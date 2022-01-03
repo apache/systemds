@@ -1,0 +1,154 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Built-in function mcc: Matthews' Correlation Coefficient for binary classification evaluation
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE               DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# predictions     Matrix[Integer]      ---     Vector of predicted 0/1 values. 
+#                                                 (requires setting 'labels' parameter)
+# labels          Matrix[Integer]      ---     Vector of 0/1 labels.
+# confusionM      Matrix[Integer]      ---     Alternatively a 2x2 confusion matrix containing
+#                                                 TN, FP, FN, TP (row major order) e.g. 
+#                                                                 Predictions
+#                                                                   0    1
+#                                                               0   TN | FP
+#                                                      Labels      ----+----
+#                                                               1   FN | TP
+#
+#                                                 TN = True Negatives
+#                                                 FP = False Positives
+#                                                 FN = False Negatives
+#                                                 TP = True Positives
+#
+# TN              Integer              ---     Or as a third option, a count of True Negatives. 
+#                                                (requires setting FP, FN and TP aswell)
+# FP              Integer              ---     Count of False Positives. 
+# FN              Integer              ---     Count of False Negatives. 
+# TP              Integer              ---     Count of True Positives.
+# ---------------------------------------------------------------------------------------------
+ 
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# mattCC          Double    ---       Matthews' Correlation Coefficient
+# ---------------------------------------------------------------------------------------------
+
+m_mcc = function(Matrix[Double] predictions = matrix(0,0,0), Matrix[Double] labels = matrix(0,0,0),
+                    Matrix[Double] confusionM = matrix(0,0,0)
+                   )
+        return (Double mattCC)
+{
+    ################
+    ## SANITY CHECKS
+    if (length(confusionM) > 0) {
+        if (nrow(confusionM) != 2 | ncol(confusionM) != 2) {
+            stop("@mcc Input Error: Confusion matrix is set but doesn't comply to 2x2 matrix")
+        }
+        if (length(predictions) > 0 | length(labels) > 0) {
+            print("@mcc Input Warning: confusion matrix and (predictions or labels) are set! " 
+                    + "Using confusion matrix")
+        }
+        if (sum(confusionM < 0) > 0) {
+          stop("@mcc Input Error: confusion matrix contains negative values")
+        }
+        if (sum(confusionM) == 0) {
+          stop("@mcc Input Error: confusion matrix contains only zeros")
+        }
+        mode = 0
+    } else {
+        if (length(predictions) == 0 | length(labels) == 0) {
+            stop("@mcc Input Error: predictions and/or labels are not set!")
+        }
+        [predictions, labels] = mcc_binaryVectorCheck(predictions, labels)
+        confusionM = table(labels + 1, predictions + 1, 2, 2)
+    }
+    mattCC = s_mcc(TN=as.scalar(confusionM[1,1]), FP=as.scalar(confusionM[1,2]), 
+                    FN=as.scalar(confusionM[2,1]), TP=as.scalar(confusionM[2,2]))
+}
+
+s_mcc = function(Integer TN = -1, Integer FP = -1, Integer FN = -1, Integer TP = -1) return (Double mattCC) {
+    if (TN < 0 | FP < 0 | FN < 0 | TP < 0) {
+        stop("@mcc Error: one or more confusion matrix entries are < 0")
+    } 
+    confusionM = matrix(0, 2, 2)
+    confusionM[1,1] = TN; confusionM[1,2] = FP; confusionM[2,1] = FN; confusionM[2,2] = TP;
+    if (sum(confusionM) == 0) {
+        print("@mcc Warning: TN, FP, FN and TP are all 0")
+    }
+    # from https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-019-6413-7
+    # MCC = (TP*TN - FP*FN) / sqrt((TP + FP) * (TP * FN) * (TN + FP) * (TN + FN))
+    # if row and/or column of zeros,
+    if (min(rowSums(confusionM)) == 0 | min(colSums(confusionM)) == 0) {
+        # epsilon approximation --> 0 --> setting mattCC to 0 directly
+        mattCC = 0.0
+    } else {
+        mattCC = (TP*TN - FP*FN) / sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
+    }
+    
+}
+
+mcc_binaryVectorCheck = function(Matrix[Double] predictionsIn, Matrix[Double] labelsIn) 
+                    return (Matrix[Double] predictionsOut, Matrix[Double] labelsOut) {
+
+    predictionsOut = predictionsIn
+    labelsOut = labelsIn
+    # same length
+    if (length(predictionsIn) != length(labelsIn)) {
+        stop("@mcc Input Error: amount of predictions doesn't match amount of labels")
+    }
+    # max two distinct prediction values
+    if (sum(predictionsIn == min(predictionsIn) | predictionsIn == max(predictionsIn)) != length(predictionsIn)) {
+        stop("@mcc Input Error: predictions contain more than two distinct values")
+    }
+    # max two distinct label values
+    if (sum(labelsIn == min(labelsIn) | labelsIn == max(labelsIn)) != length(labelsIn)) {
+        stop("@mcc Input Error: labels contain more than two distinct values")
+    }
+    if (sum(min(predictionsIn) == labelsIn | max(predictionsIn) == labelsIn) != length(predictionsIn)) {
+        # all values in predictions are equal and all values in labels are equal but distinct is allowed
+        if (!(sum(predictionsIn == min(predictionsIn)) == length(predictionsIn) 
+                & sum(labelsIn == min(labelsIn)) == length(labelsIn))) {
+            stop("@mcc Input Error: mismatch between predictions and labels. Predictions contain " 
+                + min(predictionsIn) + "," + max(predictionsIn) + " while labels contain "
+                + min(labelsIn) + "," + max(labelsIn)
+            )
+        }
+    }
+    #check if only contains 0s and/or 1s, else transform
+    if (sum(predictionsIn == 0 | predictionsIn == 1) != length(predictionsIn) | 
+            sum(labelsIn == 0 | labelsIn == 1) != length(labelsIn)) {
+        lowerValue = min(min(labelsIn), min(predictionsIn))
+        higherValue = max(max(labelsIn), max(predictionsIn))
+        print("@mcc Input Warning: prediction and label entries deviate from 0 and 1! " + 
+                "Interpreting lower value as negative, higher as positive.\n" + 
+                + lowerValue + " --> " + 0 + " and " + higherValue + " --> " + 1
+        )
+        predictionsOut = replace(target=predictionsOut, pattern=lowerValue, replacement=0)
+        predictionsOut = replace(target=predictionsOut, pattern=higherValue, replacement=1)
+        labelsOut = replace(target=labelsOut, pattern=lowerValue, replacement=0)
+        labelsOut = replace(target=labelsOut, pattern=higherValue, replacement=1)
+    }
+   
+}

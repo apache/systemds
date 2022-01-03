@@ -203,8 +203,7 @@ public class Dag<N extends Lop>
 		prefetchFederated(node_bc);
 
 		// do greedy grouping of operations
-		ArrayList<Instruction> inst =
-			doPlainInstructionGen(sb, node_bc);
+		ArrayList<Instruction> inst = doPlainInstructionGen(sb, node_bc);
 		
 		// cleanup instruction (e.g., create packed rmvar instructions)
 		return cleanupInstructions(inst);
@@ -255,6 +254,8 @@ public class Dag<N extends Lop>
 			v.stream().filter(l -> !l.getOutputs().isEmpty()).sorted(Comparator.comparing(l -> l.getID())),
 			v.stream().filter(l -> l.getOutputs().isEmpty())).collect(Collectors.toList());
 
+		printStats(nodes);
+
 		//NOTE: in contrast to hadoop execution modes, we avoid computing the transitive
 		//closure here to ensure linear time complexity because its unnecessary for CP and Spark
 		return nodes;
@@ -269,6 +270,7 @@ public class Dag<N extends Lop>
 	}
 
 	private static void printStats(List<Lop> v) {
+		if (true) return;
 		for (Lop l : v) {
 			long memEst = OptimizerUtils.estimateSizeExactSparsity(l.getOutputParameters().getNumRows(),
 				l.getOutputParameters().getNumCols(), l.getOutputParameters().getNnz());
@@ -305,12 +307,14 @@ public class Dag<N extends Lop>
 		// TODO: Improve memory estimate?
 		// Sort primarily by memory estimate, if memory estimate is the same, sort by ID
 		// This preserves print order
-		List<Map.Entry<Lop, Long>> memEst = input.stream().map(l -> new AbstractMap.SimpleEntry<>(l,
-			OptimizerUtils.estimateSizeExactSparsity(l.getOutputParameters().getNumRows(),
+		List<Map.Entry<Lop, Long>> memEst = input.stream().distinct().map(l -> new AbstractMap.SimpleEntry<>(l,
+			l.getOutputs().isEmpty() /* TODO */ ? 0 : OptimizerUtils.estimateSizeExactSparsity(l.getOutputParameters().getNumRows(),
 				l.getOutputParameters().getNumCols(), l.getOutputParameters().getNnz())))
 			.sorted(Comparator.comparing(e -> ((Map.Entry<Lop, Long>) e).getValue())
 				.thenComparing(e -> ((Map.Entry<Lop, Long>) e).getKey().getID()).reversed())
 			.collect(Collectors.toList());
+
+		// TODO: Read order?
 
 		for (Map.Entry<Lop, Long> e : memEst) {
 			// TODO: This may cause order that isn't optimal

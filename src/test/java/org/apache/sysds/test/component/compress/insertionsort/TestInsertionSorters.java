@@ -97,8 +97,8 @@ public class TestInsertionSorters {
 			tests.add(new Object[] {10, new int[][] {new int[] {0, 1, 3, 4, 7}, new int[] {5, 8}, new int[] {2, 9}}, t, 0,
 				new int[] {2, 5, 6, 8, 9}, new int[] {1, 0, 2, 0, 1}});
 
-				tests.add(gen(240, 10, t));
-				tests.add(gen2(20, 10, t));
+			tests.add(gen(240, 10, t));
+			tests.add(gen2(20, 10, t));
 		}
 
 		return tests;
@@ -123,7 +123,7 @@ public class TestInsertionSorters {
 
 	private static Object[] gen2(int size, int offsets, SORT_TYPE t) {
 		final int offsetsSize = size / offsets;
-		final int[] expectedIndexes = new int[size  - offsetsSize];
+		final int[] expectedIndexes = new int[size - offsetsSize];
 		final int[] expectedData = new int[size - offsetsSize];
 		final int[][] ar = new int[offsets][];
 		for(int i = 0; i < offsets; i++)
@@ -132,9 +132,9 @@ public class TestInsertionSorters {
 			final int bucket = i / offsetsSize;
 			final int index = i % offsetsSize;
 			ar[bucket][index] = i;
-			if(i >= offsetsSize){
-				expectedIndexes[i- offsetsSize] = i;
-				expectedData[i- offsetsSize] = bucket-1;
+			if(i >= offsetsSize) {
+				expectedIndexes[i - offsetsSize] = i;
+				expectedData[i - offsetsSize] = bucket - 1;
 			}
 		}
 
@@ -175,8 +175,8 @@ public class TestInsertionSorters {
 	private void compareData(AMapToData m) {
 		for(int i = 0; i < expectedData.length; i++)
 			if(expectedData[i] != m.getIndex(i))
-				fail("compare data failed with technique: " + st.toString() + "\n\t" + Arrays.toString(expectedData) + "\n\t" + m.toString() + "\n"
-					+ "differed at index " + i);
+				fail("compare data failed with technique: " + st.toString() + "\n\t" + Arrays.toString(expectedData)
+					+ "\n\t" + m.toString() + "\n" + "differed at index " + i);
 	}
 
 	@BeforeClass

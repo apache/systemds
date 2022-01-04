@@ -208,6 +208,11 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
+	}
+
+	@Override
 	protected TransformType getTransformType() {
 		return TransformType.N_A;
 	}

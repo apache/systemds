@@ -71,13 +71,73 @@ public abstract class ADictionary implements Serializable {
 	public abstract double aggregate(double init, Builtin fn);
 
 	/**
+	 * Aggregate all the contained values, with a reference offset.
+	 * 
+	 * @param init      The initial value, in cases such as Max value this could be -infinity.
+	 * @param fn        The function to apply to the values
+	 * @param reference The reference offset to each value in the dictionary
+	 * @return The aggregated value as a double.
+	 */
+	public abstract double aggregate(double init, Builtin fn, double[] reference);
+
+	/**
 	 * Aggregate all entries in the rows.
 	 * 
 	 * @param fn   The aggregate function
 	 * @param nCol The number of columns contained in the dictionary.
 	 * @return Aggregates for this dictionary tuples.
 	 */
-	public abstract double[] aggregateTuples(Builtin fn, int nCol);
+	public abstract double[] aggregateRows(Builtin fn, int nCol);
+
+	/**
+	 * Aggregate all entries in the rows with an offset value reference added.
+	 * 
+	 * @param fn        The aggregate function
+	 * @param reference The reference offset to each value in the dictionary
+	 * @return Aggregates for this dictionary tuples.
+	 */
+	public abstract double[] aggregateRows(Builtin fn, double[] reference);
+
+	/**
+	 * Aggregates the columns into the target double array provided.
+	 * 
+	 * @param c          The target double array, this contains the full number of columns, therefore the colIndexes for
+	 *                   this specific dictionary is needed.
+	 * @param fn         The function to apply to individual columns
+	 * @param colIndexes The mapping to the target columns from the individual columns
+	 */
+	public abstract void aggregateCols(double[] c, Builtin fn, int[] colIndexes);
+
+	/**
+	 * Aggregates the columns into the target double array provided.
+	 * 
+	 * @param c          The target double array, this contains the full number of columns, therefore the colIndexes for
+	 *                   this specific dictionary is needed.
+	 * @param fn         The function to apply to individual columns
+	 * @param reference  The reference offset values to add to each cell.
+	 * @param colIndexes The mapping to the target columns from the individual columns
+	 */
+	public abstract void aggregateCols(double[] c, Builtin fn, int[] colIndexes, double[] reference);
+
+	/**
+	 * Allocate a new dictionary and applies the scalar operation on each cell of the to then return the new.
+	 * 
+	 * @param op The operator.
+	 * @return The new dictionary to return.
+	 */
+	public abstract ADictionary applyScalarOp(ScalarOperator op);
+
+	/**
+	 * Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.
+	 * 
+	 * outValues[j] = op(this.values[j] + reference[i]) - newReference[i]
+	 * 
+	 * @param op           The operator to apply to each cell.
+	 * @param reference    The reference value to add before the operator.
+	 * @param newReference The reference value to subtract after the operator.
+	 * @return A New Dictionary.
+	 */
+	public abstract ADictionary applyScalarOp(ScalarOperator op, double[] reference, double[] newReference);
 
 	/**
 	 * Applies the scalar operation on the dictionary. Note that this operation modifies the underlying data, and
@@ -110,6 +170,23 @@ public abstract class ADictionary implements Serializable {
 	public abstract ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes);
 
 	/**
+	 * Apply the binary operator such that each value is offset by the reference before application. Then put the result
+	 * into the new dictionary, but offset it by the new reference.
+	 * 
+	 * outValues[j] = op(v[colIndexes[i]], this.values[j] + reference[i]) - newReference[i]
+	 * 
+	 * 
+	 * @param op           The operation to apply on the dictionary values.
+	 * @param v            The values to use on the left side of the operator.
+	 * @param colIndexes   The column indexes to use.
+	 * @param reference    The reference value to add before operator.
+	 * @param newReference The reference value to subtract after operator.
+	 * @return A new dictionary.
+	 */
+	public abstract ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+		double[] newReference);
+
+	/**
 	 * Apply binary row operation on the right side.
 	 * 
 	 * @param op         The operation to this dictionary
@@ -118,6 +195,22 @@ public abstract class ADictionary implements Serializable {
 	 * @return A new dictionary containing the updated values.
 	 */
 	public abstract ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes);
+
+	/**
+	 * Apply the binary operator such that each value is offset by the reference before application. Then put the result
+	 * into the new dictionary, but offset it by the new reference.
+	 * 
+	 * outValues[j] = op(this.values[j] + reference[i], v[colIndexes[i]]) - newReference[i]
+	 * 
+	 * @param op           The operation to apply on the dictionary values.
+	 * @param v            The values to use on the right side of the operator.
+	 * @param colIndexes   The column indexes to use.
+	 * @param reference    The reference value to add before operator.
+	 * @param newReference The reference value to subtract after operator.
+	 * @return A new dictionary.
+	 */
+	public abstract ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+		double[] newReference);
 
 	/**
 	 * Apply binary row operation on the left side and allocate a new dictionary.
@@ -130,7 +223,6 @@ public abstract class ADictionary implements Serializable {
 	 * @return A new dictionary containing the updated values.
 	 */
 	public abstract ADictionary applyBinaryRowOpLeftAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes);
-
 
 	/**
 	 * Apply binary row operation on this dictionary on the right side.
@@ -154,16 +246,6 @@ public abstract class ADictionary implements Serializable {
 	 * @return a clone of the dictionary, extended by len.
 	 */
 	public abstract ADictionary cloneAndExtend(int len);
-
-	/**
-	 * Aggregates the columns into the target double array provided.
-	 * 
-	 * @param c          The target double array, this contains the full number of columns, therefore the colIndexes for
-	 *                   this specific dictionary is needed.
-	 * @param fn         The function to apply to individual columns
-	 * @param colIndexes The mapping to the target columns from the individual columns
-	 */
-	public abstract void aggregateCols(double[] c, Builtin fn, int[] colIndexes);
 
 	/**
 	 * Write the dictionary to a DataOutput.
@@ -200,21 +282,65 @@ public abstract class ADictionary implements Serializable {
 	 * 
 	 * Note if the number of columns is one the actual dictionaries values are simply returned.
 	 * 
-	 * @param square    If each entry should be squared.
+	 * 
 	 * @param nrColumns The number of columns in the ColGroup to know how to get the values from the dictionary.
 	 * @return a double array containing the row sums from this dictionary.
 	 */
-	public abstract double[] sumAllRowsToDouble(boolean square, int nrColumns);
+	public abstract double[] sumAllRowsToDouble(int nrColumns);
+
+	/**
+	 * Method used as a pre-aggregate of each tuple in the dictionary, to single double values with a reference.
+	 * 
+	 * @param reference The reference values to add to each cell.
+	 * @return a double array containing the row sums from this dictionary.
+	 */
+	public abstract double[] sumAllRowsToDouble(double[] reference);
+
+	/**
+	 * Method used as a pre-aggregate of each tuple in the dictionary, to single double values.
+	 * 
+	 * Note if the number of columns is one the actual dictionaries values are simply returned.
+	 * 
+	 * @param nrColumns The number of columns in the ColGroup to know how to get the values from the dictionary.
+	 * @return a double array containing the row sums from this dictionary.
+	 */
+	public abstract double[] sumAllRowsToDoubleSq(int nrColumns);
+
+	/**
+	 * Method used as a pre-aggregate of each tuple in the dictionary, to single double values.
+	 * 
+	 * @param reference The reference values to add to each cell.
+	 * @return a double array containing the row sums from this dictionary.
+	 */
+	public abstract double[] sumAllRowsToDoubleSq(double[] reference);
 
 	/**
 	 * Sum the values at a specific row.
 	 * 
 	 * @param k         The row index to sum
-	 * @param square    If each entry should be squared.
 	 * @param nrColumns The number of columns
 	 * @return The sum of the row.
 	 */
-	public abstract double sumRow(int k, boolean square, int nrColumns);
+	public abstract double sumRow(int k, int nrColumns);
+
+	/**
+	 * Sum the values at a specific row.
+	 * 
+	 * @param k         The row index to sum
+	 * @param nrColumns The number of columns
+	 * @return The sum of the row.
+	 */
+	public abstract double sumRowSq(int k, int nrColumns);
+
+	/**
+	 * Sum the values at a specific row, with a reference array to scale the values.
+	 * 
+	 * @param k         The row index to sum
+	 * @param nrColumns The number of columns
+	 * @param reference The reference vector to add to each cell processed.
+	 * @return The sum of the row.
+	 */
+	public abstract double sumRowSq(int k, int nrColumns, double[] reference);
 
 	/**
 	 * get the column sum of this dictionary only.
@@ -232,9 +358,29 @@ public abstract class ADictionary implements Serializable {
 	 * @param counts     The counts of the individual tuples.
 	 * @param colIndexes The columns indexes of the parent column group, this indicate where to put the column sum into
 	 *                   the c output.
-	 * @param square     Specify if the values should be squared
 	 */
-	public abstract void colSum(double[] c, int[] counts, int[] colIndexes, boolean square);
+	public abstract void colSum(double[] c, int[] counts, int[] colIndexes);
+
+	/**
+	 * Get the column sum of the values contained in the dictionary
+	 * 
+	 * @param c          The output array allocated to contain all column groups output.
+	 * @param counts     The counts of the individual tuples.
+	 * @param colIndexes The columns indexes of the parent column group, this indicate where to put the column sum into
+	 *                   the c output.
+	 */
+	public abstract void colSumSq(double[] c, int[] counts, int[] colIndexes);
+
+	/**
+	 * Get the column sum of the values contained in the dictionary with an offset reference value added to each cell.
+	 * 
+	 * @param c          The output array allocated to contain all column groups output.
+	 * @param counts     The counts of the individual tuples.
+	 * @param colIndexes The columns indexes of the parent column group, this indicate where to put the column sum into
+	 *                   the c output.
+	 * @param reference  The reference values to add to each cell.
+	 */
+	public abstract void colSumSq(double[] c, int[] counts, int[] colIndexes, double[] reference);
 
 	/**
 	 * Get the sum of the values contained in the dictionary
@@ -252,7 +398,16 @@ public abstract class ADictionary implements Serializable {
 	 * @param nCol   The number of columns contained
 	 * @return The square sum scaled by the counts provided.
 	 */
-	public abstract double sumsq(int[] counts, int nCol);
+	public abstract double sumSq(int[] counts, int nCol);
+
+	/**
+	 * Get the square sum of the values contained in the dictionary with a reference offset on each value.
+	 * 
+	 * @param counts    The counts of the individual tuples
+	 * @param reference The reference value
+	 * @return The square sum scaled by the counts and reference.
+	 */
+	public abstract double sumSq(int[] counts, double[] reference);
 
 	/**
 	 * Get a string representation of the dictionary, that considers the layout of the data.
@@ -299,6 +454,15 @@ public abstract class ADictionary implements Serializable {
 	public abstract boolean containsValue(double pattern);
 
 	/**
+	 * Detect if the dictionary contains a specific value with reference offset.
+	 * 
+	 * @param pattern   The pattern/ value to search for
+	 * @param reference The reference double array.
+	 * @return true if the value is contained else false.
+	 */
+	public abstract boolean containsValue(double pattern, double[] reference);
+
+	/**
 	 * Calculate the number of non zeros in the dictionary. The number of non zeros should be scaled with the counts
 	 * given. This gives the exact number of non zero values in the parent column group.
 	 * 
@@ -307,6 +471,20 @@ public abstract class ADictionary implements Serializable {
 	 * @return The nonZero count
 	 */
 	public abstract long getNumberNonZeros(int[] counts, int nCol);
+
+	/**
+	 * Calculate the number of non zeros in the dictionary.
+	 * 
+	 * Each value in the dictionary should be added to the reference value.
+	 * 
+	 * The number of non zeros should be scaled with the given counts.
+	 * 
+	 * @param counts    The Counts of each dict entry.
+	 * @param reference The reference vector.
+	 * @param nRows     The number of rows in the input.
+	 * @return The NonZero Count.
+	 */
+	public abstract long getNumberNonZeros(int[] counts, double[] reference, int nRows);
 
 	/**
 	 * Copies and adds the dictionary entry from this dictionary to the d dictionary
@@ -379,6 +557,8 @@ public abstract class ADictionary implements Serializable {
 	 * @return A new Column Group, reusing the index structure but with new values.
 	 */
 	public abstract ADictionary replace(double pattern, double replace, int nCol);
+
+	public abstract ADictionary replace(double pattern, double replace, double[] reference);
 
 	public abstract ADictionary replaceZeroAndExtend(double replace, int nCol);
 

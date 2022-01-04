@@ -19,7 +19,32 @@
 #
 #-------------------------------------------------------------
 
-m_cvlm = function(Matrix[Double] X, Matrix[Double] y, Integer k, Integer icpt = 0, Double reg = 1e-7) return (Matrix[Double] y_predict, Matrix[Double] allbeta) 
+# The cvlm-function is used for cross-validation of the provided data model. This function follows a non-exhaustive cross
+# validation method. It uses lm and lmPredict functions to solve the linear regression and to predict the class of a
+# feature vector with no intercept, shifting, and rescaling.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE              DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]    ---      Recorded Data set into matrix
+# y               Matrix[Double]    ---      1-column matrix of response values.
+# k               Integer           ---      Number of subsets needed, It should always be more than 1 and less than nrow(X)
+# icpt            Integer           0        Intercept presence, shifting and rescaling the columns of X
+# reg             Double            1e-7     Regularization constant (lambda) for L2-regularization. set to nonzero for
+#                                            highly dependant/sparse/numerous features
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# y_predict       Matrix[Double]        Response values
+# allbeta         Matrix[Double]        Validated data set
+# ----------------------------------------------------------------------------------------------------------------------
+
+m_cvlm = function(Matrix[Double] X, Matrix[Double] y, Integer k, Integer icpt = 0, Double reg = 1e-7)
+    return (Matrix[Double] y_predict, Matrix[Double] allbeta)
 {
   M = nrow(X);
   lim = floor(as.integer(M/k));

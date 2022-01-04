@@ -19,38 +19,39 @@
 #
 #-------------------------------------------------------------
 
-# ------------------------------------------
-# Gaussian Mixture Model
-# ------------------------------------------
-
+# The gmm-function implements builtin Gaussian Mixture Model with four different types of covariance matrices
+# i.e., VVV, EEE, VVI, VII and two initialization methods namely "kmeans" and "random".
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE     DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double   ---         Matrix X  
-# n_components    Integer  3           Number of n_components in the Gaussian mixture model
-# model           String   "VVV"       "VVV": unequal variance (full),each component has its own general covariance matrix
-#                                      "EEE": equal variance (tied), all components share the same general covariance matrix
-#                                      "VVI": spherical, unequal volume (diag), each component has its own diagonal 
-#                                             covariance matrix 
-#                                      "VII": spherical, equal volume (spherical), each component has its own single variance
-# init_param      String   "kmeans"    initialize weights with "kmeans" or "random"
-# iterations      Integer  100         Number of iterations
-# reg_covar       Double   1e-6        regularization parameter for covariance matrix
-# tol             Double   0.000001    tolerance value for convergence 
-# ---------------------------------------------------------------------------------------------
-
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE     DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# weight          Double   ---         A matrix whose [i,k]th entry is the probability that observation i in the test data 
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE             DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]   ---         Matrix X
+# n_components    Integer           3          Number of n_components in the Gaussian mixture model
+# model           String           "VVV"       "VVV": unequal variance (full),each component has its own general covariance matrix
+#                                              "EEE": equal variance (tied), all components share the same general covariance matrix
+#                                              "VVI": spherical, unequal volume (diag), each component has its own diagonal
+#                                              covariance matrix
+#                                              "VII": spherical, equal volume (spherical), each component has its own single variance
+# init_param      String           "kmeans"    initialize weights with "kmeans" or "random"
+# iterations      Integer          100         Number of iterations
+# reg_covar       Double           1e-6        regularization parameter for covariance matrix
+# tol             Double           0.000001    tolerance value for convergence
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                 MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# labels          Matrix[Double]       Prediction matrix
+# predict_prob    Matrix[Double]       Probability of the predictions
+# df              Integer              Number of estimated parameters
+# bic             Double               Bayesian information criterion for best iteration
+# mu              Matrix[Double]       fitted clusters mean
+# weight          Matrix[Double]       A matrix whose [i,k]th entry is the probability that observation i in the test data
 #                                      belongs to the kth class
-# labels          Double   ---         Prediction matrix
-# df              Integer  ---         Number of estimated parameters
-# bic             Double   ---         Bayesian information criterion for best iteration
-
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_gmm = function(Matrix[Double] X, Integer n_components = 3, String model = "VVV", String init_params = "kmeans", 
   Integer iter = 100, Double reg_covar = 1e-6, Double tol = 0.000001, Integer seed = -1, Boolean verbose = FALSE )
@@ -114,7 +115,7 @@ return (Matrix[Double] weight, Matrix[Double] mean, Matrix[Double] sigma, Matrix
   resp = matrix(0, nrow(X), n_components)
   if(init_params == "kmeans") {
     [C, Y] = kmeans(X=X, k=n_components, runs=10,
-      eps=tol, is_verbose=FALSE, avg_sample_size_per_centroid=100)
+      eps=tol, is_verbose=FALSE, avg_sample_size_per_centroid=100, seed=seed)
     resp = ((resp + t(seq(1, n_components))) == Y)
   }
   else if(init_params == "random") {

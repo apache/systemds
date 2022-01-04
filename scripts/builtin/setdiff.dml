@@ -1,0 +1,49 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Builtin function that implements difference operation on vectors
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE            DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# X               Matrix[Double]  ---         input vector
+# Y               Matrix[Double]  ---         input vector
+# ---------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE              MEANING
+# ---------------------------------------------------------------------------------------------
+# R               Matrix[Double]    vector with all elements that are present in X but not in Y
+# ---------------------------------------------------------------------------------------------
+
+setdiff = function(Matrix[double] X, Matrix[double] Y)
+  return (matrix[double] R)
+{
+  common = intersect(X, Y);
+  X = unique(X);
+  combined = order(target=rbind(X,common), by=1, decreasing=FALSE, index.return=FALSE);
+  temp = combined[1:nrow(combined)-1,] != combined[2:nrow(combined),];
+  mask = rbind(temp, matrix(1, 1, 1))
+       & rbind(matrix(1, 1, 1), temp);
+  R = removeEmpty(target = combined, margin = "rows", select = mask);
+}

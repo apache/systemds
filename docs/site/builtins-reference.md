@@ -71,15 +71,19 @@ limitations under the License.
     * [`outlier`-Function](#outlier-function)
     * [`pnmf`-Function](#pnmf-function)
     * [`scale`-Function](#scale-function)
+    * [`setdiff`-Function](#setdiff-function)
     * [`sherlock`-Function](#sherlock-function)
     * [`sherlockPredict`-Function](#sherlockPredict-function)
     * [`sigmoid`-Function](#sigmoid-function)
     * [`slicefinder`-Function](#slicefinder-function)
     * [`smote`-Function](#smote-function)
     * [`steplm`-Function](#steplm-function)
+    * [`symmetricDifference`-Function](#symmetricdifference-function)
     * [`tomekLink`-Function](#tomekLink-function)
     * [`toOneHot`-Function](#toOneHOt-function)
     * [`tSNE`-Function](#tSNE-function)
+    * [`union`-Function](#union-function)
+    * [`unique`-Function](#unique-function)
     * [`winsorize`-Function](#winsorize-function)
     * [`xgboost`-Function](#xgboost-function)
 
@@ -1823,6 +1827,36 @@ scale=TRUE;
 Y= scale(X,center,scale)
 ```
 
+## `setdiff`-Function
+
+The `setdiff`-function returns the values of X that are not in Y.
+
+### Usage
+
+```r
+setdiff(X, Y)
+```
+
+### Arguments
+
+| Name | Type   | Default  | Description |
+| :--- | :----- | -------- | :---------- |
+| X    | Matrix[Double] | required | input vector|
+| Y    | Matrix[Double] | required | input vector|
+
+### Returns
+
+| Type   | Description |
+| :----- | :---------- |
+| Matrix[Double] | values of X that are not in Y.|
+
+### Example
+
+```r
+X = matrix("1 2 3 4", rows = 4, cols = 1)
+Y = matrix("2 3", rows = 2, cols = 1)
+R = setdiff(X = X, Y = Y)
+```
 
 ## `sherlock`-Function
 
@@ -2107,6 +2141,37 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 [C, S] = steplm(X = X, y = y, icpt = 1);
 ```
 
+## `symmetricDifference`-Function
+
+The `symmetricDifference`-function returns the symmetric difference of the two input vectors.
+This is done by calculating the `setdiff` (nonsymmetric) between `union` and `intersect` of the two input vectors.
+
+### Usage
+
+```r
+symmetricDifference(X, Y)
+```
+
+### Arguments
+
+| Name | Type   | Default  | Description |
+| :--- | :----- | -------- | :---------- |
+| X    | Matrix[Double] | required | input vector|
+| Y    | Matrix[Double] | required | input vector|
+
+### Returns
+
+| Type   | Description |
+| :----- | :---------- |
+| Matrix[Double] | symmetric difference of the input vectors |
+
+### Example
+
+```r
+X = matrix("1 2 3.1", rows = 3, cols = 1)
+Y = matrix("3.1 4", rows = 2, cols = 1)
+R = symmetricDifference(X = X, Y = Y)
+```
 
 ## `tomekLink`-Function
 
@@ -2210,6 +2275,66 @@ tSNE(X, reduced_dims, perplexity, lr, momentum, max_iter, seed, is_verbose)
 ```r
 X = rand(rows = 100, cols = 10, min = -10, max = 10))
 Y = tSNE(X)
+```
+
+## `union`-Function
+
+The `union`-function combines all rows from both input vectors and removes all duplicate rows by calling `unique` on the resulting vector.
+
+### Usage
+
+```r
+union(X, Y)
+```
+
+### Arguments
+
+| Name | Type   | Default  | Description |
+| :--- | :----- | -------- | :---------- |
+| X    | Matrix[Double] | required | input vector|
+| Y    | Matrix[Double] | required | input vector|
+
+### Returns
+
+| Type   | Description |
+| :----- | :---------- |
+| Matrix[Double] | the union of both input vectors.|
+
+### Example
+
+```r
+X = matrix("1 2 3 4", rows = 4, cols = 1)
+Y = matrix("3 4 5 6", rows = 4, cols = 1)
+R = union(X = X, Y = Y)
+```
+
+## `unique`-Function
+
+The `unique`-function returns a set of unique rows from a given input vector.
+
+### Usage
+
+```r
+unique(X)
+```
+
+### Arguments
+
+| Name | Type   | Default  | Description |
+| :--- | :----- | -------- | :---------- |
+| X    | Matrix[Double] | required | input vector|
+
+### Returns
+
+| Type   | Description |
+| :----- | :---------- |
+| Matrix[Double] | a set of unique values from the input vector |
+
+### Example
+
+```r
+X = matrix("1 3.4 7 3.4 -0.9 8 1", rows = 7, cols = 1)
+R = unique(X = X)
 ```
 
 ## `winsorize`-Function

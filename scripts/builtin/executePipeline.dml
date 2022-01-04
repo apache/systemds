@@ -19,6 +19,40 @@
 #
 #-------------------------------------------------------------
 
+# This function execute pipeline.
+#
+# INPUT   PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                TYPE               DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# logical             Frame[String]      NULL     ---
+# pipeline            Frame[String]      ---      ---
+# X                   Matrix[Double]     ---      ---
+# Y                   Matrix[Double]     ---      ---
+# Xtest               Matrix[Double]     ---      ---
+# Ytest               Matrix[Double]     ---      ---
+# metaList            List[Unknown]      ---      ---
+# hyperParameters     Matrix[Double]     ---      ---
+# hpForPruning        Matrix[Double]      0       ---
+# changesByOp         Matrix[Double]      0       ---
+# flagsCount          Integer            ---      ---
+# test                Boolean             FALSE   ---
+# verbose             Boolean            ---      ---
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X                   Matrix[Double]             ---
+# Y                   Matrix[Double]             ---
+# Xtest               Matrix[Double]             ---
+# Ytest               Matrix[Double]             ---
+# t2                  Double                     ---
+# hpForPruning        Matrix[Double]             ---
+# changesByOp         Matrix[Double]             ---
+# ----------------------------------------------------------------------------------------------------------------------
+
 s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, 
   Matrix[Double] Xtest,  Matrix[Double] Ytest, List[Unknown] metaList, Matrix[Double] hyperParameters, Matrix[Double] hpForPruning = as.matrix(0),
   Matrix[Double] changesByOp = as.matrix(0), Integer flagsCount, Boolean test = FALSE, Boolean verbose)
@@ -37,7 +71,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
   testRow = nrow(Xtest)
   Xout = X
   t1 = time()
-  #print("PIPELINE EXECUTION START ... "+toString(pipeline))
+  print("PIPELINE EXECUTION START ... "+toString(pipeline))
   if(verbose) {
     print("checks   rows in X = "+nrow(X)+" rows in Y = "+nrow(Y)+" cols in X = "+ncol(X)+" col in Y = "+ncol(Y))
     print("pipeline in execution "+toString(pipeline))
@@ -49,7 +83,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
     op = as.scalar(pipeline[1,i])
     lgOp = as.scalar(logical[1,i])
     
-    if(test == FALSE | lgOp != "CI") {
+    if(lgOp != "CI") {
        Xclone = X 
       [hp, dataFlag, yFlag, executeFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
       if(executeFlag == 1) {
@@ -194,6 +228,9 @@ return (Matrix[Double] X)
     cat = removeEmpty(target=X, margin="cols", select = mask)
     # round categorical (if there is any floating  point)
     cat = round(cat)
+    less_than_1_mask = cat < 1
+    less_than_1 = less_than_1_mask * 9999
+    cat = (cat * (less_than_1_mask == 0)) +  less_than_1
     # reconstruct original X
     X = X * (mask == 0)
     q = table(seq(1, ncol(cat)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
@@ -335,44 +372,46 @@ SMOTE  = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask, Integ
 return (Matrix[Double] XY)
 {
   # get the class count 
-  classes = table(Y[, 1], 1)
-  minClass = min(classes)
-  maxClass = max(classes)
-  diff = (maxClass - minClass)/sum(classes)
-  if(diff > 0.5)
-  {
-    #print("initiating oversampling")
-    XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
-    synthesized = matrix(0,0,0) # initialize variable
-    start_class = 1
-    end_class = 0
-    k = table(XY[, 1], 1)
-    getMax = max(k)
-    maxKIndex = as.scalar(rowIndexMax(t(k)))
-    outSet = matrix(0, 0, ncol(XY))
-    remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
-    remainingRatio-(remainingRatio%%100))
-    #print("remaining ratio: "+remainingRatio)
-    for(i in 1: nrow(k), check=0) {
-      end_class = end_class + as.scalar(classes[i])
-      class_t = XY[start_class:end_class, ]
-      if((i != maxKIndex)) {
-        synthesized = smote(class_t[, 2:ncol(XY)], mask, remainingRatio, 1, FALSE)
-        synthesized = cbind(matrix(as.scalar(class_t[2,1]), nrow(synthesized), 1), synthesized)
-        outSet = rbind(outSet, synthesized)
-      }
-      start_class = end_class + 1
-    }
-  
-    XY = rbind(XY, synthesized)
-    Y = XY[, 1]
-    X = XY[, 2:ncol(XY)]
-    XY = cbind(X,Y)
+  for(k in 1:max(Y)) {
     classes = table(Y, 1)
-  }
-  else { 
-    #print("smote not applicable")
-    XY = cbind(X, Y)
+    minClass = min(classes)
+    maxClass = max(classes)
+    diff = (maxClass - minClass)/sum(classes)
+    if(diff > 0.3)
+    {
+      #print("initiating oversampling")
+      XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
+      synthesized = matrix(0,0,0) # initialize variable
+      start_class = 1
+      end_class = 0
+      k = table(XY[, 1], 1)
+      getMax = max(k)
+      maxKIndex = as.scalar(rowIndexMax(t(k)))
+      outSet = matrix(0, 0, ncol(XY))
+      remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
+      remainingRatio-(remainingRatio%%100))
+      #print("remaining ratio: "+remainingRatio)
+      for(i in 1: nrow(k), check=0) {
+        end_class = end_class + as.scalar(classes[i])
+        class_t = XY[start_class:end_class, ]
+        if((i != maxKIndex)) {
+          synthesized = smote(class_t[, 2:ncol(XY)], mask, remainingRatio, 1, FALSE)
+          synthesized = cbind(matrix(as.scalar(class_t[2,1]), nrow(synthesized), 1), synthesized)
+          outSet = rbind(outSet, synthesized)
+        }
+        start_class = end_class + 1
+      }
+  
+      XY = rbind(XY, synthesized)
+      Y = XY[, 1]
+      X = XY[, 2:ncol(XY)]
+      XY = cbind(X,Y)
+      classes = table(Y, 1)
+    }
+    else { 
+      print("smote not applicable")
+      XY = cbind(X, Y)
+    }
   }
 }
 
@@ -446,3 +485,123 @@ return(Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
   }
 }
 
+########################################################
+# The function will flip the noisy labels
+########################################################
+flipLabels = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Integer maxIter =10, Boolean verbose = FALSE)
+return (Matrix[Double] XY)
+{
+  max_y = max(Y)
+  if(min(Y) != max(Y))
+  {
+    betas = multiLogReg(X=X, Y=Y, icpt=1, reg=1e-4, maxi=100, maxii=0, verbose=FALSE)
+    [prob, yhat, accuracy] = multiLogRegPredict(X, betas, Y, FALSE)
+    inc = ((yhat != Y) & (rowMaxs(prob) > threshold))
+    Xcor = removeEmpty(target = X, margin = "rows", select = (inc==0))
+    Ycor = removeEmpty(target = Y, margin = "rows", select = (inc==0))
+    while(sum(inc) > 0 & maxIter > 0)
+    {
+      # print("inc vector "+toString(inc))
+      Xinc = removeEmpty(target = X, margin = "rows", select = inc)
+      Yinc = removeEmpty(target = Y, margin = "rows", select = inc)
+      Yinc = matrix((max_y + 1), rows=nrow(Yinc), cols=1) - Yinc
+      [prob, yhat, accuracy] = multiLogRegPredict(Xinc, betas, Yinc, FALSE)
+      inc = ((yhat != Yinc) & (rowMaxs(prob) > threshold))
+      XcorI = removeEmpty(target = Xinc, margin = "rows", select = (inc==0))
+      YcorI = removeEmpty(target = Yinc, margin = "rows", select = (inc==0))
+      Xcor = rbind(Xcor, XcorI)
+      Ycor = rbind(Ycor, YcorI)
+      X = Xinc
+      Y = Yinc
+      print("maxIter: "+maxIter)
+      maxIter = maxIter - 1
+    }
+    XY = cbind(Xcor, Ycor)
+  }
+  else 
+    XY = cbind(X, Y)
+}
+
+#######################################################################
+# function frequency conversion
+# Inputs: The input dataset X, and  mask of the columns
+# Output: categorical columns are replaced with their frequencies
+#######################################################################
+
+frequencyEncoding = function(Matrix[Double] X, Matrix[Double] mask)
+return (Matrix[Double] freqX) {
+  
+  freqX = X
+  X = replace(target=X, pattern=NaN, replacement=1)
+  if(sum(mask) > 0)
+  {
+
+    parfor(i in 1:ncol(mask))
+    {
+      if(as.scalar(mask[1, i]) == 1)
+      {
+        Y = X[, i]
+        # print("max of Y: "+max(Y)+" max of Ytrain: "+max(Xtrain[, i]))
+        valueCount = table(Y, 1)
+        resp = matrix(0, nrow(Y), max(Y))
+        resp = (resp + t(seq(1, max(Y)))) == Y
+        # print("cols in resp: "+ncol(resp)+" cols in valueCount: "+nrow(valueCount))
+        # while(FALSE){}
+        resp = resp * t(valueCount)
+        freqX[, i] = rowSums(resp)
+      }
+    
+    }
+  }
+}
+
+#######################################################################
+# function Weight of evidence / information gain
+# Inputs: The input dataset X, and  mask of the columns
+# Output: categorical columns are replaced with their frequencies
+#######################################################################
+
+WoE = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask)
+return (Matrix[Double] output) {
+  
+  freqX = X
+  X = replace(target=X, pattern=NaN, replacement=1)
+  if(sum(mask) > 0)
+  {
+    parfor(i in 1:ncol(mask))
+    {
+      if(as.scalar(mask[1, i]) == 1)
+      {
+        L = X[, i]
+        entropy = getEntropy(L, Y)
+        resp = matrix(0, nrow(L), max(L))
+        resp = (resp + t(seq(1, max(L)))) == L
+        resp = resp * entropy
+        freqX[, i] = rowSums(resp)
+      }
+    
+    }
+  }
+  output = cbind(freqX, Y)
+}
+
+
+getEntropy = function(Matrix[Double] eX, Matrix[Double] eY)
+return(Matrix[Double] entropyMatrix)
+{
+
+  tab = table(eX, eY)
+  # print("tab \n"+toString(tab))
+  entropyMatrix = matrix(0, rows=1, cols=nrow(tab))
+  catTotal = rowSums(tab)
+  for(i in 1:nrow(tab))
+  {
+    # print("catProb: " +catProb)
+    entropy =  (tab[i,]/catTotal[i])
+    # print("entropy: "+toString(entropy))
+    catEntropy = sum(-entropy * log(entropy, 2))
+    catEntropy = ifelse(is.na(catEntropy), 0, catEntropy)
+    # print("cat entropy: "+catEntropy)
+    entropyMatrix[1, i] = catEntropy
+  }  
+}

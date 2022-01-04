@@ -95,6 +95,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 
 	protected double getCode(CacheBlock in, int row){
+		// find the right bucket for a single row
 		if( _binMins.length == 0 || _binMaxs.length == 0 ) {
 			LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
 			return 1; //robustness in case of missing bins
@@ -106,6 +107,28 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		int ix = Arrays.binarySearch(_binMaxs, inVal);
 
 		return ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+	}
+	
+	@Override
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+		// find the right bucket for a block of rows
+		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
+		double codes[] = new double[endInd-startInd];
+		for (int i=startInd; i<endInd; i++) {
+			if (_binMins.length == 0 || _binMaxs.length == 0) {
+				LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
+				codes[i-startInd] = 1; //robustness in case of missing bins
+				continue;
+			}
+			double inVal = in.getDoubleNaN(i, _colID - 1);
+			if (Double.isNaN(inVal) || inVal < _binMins[0] || inVal > _binMaxs[_binMaxs.length-1]) {
+				codes[i-startInd] = Double.NaN;
+				continue;
+			}
+			int ix = Arrays.binarySearch(_binMaxs, inVal);
+			codes[i-startInd] = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+		}
+		return codes;
 	}
 
 	@Override

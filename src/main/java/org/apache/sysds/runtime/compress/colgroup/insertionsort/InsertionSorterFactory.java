@@ -19,9 +19,12 @@
 
 package org.apache.sysds.runtime.compress.colgroup.insertionsort;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class InsertionSorterFactory {
+	protected static final Log LOG = LogFactory.getLog(InsertionSorterFactory.class.getName());
 
 	public enum SORT_TYPE {
 		MERGE, MATERIALIZE;

@@ -25,13 +25,13 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
-import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -45,10 +45,14 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	public MatrixBlockDictionary(double[] values, int nCol) {
 		_data = Util.matrixBlockFromDenseArray(values, nCol);
+		if(_data.isEmpty())
+			throw new DMLCompressionException("Invalid construction of empty dictionary");
 	}
 
 	public MatrixBlockDictionary(MatrixBlock data) {
 		_data = data;
+		if(_data.isEmpty())
+			throw new DMLCompressionException("Invalid construction of empty dictionary");
 	}
 
 	public MatrixBlock getMatrixBlock() {
@@ -93,7 +97,45 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] aggregateTuples(Builtin fn, int nCol) {
+	public double aggregate(double init, Builtin fn, double[] reference) {
+		final int nCol = reference.length;
+		final int nRows = _data.getNumRows();
+		double ret = init;
+
+		for(int i = 0; i < nCol; i++)
+			ret = fn.execute(ret, reference[i]);
+
+		if(!_data.isEmpty() && _data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < nRows; i++) {
+				if(sb.isEmpty(i))
+					continue;
+				final int apos = sb.pos(i);
+				final int alen = sb.size(i) + apos;
+				final int[] aix = sb.indexes(i);
+				final double[] avals = sb.values(i);
+				for(int k = apos; k < alen; k++) {
+					final double v = avals[k] + reference[aix[k]];
+					ret = fn.execute(ret, v);
+				}
+			}
+		}
+		else if(!_data.isEmpty()) {
+			final double[] values = _data.getDenseBlockValues();
+			int off = 0;
+			for(int k = 0; k < nRows; k++) {
+				for(int j = 0; j < _data.getNumColumns(); j++) {
+					final double v = values[off++] + reference[j];
+					ret = fn.execute(ret, v);
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	@Override
+	public double[] aggregateRows(Builtin fn, int nCol) {
 		double[] ret = new double[_data.getNumRows()];
 		if(_data.isEmpty())
 			return ret;
@@ -126,6 +168,53 @@ public class MatrixBlockDictionary extends ADictionary {
 					ret[k] = fn.execute(ret[k], values[off++]);
 			}
 		}
+		return ret;
+	}
+
+	@Override
+	public double[] aggregateRows(Builtin fn, double[] reference) {
+		final int nCol = reference.length;
+		final int nRows = _data.getNumRows();
+		final double[] ret = new double[nRows + 1];
+
+		ret[nRows] = reference[0];
+		for(int i = 1; i < nCol; i++)
+			ret[nRows] = fn.execute(ret[nRows], reference[i]);
+
+		if(!_data.isEmpty() && _data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < nRows; i++) {
+				if(sb.isEmpty(i))
+					ret[i] = ret[nRows];
+				else {
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final int[] aix = sb.indexes(i);
+					final double[] avals = sb.values(i);
+					int k = apos;
+					int j = 1;
+					ret[i] = (aix[k] == 0) ? avals[k++] + reference[0] : reference[0];
+					for(; j < _data.getNumColumns() && k < alen; j++) {
+						final double v = aix[k] == j ? avals[k++] + reference[j] : reference[j];
+						ret[i] = fn.execute(ret[i], v);
+					}
+					for(; j < _data.getNumColumns(); j++)
+						ret[i] = fn.execute(ret[i], reference[j]);
+				}
+			}
+		}
+		else if(!_data.isEmpty()) {
+			final double[] values = _data.getDenseBlockValues();
+			int off = 0;
+			for(int k = 0; k < nRows; k++) {
+				ret[k] = values[off++] + reference[0];
+				for(int j = 1; j < _data.getNumColumns(); j++) {
+					final double v = values[off++] + reference[j];
+					ret[k] = fn.execute(ret[k], v);
+				}
+			}
+		}
+
 		return ret;
 	}
 
@@ -172,9 +261,102 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary inplaceScalarOp(ScalarOperator op) {
+	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes, double[] reference) {
+		final int nCol = _data.getNumColumns();
+		final int nRow = _data.getNumRows();
+
+		for(int j = 0; j < colIndexes.length; j++) {
+			final int idx = colIndexes[j];
+			c[idx] = fn.execute(c[idx], reference[j]);
+		}
+		if(!_data.isEmpty() && _data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < nRow; i++) {
+				if(sb.isEmpty(i))
+					continue;
+				final int apos = sb.pos(i);
+				final int alen = sb.size(i) + apos;
+				final double[] avals = sb.values(i);
+				final int[] aix = sb.indexes(i);
+				// This is a cool trick but it only works with min / max.
+				for(int k = apos; k < alen; k++) {
+					final int idx = colIndexes[aix[k]];
+					c[idx] = fn.execute(c[idx], avals[k] + reference[aix[k]]);
+				}
+			}
+		}
+		else if(!_data.isEmpty()) {
+			final double[] values = _data.getDenseBlockValues();
+			int off = 0;
+			for(int k = 0; k < nRow; k++) {
+				for(int j = 0; j < nCol; j++) {
+					final int idx = colIndexes[j];
+					c[idx] = fn.execute(c[idx], values[off++] + reference[j]);
+				}
+			}
+		}
+	}
+
+	@Override
+	public ADictionary applyScalarOp(ScalarOperator op) {
 		MatrixBlock res = _data.scalarOperations(op, new MatrixBlock());
-		return new MatrixBlockDictionary(res);
+		if(res.isEmpty())
+			return null;
+		else
+			return new MatrixBlockDictionary(res);
+	}
+
+	@Override
+	public ADictionary applyScalarOp(ScalarOperator op, double[] reference, double[] newReference) {
+		final int nCol = _data.getNumColumns();
+		final int nRow = _data.getNumRows();
+		final MatrixBlock ret = new MatrixBlock(nRow, nCol, false);
+		ret.allocateDenseBlock();
+		final double[] retV = ret.getDenseBlockValues();
+		int off = 0;
+		if(_data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < nRow; i++) {
+				if(sb.isEmpty(i))
+					for(int j = 0; j < nCol; j++)
+						retV[off++] = op.executeScalar(reference[j]) - newReference[j];
+				else {
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final int[] aix = sb.indexes(i);
+					final double[] avals = sb.values(i);
+					int j = 0;
+					for(int k = apos; j < nCol && k < alen; j++) {
+						final double v = aix[k] == j ? avals[k++] + reference[j] : reference[j];
+						retV[off++] = op.executeScalar(v) - newReference[j];
+					}
+					for(; j < nCol; j++)
+						retV[off++] = op.executeScalar(reference[j]) - newReference[j];
+				}
+			}
+		}
+		else {
+			final double[] values = _data.getDenseBlockValues();
+			for(int i = 0; i < nRow; i++) {
+				for(int j = 0; j < nCol; j++) {
+					retV[off] = op.executeScalar(values[off] + reference[j]) - newReference[j];
+					off++;
+				}
+			}
+		}
+
+		ret.recomputeNonZeros();
+		ret.examSparsity();
+		if(ret.isEmpty())
+			return null;
+		else
+			return new MatrixBlockDictionary(ret);
+
+	}
+
+	@Override
+	public ADictionary inplaceScalarOp(ScalarOperator op) {
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -182,21 +364,30 @@ public class MatrixBlockDictionary extends ADictionary {
 		MatrixBlock res = _data.scalarOperations(op, new MatrixBlock());
 		final int lastRow = res.getNumRows();
 		MatrixBlock res2 = new MatrixBlock(lastRow + 1, res.getNumColumns(), true);
-		if(res.isEmpty()) {
+		if(res.isEmpty())
 			for(int i = 0; i < numCols; i++)
 				res2.appendValue(lastRow, i, newVal);
-			return new MatrixBlockDictionary(res2);
-		}
-		else {
+		else
 			res.append(new MatrixBlock(1, numCols, newVal), res2, false);
+
+		if(res2.isEmpty())
+			return null;
+		else
 			return new MatrixBlockDictionary(res2);
-		}
 	}
 
 	@Override
 	public ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes) {
-		MatrixBlock rowVector = Util.extractValues(v, colIndexes);
-		return new MatrixBlockDictionary(rowVector.binaryOperations(op, _data, null));
+		throw new NotImplementedException("Binary row op left is not supported for Uncompressed Matrix, "
+			+ "Implement support for VMr in MatrixBLock Binary Cell operations");
+		// MatrixBlock rowVector = Util.extractValues(v, colIndexes);
+		// return new MatrixBlockDictionary(rowVector.binaryOperations(op, _data, null));
+	}
+
+	@Override
+	public Dictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+		double[] newReference) {
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -210,6 +401,12 @@ public class MatrixBlockDictionary extends ADictionary {
 	public ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
 		MatrixBlock rowVector = Util.extractValues(v, colIndexes);
 		return new MatrixBlockDictionary(_data.binaryOperations(op, rowVector, null));
+	}
+
+	@Override
+	public Dictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+		double[] newReference) {
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -242,7 +439,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] sumAllRowsToDouble(boolean square, int nrColumns) {
+	public double[] sumAllRowsToDouble(int nrColumns) {
 		double[] ret = new double[_data.getNumRows()];
 
 		if(_data.isEmpty())
@@ -255,7 +452,7 @@ public class MatrixBlockDictionary extends ADictionary {
 					final int alen = sb.size(i) + apos;
 					final double[] avals = sb.values(i);
 					for(int j = apos; j < alen; j++) {
-						ret[i] += (square) ? avals[j] * avals[j] : avals[j];
+						ret[i] += avals[j];
 					}
 				}
 			}
@@ -266,7 +463,7 @@ public class MatrixBlockDictionary extends ADictionary {
 			for(int k = 0; k < _data.getNumRows(); k++) {
 				for(int j = 0; j < _data.getNumColumns(); j++) {
 					final double v = values[off++];
-					ret[k] += (square) ? v * v : v;
+					ret[k] += v;
 				}
 			}
 		}
@@ -274,7 +471,141 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public double sumRow(int k, boolean square, int nrColumns) {
+	public double[] sumAllRowsToDouble(double[] reference){
+		final int nCol = reference.length;
+		final int numVals = _data.getNumRows();
+		final double[] ret = new double[numVals + 1];
+
+		final int finalIndex = numVals;
+		for(int i = 0; i < nCol; i++)
+			ret[finalIndex] += reference[i];
+
+		if(!_data.isEmpty() && _data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < numVals; i++) {
+				if(sb.isEmpty(i))
+					ret[i] = ret[finalIndex];
+				else {
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final int[] aix = sb.indexes(i);
+					final double[] avals = sb.values(i);
+					int k = apos;
+					int j = 0;
+					for(; j < _data.getNumColumns() && k < alen; j++) {
+						final double v = aix[k] == j ? avals[k++] + reference[j] : reference[j];
+						ret[i] += v ;
+					}
+					for(; j < _data.getNumColumns(); j++)
+						ret[i] += reference[j];
+				}
+
+			}
+		}
+		else if(!_data.isEmpty()) {
+			double[] values = _data.getDenseBlockValues();
+			int off = 0;
+			for(int k = 0; k < numVals; k++) {
+				for(int j = 0; j < _data.getNumColumns(); j++) {
+					final double v = values[off++] + reference[j];
+					ret[k] += v ;
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	@Override
+	public double[] sumAllRowsToDoubleSq(int nrColumns) {
+		final double[] ret = new double[_data.getNumRows()];
+
+		if(_data.isEmpty())
+			return ret;
+		else if(_data.isInSparseFormat()) {
+			SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < _data.getNumRows(); i++) {
+				if(!sb.isEmpty(i)) {
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final double[] avals = sb.values(i);
+					for(int j = apos; j < alen; j++) {
+						ret[i] += avals[j] * avals[j];
+					}
+				}
+			}
+		}
+		else {
+			double[] values = _data.getDenseBlockValues();
+			int off = 0;
+			for(int k = 0; k < _data.getNumRows(); k++) {
+				for(int j = 0; j < _data.getNumColumns(); j++) {
+					final double v = values[off++];
+					ret[k] += v * v;
+				}
+			}
+		}
+		return ret;
+	}
+
+	@Override
+	public double[] sumAllRowsToDoubleSq(double[] reference) {
+		final int nCol = reference.length;
+		final int numVals = _data.getNumRows();
+		final double[] ret = new double[numVals + 1];
+
+		final int finalIndex = numVals;
+		for(int i = 0; i < nCol; i++)
+			ret[finalIndex] += reference[i] * reference[i];
+
+		if(!_data.isEmpty() && _data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < numVals; i++) {
+				if(sb.isEmpty(i))
+					ret[i] = ret[finalIndex];
+				else {
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final int[] aix = sb.indexes(i);
+					final double[] avals = sb.values(i);
+					int k = apos;
+					int j = 0;
+					for(; j < _data.getNumColumns() && k < alen; j++) {
+						final double v = aix[k] == j ? avals[k++] + reference[j] : reference[j];
+						ret[i] += v * v;
+					}
+					for(; j < _data.getNumColumns(); j++)
+						ret[i] += reference[j] * reference[j];
+				}
+
+			}
+		}
+		else if(!_data.isEmpty()) {
+			double[] values = _data.getDenseBlockValues();
+			int off = 0;
+			for(int k = 0; k < numVals; k++) {
+				for(int j = 0; j < _data.getNumColumns(); j++) {
+					final double v = values[off++] + reference[j];
+					ret[k] += v * v;
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	@Override
+	public double sumRow(int k, int nrColumns) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public double sumRowSq(int k, int nrColumns) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public double sumRowSq(int k, int nrColumns, double[] reference) {
 		throw new NotImplementedException();
 	}
 
@@ -314,7 +645,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
+	public void colSum(double[] c, int[] counts, int[] colIndexes) {
 		if(_data.isEmpty())
 			return;
 		if(_data.isInSparseFormat()) {
@@ -328,7 +659,7 @@ public class MatrixBlockDictionary extends ADictionary {
 					final int[] aix = sb.indexes(i);
 					final double[] avals = sb.values(i);
 					for(int j = apos; j < alen; j++) {
-						c[colIndexes[aix[j]]] += square ? count * avals[j] * avals[j] : count * avals[j];
+						c[colIndexes[aix[j]]] += count * avals[j];
 					}
 				}
 			}
@@ -340,7 +671,83 @@ public class MatrixBlockDictionary extends ADictionary {
 				final int countK = counts[k];
 				for(int j = 0; j < _data.getNumColumns(); j++) {
 					final double v = values[off++];
-					c[colIndexes[j]] += square ? v * v * countK : v * countK;
+					c[colIndexes[j]] += v * countK;
+				}
+			}
+		}
+	}
+
+	@Override
+	public void colSumSq(double[] c, int[] counts, int[] colIndexes) {
+		if(_data.isEmpty())
+			return;
+		if(_data.isInSparseFormat()) {
+			SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < _data.getNumRows(); i++) {
+				if(!sb.isEmpty(i)) {
+					// double tmpSum = 0;
+					final int count = counts[i];
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final int[] aix = sb.indexes(i);
+					final double[] avals = sb.values(i);
+					for(int j = apos; j < alen; j++) {
+						c[colIndexes[aix[j]]] += count * avals[j] * avals[j];
+					}
+				}
+			}
+		}
+		else {
+			double[] values = _data.getDenseBlockValues();
+			int off = 0;
+			for(int k = 0; k < _data.getNumRows(); k++) {
+				final int countK = counts[k];
+				for(int j = 0; j < _data.getNumColumns(); j++) {
+					final double v = values[off++];
+					c[colIndexes[j]] += v * v * countK;
+				}
+			}
+		}
+	}
+
+	@Override
+	public void colSumSq(double[] c, int[] counts, int[] colIndexes, double[] reference) {
+		final int nCol = reference.length;
+		final int nRow = _data.getNumRows();
+		for(int i = 0; i < nCol; i++)
+			c[colIndexes[i]] += reference[i] * reference[i] * counts[nRow];
+
+		if(!_data.isEmpty() && _data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < nRow; i++) {
+				final int countK = counts[i];
+				if(sb.isEmpty(i))
+					for(int j = 0; j < nCol; j++)
+						c[colIndexes[j]] += reference[j] * reference[j] * countK;
+				else {
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final int[] aix = sb.indexes(i);
+					final double[] avals = sb.values(i);
+					int k = apos;
+					int j = 0;
+					for(; j < _data.getNumColumns() && k < alen; j++) {
+						final double v = aix[k] == j ? avals[k++] + reference[j] : reference[j];
+						c[colIndexes[j]] += v * v * countK;
+					}
+					for(; j < _data.getNumColumns(); j++)
+						c[colIndexes[j]] += reference[j] * reference[j] * countK;
+				}
+			}
+		}
+		else if(!_data.isEmpty()) {
+			double[] values = _data.getDenseBlockValues();
+			int off = 0;
+			for(int k = 0; k < nRow; k++) {
+				final int countK = counts[k];
+				for(int j = 0; j < _data.getNumColumns(); j++) {
+					final double v = values[off++] + reference[j];
+					c[colIndexes[j]] += v * v * countK;
 				}
 			}
 		}
@@ -380,7 +787,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public double sumsq(int[] counts, int ncol) {
+	public double sumSq(int[] counts, int ncol) {
 		double tmpSum = 0;
 		if(_data.isEmpty())
 			return tmpSum;
@@ -413,8 +820,51 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public String getString(int colIndexes) {
-		return _data.toString();
+	public double sumSq(int[] counts, double[] reference) {
+		final int nCol = reference.length;
+		final int numVals = _data.getNumRows();
+		double ret = 0;
+		for(int i = 0; i < nCol; i++)
+			ret += reference[i] * reference[i];
+		final double ref = ret;
+		ret *= counts[numVals];
+
+		if(!_data.isEmpty() && _data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < numVals; i++) {
+				final int countK = counts[i];
+				if(sb.isEmpty(i))
+					ret += ref * countK;
+				else {
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final int[] aix = sb.indexes(i);
+					final double[] avals = sb.values(i);
+					int k = apos;
+					int j = 0;
+					for(; j < _data.getNumColumns() && k < alen; j++) {
+						final double v = aix[k] == j ? avals[k++] + reference[j] : reference[j];
+						ret += v * v * countK;
+					}
+					for(; j < _data.getNumColumns(); j++)
+						ret += reference[j] * reference[j] * countK;
+				}
+
+			}
+		}
+		else if(!_data.isEmpty()) {
+			double[] values = _data.getDenseBlockValues();
+			int off = 0;
+			for(int k = 0; k < numVals; k++) {
+				final int countK = counts[k];
+				for(int j = 0; j < _data.getNumColumns(); j++) {
+					final double v = values[off++] + reference[j];
+					ret += v * v * countK;
+				}
+			}
+		}
+
+		return ret;
 	}
 
 	@Override
@@ -439,6 +889,53 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
+	public boolean containsValue(double pattern, double[] reference) {
+
+		if(_data.isEmpty()) {
+			for(double d : reference)
+				if(pattern == d)
+					return true;
+			return false;
+		}
+		else if(_data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < _data.getNumRows(); i++) {
+				if(sb.isEmpty(i))
+					continue;
+				final int apos = sb.pos(i);
+				final int alen = sb.size(i) + apos;
+				final int[] aix = sb.indexes(i);
+				final double[] avals = sb.values(i);
+				int k = apos;
+				int j = 0;
+				for(; j < _data.getNumColumns() && k < alen; j++) {
+					if(aix[k] == j) {
+						if(reference[j] + avals[k++] == pattern)
+							return true;
+					}
+					else {
+						if(reference[j] == pattern)
+							return true;
+					}
+				}
+				for(; j < _data.getNumColumns(); j++)
+					if(reference[j] == pattern)
+						return true;
+
+			}
+		}
+		else {
+			final double[] values = _data.getDenseBlockValues();
+			final int nCol = reference.length;
+			for(int i = 0; i < values.length; i++)
+				if(values[i] + reference[i % nCol] == pattern)
+					return true;
+
+		}
+		return false;
+	}
+
+	@Override
 	public long getNumberNonZeros(int[] counts, int nCol) {
 		if(_data.isEmpty())
 			return 0;
@@ -449,7 +946,6 @@ public class MatrixBlockDictionary extends ADictionary {
 			for(int i = 0; i < _data.getNumRows(); i++)
 				if(!sb.isEmpty(i))
 					nnz += sb.size(i) * counts[i];
-
 		}
 		else {
 			double[] values = _data.getDenseBlockValues();
@@ -461,6 +957,64 @@ public class MatrixBlockDictionary extends ADictionary {
 					if(v != 0)
 						countThisTuple++;
 				}
+				nnz += countThisTuple * counts[i];
+			}
+		}
+		return nnz;
+	}
+
+	@Override
+	public long getNumberNonZeros(int[] counts, double[] reference, int nRows) {
+		long nnz = 0;
+		for(double d : reference)
+			if(d != 0)
+				nnz++;
+		if(_data.isEmpty()) {
+			// sum counts
+			return nnz * nRows;
+		}
+		else if(_data.isInSparseFormat()) {
+			SparseBlock sb = _data.getSparseBlock();
+			long emptyRowNNZ = nnz;
+			nnz *= counts[counts.length - 1]; // multiply count with the common value count in reference.
+			for(int i = 0; i < _data.getNumRows(); i++) {
+				if(sb.isEmpty(i))
+					nnz += emptyRowNNZ * counts[i];
+				else {
+					int countThis = 0;
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final int[] aix = sb.indexes(i);
+					final double[] avals = sb.values(i);
+					int k = apos;
+					int j = 0;
+					for(; j < _data.getNumColumns() && k < alen; j++) {
+						if(aix[k] == j) {
+							if(reference[j] + avals[k++] != 0)
+								countThis++;
+						}
+						else {
+							if(reference[j] != 0)
+								countThis++;
+						}
+					}
+					for(; j < _data.getNumColumns(); j++)
+						if(reference[j] != 0)
+							countThis++;
+
+					nnz += countThis * counts[i];
+				}
+			}
+		}
+		else {
+			nnz *= counts[counts.length - 1]; // multiply count with the common value count in reference.
+			final double[] values = _data.getDenseBlockValues();
+			int off = 0;
+			for(int i = 0; i < _data.getNumRows(); i++) {
+				int countThisTuple = 0;
+				for(int j = 0; j < _data.getNumColumns(); j++)
+					if(values[off++] + reference[j] != 0)
+						countThisTuple++;
 				nnz += countThisTuple * counts[i];
 			}
 		}
@@ -525,11 +1079,27 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public ADictionary subtractTuple(double[] tuple) {
-		DenseBlockFP64 b = new DenseBlockFP64(new int[] {1, tuple.length}, tuple);
-		MatrixBlock rowVector = new MatrixBlock(1, tuple.length, b);
-		MatrixBlock res = new MatrixBlock(_data.getNumColumns(), _data.getNumRows(), _data.isInSparseFormat());
-		_data.binaryOperations(new BinaryOperator(Minus.getMinusFnObject()), rowVector, res);
-		return new MatrixBlockDictionary(res);
+		if(_data.isEmpty())
+			throw new NotImplementedException("Should not extract from empty matrix");
+		else if(_data.isInSparseFormat()) {
+			throw new NotImplementedException("Not supporting extracting from sparse matrix yet");
+		}
+		else {
+			final int nRow = _data.getNumRows() - 1;
+			final int nCol = _data.getNumColumns();
+			double[] values = _data.getDenseBlockValues();
+			MatrixBlock res = new MatrixBlock(nCol, nRow, false);
+			res.allocateBlock();
+			double[] resVals = res.getDenseBlockValues();
+			for(int i = 0, off = 0; i < nRow; i++)
+				for(int j = 0; j < nCol; j++, off++)
+					resVals[off] = values[off] - tuple[j];
+
+			res.examSparsity();
+			if(res.isEmpty())
+				return null;
+			return new MatrixBlockDictionary(res);
+		}
 	}
 
 	@Override
@@ -539,8 +1109,19 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
+	public String getString(int colIndexes) {
+		if(_data.isInSparseFormat() || _data.getNumColumns() > 1)
+			return "\n" + _data.toString();
+		else
+			return Arrays.toString(_data.getDenseBlockValues());
+	}
+
+	@Override
 	public String toString() {
-		return "MatrixBlock Dictionary :" + _data.toString();
+		if(_data.isInSparseFormat() || _data.getNumColumns() > 1)
+			return "MatrixBlock Dictionary :\n" + _data.toString();
+		else
+			return "MatrixBlock Dictionary : " + Arrays.toString(_data.getDenseBlockValues());
 	}
 
 	@Override
@@ -645,7 +1226,7 @@ public class MatrixBlockDictionary extends ADictionary {
 
 		DenseBlock dictV = new DenseBlockFP64(new int[] {numVals, aggregateColumns.length}, ret);
 		MatrixBlock dictM = new MatrixBlock(numVals, aggregateColumns.length, dictV);
-		dictM.getNonZeros();
+		dictM.recomputeNonZeros();
 		dictM.examSparsity();
 		return new MatrixBlockDictionary(dictM);
 
@@ -653,8 +1234,58 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public ADictionary replace(double pattern, double replace, int nCol) {
-		MatrixBlock ret = _data.replaceOperations(new MatrixBlock(), pattern, replace);
+		final MatrixBlock ret = _data.replaceOperations(new MatrixBlock(), pattern, replace);
+		if(ret.isEmpty())
+			return null;
 		return new MatrixBlockDictionary(ret);
+	}
+
+	@Override
+	public ADictionary replace(double pattern, double replace, double[] reference) {
+		final int nRow = _data.getNumRows();
+		final int nCol = _data.getNumColumns();
+		final MatrixBlock ret = new MatrixBlock(nRow, nCol, false);
+		ret.allocateDenseBlock();
+		final double[] retV = ret.getDenseBlockValues();
+		int off = 0;
+		if(_data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < nRow; i++) {
+				if(sb.isEmpty(i))
+					for(int j = 0; j < nCol; j++)
+						retV[off++] = pattern == reference[j] ? replace - reference[j] : 0;
+				else {
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final int[] aix = sb.indexes(i);
+					final double[] avals = sb.values(i);
+					int j = 0;
+					for(int k = apos; j < nCol && k < alen; j++) {
+						final double v = aix[k] == j ? avals[k++] + reference[j] : reference[j];
+						retV[off++] = pattern == v ? replace - reference[j] : v - reference[j];
+					}
+					for(; j < nCol; j++)
+						retV[off++] = pattern == reference[j] ? replace - reference[j] : 0;
+				}
+			}
+		}
+		else {
+			final double[] values = _data.getDenseBlockValues();
+			for(int i = 0; i < nRow; i++) {
+				for(int j = 0; j < nCol; j++) {
+					final double v = values[off];
+					retV[off++] = pattern == v + reference[j] ? replace - reference[j] : v;
+				}
+			}
+		}
+
+		ret.recomputeNonZeros();
+		ret.examSparsity();
+		if(ret.isEmpty())
+			return null;
+		else
+			return new MatrixBlockDictionary(ret);
+
 	}
 
 	@Override
@@ -662,7 +1293,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		final int nRows = _data.getNumRows();
 		final int nCols = _data.getNumColumns();
 		final long nonZerosOut = (nRows + 1) * nCols;
-		final MatrixBlock ret = new MatrixBlock(_data.getNumRows() + 1, _data.getNumColumns(), false);
+		final MatrixBlock ret = new MatrixBlock(nRows + 1, nCols, false);
 		ret.allocateBlock();
 		ret.setNonZeros(nonZerosOut);
 		final double[] retValues = ret.getDenseBlockValues();

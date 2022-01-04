@@ -33,7 +33,7 @@ def gmmPredict(X: Matrix,
                weight: Matrix,
                mu: Matrix,
                precisions_cholesky: Matrix,
-               model: str):
+               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: Matrix X (instances to be clustered)
     :param weight: Weight of learned model
@@ -42,7 +42,8 @@ def gmmPredict(X: Matrix,
     :param model: fitted model
     :return: 'OperationNode' containing predicted cluster labels & probabilities of belongingness & for new instances given the variance and mean of fitted data 
     """
-    params_dict = {'X': X, 'weight': weight, 'mu': mu, 'precisions_cholesky': precisions_cholesky, 'model': model}
+    params_dict = {'X': X, 'weight': weight, 'mu': mu, 'precisions_cholesky': precisions_cholesky}
+    params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')

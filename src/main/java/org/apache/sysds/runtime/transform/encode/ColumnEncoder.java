@@ -41,6 +41,8 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.SparseRowVector;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
@@ -116,19 +118,59 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 
 	protected abstract double getCode(CacheBlock in, int row);
 
+	protected abstract double[] getCodeCol(CacheBlock in, int startInd, int blkSize);
 
-	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+
+	/*protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
 			SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(r);
 			row.values()[index] = getCode(in, r);
 			row.indexes()[index] = outputCol;
 		}
+	}*/
+
+	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+		int index = _colID - 1;
+		// Apply loop tiling to exploit CPU caches
+		double[] codes = getCodeCol(in, rowStart, blk);
+		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
+		int B = 32; //tile size
+		for(int i = rowStart; i < rowEnd; i+=B) {
+			int lim = Math.min(i+B, rowEnd);
+			for (int ii=i; ii<lim; ii++) {
+				if (mcsr) {
+					SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(ii);
+					row.values()[index] = codes[ii-rowStart];
+					row.indexes()[index] = outputCol;
+				}
+				else { //csr
+					// Manually fill the column-indexes and values array
+					SparseBlockCSR csrblock = (SparseBlockCSR)out.getSparseBlock();
+					int rptr[] = csrblock.rowPointers();
+					csrblock.indexes()[rptr[ii]+index] = outputCol;
+					csrblock.values()[rptr[ii]+index] = codes[ii-rowStart];
+				}
+			}
+		}
 	}
 
-	protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	/*protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			out.quickSetValue(i, outputCol, getCode(in, i));
+		}
+	}*/
+	
+	protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+		// Apply loop tiling to exploit CPU caches
+		double[] codes = getCodeCol(in, rowStart, blk);
+		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
+		int B = 32; //tile size
+		for(int i = rowStart; i < rowEnd; i+=B) {
+			int lim = Math.min(i+B, rowEnd);
+			for (int ii=i; ii<lim; ii++)
+				out.quickSetValue(ii, outputCol, codes[ii-rowStart]);
 		}
 	}
 

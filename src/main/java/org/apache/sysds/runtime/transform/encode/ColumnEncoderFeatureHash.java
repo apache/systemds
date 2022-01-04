@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -65,10 +66,25 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 
 	@Override
 	protected double getCode(CacheBlock in, int row) {
+		// hash a single row
 		String key = in.getString(row, _colID - 1);
 		if(key == null)
 			return Double.NaN;
 		return (key.hashCode() % _K) + 1;
+	}
+
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+		// hash a block of rows
+		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
+		double codes[] = new double[endInd-startInd];
+		for (int i=startInd; i<endInd; i++) {
+			String key = in.getString(i, _colID - 1);
+			if(key == null || key.isEmpty())
+				codes[i-startInd] = Double.NaN;
+			else
+				codes[i-startInd] = (key.hashCode() % _K) + 1;
+		}
+		return codes;
 	}
 
 	@Override

@@ -17,6 +17,21 @@ limitations under the License.
 {% end comment %}
 -->
 
+### Requirements
+
+**Software:**
+
+1. OS: Linux based OS
+2. Apache Maven 3.8+
+3. [gpg](https://www.gnupg.org)
+
+**Credentials:**
+
+1. Publish release manager's gpg key to [`release dist repo`](https://dist.apache.org/repos/dist/release/systemds/KEYS)
+2. GitHub PAT ([`Personal Access Token`](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token))
+3. Apache credentials (Make sure your id is at [`SystemDS committers`](https://people.apache.org/committers-by-project.html#systemds))
+4. Confirm access to Nexus repo at https://repository.apache.org/#stagingProfiles;1486a6e8f50cdf
+
 ### Usage
 
 Set gpg home as

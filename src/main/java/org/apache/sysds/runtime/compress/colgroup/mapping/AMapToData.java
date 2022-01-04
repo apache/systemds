@@ -25,12 +25,22 @@ import java.io.Serializable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
+/**
+ * This Class's job is to link into the dictionary entries for column groups.
+ * 
+ * Column groups
+ * 
+ * - DDC use this to map to map directly to the dictionary
+ * 
+ * - SDC use this in collaboration with the offsets to only point to dictionary entries for non default values.
+ */
 public abstract class AMapToData implements Serializable {
-
-	private static final long serialVersionUID = 100512759972844714L;
-
+	private static final long serialVersionUID = 1208906071822976041L;
 	protected static final Log LOG = LogFactory.getLog(AMapToData.class.getName());
 
 	/** Number of unique values inside this map. */
@@ -63,7 +73,7 @@ public abstract class AMapToData implements Serializable {
 	 * 
 	 * @param nUnique the value to set.
 	 */
-	protected final void setUnique(int nUnique) {
+	public final void setUnique(int nUnique) {
 		this.nUnique = nUnique;
 	}
 
@@ -145,14 +155,83 @@ public abstract class AMapToData implements Serializable {
 	/**
 	 * Pre aggregate a dense matrix m into pre, subject to only including a row segment and column segment.
 	 * 
-	 * @param m   The dense matrix values to preaggregate
-	 * @param pre The preAggregate to populate with the summed values of m
-	 * @param rl  The row start in m
-	 * @param ru  The row end in m
-	 * @param cl  The column start in m
-	 * @param cu  The column end in m
+	 * @param m     The dense matrix values to preaggregate
+	 * @param preAV The preAggregate double array populate with the summed values of m
+	 * @param rl    The row start in m
+	 * @param ru    The row end in m
+	 * @param cl    The column start in m
+	 * @param cu    The column end in m
 	 */
-	public abstract void preAggregateDense(MatrixBlock m, MatrixBlock pre, int rl, int ru, int cl, int cu);
+	public final void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu) {
+		final DenseBlock db = m.getDenseBlock();
+		if(rl == ru - 1)
+			preAggregateDenseToRow(db.values(rl), db.pos(rl), preAV, cl, cu);
+		else
+			preAggregateDenseRows(m, preAV, rl, ru, cl, cu);
+	}
+
+	/**
+	 * PreAggregate Dense on a single row.
+	 * 
+	 * @param mV    The DenseMatrix Values from the input matrix block for the specific row given
+	 * @param off   The offset into the mV that the row values start from
+	 * @param preAV The PreAggregate value target to preAggregate into
+	 * @param cl    The column index to start at
+	 * @param cu    The column index to stop at (not inclusive)
+	 */
+	protected abstract void preAggregateDenseToRow(double[] mV, int off, double[] preAV, int cl, int cu);
+
+	/**
+	 * PreAggregate from Dense Matrix, and handle multiple rows,
+	 * 
+	 * @param m     The Matrix to preAggregate.
+	 * @param preAV The target dense array to preAggregate into
+	 * @param rl    The row to start at
+	 * @param ru    The row to end at (not inclusive)
+	 * @param cl    The column to start at
+	 * @param cu    The column to end at (not inclusive)
+	 */
+	protected abstract void preAggregateDenseRows(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu);
+
+	/**
+	 * PreAggregate a Dense Matrix at index offsets.
+	 * 
+	 * @param m       The DenseBlock to preAggregate
+	 * @param preAV   The target double array to put the preAggregate into
+	 * @param rl      The row to start at
+	 * @param ru      The row to end at (not inclusive)
+	 * @param cl      The column in m to start from
+	 * @param cu      The column in m to end at (not inclusive)
+	 * @param indexes The Offset Indexes to iterate through
+	 */
+	public abstract void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu,
+		AOffset indexes);
+
+	/**
+	 * PreAggregate the SparseBlock in the range of rows given.
+	 * 
+	 * @param sb      The SparseBlock to preAggregate
+	 * @param preAV   The target double array to put the preAggregate into
+	 * @param rl      The row to start at
+	 * @param ru      The row to end at (not inclusive)
+	 * @param indexes The Offset Indexes to iterate through
+	 */
+	public abstract void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes);
+
+	/**
+	 * Get the number of counts of each unique value contained in this map.
+	 * 
+	 * @param counts The object to return.
+	 * @param nRows  The number of rows in the calling column group.
+	 * @return the Counts
+	 */
+	public int[] getCounts(int[] counts, int nRows) {
+		final int nonDefaultLength = size();
+		for(int i = 0; i < nonDefaultLength; i++)
+			counts[getIndex(i)]++;
+		counts[counts.length - 1] += nRows - nonDefaultLength;
+		return counts;
+	}
 
 	/**
 	 * Copy the values in this map into another mapping object.

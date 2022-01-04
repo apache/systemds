@@ -69,9 +69,9 @@ getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
 metaList = list(mask=getMask, schema=getSchema, fd=as.matrix(0))
 
 logical =  frame([
-                 "7", "MVI", "OTLR", "ED", "EC", "CI", "DUMMY", "DIM", 
-                 "5", "ED",  "MVI",  "CI", "DUMMY", "DIM", "0", "0"
-                 ], rows=2, cols=8) 
+                 "6", "MVI", "OTLR", "ED", "EC", "CI", "DUMMY", 
+                 "4", "ED",  "MVI",  "CI", "DUMMY", "0", "0"
+                 ], rows=2, cols=7) 
 
 
 
@@ -107,7 +107,7 @@ write(result , $O)
 # UDF for evaluation  
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
 evalML = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
-  Matrix[Double] evalFunHp, Boolean trainML = FALSE)
+  Matrix[Double] evalFunHp)
   
 return(Matrix[Double] accuracy)
 {

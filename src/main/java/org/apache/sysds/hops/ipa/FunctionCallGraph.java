@@ -438,13 +438,14 @@ public class FunctionCallGraph
 			rConstructFunctionCallGraph(h, fkey, sb, fstack, lfset);
 		
 		if( HopRewriteUtils.isParameterBuiltinOp(hop, ParamBuiltinOp.PARAMSERV)
-			&& HopRewriteUtils.knownParamservFunctions(hop))
+			&& HopRewriteUtils.knownParamservFunctions(hop, sb.getDMLProg()))
 		{
 			ParameterizedBuiltinOp pop = (ParameterizedBuiltinOp) hop;
 			List<FunctionOp> fps = pop.getParamservPseudoFunctionCalls();
 			//include artificial function ops into functional call graph
-			for( FunctionOp fop : fps )
-				ret |= addFunctionOpToGraph(fop, fkey, sb, fstack, lfset);
+			if( !fps.isEmpty() ) //valid functional parameters
+				for( FunctionOp fop : fps )
+					ret |= addFunctionOpToGraph(fop, fkey, sb, fstack, lfset);
 		}
 		
 		hop.setVisited();
@@ -472,16 +473,14 @@ public class FunctionCallGraph
 
 			//recursively construct function call dag
 			if( !fstack.contains(lfkey) ) {
-
-					fstack.push(lfkey);
-					_fGraph.get(fkey).add(lfkey);
-					FunctionStatementBlock fsb = sb.getDMLProg()
-						.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
-					FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
-					for( StatementBlock csb : fs.getBody() )
-						ret |= rConstructFunctionCallGraph(lfkey, csb, fstack, new HashSet<String>());
-					fstack.pop();
-
+				fstack.push(lfkey);
+				_fGraph.get(fkey).add(lfkey);
+				FunctionStatementBlock fsb = sb.getDMLProg()
+					.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
+				FunctionStatement fs = (FunctionStatement) fsb.getStatement(0);
+				for( StatementBlock csb : fs.getBody() )
+					ret |= rConstructFunctionCallGraph(lfkey, csb, fstack, new HashSet<String>());
+				fstack.pop();
 			}
 			//recursive function call
 			else {

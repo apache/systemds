@@ -1,3 +1,3 @@
 ED,MVI,OTLR,EC,SCALE,CI,DUMMY,DIM
 ,imputeByMean,winsorize,imputeByMean,scale,abstain,dummycoding,m_pca
-outlierBySd,imputeByMedian,outlierBySd,imputeByMedian,,wtomeklink,,ppca
+outlierBySd,imputeByMedian,outlierBySd,imputeByMedian,,underSampling,frequencyEncoding,ppca

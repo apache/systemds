@@ -153,15 +153,17 @@ return(Frame[Unknown] processedData, Matrix[Double] M)
 { 
   M = mask
   prefix = as.scalar(ctx["prefix"]);
-  # step 1 fix swap values
+  
+  # step 1 fix invalid lengths
+  q0 = 0.05
+  q1 = 0.88
+  print(prefix+" fixing invalid lengths between "+q0+" and "+q1+" quantile");
+
+  [data, M] = fixInvalidLengths(data, mask, q0, q1)
+  
+  # step 2 fix swap values
   print(prefix+" value swap fixing");
   data = valueSwap(data, schema)
-  
-  # step 2 fix invalid lengths
-  print(prefix+" fixing invalid lengths between 5th and 95th quantile");
-  q0 = 0.05
-  q1 = 0.95
-  [data, M] = fixInvalidLengths(data, q0, q1)
   
   # step 3 drop invalid types
   print(prefix+" drop values with type mismatch");
@@ -172,8 +174,8 @@ return(Frame[Unknown] processedData, Matrix[Double] M)
   for(i in 1:ncol(mask))
     if(as.scalar(schema[1,i]) == "STRING")
       data[, i] = map(data[, i], "x -> x.toLowerCase()")
-  
-  # step 5 typo correction
+
+  # step 5 typo correction  
   if(CorrectTypos)
   {
     # recode data to get null mask
@@ -195,7 +197,7 @@ return(Frame[Unknown] processedData, Matrix[Double] M)
   }
   # step 6 porter stemming on all features
   print(prefix+" porter-stemming on all features");
-  data = map(data, "x -> PorterStemmer.stem(x)")
+  data = map(data, "x -> PorterStemmer.stem(x)", 0)
   
   # TODO add deduplication
   print(prefix+" deduplication via entity resolution");

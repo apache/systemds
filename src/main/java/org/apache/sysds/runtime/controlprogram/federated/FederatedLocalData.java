@@ -24,18 +24,21 @@ import java.util.concurrent.Future;
 
 import org.apache.log4j.Logger;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 
 public class FederatedLocalData extends FederatedData {
 	protected final static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
 
-	private static final ExecutionContextMap ecm = new ExecutionContextMap();
-	private static final FederatedWorkerHandler fwh = new FederatedWorkerHandler(ecm);
+	private static final FederatedLookupTable _flt = new FederatedLookupTable();
+	private static final FederatedWorkerHandler _fwh = new FederatedWorkerHandler(_flt);
 
 	private final CacheableData<?> _data;
 
 	public FederatedLocalData(long id, CacheableData<?> data) {
 		super(data.getDataType(), null, data.getFileName());
 		_data = data;
+		long pid = Long.valueOf(IDHandler.obtainProcessID());
+		ExecutionContextMap ecm = _flt.getECM(FederatedLookupTable.NOHOST, pid);
 		synchronized(ecm) {
 			ecm.get(-1).setVariable(Long.toString(id), _data);
 		}
@@ -54,6 +57,6 @@ public class FederatedLocalData extends FederatedData {
 
 	@Override
 	public synchronized Future<FederatedResponse> executeFederatedOperation(FederatedRequest... request) {
-		return CompletableFuture.completedFuture(fwh.createResponse(request));
+		return CompletableFuture.completedFuture(_fwh.createResponse(request));
 	}
 }

@@ -30,15 +30,19 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.utils.DMLCompressionStatistics;
 
 public class CLALibRightMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibRightMultBy.class.getName());
@@ -52,39 +56,45 @@ public class CLALibRightMultBy {
 	public static MatrixBlock rightMultByMatrix(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k,
 		boolean allowOverlap) {
 
-		if(m2.isEmpty()) {
+		final int rr = m1.getNumRows();
+		final int rc = m2.getNumColumns();
+
+		if(m1.isEmpty() || m2.isEmpty()) {
 			LOG.trace("Empty right multiply");
 			if(ret == null)
-				ret = new MatrixBlock(m1.getNumRows(), m2.getNumColumns(), 0);
+				ret = new MatrixBlock(rr, rc, 0);
 			else
-				ret.reset(m1.getNumRows(), m2.getNumColumns(), 0);
+				ret.reset(rr, rc, 0);
+			return ret;
 		}
 		else {
 			if(m2 instanceof CompressedMatrixBlock)
 				m2 = ((CompressedMatrixBlock) m2).getUncompressed("Uncompressed right side of right MM");
 
-			ret = rightMultByMatrixOverlapping(m1, m2, k);
+			if(!allowOverlap) {
+				LOG.trace("Overlapping output not allowed in call to Right MM");
+				return RMM(m1, m2, k);
+			}
 
-			if(ret instanceof CompressedMatrixBlock) {
-				if(!allowOverlap)
-					ret = ((CompressedMatrixBlock) ret).getUncompressed("Overlapping not allowed");
-				else {
-					final double compressedSize = ret.getInMemorySize();
-					final double uncompressedSize = MatrixBlock.estimateSizeDenseInMemory(ret.getNumRows(),
-						ret.getNumColumns());
-					if(compressedSize > uncompressedSize)
-						ret = ((CompressedMatrixBlock) ret).getUncompressed(
-							"Overlapping rep to big: " + compressedSize + " vs Uncompressed " + uncompressedSize);
-				}
+			final CompressedMatrixBlock retC = RMMOverlapping(m1, m2, k);
+			final double cs = retC.getInMemorySize();
+			final double us = MatrixBlock.estimateSizeDenseInMemory(rr, rc);
+			if(cs > us)
+				return retC.getUncompressed("Overlapping rep to big: " + cs + " vs uncompressed " + us);
+			else if(retC.isEmpty())
+				return retC;
+			else {
+				if(retC.isOverlapping())
+					retC.setNonZeros((long) rr * rc); // set non zeros to fully dense in case of overlapping.
+				else
+					retC.recomputeNonZeros(); // recompute if non overlapping compressed out.
+				return retC;
 			}
 		}
 
-		ret.recomputeNonZeros();
-
-		return ret;
 	}
 
-	private static MatrixBlock rightMultByMatrixOverlapping(CompressedMatrixBlock m1, MatrixBlock that, int k) {
+	private static CompressedMatrixBlock RMMOverlapping(CompressedMatrixBlock m1, MatrixBlock that, int k) {
 		final int rl = m1.getNumRows();
 		final int cr = that.getNumColumns();
 		final int rr = that.getNumRows(); // shared dim
@@ -92,18 +102,18 @@ public class CLALibRightMultBy {
 		final List<AColGroup> retCg = new ArrayList<>();
 		final CompressedMatrixBlock ret = new CompressedMatrixBlock(rl, cr);
 
-		final boolean containsSDC = CLALibUtils.containsSDCOrConst(colGroups);
+		final boolean shouldFilter = CLALibUtils.shouldPreFilter(colGroups);
 
-		double[] constV = containsSDC ? new double[rr] : null;
+		double[] constV = shouldFilter ? new double[rr] : null;
 		final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
 		if(colGroups == filteredGroups)
 			constV = null;
 
 		boolean containsNull = false;
 		if(k == 1)
-			containsNull = rightMultByMatrixOverlappingSingleThread(filteredGroups, that, retCg);
+			containsNull = RMMSingle(filteredGroups, that, retCg);
 		else
-			containsNull = rightMultByMatrixOverlappingMultiThread(filteredGroups, that, retCg, k);
+			containsNull = RMMParallel(filteredGroups, that, retCg, k);
 
 		if(constV != null) {
 			AColGroup cRet = ColGroupFactory.genColGroupConst(constV).rightMultByMatrix(that);
@@ -121,8 +131,58 @@ public class CLALibRightMultBy {
 		return ret;
 	}
 
-	private static boolean rightMultByMatrixOverlappingSingleThread(List<AColGroup> filteredGroups, MatrixBlock that,
-		List<AColGroup> retCg) {
+	private static MatrixBlock RMM(CompressedMatrixBlock m1, MatrixBlock that, int k) {
+		// this version returns a decompressed result.
+		final int rl = m1.getNumRows();
+		final int cr = that.getNumColumns();
+		final int rr = that.getNumRows(); // shared dim
+		final List<AColGroup> colGroups = m1.getColGroups();
+		final List<AColGroup> retCg = new ArrayList<>();
+
+		final boolean shouldFilter = CLALibUtils.shouldPreFilter(colGroups);
+
+		// start allocation of output.
+		MatrixBlock ret = new MatrixBlock(rl, cr, false);
+		final Future<MatrixBlock> f = ret.allocateBlockAsync();
+
+		double[] constV = shouldFilter ? new double[rr] : null;
+		final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
+		if(colGroups == filteredGroups)
+			constV = null;
+
+		if(k == 1)
+			RMMSingle(filteredGroups, that, retCg);
+		else
+			RMMParallel(filteredGroups, that, retCg, k);
+
+		if(constV != null) {
+			ColGroupConst cRet = (ColGroupConst) ColGroupFactory.genColGroupConst(constV).rightMultByMatrix(that);
+			constV = cRet.getValues(); // overwrite constV
+		}
+
+		final Timing time = new Timing(true);
+
+		ret = asyncRet(f);
+		CLALibDecompress.decompressDenseMultiThread(ret, retCg, constV, 0, k);
+
+		if(DMLScript.STATISTICS) {
+			final double t = time.stop();
+			DMLCompressionStatistics.addDecompressTime(t, k);
+		}
+
+		return ret;
+	}
+
+	private static <T> T asyncRet(Future<T> in) {
+		try {
+			return in.get();
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	private static boolean RMMSingle(List<AColGroup> filteredGroups, MatrixBlock that, List<AColGroup> retCg) {
 		boolean containsNull = false;
 		for(AColGroup g : filteredGroups) {
 			AColGroup retG = g.rightMultByMatrix(that);
@@ -134,8 +194,7 @@ public class CLALibRightMultBy {
 		return containsNull;
 	}
 
-	private static boolean rightMultByMatrixOverlappingMultiThread(List<AColGroup> filteredGroups, MatrixBlock that,
-		List<AColGroup> retCg, int k) {
+	private static boolean RMMParallel(List<AColGroup> filteredGroups, MatrixBlock that, List<AColGroup> retCg, int k) {
 		ExecutorService pool = CommonThreadPool.get(k);
 		boolean containsNull = false;
 		try {

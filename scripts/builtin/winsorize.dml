@@ -19,6 +19,26 @@
 #
 #-------------------------------------------------------------
 
+# The winsorize-function removes outliers from the data. It does so by computing upper and
+# lower quartile range of the given data then it replaces any value that falls outside this range
+# (less than lower quartile range or more than upper quartile range).
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             DEFAULT         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]   ---            Input feature matrix
+# verbose   Boolean          FALSE          To print output on screen
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE                             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y        Matrix[Double]                   Matrix without outlier values
+# ----------------------------------------------------------------------------------------------------------------------
+
 m_winsorize = function(Matrix[Double] X, Double ql = 0.05, Double qu = 0.95, Boolean verbose) 
 return (Matrix[Double] Y) {
 

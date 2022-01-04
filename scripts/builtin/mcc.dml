@@ -76,16 +76,21 @@ m_mcc = function(Matrix[Double] predictions = matrix(0,0,0), Matrix[Double] labe
         if (sum(confusionM) == 0) {
           stop("@mcc Input Error: confusion matrix contains only zeros")
         }
-        mode = 0
+        mattCC = s_mcc(TN=as.scalar(confusionM[1,1]), FP=as.scalar(confusionM[1,2]), 
+                    FN=as.scalar(confusionM[2,1]), TP=as.scalar(confusionM[2,2]))
     } else {
         if (length(predictions) == 0 | length(labels) == 0) {
             stop("@mcc Input Error: predictions and/or labels are not set!")
         }
         [predictions, labels] = mcc_binaryVectorCheck(predictions, labels)
-        confusionM = table(labels + 1, predictions + 1, 2, 2)
+        confM = table(labels + 1, predictions + 1, 2, 2)
+
+        # currently recursive call on confusion matrix so checks are applied
+        # for the purpose of testing if confusion matrix input works
+        # can be (re)moved of else branch to outer scope if considered bad idea
+        mattCC = m_mcc(confusionM=confM)
     }
-    mattCC = s_mcc(TN=as.scalar(confusionM[1,1]), FP=as.scalar(confusionM[1,2]), 
-                    FN=as.scalar(confusionM[2,1]), TP=as.scalar(confusionM[2,2]))
+    
 }
 
 s_mcc = function(Integer TN = -1, Integer FP = -1, Integer FN = -1, Integer TP = -1) return (Double mattCC) {
@@ -101,7 +106,7 @@ s_mcc = function(Integer TN = -1, Integer FP = -1, Integer FN = -1, Integer TP =
     # MCC = (TP*TN - FP*FN) / sqrt((TP + FP) * (TP * FN) * (TN + FP) * (TN + FN))
     # if row and/or column of zeros,
     if (min(rowSums(confusionM)) == 0 | min(colSums(confusionM)) == 0) {
-        # epsilon approximation --> 0 --> setting mattCC to 0 directly
+        # epsilon approximation --> 0 --> setting mattCC to 0 directly avoids calculation
         mattCC = 0.0
     } else {
         mattCC = (TP*TN - FP*FN) / sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
@@ -126,8 +131,10 @@ mcc_binaryVectorCheck = function(Matrix[Double] predictionsIn, Matrix[Double] la
     if (sum(labelsIn == min(labelsIn) | labelsIn == max(labelsIn)) != length(labelsIn)) {
         stop("@mcc Input Error: labels contain more than two distinct values")
     }
+    # check for match between encoding of predictions and labels 
     if (sum(min(predictionsIn) == labelsIn | max(predictionsIn) == labelsIn) != length(predictionsIn)) {
-        # all values in predictions are equal and all values in labels are equal but distinct is allowed
+        # at the moment allowing values in predictions are equal and all values in labels are equal but distinct
+        # if not the case throw value mismatch
         if (!(sum(predictionsIn == min(predictionsIn)) == length(predictionsIn) 
                 & sum(labelsIn == min(labelsIn)) == length(labelsIn))) {
             stop("@mcc Input Error: mismatch between predictions and labels. Predictions contain " 
@@ -137,6 +144,7 @@ mcc_binaryVectorCheck = function(Matrix[Double] predictionsIn, Matrix[Double] la
         }
     }
     #check if only contains 0s and/or 1s, else transform
+    # returned vectors should now always be binary
     if (sum(predictionsIn == 0 | predictionsIn == 1) != length(predictionsIn) | 
             sum(labelsIn == 0 | labelsIn == 1) != length(labelsIn)) {
         lowerValue = min(min(labelsIn), min(predictionsIn))
@@ -150,5 +158,6 @@ mcc_binaryVectorCheck = function(Matrix[Double] predictionsIn, Matrix[Double] la
         labelsOut = replace(target=labelsOut, pattern=lowerValue, replacement=0)
         labelsOut = replace(target=labelsOut, pattern=higherValue, replacement=1)
     }
+    
    
 }

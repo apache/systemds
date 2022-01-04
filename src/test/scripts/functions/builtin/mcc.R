@@ -21,6 +21,10 @@
 args<-commandArgs(TRUE)
 options(digits=22)
 
+if(!("mltools" %in% rownames(installed.packages()))){
+   install.packages("mltools")
+}
+
 library("Matrix")
 library("mltools")
 

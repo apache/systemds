@@ -190,7 +190,6 @@ public class Dag<N extends Lop>
 		// create ordering of lops (for MR, we sort by level, while for all
 		// other exec types we use a two-level sorting of )
 		List<Lop> node_v = 
-			//doTopologicalSortStrictOrder(nodes) :
 			//doTopologicalSortTwoLevelOrder(nodes);
 			//doBreadthFirstSort(nodes);
 			doMinIntermediateSort(nodes);
@@ -254,7 +253,7 @@ public class Dag<N extends Lop>
 			v.stream().filter(l -> !l.getOutputs().isEmpty()).sorted(Comparator.comparing(l -> l.getID())),
 			v.stream().filter(l -> l.getOutputs().isEmpty())).collect(Collectors.toList());
 
-		printStats(nodes);
+		//printStats(nodes);
 
 		//NOTE: in contrast to hadoop execution modes, we avoid computing the transitive
 		//closure here to ensure linear time complexity because its unnecessary for CP and Spark
@@ -264,13 +263,12 @@ public class Dag<N extends Lop>
 	private static List<Lop> doBreadthFirstSort(List<Lop> v) {
 		List<Lop> nodes = v.stream().sorted(Comparator.comparing(Lop::getLevel)).collect(Collectors.toList());
 
-		printStats(nodes);
+		//printStats(nodes);
 
 		return nodes;
 	}
 
 	private static void printStats(List<Lop> v) {
-		if (true) return;
 		for (Lop l : v) {
 			long memEst = OptimizerUtils.estimateSizeExactSparsity(l.getOutputParameters().getNumRows(),
 				l.getOutputParameters().getNumCols(), l.getOutputParameters().getNnz());
@@ -291,36 +289,58 @@ public class Dag<N extends Lop>
 
 	private static List<Lop> doMinIntermediateSort(List<Lop> v) {
 		List<Lop> nodes = new ArrayList<>(v.size());
-		List<Lop> lowestLevel = v.stream().filter(l -> l.getOutputs().isEmpty())
-			.sorted(Comparator.comparing(Lop::getID)).collect(Collectors.toList());
+		List<Lop> lowestLevel = v.stream().filter(l -> l.getOutputs().isEmpty()).collect(Collectors.toList());
 
 		// Traverse the tree bottom up, choose nodes with higher memory requirements, then reverse list
-		sortRecursive(nodes, lowestLevel);
+		List<Lop> remaining = new LinkedList<>(v);
+		sortRecursive(nodes, lowestLevel, remaining);
+		while (!remaining.isEmpty()) {
+			int sizeBefore = nodes.size();
+			int maxLevel = remaining.stream().mapToInt(Lop::getLevel).max().orElse(-1);
+			List<Lop> lowestNodes = remaining.stream().filter(l -> l.getLevel() == maxLevel)
+				.collect(Collectors.toList());
+			sortRecursive(nodes, lowestNodes, remaining);
+
+			int delta = nodes.size() - sizeBefore;
+			List<Lop> added = new ArrayList<>(delta);
+			for (int i = nodes.size() - 1; i >= sizeBefore; i--) {
+				added.add(nodes.get(i));
+				nodes.remove(i);
+			}
+			Collections.reverse(added);
+			long minId = added.stream().mapToLong(Lop::getID).min().getAsLong();
+
+			int index = 0;
+			for (int i = 0; i < nodes.size(); i++) {
+				if (nodes.get(i).getID() < minId)
+					index = i;
+			}
+
+			nodes.addAll(index, added);
+		}
 		Collections.reverse(nodes);
 
-		printStats(nodes);
+		//printStats(nodes);
 
 		return nodes;
 	}
 
-	private static void sortRecursive(List<Lop> result, List<Lop> input) {
-		// TODO: Improve memory estimate?
-		// Sort primarily by memory estimate, if memory estimate is the same, sort by ID
-		// This preserves print order
+	private static void sortRecursive(List<Lop> result, List<Lop> input, List<Lop> remaining) {
+		// Sort by memory estimate
 		List<Map.Entry<Lop, Long>> memEst = input.stream().distinct().map(l -> new AbstractMap.SimpleEntry<>(l,
-			l.getOutputs().isEmpty() /* TODO */ ? 0 : OptimizerUtils.estimateSizeExactSparsity(l.getOutputParameters().getNumRows(),
+			l.getOutputs().isEmpty() ? 0 : OptimizerUtils.estimateSizeExactSparsity(l.getOutputParameters().getNumRows(),
 				l.getOutputParameters().getNumCols(), l.getOutputParameters().getNnz())))
-			.sorted(Comparator.comparing(e -> ((Map.Entry<Lop, Long>) e).getValue())
-				.thenComparing(e -> ((Map.Entry<Lop, Long>) e).getKey().getID()).reversed())
+			.sorted(Comparator.comparing(e -> ((Map.Entry<Lop, Long>) e).getValue()))
 			.collect(Collectors.toList());
-
-		// TODO: Read order?
+		Collections.reverse(memEst);
 
 		for (Map.Entry<Lop, Long> e : memEst) {
-			// TODO: This may cause order that isn't optimal
-			if (!result.containsAll(e.getKey().getOutputs())) continue;
+			if (result.contains(e.getKey()) ||
+				(!result.containsAll(e.getKey().getOutputs()) &&
+					remaining.stream().anyMatch(l -> e.getKey().getOutputs().contains(l)))) continue;
 			result.add(e.getKey());
-			sortRecursive(result, e.getKey().getInputs());
+			remaining.remove(e.getKey());
+			sortRecursive(result, e.getKey().getInputs(), remaining);
 		}
 	}
 	

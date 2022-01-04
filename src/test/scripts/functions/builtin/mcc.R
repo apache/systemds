@@ -21,11 +21,11 @@
 args<-commandArgs(TRUE)
 options(digits=22)
 
-library('Matrix')
-library('mltools')
+library("Matrix")
+library("mltools")
 
 predictions = as.vector(readMM(paste(args[1], "predictions.mtx", sep="")))
 labels = as.vector(readMM(paste(args[1], "labels.mtx", sep="")))
-mattCorrCoeff = mcc(predictions, labels)
+mattCorrCoeff = mcc(preds=predictions, actuals=labels)
 
 write(mattCorrCoeff, args[2])

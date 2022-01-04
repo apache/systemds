@@ -19,58 +19,60 @@
 
 package org.apache.sysds.test.functions.builtin;
 
-public class BuiltinDBSCANTest extends AutomatedTestBase
+public class BuiltinOutlierByDBTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "outlierByDB";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinDBSCANTest.class.getSimpleName() + "/";
 
-	// private final static double eps = 1e-3;
-	// private final static int rows = 1700;
+	private final static double eps = 1e-3;
+	private final static int rows = 1700;
 
-	// private final static double epsDBSCAN = 1;
-	// private final static int minPts = 5;
+	private final static double epsDBSCAN = 1;
+	private final static int minPts = 5;
 
 	@Override
 	public void setUp() { 
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
 	}
 
-	// @Test
-	// public void testDBSCANDefaultCP() {
-	// 	runDBSCAN(true, ExecType.CP);
-	// }
+	@Test
+	public void testDBSCANOutlierDefaultCP() {
+		runOutlierByDBSCAN(true, ExecType.CP);
+	}
 
-	// @Test
-	// public void testDBSCANDefaultSP() {
-	// 	runDBSCAN(true, ExecType.SPARK);
-	// }
+	@Test
+	public void testDBSCANOutlierDefaultSP() {
+		runOutlierByDBSCAN(true, ExecType.SPARK);
+	}
 
-	// private void runDBSCAN(boolean defaultProb, ExecType instType)
-	// {
-	// 	ExecMode platformOld = setExecMode(instType);
+	private void runOutlierByDBSCAN(boolean defaultProb, ExecType instType)
+	{
+		ExecMode platformOld = setExecMode(instType);
 
-	// 	try
-	// 	{
-	// 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
-	// 		String HOME = SCRIPT_DIR + TEST_DIR;
+		try
+		{
+			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+			String HOME = SCRIPT_DIR + TEST_DIR;
 
-	// 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-	// 		programArgs = new String[]{"-explain","-nvargs",
-	// 			"X=" + input("A"), "Y=" + output("B"), "eps=" + epsDBSCAN, "minPts=" + minPts};
-	// 		fullRScriptName = HOME + TEST_NAME + ".R";
-	// 		rCmd = getRCmd(inputDir(), Double.toString(epsDBSCAN), Integer.toString(minPts), expectedDir());
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			programArgs = new String[]{"-explain","-nvargs",
+				"X=" + input("A"), "Y=" + input("B"),"Z=" + output("C"), "eps=" + epsDBSCAN, "minPts=" + minPts};
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = getRCmd(inputDir(), Double.toString(epsDBSCAN), Integer.toString(minPts), expectedDir());
 
 	// 		//generate actual dataset
-	// 		double[][] A = getNonZeroRandomMatrix(rows, 3, -10, 10, 7);
-	// 		writeInputMatrixWithMTD("A", A, true);
+			double[][] A = getNonZeroRandomMatrix(rows, 3, -10, 10, 7);
+			double[][] B = getNonZeroRandomMatrix(rows, 3, -10, 10, 7);
+			writeInputMatrixWithMTD("A", A, true);
+			writeInputMatrixWithMTD("B", B, true);
 
-	// 		runTest(true, false, null, -1);
-	// 		runRScript(true);
+			runTest(true, false, null, -1);
+			runRScript(true);
 
 	// 		//compare matrices
-	// 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
-	// 		HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("C");
 
 	// 		//map cluster ids
 	// 		//NOTE: border points that are reachable from more than 1 cluster
@@ -79,10 +81,10 @@ public class BuiltinDBSCANTest extends AutomatedTestBase
 	// 		rfile.forEach((key, value) -> merged.put(value, dmlfile.get(key)));
 	// 		dmlfile.replaceAll((k, v) -> merged.inverse().get(v));
 
-	// 		TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-	// 	}
-	// 	finally {
-	// 		rtplatform = platformOld;
-	// 	}
-	// }
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+		}
+		finally {
+			rtplatform = platformOld;
+		}
+	}
 }

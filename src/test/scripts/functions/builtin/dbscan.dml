@@ -22,5 +22,5 @@
 X = read($X);
 eps = as.double($eps);
 minPts = as.integer($minPts);
-Y = dbscan(X, eps, minPts);
+[Y, model] = dbscan(X, eps, minPts);
 write(Y, $Y);

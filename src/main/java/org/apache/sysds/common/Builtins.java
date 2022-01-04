@@ -210,7 +210,7 @@ public enum Builtins {
 	OUTLIER_ARIMA("outlierByArima",true),
 	OUTLIER_IQR("outlierByIQR", true),
 	OUTLIER_SD("outlierBySd", true),
-	OUTLIER_DB("outlierByDB", true), //TODO: implement and write tests
+	OUTLIER_DB("outlierByDB", true), 
 	PCA("pca", true),
 	PCAINVERSE("pcaInverse", true),
 	PCATRANSFORM("pcaTransform", true),

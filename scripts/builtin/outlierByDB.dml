@@ -25,20 +25,29 @@
 # ----------------------------------------------------------------------------
 # NAME              TYPE             DEFAULT    MEANING
 # ----------------------------------------------------------------------------
-# Xtest             Matrix[Double]   ---        The input Matrix to do outlierDetection on.
-# model             Matrix[Double]   ---        Model of cluster to predict outliers against
-#
+# Xtest             Matrix[Double]   ---        The input Matrix to do outlier detection on.
+# clusterModel      Matrix[Double]   ---        Model of clusters to predict outliers against.
+# eps               Double           0.5        Maximum distance between two points for one to be considered reachable for the other.
+# minPts            Integer          5          Number of points in a neighborhood for a point to be considered as a core point (includes the point itself).
 
-m_outlierByDB = function (Matrix[Double] Xtest, Matrix[Double] model)
+m_outlierByDB = function (Matrix[Double] Xtest, Matrix[Double] clusterModel, Double eps = 0.5, Integer minPts = 5)
     return (Matrix[double] outlierPoints)
 {
-    # TODO: check if points outside of cluster, need more information than borderPoints me thinks
-    # Whole model needed otherwise I have no indication what the borderPoints span
-    # Save the clusters per cluster in the model, if part of a cluster, return the cluster association
-    print("Border points: ")
-    print(toString(model))
-    print("==============================================================")
-    print("X: ")
-    print(toString(Xtest))
-    outlierPoints = Xtest
+    num_features_Xtest = ncol(Xtest);
+    num_features_model = ncol(clusterModel);
+    num_rows_model = nrow(clusterModel);
+
+    if(num_features_Xtest != num_features_model) {stop("DBSCAN Outlier: Stopping due to invalid inputs: features need to match");}
+    if(minPts < 0) { stop("DBSCAN Outlier: Stopping due to invalid inputs: minPts should be greater than 0"); }
+    if(eps < 0) { stop("DBSCAN Outlier: Stopping due to invalid inputs: Epsilon (eps) should be greater than 0"); }
+    
+    X = rbind(clusterModel, Xtest);
+
+    neighbors = dist(X);
+    neighbors = replace(target = neighbors, pattern = 0, replacement = 2.225e-307)
+    neighbors = neighbors - diag(diag(neighbors));
+    withinEps = ((neighbors <= eps) * (0 < neighbors));
+    # minpts needed? search for every point seperately?
+    XtestPts = rowSums(withinEps) + 1 >= minPts;
+    outlierPoints = XtestPts[(num_rows_model + 1):nrow(XtestPts),];
 }

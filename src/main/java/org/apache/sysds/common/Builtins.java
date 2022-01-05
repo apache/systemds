@@ -106,6 +106,7 @@ public enum Builtins {
 	CUMSUMPROD("cumsumprod", false),
 	DBSCAN("dbscan", true),
 	DECISIONTREE("decisionTree", true),
+	DECISIONTREEPREDICT("decisionTreePredict", true),
 	DECOMPRESS("decompress", false),
 	DEEPWALK("deepWalk", true),
 	DETECTSCHEMA("detectSchema", false),

@@ -28,9 +28,8 @@
 # Xtest             Matrix[Double]   ---        The input Matrix to do outlier detection on.
 # clusterModel      Matrix[Double]   ---        Model of clusters to predict outliers against.
 # eps               Double           0.5        Maximum distance between two points for one to be considered reachable for the other.
-# minPts            Integer          5          Number of points in a neighborhood for a point to be considered as a core point (includes the point itself).
 
-m_outlierByDB = function (Matrix[Double] Xtest, Matrix[Double] clusterModel, Double eps = 0.5, Integer minPts = 5)
+m_outlierByDB = function (Matrix[Double] Xtest, Matrix[Double] clusterModel, Double eps = 0.5)
     return (Matrix[double] outlierPoints)
 {
     num_features_Xtest = ncol(Xtest);
@@ -39,7 +38,6 @@ m_outlierByDB = function (Matrix[Double] Xtest, Matrix[Double] clusterModel, Dou
     num_rows_model = nrow(clusterModel);
 
     if(num_features_Xtest != num_features_model) {stop("DBSCAN Outlier: Stopping due to invalid inputs: features need to match");}
-    if(minPts < 0) { stop("DBSCAN Outlier: Stopping due to invalid inputs: minPts should be greater than 0"); }
     if(eps < 0) { stop("DBSCAN Outlier: Stopping due to invalid inputs: Epsilon (eps) should be greater than 0"); }
     
     X = rbind(clusterModel, Xtest);

@@ -107,6 +107,7 @@ public enum Builtins {
 	DBSCAN("dbscan", true),
 	DBSCANAPPLY("dbscanApply", true),
 	DECISIONTREE("decisionTree", true),
+	DECISIONTREEPREDICT("decisionTreePredict", true),
 	DECOMPRESS("decompress", false),
 	DEEPWALK("deepWalk", true),
 	DETECTSCHEMA("detectSchema", false),

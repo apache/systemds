@@ -21,7 +21,6 @@
 
 args<-commandArgs(TRUE)
 library("Matrix")
-options(digits=22)
 library("dbscan")
 
 X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")));
@@ -30,5 +29,6 @@ eps = as.double(args[3]);
 minPts = as.integer(args[4]);
 dbModel = dbscan(X, eps, minPts);
 
-Z = predict(dbmodel, Y, data = X)
+Z = predict(dbModel, Y, data = X)
+Z[Z > 0] = 1
 writeMM(as(Z, "CsparseMatrix"), paste(args[5], "C", sep=""));

@@ -34,6 +34,7 @@ m_outlierByDB = function (Matrix[Double] Xtest, Matrix[Double] clusterModel, Dou
     return (Matrix[double] outlierPoints)
 {
     num_features_Xtest = ncol(Xtest);
+    num_rows_Xtest = nrow(Xtest);
     num_features_model = ncol(clusterModel);
     num_rows_model = nrow(clusterModel);
 
@@ -44,10 +45,8 @@ m_outlierByDB = function (Matrix[Double] Xtest, Matrix[Double] clusterModel, Dou
     X = rbind(clusterModel, Xtest);
 
     neighbors = dist(X);
-    neighbors = replace(target = neighbors, pattern = 0, replacement = 2.225e-307)
-    neighbors = neighbors - diag(diag(neighbors));
-    withinEps = ((neighbors <= eps) * (0 < neighbors));
-    # minpts needed? search for every point seperately?
-    XtestPts = rowSums(withinEps) + 1 >= minPts;
-    outlierPoints = XtestPts[(num_rows_model + 1):nrow(XtestPts),];
+    neighbors = replace(target = neighbors, pattern = 0, replacement = 2.225e-307);
+    Xtest_dists = matrix(neighbors[num_rows_model + 1:nrow(X), 1:num_rows_model], num_rows_Xtest, num_rows_model);
+    withinEps = ((Xtest_dists <= eps) * (0 < Xtest_dists));
+    outlierPoints = rowSums(withinEps) > 1;
 }

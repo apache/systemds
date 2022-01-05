@@ -17,13 +17,27 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.builtin;
+package org.apache.sysds.test.functions.builtin.part2;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
+import java.util.HashMap;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Collection;
 
 public class BuiltinOutlierByDBTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "outlierByDB";
 	private final static String TEST_DIR = "functions/builtin/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinDBSCANTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinOutlierByDBTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-3;
 	private final static int rows = 1700;
@@ -59,27 +73,20 @@ public class BuiltinOutlierByDBTest extends AutomatedTestBase
 			programArgs = new String[]{"-explain","-nvargs",
 				"X=" + input("A"), "Y=" + input("B"),"Z=" + output("C"), "eps=" + epsDBSCAN, "minPts=" + minPts};
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = getRCmd(inputDir(), Double.toString(epsDBSCAN), Integer.toString(minPts), expectedDir());
+			rCmd = getRCmd(inputDir(), inputDir(), Double.toString(epsDBSCAN), Integer.toString(minPts), expectedDir());
 
-	// 		//generate actual dataset
+			//generate actual dataset
 			double[][] A = getNonZeroRandomMatrix(rows, 3, -10, 10, 7);
-			double[][] B = getNonZeroRandomMatrix(rows, 3, -10, 10, 7);
 			writeInputMatrixWithMTD("A", A, true);
+			double[][] B = getNonZeroRandomMatrix(rows, 3, -10, 10, 7);
 			writeInputMatrixWithMTD("B", B, true);
 
 			runTest(true, false, null, -1);
 			runRScript(true);
 
-	// 		//compare matrices
+			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("C");
-
-	// 		//map cluster ids
-	// 		//NOTE: border points that are reachable from more than 1 cluster
-	// 		// are assigned to lowest point id, not cluster id -> can fail in this case, but it's still correct
-	// 		BiMap<Double, Double> merged = HashBiMap.create();
-	// 		rfile.forEach((key, value) -> merged.put(value, dmlfile.get(key)));
-	// 		dmlfile.replaceAll((k, v) -> merged.inverse().get(v));
 
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}

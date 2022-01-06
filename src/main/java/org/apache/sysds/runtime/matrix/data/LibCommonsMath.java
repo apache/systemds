@@ -91,8 +91,7 @@ public class LibCommonsMath
 		return multiReturnOperations(in, opcode, 1, 1);
 	}
 
-	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads,
-													  int num_iterations, double tol) {
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, int num_iterations, double tol) {
 		if(opcode.equals("eigen_qr"))
 			return computeEigenQR(in, num_iterations, tol, threads);
 		else

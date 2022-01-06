@@ -33,9 +33,20 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.functionobjects.*;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Divide;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
+import org.apache.sysds.runtime.functionobjects.MinusMultiply;
+import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.matrix.operators.*;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 
 /**
@@ -75,20 +86,32 @@ public class LibCommonsMath
 			return computeCholesky(matrixInput);
 		return null;
 	}
-	
+
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode) {
+		return multiReturnOperations(in, opcode, 1, 1);
+	}
+
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads,
+													  int num_iterations, double tol) {
+		if(opcode.equals("eigen_qr"))
+			return computeEigenQR(in, num_iterations, tol, threads);
+		else
+			return multiReturnOperations(in, opcode, threads, 1);
+	}
+
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, long seed) {
 		if(opcode.equals("qr"))
 			return computeQR(in);
 		else if (opcode.equals("qr2"))
-			return computeQR2(in);
+			return computeQR2(in, threads);
 		else if (opcode.equals("lu"))
 			return computeLU(in);
 		else if (opcode.equals("eigen"))
 			return computeEigen(in);
 		else if (opcode.equals("eigen_lanczos"))
-			return computeEigenLanczos(in);
+			return computeEigenLanczos(in, threads, seed);
 		else if (opcode.equals("eigen_qr"))
-			return computeEigenQR(in);
+			return computeEigenQR(in, threads);
 		else if (opcode.equals("svd"))
 			return computeSvd(in);
 		return null;
@@ -291,63 +314,70 @@ public class LibCommonsMath
 	}
 
 	/**
+	 * Creates a random normalized vector with dim elements.
+	 *
+	 * @param dim dimension of the created vector
+	 * @param threads number of threads
+	 * @param seed seed for the random MatrixBlock generation
+	 * @return random normalized vector
+	 */
+	private static MatrixBlock randNormalizedVect(int dim, int threads, long seed) {
+		MatrixBlock v1 = MatrixBlock.randOperations(dim, 1, 1.0, 0.0, 1.0, "UNIFORM", seed);
+
+		double v1_sum = v1.sum();
+		ScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), v1_sum, threads);
+		v1 = v1.scalarOperations(op_div_scalar, new MatrixBlock());
+		UnaryOperator op_sqrt = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.SQRT), threads, true);
+		v1 = v1.unaryOperations(op_sqrt, new MatrixBlock());
+
+		if(Math.abs(v1.sumSq() - 1.0) >= 1e-7)
+			throw new DMLRuntimeException("v1 not correctly normalized (maybe try changing the seed)");
+
+		return v1;
+	}
+
+	/**
 	 * Function to perform the Lanczos algorithm and then computes the Eigendecomposition.
 	 * Caution: Lanczos is not numerically stable (see https://en.wikipedia.org/wiki/Lanczos_algorithm)
 	 * Input must be a symmetric (and square) matrix.
 	 *
 	 * @param in matrix object
+	 * @param threads number of threads
+	 * @param seed seed for the random MatrixBlock generation
 	 * @return array of matrix blocks
 	 */
-	private static MatrixBlock[] computeEigenLanczos(MatrixBlock in) {
+	private static MatrixBlock[] computeEigenLanczos(MatrixBlock in, int threads, long seed) {
 		if(in.getNumRows() != in.getNumColumns()) {
 			throw new DMLRuntimeException(
 				"Lanczos algorithm and Eigen Decomposition can only be done on a square matrix. "
 					+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
 		}
-		if(!isSym(in)) {
-			throw new DMLRuntimeException("Lanczos algorithm can only be done on a symmetric matrix.");
-		}
-
-		int num_Threads = 1;
 
 		int m = in.getNumRows();
 		MatrixBlock v0 = new MatrixBlock(m, 1, 0.0);
-		MatrixBlock v1 = MatrixBlock.randOperations(m, 1, 1.0, 0.0, 1.0, "UNIFORM", 0xC0FFEE);
-
-		// normalize v1
-		double v1_sum = v1.sum();
-		RightScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), v1_sum, num_Threads);
-		v1 = v1.scalarOperations(op_div_scalar, new MatrixBlock());
-		UnaryOperator op_sqrt = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.SQRT), num_Threads, true);
-		v1 = v1.unaryOperations(op_sqrt, new MatrixBlock());
-		if(v1.sumSq() != 1.0)
-			throw new DMLRuntimeException("Lanczos algorithm: v1 not correctly normalized");
+		MatrixBlock v1 = randNormalizedVect(m, threads, seed);
 
 		MatrixBlock T = new MatrixBlock(m, m, 0.0);
-		MatrixBlock TV = new MatrixBlock(m, 1, 0.0);
+		MatrixBlock TV = new MatrixBlock(m, m, 0.0);
 		MatrixBlock w1;
 
-		ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), num_Threads);
-		TernaryOperator op_minus_mul = new TernaryOperator(MinusMultiply.getFnObject(), num_Threads);
-		AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(num_Threads);
+		ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);
+		TernaryOperator op_minus_mul = new TernaryOperator(MinusMultiply.getFnObject(), threads);
+		AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
+		ScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), 1, threads);
 
 		MatrixBlock beta = new MatrixBlock(1, 1, 0.0);
 		for(int i = 0; i < m; i++) {
-			if(i == 0)
-				TV.copy(v1);
-			else
-				TV = TV.append(v1, new MatrixBlock(), true);
-
+			v1.putInto(TV, 0, i, false);
 			w1 = in.aggregateBinaryOperations(in, v1, op_mul_agg);
-			MatrixBlock w1_t = w1.reorgOperations(op_t, new MatrixBlock(), 0, 0, m);
-			MatrixBlock alpha = w1_t.aggregateBinaryOperations(w1_t, v1, op_mul_agg);
+			MatrixBlock alpha = w1.aggregateBinaryOperations(v1.reorgOperations(op_t, new MatrixBlock(), 0, 0, m), w1, op_mul_agg);
 			if(i < m - 1) {
 				w1 = w1.ternaryOperations(op_minus_mul, v1, alpha, new MatrixBlock());
 				w1 = w1.ternaryOperations(op_minus_mul, v0, beta, new MatrixBlock());
 				beta.setValue(0, 0, Math.sqrt(w1.sumSq()));
 				v0.copy(v1);
-				op_div_scalar = (RightScalarOperator) op_div_scalar.setConstant(beta.getDouble(0, 0));
-				v1 = w1.scalarOperations(op_div_scalar, new MatrixBlock());
+				op_div_scalar = op_div_scalar.setConstant(beta.getDouble(0, 0));
+				w1.scalarOperations(op_div_scalar, v1);
 
 				T.setValue(i + 1, i, beta.getValue(0, 0));
 				T.setValue(i, i + 1, beta.getValue(0, 0));
@@ -356,6 +386,7 @@ public class LibCommonsMath
 		}
 
 		MatrixBlock[] e = multiReturnOperations(T, "eigen");
+		TV.setNonZeros((long) m*m);
 		e[1] = TV.aggregateBinaryOperations(TV, e[1], op_mul_agg);
 		return e;
 	}
@@ -363,17 +394,18 @@ public class LibCommonsMath
 	/**
 	 * Function to perform the QR decomposition.
 	 * Input must be a square matrix.
+	 * TODO: use Householder transformation and implicit shifts to further speed up QR decompositions
 	 *
 	 * @param in matrix object
+	 * @param threads number of threads
 	 * @return array of matrix blocks [Q, R]
 	 */
-	private static MatrixBlock[] computeQR2(MatrixBlock in) {
+	private static MatrixBlock[] computeQR2(MatrixBlock in, int threads) {
 		if(in.getNumRows() != in.getNumColumns()) {
 			throw new DMLRuntimeException("QR2 Decomposition can only be done on a square matrix. "
 				+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
 		}
 
-		int num_Threads = 1;
 		int m = in.rlen;
 
 		MatrixBlock A_n = new MatrixBlock(m, m, 0.0);
@@ -384,32 +416,31 @@ public class LibCommonsMath
 			Q_n.setValue(i, i, 1.0);
 		}
 
-		ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), num_Threads);
-		AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(num_Threads);
+		ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);
+		AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
 		BinaryOperator op_sub = InstructionUtils.parseExtendedBinaryOperator("-");
-		RightScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), 1, num_Threads);
-		LeftScalarOperator op_mult_2 = new LeftScalarOperator(Multiply.getMultiplyFnObject(), 2, num_Threads);
+		ScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), 1, threads);
+		ScalarOperator op_mult_2 = new LeftScalarOperator(Multiply.getMultiplyFnObject(), 2, threads);
 
 		for(int k = 0; k < m; k++) {
 			MatrixBlock z = A_n.slice(k, m - 1, k, k);
 			MatrixBlock uk = new MatrixBlock(m - k, 1, 0.0);
 			uk.copy(z);
 			uk.setValue(0, 0, uk.getValue(0, 0) + Math.signum(z.getValue(0, 0)) * Math.sqrt(z.sumSq()));
-			op_div_scalar = (RightScalarOperator) op_div_scalar.setConstant(Math.sqrt(uk.sumSq()));
+			op_div_scalar = op_div_scalar.setConstant(Math.sqrt(uk.sumSq()));
 			uk = uk.scalarOperations(op_div_scalar, new MatrixBlock());
 
 			MatrixBlock vk = new MatrixBlock(m, 1, 0.0);
 			vk.copy(k, m - 1, 0, 0, uk, true);
 
 			MatrixBlock vkt = vk.reorgOperations(op_t, new MatrixBlock(), 0, 0, m);
-			MatrixBlock vkvkt = vk.aggregateBinaryOperations(vk, vkt, op_mul_agg);
-			MatrixBlock vkvkt2 = vkvkt.scalarOperations(op_mult_2, new MatrixBlock());
+			MatrixBlock vkt2 = vkt.scalarOperations(op_mult_2, new MatrixBlock());
+			MatrixBlock vkvkt2 = vk.aggregateBinaryOperations(vk, vkt2, op_mul_agg);
 
 			A_n = A_n.binaryOperations(op_sub, A_n.aggregateBinaryOperations(vkvkt2, A_n, op_mul_agg));
 			Q_n = Q_n.binaryOperations(op_sub, Q_n.aggregateBinaryOperations(Q_n, vkvkt2, op_mul_agg));
 		}
-		// Q_n= Q
-		// A_n = R
+		// QR decomp: Q: Q_n; R: A_n
 		return new MatrixBlock[] {Q_n, A_n};
 	}
 
@@ -419,22 +450,21 @@ public class LibCommonsMath
 	 * Caution: if the input matrix has complex eigenvalues results will be incorrect
 	 *
 	 * @param in Input matrix
+	 * @param threads number of threads
 	 * @return array of matrix blocks
 	 */
-	private static MatrixBlock[] computeEigenQR(MatrixBlock in) {
-		return computeEigenQR(in, 300);
+	private static MatrixBlock[] computeEigenQR(MatrixBlock in, int threads) {
+		return computeEigenQR(in, 500, 1e-10, threads);
 	}
 
-	private static MatrixBlock[] computeEigenQR(MatrixBlock in, int num_iterations) {
+	private static MatrixBlock[] computeEigenQR(MatrixBlock in, int num_iterations, double tol, int threads) {
 		if(in.getNumRows() != in.getNumColumns()) {
 			throw new DMLRuntimeException("Eigen Decomposition (QR) can only be done on a square matrix. "
 				+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
 		}
-		int num_Threads = 1;
-		double tol = 1e-10;
-		int m = in.rlen;
 
-		AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(num_Threads);
+		int m = in.rlen;
+		AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
 
 		MatrixBlock Q_prod = new MatrixBlock(m, m, 0.0);
 		for(int i = 0; i < m; i++) {
@@ -442,15 +472,16 @@ public class LibCommonsMath
 		}
 
 		for(int i = 0; i < num_iterations; i++) {
-			MatrixBlock[] QR = computeQR2(in);
+			MatrixBlock[] QR = computeQR2(in, threads);
 			Q_prod = Q_prod.aggregateBinaryOperations(Q_prod, QR[0], op_mul_agg);
 			in = in.aggregateBinaryOperations(QR[1], QR[0], op_mul_agg);
 		}
 
+		double[] check = in.getDenseBlockValues();
 		for(int i = 0; i < m; i++) {
 			for(int j = 0; j < m; j++) {
 				if(i != j) {
-					if(Math.abs(in.getValue(i, j)) > tol)
+					if(Math.abs(check[i*m+j]) > tol)
 						throw new DMLRuntimeException("QR Eigen Decomposition not converged or contains complex EVs"
 							+ " (position i = " + i + ", j = " + j + ")");
 				}
@@ -461,10 +492,10 @@ public class LibCommonsMath
 		// 2x2 blocks on diagonal of A correspond to a matrix that has the same complex evals
 		double[] eval = new double[m];
 		for(int i = 0; i < m; i++) {
-			eval[i] = in.getValue(i, i);
+			eval[i] = check[i*m+i];
 		}
 
-		double[][] evec = DataConverter.convertToArray2DRowRealMatrix(Q_prod).getData();
+		double[] evec = Q_prod.getDenseBlockValues();
 		return sortEVs(eval, evec);
 	}
 
@@ -472,10 +503,10 @@ public class LibCommonsMath
 	 * Function to compute the Householder transformation of a Matrix.
 	 *
 	 * @param in Input Matrix
+	 * @param threads number of threads
 	 * @return transformed matrix
 	 */
-	private static MatrixBlock computeHouseholder(MatrixBlock in) {
-		int num_Threads = 1;
+	private static MatrixBlock computeHouseholder(MatrixBlock in, int threads) {
 		int m = in.rlen;
 
 		MatrixBlock A_n = new MatrixBlock(m, m, 0.0);
@@ -494,7 +525,7 @@ public class LibCommonsMath
 			MatrixBlock v = new MatrixBlock(m, 1, 0.0);
 			v.copy(ajk);
 			v.setValue(k + 1, 0, ak1k - alpha);
-			RightScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), 2 * r, num_Threads);
+			ScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), 2 * r, threads);
 			v = v.scalarOperations(op_div_scalar, new MatrixBlock());
 
 			MatrixBlock P = new MatrixBlock(m, m, 0.0);
@@ -502,8 +533,8 @@ public class LibCommonsMath
 				P.setValue(i, i, 1.0);
 			}
 
-			ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), num_Threads);
-			AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(num_Threads);
+			ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);
+			AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
 			BinaryOperator op_add = InstructionUtils.parseExtendedBinaryOperator("+");
 			BinaryOperator op_sub = InstructionUtils.parseExtendedBinaryOperator("-");
 
@@ -550,14 +581,31 @@ public class LibCommonsMath
 		return new MatrixBlock[] {eval, evec};
 	}
 
-	private static boolean isSym(MatrixBlock in) {
-		double[][] m = DataConverter.convertToArray2DRowRealMatrix(in).getData();
-		for(int i = 0; i < m.length; i++) {
-			for(int j = 0; j < m[i].length; j++) {
-				if(Double.compare(m[i][j], m[j][i]) != 0)
-					return false;
+	private static MatrixBlock[] sortEVs(double[] eValues, double[] eVectors) {
+		int n = eValues.length;
+		for(int i = 0; i < n; i++) {
+			int k = i;
+			double p = eValues[i];
+			for(int j = i + 1; j < n; j++) {
+				if(eValues[j] < p) {
+					k = j;
+					p = eValues[j];
+				}
+			}
+			if(k != i) {
+				eValues[k] = eValues[i];
+				eValues[i] = p;
+				for(int j = 0; j < n; j++) {
+					p = eVectors[j*n+i];
+					eVectors[j*n+i] = eVectors[j*n+k];
+					eVectors[j*n+k] = p;
+				}
 			}
 		}
-		return true;
+
+		MatrixBlock eval = DataConverter.convertToMatrixBlock(eValues, true);
+		MatrixBlock evec = new MatrixBlock(n, n, false);
+		evec.init(eVectors, n, n);
+		return new MatrixBlock[] {eval, evec};
 	}
 }

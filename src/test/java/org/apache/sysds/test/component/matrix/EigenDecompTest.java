@@ -28,31 +28,42 @@ import org.junit.Assert;
 
 public class EigenDecompTest {
 
-	@Test public void testLanczosSimple() {
-		double tol = 1e-4;
-
+	@Test
+	public void testLanczosSimple() {
 		MatrixBlock in = new MatrixBlock(4, 4, false);
-		double[] a = { 4, 1, -2,  2,
-					   1, 2,  0,  1,
-		              -2, 0,  3, -2,
-				       2, 1, -2, -1};
+		//  4, 1, -2,  2
+		//  1, 2,  0,  1
+		// -2, 0,  3, -2
+		//  2, 1, -2, -1
+		double[] a = { 4, 1, -2, 2, 1, 2, 0, 1, -2, 0, 3, -2, 2, 1, -2, -1};
 		in.init(a, 4, 4);
-		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen");
-		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigen_lanczos");
-
-		TestUtils.compareMatrices(m1[0], m2[0], tol, "Result of eigenvalues of new eigen_lanczos function wrong");
-		testEvecValues(m1[1], m2[1], tol);
+		testLanczos(in, 1e-4, 1);
 	}
 
-	@Test public void testLanczosRandom() {
-		double tol = 1e-4;
-
+	@Test
+	public void testLanczosSmall() {
 		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(10, 10, 0.0, 1.0, 1.0, 1);
-		// MatrixBlock in = TestUtils.generateTestMatrixBlockSym(100, 100, 0.0, 1.0, 1.0, 1); // fails
+		testLanczos(in, 1e-4, 1);
+	}
+
+	@Test
+	public void testLanczosLarge() {
+	 	MatrixBlock in = TestUtils.generateTestMatrixBlockSym(100, 100, 0.0, 1.0, 1.0, 1);
+		testLanczos(in, 1e-4, 1);
+	}
+
+	@Test
+	public void testLanczosLargeMT() {
+		int threads = 10;
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(100, 100, 0.0, 1.0, 1.0, 1);
+		testLanczos(in, 1e-4, threads);
+	}
+
+	private void testLanczos(MatrixBlock in, double tol, int threads) {
 		long t1 = System.nanoTime();
-		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen");
+		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen", threads, 1);
 		long t2 = System.nanoTime();
-		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigen_lanczos");
+		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigen_lanczos", threads, 1);
 		long t3 = System.nanoTime();
 
 		System.out.println(
@@ -61,34 +72,61 @@ public class EigenDecompTest {
 		testEvecValues(m1[1], m2[1], tol);
 	}
 
-	@Test public void testQREigenSimple() {
-		double tol = 1e-4;
-
+	@Test
+	public void testQREigenSimple() {
 		MatrixBlock in = new MatrixBlock(4, 4, false);
-		double[] a = { 52, 30, 49, 28,
-				       30, 50,  8, 44,
-				       49,  8, 46, 16,
-					   28, 44, 16, 22};
+		// 52, 30, 49, 28
+		// 30, 50,  8, 44
+		// 49,  8, 46, 16
+		// 28, 44, 16, 22
+		double[] a = { 52, 30, 49, 28, 30, 50, 8, 44, 49, 8, 46, 16, 28, 44, 16, 22};
 		in.init(a, 4, 4);
-
-		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen");
-		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigen_qr");
-
-		TestUtils.compareMatrices(m1[0], m2[0], tol, "Result of eigenvalues of new eigen_qr function wrong");
-		testEvecValues(m1[1], m2[1], tol);
+		testQREigen(in, 1e-4, 1);
 	}
 
-	@Test public void testQREigenRandom() {
-		double tol = 1e-4;
-
+	@Test
+	public void testQREigenSymSmall() {
 		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(10, 10, 0.0, 1.0, 1.0, 1);
-		// MatrixBlock in = TestUtils.generateTestMatrixBlock(5, 5, 0.0, 1.0, 1.0, 5); // fails evals correct evecs wrong (evec corresponding to largest eval correct)
-		// MatrixBlock in = TestUtils.generateTestMatrixBlock(10, 10, 0.0, 1.0, 1.0, 2); // fails complex EVs
-		// MatrixBlock in = TestUtils.generateTestMatrixBlockSym(50, 50, 0.0, 1.0, 1.0, 1); // fails not converged
+		testQREigen(in, 1e-4, 1);
+	}
+
+	@Test
+	public void testQREigenSymSmallMT() {
+		int threads = 10;
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(10, 10, 0.0, 1.0, 1.0, 1);
+		testQREigen(in, 1e-4, threads);
+	}
+
+	@Test
+	public void testQREigenSmall() {
+		MatrixBlock in = TestUtils.generateTestMatrixBlock(5, 5, 0.0, 1.0, 1.0, 5);
+		testQREigen(in, 1e-4, 1);
+	}
+
+	@Test
+	public void testQREigenComplexEVs() {
+		MatrixBlock in = TestUtils.generateTestMatrixBlock(10, 10, 0.0, 1.0, 1.0, 2);
+		testQREigen(in, 1e-4, 1);
+	}
+
+	@Test
+	public void testQREigenSymLarge() {
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(50, 50, 0.0, 1.0, 1.0, 1);
+		testQREigen(in, 1e-4, 1);
+	}
+
+	@Test
+	public void testQREigenSymLargeMT() {
+		int threads = 10;
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(50, 50, 0.0, 1.0, 1.0, 1);
+		testQREigen(in, 1e-4, threads);
+	}
+
+	private void testQREigen(MatrixBlock in, double tol, int threads) {
 		long t1 = System.nanoTime();
-		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen");
+		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen", threads, 1);
 		long t2 = System.nanoTime();
-		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigen_qr");
+		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigen_qr", threads, 1);
 		long t3 = System.nanoTime();
 
 		System.out.println("time eigen: "+ (t2-t1) + " time QR: " + (t3-t2) + " QR speedup: " + ((double)(t2-t1)/(t3-t2)));

@@ -830,7 +830,7 @@ public class Explain
 		return OptimizerUtils.toMB(mem) + (units?"MB":"");
 	}
 
-	private static String createOffset( int level )
+	public static String createOffset( int level )
 	{
 		StringBuilder sb = new StringBuilder();
 		for( int i=0; i<level; i++ )

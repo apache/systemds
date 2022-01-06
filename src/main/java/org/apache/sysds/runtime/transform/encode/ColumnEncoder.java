@@ -132,6 +132,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 
 	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+		mcsr = false; //force CSR for transformencode
 		int index = _colID - 1;
 		// Apply loop tiling to exploit CPU caches
 		double[] codes = getCodeCol(in, rowStart, blk);

@@ -22,8 +22,10 @@ package org.apache.sysds.runtime.util;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.utils.Explain;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -90,7 +92,10 @@ public class DependencyThreadPool {
 	public List<Object> submitAllAndWait(List<DependencyTask<?>> dtasks)
 		throws ExecutionException, InterruptedException {
 		List<Object> res = new ArrayList<>();
-		// printDependencyGraph(dtasks);
+		if(DependencyTask.ENABLE_DEBUG_DATA) {
+			if (dtasks != null && dtasks.size() > 0)
+				explainTaskGraph(dtasks);
+		}
 		List<Future<Future<?>>> futures = submitAll(dtasks);
 		int i = 0;
 		for(Future<Future<?>> ff : futures) {
@@ -112,10 +117,12 @@ public class DependencyThreadPool {
 	}
 
 	/*
-	 * Creates the Dependency list from a map and the tasks. The map specifies which tasks should have a Dependency on
-	 * which other task. e.g.
-	 * ([0, 3], [4, 6])   means the first 3 tasks in the tasks list are dependent on tasks at index 4 and 5
-	 * ([-2, -1], [0, 5]) means the last task has a Dependency on the first 5 tasks.
+	 * Creates the Dependency list from a map and the tasks. The map specifies which tasks 
+	 * should have a Dependency on which other task. e.g.
+	 * ([0, 3], [4, 6])   means the 1st 3 tasks in the list are dependent on tasks at index 4 and 5
+	 * ([-2, -1], [0, 5]) means the last task depends on the first 5 tasks.
+	 * ([dependent start index, dependent end index (excluding)], 
+	 *  [parent start index, parent end index (excluding)])
 	 */
 	public static List<List<? extends Callable<?>>> createDependencyList(List<? extends Callable<?>> tasks,
 		Map<Integer[], Integer[]> depMap, List<List<? extends Callable<?>>> dep) {
@@ -174,5 +181,55 @@ public class DependencyThreadPool {
 			}
 		}
 		return ret;
+	}
+
+	/*
+	 * Prints the task-graph level-wise, however, the printed
+	 * output doesn't specify which task of level l depends
+	 * on which task of level (l-1).
+	 */
+	public static void explainTaskGraph(List<DependencyTask<?>> tasks) {
+		Map<DependencyTask<?>, Integer> levelMap = new HashMap<>();
+		int depth = 1;
+		while (levelMap.size() < tasks.size()) {
+			for (int i=0; i<tasks.size(); i++) {
+				DependencyTask<?> dt = tasks.get(i);
+				if (dt._dependencyTasks == null || dt._dependencyTasks.size() == 0)
+					levelMap.put(dt, 0);
+				if (dt._dependencyTasks != null) {
+					List<DependencyTask<?>> parents = dt._dependencyTasks;
+					int[] parentLevels = new int[parents.size()];
+					boolean missing = false;
+					for (int p=0; p<parents.size(); p++) {
+						if (!levelMap.containsKey(parents.get(p)))
+							missing = true;
+						else
+							parentLevels[p] = levelMap.get(parents.get(p));
+					}
+					if (missing)
+						continue;
+					int maxParentLevel = Arrays.stream(parentLevels).max().getAsInt();
+					levelMap.put(dt, maxParentLevel+1);
+					if (maxParentLevel+1 == depth)
+						depth++;
+				}
+			}
+		}
+		StringBuilder sbs[] = new StringBuilder[depth];
+		String offsets[] = new String[depth];
+		for (Map.Entry<DependencyTask<?>, Integer> entry : levelMap.entrySet()) {
+			int level = entry.getValue();
+			if (sbs[level] == null) {
+				sbs[level] = new StringBuilder();
+				offsets[level] = Explain.createOffset(level);
+			}
+			sbs[level].append(offsets[level]);
+			sbs[level].append(entry.getKey().toString()+"\n");
+		}
+		System.out.println("EXPlAIN (TASK-GRAPH):");
+		for (int i=0; i<sbs.length; i++) {
+			System.out.println(sbs[i].toString());
+		}
+
 	}
 }

@@ -19,11 +19,22 @@
 #
 #-------------------------------------------------------------
 
+m_WoEApply = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] entropyMatrix)
+return (Matrix[Double] X) {
+  
+  for(i in 1:ncol(X))
+  {
+    if(sum(abs(entropyMatrix[i])) > 0)
+    {
+      L = replace(target=X[, i], pattern=NaN, replacement=1)
+      idx = min(ncol(entropyMatrix), max(L))
+      entropy = entropyMatrix[i, 1:idx]
+      resp = matrix(0, nrow(L), idx)
+      resp = (resp + t(seq(1, idx))) == L
+      resp = resp * entropy
+      X[, i] = rowSums(resp)
+    }  
+  }
+  
+}
 
-X = read($1);
-[Y, Q1, Q3, IQR, k, r] = outlierByIQR(X, $2, $3, $4, FALSE);
-Yapply = outlierByIQRApply(X, Q1, Q3, IQR, k, r);
-Y = replace(target=Y, pattern=NaN, replacement=0)
-Yapply = replace(target=Yapply, pattern=NaN, replacement=0)
-print(sum(Y != Yapply) == 0)
-write(Y, $5)

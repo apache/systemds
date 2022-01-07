@@ -34,11 +34,12 @@
 # ----------------------------------------------------------------------------------------------------------------------
 # NAME         TYPE                       MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# data         Matrix[Double]             The cbinded data of X and Y
+# X         Matrix[Double]             The undersample data X
+# Y         Matrix[Double]             
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_underSampling = function(Matrix[Double] X, Matrix[Double] Y, Double ratio)
-return(Matrix[Double] data)
+return(Matrix[Double] X, Matrix[Double] Y)
 {
   if(ratio < 0 | ratio > 0.5) {
     ratio = 0.1
@@ -60,5 +61,6 @@ return(Matrix[Double] data)
   u_select = u_select * majority[, 1]
   u_select = removeEmpty(target = u_select, margin = "rows")
   u_select1 = table(u_select, 1, 1, nrow(X), 1)
-  data = removeEmpty(target=cbind(X,Y), margin="rows", select = (u_select1 == 0))
+  X = removeEmpty(target=X, margin="rows", select = (u_select1 == 0))
+  Y = removeEmpty(target=Y, margin="rows", select = (u_select1 == 0))
 }

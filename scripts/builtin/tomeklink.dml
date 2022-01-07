@@ -74,7 +74,7 @@ get_nn = function(Matrix[Double] X)
 return (Matrix[Double] nn) {
   # TODO exchange manhatten by euclidean dist()?
   nn = matrix(0, rows = nrow(X), cols = 1)
-  for (i in 1:nrow(X)) {
+  parfor (i in 1:nrow(X)) {
     dists = rowSums((X - X[i,])^2) 
     dists[i,] = NaN; # mask out self-ref
     nn[i, 1] = rowIndexMin(t(dists))

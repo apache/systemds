@@ -19,11 +19,32 @@
 #
 #-------------------------------------------------------------
 
+args<-commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
+library("DescTools")
 
-X = read($1);
-[Y, Q1, Q3, IQR, k, r] = outlierByIQR(X, $2, $3, $4, FALSE);
-Yapply = outlierByIQRApply(X, Q1, Q3, IQR, k, r);
-Y = replace(target=Y, pattern=NaN, replacement=0)
-Yapply = replace(target=Yapply, pattern=NaN, replacement=0)
-print(sum(Y != Yapply) == 0)
-write(Y, $5)
+print("running")
+Salaries <- read.csv(args[1], header=TRUE, na.strings = "19")
+
+mode = Mode(Salaries$yrs.since.phd, na.rm = TRUE)
+
+Salaries$yrs.since.phd[is.na(Salaries$yrs.since.phd)]<-mode
+
+t = Salaries$yrs.service
+t[is.na(t)]<-0
+median = median(t)
+
+Salaries$yrs.service[is.na(Salaries$yrs.service)]<-median
+output = cbind(Salaries$yrs.since.phd, Salaries$yrs.service)
+
+Mode <- function(x, na.rm = FALSE) {
+  if(na.rm){
+    x = x[!is.na(x)]
+  }
+
+  ux <- unique(x)
+  return(ux[which.max(tabulate(match(x, ux)))])
+}
+
+writeMM(as(output, "CsparseMatrix"), paste(args[2], "B", sep=""));

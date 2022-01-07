@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.builtin.part2;
 
+import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
@@ -42,7 +44,7 @@ public class BuiltinOutlierByIQRTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
 	}
 
-	@Test
+	@Ignore
 	public void testOutlierRepair0CP() {
 		runOutlierTest(false, 1.5, 0, 10,ExecType.CP);
 	}
@@ -99,6 +101,7 @@ public class BuiltinOutlierByIQRTest extends AutomatedTestBase {
 
 		try
 		{
+			setOutputBuffering(true);
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
@@ -117,7 +120,9 @@ public class BuiltinOutlierByIQRTest extends AutomatedTestBase {
 
 			writeInputMatrixWithMTD("A", A, true);
 
-			runTest(true, false, null, -1);
+//			runTest(true, false, null, -1);
+			String out = runTest(null).toString();
+			Assert.assertTrue(out.contains("TRUE"));
 
 		}
 		finally {

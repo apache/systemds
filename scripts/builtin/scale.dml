@@ -35,12 +35,12 @@
 # NAME         TYPE                      MEANING
 # ----------------------------------------------------------------------------------------------------------------------
 # Y            Matrix[Double]            Output feature matrix with K columns
-# ColMean      Matrix[Double]            The column means of the input, subtracted if Center was TRUE
+# Centering      Matrix[Double]            The column means of the input, subtracted if Center was TRUE
 # ScaleFactor  Matrix[Double]            The Scaling of the values, to make each dimension have similar value ranges
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_scale = function(Matrix[Double] X, Boolean center, Boolean scale) 
-  return (Matrix[Double] Y, Matrix[Double] ColMean, Matrix[Double] ScaleFactor) 
+  return (Matrix[Double] out, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
 {
   if(center){
     ColMean = colMeans(X)
@@ -73,5 +73,6 @@ m_scale = function(Matrix[Double] X, Boolean center, Boolean scale)
     ScaleFactor = matrix(0, rows= 0, cols=0)
   }
 
-  Y = X
+  out = X
+  Centering = ColMean
 }

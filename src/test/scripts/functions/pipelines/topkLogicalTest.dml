@@ -66,7 +66,7 @@ getMask = getMask[, 1:ncol(getMask) - 1] # strip the mask of class label
 getFdMask = getFdMask[, 1:ncol(getFdMask) - 1] # strip the mask of class label
 getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
 
-metaList = list(mask=getMask, schema=getSchema, fd=as.matrix(0))
+metaList = list(mask=getMask, schema=getSchema, fd=as.matrix(0), applyFunc=as.frame("NULL"))
 
 logical =  frame([
                  "6", "MVI", "OTLR", "ED", "EC", "CI", "DUMMY", 

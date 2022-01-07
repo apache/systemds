@@ -19,15 +19,15 @@
 #
 #-------------------------------------------------------------
 
-# impute the data by mean value and if the feature is categorical then by mode value
+# impute the data by most frequent value (recoded data only)
 # Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
 #
 # INPUT PARAMETERS:
 # ----------------------------------------------------------------------------------------------------------------------
-# NAME       TYPE              DEFAULT     MEANING
+# NAME                     TYPE              DEFAULT     MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# X          Matrix[Double]    ---         Data Matrix (Recoded Matrix for categorical features)
-# mask       Matrix[Double]    ---         A 0/1 row vector for identifying numeric (0) and categorical features (1)
+# X                      Matrix[Double]    ---         Data Matrix (Recoded Matrix for categorical features)
+# imputationVector       Matrix[Double]    ---         column mean vector
 # ----------------------------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -37,24 +37,10 @@
 # X         Matrix[Double]                 imputed dataset
 # ----------------------------------------------------------------------------------------------------------------------
 
-m_imputeByMean = function(Matrix[Double] X, Matrix[Double] mask)
-return(Matrix[Double] X, Matrix[Double] imputedVec)
+m_imputeByModeApply = function(Matrix[Double] X, Matrix[Double] imputedVec)
+return(Matrix[Double] X)
 {
-  nX = X*(mask==0)
-  nX = replace(target=nX, pattern=NaN, replacement=0);
-  #  mean imputation
-  colMean = colMeans(nX)
-
-  if(sum(mask) > 0)
-  {
-    # mode imputation
-    cX = X*mask
-    [X_c, colMode] = imputeByMode(cX)
-    imputedVec = colMean + colMode
-  }
-  else 
-  {
-    imputedVec = colMean
-  }
-  X = imputeByMeanApply(X, imputedVec)
+  maskNA = is.na(X)
+  X = replace(target = X, pattern=NaN, replacement=0)
+  X = X + (maskNA * imputedVec)
 }

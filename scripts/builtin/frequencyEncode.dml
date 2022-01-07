@@ -19,11 +19,30 @@
 #
 #-------------------------------------------------------------
 
+#######################################################################
+# function frequency conversion
+# Inputs: The input dataset X, and  mask of the columns
+# Output: categorical columns are replaced with their frequencies
+#######################################################################
 
-X = read($1);
-[Y, Q1, Q3, IQR, k, r] = outlierByIQR(X, $2, $3, $4, FALSE);
-Yapply = outlierByIQRApply(X, Q1, Q3, IQR, k, r);
-Y = replace(target=Y, pattern=NaN, replacement=0)
-Yapply = replace(target=Yapply, pattern=NaN, replacement=0)
-print(sum(Y != Yapply) == 0)
-write(Y, $5)
+
+
+m_frequencyEncode = function(Matrix[Double] X, Matrix[Double] mask)
+return (Matrix[Double] X, Matrix[Double] freqCount) {
+  
+  tempX = replace(target=X, pattern=NaN, replacement=1)
+  freqCount = matrix(0, rows=ncol(tempX), cols = max(tempX))
+  if(sum(mask) > 0)
+  {
+    parfor(i in 1:ncol(mask))
+    {
+      if(as.scalar(mask[1, i]) == 1)
+      {
+        Y = tempX[, i]
+        valueCount = table(Y, 1)
+        freqCount[i, 1:nrow(valueCount)] = t(valueCount)
+      }
+    }
+  }
+  X = frequencyEncodeApply(X, freqCount)
+}

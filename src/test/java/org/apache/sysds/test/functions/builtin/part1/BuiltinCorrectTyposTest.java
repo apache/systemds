@@ -66,26 +66,23 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 
 	 @Test
 	 public void testCorrectTyposCPReport() throws IOException {
-		 runCorrectTyposTest("TRUE", 0.1, 3,
-			 "FALSE", "FALSE", 41, false, ExecType.CP);
+		 runCorrectTyposTest(0.1, 3, "FALSE", 41, false, ExecType.CP);
 	 }
 
 	@Test
 	public void testCorrectTyposCPCorrect() throws IOException {
-		runCorrectTyposTest("TRUE", 0.05, 3,
-			"TRUE", "FALSE", 42,true, ExecType.CP);
+		runCorrectTyposTest(0.05, 3, "FALSE", 42,true, ExecType.CP);
 	}
 
 	// TODO: Computing incorrect results for Spark
 	@Ignore
 	public void testCorrectTyposSP() throws IOException {
-		runCorrectTyposTest("TRUE", 0.05, 3, "TRUE",
-			"FALSE", 42, true, ExecType.SPARK);
+		runCorrectTyposTest(0.05, 3, "FALSE", 42, true, ExecType.SPARK);
 	}
 
 	
-	private void runCorrectTyposTest(String decapitalize, double frequency_threshold, int distance_threshold,
-		String correct, String is_verbose, Integer seed, boolean runVerify,	ExecType instType) throws IOException
+	private void runCorrectTyposTest(double frequency_threshold, int distance_threshold, String is_verbose, Integer seed, boolean runVerify,
+		ExecType instType) throws IOException
 	{
 		ExecMode platformOld = setExecMode(instType);
 
@@ -100,8 +97,6 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 				"-nvargs", "X=" + input("X"), "Y=" + output("Y"),
 				"frequency_threshold=" + frequency_threshold, 
 				"distance_threshold=" + distance_threshold,
-				"decapitalize=" + decapitalize,
-				"correct=" + correct,
 				"is_verbose=" + is_verbose};
 
 			generator = (seed != null)? new Random(seed): new Random();
@@ -109,7 +104,7 @@ public class BuiltinCorrectTyposTest extends AutomatedTestBase
 			FrameBlock frame = new FrameBlock(schema);
 			FrameBlock verificationFrame = new FrameBlock(schema);
 			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
-			initFrameData(frame, verificationFrame, decapitalize);
+			initFrameData(frame, verificationFrame, "TRUE");
 			verificationFrame = verificationFrame.slice(0, numberDataPoints-1, 0, 0, new FrameBlock());
 			writer.writeFrameToHDFS(frame.slice(0, numberDataPoints-1, 0, 0, new FrameBlock()),
 				input("X"), frame.getNumRows(), 1);

@@ -57,7 +57,7 @@ source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
 
 s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"), Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives,
   Frame[Unknown] parameters, Matrix[Double] cmr = matrix("4 0.7 1", rows=1, cols=3), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, 
-  Integer resource_val = 20, Double sample = 0.1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, String output)
+  Integer resource_val = 20, Integer num_inst = 5, Double sample = 0.1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, String output)
   return(Boolean perf)
   # return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores, Frame[Unknown] bestLogical,
   # Frame[Unknown] features, Double dirtyScore, Matrix[Double] evalFunHp)
@@ -71,7 +71,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   # prepare meta data
   # # keeping the meta list format if we decide to add more stuff in metadata
   [schema, mask, fdMask, maskY] = prepareMeta(dataTrain, metaData)
-  metaList = list(mask=mask, schema=schema, fd=fdMask)
+  metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=as.frame("null"))
   t2 = time(); print("-- Cleaning - Prepare Metadata: "+(t2-t1)/1e9+"s");
     
   # separate the label
@@ -153,9 +153,9 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   [bestLogical, score] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest, cmr=cmr, 
     cat=category, population=logical[2:nrow(logical)], max_iter=ceil(resource_val/topK), metaList = metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, primitives=primitives, param=parameters,
-    num_inst=nrow(primitives), num_exec=ceil(resource_val/topK), cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)
+    num_inst=num_inst, num_exec=ceil(resource_val/topK), cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)
   t6 = time(); print("---- finalized in: "+(t6-t5)/1e9+"s");
-
+  # bestLogical = frame(["MVI", "OTLR", "DUMMY"], rows=1, cols=3)
   topKPipelines = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); features = as.frame("NULL")
   
   # # [topKPipelines, topKHyperParams, topKScores, features] = 
@@ -210,13 +210,11 @@ runStringPipeline = function(Frame[Unknown] Xtrain, Frame[Unknown] Xtest, Frame[
 return(Frame[Unknown] Xtrain, Frame[Unknown] Xtest)
 {
   if(cv)
-    Xtrain = utils::stringProcessing(data=Xtrain, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
+    [Xtrain, Xtest] = utils::stringProcessing(train=Xtrain, test=Xtrain, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
   else
   {
     # # # binding train and test to use same dictionary for both
-    XAll = utils::stringProcessing(data=rbind(Xtrain, Xtest), mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
-    Xtrain = XAll[1:nrow(Xtrain),]
-    Xtest = XAll[nrow(Xtrain)+1:nrow(XAll),]
+    [Xtrain, Xtest] = utils::stringProcessing(train=Xtrain, test=Xtest, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
   }
 }
 
@@ -234,8 +232,8 @@ return(Double dirtyScore, Matrix[Double] evalFunHp)
   mask = as.matrix(metaList['mask']) 
   mask = ifelse(sum(mask == dmask) < ncol(mask), matrix(1, rows=1, cols=ncol(mask)), mask)
   [eXtrain, eXtest] = recodeData(X, Xtest, mask, cv, "recode")
-  eXtrain = replace(target=eXtrain, pattern=NaN, replacement = 0)
-  eXtest = replace(target=eXtest, pattern=NaN, replacement = 0)
+  eXtrain = replace(target=eXtrain, pattern=NaN, replacement = 1)
+  eXtest = replace(target=eXtest, pattern=NaN, replacement = 1)
   dirtyScore = 100
   print(prefix+" sample from train data and dummy code");
   [eXtrain, Ytrain] =  utils::doSample(eXtrain, Y, sample, TRUE)

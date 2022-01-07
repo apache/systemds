@@ -113,7 +113,7 @@ public class BuiltinImputeFDTest extends AutomatedTestBase {
 				break;
 			case 2:
 				s1 = new String[]  {"TU-Graz", "TU-Graz", "TU-Graz", "IIT", "IIT", "IIT", "IIT", "SIBA", "SIBA", "SIBA", "TU-Wien"};
-				s2 = new String[]  {"Austria", "Austria", "Austria", "India", "IIT", "In","India", "Pakistan", "Pakistan", null,"Austria"};
+				s2 = new String[]  {"Austria", "Austria", "Austria", "India", "IIT", "In","India", "Pakistan", null, null,"Austria"};
 				break;
 		}
 

@@ -19,42 +19,31 @@
 #
 #-------------------------------------------------------------
 
-# impute the data by mean value and if the feature is categorical then by mode value
-# Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
+# The winsorizeAPply takes the upper and lower quantile values and remove outliers.
 #
 # INPUT PARAMETERS:
 # ----------------------------------------------------------------------------------------------------------------------
-# NAME       TYPE              DEFAULT     MEANING
+# NAME      TYPE       DEFAULT       MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# X          Matrix[Double]    ---         Data Matrix (Recoded Matrix for categorical features)
-# mask       Matrix[Double]    ---         A 0/1 row vector for identifying numeric (0) and categorical features (1)
+# X    Matrix[Double]   ---          Input feature matrix
+# ql   Double           ---          lower quantile
+# qu   Double           ---          upper quantile 
+#
 # ----------------------------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ----------------------------------------------------------------------------------------------------------------------
-# NAME      TYPE                           MEANING
+# NAME     TYPE                             MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# X         Matrix[Double]                 imputed dataset
+# Y        Matrix[Double]                   Matrix without outlier values
 # ----------------------------------------------------------------------------------------------------------------------
 
-m_imputeByMean = function(Matrix[Double] X, Matrix[Double] mask)
-return(Matrix[Double] X, Matrix[Double] imputedVec)
+
+m_winsorizeApply = function(Matrix[Double] X,  Matrix[Double] qLower, Matrix[Double] qUpper) return (Matrix[Double] Y)
 {
-  nX = X*(mask==0)
-  nX = replace(target=nX, pattern=NaN, replacement=0);
-  #  mean imputation
-  colMean = colMeans(nX)
-
-  if(sum(mask) > 0)
-  {
-    # mode imputation
-    cX = X*mask
-    [X_c, colMode] = imputeByMode(cX)
-    imputedVec = colMean + colMode
-  }
-  else 
-  {
-    imputedVec = colMean
-  }
-  X = imputeByMeanApply(X, imputedVec)
+  # replace values outside [ql,qu] w/ ql and qu respectively
+  t1 = (X < qLower)
+  Y = ifelse(t1, (X * (t1 == 0))  + ( t1 * qLower), X);
+  t2 = Y > qUpper
+  Y = ifelse(t2, (Y * (t2 == 0))+ (t2 * qUpper), Y);
 }

@@ -79,7 +79,7 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] { "-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+data,
-				"metaData="+meta, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources,
+				"metaData="+meta, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources, "num_inst=5",
 				"sample="+sample, "testCV="+cv, "cvk="+cvk, "split="+split, "output="+OUTPUT, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);

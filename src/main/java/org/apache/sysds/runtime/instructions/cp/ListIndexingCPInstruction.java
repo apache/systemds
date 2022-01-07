@@ -84,7 +84,7 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 				else
 					ec.setVariable(output.getName(), lin.copy().set((int)rl.getLongValue()-1, scalar, li));
 			}
-			else if( input2.getDataType().isMatrix() ) { //LIST <- MATRIX/FRAME
+			else if( input2.getDataType().isMatrix() || input2.getDataType().isFrame()) { //LIST <- MATRIX/FRAME
 				CacheableData<?> dat = ec.getCacheableData(input2);
 				dat.enableCleanup(false);
 				LineageItem li = DMLScript.LINEAGE ? ec.getLineage().get(input2) : null;

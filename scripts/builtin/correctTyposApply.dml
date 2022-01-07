@@ -1,0 +1,95 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Corrects corrupted frames of strings
+# This algorithm operates on the assumption that most strings are correct
+# and simply swaps strings that do not occur often with similar strings that 
+# occur more often
+#
+# References:
+# Fred J. Damerau. 1964. 
+#   A technique for computer detection and correction of spelling errors. 
+#   Commun. ACM 7, 3 (March 1964), 171–176. 
+#   DOI:https://doi.org/10.1145/363958.363994
+#
+# INPUT PARAMETERS:
+# ------------------------------------------------------------------------------------------------------------------------
+# NAME                       TYPE             DEFAULT  MEANING
+# ------------------------------------------------------------------------------------------------------------------------
+# strings                    Frame[String]    ---      The nx1 input frame of corrupted strings
+# nullMask                   Matrix[Double]   ---      ---
+# frequency_threshold        Double           0.05     Strings that occur above this frequency level will not be corrected
+# distance_threshold         integer          2        Max distance at which strings are considered similar
+# distance matrix            Matrix[Double]         
+# dict                       Frame[String]        
+#
+# ------------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE                    MEANING
+# ------------------------------------------------------------------------------------------------------------------------
+# Y        Frame[String]           Corrected nx1 output frame
+# ------------------------------------------------------------------------------------------------------------------------
+
+# TODO: future: add parameter for list of words that are sure to be correct
+
+s_correctTyposApply = function(Frame[String] strings, Double frequency_threshold = 0.05, Integer distance_threshold = 2, Matrix[Double] distance_matrix, Frame[Unknown] dict)
+  return (Frame[String] Y)
+{
+  strings = map(strings, "s -> s.toLowerCase()");
+  Y = strings
+  frequencies = as.matrix(dict[,2]) / length(strings);
+  strings = dict[,1];
+  num_different_strings = nrow(strings)
+  sorted_frequency_idxs = order(target=frequencies, index.return=TRUE);
+  # correct strings
+  for (i in 1:num_different_strings) {
+    idx = as.integer(as.scalar(sorted_frequency_idxs[i])); # lowest frequency idx
+    frequency = as.scalar(frequencies[idx]);
+    if (frequency < frequency_threshold) {
+      min_idxs = t(order(target=t(distance_matrix[idx,]), index.return=TRUE));
+
+      j = 1;
+      break=FALSE;
+      while (j <= num_different_strings & !break) {
+        min_idx = as.integer(as.scalar(min_idxs[,j]));
+        min = as.integer(as.scalar(distance_matrix[idx, min_idx]));
+        replacement_frequency = as.scalar(frequencies[min_idx]);
+
+        # TODO: additional parameter for replacement_frequency?
+        if (min < distance_threshold & replacement_frequency > frequency_threshold/2) {
+          to_replace = as.scalar(strings[idx,]);
+          replacement = as.scalar(strings[min_idx,]);
+          Y = replaceStrings1(replacement, to_replace, Y);
+          break=TRUE;
+        }
+        j += 1;
+      }
+    }
+  }
+}
+
+replaceStrings1 = function(String replacement, String to_replace, Frame[String] strings)
+  return(Frame[String] strings) 
+{
+  strings = map(strings, "s -> s.equals(\""+to_replace+"\") ? \""+replacement+"\" : s");
+}

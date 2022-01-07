@@ -24,112 +24,73 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 
 import java.io.Serializable;
-import java.util.HashSet;
 
 public class CustomProperties extends FileFormatProperties implements Serializable {
-	protected static final Log LOG = LogFactory.getLog(CustomProperties.class.getName());
+	private static final Log LOG = LogFactory.getLog(CustomProperties.class.getName());
 	private static final long serialVersionUID = -4447926749068752721L;
 
-	private String delim;
-	private String indexDelim;
-	private HashSet<String> naStrings;
-	private int firstColIndex;
-	private int firstRowIndex;
+	public enum IndexProperties {
+		IDENTIFY, PREFIX, KEY;
 
-	protected enum GRPattern {
-		Regular, Irregular;
-
-		@Override
-		public String toString() {
-			return this.name().toLowerCase();
-		}
-	}
-
-	protected enum GRSymmetry {
-		GENERAL, SYMMETRIC, SKEW_SYMMETRIC;
-
-		@Override
-		public String toString() {
+		@Override public String toString() {
 			return this.name().toLowerCase().replaceAll("_", "-");
 		}
 	}
 
-	private GRPattern rowPattern;
-	private GRPattern colPattern;
-	private GRSymmetry grSymmetry;
+	private IndexProperties rowIndex;
+	private IndexProperties colIndex;
 
-	public CustomProperties() {
+	// When the Row and Column Index are identify
+	private ColumnIdentifyProperties[] columnIdentifyProperties;
+
+	// When the index is prefixes
+	private Integer rowIndexPrefixPosition;
+	private String rowIndexPrefixDelim;
+	private Boolean rowIndexPrefixDelimFixLength;
+
+	public void setRowColIdentifyProperties(ColumnIdentifyProperties[] columnIdentifyProperties) {
+		this.columnIdentifyProperties = columnIdentifyProperties;
+		this.rowIndex = IndexProperties.IDENTIFY;
+		this.colIndex = IndexProperties.IDENTIFY;
 	}
 
-	// Row & Col Regular Format
-	public CustomProperties(GRPattern rowPattern, String delim, HashSet<String> naStrings) {
-		this.delim = delim;
-		this.naStrings = naStrings;
-		this.rowPattern = rowPattern;
-		this.colPattern = GRPattern.Regular;
-		this.grSymmetry = GRSymmetry.GENERAL;
-		this.firstRowIndex = 0;
-		this.firstColIndex = 0;
+	public IndexProperties getRowIndex() {
+		return rowIndex;
 	}
 
-	// Row Regular & Col Irregular Format
-	public CustomProperties(GRPattern rowPattern, String delim, String indexDelim, int firstColIndex) {
-		this.delim = delim;
-		this.indexDelim = indexDelim;
-		this.rowPattern = rowPattern;
-		this.colPattern = GRPattern.Irregular;
-		this.grSymmetry = GRSymmetry.GENERAL;
-		this.firstColIndex = firstColIndex;
-		this.firstRowIndex = 0;
+	public void setRowIndex(IndexProperties rowIndex) {
+		this.rowIndex = rowIndex;
 	}
 
-	// Row Irregular format
-	public CustomProperties(GRSymmetry grSymmetry, String delim, int firstRowIndex, int firstColIndex) {
-		this.delim = delim;
-		this.grSymmetry = grSymmetry;
-		this.colPattern = GRPattern.Regular;
-		this.rowPattern = GRPattern.Irregular;
-		this.firstColIndex = firstColIndex;
-		this.firstRowIndex = firstRowIndex;
+	public IndexProperties getColIndex() {
+		return colIndex;
 	}
 
-	public String getDelim() {
-		return delim;
+	public void setColIndex(IndexProperties colIndex) {
+		this.colIndex = colIndex;
 	}
 
-	public String getIndexDelim() {
-		return indexDelim;
+	public Integer getRowIndexPrefixPosition() {
+		return rowIndexPrefixPosition;
 	}
 
-	public HashSet<String> getNaStrings() {
-		return naStrings;
+	public void setRowIndexPrefixPosition(Integer rowIndexPrefixPosition) {
+		this.rowIndexPrefixPosition = rowIndexPrefixPosition;
 	}
 
-	public GRPattern getRowPattern() {
-		return rowPattern;
+	public String getRowIndexPrefixDelim() {
+		return rowIndexPrefixDelim;
 	}
 
-	public GRPattern getColPattern() {
-		return colPattern;
+	public void setRowIndexPrefixDelim(String rowIndexPrefixDelim) {
+		this.rowIndexPrefixDelim = rowIndexPrefixDelim;
 	}
 
-	public GRSymmetry getGrSymmetry() {
-		return grSymmetry;
+	public Boolean getRowIndexPrefixDelimFixLength() {
+		return rowIndexPrefixDelimFixLength;
 	}
 
-	public int getFirstColIndex() {
-		return firstColIndex;
-	}
-
-	public void setFirstColIndex(int firstColIndex) {
-		this.firstColIndex = firstColIndex;
-	}
-
-	public int getFirstRowIndex() {
-		return firstRowIndex;
-	}
-
-	public void setFirstRowIndex(int firstRowIndex) {
-		this.firstRowIndex = firstRowIndex;
+	public void setRowIndexPrefixDelimFixLength(Boolean rowIndexPrefixDelimFixLength) {
+		this.rowIndexPrefixDelimFixLength = rowIndexPrefixDelimFixLength;
 	}
 }

@@ -340,6 +340,10 @@ public class RawIndex {
 		return raw.substring(start, end);
 	}
 
+	public int getRawLength() {
+		return rawLength;
+	}
+
 	public static void main(String[] args) {
 		String s = "123dddd56";
 		RawIndex ni = new RawIndex(s);

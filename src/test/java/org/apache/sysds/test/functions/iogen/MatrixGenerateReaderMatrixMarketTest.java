@@ -139,7 +139,7 @@ public class MatrixGenerateReaderMatrixMarketTest extends GenerateReaderMatrixTe
 
 	@Test
 	public void test1_2() {
-		generateRandomMM(1, 5, 100, -100, 100, 1, ",,,,,");
+		generateRandomMM(1, 500, 1000, -100, 100, 1, ",,,,,");
 		runGenerateReaderTest();
 	}
 

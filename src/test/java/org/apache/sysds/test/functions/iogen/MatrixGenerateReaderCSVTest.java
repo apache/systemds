@@ -68,7 +68,7 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderMatrixTest {
 	@Test
 	public void test2() {
 		String[] naString = {"NaN"};
-		generateRandomCSV(5, 5, -10, 10, 1, ",", naString);
+		generateRandomCSV(1000, 10000, -10, 10, 1, ",", naString);
 		runGenerateReaderTest();
 	}
 
@@ -82,7 +82,7 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderMatrixTest {
 	@Test
 	public void test4() {
 		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
-		generateRandomCSV(50, 50, -10, 10, 0.5, ",,", naString);
+		generateRandomCSV(5, 5, -10, 10, 0.5, ",,", naString);
 		runGenerateReaderTest();
 	}
 

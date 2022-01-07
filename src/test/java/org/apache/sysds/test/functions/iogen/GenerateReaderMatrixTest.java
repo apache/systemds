@@ -19,11 +19,11 @@
 
 package org.apache.sysds.test.functions.iogen;
 
+import com.google.gson.Gson;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.CompilerConfig;
-import org.apache.sysds.runtime.io.MatrixReader;
-import org.apache.sysds.runtime.iogen.GenerateReader;
+import org.apache.sysds.runtime.iogen.ReaderMapping;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -89,10 +89,17 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 			String dataPath = HOME + "matrix_data.raw";
 			int clen = sampleMatrix[0].length;
 			writeRawString(sampleRaw, dataPath);
-			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
+			ReaderMapping r2 = new ReaderMapping(sampleRaw, sampleMB);
+			//System.out.println(r2.isMapped());
 
-			MatrixReader mr= gr.getReader();
-			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, -1, clen, -1, -1);
+			Gson gson=new Gson();
+			System.out.println(gson.toJson(r2.getFormatProperties()));
+
+
+//			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
+//
+//			MatrixReader mr= gr.getReader();
+//			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, -1, clen, -1, -1);
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

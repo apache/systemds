@@ -45,9 +45,9 @@ public abstract class GenerateReader {
 
 	public GenerateReader(SampleProperties sampleProperties) throws Exception {
 
-		readerMapping = sampleProperties.getDataType().isMatrix() ? new ReaderMapping.MatrixReaderMapping(
-			sampleProperties.getSampleRaw(), sampleProperties.getSampleMatrix()) : new ReaderMapping.FrameReaderMapping(
-			sampleProperties.getSampleRaw(), sampleProperties.getSampleFrame());
+		readerMapping = sampleProperties.getDataType().isMatrix() ? new ReaderMapping(sampleProperties.getSampleRaw(),
+			sampleProperties.getSampleMatrix()) : new ReaderMapping(sampleProperties.getSampleRaw(),
+			sampleProperties.getSampleFrame());
 	}
 
 	// Generate Reader for Matrix

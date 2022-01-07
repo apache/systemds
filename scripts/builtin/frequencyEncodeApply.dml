@@ -19,11 +19,19 @@
 #
 #-------------------------------------------------------------
 
+m_frequencyEncodeApply = function(Matrix[Double] X, Matrix[Double] freqCount)
+return (Matrix[Double] X) {
 
-X = read($1);
-[Y, Q1, Q3, IQR, k, r] = outlierByIQR(X, $2, $3, $4, FALSE);
-Yapply = outlierByIQRApply(X, Q1, Q3, IQR, k, r);
-Y = replace(target=Y, pattern=NaN, replacement=0)
-Yapply = replace(target=Yapply, pattern=NaN, replacement=0)
-print(sum(Y != Yapply) == 0)
-write(Y, $5)
+ parfor(i in 1:ncol(X))
+  {
+    if(sum(freqCount[i]) > 0)
+    {
+      Y = replace(target=X[, i], pattern=NaN, replacement=1)
+      valueCount = freqCount[i, 1:max(Y)]
+      resp = matrix(0, nrow(Y), max(Y))
+      resp = (resp + t(seq(1, max(Y)))) == Y
+      resp = resp * valueCount
+      X[, i] = rowSums(resp)
+    }
+  }
+}

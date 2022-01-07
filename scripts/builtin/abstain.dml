@@ -35,26 +35,27 @@
 # ----------------------------------------------------------------------------------------------------------------------
 # NAME      TYPE             MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# abstain   Matrix[Double]   ---
+# Xout   Matrix[Double]   ---
+# Yout   Matrix[Double]   ---
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_abstain = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Boolean verbose = FALSE)
-return (Matrix[Double] abstain)
+return (Matrix[Double] Xout, Matrix[Double] Yout)
 {
-
+  Xout = X
+  Yout = Y
   # for(i in 1:100) {
   if(min(Y) != max(Y))
   {
     betas = multiLogReg(X=X, Y=Y, icpt=1, reg=1e-4, maxi=100, maxii=0, verbose=FALSE)
     [prob, yhat, accuracy] = multiLogRegPredict(X, betas, Y, FALSE)
-    abstain = cbind(X, Y)
+    # abstain = cbind(X, Y)
     inc = ((yhat != Y) & (rowMaxs(prob) > threshold))
     if(sum(inc) > 0)
     {
       # print("inc vector "+toString(inc))
-      abstain = removeEmpty(target = cbind(X, Y), margin = "rows", select = (inc == 0) )
+      Xout = removeEmpty(target = X, margin = "rows", select = (inc == 0) )
+      Yout = removeEmpty(target = Y, margin = "rows", select = (inc == 0) )
     }
   }
-  else 
-    abstain = cbind(X, Y)
 }

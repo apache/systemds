@@ -177,7 +177,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
 }
 
 # this method will extract the physical pipelines for a given logical pipelines
-get_physical_configurations = function(Frame[String] logical, Scalar[int] numConfigs, 
+get_physical_configurations = function(Frame[String] logical, Scalar[int] numConfigs = 0, 
   Frame[Unknown] primitives)
   return(Frame[String] physical, Double min)
 {
@@ -229,6 +229,7 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] numCon
     paramLens[j,1] = nrow(vect);
   }
   min = prod(paramLens)
+  numConfigs = ifelse(numConfigs == 0, min, numConfigs)
   sample = ifelse(min > numConfigs, TRUE, FALSE)
   paramVals = matrix(0, ncol(logical), max(paramLens));
   for( j in 1:ncol(logical) ) {
@@ -236,12 +237,17 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] numCon
     paramVals[j,1:nrow(vect)] = t(vect);
   }
   cumLens = rev(cumprod(rev(paramLens))/rev(paramLens));
+  XI = table(seq(1,nrow(cumLens)), sample(nrow(cumLens),nrow(cumLens)))
+  cumLens = XI %*% cumLens
   # materialize hyper-parameter combinations 
   HP = matrix(0, min(numConfigs, min), ncol(logical));
+  pip = seq(1,nrow(HP))
   if(sample) 
-    pip = sample(numConfigs,numConfigs)
-  else pip = seq(1,nrow(HP))
-  for( i in 1:nrow(HP) ) {
+    pip = sample(nrow(HP),numConfigs)
+  XI = table(seq(1,nrow(pip)), sample(nrow(pip),nrow(pip)))
+  pip = XI %*% pip
+  
+  for( i in 1:nrow(HP)) {
     for( j in 1:ncol(logical) ) {
       HP[i,j] = paramVals[j,as.scalar((as.scalar(pip[i,1])/cumLens[j,1])%%paramLens[j,1]+1)];
     }
@@ -274,12 +280,13 @@ run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer
   for(i in 1:nrow(ph_pip))
   {
     # execute configurations with r resources
-    [hp, no_of_res, no_of_flag_vars] = getHyperparam(ph_pip[i], param, r_i)
+    [hp, applyFunctions, no_of_res, no_of_flag_vars] = getHyperparam(ph_pip[i], param, r_i)
     if(ncol(featureFrameOuter) > 1)
       feaFrame = frame("", rows = no_of_res, cols = ncol(featureFrameOuter))
     pip_toString = pipToString(ph_pip[i])
     hpForPruning = matrix(0, rows=1, cols=ncol(lp))
     changesByOp = matrix(0, rows=1, cols=ncol(lp))
+    metaList["applyFunc"] = applyFunctions
     for(r in 1:no_of_res)
     {
       # as the matrix first block of r rows belongs to first operator and r+1 block of rows to second operator 
@@ -305,7 +312,7 @@ run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer
         else 
         {
           [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp] = executePipeline(logical=lp, pipeline=ph_pip[i], 
-            X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
+            Xtrain=X, Ytrain=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
             changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
           if(max(eYtrain) == min(eYtrain)) 
             print("Y contains only one class")
@@ -349,7 +356,7 @@ run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer
 
 # extract the hyper-parameters for pipelines
 getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Integer no_of_res)
-  return (Matrix[Double] paramMatrix, Integer no_of_res, Integer NUM_META_FLAGS)
+  return (Matrix[Double] paramMatrix, Frame[Unknown] applyFunc, Integer no_of_res, Integer NUM_META_FLAGS)
 {
 
   allParam = 0;
@@ -360,6 +367,9 @@ getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Intege
   # store the row indexes of the operator matches
   indexes = matrix(0, rows= ncol(pipeline), cols=1)
   paramCount = matrix(0, rows= ncol(pipeline), cols=1)
+  applyList = hpList[, 1]
+  hpList = hpList[, 2:ncol(hpList)]
+  applyFunc = pipeline
   parfor(k in 1:ncol(pipeline))
   {
     op = as.scalar(pipeline[1,k])
@@ -372,6 +382,7 @@ getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Intege
     index = as.scalar(removeEmpty(target = index, margin = "rows"))
     indexes[k] = index
     paramCount[k] = as.integer(as.scalar(hpList[index, 2]))
+    applyFunc[1, k] = as.scalar(applyList[index, 1])
   }
   # if there are no hyper-parameters than change the values of resources
   # so that the pipeline is only executed once and no resource are wasted, saving looping

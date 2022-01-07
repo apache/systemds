@@ -24,10 +24,10 @@
 #
 # INPUT PARAMETERS:
 # ----------------------------------------------------------------------------------------------------------------------
-# NAME       TYPE              DEFAULT     MEANING
+# NAME                     TYPE              DEFAULT     MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# X          Matrix[Double]    ---         Data Matrix (Recoded Matrix for categorical features)
-# mask       Matrix[Double]    ---         A 0/1 row vector for identifying numeric (0) and categorical features (1)
+# X                      Matrix[Double]    ---         Data Matrix (Recoded Matrix for categorical features)
+# imputationVector       Matrix[Double]    ---         column mean vector
 # ----------------------------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -37,24 +37,11 @@
 # X         Matrix[Double]                 imputed dataset
 # ----------------------------------------------------------------------------------------------------------------------
 
-m_imputeByMean = function(Matrix[Double] X, Matrix[Double] mask)
-return(Matrix[Double] X, Matrix[Double] imputedVec)
+m_imputeByMeanApply = function(Matrix[Double] X, Matrix[Double] imputedVec)
+return(Matrix[Double] X)
+# return(List[Unknown] out)
 {
-  nX = X*(mask==0)
-  nX = replace(target=nX, pattern=NaN, replacement=0);
-  #  mean imputation
-  colMean = colMeans(nX)
-
-  if(sum(mask) > 0)
-  {
-    # mode imputation
-    cX = X*mask
-    [X_c, colMode] = imputeByMode(cX)
-    imputedVec = colMean + colMode
-  }
-  else 
-  {
-    imputedVec = colMean
-  }
-  X = imputeByMeanApply(X, imputedVec)
+  maskNA = is.na(X)
+  X = replace(target = X, pattern=NaN, replacement=0)
+  X = X + (maskNA * imputedVec)
 }

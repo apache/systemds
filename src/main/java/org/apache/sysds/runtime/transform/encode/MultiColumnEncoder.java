@@ -142,7 +142,7 @@ public class MultiColumnEncoder implements Encoder {
 	 * ColumnCompositeUpdateDCTask: Update domain size of a DC encoder based on #distincts, #bins, K
 	 * ColumnMetaDataTask:          Fill up metadata of an encoder
 	 * ApplyTasksWrapperTask:       Wrapper task for an Apply
-	 * UpdateOutputColTask:         Sets starting offsets of the DC columns
+	 * UpdateOutputColTask:         Set starting offsets of the DC columns
 	 */
 	private List<DependencyTask<?>> getEncodeTasks(CacheBlock in, MatrixBlock out, DependencyThreadPool pool) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
@@ -166,13 +166,14 @@ public class MultiColumnEncoder implements Encoder {
 				// getMetaDataTask depends on build completion
 				depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2}, //MetaDataTask
 					new Integer[] {tasks.size() - 1, tasks.size()});           //BuildTask
-				// getMetaDataTask depends on AllocMeta task
-				depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2}, //MetaDataTask
-					new Integer[] {1, 2});                                     //AllocMetaTask (2nd task)
 				// AllocMetaTask depends on the build completion tasks
 				depMap.put(new Integer[] {1, 2},                               //AllocMetaTask (2nd task)
 					new Integer[] {tasks.size() - 1, tasks.size()});           //BuildTask
 			}
+
+			// getMetaDataTask depends on AllocMeta task
+			depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2},     //MetaDataTask
+				new Integer[] {1, 2});                                         //AllocMetaTask (2nd task)
 
 			// Apply Task depends on InitOutputMatrixTask (output allocation)
 			depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},         //ApplyTask

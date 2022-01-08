@@ -60,13 +60,13 @@ RUN apt-get update -qq \
 	rm -r target/hadoop-test && \
 	rm -r target/maven-archiver && \
 	rm -r target/systemds-** && \
-	rm -r docker && \
 	rm -r docs && \
 	rm -r src && \
 	rm -r /usr/lib/mvn && \
 	rm -r CONTRIBUTING.md && \
 	rm -r pom.xml && \ 
 	rm -r ~/.m2
+
 
 COPY docker/mountFolder/main.dml /input/main.dml
 

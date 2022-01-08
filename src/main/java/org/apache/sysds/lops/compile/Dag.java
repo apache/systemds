@@ -243,7 +243,12 @@ public class Dag<N extends Lop>
 			}
 		}
 	}
-	
+
+	/**
+	 * Sort lops depth-first
+	 * @param v List of lops to sort
+	 * @return Sorted list of lops
+	 */
 	private static List<Lop> doTopologicalSortTwoLevelOrder(List<Lop> v) {
 		//partition nodes into leaf/inner nodes and dag root nodes,
 		//+ sort leaf/inner nodes by ID to force depth-first scheduling
@@ -287,37 +292,33 @@ public class Dag<N extends Lop>
 		}
 	}
 
+	/**
+	 * Sort lops to execute them in an order that minimizes the memory requirements of intermediates
+	 * @param v List of lops to sort
+	 * @return Sorted list of lops
+	 */
 	private static List<Lop> doMinIntermediateSort(List<Lop> v) {
 		List<Lop> nodes = new ArrayList<>(v.size());
+		// Get the lowest level in the tree to move upwards from
 		List<Lop> lowestLevel = v.stream().filter(l -> l.getOutputs().isEmpty()).collect(Collectors.toList());
 
-		// Traverse the tree bottom up, choose nodes with higher memory requirements, then reverse list
+		// Traverse the tree bottom up, choose nodes with higher memory requirements, then reverse the list
 		List<Lop> remaining = new LinkedList<>(v);
 		sortRecursive(nodes, lowestLevel, remaining);
+
+		// In some cases (function calls) some output lops are not in the list of nodes to be sorted.
+		// With the next layer up having output lops, they are not added to the initial list of lops and are
+		// subsequently never reached by the recursive sort.
+		// We work around this issue by checking for remaining lops after the initial sort.
 		while (!remaining.isEmpty()) {
-			int sizeBefore = nodes.size();
+			// Start with the lowest level lops, this time by level instead of no outputs
 			int maxLevel = remaining.stream().mapToInt(Lop::getLevel).max().orElse(-1);
 			List<Lop> lowestNodes = remaining.stream().filter(l -> l.getLevel() == maxLevel)
 				.collect(Collectors.toList());
 			sortRecursive(nodes, lowestNodes, remaining);
-
-			int delta = nodes.size() - sizeBefore;
-			List<Lop> added = new ArrayList<>(delta);
-			for (int i = nodes.size() - 1; i >= sizeBefore; i--) {
-				added.add(nodes.get(i));
-				nodes.remove(i);
-			}
-			Collections.reverse(added);
-			long minId = added.stream().mapToLong(Lop::getID).min().getAsLong();
-
-			int index = 0;
-			for (int i = 0; i < nodes.size(); i++) {
-				if (nodes.get(i).getID() < minId)
-					index = i;
-			}
-
-			nodes.addAll(index, added);
 		}
+
+		// All lops were added bottom up, from highest to lowest memory consumption, now reverse this
 		Collections.reverse(nodes);
 
 		//printStats(nodes);
@@ -326,20 +327,27 @@ public class Dag<N extends Lop>
 	}
 
 	private static void sortRecursive(List<Lop> result, List<Lop> input, List<Lop> remaining) {
-		// Sort by memory estimate
+		// Sort input lops by memory estimate
+		// Lowest level nodes (those with no outputs) receive a memory estimate of 0 to preserve order
+		// This affects prints, writes, ...
 		List<Map.Entry<Lop, Long>> memEst = input.stream().distinct().map(l -> new AbstractMap.SimpleEntry<>(l,
 			l.getOutputs().isEmpty() ? 0 : OptimizerUtils.estimateSizeExactSparsity(l.getOutputParameters().getNumRows(),
 				l.getOutputParameters().getNumCols(), l.getOutputParameters().getNnz())))
 			.sorted(Comparator.comparing(e -> ((Map.Entry<Lop, Long>) e).getValue()))
 			.collect(Collectors.toList());
-		Collections.reverse(memEst);
 
+		// Start with the highest memory estimate because the entire list is reversed later
+		Collections.reverse(memEst);
 		for (Map.Entry<Lop, Long> e : memEst) {
+			// Skip if the node is already in the result list
+			// Skip if one of the lop's outputs is not in the result list yet (will be added once the output lop is
+			// traversed), but only if any of the output lops is bound to be added to the result at a later stage
 			if (result.contains(e.getKey()) ||
 				(!result.containsAll(e.getKey().getOutputs()) &&
 					remaining.stream().anyMatch(l -> e.getKey().getOutputs().contains(l)))) continue;
 			result.add(e.getKey());
 			remaining.remove(e.getKey());
+			// Add input lops recursively
 			sortRecursive(result, e.getKey().getInputs(), remaining);
 		}
 	}

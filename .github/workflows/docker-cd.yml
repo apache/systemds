@@ -23,6 +23,8 @@
 name: Docker Image CI and CD
 
 on:
+  schedule:
+    - cron: '30 1 * * *' # everyday at 1:30 PM UTC
   workflow_dispatch:
   
 
@@ -34,6 +36,14 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    
+    - name: Configure Docker metadata
+      id: meta
+      uses: docker/metadata-action@v3
+      with:
+        images: apache/systemds
+        tags: |
+          type=schedule,pattern=nightly
 
     # https://github.com/docker/setup-buildx-action
     - name: Set up Docker Buildx
@@ -68,5 +78,6 @@ jobs:
         context: .
         file: ./docker/sysds.Dockerfile
         push: true
-        tags: apache/systemds:nightly
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
         

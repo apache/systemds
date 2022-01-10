@@ -41,7 +41,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v3
       with:
-        images: return01/systemds
+        images: apache/systemds
         tags: |
           type=schedule,pattern=nightly
 

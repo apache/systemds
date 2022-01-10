@@ -29,8 +29,8 @@ P = table(seq(1,nrow(IX)), IX, nrow(IX), nrow(X));
 X = P %*% X
 Y = P %*% Y
 
-balanced = underSampling(X, Y, ratio)
-classesBalanced = table(balanced[, ncol(balanced)], 1)
+[balancedX, balancedY] = underSampling(X, Y, ratio)
+classesBalanced = table(balancedY, 1)
 out = as.scalar(classesUnBalanced[1] - classesBalanced[1]) == floor(15.0*ratio)
 print(out)
 

@@ -40,8 +40,13 @@ for(i in 1:nrow(idx))
 q0 = 0.05
 q1 = 0.95
 
-[W, M] = fixInvalidLengths(F1, mask, q0, q1)
+[W, mask, qLow, qUp] = fixInvalidLengths(F1, mask, q0, q1)
+W1 = fixInvalidLengthsApply(F1, mask, qLow, qUp)
 comp = as.matrix(W != F)
 out = sum(comp) == 0
-print(out)
+
+comp = as.matrix(F != W1)
+out2 = sum(comp) == 0
+out = out == out2
+
 write(out, $2)

@@ -20,5 +20,10 @@
 #-------------------------------------------------------------
 
 X = read($1);
-Y = outlierBySd(X, $2, $3, $4, FALSE);
+[Y, colMean, colSd, k, r] = outlierBySd(X, $2, $3, $4, FALSE);
+Yapply = outlierBySdApply(X=Y, colMean=colMean, colSD=colSd, k=k, repairMethod=r);
+Y = replace(target=Y, pattern=NaN, replacement=0)
+Yapply = replace(target=Yapply, pattern=NaN, replacement=0)
+print(sum(Y != Yapply) == 0)
 write(Y, $5)
+

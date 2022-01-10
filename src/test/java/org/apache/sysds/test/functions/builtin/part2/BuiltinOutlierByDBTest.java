@@ -41,8 +41,10 @@ public class BuiltinOutlierByDBTest extends AutomatedTestBase
 
 	private final static double eps = 1e-3;
 	private final static int rows = 1700;
+	private final static int cols = 3;
+	private final static int min = -10;
+	private final static int max = 10;
 
-	private final static double epsDBSCAN = 1;
 	private final static int minPts = 5;
 
 	@Override
@@ -51,16 +53,26 @@ public class BuiltinOutlierByDBTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testDBSCANOutlierDefaultCP() {
-		runOutlierByDBSCAN(true, ExecType.CP);
+	public void testDBSCANOutlierDefault0CP() {
+		runOutlierByDBSCAN(true, 6, 18, 1, ExecType.CP);
 	}
 
 	@Test
-	public void testDBSCANOutlierDefaultSP() {
-		runOutlierByDBSCAN(true, ExecType.SPARK);
+	public void testDBSCANOutlierDefault0SP() {
+		runOutlierByDBSCAN(true, 6, 18, 1, ExecType.SPARK);
 	}
 
-	private void runOutlierByDBSCAN(boolean defaultProb, ExecType instType)
+	@Test
+	public void testDBSCANOutlierDefault1CP() {
+		runOutlierByDBSCAN(true, 5, 15, 1, ExecType.CP);
+	}
+
+	@Test
+	public void testDBSCANOutlierDefault1SP() {
+		runOutlierByDBSCAN(true, 5, 15, 1, ExecType.SPARK);
+	}
+
+	private void runOutlierByDBSCAN(boolean defaultProb, int seedA, int seedB, double epsDB, ExecType instType)
 	{
 		ExecMode platformOld = setExecMode(instType);
 
@@ -71,16 +83,16 @@ public class BuiltinOutlierByDBTest extends AutomatedTestBase
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-explain","-nvargs",
-				"X=" + input("A"), "Y=" + input("B"),"Z=" + output("C"), "eps=" + epsDBSCAN, "minPts=" + minPts};
+				"X=" + input("A"), "Y=" + input("B"),"Z=" + output("C"), "eps=" + epsDB, "minPts=" + minPts};
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = getRCmd(inputDir(), inputDir(), Double.toString(epsDBSCAN), Integer.toString(minPts), expectedDir());
+			rCmd = getRCmd(inputDir(), inputDir(), Double.toString(epsDB), Integer.toString(minPts), expectedDir());
 
 			//generate actual dataset
-			double[][] A = getNonZeroRandomMatrix(rows, 3, -10, 10, 7);
+			double[][] A = getNonZeroRandomMatrix(rows, cols, min, max, seedA);
 			writeInputMatrixWithMTD("A", A, true);
-			double[][] B = getNonZeroRandomMatrix(rows, 3, -10, 10, 7);
+			double[][] B = getNonZeroRandomMatrix(rows, cols, min, max, seedB);
 			writeInputMatrixWithMTD("B", B, true);
-
+			
 			runTest(true, false, null, -1);
 			runRScript(true);
 

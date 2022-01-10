@@ -80,7 +80,7 @@ m_dbscan = function (Matrix[Double] X, Double eps = 0.5, Integer minPts = 5)
         
         # create model
         for(iter in 1:num_records) {
-            if(as.scalar(clusterMembers[iter,1]) != UNASSIGNED) {
+            if(as.scalar(clusterMembers[iter,1]) > 0) {
                 clusterModel = rbind(clusterModel, matrix(X[iter, ], rows=1, cols=num_features));
             }
         }

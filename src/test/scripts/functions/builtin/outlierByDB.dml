@@ -26,4 +26,4 @@ minPts = as.integer($minPts);
 
 [indices, clusterModel] = dbscan(X = X, eps = eps, minPts = minPts);
 Z = outlierByDB(Xtest=Y, clusterModel = clusterModel, eps = eps);
-write(Z, $Z)
+write(Z, $Z);

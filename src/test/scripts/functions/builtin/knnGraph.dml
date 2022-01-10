@@ -19,29 +19,12 @@
 #
 #-------------------------------------------------------------
 
-/*
+
 X = read($in_X)
 k = $in_k
 
-[NNR, PR, FI] = knn(Train=X,  Test=T, CL=CL, k_value=k, predict_con_tg=1);
+G = knnGraph(X, k);
+write(G, $out_G);
 
-PR_val = matrix(0, 0, ncol(T));
-for(i in 1:nrow(T)) {
-  PR_val = rbind(PR_val, X[as.scalar(PR[i]), ]);
-}
-
-write(NNR, $out_NNR);
-write(PR_val, $out_PR);
-*/
-
-
-
-A = matrix(0, rows=10, cols=8);
-
-for(i in 1:nrow(A)) {
-    A[i,] = A[i,] + i;
-}
-
-M = knnGraph(A, 2);
-print(toString(A));
-print(toString(M));
+#print(toString(X));
+#print(toString(G));

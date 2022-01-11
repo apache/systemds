@@ -88,6 +88,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 					" and not MatrixBlock");
 		}
 		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+		mcsr = false; //force CSR for transformencode
 		Set<Integer> sparseRowsWZeros = null;
 		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {

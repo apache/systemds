@@ -43,6 +43,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -134,46 +135,68 @@ public class MultiColumnEncoder implements Encoder {
 		return out;
 	}
 
+	/* TASK DETAILS:
+	 * InitOutputMatrixTask:        Allocate output matrix
+	 * AllocMetaTask:               Allocate metadata frame
+	 * BuildTask:                   Build an encoder
+	 * ColumnCompositeUpdateDCTask: Update domain size of a DC encoder based on #distincts, #bins, K
+	 * ColumnMetaDataTask:          Fill up metadata of an encoder
+	 * ApplyTasksWrapperTask:       Wrapper task for an Apply
+	 * UpdateOutputColTask:         Set starting offsets of the DC columns
+	 */
 	private List<DependencyTask<?>> getEncodeTasks(CacheBlock in, MatrixBlock out, DependencyThreadPool pool) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<DependencyTask<?>> applyTAgg = null;
 		Map<Integer[], Integer[]> depMap = new HashMap<>();
 		boolean hasDC = getColumnEncoders(ColumnEncoderDummycode.class).size() > 0;
 		boolean applyOffsetDep = false;
+		_meta = new FrameBlock(in.getNumColumns(), ValueType.STRING);
+		// Create the output and metadata allocation tasks
 		tasks.add(DependencyThreadPool.createDependencyTask(new InitOutputMatrixTask(this, in, out)));
-		for(ColumnEncoderComposite e : _columnEncoders) {
-			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in);
+		tasks.add(DependencyThreadPool.createDependencyTask(new AllocMetaTask(this, _meta)));
 
+		for(ColumnEncoderComposite e : _columnEncoders) {
+			// Create the build tasks
+			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in);
 			tasks.addAll(buildTasks);
 			if(buildTasks.size() > 0) {
-				// Apply Task dependency to build completion task
-				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},
-					new Integer[] {tasks.size() - 1, tasks.size()});
+				// Apply Task depends on build completion task
+				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},      //ApplyTask
+					new Integer[] {tasks.size() - 1, tasks.size()});            //BuildTask
+				// getMetaDataTask depends on build completion
+				depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2}, //MetaDataTask
+					new Integer[] {tasks.size() - 1, tasks.size()});           //BuildTask
+				// AllocMetaTask depends on the build completion tasks
+				depMap.put(new Integer[] {1, 2},                               //AllocMetaTask (2nd task)
+					new Integer[] {tasks.size() - 1, tasks.size()});           //BuildTask
 			}
 
-			// Apply Task dependency to InitOutputMatrixTask
-			depMap.put(new Integer[] {tasks.size(), tasks.size() + 1}, new Integer[] {0, 1});
+			// getMetaDataTask depends on AllocMeta task
+			depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2},     //MetaDataTask
+				new Integer[] {1, 2});                                         //AllocMetaTask (2nd task)
+
+			// Apply Task depends on InitOutputMatrixTask (output allocation)
+			depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},         //ApplyTask
+					new Integer[] {0, 1});                                     //Allocation task (1st task)
 			ApplyTasksWrapperTask applyTaskWrapper = new ApplyTasksWrapperTask(e, in, out, pool);
 
 			if(e.hasEncoder(ColumnEncoderDummycode.class)) {
-				// InitMatrix dependency to build of recode if a DC is present
-				// Since they are the only ones that change the domain size which would influence the Matrix creation
-				depMap.put(new Integer[] {0, 1}, // InitMatrix Task first in list
-					new Integer[] {tasks.size() - 1, tasks.size()});
-				// output col update task dependent on Build completion only for Recode and binning since they can
-				// change dummycode domain size
-				// colUpdateTask can start when all domain sizes, because it can now calculate the offsets for
-				// each column
-				depMap.put(new Integer[] {-2, -1}, new Integer[] {tasks.size() - 1, tasks.size()});
+				// Allocation depends on build if DC is in the list.
+				// Note, DC is the only encoder that changes dimensionality
+				depMap.put(new Integer[] {0, 1},                               //Allocation task (1st task)
+					new Integer[] {tasks.size() - 1, tasks.size()});           //BuildTask
+				// UpdateOutputColTask, that sets the starting offsets of the DC columns,
+				// depends on the Build completion tasks
+				depMap.put(new Integer[] {-2, -1},                             //UpdateOutputColTask (last task) 
+						new Integer[] {tasks.size() - 1, tasks.size()});       //BuildTask
 				buildTasks.forEach(t -> t.setPriority(5));
 				applyOffsetDep = true;
 			}
 
 			if(hasDC && applyOffsetDep) {
-				// Apply Task dependency to output col update task (is last in list)
-				// All ApplyTasks need to wait for this task, so they all have the correct offsets.
-				// But only for the columns that come after the first DC coder since they don't have an offset
-				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1}, new Integer[] {-2, -1});
+				// Apply tasks depend on UpdateOutputColTask
+				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},     //ApplyTask 
+						new Integer[] {-2, -1});                               //UpdateOutputColTask (last task)
 
 				applyTAgg = applyTAgg == null ? new ArrayList<>() : applyTAgg;
 				applyTAgg.add(applyTaskWrapper);
@@ -181,9 +204,13 @@ public class MultiColumnEncoder implements Encoder {
 			else {
 				applyTaskWrapper.setOffset(0);
 			}
+			// Create the ApplyTask (wrapper)
 			tasks.add(applyTaskWrapper);
+			// Create the getMetadata task
+			tasks.add(DependencyThreadPool.createDependencyTask(new ColumnMetaDataTask<ColumnEncoder>(e, _meta)));
 		}
 		if(hasDC)
+			// Create the last task, UpdateOutputColTask
 			tasks.add(DependencyThreadPool.createDependencyTask(new UpdateOutputColTask(this, applyTAgg)));
 
 		List<List<? extends Callable<?>>> deps = new ArrayList<>(Collections.nCopies(tasks.size(), null));
@@ -330,6 +357,7 @@ public class MultiColumnEncoder implements Encoder {
 					&& MatrixBlock.DEFAULT_SPARSEBLOCK != SparseBlock.Type.MCSR)
 				throw new RuntimeException("Transformapply is only supported for MCSR and CSR output matrix");
 			boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+			mcsr = false; //force CSR for transformencode
 			if (mcsr) {
 				output.allocateBlock();
 				SparseBlock block = output.getSparseBlock();
@@ -933,6 +961,27 @@ public class MultiColumnEncoder implements Encoder {
 			return null;
 		}
 	}
+
+	private static class AllocMetaTask implements Callable<Object> {
+		private final MultiColumnEncoder _encoder;
+		private final FrameBlock _meta;
+		
+		private AllocMetaTask (MultiColumnEncoder encoder, FrameBlock meta) {
+			_encoder = encoder;
+			_meta = meta;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			_encoder.allocateMetaData(_meta);
+			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName();
+		}
+	}
 	
 	private static class ColumnMetaDataTask<T extends ColumnEncoder> implements Callable<Object> {
 		private final T _colEncoder;
@@ -947,6 +996,11 @@ public class MultiColumnEncoder implements Encoder {
 		public Object call() throws Exception {
 			_colEncoder.getMetaData(_out);
 			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _colEncoder._colID + ">";
 		}
 	}
 

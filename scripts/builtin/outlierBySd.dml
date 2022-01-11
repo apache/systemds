@@ -41,7 +41,8 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 1, 
-  Integer max_iterations, Boolean verbose = TRUE) return(Matrix[Double] Y) 
+  Integer max_iterations, Boolean verbose = TRUE) 
+  return(Matrix[Double] out, Matrix[Double] colMean, Matrix[Double] colSD, Double k, Integer repairMethod) 
 {
   # variable initialization 
   sumPrevious = as.double(0)
@@ -75,17 +76,18 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
 
     counter = counter + 1; 
   }
-  Y = X
+  out = X
   if(verbose) {
     print("last outlier filter:\n"+ toString(outlierFilter))
     print("Total executed iterations = "+counter)
     print("Upper-bound of data was calculated using Mean + k * Standard Deviation")
     print("lower-bound of data was calculated using Mean - k * Standard Deviation")
     print("Anything less than the lower-bound and greater than the upper-bound was treated as outlier")
-    if(sum(Y) == 0)
+    if(sum(out) == 0)
       print("output is a zero matrix due to iterative evaluation of outliers ")
-    print("output:\n"+ toString(Y))
+    print("output:\n"+ toString(out))
   }
+  bounds = rbind(lowerBound, upperBound)
 }
 
 fix_outliers_sd = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 2)

@@ -1,0 +1,48 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Implements builtin for imputing missing values from observed values (if exist) using robust functional dependencies
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE             DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]   ---       Matrix X
+# source          Integer          ---       source attribute to use for imputation and error correction
+# target          Integer          ---       attribute to be fixed
+# threshold       Double           ---       threshold value in interval [0, 1] for robust FDs
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]             Matrix with possible imputations
+# ----------------------------------------------------------------------------------------------------------------------
+
+m_imputeByFDApply = function(Matrix[Double] X, Matrix[Double] Y_imp)
+  return(Matrix[Double] imputed_Y)
+{
+  X = replace(target = X, pattern=NaN, replacement=1)
+  imputed_Y = table(seq(1,nrow(X)), X, 1, nrow(X), nrow(Y_imp)) %*% Y_imp;
+  imputed_Y = replace(target=imputed_Y, pattern=0, replacement=NaN)
+}
+

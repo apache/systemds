@@ -43,8 +43,17 @@
 # Y               Matrix[Double]             Matrix X with no outliers
 # ----------------------------------------------------------------------------------------------------------------------
 
-m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod = 1,
-  Integer max_iterations, Boolean verbose = TRUE) return(Matrix[Double] Y)
+
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# Y               Double   ---       Matrix X with no outliers
+
+m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod = 1, 
+  Integer max_iterations, Boolean verbose = TRUE) 
+  return(Matrix[Double] Y, Matrix[Double] Q1, Matrix[Double] Q3, Matrix[Double] IQR, Double k, Integer repairMethod) 
+  # return(List[Unknown] out)
 {
 
   sumPrevious = as.double(0)
@@ -81,6 +90,8 @@ m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod 
       print("output is a zero matrix due to iterative evaluation of outliers ")
     print("output:\n"+ toString(Y))
   }
+  bounds = rbind(lowerBound, upperBound)
+  out = list(Y, bounds)
 }
   
 fix_outliers_iqr = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 1)

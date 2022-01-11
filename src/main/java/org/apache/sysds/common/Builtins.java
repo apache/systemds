@@ -200,6 +200,7 @@ public enum Builtins {
 	MAX("max", "pmax", false),
 	MAX_POOL("max_pool", false),
 	MAX_POOL_BACKWARD("max_pool_backward", false),
+	MCC("mcc", true),
 	MEAN("mean", "avg", false),
 	MEDIAN("median", false),
 	MICE("mice", true),

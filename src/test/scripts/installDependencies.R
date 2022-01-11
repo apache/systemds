@@ -63,6 +63,7 @@ custom_install("class");
 custom_install("unbalanced");
 custom_install("naivebayes");
 custom_install("BiocManager");
+custom_install("mltools");
 BiocManager::install("rhdf5");
 
 print("Installation Done")

@@ -1,0 +1,80 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Built-in function mcc: Matthews' Correlation Coefficient for binary classification evaluation
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE               DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# predictions     Matrix[Integer]      ---     Vector of predicted 0/1 values. 
+#                                                 (requires setting 'labels' parameter)
+# labels          Matrix[Integer]      ---     Vector of 0/1 labels.
+# ---------------------------------------------------------------------------------------------
+ 
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# mattCC          Double    ---       Matthews' Correlation Coefficient
+# ---------------------------------------------------------------------------------------------
+
+m_mcc = function(Matrix[Double] predictions = matrix(0,0,0), Matrix[Double] labels = matrix(0,0,0))
+return (Double mattCC)
+{
+  # # validation checks   
+  if ((length(labels) > 0 & sum(labels) == 0)) 
+    stop("MCC Input Error: labels contains only zeros")
+
+  if (nrow(predictions) != nrow(labels)) 
+    stop("MCC Input Error: rows in predictions != rows in labels")
+    
+  if(min(labels) != 0 | min(predictions) != 0)
+    stop("MCC Input Error: accepts 0/1 vector only")
+    
+  if (min(labels) == max(labels)) 
+    stop("MCC Input Error: labels contains single class")
+  
+  if(max(labels) > 1 | max(predictions) > 1)
+    stop("MCC Input Error: accepts 0/1 vector only")
+  # # add 1 to predictions and labels because table does not accept zero
+  labels = labels + 1
+  predictions = predictions + 1
+  confM = table(labels, predictions, 2, 2)
+  mattCC = computeMCC(confM)
+}
+
+computeMCC = function(Matrix[Double] confusionM) 
+  return (Double mattCC) {
+
+  TN=as.scalar(confusionM[1,1])
+  FP=as.scalar(confusionM[1,2])
+  FN=as.scalar(confusionM[2,1])
+  TP=as.scalar(confusionM[2,2])
+
+  # from https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-019-6413-7
+  # MCC = (TP*TN - FP*FN) / sqrt((TP + FP) * (TP * FN) * (TN + FP) * (TN + FN))
+  # if row and/or column of zeros,
+  if (min(rowSums(confusionM)) == 0 | min(colSums(confusionM)) == 0) 
+    mattCC = 0.0 # epsilon approximation --> 0 --> setting mattCC to 0 directly avoids calculation
+  else 
+    mattCC = (TP*TN - FP*FN) / sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
+}

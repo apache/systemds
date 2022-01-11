@@ -57,7 +57,7 @@ source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
 
 s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"), Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives,
   Frame[Unknown] parameters, Matrix[Double] cmr = matrix("4 0.7 1", rows=1, cols=3), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, 
-  Integer resource_val = 20, Integer num_inst = 5, Double sample = 0.1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, String output)
+  Integer resource_val = 20, Integer num_inst = 5, Integer max_iter = 10, Double sample = 0.1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, String output)
   return(Boolean perf)
   # return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores, Frame[Unknown] bestLogical,
   # Frame[Unknown] features, Double dirtyScore, Matrix[Double] evalFunHp)
@@ -110,32 +110,25 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   [eXtrain, eYtrain] = utils::doSample(eXtrain, eYtrain, sample, TRUE)
   t5 = time(); print("---- finalized in: "+(t5-t4)/1e9+"s");
 
-  # # # create logical pipeline seeds
+  # # # create logical pipeline seeds 
   logicalSeedCI =  frame([
-                   "4", "ED", "MVI", "OTLR", "EC", "0", "0", "0", "0",
-                   "5", "ED", "EC", "SCALE", "CI","DUMMY","0", "0", "0", 
-                   "5", "OTLR", "EC", "SCALE", "CI", "DUMMY", "0","0", "0",
-                   "8", "ED", "MVI", "OTLR", "ED", "EC", "SCALE", "CI", "DUMMY",
-                   "5", "ED",  "MVI",  "SCALE", "CI", "DUMMY", "0", "0", "0",
-                   "4", "MVI", "SCALE", "CI", "DUMMY", "0", "0", "0", "0", 
-                   "6", "ED", "MVI", "EC", "SCALE", "CI", "DUMMY", "0", "0",
-                   "6", "MVI", "OTLR","EC", "SCALE", "CI", "DUMMY", "0", "0",
-                   "7", "OTLR", "MVI", "OTLR", "EC", "SCALE", "CI", "DUMMY", "0",
-                   "7", "ED", "MVI", "OTLR", "EC", "SCALE", "CI", "DUMMY", "0"
-                   ], rows=10, cols=9)  
+                   "4", "ED", "MVI", "OTLR", "EC",
+                   "2", "MVI", "DUMMY", "0","0",
+                   "2", "OTLR", "DUMMY","0","0", 
+                   "2", "CI", "DUMMY","0","0",
+                   "2", "SCALE", "DUMMY","0","0",
+                   "2", "ED", "DUMMY","0","0",
+                   "2", "EC", "DUMMY", "0","0"
+                   ], rows=7, cols=5)  
                    
   logicalSeedNoCI =  frame([
-                   "3", "ED", "MVI", "OTLR", "EC", "0", "0", "0",
-                   "4", "ED", "EC", "SCALE", "DUMMY","0", "0", "0", 
-                   "4", "OTLR", "EC", "SCALE", "DUMMY", "0","0", "0",
-                   "7", "ED", "MVI", "OTLR", "ED", "EC", "SCALE", "DUMMY",
-                   "4", "ED",  "MVI",  "SCALE", "DUMMY", "0", "0", "0",
-                   "3", "MVI", "SCALE", "DUMMY", "0", "0", "0", "0", 
-                   "5", "ED", "MVI", "EC", "SCALE", "DUMMY", "0", "0",
-                   "5", "MVI", "OTLR","EC", "SCALE", "DUMMY", "0", "0",
-                   "6", "OTLR", "MVI", "OTLR", "EC", "SCALE", "DUMMY", "0",
-                   "6", "ED", "MVI", "OTLR", "EC", "SCALE", "DUMMY", "0"
-                   ], rows=10, cols=8)  
+                   "4", "ED", "MVI", "OTLR", "EC",
+                   "2", "MVI", "DUMMY", "0","0",
+                   "2", "OTLR", "DUMMY","0","0", 
+                   "2", "SCALE", "DUMMY","0","0",
+                   "2", "ED", "DUMMY","0","0",
+                   "2", "EC", "DUMMY", "0","0"
+                   ], rows=6, cols=5)  
                    
   if(min(eYtrain) >= 1) {
     tab = table(eYtrain, 1)
@@ -151,9 +144,9 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   
   print("-- Cleaning - Enum Logical Pipelines: ");
   [bestLogical, score] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest, cmr=cmr, 
-    cat=category, population=logical[2:nrow(logical)], max_iter=ceil(resource_val/topK), metaList = metaList,
+    cat=category, population=logical[2:nrow(logical),], max_iter=max_iter, metaList = metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, primitives=primitives, param=parameters,
-    num_inst=num_inst, num_exec=ceil(resource_val/topK), cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)
+    num_inst=num_inst, cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)
   t6 = time(); print("---- finalized in: "+(t6-t5)/1e9+"s");
   # bestLogical = frame(["MVI", "OTLR", "DUMMY"], rows=1, cols=3)
   topKPipelines = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); features = as.frame("NULL")
@@ -210,7 +203,7 @@ runStringPipeline = function(Frame[Unknown] Xtrain, Frame[Unknown] Xtest, Frame[
 return(Frame[Unknown] Xtrain, Frame[Unknown] Xtest)
 {
   if(cv)
-    [Xtrain, Xtest] = utils::stringProcessing(train=Xtrain, test=Xtrain, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
+    Xtrain = utils::stringProcessing(train=Xtrain, test=Xtrain, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
   else
   {
     # # # binding train and test to use same dictionary for both

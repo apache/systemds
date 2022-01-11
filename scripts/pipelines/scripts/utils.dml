@@ -160,26 +160,40 @@ return(Frame[Unknown] train, Frame[Unknown] test, Matrix[Double] M)
   print(prefix+" fixing invalid lengths between "+q0+" and "+q1+" quantile");
 
   [train, mask, qlow, qup] = fixInvalidLengths(train, mask, q0, q1)
-  test = fixInvalidLengthsApply(test, mask, qlow, qup)
 
   
   # step 2 fix swap values
   print(prefix+" value swap fixing");
   train = valueSwap(train, schema)
-  test = valueSwap(test, schema)
+  if(length(test) > 0)
+
   
   # step 3 drop invalid types
   print(prefix+" drop values with type mismatch");
   train = dropInvalidType(train, schema)
-  test = dropInvalidType(test, schema)
+
   
   # step 4 do the case transformations
   print(prefix+" convert strings to lower case");
   train = map(train, "x -> x.toLowerCase()")
-  test = map(test, "x -> x.toLowerCase()")
 
 
-  # step 5 typo correction  
+
+  # step 5 porter stemming on all features
+  print(prefix+" porter-stemming on all features");
+  train = map(train, "x -> PorterStemmer.stem(x)", 0)
+
+  
+  if(length(test) > 0)
+  {
+    test = fixInvalidLengthsApply(test, mask, qlow, qup)
+    test = valueSwap(test, schema)
+    test = dropInvalidType(test, schema)
+    test = map(test, "x -> x.toLowerCase()")
+    test = map(test, "x -> PorterStemmer.stem(x)", 0)
+  }
+ 
+  # step 6 typo correction  
   if(CorrectTypos)
   {
     print(prefix+" correct typos in strings");
@@ -187,13 +201,10 @@ return(Frame[Unknown] train, Frame[Unknown] test, Matrix[Double] M)
     for(i in 1:ncol(schema))
       if(as.scalar(schema[1,i]) == "STRING") {
         [train[, i], ft, dt, dm, fr] = correctTypos(train[, i], 0.2, 0.9, FALSE);
-        test[, i] = correctTyposApply(test[, i], ft, dt, dm, fr);
+        if(length(test) > 0)
+          test[, i] = correctTyposApply(test[, i], ft, dt, dm, fr);
       }
   }
-  # step 6 porter stemming on all features
-  print(prefix+" porter-stemming on all features");
-  train = map(train, "x -> PorterStemmer.stem(x)", 0)
-  test = map(test, "x -> PorterStemmer.stem(x)", 0)
   
   # TODO add deduplication
   print(prefix+" deduplication via entity resolution");

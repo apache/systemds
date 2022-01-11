@@ -33,6 +33,7 @@ topK = $topk
 resources = $rv
 num_inst=$num_inst
 sample=$sample
+max_iter=$max_iter
 output=$output
 testCV = as.logical($testCV)
 cvk = as.integer($cvk)
@@ -42,7 +43,7 @@ split = nrow(F) * trainTestSplit
 if(testCV) {
 
   trainData = F
-  testData = as.frame("0")
+  testData = frame("", rows=0, cols=0)
 }
 else {
 
@@ -58,8 +59,8 @@ metaInfo = metaInfo[, 2:ncol(metaInfo)]
 
 # [topKPipelines, topKHyperParams, topKScores, bestLogical, features, dirtyScore, evalHp] = 
 result = topk_cleaning(dataTrain=trainData, dataTest=testData, metaData=metaInfo, primitives=primitives, parameters=param,
-  cmr=matrix("2 0.7 1", rows=1, cols=3), evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),
-  topK=topK, resource_val=resources, num_inst=num_inst, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output) 
+  evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),topK=topK, resource_val=resources,
+  num_inst=num_inst, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output) 
 
 write(result, $O)
 

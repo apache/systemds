@@ -29,6 +29,17 @@ eps = as.double(args[3]);
 minPts = as.integer(args[4]);
 dbModel = dbscan(X, eps, minPts);
 
-Z = predict(dbModel, Y, data = X)
-Z[Z > 0] = 1
+cleanMatr = matrix(, nrow = nrow(X), ncol = 3)
+for(i in 1:nrow(X)) {
+  if(dbModel$cluster[i] > 0) {
+    cleanMatr[i,] = X[i,]
+  }
+}
+
+cleanMatr = cleanMatr[rowSums(is.na(cleanMatr)) != ncol(cleanMatr),]
+
+dbModelClean = dbscan(cleanMatr, eps, minPts);
+
+Z = predict(dbModelClean, Y, data = cleanMatr);
+Z[Z > 0] = 1;
 writeMM(as(Z, "CsparseMatrix"), paste(args[5], "C", sep=""));

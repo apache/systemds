@@ -39,7 +39,7 @@ public class BuiltinOutlierByDBTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinOutlierByDBTest.class.getSimpleName() + "/";
 
-	private final static double eps = 1e-3;
+	private final static double eps = 1e-9;
 	private final static int rows = 1700;
 	private final static int cols = 3;
 	private final static int min = -10;
@@ -70,6 +70,16 @@ public class BuiltinOutlierByDBTest extends AutomatedTestBase
 	@Test
 	public void testDBSCANOutlierDefault1SP() {
 		runOutlierByDBSCAN(true, 5, 15, 1, ExecType.SPARK);
+	}
+
+	@Test
+	public void testDBSCANOutlierDefault2CP() {
+		runOutlierByDBSCAN(true, 12, 77, 1, ExecType.CP);
+	}
+
+	@Test
+	public void testDBSCANOutlierDefault2SP() {
+		runOutlierByDBSCAN(true, 12, 77, 1, ExecType.SPARK);
 	}
 
 	private void runOutlierByDBSCAN(boolean defaultProb, int seedA, int seedB, double epsDB, ExecType instType)

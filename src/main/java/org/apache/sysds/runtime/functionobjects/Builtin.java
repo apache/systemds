@@ -50,7 +50,7 @@ public class Builtin extends ValueFunction
 	public enum BuiltinCode { AUTODIFF, SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
 		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, LINEAGE, ROUND, MAXINDEX, MININDEX,
 		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
-		TYPEOF, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID_TYPE, DROP_INVALID_LENGTH, VALUE_SWAP, MAP,
+		TYPEOF, DETECTSCHEMA, SETSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID_TYPE, DROP_INVALID_LENGTH, VALUE_SWAP, MAP,
 		COUNT_DISTINCT, COUNT_DISTINCT_APPROX}
 
 
@@ -110,6 +110,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "dropInvalidLength", BuiltinCode.DROP_INVALID_LENGTH);
 		String2BuiltinCode.put( "_map", BuiltinCode.MAP);
 		String2BuiltinCode.put( "valueSwap", BuiltinCode.VALUE_SWAP);
+		String2BuiltinCode.put( "setSchema", BuiltinCode.SETSCHEMA);
 	}
 	
 	private Builtin(BuiltinCode bf) {

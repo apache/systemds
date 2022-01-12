@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -48,6 +49,15 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction
 			FrameBlock retBlock = inBlock1.valueSwap(inBlock2);
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), retBlock);
+		}
+		else if(getOpcode().equals("setSchema")) {
+			// Set frame schema from DML
+			Types.ValueType[] schema = new Types.ValueType[inBlock2.getNumColumns()];
+			for(int i=0; i<inBlock2.getNumColumns(); i++)
+				schema[i] = Types.ValueType.fromExternalString(inBlock2.get(0, i).toString());
+			FrameBlock out = new FrameBlock(schema);
+			out.copy(inBlock1);
+			ec.setFrameOutput(output.getName(), out);
 		}
 		else {
 			// Execute binary operations

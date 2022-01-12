@@ -109,6 +109,7 @@ public enum Builtins {
 	DECOMPRESS("decompress", false),
 	DEEPWALK("deepWalk", true),
 	DETECTSCHEMA("detectSchema", false),
+	SETSCHEMA("setSchema", false),
 	DENIALCONSTRAINTS("denialConstraints", true),
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),

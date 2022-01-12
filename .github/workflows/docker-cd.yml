@@ -33,11 +33,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - image-pattern: nightly
-            docker-file: sysds.Dockerfile
-        include:
-          - image-pattern: python-nightly
-            docker-file: pythonsysds.Dockerfile
+          - { image-pattern: nightly, docker-file: sysds.Dockerfile }
+          - { image-pattern: python-nightly, docker-file: pythonsysds.Dockerfile }
 
     steps:
     - name: Checkout
@@ -49,7 +46,7 @@ jobs:
       with:
         images: apache/systemds
         tags: |
-          type=schedule,pattern=${{image-pattern}}
+          type=schedule,pattern=${{ matrix.image-pattern }}
 
     # https://github.com/docker/setup-buildx-action
     - name: Set up Docker Buildx
@@ -68,7 +65,7 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         context: .
-        file: ./docker/${{docker-file}}
+        file: ./docker/${{ matrix.docker-file }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}

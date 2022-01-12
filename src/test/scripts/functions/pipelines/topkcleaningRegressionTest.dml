@@ -39,7 +39,7 @@ split = nrow(F) * trainTestSplit
   evalFunc = "evalRegression"
 if(testCV) {
   trainData = F[1:split,]
-  testData = as.frame("0")
+  testData = frame("", rows=0, cols=0)
 }
 else {
   trainData = F[1:split,]

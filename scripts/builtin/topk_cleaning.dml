@@ -143,7 +143,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   category = logical[1, 2:idx]
   
   print("-- Cleaning - Enum Logical Pipelines: ");
-  [bestLogical, score] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest, cmr=cmr, 
+  [bestLogical, score] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest,
     cat=category, population=logical[2:nrow(logical),], max_iter=max_iter, metaList = metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, primitives=primitives, param=parameters,
     num_inst=num_inst, cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)

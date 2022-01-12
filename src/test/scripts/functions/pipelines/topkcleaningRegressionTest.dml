@@ -49,7 +49,7 @@ else {
 # # # split in train/test 70/30
 
 result = topk_cleaning(dataTrain=trainData, dataTest=testData, 
-  primitives=primitives, parameters=param, cmr=matrix("2 0.7 1", rows=1, cols=3), evaluationFunc=evalFunc, evalFunHp=matrix("1 1e-3 1e-9 100", rows=1, cols=4),
+  primitives=primitives, parameters=param, evaluationFunc=evalFunc, evalFunHp=matrix("1 1e-3 1e-9 100", rows=1, cols=4),
   topK=topK, resource_val=resources, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output)
   
      

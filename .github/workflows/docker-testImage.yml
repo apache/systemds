@@ -45,7 +45,7 @@ jobs:
       with:
         images: apache/systemds
         tags: |
-          type=schedule,pattern=${{ matrix.image-pattern }}
+          type=raw,value=${{ matrix.image-pattern }}
 
     # https://github.com/docker/setup-buildx-action
     - name: Set up Docker Buildx

@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 
-name: Docker Image CI and CD
+name: Docker Test Image Update
 
 # This job only tricker if requested in github.
 on:

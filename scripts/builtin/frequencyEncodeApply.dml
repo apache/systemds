@@ -27,9 +27,10 @@ return (Matrix[Double] X) {
     if(sum(freqCount[i]) > 0)
     {
       Y = replace(target=X[, i], pattern=NaN, replacement=1)
-      valueCount = freqCount[i, 1:max(Y)]
-      resp = matrix(0, nrow(Y), max(Y))
-      resp = (resp + t(seq(1, max(Y)))) == Y
+      idx = min(ncol(freqCount), max(Y))
+      valueCount = freqCount[i, 1:idx]
+      resp = matrix(0, nrow(Y), idx)
+      resp = (resp + t(seq(1, idx))) == Y
       resp = resp * valueCount
       X[, i] = rowSums(resp)
     }

@@ -56,8 +56,10 @@
 s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[String] pipeline, Matrix[Double] Xtrain,  Matrix[Double] Ytrain, 
   Matrix[Double] Xtest,  Matrix[Double] Ytest, List[Unknown] metaList, Matrix[Double] hyperParameters, Matrix[Double] hpForPruning = as.matrix(0),
   Matrix[Double] changesByOp = as.matrix(0), Integer flagsCount, Boolean test = FALSE, Boolean verbose)
-  return (Matrix[Double] Xtrain, Matrix[Double] Ytrain, Matrix[Double] Xtest, Matrix[Double] Ytest, Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
+  return (Matrix[Double] Xtrain, Matrix[Double] Ytrain, Matrix[Double] Xtest, Matrix[Double] Ytest,
+    Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
 {
+
   mask=as.matrix(metaList['mask'])
   FD = as.matrix(metaList['fd'])
   applyFunc = as.frame(metaList['applyFunc'])
@@ -78,6 +80,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
     Xclone = Xtrain
     XtestClone = Xtest
     [hp, dataFlag, yFlag, executeFlag] = matrixToList(Xtrain, Ytrain, mask, FD, hyperParameters[i], flagsCount, op)
+    print("executing: ---------- "+toString(op))
     if(executeFlag == 1) {
       L = evalList(op, hp)
       [L, O] = remove(L, 1);

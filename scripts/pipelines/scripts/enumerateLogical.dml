@@ -52,19 +52,20 @@
 source("scripts/builtin/bandit.dml") as bandit;
 
 enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest, Matrix[Double] ytest,
-  Matrix[Double] cmr, Frame[Unknown] cat, Frame[Unknown] population, Integer max_iter=10, List[Unknown] metaList, 
+  Frame[Unknown] cat, Frame[Unknown] population, Integer max_iter=10, List[Unknown] metaList, 
   String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] primitives, Frame[Unknown] param,
-  Integer num_inst, Integer num_exec, Boolean cv=FALSE, Boolean cvk=3, Boolean verbose, List[Unknown] ctx=list(prefix="----"))
+  Integer num_inst, Boolean cv=FALSE, Boolean cvk=3, Boolean verbose, List[Unknown] ctx=list(prefix="----"))
 return (Frame[Unknown] bestLg, Double pre_best)
 {
+
+  num_exec = 1
   prefix = as.scalar(ctx["prefix"]);  
   bestLg = as.frame("")
   best_score = 0.0
   pre_best = 0.0
   iter = 1
-  convergedOuter = FALSE
 
-  while(iter <= max_iter & !convergedOuter)
+  while(as.scalar(population[1, 1]) > 0 & iter < max_iter)
   {
     print(prefix+" EnumLP iteration "+iter+"/"+as.integer(max_iter)+":" );
     physicalPipList = list();
@@ -72,40 +73,49 @@ return (Frame[Unknown] bestLg, Double pre_best)
     
     # get the physical instances from logical ones
     # unrolled by physical pipelines
-    ppos = list();
+    max_confR = 0
+    max_confC = 0
+    start = 1; 
+    end = 0;
     for(i in 1:nrow(population)) { 
       lv = as.integer(as.scalar(population[i, 1])) + 1
       lp = population[i, 2:lv]
-      pconf = bandit::get_physical_configurations(lp, num_inst, primitives)
-      for(j in 1:nrow(pconf)) {
-        physicalPipList = append(physicalPipList, pconf[j,]);
-        ppos = append(ppos, i)
-      }
+      pconf = bandit::get_physical_configurations(lp, 0, primitives)
+      max_confR = ifelse(max_confR < nrow(pconf), nrow(pconf), max_confR)
+      max_confC = ifelse(max_confC < ncol(pconf), ncol(pconf), max_confC)
+      physicalPipList = append(physicalPipList, pconf);
       logicalPipList = append(logicalPipList, lp);
+
     }
-    
+    # print("pipeline Frame: "+toString(pipelineFrame))
     # # # execute the physical pipelines
-    scores = matrix(0, nrow(physicalPipList), 1)
-    parfor(i in 1:length(physicalPipList)) {
-      lp2 = as.frame(logicalPipList[as.scalar(ppos[i]),])
+    scores = matrix(0, rows=nrow(population) * max_confR, cols=2)
+    start = 1; 
+    end = 0;
+    pipelineFrame = frame(0, rows=length(physicalPipList) * max_confR, cols=max_confC)
+    parfor(i in 1:length(physicalPipList), check=0) {
+      lp2 = as.frame(logicalPipList[i,])
       pp2 = as.frame(physicalPipList[i,])
       # # append configuration keys for extracting the pipeline later on
       id = seq(1, nrow(pp2))
       idpp = cbind(as.frame(id), pp2)
       # # execute the physical instances and store the minimum scores, each pipeline is executed num_exec times
       [outPip, outHp, feaFrameOuter] = bandit::run_with_hyperparam(lp2, idpp, num_exec, X, y, Xtest, ytest, metaList,
-        evaluationFunc, evalFunHp, param, as.frame(""), cv, cvk, FALSE)
+        evaluationFunc, evalFunHp, param, as.frame(""), cv, cvk, TRUE)
       # # sort the configurations groupwise
-      max_perf = bandit::getMaxPerConf(outPip, nrow(pp2)) 
-      scores[i,1] = as.matrix(max_perf[1,1])
+      end = end + nrow(outPip)
+      scores[start:end, 1] = outPip[, 1]
+      scores[start:end, 2] = matrix(i, rows=nrow(outPip), cols=1)
+      start = end + 1
     }
-    
+
     # # select parents and best score
-    selected = order(target = scores, by = 1, decreasing=TRUE, index.return=TRUE)
+    selected = order(target = scores[, 1], by = 1, decreasing=TRUE, index.return=TRUE)
     idxR = as.scalar(selected[1,1])
-    best_score = as.scalar(scores[idxR])
-    converged =  pre_best > best_score
-    convergedOuter = converged
+    best_score = as.scalar(scores[idxR, 1])
+    converged =  pre_best >= best_score
+    print("best score: "+best_score)
+    print("pre score: "+pre_best)
     if(converged & (iter > 1)) {
       print(prefix+"EnumLP: converged after "+iter+" iteration(s)")
       print(prefix+"EnumLP: best score " + pre_best)
@@ -113,38 +123,30 @@ return (Frame[Unknown] bestLg, Double pre_best)
     }
     else {
       pre_best = best_score
-      idxR2 = as.scalar(ppos[idxR]) #logical pipeline ID
-      idxC = as.integer(as.scalar(population[idxR2, 1])) + 1
-      bestLg = population[idxR2, 2:idxC]
+      bestLg = as.frame(logicalPipList[as.scalar(scores[idxR, 2])])
+      print("best logical: "+toString(bestLg))
     }
-    pipLength = max(as.matrix(population[, 1])) + as.scalar(cmr[1, 1]) + 3
+    pipLength = 10
     # # # if new best is not better than pre_best then no need od generating new population
-    children = frame(0, rows=ceil(nrow(scores)/2), cols=pipLength)
+    children = frame(0, rows=ceil(nrow(population)/2), cols=pipLength)
     i = 1
-
-    while(i <= ceil(nrow(scores)/2) & !converged) {
-      top = population[as.scalar(ppos[as.scalar(selected[i])]), ]
-      length_top = as.integer(as.scalar(top[1, 1]))
-      top = top[, 2:(length_top+1)]
-      
+    while(i <= ceil(nrow(population)/2) & ncol(population) < pipLength - 1) {
+      idxR = as.scalar(selected[i,1])
+      top = as.frame(logicalPipList[as.scalar(scores[idxR, 2])])
+      length_top = ncol(top)
       # generate children from crossover
-      c1 = addition(top, cat, as.scalar(cmr[1,1]))
-
-      # perform mutation
-      c1 = mutation(c1, as.scalar(cmr[1, 2]))
-
-      # perform removal if non-zero
-      c1 = removal(c1, as.scalar(cmr[1, 3]))
+      c1 = addition(top, cat, 1) #i%%(pipLength-1)
 
       # # # append length of pipeline and pipeline in frame
       children[i, 1] = ncol(c1)
       children[i, 2:(ncol(c1) + 1)] = c1
+      
       i = i + 1
     }
     population = children
     iter  = iter + 1
   }
-  if(pre_best == best_score) {
+  if(pre_best < best_score) {
     print(prefix+" EnumLP did not converge after "+max_iter+" iterations")  
   }
 }
@@ -156,7 +158,7 @@ return (Frame [Unknown] child)
   for(i in 1:addCount)
   {
     c = as.scalar(sample(ncol(allOps), 1))
-    place_to_add = as.scalar(sample(ncol(top)-2, 1))
+    place_to_add = as.scalar(sample(ncol(top)+2, 1))
     if(place_to_add == 1)
       child = cbind(allOps[1, c], top)
     else if(place_to_add >= ncol(top))
@@ -167,41 +169,17 @@ return (Frame [Unknown] child)
       end = top[, place_to_add+1:ncol(top)]
       child = cbind(cbind(start, allOps[1, c]), end)
     }
+    top = child
+  }
+  hasDummy = map(child, "x -> x.equals(\"DUMMY\")")
+  hasDummy = as.matrix(hasDummy == frame("true", rows=1, cols=ncol(hasDummy)))
+  if(sum(hasDummy) > 0 & as.scalar(hasDummy[1, ncol(hasDummy)]) != 1)
+  {
+    # place the dummycode in last
+    idx = as.scalar(removeEmpty(target = hasDummy*t(seq(1, ncol(hasDummy))), margin = "cols"))
+    tmp = child[1, idx]
+    child[1, idx] = child[1, ncol(child)]
+    child[1, ncol(child)] = tmp
   }
 }
 
-mutation = function(Frame[Unknown] child, Double mutationRate)
-return (Frame [Unknown] mChild)
-{
-  random = as.scalar(rand(rows=1, cols=1))
-  if(random > mutationRate & ncol(child) >= 3)
-  {
-    r = sample(ncol(child) - 2, 2)
-    r1 = as.scalar(r[1,1])
-    r2 = as.scalar(r[2,1])
-    temp = child[1, r1]
-    child[1, r1] = child[1, r2]
-    child[1, r2] = temp
-  }
-  mChild = child
-}
-
-removal = function(Frame[Unknown] child, Integer removal)
-return (Frame[Unknown] output)
-{
-  if(ncol(child) > 2 & (ncol(child)-2) > removal & removal > 0)
-  {
-    for(i in 1:removal)
-    {
-      idx = as.scalar(sample(ncol(child)-3, 1))
-      if(idx == 1)
-        ch = child[, 2:ncol(child)]
-      else if (idx == ncol(child))
-        ch = child[, 1:ncol(child)-1]
-      else 
-        ch = cbind(child[, 1:(idx-1)], child[,(idx+1):ncol(child)])
-      child = ch
-    }
-  }
-  output = child
-}

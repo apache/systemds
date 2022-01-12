@@ -65,7 +65,7 @@ public class BuiltinTopkLogicalTest extends AutomatedTestBase {
 
 	private void runTestLogical(int max_iter,  int num_inst, int num_exec,  Types.ExecMode et) {
 
-		setOutputBuffering(true);
+//		setOutputBuffering(true);
 
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);

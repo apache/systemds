@@ -58,6 +58,8 @@ public class CM_COV_Object extends Data
 		m4=new KahanObject(0,0);
 		mean_v=new KahanObject(0,0);
 		c2=new KahanObject(0,0);
+		min=Double.MAX_VALUE;
+		max=Double.MIN_VALUE;
 	}
 	
 	public void reset()
@@ -69,6 +71,8 @@ public class CM_COV_Object extends Data
 		m4=new KahanObject(0,0);
 		mean_v=new KahanObject(0,0);
 		c2=new KahanObject(0,0);
+		min=Double.MAX_VALUE;
+		max=Double.MIN_VALUE;
 	}
 	
 	public int compareTo(CM_COV_Object that)
@@ -85,6 +89,10 @@ public class CM_COV_Object extends Data
 			return KahanObject.compare(m4, that.m4);
 		else if(mean_v!=that.mean_v)
 			return KahanObject.compare(mean_v, that.mean_v);
+		else if(min!=that.min)
+			return Double.compare(min, that.min);
+		else if(max!=that.max)
+			return Double.compare(max, that.max);
 		else
 			return KahanObject.compare(c2, that.c2);
 	}
@@ -98,7 +106,8 @@ public class CM_COV_Object extends Data
 		CM_COV_Object that = (CM_COV_Object)o;
 		return (w==that.w && mean.equals(that.mean) && m2.equals(that.m2))
 				&& m3.equals(that.m3) && m4.equals(that.m4) 
-				&& mean_v.equals(that.mean_v) && c2.equals(that.c2);
+				&& mean_v.equals(that.mean_v) && c2.equals(that.c2)
+				&& min==that.min && max == that.max;
 	}
 	
 	@Override
@@ -115,6 +124,8 @@ public class CM_COV_Object extends Data
 		this.m4.set(that.m4);
 		this.mean_v.set(that.mean_v);
 		this.c2.set(that.c2);
+		this.min=that.min;
+		this.max=that.max;
 	}
 	
 	public boolean isCMAllZeros()

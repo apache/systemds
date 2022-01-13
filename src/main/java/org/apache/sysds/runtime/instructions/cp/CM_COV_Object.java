@@ -38,6 +38,7 @@ public class CM_COV_Object extends Data
 	public KahanObject m3;
 	public KahanObject m4;
 	public double min;
+	public double max;
 	
 	public KahanObject mean_v;
 	public KahanObject c2;
@@ -169,6 +170,8 @@ public class CM_COV_Object extends Data
 				return m4._sum/w;
 			case MIN:
 				return min;
+			case MAX:
+				return max;
 			case VARIANCE:
 				return w==1.0? 0:m2._sum/(w-1);
 			default:

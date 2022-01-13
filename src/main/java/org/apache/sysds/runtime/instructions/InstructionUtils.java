@@ -1010,6 +1010,7 @@ public class InstructionUtils
 		case CM3:
 		case CM4:
 		case MIN:
+		case MAX:
 			return new CMOperator(CM.getCMFnObject(op), op);
 		case INVALID:
 		default:

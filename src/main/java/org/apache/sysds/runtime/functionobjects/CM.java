@@ -90,6 +90,7 @@ public class CM extends ValueFunction
 			cm1.w=1;
 			cm1.mean.set(in2, 0);
 			cm1.min = Double.MAX_VALUE;
+			cm1.max = Double.MIN_VALUE;
 			cm1.m2.set(0,0);
 			cm1.m3.set(0,0);
 			cm1.m4.set(0,0);
@@ -114,6 +115,11 @@ public class CM extends ValueFunction
 			case MIN:
 			{
 				cm1.min = Math.min(cm1.min, in2);
+				break;
+			}
+			case MAX:
+			{
+				cm1.max = Math.max(cm1.max, in2);
 				break;
 			}
 			case CM2:
@@ -200,6 +206,7 @@ public class CM extends ValueFunction
 			cm1.w=w2;
 			cm1.mean.set(in2, 0);
 			cm1.min = Double.MAX_VALUE;
+			cm1.max = Double.MIN_VALUE;
 			cm1.m2.set(0,0);
 			cm1.m3.set(0,0);
 			cm1.m4.set(0,0);
@@ -217,6 +224,12 @@ public class CM extends ValueFunction
 			{
 				in2 *= w2;
 				cm1.min = Math.min(cm1.min, in2);
+				break;
+			}
+			case MAX:
+			{
+				in2 *= w2;
+				cm1.max = Math.max(cm1.max, in2);
 				break;
 			}
 			case MEAN:
@@ -313,6 +326,7 @@ public class CM extends ValueFunction
 			cm1.w=cm2.w;
 			cm1.mean.set(cm2.mean);
 			cm1.min = cm2.min;
+			cm1.max = cm2.max;
 			cm1.m2.set(cm2.m2);
 			cm1.m3.set(cm2.m3);
 			cm1.m4.set(cm2.m4);
@@ -332,6 +346,10 @@ public class CM extends ValueFunction
 			{
 				cm1.min = Math.min(cm1.min, cm2.min);
 				break;
+			}
+			case MAX:
+			{
+				cm1.max = Math.max(cm1.max, cm2.max);
 			}
 			case MEAN:
 			{

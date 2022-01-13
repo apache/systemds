@@ -57,7 +57,8 @@ public abstract class Statement implements ParseInfo
 	public static final String GAGG_FN_MEAN     = "mean";
 	public static final String GAGG_FN_VARIANCE = "variance";
 	public static final String GAGG_FN_CM       = "centralmoment";
-	public static final String GAGG_FN_MIN		= "min";
+	public static final String GAGG_FN_MIN      = "min";
+	public static final String GAGG_FN_MAX      = "max";
 	public static final String GAGG_FN_CM_ORDER = "order";
 	public static final String GAGG_NUM_GROUPS  = "ngroups";
 

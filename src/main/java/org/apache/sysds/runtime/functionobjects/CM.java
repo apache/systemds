@@ -350,6 +350,7 @@ public class CM extends ValueFunction
 			case MAX:
 			{
 				cm1.max = Math.max(cm1.max, cm2.max);
+				break;
 			}
 			case MEAN:
 			{

@@ -89,8 +89,8 @@ public class CM extends ValueFunction
 		if(cm1.isCMAllZeros()) {
 			cm1.w=1;
 			cm1.mean.set(in2, 0);
-			cm1.min = Double.MAX_VALUE;
-			cm1.max = Double.MIN_VALUE;
+			cm1.min = in2;
+			cm1.max = in2;
 			cm1.m2.set(0,0);
 			cm1.m3.set(0,0);
 			cm1.m4.set(0,0);
@@ -205,8 +205,8 @@ public class CM extends ValueFunction
 		{
 			cm1.w=w2;
 			cm1.mean.set(in2, 0);
-			cm1.min = Double.MAX_VALUE;
-			cm1.max = Double.MIN_VALUE;
+			cm1.min = in2 * w2;
+			cm1.max = in2 * w2;
 			cm1.m2.set(0,0);
 			cm1.m3.set(0,0);
 			cm1.m4.set(0,0);
@@ -222,14 +222,12 @@ public class CM extends ValueFunction
 			}
 			case MIN:
 			{
-				in2 *= w2;
-				cm1.min = Math.min(cm1.min, in2);
+				cm1.min = Math.min(cm1.min, in2 * w2);
 				break;
 			}
 			case MAX:
 			{
-				in2 *= w2;
-				cm1.max = Math.max(cm1.max, in2);
+				cm1.max = Math.max(cm1.max, in2 * w2);
 				break;
 			}
 			case MEAN:

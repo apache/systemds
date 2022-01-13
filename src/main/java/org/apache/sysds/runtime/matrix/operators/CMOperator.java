@@ -111,7 +111,7 @@ public class CMOperator extends Operator
 		switch( aggOpType )
 		{
 			case COUNT:
-			case MEAN: 
+			case MEAN:
 				ret = true; break;
 				
 			//NOTE: the following aggregation operators are not marked for partial aggregation 

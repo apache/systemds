@@ -45,7 +45,7 @@ public class CM_COV_Object extends Data
 	
 	@Override
 	public String toString() {
-		return "weight: "+w+", mean: "+mean+", m2: "+m2+", m3: "+m3+", m4: "+m4+", mean2: "+mean_v+", c2: "+c2;
+		return "weight: "+w+", mean: "+mean+", m2: "+m2+", m3: "+m3+", m4: "+m4+", min: "+min+", max: "+max+", mean2: "+mean_v+", c2: "+c2;
 	}
 	
 	public CM_COV_Object()
@@ -58,8 +58,8 @@ public class CM_COV_Object extends Data
 		m4=new KahanObject(0,0);
 		mean_v=new KahanObject(0,0);
 		c2=new KahanObject(0,0);
-		min=Double.MAX_VALUE;
-		max=Double.MIN_VALUE;
+		min=0;
+		max=0;
 	}
 	
 	public void reset()
@@ -71,8 +71,8 @@ public class CM_COV_Object extends Data
 		m4=new KahanObject(0,0);
 		mean_v=new KahanObject(0,0);
 		c2=new KahanObject(0,0);
-		min=Double.MAX_VALUE;
-		max=Double.MIN_VALUE;
+		min=0;
+		max=0;
 	}
 	
 	public int compareTo(CM_COV_Object that)
@@ -130,7 +130,7 @@ public class CM_COV_Object extends Data
 	
 	public boolean isCMAllZeros()
 	{
-		return w==0 && mean.isAllZero() && m2.isAllZero()  && m3.isAllZero()  && m4.isAllZero() ;
+		return w==0 && mean.isAllZero() && m2.isAllZero()  && m3.isAllZero()  && m4.isAllZero() && min==0 && max==0;
 	}
 	
 	public boolean isCOVAllZeros()

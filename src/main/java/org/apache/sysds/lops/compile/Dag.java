@@ -258,8 +258,6 @@ public class Dag<N extends Lop>
 			v.stream().filter(l -> !l.getOutputs().isEmpty()).sorted(Comparator.comparing(l -> l.getID())),
 			v.stream().filter(l -> l.getOutputs().isEmpty())).collect(Collectors.toList());
 
-		//printStats(nodes);
-
 		//NOTE: in contrast to hadoop execution modes, we avoid computing the transitive
 		//closure here to ensure linear time complexity because its unnecessary for CP and Spark
 		return nodes;
@@ -268,28 +266,7 @@ public class Dag<N extends Lop>
 	private static List<Lop> doBreadthFirstSort(List<Lop> v) {
 		List<Lop> nodes = v.stream().sorted(Comparator.comparing(Lop::getLevel)).collect(Collectors.toList());
 
-		//printStats(nodes);
-
 		return nodes;
-	}
-
-	private static void printStats(List<Lop> v) {
-		for (Lop l : v) {
-			long memEst = OptimizerUtils.estimateSizeExactSparsity(l.getOutputParameters().getNumRows(),
-				l.getOutputParameters().getNumCols(), l.getOutputParameters().getNnz());
-
-			System.out.println("ID: " + l.getID());
-			System.out.println("Level: " + l.getLevel());
-			System.out.println("Memory estimate: " + memEst);
-			System.out.println("Output params: " + l.getOutputParameters());
-			System.out.println("Class: " + l.getClass());
-			System.out.println("Type: " + l.getDataType() + ", data exec location: " + l.isDataExecLocation() +
-				", variable: " + l.isVariable() + ", exec type: " + l.getExecType());
-			System.out.println("Inputs: " + l.getInputs());
-			System.out.println("Outputs: " + l.getOutputs());
-			System.out.println("Str: " + l.toString());
-			System.out.println("=============================");
-		}
 	}
 
 	/**
@@ -320,8 +297,6 @@ public class Dag<N extends Lop>
 
 		// All lops were added bottom up, from highest to lowest memory consumption, now reverse this
 		Collections.reverse(nodes);
-
-		//printStats(nodes);
 
 		return nodes;
 	}

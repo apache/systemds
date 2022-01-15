@@ -35,6 +35,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.meta.MetaData;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -52,8 +53,8 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.concurrent.Promise;
-import org.apache.sysds.runtime.meta.MetaData;
 
 public class FederatedData {
 	private static final Log LOG = LogFactory.getLog(FederatedData.class.getName());
@@ -179,13 +180,15 @@ public class FederatedData {
 						cp.addLast(SslConstructor().context
 							.newHandler(ch.alloc(), address.getAddress().getHostAddress(), address.getPort()));
 					}
+					final int timeout = ConfigurationManager.getFederatedTimeout();
+					if(timeout > -1)
+						cp.addLast("timeout",new ReadTimeoutHandler(timeout));
 
 					cp.addLast("ObjectDecoder",
 						new ObjectDecoder(Integer.MAX_VALUE,
 							ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
 					cp.addLast("FederatedOperationHandler", handler);
 					cp.addLast("ObjectEncoder", new ObjectEncoder());
-
 				}
 			});
 

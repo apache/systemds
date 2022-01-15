@@ -275,7 +275,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			throw ex;
 		}
 		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
+			String msg = "Exception of type " + ex.getClass() + " thrown when processing READ request";
+			LOG.error(msg, ex);
+			throw new DMLRuntimeException(msg);
 		}
 		finally {
 			IOUtilFunctions.closeSilently(fs);
@@ -425,6 +427,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		catch(Exception ex) {
 			// Note it is unsafe to throw the ex trace along with the exception here.
 			String msg = "Exception of type " + ex.getClass() + " thrown when processing EXEC_UDF request";
+			LOG.error(msg, ex);
 			throw new FederatedWorkerHandlerException(msg);
 		}
 	}
@@ -438,6 +441,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 		catch(Exception ex) {
 			String msg = "Exception of type " + ex.getClass() + " thrown when processing CLEAR request";
+			LOG.error(msg, ex);
 			throw new FederatedWorkerHandlerException(msg);
 		}
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);

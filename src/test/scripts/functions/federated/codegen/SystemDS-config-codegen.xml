@@ -18,15 +18,11 @@
 -->
 
 <root>
-   <sysds.localtmpdir>/tmp/systemds</sysds.localtmpdir>
-   <sysds.scratch>scratch_space</sysds.scratch>
    <sysds.optlevel>7</sysds.optlevel>
    <sysds.codegen.enabled>true</sysds.codegen.enabled>
    <sysds.codegen.plancache>true</sysds.codegen.plancache>
    <sysds.codegen.literals>1</sysds.codegen.literals>
-
-   <!-- The number of theads for the spark instance artificially selected-->
-   <sysds.local.spark.number.threads>16</sysds.local.spark.number.threads>
-
+   <sysds.local.spark.number.threads>2</sysds.local.spark.number.threads>
    <sysds.codegen.api>auto</sysds.codegen.api>
+   <sysds.federated.timeout>128</sysds.federated.timeout>
 </root>

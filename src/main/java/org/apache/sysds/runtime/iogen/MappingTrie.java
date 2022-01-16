@@ -56,20 +56,27 @@ public class MappingTrie {
 			if(bitSet.get(i))
 				sb.append(str.charAt(i));
 			else if(sb.length() > 0) {
-				if(sb.length() == 1)
-					result.add(sb.toString());
-				else {
-					for(int j = 1; j <= sb.length(); j++) {
-						for(int k = 0; k <= sb.length() - j; k++) {
-							result.add(sb.substring(k, k + j));
-						}
-					}
-				}
+				getAllSubStrings(result, sb);
 				sb = new StringBuilder();
 			}
 		}
+		if(sb.length() > 0){
+			getAllSubStrings(result, sb);
+		}
 
 		return result;
+	}
+
+	private void getAllSubStrings(HashSet<String> result, StringBuilder sb) {
+		if(sb.length() == 1)
+			result.add(sb.toString());
+		else {
+			for(int j = 1; j <= sb.length(); j++) {
+				for(int k = 0; k <= sb.length() - j; k++) {
+					result.add(sb.substring(k, k + j));
+				}
+			}
+		}
 	}
 
 	public String getIntersectOfChildren(MappingTrieNode node) {

@@ -103,7 +103,6 @@ public class FormatIdentifying {
 		HashSet<String> endWithValueString = null;
 		boolean flagReconstruct;
 		int selectedIndex = -1;
-
 		do {
 			int index = 0;
 			for(ArrayList<String> key : keys) {

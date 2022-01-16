@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import com.google.gson.Gson;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -344,14 +343,7 @@ public class RawIndex {
 		return rawLength;
 	}
 
-	public static void main(String[] args) {
-		String s = "123dddd56";
-		RawIndex ni = new RawIndex(s);
-		//ni.printBitSets();
-		Pair<Integer, Integer> p1= ni.findValue(123);
-		Pair<Integer, Integer> p= ni.findValue(123);
-		Gson gson=new Gson();
-		System.out.println(gson.toJson(p));
+	public String getRaw() {
+		return raw;
 	}
-
 }

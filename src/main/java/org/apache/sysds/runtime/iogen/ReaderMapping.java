@@ -36,23 +36,26 @@ public class ReaderMapping {
 	private int[][] mapRow;
 	private int[][] mapCol;
 	private int[][] mapLen;
-	private boolean symmetric;
-	private boolean skewSymmetric;
-	private boolean isUpperTriangular;
-	private int skewCoefficient;
-	private ArrayList<RawIndex> sampleRawIndexes;
-
 	private boolean mapped;
-	private static int nrows;
-	private static int ncols;
+	private int nrows;
+	private int ncols;
 	private int nlines;
-	private int firstRowIndex;
-	private int firstColIndex;
-
+	private ArrayList<RawIndex> sampleRawIndexes;
 	private MatrixBlock sampleMatrix;
 	private FrameBlock sampleFrame;
 	private Types.ValueType[] schema;
 	private final boolean isMatrix;
+
+	public ReaderMapping(int nlines, int nrows, int ncols, ArrayList<RawIndex> sampleRawIndexes, MatrixBlock matrix)
+		throws Exception {
+		this.nlines = nlines;
+		this.nrows = nrows;
+		this.ncols = ncols;
+		this.sampleRawIndexes = sampleRawIndexes;
+		this.sampleMatrix = matrix;
+		this.isMatrix = true;
+		this.runMapping(true);
+	}
 
 	public ReaderMapping(String raw, MatrixBlock matrix) throws Exception {
 		this.ReadRaw(raw);
@@ -60,7 +63,7 @@ public class ReaderMapping {
 		this.sampleMatrix = matrix;
 		this.nrows = this.sampleMatrix.getNumRows();
 		this.ncols = this.sampleMatrix.getNumColumns();
-		this.runMapping();
+		this.runMapping(false);
 	}
 
 	public ReaderMapping(String raw, FrameBlock frame) throws Exception {
@@ -70,7 +73,7 @@ public class ReaderMapping {
 		this.nrows = this.sampleFrame.getNumRows();
 		this.ncols = this.sampleFrame.getNumColumns();
 		this.schema = this.sampleFrame.getSchema();
-		this.runMapping();
+		this.runMapping(false);
 	}
 
 	private void ReadRaw(String raw) throws Exception {
@@ -85,8 +88,6 @@ public class ReaderMapping {
 			nlines++;
 		}
 		this.nlines = nlines;
-		this.firstColIndex = 0;
-		this.firstRowIndex = 0;
 	}
 
 	private boolean isSchemaNumeric() {
@@ -99,11 +100,11 @@ public class ReaderMapping {
 		return result;
 	}
 
-	private void runMapping() throws Exception {
-		mapped = findMapping();
+	private void runMapping(boolean isIndexMapping) throws Exception {
+		mapped = findMapping(isIndexMapping);
 	}
 
-	protected boolean findMapping() {
+	protected boolean findMapping(boolean isIndexMapping) {
 		mapRow = new int[nrows][ncols];
 		mapCol = new int[nrows][ncols];
 		mapLen = new int[nrows][ncols];
@@ -116,8 +117,8 @@ public class ReaderMapping {
 		int itRow = 0;
 		for(int r = 0; r < nrows; r++) {
 			for(int c = 0; c < ncols; c++) {
-				if((this.isMatrix && this.sampleMatrix.getValue(r, c) != 0) || (!this.isMatrix && this.sampleFrame.get(
-					r, c) != null)) {
+				if(isIndexMapping || ((this.isMatrix && this.sampleMatrix.getValue(r, c) != 0) || (!this.isMatrix && this.sampleFrame.get(
+					r, c) != null))) {
 					HashSet<Integer> checkedLines = new HashSet<>();
 					while(checkedLines.size() < nlines) {
 						RawIndex ri = sampleRawIndexes.get(itRow);
@@ -149,229 +150,34 @@ public class ReaderMapping {
 		return flagMap;
 	}
 
-	public CustomProperties getFormatProperties() {
-		CustomProperties properties = new CustomProperties();
 
-		boolean rowIndexIdentify = isRowIndexIdentify();
-		ColumnIdentifyProperties[] colIndexIdentify = isColumnIndexIdentify();
-		if(rowIndexIdentify && colIndexIdentify!=null)
-			properties.setRowColIdentifyProperties(colIndexIdentify);
 
-		return properties;
+	public int[][] getMapRow() {
+		return mapRow;
 	}
 
-	// Row Index is Identifies, when the sample row index equal to sample Matrix/Frame row index
-	private boolean isRowIndexIdentify() {
-		int l = 0;
-		ArrayList<Pair<Integer, Integer>> mismatched = new ArrayList<>();
-		for(int r = 0; r < nrows; r++) {
-			for(int c = 0; c < ncols; c++) {
-				if(mapRow[r][c] != -1 && l != mapRow[r][c]) {
-					mismatched.add(new Pair<>(r, c));
-				}
-			}
-			l++;
-		}
-		// All rows of sample raw not used
-		if(l != nlines) {
-			return false;
-		}
-		else if(mismatched.size() > 0) {
-			return false;
-		}
-		return true;
+	public int[][] getMapCol() {
+		return mapCol;
 	}
 
-	// Column Index is identifies, when the logical char position of the sample raw on a line
-	// equal to a column index in sample Matrix/Frame
-	private ColumnIdentifyProperties[] isColumnIndexIdentify() {
-		ColumnIdentifyProperties[] result = new ColumnIdentifyProperties[ncols];
-		for(int c = 0; c < ncols; c++) {
-			Pair<String, Integer> pair = getLogicalPositionOfAColumn(c);
-			if(pair == null)
-				return null;
-			else {
-				String endDelimiterOfAColumn = getEndDelimiterOfAColumn(c);
-				if(endDelimiterOfAColumn != null)
-					result[c] = new ColumnIdentifyProperties(pair.getKey(), pair.getValue(), endDelimiterOfAColumn);
-				else
-					return null;
-			}
-		}
-		return result;
+	public int[][] getMapLen() {
+		return mapLen;
 	}
 
-	private Pair<String, Integer> getLogicalPositionOfAColumn(int colIndex) {
-		ArrayList<String> tokens = new ArrayList<>();
-		int minPos = mapCol[0][colIndex];
-		int maxPos = minPos;
-		int colPos;
-		int rowIndex;
-		for(int r = 0; r < nrows; r++) {
-			colPos = mapCol[r][colIndex];
-			rowIndex = mapRow[r][colIndex];
-			if(colPos != -1) {
-				tokens.add(sampleRawIndexes.get(rowIndex).getSubString(0, colPos));
-				minPos = Math.min(minPos, colPos);
-				maxPos = Math.max(maxPos, colPos);
-			}
-		}
-		if(maxPos == 0 && minPos == 0) {
-			return new Pair<String, Integer>("", 0);
-		}
-
-		String delimCandidate = null;
-		int delimCandidateCont = 0;
-		for(int tl = 1; tl < minPos; tl++) {
-			String token = tokens.get(0);
-			String delim = token.substring(token.length() - tl);
-			int xCount = getDuplicateSubstringCountString(tokens.get(0), delim);
-			int yCount = xCount;
-			for(int i = 1; i < tokens.size() && xCount == yCount; i++) {
-				yCount = getDuplicateSubstringCountString(tokens.get(i), delim);
-			}
-			if(xCount == yCount) {
-				delimCandidate = delim;
-				delimCandidateCont = xCount;
-			}
-			else
-				break;
-		}
-		if(delimCandidate != null)
-			return new Pair<>(delimCandidate, delimCandidateCont);
-		return null;
-
+	public ArrayList<RawIndex> getSampleRawIndexes() {
+		return sampleRawIndexes;
 	}
 
-	private String getEndDelimiterOfAColumn(int colIndex) {
-		HashSet<String> tokens = new HashSet<>();
-		int colEnd;
-		int colPos;
-		int rowIndex;
-		for(int r = 0; r < nrows; r++) {
-			rowIndex = mapRow[r][colIndex];
-			colPos = mapCol[rowIndex][colIndex];
-			RawIndex ri = sampleRawIndexes.get(r);
-			if(colPos != -1) {
-				colEnd = colPos + mapLen[r][colIndex];
-				String endStr = ri.getSubString(colEnd, Math.min(ri.getRawLength(), colEnd + 1));
-				tokens.add(endStr);
-			}
-		}
-		if(tokens.size() == 1)
-			return tokens.iterator().next();
-		else
-			return null;
+	public int getNrows() {
+		return nrows;
 	}
 
-	private int getDuplicateSubstringCountString(String source, String str) {
-		int count = 0;
-		int index = 0;
-		do {
-			index = source.indexOf(str, index);
-			if(index != -1) {
-				count++;
-				index += str.length();
-			}
-		}
-		while(index != -1);
-		return count;
+	public int getNcols() {
+		return ncols;
 	}
 
-	private Pair<String, Boolean> isRowIndexPrefix() {
-
-		ArrayList<Pair<Integer, Integer>> mismatched = new ArrayList<>();
-		ArrayList<Pair<Integer, Integer>> prefixes = new ArrayList<>();
-		ArrayList<Pair<Integer, Integer>> nonePrefix = new ArrayList<>();
-		DelimiterTrie delimiterTrie = new DelimiterTrie();
-
-		int delimiterMinSize = 0;
-
-		for(int r = 0; r < nrows; r++) {
-			RawIndex ri = sampleRawIndexes.get(r);
-			ri.cloneReservedPositions();
-			for(int c = 0; c < ncols; c++) {
-				if(mapRow[r][c] != -1) {
-					Pair<Integer, Integer> pair = ri.findValue(r);
-					if(pair == null)
-						mismatched.add(new Pair<>(r, c));
-					else {
-						if(pair.getKey() < mapCol[r][c]) {
-							String delim = ri.getSubString(pair.getKey() + pair.getValue(), mapCol[r][c]);
-							int delimLength = delim.length();
-							if(delimiterMinSize != 0 && delimLength < delimiterMinSize)
-								delimiterMinSize = delimLength;
-							else
-								delimiterMinSize = delimLength;
-
-							delimiterTrie.insert(delim);
-							prefixes.add(pair);
-						}
-						else
-							nonePrefix.add(pair);
-					}
-				}
-			}
-			//ri.restoreReservedPositions();
-		}
-		// TODO: attend to mistakes and none-prefix row index maps
-
-		return delimiterTrie.getShortestDelim(delimiterMinSize);
-	}
-
-	class DelimiterTrie {
-		private final StringBuilder totalDelim;
-		private int totalDelimLength;
-		private boolean valid;
-
-		public DelimiterTrie() {
-			totalDelim = new StringBuilder();
-			totalDelimLength = 0;
-			valid = true;
-		}
-
-		public boolean insert(String delim) {
-			if(delim.length() > totalDelimLength) {
-				if(delim.startsWith(totalDelim.toString())) {
-					totalDelim.append(delim.substring(totalDelimLength));
-					totalDelimLength += delim.length() - totalDelimLength;
-				}
-				else
-					valid = false;
-			}
-			else if(!totalDelim.toString().startsWith(delim))
-				valid = false;
-			return valid;
-		}
-
-		public Pair<String, Boolean> getShortestDelim(int minsize) {
-			if(!valid)
-				return null;
-
-			if(minsize == totalDelimLength)
-				return new Pair<String, Boolean>(totalDelim.toString(), true);
-			else {
-				HashSet<String> delimSet = new HashSet<>();
-				for(int i = 1; i <= minsize; i++) {
-					delimSet.clear();
-					for(int j = 0; j < totalDelimLength; j += i) {
-						delimSet.add(totalDelim.substring(j, Math.min(j + i, totalDelimLength)));
-					}
-					if(delimSet.size() == 1)
-						break;
-				}
-				if(delimSet.size() == 1) {
-					String delim = delimSet.iterator().next();
-					return new Pair<String, Boolean>(delim, delim.length() == totalDelimLength);
-				}
-				else
-					return null;
-			}
-		}
-
-		public void print() {
-			System.out.println(totalDelim);
-		}
+	public int getNlines() {
+		return nlines;
 	}
 
 	public boolean isMapped() {

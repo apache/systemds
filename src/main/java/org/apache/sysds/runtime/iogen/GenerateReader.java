@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.io.FrameReader;
+import org.apache.sysds.runtime.iogen.template.GIOMatrixReader;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -41,12 +42,12 @@ public abstract class GenerateReader {
 
 	protected static final Log LOG = LogFactory.getLog(GenerateReader.class.getName());
 
-	protected static ReaderMapping readerMapping;
+	protected static FormatIdentifying formatIdentifying;
 
 	public GenerateReader(SampleProperties sampleProperties) throws Exception {
 
-		readerMapping = sampleProperties.getDataType().isMatrix() ? new ReaderMapping(sampleProperties.getSampleRaw(),
-			sampleProperties.getSampleMatrix()) : new ReaderMapping(sampleProperties.getSampleRaw(),
+		formatIdentifying = sampleProperties.getDataType().isMatrix() ? new FormatIdentifying(sampleProperties.getSampleRaw(),
+			sampleProperties.getSampleMatrix()) : new FormatIdentifying(sampleProperties.getSampleRaw(),
 			sampleProperties.getSampleFrame());
 	}
 
@@ -65,29 +66,25 @@ public abstract class GenerateReader {
 
 		public MatrixReader getReader() throws Exception {
 
-			boolean isMapped = readerMapping != null && readerMapping.isMapped();
-			if(!isMapped) {
-				throw new Exception("Sample raw data and sample matrix don't match !!");
-			}
-			CustomProperties ffp = readerMapping.getFormatProperties();
+			CustomProperties ffp = formatIdentifying.getFormatProperties();
 			if(ffp == null) {
 				throw new Exception("The file format couldn't recognize!!");
 			}
-			// 2. Generate a Matrix Reader:
-			if(ffp.getRowPattern().equals(CustomProperties.GRPattern.Regular)) {
-				if(ffp.getColPattern().equals(CustomProperties.GRPattern.Regular)) {
-					matrixReader = new MatrixGenerateReader.MatrixReaderRowRegularColRegular(ffp);
-				}
-				else {
-					matrixReader = new MatrixGenerateReader.MatrixReaderRowRegularColIrregular(ffp);
-				}
-			}
-			else {
-				matrixReader = new MatrixGenerateReader.MatrixReaderRowIrregular(ffp);
-			}
+
+			//String className = "GIOMatrixReader2";
+			//TemplateCodeGenMatrix src = new TemplateCodeGenMatrix(ffp, className);
+
+			// constructor with arguments as CustomProperties
+			//Class[] cArg = new Class[1];
+			//cArg[0] = CustomProperties.class;
+
+			//String co = src.generateCodeJava();
+
+			//System.out.println(src.generateCodeJava());
+			//matrixReader = (MatrixReader) CodegenUtils.compileClass(className, src.generateCodeJava()).getDeclaredConstructor().newInstance();
+			matrixReader = new GIOMatrixReader(ffp);
 			return matrixReader;
 		}
-
 	}
 
 	// Generate Reader for Frame
@@ -105,25 +102,9 @@ public abstract class GenerateReader {
 
 		public FrameReader getReader() throws Exception {
 
-			boolean isMapped = readerMapping != null && readerMapping.isMapped();
-			if(!isMapped) {
-				throw new Exception("Sample raw data and sample frame don't match !!");
-			}
-			CustomProperties ffp = readerMapping.getFormatProperties();
+			CustomProperties ffp = formatIdentifying.getFormatProperties();
 			if(ffp == null) {
 				throw new Exception("The file format couldn't recognize!!");
-			}
-			// 2. Generate a Frame Reader:
-			if(ffp.getRowPattern().equals(CustomProperties.GRPattern.Regular)) {
-				if(ffp.getColPattern().equals(CustomProperties.GRPattern.Regular)) {
-					frameReader = new FrameGenerateReader.FrameReaderRowRegularColRegular(ffp);
-				}
-				else {
-					frameReader = new FrameGenerateReader.FrameReaderRowRegularColIrregular(ffp);
-				}
-			}
-			else {
-				frameReader = new FrameGenerateReader.FrameReaderRowIrregular(ffp);
 			}
 			return frameReader;
 		}

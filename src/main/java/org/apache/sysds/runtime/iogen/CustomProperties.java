@@ -24,6 +24,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
 
 public class CustomProperties extends FileFormatProperties implements Serializable {
 	private static final Log LOG = LogFactory.getLog(CustomProperties.class.getName());
@@ -33,25 +35,34 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		IDENTIFY, PREFIX, KEY;
 
 		@Override public String toString() {
-			return this.name().toLowerCase().replaceAll("_", "-");
+			return this.name().toUpperCase();
 		}
 	}
 
+	private  ArrayList<String>[] colKeyPattern;
+	private HashSet<String>[] endWithValueString;
 	private IndexProperties rowIndex;
 	private IndexProperties colIndex;
 
-	// When the Row and Column Index are identify
-	private ColumnIdentifyProperties[] columnIdentifyProperties;
+	public CustomProperties(ArrayList<String>[] colKeyPattern, HashSet<String>[] endWithValueString) {
+		this.colKeyPattern = colKeyPattern;
+		this.endWithValueString = endWithValueString;
+	}
 
-	// When the index is prefixes
-	private Integer rowIndexPrefixPosition;
-	private String rowIndexPrefixDelim;
-	private Boolean rowIndexPrefixDelimFixLength;
+	public ArrayList<String>[] getColKeyPattern() {
+		return colKeyPattern;
+	}
 
-	public void setRowColIdentifyProperties(ColumnIdentifyProperties[] columnIdentifyProperties) {
-		this.columnIdentifyProperties = columnIdentifyProperties;
-		this.rowIndex = IndexProperties.IDENTIFY;
-		this.colIndex = IndexProperties.IDENTIFY;
+	public void setColKeyPattern(ArrayList<String>[] colKeyPattern) {
+		this.colKeyPattern = colKeyPattern;
+	}
+
+	public HashSet<String>[] getEndWithValueString() {
+		return endWithValueString;
+	}
+
+	public void setEndWithValueString(HashSet<String>[] endWithValueString) {
+		this.endWithValueString = endWithValueString;
 	}
 
 	public IndexProperties getRowIndex() {
@@ -68,29 +79,5 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public void setColIndex(IndexProperties colIndex) {
 		this.colIndex = colIndex;
-	}
-
-	public Integer getRowIndexPrefixPosition() {
-		return rowIndexPrefixPosition;
-	}
-
-	public void setRowIndexPrefixPosition(Integer rowIndexPrefixPosition) {
-		this.rowIndexPrefixPosition = rowIndexPrefixPosition;
-	}
-
-	public String getRowIndexPrefixDelim() {
-		return rowIndexPrefixDelim;
-	}
-
-	public void setRowIndexPrefixDelim(String rowIndexPrefixDelim) {
-		this.rowIndexPrefixDelim = rowIndexPrefixDelim;
-	}
-
-	public Boolean getRowIndexPrefixDelimFixLength() {
-		return rowIndexPrefixDelimFixLength;
-	}
-
-	public void setRowIndexPrefixDelimFixLength(Boolean rowIndexPrefixDelimFixLength) {
-		this.rowIndexPrefixDelimFixLength = rowIndexPrefixDelimFixLength;
 	}
 }

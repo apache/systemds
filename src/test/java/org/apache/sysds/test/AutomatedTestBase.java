@@ -1102,7 +1102,7 @@ public abstract class AutomatedTestBase {
 					.replace(createXMLElement(DMLConfig.SCRATCH_SPACE, "scratch_space"),"")
 					.replace(createXMLElement(DMLConfig.LOCAL_TMP_DIR, "/tmp/systemds"),"")
 					.replace("</root>", testScratchSpace + testTempSpace + "\n</root>");
-				LOG.error(configContents);
+
 				FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 
 				if(LOG.isDebugEnabled())

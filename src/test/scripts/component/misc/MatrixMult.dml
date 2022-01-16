@@ -1,0 +1,12 @@
+totalResult = matrix(0, rows=1000, cols=1)
+for (i in 1:2) {
+    A = matrix(1.0 * i, rows=1000, cols=1000)
+    B = matrix(1.0 * (i + 1), rows=1000, cols=1000)
+    C = matrix(1.0 * (i + 2), rows=1000, cols=1000)
+    D = matrix(1.0 * (i + 3), rows=1000, cols=1000)
+    result = (A + B) %*% (rowMaxs(C + D))
+    totalResult = totalResult + result
+}
+
+print(toString(totalResult))
+write(totalResult, $1, format="text")

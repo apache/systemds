@@ -26,6 +26,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -135,6 +136,11 @@ public class Dag<N extends Lop>
 			lastInstructions.add(inst);
 		}
 	}
+
+	public enum DagLinearization {
+		TOPOLOGICAL,
+		MIN_INTERMEDIATE
+	}
 	
 	public Dag() {
 		//allocate internal data structures
@@ -195,12 +201,12 @@ public class Dag<N extends Lop>
 		if (config != null) {
 			scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE) + "/";
 		}
-		
-		// create ordering of lops (for MR, we sort by level, while for all
-		// other exec types we use a two-level sorting of )
-		List<Lop> node_v = 
-			//doTopologicalSortTwoLevelOrder(nodes);
-			//doBreadthFirstSort(nodes);
+
+		DMLConfig dmlConfig = ConfigurationManager.getDMLConfig();
+		DagLinearization linearization = DagLinearization.valueOf(
+			dmlConfig.getTextValue(DMLConfig.DAG_LINEARIZATION).toUpperCase());
+		List<Lop> node_v = linearization == DagLinearization.TOPOLOGICAL ?
+			doTopologicalSortTwoLevelOrder(nodes) :
 			doMinIntermediateSort(nodes);
 		
 		// add Prefetch and broadcast lops, if necessary

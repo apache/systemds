@@ -38,6 +38,9 @@
     
     <!-- enables compressed linear algebra, experimental feature -->
     <sysds.compressed.linalg>false</sysds.compressed.linalg>
+
+    <!-- set the dag linearization algorithm (topological, min_intermediate) -->
+    <sysds.compile.linearization>topological</sysds.compile.linearization>
     
     <!-- enables operator fusion via code generation, experimental feature -->
     <sysds.codegen.enabled>false</sysds.codegen.enabled>

@@ -74,7 +74,7 @@ predict_TT = function (Matrix[Double] M, Matrix[Double] X)
 {
   Y = matrix(0, rows=1, cols=nrow(X))
   n = ncol(M)
-  tree_depth = ceiling(log(7,2)) # max depth of complete binary tree
+  tree_depth = ceiling(log(n+1,2)) # max depth of complete binary tree
   [N_L, N_R, N_F, N_T, N_C] = createNodeTensors(M)
 
   for (k in 1:nrow(X)){
@@ -108,57 +108,44 @@ createNodeTensors = function( Matrix[Double] M )
 {
       N = M[1,] # all tree nodes
       I = M[2,] # list of node offsets to their left children
+      n_nodes  = ncol(N)
 
-      N_L = matrix(0, rows=1, cols=0)
-      N_R = matrix(0, rows=1, cols=0)
-      N_F = matrix(0, rows=1, cols=0)
-      N_T = matrix(0, rows=1, cols=0)
+      N_L = matrix(0, rows=1, cols=n_nodes)
+      N_R = matrix(0, rows=1, cols=n_nodes)
+      N_F = matrix(0, rows=1, cols=n_nodes)
+      N_T = matrix(0, rows=1, cols=n_nodes)
 
-      for (i in 1:ncol(N)){
-        # if the node is an internal node, add its left child to the N_L tensor
-        if (as.scalar(I[1,i]) != 0){
-          offset = as.scalar(I[1, i])
-          N_L = cbind(N_L, N[1, i+offset])
-        } else {
-          N_L = cbind(N_L, as.matrix(i))
-        }
-      }
-
-      for (i in 1:ncol(N)){
-        # if the node is an internal node, add its right child to the N_R tensor
-
+      for (i in 1:n_nodes){
+        # if the node is an internal node, add its left and right child to the N_L and N_R tensor, respectively
         if (as.scalar(I[1,i]) != 0){
           offset = as.scalar(I[1, i])
           leftChild = as.scalar(N[1, i+offset])
+          N_L[1, i] = N[1, i+offset]
           rightChild = leftChild + 1
 
-          if (as.scalar(I[1, leftChild]) == 0 & as.scalar(I[1, rightChild]) != 0 ){
+          if (as.scalar(I[1, leftChild]) == 0 & as.scalar(I[1, rightChild]) != 0){
             rightChild = i
           }
-          N_R = cbind(N_R, N[1, rightChild])
-        
+          N_R[1, i] = N[1, rightChild]        
         } else {
-          N_R = cbind(N_R, as.matrix(i))
+          N_L[1, i] = as.matrix(i)
+          N_R[1, i] = as.matrix(i)
         }
-      }
 
-      for (i in 1:ncol(N)){
         # if the node is an internal node, add index of the feature it evaluates
         if (as.scalar(M[3,i]) != 0){
-          N_F = cbind(N_F, M[3,i])
+          N_F[1, i] = M[3,i]
         
         } else {
-          N_F = cbind(N_F, as.matrix(1))
+          N_F[1, i] = as.matrix(1)
         }
-      }
 
-      for (i in 1:ncol(N)){
         # if the node is an internal node, add the threshold of the feature it evaluates
         if (as.scalar(M[6,i]) != 0){
-          N_T = cbind(N_T, M[6,i])
+          N_T[1, i] = M[6,i]
         
         } else {
-          N_T = cbind(N_T, as.matrix(0))
+          N_T[1, i] = as.matrix(0)
         }
       }
 
@@ -166,7 +153,7 @@ createNodeTensors = function( Matrix[Double] M )
     predicted_labels = M[4,]
     zero = FALSE
 
-    for (i in 1: ncol(predicted_labels)){
+    for (i in 1: n_nodes){
       if (as.scalar(I[1, i]) == 0){ # for every leaf node
         new_class = TRUE
         for (k in 1: ncol(unique_classes)){ # check if leaf node maps to a new class
@@ -190,7 +177,7 @@ createNodeTensors = function( Matrix[Double] M )
 
   N_C = matrix(0, rows=length(N), cols= length(C))
 
-  for (i in 1:ncol(N)){
+  for (i in 1:n_nodes){
     
     # check if node is leaf node   
     if (as.scalar(I[1, i])==0){ 

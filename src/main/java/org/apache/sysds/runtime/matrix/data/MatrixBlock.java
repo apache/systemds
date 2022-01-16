@@ -2616,22 +2616,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return size;
 	}
 
-	public static SparsityEstimate estimateSparsityOnAggBinary(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op)
-	{
-		//Since MatrixMultLib always uses a dense output (except for ultra-sparse mm)
-		//with subsequent check for sparsity, we should always return a dense estimate.
-		//Once, we support more aggregate binary operations, we need to change this.
-		
-		//WARNING: KEEP CONSISTENT WITH LIBMATRIXMULT
-		//Note that it is crucial to report the right output representation because
-		//in case of block reuse (e.g., mmcj) the output 'reset' refers to either
-		//dense or sparse representation and hence would produce incorrect results
-		//if we report the wrong representation (i.e., missing reset on ultrasparse mm). 
-		
-		boolean ultrasparse = (m1.isUltraSparse() || m2.isUltraSparse());
-		return new SparsityEstimate(ultrasparse, m1.getNumRows()*m2.getNumRows());
-	}
-
 	private static SparsityEstimate estimateSparsityOnBinary(MatrixBlock m1, MatrixBlock m2, BinaryOperator op)
 	{
 		SparsityEstimate est = new SparsityEstimate();
@@ -4988,34 +4972,34 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, AggregateBinaryOperator op) {
+		checkAggregateBinaryOperations(m1, m2, op);
+		final int k = op.getNumThreads();
+		if(NativeHelper.isNativeLibraryLoaded())
+			return LibMatrixNative.matrixMult(m1, m2, ret, k);
+		else 
+			return LibMatrixMult.matrixMult(m1, m2, ret, k);
+	}
+
+	protected void checkAggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op) {
 		//check input types, dimensions, configuration
-		if( m1.clen != m2.rlen ) {
+		if( m1.clen != m2.rlen )
 			throw new RuntimeException("Dimensions do not match for matrix multiplication ("+m1.clen+"!="+m2.rlen+").");
-		}
-		if( !(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus) ) {
+		checkAggregateBinaryOperationsCommon(m1, m2, op);
+	}
+
+	protected void checkAggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op, boolean transposeLeft,
+			boolean transposeRight) {
+		//check input types, dimensions, configuration
+		if((transposeLeft ? m1.rlen : m1.clen) != ( transposeRight ? m2.clen : m2.rlen) )
+			throw new RuntimeException("Dimensions do not match for matrix multiplication ("+m1.clen+"!="+m2.rlen+").");
+		checkAggregateBinaryOperationsCommon(m1, m2, op);
+	}
+		
+	private void checkAggregateBinaryOperationsCommon(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op){
+		if( !(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus) )
 			throw new DMLRuntimeException("Unsupported binary aggregate operation: ("+op.binaryFn+", "+op.aggOp+").");
-		}
-		
-		//setup meta data (dimensions, sparsity)
-		int rl = m1.rlen;
-		int cl = m2.clen;
-		SparsityEstimate sp = estimateSparsityOnAggBinary(m1, m2, op);
-		
-		//create output matrix block
-		if( ret==null )
-			ret = new MatrixBlock(rl, cl, sp.sparse, sp.estimatedNonZeros);
-		else
-			ret.reset(rl, cl, sp.sparse, sp.estimatedNonZeros);
-		
-		//compute matrix multiplication (only supported binary aggregate operation)
-		if( NativeHelper.isNativeLibraryLoaded() )
-			LibMatrixNative.matrixMult(m1, m2, ret, op.getNumThreads());
-		else if( op.getNumThreads() > 1 )
-			LibMatrixMult.matrixMult(m1, m2, ret, op.getNumThreads());
-		else
-			LibMatrixMult.matrixMult(m1, m2, ret);
-		
-		return ret;
+		if(!(m1 == this || m2 == this))
+			throw new DMLRuntimeException("Invalid aggregateBinaryOperatio: one of either input should be this");
 	}
 
 	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,

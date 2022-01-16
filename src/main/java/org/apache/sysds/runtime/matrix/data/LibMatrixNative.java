@@ -64,86 +64,83 @@ public class LibMatrixNative
 	 * @param m2 rhs matrix block
 	 * @param ret output matrix block
 	 * @param k number of threads
+	 * @return the ret matrixBlock if allocated otherwise a new matrixBlock.
 	 */
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
-		matrixMult(m1, m2, ret, k, true);
-	}
+	public static MatrixBlock matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
+		
+		if(NativeHelper.isNativeLibraryLoaded()){
+			// Sanity check:
+			k = k <= 0 ? NativeHelper.getMaxNumThreads() : k;
+			
+			// check inputs / outputs
+			if (m1.isEmptyBlock(false) || m2.isEmptyBlock(false))
+				return LibMatrixMult.emptyMatrixMult(m1,m2, ret);
+			
+			boolean isValidForNative = !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) 
+				&& !m1.isInSparseFormat() && !m2.isInSparseFormat()
+				&& (m1.getDenseBlock().isContiguous() || !isSinglePrecision())
+				&& m2.getDenseBlock().isContiguous() //contiguous but not allocated
+				&& 8L * ret.getLength() < Integer.MAX_VALUE;
 	
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k, boolean examSparsity) {
-		// Sanity check:
-		k = k <= 0 ? NativeHelper.getMaxNumThreads() : k;
-		
-		// check inputs / outputs
-		if (m1.isEmptyBlock(false) || m2.isEmptyBlock(false)){
-			ret.setNonZeros(0);
-			if(examSparsity)
-				ret.examSparsity(); // turn empty dense into sparse
-			return;
-		}
-		
-		boolean isValidForNative = !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) 
-			&& !m1.isInSparseFormat() && !m2.isInSparseFormat()
-			&& (m1.getDenseBlock().isContiguous() || !isSinglePrecision())
-			&& m2.getDenseBlock().isContiguous() //contiguous but not allocated
-			&& 8L * ret.getLength() < Integer.MAX_VALUE;
-
-		if( NativeHelper.isNativeLibraryLoaded() && isValidForNative ) 
-		{
-			ret.sparse = false;
-			ret.allocateDenseBlock();
-			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			long nnz = 0;
-			if( isSinglePrecision() ) {
-				FloatBuffer fin1 = toFloatBuffer(m1.getDenseBlockValues(), inBuff, true);
-				FloatBuffer fin2 = toFloatBuffer(m2.getDenseBlockValues(), filterBuff, true);
-				FloatBuffer fout = toFloatBuffer(ret.getDenseBlockValues(), outBuff, false);
-				nnz = NativeHelper.smmdd(fin1, fin2, fout, 
-					m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), k);
-				fromFloatBuffer(outBuff.get(), ret.getDenseBlockValues());
-			}
-			else {
-				DenseBlock a = m1.getDenseBlock();
-				if( a.isContiguous() ) {
-					nnz = NativeHelper.dmmdd(m1.getDenseBlockValues(), m2.getDenseBlockValues(),
-						ret.getDenseBlockValues(), m1.rlen, m1.clen, m2.clen, k);
+			if( isValidForNative ) 
+			{
+				// allocate output
+				if(ret == null)
+					ret = new MatrixBlock(m1.rlen, m2.clen, false);
+				else 
+					ret.reset(m1.rlen, m2.clen, false);
+				ret.allocateBlock();
+				
+				long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
+				long nnz = 0;
+				if( isSinglePrecision() ) {
+					FloatBuffer fin1 = toFloatBuffer(m1.getDenseBlockValues(), inBuff, true);
+					FloatBuffer fin2 = toFloatBuffer(m2.getDenseBlockValues(), filterBuff, true);
+					FloatBuffer fout = toFloatBuffer(ret.getDenseBlockValues(), outBuff, false);
+					nnz = NativeHelper.smmdd(fin1, fin2, fout, 
+						m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), k);
+					fromFloatBuffer(outBuff.get(), ret.getDenseBlockValues());
 				}
 				else {
-					//sequential processing of individual blocks to 
-					//avoid segementation faults with concurrent multi-threaded BLAS calls
-					for(int bix = 0; bix < a.numBlocks(); bix++) {
-						double[] tmp = new double[a.blockSize(bix)*m2.clen];
-						nnz += NativeHelper.dmmdd(a.valuesAt(bix), m2.getDenseBlockValues(),
-							tmp, a.blockSize(bix), m1.clen, m2.clen, k);
-						int rl = bix * a.blockSize();
-						ret.getDenseBlock().set(rl, rl+a.blockSize(bix), 0, m2.clen,
-							DenseBlockFactory.createDenseBlock(tmp, new int[]{a.blockSize(bix),m2.clen}));
+					DenseBlock a = m1.getDenseBlock();
+					if( a.isContiguous() ) {
+						nnz = NativeHelper.dmmdd(m1.getDenseBlockValues(), m2.getDenseBlockValues(),
+							ret.getDenseBlockValues(), m1.rlen, m1.clen, m2.clen, k);
+					}
+					else {
+						//sequential processing of individual blocks to 
+						//avoid segementation faults with concurrent multi-threaded BLAS calls
+						for(int bix = 0; bix < a.numBlocks(); bix++) {
+							double[] tmp = new double[a.blockSize(bix)*m2.clen];
+							nnz += NativeHelper.dmmdd(a.valuesAt(bix), m2.getDenseBlockValues(),
+								tmp, a.blockSize(bix), m1.clen, m2.clen, k);
+							int rl = bix * a.blockSize();
+							ret.getDenseBlock().set(rl, rl+a.blockSize(bix), 0, m2.clen,
+								DenseBlockFactory.createDenseBlock(tmp, new int[]{a.blockSize(bix),m2.clen}));
+						}
 					}
 				}
-			}
-			
-			if(nnz > -1) {
-				if(DMLScript.STATISTICS) {
-					Statistics.nativeLibMatrixMultTime += System.nanoTime() - start;
-					Statistics.numNativeLibMatrixMultCalls.increment();
-				}
-				ret.setNonZeros(nnz);
-				if(examSparsity)
+				
+				if(nnz > -1) {
+					if(DMLScript.STATISTICS) {
+						Statistics.nativeLibMatrixMultTime += System.nanoTime() - start;
+						Statistics.numNativeLibMatrixMultCalls.increment();
+					}
+					ret.setNonZeros(nnz);
 					ret.examSparsity();
-				return;
+					return ret;
+				}
+				//else record failure and fallback to java
+				Statistics.incrementNativeFailuresCounter();
+				LOG.warn("matrixMult: Native mat mult failed. Falling back to java version ("
+					+ "loaded=" + NativeHelper.isNativeLibraryLoaded()
+					+ ", sparse=" + (m1.isInSparseFormat() | m2.isInSparseFormat()) + ")");
 			}
-			//else record failure and fallback to java
-			Statistics.incrementNativeFailuresCounter();
-			LOG.warn("matrixMult: Native mat mult failed. Falling back to java version ("
-				+ "loaded=" + NativeHelper.isNativeLibraryLoaded()
-				+ ", sparse=" + (m1.isInSparseFormat() | m2.isInSparseFormat()) + ")");
 		}
-		else if(isValidForNative)
+		else
 			LOG.warn("Was valid for native MM but native lib was not loaded");
 		
-		if (k == 1)
-			LibMatrixMult.matrixMult(m1, m2, ret, !examSparsity);
-		else
-			LibMatrixMult.matrixMult(m1, m2, ret, k);
+		return LibMatrixMult.matrixMult(m1, m2, ret, k);
 	}
 	
 	public static void tsmm(MatrixBlock m1, MatrixBlock ret, boolean leftTrans, int k) {

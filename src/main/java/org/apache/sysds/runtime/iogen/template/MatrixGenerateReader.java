@@ -30,7 +30,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixReader;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -42,6 +41,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 public abstract class MatrixGenerateReader extends MatrixReader {
@@ -149,23 +149,13 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		}
 	}
 
-//	protected double getCellValue(String str, ArrayList<String> keys, HashSet<String> endDelim) {
-//		int currPos = 0;
-//		for(String k : keys) {
-//			int index = str.indexOf(k, currPos);
-//			if(index != -1)
-//				currPos = index + k.length();
-//			else
-//				return 0;
-//		}
-//		int endPos = -1;
-//		for(String d : endDelim) {
-//			endPos = d.length()> 0 ? str.indexOf(d, currPos): str.length();
-//			if(endPos != -1)
-//				break;
-//		}
-//		//------------------------
-//		if(endDelim.contains("")){}
-//		return UtilFunctions.getDouble(str.substring(currPos, endPos));
-//	}
+	protected int getEndPos(String str, int strLen, int currPos, HashSet<String> endWithValueString) {
+		int endPos = strLen;
+		for(String d : endWithValueString) {
+			int pos = d.length()> 0 ? str.indexOf(d, currPos): strLen;
+			if(pos != -1)
+				endPos = Math.min(endPos, pos);
+		}
+		return endPos;
+	}
 }

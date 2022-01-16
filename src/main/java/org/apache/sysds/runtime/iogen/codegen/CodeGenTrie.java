@@ -20,12 +20,9 @@
 package org.apache.sysds.runtime.iogen.codegen;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.iogen.MappingTrieNode;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Random;
 
 public class CodeGenTrie {
@@ -35,7 +32,7 @@ public class CodeGenTrie {
 		root = new CodeGenTrieNode();
 	}
 
-	public void insert(int colIndex, Types.ValueType valueType, ArrayList<String> keys, HashSet<String> endWithValueString) {
+	public void insert(int colIndex, Types.ValueType valueType, ArrayList<String> keys) {
 	
 		CodeGenTrieNode currentNode = root;
 		int index = 0;
@@ -50,7 +47,7 @@ public class CodeGenTrie {
 
 		CodeGenTrieNode newNode;
 		for(int i = index; i < keys.size(); i++) {
-			newNode = new CodeGenTrieNode(i == keys.size() - 1, colIndex, valueType, keys.get(i), endWithValueString, new HashSet<>());
+			newNode = new CodeGenTrieNode(i == keys.size() - 1, colIndex, valueType, keys.get(i), new HashSet<>());
 			currentNode.getChildren().put(keys.get(i), newNode);
 			currentNode = newNode;
 		}
@@ -61,7 +58,7 @@ public class CodeGenTrie {
 		return src.toString();
 	}
 
-	private String getRandomName(String base) {
+	public String getRandomName(String base) {
 		Random r = new Random();
 		int low = 0;
 		int high = 100000000;
@@ -69,12 +66,13 @@ public class CodeGenTrie {
 
 		return base + "_" + result;
 	}
+
 	private void getJavaCode(CodeGenTrieNode node, StringBuilder src, String destination, String currPos){
 		String currPosVariable = getRandomName("curPos");
 		if(node.getChildren().size() ==0){
 			String key = node.getKey();
 			if(key.length() > 0){
-				src.append("index = str.indexOf(\""+node.getKey()+"\", "+currPos+"); \n");
+				src.append("index = str.indexOf(\""+node.getKey().replace("\"", "\\\"")+"\", "+currPos+"); \n");
 				src.append("if(index != -1) { \n");
 				src.append("int "+currPosVariable + " = index + "+ key.length()+"; \n");
 				src.append(node.geValueCode(destination, currPosVariable));
@@ -86,7 +84,7 @@ public class CodeGenTrie {
 		}
 		else {
 			if(node.getKey()!=null) {
-				src.append("index = str.indexOf(\"" + node.getKey() + "\", "+currPos+"); \n");
+				src.append("index = str.indexOf(\"" + node.getKey().replace("\"", "\\\"") + "\", "+currPos+"); \n");
 				src.append("if(index != -1) { \n");
 				src.append("int "+currPosVariable + " = index + "+ node.getKey().length()+"; \n");
 				currPos = currPosVariable;

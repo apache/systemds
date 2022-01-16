@@ -1,7 +1,7 @@
 package org.apache.sysds.runtime.iogen.template;
 
 import org.apache.sysds.runtime.iogen.CustomProperties;
-import org.apache.sysds.runtime.iogen.codegen.CodeGenBase;
+import org.apache.sysds.runtime.iogen.codegen.CodeGen;
 
 public abstract class TemplateCodeGenBase {
 
@@ -13,7 +13,7 @@ public abstract class TemplateCodeGenBase {
 	protected String cppSourceTemplate;
 	protected String cppHeaderTemplate;
 
-	protected CodeGenBase codeGenClass;
+	protected CodeGen codeGen;
 
 	public TemplateCodeGenBase(CustomProperties properties, String className) {
 		this.properties = properties;

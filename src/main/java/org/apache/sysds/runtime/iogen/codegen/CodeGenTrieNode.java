@@ -20,13 +20,10 @@
 package org.apache.sysds.runtime.iogen.codegen;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.iogen.MappingTrieNode;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Random;
-import java.util.Set;
 
 public class CodeGenTrieNode {
 
@@ -34,7 +31,7 @@ public class CodeGenTrieNode {
 	private boolean endOfCondition;
 	private int colIndex;
 	private Types.ValueType valueType;
-	private HashSet<String> endWithValueString;
+	//private HashSet<String> endWithValueString;
 	private String key;
 	private HashSet<String> naStrings;
 
@@ -47,13 +44,13 @@ public class CodeGenTrieNode {
 		this.key = key;
 	}
 
-	public CodeGenTrieNode(boolean endOfCondition, int colIndex, Types.ValueType valueType, String key, HashSet<String> endWithValueString, HashSet<String> naStrings) {
+	public CodeGenTrieNode(boolean endOfCondition, int colIndex, Types.ValueType valueType, String key, HashSet<String> naStrings) {
 		this.endOfCondition = endOfCondition;
 		this.colIndex = colIndex;
 		this.valueType = valueType;
 		this.key = key;
 		if(endOfCondition){
-			this.endWithValueString = endWithValueString;
+			//this.endWithValueString = endWithValueString;
 			this.naStrings = naStrings;
 		}
 
@@ -64,32 +61,9 @@ public class CodeGenTrieNode {
 		StringBuilder src = new StringBuilder();
 		String subStr;
 
-		if(this.endWithValueString.size() == 1) {
-			String delim = this.endWithValueString.iterator().next();
-			if(delim.length() > 0)
-				subStr = "str.substring("+currPos+", str.indexOf(\""+delim+"\", "+currPos+"))";
-			else
-				subStr = "str.substring("+currPos+")";
-		}
-		else {
-			int i = 0;
-			for(String d: this.endWithValueString){
-				if(i == 0) {
-					if(d.length() == 0)
-						src.append("endPos = strLen; \n");
-					else
-						src.append("endPos = str.indexOf(\"" + d + "\", "+currPos+"); \n");
-				}
-				else {
-					if(d.length() == 0)
-						src.append("endPos = Math.min(strLen, endPos); \n");
-					else
-						src.append("endPos = Math.min(endPos, str.indexOf(\"" + d + "\", "+currPos+")); \n");
-				}
-				i++;
-			}
-			subStr = "str.substring(currPos, endPos)";
-		}
+		src.append("endPos = getEndPos(str, strLen, "+ currPos+", endWithValueString["+colIndex+"]); \n");
+		subStr = "str.substring("+currPos+",endPos)";
+
 		if(valueType.isNumeric()) {
 			src.append(getParsCode(subStr));
 			src.append("if(cellValue"+colIndex+" != 0) { \n");
@@ -98,7 +72,7 @@ public class CodeGenTrieNode {
 			src.append("}\n");
 		}
 		else if(valueType == Types.ValueType.STRING || valueType == Types.ValueType.BOOLEAN){
-			if(naStrings.size() > 0) {
+			if(naStrings !=null && naStrings.size() > 0) {
 				StringBuilder sb = new StringBuilder();
 				sb.append("if(");
 				for(String na : naStrings) {
@@ -122,8 +96,8 @@ public class CodeGenTrieNode {
 			case BOOLEAN: return "Boolean cellValue"+colIndex+" = Boolean.parseBoolean("+subStr+"); \n";
 			case INT32:   return "Integer cellValue"+colIndex+" = Integer.parseInt("+subStr+"); \n";
 			case INT64:   return "Long cellValue"+colIndex+" = Long.parseLong("+subStr+"); \n";
-			case FP64:    return "Float cellValue"+colIndex+" = Double.parseDouble("+subStr+"); \n";
-			case FP32:    return "Double cellValue"+colIndex+" = Float.parseFloat("+subStr+"); \n";
+			case FP64:    return "Double cellValue"+colIndex+" = Double.parseDouble("+subStr+"); \n";
+			case FP32:    return "Float cellValue"+colIndex+" = Float.parseFloat("+subStr+"); \n";
 			default: throw new RuntimeException("Unsupported value type: "+valueType);
 		}
 	}

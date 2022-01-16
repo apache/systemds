@@ -75,9 +75,9 @@ predict_TT = function (Matrix[Double] M, Matrix[Double] X)
   Y = matrix(0, rows=1, cols=nrow(X))
   n = ncol(M)
   tree_depth = ceiling(log(n+1,2)) # max depth of complete binary tree
-  [N_L, N_R, N_F, N_T, N_C] = createNodeTensors(M)
+  [N_L, N_R, N_F, N_T] = createNodeTensors(M)
 
-  for (k in 1:nrow(X)){
+  parfor (k in 1:nrow(X)){
     # iterate over every sample in X matrix
     sample = X[k,]
     current_node = 1
@@ -104,7 +104,7 @@ predict_TT = function (Matrix[Double] M, Matrix[Double] X)
 }
 
 createNodeTensors = function( Matrix[Double] M )
-  return ( Matrix[Double] N_L, Matrix[Double] N_R, Matrix[Double] N_F, Matrix[Double] N_T, Matrix[Double] N_C )
+  return ( Matrix[Double] N_L, Matrix[Double] N_R, Matrix[Double] N_F, Matrix[Double] N_T)
 {
       N = M[1,] # all tree nodes
       I = M[2,] # list of node offsets to their left children
@@ -115,7 +115,7 @@ createNodeTensors = function( Matrix[Double] M )
       N_F = matrix(0, rows=1, cols=n_nodes)
       N_T = matrix(0, rows=1, cols=n_nodes)
 
-      for (i in 1:n_nodes){
+      parfor (i in 1:n_nodes){
         # if the node is an internal node, add its left and right child to the N_L and N_R tensor, respectively
         if (as.scalar(I[1,i]) != 0){
           offset = as.scalar(I[1, i])
@@ -148,47 +148,4 @@ createNodeTensors = function( Matrix[Double] M )
           N_T[1, i] = as.matrix(0)
         }
       }
-
-    unique_classes = matrix(0, rows=1, cols=1)
-    predicted_labels = M[4,]
-    zero = FALSE
-
-    for (i in 1: n_nodes){
-      if (as.scalar(I[1, i]) == 0){ # for every leaf node
-        new_class = TRUE
-        for (k in 1: ncol(unique_classes)){ # check if leaf node maps to a new class
-          if (as.scalar(predicted_labels[1, i]) == as.scalar(unique_classes[1,k])) {
-            new_class = FALSE
-          }
-        }
-        if (as.scalar(predicted_labels[1, i]) == 0){
-          zero = TRUE
-        }
-        if (new_class == TRUE){
-          unique_classes = cbind(unique_classes, predicted_labels[1, i])
-        }
-      }
-    }
-    if (zero == FALSE){
-      C = unique_classes[1,2:ncol(unique_classes)]
-    } else {
-      C = unique_classes[1,]
-    }
-
-  N_C = matrix(0, rows=length(N), cols= length(C))
-
-  for (i in 1:n_nodes){
-    
-    # check if node is leaf node   
-    if (as.scalar(I[1, i])==0){ 
-         
-      for (k in 1:ncol(C)){ 
-        # add node if it maps to a class
-        if (as.scalar(M[4, i]) == as.scalar(C[1, k])){           
-          N_C[i, k] = 1
-        }
-      }
-    }
-  }
-
 }

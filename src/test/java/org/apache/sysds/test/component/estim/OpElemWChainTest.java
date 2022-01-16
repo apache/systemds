@@ -129,7 +129,7 @@ public class OpElemWChainTest extends AutomatedTestBase
 			case MULT:
 				bOp = new BinaryOperator(Multiply.getMultiplyFnObject());
 				m1.binaryOperations(bOp, m2, m4);
-				m5 = m1.aggregateBinaryOperations(m4, m3, 
+				m5 = m4.aggregateBinaryOperations(m4, m3, 
 						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
 				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m3), OpCode.MM)).getSparsity();
 				// System.out.println(m5.getSparsity());
@@ -138,7 +138,7 @@ public class OpElemWChainTest extends AutomatedTestBase
 			case PLUS:
 				bOp = new BinaryOperator(Plus.getPlusFnObject());
 				m1.binaryOperations(bOp, m2, m4);
-				m5 = m1.aggregateBinaryOperations(m4, m3, 
+				m5 = m4.aggregateBinaryOperations(m4, m3, 
 						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
 				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m3), OpCode.MM)).getSparsity();
 				// System.out.println(m5.getSparsity());

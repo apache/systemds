@@ -621,7 +621,6 @@ public abstract class CompressedTestBase extends TestBase {
 				return; // Early termination since the test does not test what we wanted.
 
 			// Make Operator
-			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
 			AggregateBinaryOperator abopSingle = InstructionUtils.getMatMultOperator(1);
 
 			// vector-matrix uncompressed
@@ -633,7 +632,7 @@ public abstract class CompressedTestBase extends TestBase {
 			ucRet = right.aggregateBinaryOperations(left, right, ucRet, abopSingle);
 
 			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb).aggregateBinaryOperations(compMatrix, cmb, new MatrixBlock(),
-				abop, transposeLeft, transposeRight);
+			abopSingle, transposeLeft, transposeRight);
 
 			compareResultMatrices(ucRet, ret2, 100);
 		}

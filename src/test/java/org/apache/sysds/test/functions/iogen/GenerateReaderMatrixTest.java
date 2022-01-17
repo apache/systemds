@@ -19,11 +19,11 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import com.google.gson.Gson;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.CompilerConfig;
-import org.apache.sysds.runtime.iogen.ReaderMapping;
+import org.apache.sysds.runtime.io.MatrixReader;
+import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -44,8 +44,7 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 
 	protected abstract String getTestName();
 
-	@Override
-	public void setUp() {
+	@Override public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(getTestName(), new TestConfiguration(TEST_DIR, getTestName(), new String[] {"Y"}));
 	}
@@ -64,8 +63,7 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 		}
 	}
 
-	@SuppressWarnings("unused")
-	protected void runGenerateReaderTest() {
+	@SuppressWarnings("unused") protected void runGenerateReaderTest() {
 
 		Types.ExecMode oldPlatform = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -83,23 +81,19 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			File directory = new File(HOME);
-			if (! directory.exists()){
+			if(!directory.exists()) {
 				directory.mkdir();
 			}
 			String dataPath = HOME + "matrix_data.raw";
 			int clen = sampleMatrix[0].length;
 			writeRawString(sampleRaw, dataPath);
-			ReaderMapping r2 = new ReaderMapping(sampleRaw, sampleMB);
-			//System.out.println(r2.isMapped());
 
-			Gson gson=new Gson();
-			System.out.println(gson.toJson(r2.getFormatProperties()));
+			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
 
+			MatrixReader mr = gr.getReader();
+			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, -1, clen, -1, -1);
 
-//			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
-//
-//			MatrixReader mr= gr.getReader();
-//			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, -1, clen, -1, -1);
+			int a = 100;
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

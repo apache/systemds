@@ -49,8 +49,9 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 		Types.ValueType.INT32,
 		Types.ValueType.INT64,
 		Types.ValueType.FP32,
-		Types.ValueType.FP64,
-		Types.ValueType.BOOLEAN};
+		Types.ValueType.FP64//,
+	//	Types.ValueType.BOOLEAN
+	};
 
 	protected Types.ValueType[] types1= { Types.ValueType.BOOLEAN};
 

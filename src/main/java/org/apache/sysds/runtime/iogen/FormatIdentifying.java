@@ -19,11 +19,13 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import com.google.gson.Gson;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class FormatIdentifying {
@@ -66,11 +68,15 @@ public class FormatIdentifying {
 		ncols = mappingValues.getNcols();
 		nlines = mappingValues.getNlines();
 
+		// Build a Key-Pattern foreach column
 		Pair<ArrayList<String>[], HashSet<String>[]> patternPair = buildKeyPattern();
 		properties = new CustomProperties(patternPair.getKey(), patternPair.getValue());
+
+		// Check the row index format
+		//verifyColsAtAllLines(patternPair.getKey());
+
 		properties.setRowIndex(CustomProperties.IndexProperties.IDENTIFY);
 	}
-
 
 	public CustomProperties getFormatProperties() {
 		return properties;
@@ -140,8 +146,8 @@ public class FormatIdentifying {
 		for(int r = 0; r < nrows; r++) {
 			rowIndex = mapRow[r][colIndex];
 			if(rowIndex != -1) {
-				prefixStringAndLineNumber.add(new Pair<>(
-					sampleRawIndexes.get(rowIndex).getSubString(0, mapCol[r][colIndex]), rowIndex));
+				prefixStringAndLineNumber.add(
+					new Pair<>(sampleRawIndexes.get(rowIndex).getSubString(0, mapCol[r][colIndex]), rowIndex));
 			}
 		}
 		return prefixStringAndLineNumber;
@@ -177,4 +183,70 @@ public class FormatIdentifying {
 			return null;
 		return endWithValueString;
 	}
+
+	// Check the row index pattern of columns
+	private void verifyColsAtAllLines(ArrayList<String>[] colKeyPattern){
+		Pair<HashSet<Integer>, HashSet<Integer>>[] colsRowsLineNumbers = new Pair[ncols];
+
+		boolean isRowIdentified;
+
+		HashSet<Integer> allCoveredLines = new HashSet<>();
+		for(int c = 0; c < ncols; c++){
+			Pair<HashSet<Integer>, HashSet<Integer>> colRowLineNumbers = verifyColKeyAtAllLines(c, colKeyPattern[c]);
+			colsRowsLineNumbers[c] = colRowLineNumbers;
+			allCoveredLines.addAll(colRowLineNumbers.getKey());
+		}
+
+		isRowIdentified = allCoveredLines.size() == nrows;
+	}
+
+	// Check the sequential list of keys are on a string
+	private Integer getIndexOfKeysOnString(String str, ArrayList<String> key, int beginPos) {
+		int currPos = beginPos;
+		boolean flag = true;
+		for(String k : key) {
+			int index = str.indexOf(k, currPos);
+			if(index != -1)
+				currPos = index + k.length();
+			else {
+				flag = false;
+				break;
+			}
+		}
+		if(flag)
+			return currPos;
+		else
+			return -1;
+	}
+
+	// Check the row index pattern of a column
+	private Pair<HashSet<Integer>, HashSet<Integer>> verifyColKeyAtAllLines(int colIndex, ArrayList<String> key) {
+
+		HashSet<Integer> lineNumbers = new HashSet<>();
+		HashSet<Integer> rowNumbers = new HashSet<>();
+		HashMap<Integer, Integer> mapColRow = new HashMap<>();
+		for(int r = 0; r < nrows; r++) {
+			int lineNumber = mapRow[r][colIndex];
+			if(lineNumber != -1) {
+				mapColRow.put(lineNumber, mapCol[r][colIndex]);
+				rowNumbers.add(r);
+			}
+		}
+
+		for(int l = 0; l < nlines; l++) {
+			boolean flag = true;
+			RawIndex ri = sampleRawIndexes.get(l);
+			int index = getIndexOfKeysOnString(ri.getRaw(), key, 0);
+			if(index != -1) {
+				if(mapColRow.containsKey(l) && mapColRow.get(l) == index)
+					lineNumbers.add(l);
+				else
+					flag = false;
+			}
+			if(!flag)
+				return null;
+		}
+		return new Pair<>(lineNumbers, rowNumbers);
+	}
+
 }

@@ -79,5 +79,55 @@ public class MatrixGRRowColIdentifyTest extends GenerateReaderMatrixTest {
 		runGenerateReaderTest();
 	}
 
+	@Test
+	public void test4() {
+		String[] naString = {"NaN"};
+		generateRandomCSV(20, 20, -10, 10, 1, ",", naString);
+		runGenerateReaderTest();
+	}
 
+	@Test
+	public void test5() {
+		sampleRaw = "{\"name\":1, \"occupation\":2, \"user\":{\"name\":3,\"password\":4}}\n" +
+			"{\"name\":6, \"occupation\":7, \"user\":{\"name\":8,\"password\":9}}\n" +
+			"{\"name\":10, \"occupation\":11, \"user\":{\"name\":12,\"password\":13}}\n" +
+			"{\"name\":14, \"occupation\":15, \"user\":{\"name\":16,\"password\":17}}\n" +
+			"{\"name\":18, \"occupation\":19, \"user\":{\"name\":20,\"password\":21}}";
+		sampleMatrix = new double[][] {{2, 3}, {7, 8}, {11, 12},{15,16},{19,20}};
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void test6() {
+		sampleRaw = "{\"name\":1, \"occupation\":2, \"user\":{\"password\":4, \"name\":3}}\n" +
+			"{\"name\":6, \"occupation\":7, \"user\":{\"name\":8,\"password\":9}}\n" +
+			"{\"name\":10, \"occupation\":11, \"user\":{\"name\":12,\"password\":13}}\n" +
+			"{\"name\":14, \"occupation\":15, \"user\":{\"name\":16,\"password\":17}}\n" +
+			"{\"name\":18, \"occupation\":19, \"user\":{\"name\":20,\"password\":21}}";
+		sampleMatrix = new double[][] {{2, 3}, {7, 8}, {11, 12},{15,16},{19,20}};
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void test7() {
+		sampleRaw = "{\"name\":1, \"occupation\":2, \"user\":{\"password\":4, \"name\":3}}\n" +
+			"{\"name\":6, \"occupation\":7, \"user\":{\"name\":8,\"password\":9}}\n" +
+			"{\"name\":10, \"occupation\":11, \"user\":{\"name\":12,\"password\":13}}\n" +
+			"{\"name\":14, \"occupation\":15, \"user\":{\"name\":16,\"password\":17}}\n" +
+			"{\"name\":18, \"user\":{\"name\":20,\"password\":21}, \"occupation\":19}";
+		sampleMatrix = new double[][] {{2, 3}, {7, 8}, {11, 12},{15,16},{19,20}};
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void test8() {
+		sampleRaw = "1,1,10\n" +
+					"1,2,20\n" +
+					"1,3,30\n" +
+					"2,2,40\n" +
+					"3,2,50\n";
+
+		sampleMatrix = new double[][] {{10,20,30}, {0,40,0}, {0,50,0}};
+		runGenerateReaderTest();
+	}
 }

@@ -30,7 +30,6 @@ public class CodeGenTrieNode {
 	private boolean endOfCondition;
 	private int colIndex;
 	private Types.ValueType valueType;
-	//private HashSet<String> endWithValueString;
 	private String key;
 	private HashSet<String> naStrings;
 
@@ -49,7 +48,6 @@ public class CodeGenTrieNode {
 		this.valueType = valueType;
 		this.key = key;
 		if(endOfCondition){
-			//this.endWithValueString = endWithValueString;
 			this.naStrings = naStrings;
 		}
 

@@ -25,6 +25,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Ignore;
+import org.junit.Test;
 
 public class BuiltinTopkEvaluateTest extends AutomatedTestBase {
 	//	private final static String TEST_NAME1 = "prioritized";

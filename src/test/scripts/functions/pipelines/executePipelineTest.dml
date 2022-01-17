@@ -36,7 +36,7 @@ schema = metaData[1, 1:ncol(metaData) - 1]
 mask = as.matrix(metaData[2, 1:ncol(metaData) - 1])
 FD = as.matrix(metaData[3, 1:ncol(metaData) - 1])
 maskY = as.integer(as.scalar(metaData[2, ncol(metaData)]))
-metaList = list(mask=mask, schema=schema, fd=FD, applyFunc=frame(["imputeByMeanApply", "NULL"], rows=1, cols=2))
+metaList = list(mask=mask, schema=schema, fd=FD, applyFunc=frame(["imputeByMeanApply", "NA"], rows=1, cols=2))
 
 # separate the label
 [Xtrain, Ytrain] = getLabel(trainData, TRUE)
@@ -47,13 +47,11 @@ metaList = list(mask=mask, schema=schema, fd=FD, applyFunc=frame(["imputeByMeanA
 eYtest = transformapply(target=Ytest, spec= "{ids:true, recode:[1]}", meta=M);
 [eXtrain, eXtest] = recodeData(Xtrain, Xtest, mask, FALSE, "recode")
 
-
-lp = frame(["MVI", "CI"], rows=1, cols=2)
 pip = frame(["imputeByMean", "abstain"], rows=1, cols=2)
 hp = matrix("0.000 0.000 1.000 0.000 0.000 0.000 2.000
             1.000 0.786 0.000 0.000 1.000 1.000 2.000", rows=2, cols=7)
 print("X unchanged "+sum(eXtrain))
-[eX, Y, Xtest, Ytest, tr] = executePipeline(lp, pip, eXtrain, eYtrain, eXtest, eYtest, metaList, hp,
+[eX, Y, Xtest, Ytest, tr] = executePipeline(pip, eXtrain, eYtrain, eXtest, eYtest, metaList, hp,
   as.matrix(0), as.matrix(0), flagsCount, TRUE, FALSE)
 
 

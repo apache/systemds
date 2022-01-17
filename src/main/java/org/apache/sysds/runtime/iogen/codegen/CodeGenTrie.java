@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.iogen.codegen;
 
 import org.apache.sysds.common.Types;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
@@ -33,7 +32,7 @@ public class CodeGenTrie {
 	}
 
 	public void insert(int colIndex, Types.ValueType valueType, ArrayList<String> keys) {
-	
+
 		CodeGenTrieNode currentNode = root;
 		int index = 0;
 		for(String key : keys) {
@@ -52,9 +51,9 @@ public class CodeGenTrie {
 			currentNode = newNode;
 		}
 	}
-	public String getJavaCode(){
+	public String getJavaCode(String destination){
 		StringBuilder src = new StringBuilder();
-		getJavaCode(root, src, "dest.appendValue", "0");
+		getJavaCode(root, src, destination, "0");
 		return src.toString();
 	}
 
@@ -69,34 +68,42 @@ public class CodeGenTrie {
 
 	private void getJavaCode(CodeGenTrieNode node, StringBuilder src, String destination, String currPos){
 		String currPosVariable = getRandomName("curPos");
-		if(node.getChildren().size() ==0){
+		if(node.getChildren().size() ==0 || node.isEndOfCondition()){
 			String key = node.getKey();
 			if(key.length() > 0){
 				src.append("index = str.indexOf(\""+node.getKey().replace("\"", "\\\"")+"\", "+currPos+"); \n");
 				src.append("if(index != -1) { \n");
 				src.append("int "+currPosVariable + " = index + "+ key.length()+"; \n");
 				src.append(node.geValueCode(destination, currPosVariable));
-				src.append("}\n");
+				currPos = currPosVariable;
 			}
-			else {
+			else
 				src.append(node.geValueCode(destination, "0"));
-			}
 		}
-		else {
-			if(node.getKey()!=null) {
-				src.append("index = str.indexOf(\"" + node.getKey().replace("\"", "\\\"") + "\", "+currPos+"); \n");
+
+		if(node.getChildren().size() > 0) {
+			if(node.getKey() != null) {
+				currPosVariable = getRandomName("curPos");
+				src.append("index = str.indexOf(\"" + node.getKey().replace("\"", "\\\"") + "\", " + currPos + "); \n");
 				src.append("if(index != -1) { \n");
-				src.append("int "+currPosVariable + " = index + "+ node.getKey().length()+"; \n");
+				src.append("int " + currPosVariable + " = index + " + node.getKey().length() + "; \n");
 				currPos = currPosVariable;
 			}
 
-			for(String key: node.getChildren().keySet()){
+			for(String key : node.getChildren().keySet()) {
 				CodeGenTrieNode child = node.getChildren().get(key);
 				getJavaCode(child, src, destination, currPos);
 			}
-			if(node.getKey()!=null){
+			if(node.getKey() != null) {
 				src.append("}\n");
 			}
 		}
+
+		if(node.getChildren().size() ==0 || node.isEndOfCondition()){
+			String key = node.getKey();
+			if(key.length() > 0)
+				src.append("} \n");
+		}
+
 	}
 }

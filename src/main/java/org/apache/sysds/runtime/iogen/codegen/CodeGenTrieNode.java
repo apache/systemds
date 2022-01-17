@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.iogen.codegen;
 
 import org.apache.sysds.common.Types;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -85,7 +84,7 @@ public class CodeGenTrieNode {
 			}
 			else
 				src.append(getParsCode(subStr));
-			src.append(destination).append("(row, " + colIndex + ", cellValue+"+colIndex+"); \n");
+			src.append(destination).append("(row, " + colIndex + ", cellValue"+colIndex+"); \n");
 		}
 		return src.toString();
 	}

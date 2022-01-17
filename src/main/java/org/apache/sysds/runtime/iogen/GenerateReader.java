@@ -24,7 +24,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.io.FrameReader;
-import org.apache.sysds.runtime.iogen.template.TemplateCodeGenMatrix;
+import org.apache.sysds.runtime.iogen.codegen.FrameCodeGen;
+import org.apache.sysds.runtime.iogen.codegen.MatrixCodeGen;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -44,18 +45,23 @@ public abstract class GenerateReader {
 
 	protected static final Log LOG = LogFactory.getLog(GenerateReader.class.getName());
 
-	public FormatIdentifying formatIdentifying;
+	protected CustomProperties properties;
 
 	public GenerateReader(SampleProperties sampleProperties) throws Exception {
 
-		formatIdentifying = sampleProperties.getDataType().isMatrix() ? new FormatIdentifying(sampleProperties.getSampleRaw(),
+		FormatIdentifying formatIdentifying = sampleProperties.getDataType().isMatrix() ? new FormatIdentifying(sampleProperties.getSampleRaw(),
 			sampleProperties.getSampleMatrix()) : new FormatIdentifying(sampleProperties.getSampleRaw(),
 			sampleProperties.getSampleFrame());
+
+		properties = formatIdentifying.getFormatProperties();
+		if(properties == null) {
+			throw new Exception("The file format couldn't recognize!!");
+		}
+		if(sampleProperties.getDataType().isFrame()){
+			properties.setSchema(sampleProperties.getSampleFrame().getSchema());
+		}
 	}
 
-	public FormatIdentifying getFormatIdentifying() {
-		return formatIdentifying;
-	}
 
 	// Generate Reader for Matrix
 	public static class GenerateReaderMatrix extends GenerateReader {
@@ -71,14 +77,8 @@ public abstract class GenerateReader {
 		}
 
 		public MatrixReader getReader() throws Exception {
-
-			CustomProperties ffp = formatIdentifying.getFormatProperties();
-			if(ffp == null) {
-				throw new Exception("The file format couldn't recognize!!");
-			}
-
 			String className = "GIOMatrixReader";
-			TemplateCodeGenMatrix src = new TemplateCodeGenMatrix(ffp, className);
+			MatrixCodeGen src = new MatrixCodeGen(properties, className);
 
 			// constructor with arguments as CustomProperties
 			Class[] cArg = new Class[1];
@@ -86,7 +86,7 @@ public abstract class GenerateReader {
 
 			String jc = src.generateCodeJava();
 
-			matrixReader = (MatrixReader) CodegenUtils.compileClass(className, src.generateCodeJava()).getDeclaredConstructor(cArg).newInstance(ffp);
+			matrixReader = (MatrixReader) CodegenUtils.compileClass(className, src.generateCodeJava()).getDeclaredConstructor(cArg).newInstance(properties);
 			return matrixReader;
 		}
 	}
@@ -105,11 +105,17 @@ public abstract class GenerateReader {
 		}
 
 		public FrameReader getReader() throws Exception {
+			String className = "GIOFrameReader";
+			FrameCodeGen src = new FrameCodeGen(properties, className);
 
-			CustomProperties ffp = formatIdentifying.getFormatProperties();
-			if(ffp == null) {
-				throw new Exception("The file format couldn't recognize!!");
-			}
+			// constructor with arguments as CustomProperties
+			Class[] cArg = new Class[1];
+			cArg[0] = CustomProperties.class;
+
+			String jc = src.generateCodeJava();
+
+			frameReader = (FrameReader) CodegenUtils.compileClass(className, src.generateCodeJava()).getDeclaredConstructor(cArg).newInstance(properties);
+
 			return frameReader;
 		}
 	}

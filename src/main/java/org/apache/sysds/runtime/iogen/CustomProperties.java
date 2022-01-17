@@ -19,17 +19,13 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatProperties;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 
 public class CustomProperties extends FileFormatProperties implements Serializable {
-	private static final Log LOG = LogFactory.getLog(CustomProperties.class.getName());
-	private static final long serialVersionUID = -4447926749068752721L;
 
 	public enum IndexProperties {
 		IDENTIFY, PREFIX, KEY;
@@ -41,6 +37,7 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	private  ArrayList<String>[] colKeyPattern;
 	private HashSet<String>[] endWithValueString;
+	private Types.ValueType[] schema;
 	private IndexProperties rowIndex;
 	private IndexProperties colIndex;
 
@@ -79,5 +76,13 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public void setColIndex(IndexProperties colIndex) {
 		this.colIndex = colIndex;
+	}
+
+	public Types.ValueType[] getSchema() {
+		return schema;
+	}
+
+	public void setSchema(Types.ValueType[] schema) {
+		this.schema = schema;
 	}
 }

@@ -38,7 +38,7 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 
 	private static final String PARAM_DIR = "./scripts/pipelines/properties/";
 	private final static String PARAM = PARAM_DIR + "param.csv";
-	private final static String PRIMITIVES = PARAM_DIR + "primitives.csv";
+	private final static String PRIMITIVES = PARAM_DIR + "testPrimitives.csv";
 
 	@Override
 	public void setUp() {
@@ -48,29 +48,29 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 	@Ignore
 	public void testFindBestPipelineCompany() {
 		runtopkCleaning(DATA_DIR+ "company.csv", RESOURCE+ "meta/meta_company.csv", 1.0, 3,5,
-			"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
+			10.0,"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testFindBestPipelineCensus() {
 		runtopkCleaning(DATA_DIR+ "dirty.csv", RESOURCE+ "meta/meta_census.csv", 1.0, 3,5,
-			"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
+			20.0,"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
 	}
 
 	// this test is ignored due to it long running time in Git actions
-	@Ignore
+	@Test
 	public void testFindBestPipelineCensusCV() {
 		runtopkCleaning(DATA_DIR+ "dirty.csv", RESOURCE+ "meta/meta_census.csv", 1.0, 3,5,
-			"TRUE", 3,0.8, Types.ExecMode.SINGLE_NODE);
+			2.0,"TRUE", 3,0.8, Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Test
+	@Ignore // TODO fix rmempty for frame in spark context
 	public void testFindBestPipelineHybrid() {
 		runtopkCleaning(DATA_DIR+ "dirty.csv", RESOURCE+ "meta/meta_census.csv", 1.0, 3,5,
-			"FALSE", 0,0.8, Types.ExecMode.HYBRID);
+			1.5,"FALSE", 0,0.8, Types.ExecMode.HYBRID);
 	}
 
-	private void runtopkCleaning(String data, String meta, Double sample, int topk, int resources,  String cv, int cvk ,
+	private void runtopkCleaning(String data, String meta, Double sample, int topk, int resources, double inc, String cv, int cvk ,
 		double split, Types.ExecMode et) {
 
 		Types.ExecMode modeOld = setExecMode(et);
@@ -79,8 +79,8 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] { "-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+data,
-				"metaData="+meta, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources, "num_inst=0",
-				"max_iter="+3, "sample="+sample, "testCV="+cv, "cvk="+cvk, "split="+split, "output="+OUTPUT, "O="+output("O")};
+				"metaData="+meta, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources, "expectedIncrease="+inc,
+				"max_iter="+5, "sample="+sample, "testCV="+cv, "cvk="+cvk, "split="+split, "output="+OUTPUT, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 

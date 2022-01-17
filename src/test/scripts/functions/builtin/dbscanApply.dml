@@ -19,8 +19,11 @@
 #
 #-------------------------------------------------------------
 
-X = read($X);
+X = read($X)
+Y = read($Y)
 eps = as.double($eps);
 minPts = as.integer($minPts);
-[Y, model] = dbscan(X, eps, minPts);
-write(Y, $Y);
+
+[indices, clusterModel] = dbscan(X = X, eps = eps, minPts = minPts);
+Z = dbscanApply(Xtest=Y, clusterModel = clusterModel, eps = eps);
+write(Z, $Z);

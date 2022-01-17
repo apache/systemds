@@ -69,6 +69,7 @@ limitations under the License.
     * [`naiveBayesPredict`-Function](#naiveBayesPredict-function)
     * [`normalize`-Function](#normalize-function)
     * [`outlier`-Function](#outlier-function)
+    * [`outlierByDB`-Function](#outlierByDB-function)
     * [`pnmf`-Function](#pnmf-function)
     * [`scale`-Function](#scale-function)
     * [`setdiff`-Function](#setdiff-function)
@@ -422,12 +423,13 @@ Y = dbscan(X = X, eps = 2.5, minPts = 5)
 | Type        | Description |
 | :-----------| :---------- |
 | Matrix[Integer] | The mapping of records to clusters |
+| Matrix[Double]  | The coordinates of all points considered part of a cluster |
 
 ### Example
 
 ```r
 X = rand(rows=1780, cols=180, min=1, max=20) 
-dbscan(X = X, eps = 2.5, minPts = 360)
+[indices, model] = dbscan(X = X, eps = 2.5, minPts = 360)
 ```
 
 
@@ -1756,6 +1758,40 @@ X = rand (rows = 50, cols = 10)
 outlier(X=X, opposite=1)
 ```
 
+## `outlierByDB`-Function
+
+The `outlierByDB`-function implements an outlier prediction for a trained dbscan model. The points in the `Xtest` matrix are checked against the model and are considered part of the cluster if at least one member is within `eps` distance. 
+
+### Usage
+
+```r
+outlierByDB(X, model, eps)
+```
+
+### Arguments
+
+| Name     | Type           | Default  | Description |
+| :------- | :------------- | -------- | :---------- |
+| Xtest    | Matrix[Double] | required | Matrix of points for outlier testing |
+| model    | Matrix[Double] | required | Matrix model of the clusters, containing all points that are considered members, returned by the [`dbscan builtin`](#DBSCAN-function) |
+| eps      | Double         | 0.5      | Epsilon distance between points to be considered in their neighborhood |
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Matrix indicating outlier values of the points in Xtest, 0 suggests it being an outlier |
+
+### Example
+
+```r
+eps = 1
+minPts = 5
+X = rand(rows=1780, cols=180, min=1, max=20)
+[indices, model] = dbscan(X=X, eps=eps, minPts=minPts)
+Y = rand(rows=500, cols=180, min=1, max=20)
+Z = outlierByDB(Xtest=Y, clusterModel = model, eps = eps)
+```
 
 ## `pnmf`-Function
 

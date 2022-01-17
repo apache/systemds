@@ -19,8 +19,27 @@
 #
 #-------------------------------------------------------------
 
-X = read($X);
-eps = as.double($eps);
-minPts = as.integer($minPts);
-[Y, model] = dbscan(X, eps, minPts);
-write(Y, $Y);
+args<-commandArgs(TRUE)
+library("Matrix")
+library("dbscan")
+
+X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")));
+Y = as.matrix(readMM(paste(args[2], "B.mtx", sep="")));
+eps = as.double(args[3]);
+minPts = as.integer(args[4]);
+dbModel = dbscan(X, eps, minPts);
+
+cleanMatr = matrix(, nrow = nrow(X), ncol = 3)
+for(i in 1:nrow(X)) {
+  if(dbModel$cluster[i] > 0) {
+    cleanMatr[i,] = X[i,]
+  }
+}
+
+cleanMatr = cleanMatr[rowSums(is.na(cleanMatr)) != ncol(cleanMatr),]
+
+dbModelClean = dbscan(cleanMatr, eps, minPts);
+
+Z = predict(dbModelClean, Y, data = cleanMatr);
+Z[Z > 0] = 1;
+writeMM(as(Z, "CsparseMatrix"), paste(args[5], "C", sep=""));

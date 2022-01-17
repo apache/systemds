@@ -24,14 +24,13 @@ source("scripts/pipelines/scripts/utils.dml") as utils;
 
 # read the inputs
 F = read($dirtyData, data_type="frame", format="csv", header=TRUE, 
-  naStrings= ["NA", "null","  ","NaN", "nan", "", " ", "_nan_", "inf", "?", "NAN", "99999"]);
-
+  naStrings= ["NA", "null","  ","NaN", "nan", "", " ", "_nan_", "inf", "?", "NAN", "99999", "99999.00"]);
 metaInfo = read($metaData, data_type="frame", format="csv", header=FALSE);
 primitives = read($primitives, data_type = "frame", format="csv", header= TRUE)
 param = read($parameters, data_type = "frame", format="csv", header= TRUE)
 topK = $topk
 resources = $rv
-num_inst=$num_inst
+expectedIncrease=$expectedIncrease
 sample=$sample
 max_iter=$max_iter
 output=$output
@@ -60,7 +59,7 @@ metaInfo = metaInfo[, 2:ncol(metaInfo)]
 # [topKPipelines, topKHyperParams, topKScores, bestLogical, features, dirtyScore, evalHp] = 
 result = topk_cleaning(dataTrain=trainData, dataTest=testData, metaData=metaInfo, primitives=primitives, parameters=param,
   evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),topK=topK, resource_val=resources,
-  num_inst=num_inst, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output) 
+  expectedIncrease=expectedIncrease, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output) 
 
 write(result, $O)
 
@@ -69,17 +68,20 @@ write(result, $O)
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
 evalClassification = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
   Matrix[Double] evalFunHp)
-  
-return(Matrix[Double] output)
+return(Matrix[Double] output, Matrix[Double] error)
 {
   if(is.na(as.scalar(evalFunHp[1,1])))
   {
+    nc = max(Y);
     params = list("icpt", "reg", "tol")
     paramRanges = list(seq(0, 2, 1), 10^seq(1,-3), 10^seq(1,-5));
-    trainArgs = list(X=X, Y=Y, icpt=-1, reg=-1, tol=-1, maxi=1000, maxii=100, verbose=FALSE);
-    [B1, opt] = utils::topk_gridSearch(X=X, y=Y, Xtest=Xtest, ytest=Ytest, train="multiLogReg", predict="accuracy", numB=ncol(X)+1, cv=FALSE, cvk=0,
-      params=params, paramValues=paramRanges, trainArgs=trainArgs, verbose=FALSE);
-    evalFunHp = as.matrix(opt)  
+    trainArgs = list(X=X, Y=Y, icpt=-1, reg=-1, tol=1e-9, maxi=1000, maxii=-1, verbose=FALSE);
+    dataArgs = list("X", "Y");
+    # [B1,opt] = gridSearch(X=X, y=Y, train="multiLogReg", predict="accuracy", numB=(ncol(X)+1)*(nc-1),
+      # params=params, paramValues=paramRanges, dataArgs=dataArgs, trainArgs=trainArgs, cv=TRUE, cvk=3, verbose=TRUE);
+    # evalFunHp = as.matrix(opt) # opt #
+    opt = matrix("2 10 0.001", rows=1, cols=3)
+    evalFunHp = opt
   }
   if(min(Y) == max(Y))
   {
@@ -88,10 +90,9 @@ return(Matrix[Double] output)
   }
   else {
     beta = multiLogReg(X=X, Y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]), 
-      maxi=1000, maxii=100, verbose=FALSE);
+      maxi=1000, maxii=0, verbose=FALSE);
     [prob, yhat, accuracy] = multiLogRegPredict(Xtest, beta, Ytest, FALSE)
-    a = getAccuracy(Ytest, yhat, TRUE)
-    print("accuracy: "+toString(accuracy)+" weighted accuracy: "+a)
+    error = yhat != Ytest
     accuracy = as.matrix(accuracy)
   }
   output = cbind(accuracy, evalFunHp)

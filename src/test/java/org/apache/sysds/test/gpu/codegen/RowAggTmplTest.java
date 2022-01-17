@@ -20,6 +20,7 @@
 package org.apache.sysds.test.gpu.codegen;
 
 import org.apache.sysds.test.AutomatedTestBase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class RowAggTmplTest extends AutomatedTestBase {
@@ -96,6 +97,7 @@ public class RowAggTmplTest extends AutomatedTestBase {
 	@Test public void testCodegenRowAggRewrite15CP() { dmlTestCase.testCodegenRowAggRewrite15CP(); }
 	@Test public void testCodegenRowAggRewrite16CP() { dmlTestCase.testCodegenRowAggRewrite16CP(); }
 	@Test public void testCodegenRowAggRewrite17CP() { dmlTestCase.testCodegenRowAggRewrite17CP(); }
+	@Ignore // also ignored in java version (see explanation there)
 	@Test public void testCodegenRowAggRewrite18CP() { dmlTestCase.testCodegenRowAggRewrite18CP(); }
 	@Test public void testCodegenRowAggRewrite19CP() { dmlTestCase.testCodegenRowAggRewrite19CP(); }
 	@Test public void testCodegenRowAggRewrite20CP() { dmlTestCase.testCodegenRowAggRewrite20CP(); }

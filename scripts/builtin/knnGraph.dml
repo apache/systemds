@@ -23,10 +23,11 @@
 
 
 m_knnGraph = function(Matrix[double] input, integer k) return (Matrix[double] graph) {
+
     distances = matrix(0, rows = nrow(input), cols = nrow(input));
-    for (i in 1:nrow(input) - 1) {
+    parfor (i in 1:nrow(input) - 1, check=0) {
         distances[i, i] = 0;
-        for (j in i + 1:nrow(input)) {
+        parfor (j in i + 1:nrow(input)) {
             distances[i, j] = sum((input[i,] - input[j,])^2)^0.5;
             distances[j, i] = distances[i, j];
         }
@@ -34,19 +35,79 @@ m_knnGraph = function(Matrix[double] input, integer k) return (Matrix[double] gr
 
     graph = matrix(0, rows=nrow(distances), cols=ncol(distances));
     for (row in 1:nrow(distances)) {
-        for(k_i in 1:k) {
-            nearest_dist = as.integer(2^64);
-            index_i = 0;
-            index_j = 0;
-            for (col in 1:ncol(distances)) {
-                    if ((nearest_dist > as.scalar(distances[row, col])) & (as.scalar(graph[row, col]) == 0) &
-                    (row != col)) {
-                        nearest_dist = as.scalar(distances[row, col]);
-                        index_i = row;
-                        index_j = col;
-                    }
+        referent = kthSmallest(distances[row,], k + 1);
+        for (col in 1:ncol(distances)) {
+            if (as.scalar(distances[row, col]) < referent) {
+                graph[row, col] = 1;
             }
-            graph[index_i, index_j] = 1;
+            else {
+                graph[row, col] = 0;
+            }
         }
     }
 }
+
+
+kthSmallest = function(Matrix[double] array, integer k) return (integer res) {
+    left = 1;
+    right = ncol(array);
+    found = FALSE;
+
+    while ((left <= right) & !found) {
+        pivot = as.scalar(array[1,right]);
+        i = (left - 1);
+        j = left;
+        while (j < right) {
+            if (as.scalar(array[1,j]) <= pivot) {
+                i = i + 1;
+
+                temp = as.scalar(array[1,i]);
+                array[1,i] = array[1,j];
+                array[1,j] = temp;
+            }
+            j = j + 1;
+        }
+
+        temp = as.scalar(array[1,i + 1]);
+        array[1,i + 1] = array[1,right];
+        array[1,right] = temp;
+
+        pivot = i + 1;
+
+        if (pivot == k) {
+           res = as.scalar(array[1,pivot]);
+           found = TRUE;
+        }
+        else if (pivot > k) {
+           right = pivot - 1;
+        }
+        else {
+          left = pivot + 1;
+        }
+    }
+    if (!found) {
+        res = -1;
+    }
+}
+
+#####################################################
+
+
+
+
+A = matrix(0, rows=10, cols=8);
+
+for(i in 1:nrow(A)) {
+    A[i,] = A[i,] + i;
+}
+
+M = m_knnGraph(A, 2);
+print(toString(A));
+print(toString(M));
+
+B = matrix(0, rows=1, cols=10);
+for (i in 1:ncol(B)) {
+    B[1,i] = i * i;
+}
+
+print(kthSmallest(B[1,], 6));

@@ -21,24 +21,43 @@
 
 # Builtin for k nearest neighbor graph construction
 
+# Trivial solution
+m_knnGraph_nnk = function(Matrix[double] X, integer k) return (Matrix[double] graph) {
 
-m_knnGraph = function(Matrix[double] input, integer k) return (Matrix[double] graph) {
-
-    distances = matrix(0, rows = nrow(input), cols = nrow(input));
-    parfor (i in 1:nrow(input) - 1, check=0) {
-        distances[i, i] = 0;
-        parfor (j in i + 1:nrow(input)) {
-            distances[i, j] = sum((input[i,] - input[j,])^2)^0.5;
-            distances[j, i] = distances[i, j];
-        }
-    }
+    distances = dist(X)
 
     graph = matrix(0, rows=nrow(distances), cols=ncol(distances));
     for (row in 1:nrow(distances)) {
-        referent = kthSmallest(distances[row,], k + 1);
+        for(k_i in 1:k) {
+            nearest_dist = as.integer(2^64);
+            index_i = 0;
+            index_j = 0;
+            for (col in 1:ncol(distances)) {
+                    if ((nearest_dist > as.scalar(distances[row, col])) & (as.scalar(graph[row, col]) == 0) &
+                    (row != col)) {
+                        nearest_dist = as.scalar(distances[row, col]);
+                        index_i = row;
+                        index_j = col;
+                    }
+            }
+            graph[index_i, index_j] = 1;
+        }
+    }
+}
+
+
+
+m_knnGraph = function(Matrix[double] X, integer k) return (Matrix[double] graph) {
+    distances = dist(X)
+
+    graph = matrix(0, rows=nrow(distances), cols=ncol(distances));
+    for (row in 1:nrow(distances)) {
+        referent = kthSmallest(distances[row,], k);
+        count = 0
         for (col in 1:ncol(distances)) {
-            if (as.scalar(distances[row, col]) < referent) {
+            if ((as.scalar(distances[row, col]) <= referent) & (count < k)) {
                 graph[row, col] = 1;
+                count = count + 1;
             }
             else {
                 graph[row, col] = 0;
@@ -98,11 +117,14 @@ kthSmallest = function(Matrix[double] array, integer k) return (integer res) {
 A = matrix(0, rows=10, cols=8);
 
 for(i in 1:nrow(A)) {
-    A[i,] = A[i,] + i;
+    for(j in 1:ncol(A)) {
+        A[i, j] = 10 + i * j - j * j * i;
+    }
 }
 
 M = m_knnGraph(A, 2);
 print(toString(A));
+print(toString(dist(A)));
 print(toString(M));
 
 B = matrix(0, rows=1, cols=10);

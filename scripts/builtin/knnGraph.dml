@@ -27,7 +27,7 @@ m_knnGraph = function(Matrix[double] X, integer k) return (Matrix[double] graph)
     graph = matrix(0, rows=nrow(distances), cols=ncol(distances));
     for (row in 1:nrow(distances)) {
         referent = kthSmallest(distances[row,], k);
-        count = 0
+        count = 0;
         for (col in 1:ncol(distances)) {
             if ((as.scalar(distances[row, col]) <= referent) & (count < k)) {
                 graph[row, col] = 1;

@@ -186,7 +186,7 @@ public class FederationMap {
 
 			Arrays.parallelSetAll(ret,
 				i -> new FederatedRequest(RequestType.PUT_VAR, lineageTrace, id,
-				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
+					cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
 		}
 		return ret;
 	}

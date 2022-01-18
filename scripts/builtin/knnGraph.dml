@@ -21,41 +21,64 @@
 
 # Builtin for k nearest neighbor graph construction
 
-#TODO: provide different distance measures: Hamming distance, Cosine distance, Euclidean distance
-
-
 m_knnGraph = function(Matrix[double] X, integer k) return (Matrix[double] graph) {
-
-    /*
-    distances = matrix(0, rows = nrow(X), cols = nrow(X));
-    Euclidian
-    for (i in 1:nrow(X) - 1) {
-        distances[i, i] = 0;
-        for (j in i + 1:nrow(X)) {
-            distances[i, j] = sum((X[i,] - X[j,])^2)^0.5;
-            distances[j, i] = distances[i, j];
-        }
-    }
-    */
-
-    #use builtin function dist for Euclidian distance
     distances = dist(X)
 
     graph = matrix(0, rows=nrow(distances), cols=ncol(distances));
     for (row in 1:nrow(distances)) {
-        for(k_i in 1:k) {
-            nearest_dist = as.integer(2^64);
-            index_i = 0;
-            index_j = 0;
-            for (col in 1:ncol(distances)) {
-                    if ((nearest_dist > as.scalar(distances[row, col])) & (as.scalar(graph[row, col]) == 0) &
-                    (row != col)) {
-                        nearest_dist = as.scalar(distances[row, col]);
-                        index_i = row;
-                        index_j = col;
-                    }
+        referent = kthSmallest(distances[row,], k);
+        count = 0
+        for (col in 1:ncol(distances)) {
+            if ((as.scalar(distances[row, col]) <= referent) & (count < k)) {
+                graph[row, col] = 1;
+                count = count + 1;
             }
-            graph[index_i, index_j] = 1;
+            else {
+                graph[row, col] = 0;
+            }
         }
+    }
+}
+
+# Finds kth smallest element in an array
+kthSmallest = function(Matrix[double] array, integer k) return (integer res) {
+    left = 1;
+    right = ncol(array);
+    found = FALSE;
+
+    while ((left <= right) & !found) {
+        pivot = as.scalar(array[1,right]);
+        i = (left - 1);
+        j = left;
+        while (j < right) {
+            if (as.scalar(array[1,j]) <= pivot) {
+                i = i + 1;
+
+                temp = as.scalar(array[1,i]);
+                array[1,i] = array[1,j];
+                array[1,j] = temp;
+            }
+            j = j + 1;
+        }
+
+        temp = as.scalar(array[1,i + 1]);
+        array[1,i + 1] = array[1,right];
+        array[1,right] = temp;
+
+        pivot = i + 1;
+
+        if (pivot == k) {
+           res = as.scalar(array[1,pivot]);
+           found = TRUE;
+        }
+        else if (pivot > k) {
+           right = pivot - 1;
+        }
+        else {
+          left = pivot + 1;
+        }
+    }
+    if (!found) {
+        res = -1;
     }
 }

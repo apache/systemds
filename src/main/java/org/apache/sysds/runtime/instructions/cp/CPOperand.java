@@ -181,8 +181,12 @@ public class CPOperand
 	}
 	
 	public String getLineageLiteral(ScalarObject so) {
+		return getLineageLiteral(so, isLiteral());
+	}
+
+	public static String getLineageLiteral(ScalarObject so, boolean isLiteral) {
 		return InstructionUtils.concatOperandParts(
-			so.toString(), getDataType().name(),
-			getValueType().name(), String.valueOf(isLiteral()));
+			so.toString(), so.getDataType().name(),
+			so.getValueType().name(), String.valueOf(isLiteral));
 	}
 }

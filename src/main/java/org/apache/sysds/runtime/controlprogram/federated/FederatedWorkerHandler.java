@@ -51,11 +51,13 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.Respo
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.Instruction.IType;
 import org.apache.sysds.runtime.instructions.InstructionParser;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
@@ -383,9 +385,15 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		// set variable and construct empty response
 		ec.setVariable(varName, data);
-		if(DMLScript.LINEAGE && request.getNumParams()==1)
-			// don't trace if the data contains only metadata
-			ec.getLineage().set(varName, new LineageItem(String.valueOf(request.getChecksum(0))));
+
+		if(DMLScript.LINEAGE) {
+			if(request.getParam(0) instanceof CacheBlock && request.getLineageTrace() != null)
+				ec.getLineage().set(varName, Lineage.deserializeSingleTrace(request.getLineageTrace()));
+			else if(request.getParam(0) instanceof ScalarObject)
+				ec.getLineage().set(varName, new LineageItem(CPOperand.getLineageLiteral((ScalarObject)request.getParam(0), true)));
+			else if(request.getNumParams()==1) // don't trace if the data contains only metadata
+				ec.getLineage().set(varName, new LineageItem(String.valueOf(request.getChecksum(0))));
+		}
 
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}

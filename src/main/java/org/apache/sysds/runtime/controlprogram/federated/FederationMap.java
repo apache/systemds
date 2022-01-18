@@ -32,6 +32,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -200,7 +201,8 @@ public class FederationMap {
 		// is fine, because with broadcast all data on all workers)
 		data.setFedMapping(copyWithNewIDAndRange(
 			cb.getNumRows(), cb.getNumColumns(), id, FType.BROADCAST));
-		return new FederatedRequest(RequestType.PUT_VAR, id, cb);
+		return new FederatedRequest(RequestType.PUT_VAR, id,
+			DMLScript.LINEAGE ? data.getCacheLineage() : null, cb);
 	}
 
 	public FederatedRequest broadcast(ScalarObject scalar) {
@@ -254,7 +256,7 @@ public class FederationMap {
 		// multi-threaded block slicing and federation request creation
 		else {
 			Arrays.parallelSetAll(ret,
-				i -> new FederatedRequest(RequestType.PUT_VAR, id,
+				i -> new FederatedRequest(RequestType.PUT_VAR, id, DMLScript.LINEAGE ? data.getCacheLineage() : null,
 				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
 		}
 		return ret;
@@ -271,7 +273,7 @@ public class FederationMap {
 		// multi-threaded block slicing and federation request creation
 		FederatedRequest[] ret = new FederatedRequest[ix.length];
 		Arrays.setAll(ret,
-			i -> new FederatedRequest(RequestType.PUT_VAR, id,
+			i -> new FederatedRequest(RequestType.PUT_VAR, id, DMLScript.LINEAGE ? data.getCacheLineage() : null,
 				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], isFrame ? new FrameBlock() : new MatrixBlock())));
 		return ret;
 	}

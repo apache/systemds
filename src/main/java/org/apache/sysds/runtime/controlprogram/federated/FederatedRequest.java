@@ -35,6 +35,8 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageItem;
 
 public class FederatedRequest implements Serializable {
 	private static final long serialVersionUID = 5946781306963870394L;
@@ -57,6 +59,7 @@ public class FederatedRequest implements Serializable {
 	private boolean _checkPrivacy;
 	private List<Long> _checksums;
 	private long _pid;
+	private String _lineageTrace;
 
 	public FederatedRequest(RequestType method) {
 		this(method, FederationUtils.getNextFedDataID(), new ArrayList<>());
@@ -70,6 +73,12 @@ public class FederatedRequest implements Serializable {
 		this(method, id, Arrays.asList(data));
 	}
 
+	public FederatedRequest(RequestType method, long id, LineageItem linItem, Object ... data) {
+		this(method, id, Arrays.asList(data));
+		if (linItem != null && DMLScript.LINEAGE && method == RequestType.PUT_VAR)
+			setLineageTrace(linItem);
+	}
+
 	public FederatedRequest(RequestType method, long id, List<Object> data) {
 		if(DMLScript.STATISTICS)
 			FederatedStatistics.incFederated(method, data);
@@ -78,8 +87,6 @@ public class FederatedRequest implements Serializable {
 		_data = data;
 		_pid = Long.valueOf(IDHandler.obtainProcessID());
 		setCheckPrivacy();
-		if (DMLScript.LINEAGE && method == RequestType.PUT_VAR)
-			setChecksum();
 	}
 
 	public RequestType getType() {
@@ -182,6 +189,16 @@ public class FederatedRequest implements Serializable {
 					throw new IOException("Failed to serialize cache block.", ex);
 				}
 			}
+		}
+	}
+
+	public String getLineageTrace() {
+		return _lineageTrace;
+	}
+
+	private void setLineageTrace(LineageItem linItem) {
+		if(getParam(0) instanceof CacheBlock || getParam(0) instanceof ScalarObject) {
+			_lineageTrace = Lineage.serializeSingleTrace(linItem);
 		}
 	}
 

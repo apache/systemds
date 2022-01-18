@@ -44,11 +44,13 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.CacheStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.GCStatsCollection;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.LineageCacheStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.MultiTenantStatsCollection;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -193,6 +195,7 @@ public class FederatedStatistics {
 		sb.append(displayCacheStats(fedStats.cacheStats));
 		sb.append(String.format("Total JIT compile time:\t\t%.3f sec.\n", fedStats.jitCompileTime));
 		sb.append(displayGCStats(fedStats.gcStats));
+		sb.append(displayLinCacheStats(fedStats.linCacheStats));
 		sb.append(displayMultiTenantStats(fedStats.mtStats));
 		sb.append(displayHeavyHitters(fedStats.heavyHitters, numHeavyHitters));
 		return sb.toString();
@@ -213,6 +216,17 @@ public class FederatedStatistics {
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.format("Total JVM GC count:\t\t%d.\n", gcsc.gcCount));
 		sb.append(String.format("Total JVM GC time:\t\t%.3f sec.\n", gcsc.gcTime));
+		return sb.toString();
+	}
+
+	private static String displayLinCacheStats(LineageCacheStatsCollection lcsc) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.format("LinCache hits (Mem/FS/Del):\t%d/%d/%d.\n",
+			lcsc.numHitsMem, lcsc.numHitsFS, lcsc.numHitsDel));
+		sb.append(String.format("LinCache MultiLvl (Ins/SB/Fn):\t%d/%d/%d.\n",
+			lcsc.numHitsInst, lcsc.numHitsSB, lcsc.numHitsFunc));
+		sb.append(String.format("LinCache writes (Mem/FS/Del):\t%d/%d/%d.\n",
+			lcsc.numWritesMem, lcsc.numWritesFS, lcsc.numMemDel));
 		return sb.toString();
 	}
 
@@ -431,6 +445,7 @@ public class FederatedStatistics {
 			cacheStats.collectStats();
 			jitCompileTime = ((double)Statistics.getJITCompileTime()) / 1000; // in sec
 			gcStats.collectStats();
+			linCacheStats.collectStats();
 			mtStats.collectStats();
 			heavyHitters = Statistics.getHeavyHittersHashMap();
 		}
@@ -439,6 +454,7 @@ public class FederatedStatistics {
 			cacheStats.aggregate(that.cacheStats);
 			jitCompileTime += that.jitCompileTime;
 			gcStats.aggregate(that.gcStats);
+			linCacheStats.aggregate(that.linCacheStats);
 			mtStats.aggregate(that.mtStats);
 			that.heavyHitters.forEach(
 				(key, value) -> heavyHitters.merge(key, value, (v1, v2) ->
@@ -513,6 +529,44 @@ public class FederatedStatistics {
 			private double gcTime = 0;
 		}
 
+		protected static class LineageCacheStatsCollection implements Serializable {
+			private static final long serialVersionUID = 1L;
+
+			private void collectStats() {
+				numHitsMem = LineageCacheStatistics.getMemHits();
+				numHitsFS = LineageCacheStatistics.getFSHits();
+				numHitsDel = LineageCacheStatistics.getDelHits();
+				numHitsInst = LineageCacheStatistics.getInstHits();
+				numHitsSB = LineageCacheStatistics.getSBHits();
+				numHitsFunc = LineageCacheStatistics.getFuncHits();
+				numWritesMem = LineageCacheStatistics.getMemWrites();
+				numWritesFS = LineageCacheStatistics.getFSWrites();
+				numMemDel = LineageCacheStatistics.getMemDeletes();
+			}
+
+			private void aggregate(LineageCacheStatsCollection that) {
+				numHitsMem += that.numHitsMem;
+				numHitsFS += that.numHitsFS;
+				numHitsDel += that.numHitsDel;
+				numHitsInst += that.numHitsInst;
+				numHitsSB += that.numHitsSB;
+				numHitsFunc += that.numHitsFunc;
+				numWritesMem += that.numWritesMem;
+				numWritesFS += that.numWritesFS;
+				numMemDel += that.numMemDel;
+			}
+
+			private long numHitsMem = 0;
+			private long numHitsFS = 0;
+			private long numHitsDel = 0;
+			private long numHitsInst = 0;
+			private long numHitsSB = 0;
+			private long numHitsFunc = 0;
+			private long numWritesMem = 0;
+			private long numWritesFS = 0;
+			private long numMemDel = 0;
+		}
+
 		protected static class MultiTenantStatsCollection implements Serializable {
 			private static final long serialVersionUID = 1L;
 
@@ -542,6 +596,7 @@ public class FederatedStatistics {
 		private CacheStatsCollection cacheStats = new CacheStatsCollection();
 		private double jitCompileTime = 0;
 		private GCStatsCollection gcStats = new GCStatsCollection();
+		private LineageCacheStatsCollection linCacheStats = new LineageCacheStatsCollection();
 		private MultiTenantStatsCollection mtStats = new MultiTenantStatsCollection();
 		private HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
 	}

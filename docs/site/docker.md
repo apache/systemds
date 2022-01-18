@@ -23,7 +23,7 @@ limitations under the License.
 
 
 [Docker](https://docs.docker.com/get-docker/) enables you to separate applications from
-your infrastructure. This provides a way to manage the instrafrastructure the same way
+your infrastructure. This provides a way to manage the infrastructure the same way
 you do with the software.
 
 With Docker, enabling GPU support would be much easier on linux. Since only the NVIDIA

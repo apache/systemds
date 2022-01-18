@@ -24,17 +24,22 @@
 #TODO: provide different distance measures: Hamming distance, Cosine distance, Euclidean distance
 
 
-m_knnGraph = function(Matrix[double] input, integer k) return (Matrix[double] graph) {
-    distances = matrix(0, rows = nrow(input), cols = nrow(input));
+m_knnGraph = function(Matrix[double] X, integer k) return (Matrix[double] graph) {
 
-    # Euclidian
-    for (i in 1:nrow(input) - 1) {
+    /*
+    distances = matrix(0, rows = nrow(X), cols = nrow(X));
+    Euclidian
+    for (i in 1:nrow(X) - 1) {
         distances[i, i] = 0;
-        for (j in i + 1:nrow(input)) {
-            distances[i, j] = sum((input[i,] - input[j,])^2)^0.5;
+        for (j in i + 1:nrow(X)) {
+            distances[i, j] = sum((X[i,] - X[j,])^2)^0.5;
             distances[j, i] = distances[i, j];
         }
     }
+    */
+
+    #use builtin function dist for Euclidian distance
+    distances = dist(X)
 
     graph = matrix(0, rows=nrow(distances), cols=ncol(distances));
     for (row in 1:nrow(distances)) {

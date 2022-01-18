@@ -23,7 +23,7 @@
 X = read($in_X)
 k = $in_k
 
-G = knnGraph(X, k);
+G = knnGraph(X=X, k=k);
 write(G, $out_G);
 
 #print(toString(X));

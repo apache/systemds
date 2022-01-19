@@ -17,15 +17,39 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.iogen;
+package org.apache.sysds.test.functions.iogen.objects;
 
-public abstract class ReaderMapping {
+import org.apache.sysds.common.Types;
 
-	protected boolean mapped;
-	protected static int nrows;
-	protected static int ncols;
-	public abstract CustomProperties getFormatProperties() throws Exception;
-	protected boolean isMapped() {
-		return mapped;
+import java.util.ArrayList;
+
+public class ComplexObject4 extends ComplexObjectTemplate {
+
+	// Object Items
+	private ComplexObject5 complexObject5 = new ComplexObject5();
+
+	public ComplexObject4() {
+		super();
+	}
+
+	@Override
+	public ArrayList<Object> getJSONFlatValues() {
+		ArrayList<Object> values = super.getJSONFlatValues();
+
+		if(complexObject5 != null) {
+			values.addAll(complexObject5.getJSONFlatValues());
+		}
+		else
+			values.addAll(getEmptyFlatObject(this));
+
+		return values;
+	}
+
+
+	@Override
+	public ArrayList<Types.ValueType> getSchema() {
+		ArrayList<Types.ValueType> result = super.getSchema();
+		result.addAll(complexObject5.getSchema());
+		return result;
 	}
 }

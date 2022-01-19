@@ -23,8 +23,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.wink.json4j.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 public class SampleProperties extends FileFormatProperties {
 
@@ -34,6 +40,7 @@ public class SampleProperties extends FileFormatProperties {
 	private MatrixBlock sampleMatrix;
 	private FrameBlock sampleFrame;
 	private Types.DataType dataType;
+	private boolean nested;
 
 	public SampleProperties(String sampleRaw) {
 		this.sampleRaw = sampleRaw;
@@ -43,12 +50,14 @@ public class SampleProperties extends FileFormatProperties {
 		this.sampleRaw = sampleRaw;
 		this.sampleMatrix = sampleMatrix;
 		this.dataType = Types.DataType.MATRIX;
+		this.nested = checkNested();
 	}
 
 	public SampleProperties(String sampleRaw, FrameBlock sampleFrame) {
 		this.sampleRaw = sampleRaw;
 		this.sampleFrame = sampleFrame;
 		this.dataType = Types.DataType.FRAME;
+		this.nested = checkNested();
 	}
 
 	public String getSampleRaw() {
@@ -75,5 +84,30 @@ public class SampleProperties extends FileFormatProperties {
 	public void setSampleFrame(FrameBlock sampleFrame) {
 		this.sampleFrame = sampleFrame;
 		dataType = Types.DataType.FRAME;
+	}
+	private boolean checkNested(){
+		boolean result;
+		InputStream is = IOUtilFunctions.toInputStream(sampleRaw);
+		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+		try {
+			String value;
+			while((value = br.readLine()) != null) {
+				JSONObject jo = new JSONObject(value);
+			}
+			result = true;
+		}
+		catch(Exception e){
+			result = false;
+		}
+		finally {
+			IOUtilFunctions.closeSilently(br);
+			IOUtilFunctions.closeSilently(is);
+
+		}
+		return result;
+	}
+
+	public boolean isNested() {
+		return nested;
 	}
 }

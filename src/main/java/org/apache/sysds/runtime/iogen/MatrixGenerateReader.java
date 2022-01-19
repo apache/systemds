@@ -116,8 +116,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 	}
 
 	@SuppressWarnings("unchecked")
-	private MatrixBlock readMatrixFromHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen,
-		long clen, int blen) throws IOException, DMLRuntimeException {
+	private MatrixBlock readMatrixFromHDFS(Path path, JobConf job, FileSystem fs,
+		MatrixBlock dest, long rlen, long clen, int blen) throws IOException, DMLRuntimeException {
 		//prepare file paths in alphanumeric order
 		ArrayList<Path> files = new ArrayList<>();
 		if(fs.getFileStatus(path).isDirectory()) {
@@ -226,7 +226,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 					fastStringTokenizerDelim.reset(value);
 					String cellValueString = fastStringTokenizerDelim.nextToken();
 					cellValue = UtilFunctions.parseToDouble(cellValueString, null);
-					dest.appendValue(row, (int) clen-_props.getFirstColIndex()-1, cellValue);
+					dest.appendValue(row, (int) clen - _props.getFirstColIndex() - 1, cellValue);
 
 					while(col != -1) {
 						String nt = fastStringTokenizerDelim.nextToken();
@@ -236,7 +236,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 						col = fastStringTokenizerIndexDelim.nextInt();
 						cellValue = fastStringTokenizerIndexDelim.nextDouble();
 						if(cellValue != 0) {
-							dest.appendValue(row, col-_props.getFirstColIndex(), cellValue);
+							dest.appendValue(row, col - _props.getFirstColIndex(), cellValue);
 							lnnz++;
 						}
 					}
@@ -259,8 +259,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 			super(_props);
 		}
 
-		@Override
-		protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
+		@Override protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
 			MutableInt rowPos, long rlen, long clen, int blen) throws IOException {
 			String value = null;
 			int row = rowPos.intValue();
@@ -282,11 +281,52 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 					cellValue = fastStringTokenizerDelim.nextDouble();
 
 					if(cellValue != 0) {
-						dest.appendValue(ri-_props.getFirstColIndex(), col-_props.getFirstColIndex(), cellValue);
+						dest.appendValue(ri - _props.getFirstColIndex(), col - _props.getFirstColIndex(), cellValue);
 						lnnz++;
 					}
 					row = Math.max(row, ri);
 				}
+			}
+			finally {
+				IOUtilFunctions.closeSilently(br);
+			}
+			rowPos.setValue(row);
+			return lnnz;
+		}
+	}
+
+	public static class MatrixReaderJSON extends MatrixGenerateReader {
+
+		public MatrixReaderJSON(CustomProperties _props) {
+			super(_props);
+		}
+
+		@Override
+		protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
+			MutableInt rowPos, long rlen, long clen, int blen) throws IOException {
+			String value;
+			int row = rowPos.intValue();
+			double cellValue;
+			long lnnz = 0;
+
+			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+			String[] colKeys = _props.getColKeys();
+			// Read the data
+			try {
+				while((value = br.readLine()) != null) {
+					FastJSONIndex fastJSONIndex = new FastJSONIndex(value);
+					for(int c = 0; c < clen; c++) {
+						cellValue = fastJSONIndex.getDoubleValue(colKeys[c]);
+						if(cellValue != 0) {
+							dest.appendValue(row, c, cellValue);
+							lnnz++;
+						}
+					}
+					row++;
+				}
+			}
+			catch(Exception e) {
+				throw new RuntimeException(e);
 			}
 			finally {
 				IOUtilFunctions.closeSilently(br);

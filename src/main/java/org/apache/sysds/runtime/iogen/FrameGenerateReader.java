@@ -219,8 +219,8 @@ public abstract class FrameGenerateReader extends FrameReader {
 					String cellStr = value.toString();
 					fastStringTokenizerDelim.reset(cellStr);
 					String cellValueString = fastStringTokenizerDelim.nextToken();
-					dest.set(row, (int) clen - 1 - _props.getFirstColIndex(),
-						UtilFunctions.stringToObject(schema[(int) clen - 1 - _props.getFirstColIndex()], cellValueString));
+					dest.set(row, (int) clen - 1 - _props.getFirstColIndex(), UtilFunctions
+						.stringToObject(schema[(int) clen - 1 - _props.getFirstColIndex()], cellValueString));
 
 					while(col != -1) {
 						String nt = fastStringTokenizerDelim.nextToken();
@@ -277,11 +277,51 @@ public abstract class FrameGenerateReader extends FrameReader {
 					cellValue = fastStringTokenizerDelim.nextToken();
 
 					if(col != -1 && cellValue != null) {
-						dest.set(ri-_props.getFirstRowIndex(), col - _props.getFirstColIndex(),
+						dest.set(ri - _props.getFirstRowIndex(), col - _props.getFirstColIndex(),
 							UtilFunctions.stringToObject(schema[col - _props.getFirstColIndex()], cellValue));
 					}
 					row = Math.max(row, ri);
 				}
+			}
+			finally {
+				IOUtilFunctions.closeSilently(reader);
+			}
+			return row;
+		}
+	}
+
+	public static class FrameReaderJSON extends FrameGenerateReader {
+		public FrameReaderJSON(CustomProperties _props) {
+			super(_props);
+		}
+
+		@Override
+		protected int readFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat,
+			JobConf job, FrameBlock dest, Types.ValueType[] schema, String[] names, long rlen, long clen, int rl,
+			boolean first) throws IOException {
+
+			// create record reader
+			RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
+			LongWritable key = new LongWritable();
+			Text value = new Text();
+			int row = rl;
+			String[] colKeys = _props.getColKeys();
+			Object cellValue;
+			// Read the data
+			try {
+				while(reader.next(key, value)) {
+					FastJSONIndex fastJSONIndex = new FastJSONIndex(value.toString());
+					for(int c = 0; c < clen; c++) {
+						cellValue = fastJSONIndex.getObjectValue(colKeys[c]);
+						if(cellValue != null) {
+							dest.set(row, c, UtilFunctions.objectToObject(schema[c], cellValue));
+						}
+					}
+					row++;
+				}
+			}
+			catch(Exception e) {
+				throw new RuntimeException(e);
 			}
 			finally {
 				IOUtilFunctions.closeSilently(reader);

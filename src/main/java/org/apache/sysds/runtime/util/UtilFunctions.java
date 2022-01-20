@@ -32,6 +32,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -992,6 +993,7 @@ public class UtilFunctions {
 				String currentFormat = getDateFormat(values[i]);
 				//Locale.US needs to be used as otherwise dateformat like "dd MMM yyyy HH:mm" are not parsable
 				SimpleDateFormat curr = new SimpleDateFormat(currentFormat, Locale.US);
+				curr.setTimeZone(TimeZone.getTimeZone("UTC"));
 				try {
 					Date date = curr.parse(values[i]); //parse date string
 					block.set(i, dateCol, date.getTime()); //get timestamp in milliseconds

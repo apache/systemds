@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.test.functions.builtin.part1;
 
 import static org.junit.Assert.assertEquals;
@@ -86,7 +105,7 @@ public class BuiltinDateProcessingTest extends AutomatedTestBase {
         String[][] testtable_ref = new String[][]{
             {"pseudo_value1", "pseudo_value2", "pseudo_value3", "pseudo_value4"},
             {"1", "2", "3", "4"},
-            {"1054591200000", "1088906644000", "1091656800000", "1149567360000"}
+            {"1054598400000", "1088913844000", "1091664000000", "1149574560000"}
         };
 
 		FrameBlock f = generateRandomFrameBlock(4, 3, testtable);
@@ -249,7 +268,7 @@ public class BuiltinDateProcessingTest extends AutomatedTestBase {
 
         String[][] testtable_ref = new String[][]{ 
 			{"pseudo_value1", "pseudo_value2", "pseudo_value3", "pseudo_value4",  "pseudo_value5", "08-09-2013 22:12", "05-08-2004"},
-            {"1054591200000", "1640995260000", "1091656800000", "1339751520000","1152198960000", "1149653804000", "1267701600000"},
+            {"1054598400000", "1640998860000", "1091664000000", "1339758720000","1152206160000", "1149661004000", "1267705200000"},
 			{"1", "2", "3", "4", "5",  "6", "05-08-2004"}
         };
 

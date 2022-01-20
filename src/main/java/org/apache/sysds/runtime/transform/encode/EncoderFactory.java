@@ -117,7 +117,18 @@ public class EncoderFactory {
 					int id = TfMetaUtils.parseJsonObjectID(colspec, colnames, minCol, maxCol, ids);
 					if(id <= 0)
 						continue;
-					ColumnEncoderBin bin = new ColumnEncoderBin(id, numBins);
+					String method = colspec.get("method").toString().toUpperCase();
+					ColumnEncoderBin.BinMethod binMethod;
+					if ("EQUI-WIDTH".equals(method)) {
+						binMethod = ColumnEncoderBin.BinMethod.EQUI_WIDTH;
+					}
+					else if ("EQUI-HEIGHT".equals(method)) {
+						binMethod = ColumnEncoderBin.BinMethod.EQUI_HEIGHT;
+					}
+					else {
+						throw new DMLRuntimeException("Unsupported binning method: " + method);
+					}
+					ColumnEncoderBin bin = new ColumnEncoderBin(id, numBins, binMethod);
 					addEncoderToMap(bin, colEncoders);
 				}
 			if(!dcIDs.isEmpty())

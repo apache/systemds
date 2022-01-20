@@ -94,7 +94,6 @@ public class ReaderTextCSV extends MatrixReader
 		return ret;
 	}
 	
-	@SuppressWarnings("unchecked")
 	private static MatrixBlock readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, 
 			long rlen, long clen, int blen, boolean hasHeader, String delim, boolean fill, double fillValue, HashSet<String> naStrings )
 		throws IOException, DMLRuntimeException

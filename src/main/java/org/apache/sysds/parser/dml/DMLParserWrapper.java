@@ -22,12 +22,12 @@ package org.apache.sysds.parser.dml;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.DefaultErrorStrategy;
 import org.antlr.v4.runtime.atn.PredictionMode;
@@ -100,14 +100,11 @@ public class DMLParserWrapper extends ParserWrapper
 	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, Map<String,String> argVals) {
 		DMLProgram dmlPgm = null;
 		
-		ANTLRInputStream in;
+		CharStream in;
 		try {
-			if(dmlScript == null) {
+			if(dmlScript == null) 
 				dmlScript = readDMLScript(fileName, LOG);
-			}
-			
-			InputStream stream = new ByteArrayInputStream(dmlScript.getBytes());
-			in = new ANTLRInputStream(stream);
+			in = CharStreams.fromStream(new ByteArrayInputStream(dmlScript.getBytes()));
 		} catch (FileNotFoundException e) {
 			throw new ParseException("Cannot find file/resource: " + fileName, e);
 		} catch (IOException e) {
@@ -137,7 +134,7 @@ public class DMLParserWrapper extends ParserWrapper
 				}
 				catch(ParseCancellationException ex) {
 					// Error occurred, so now try full LL(*) for better error messages
-					tokens.reset();
+					tokens.seek(0);
 					antlr4Parser.reset();
 					if(fileName != null) {
 						errorListener.setCurrentFileName(fileName);

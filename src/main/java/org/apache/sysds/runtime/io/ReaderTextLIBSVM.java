@@ -89,7 +89,6 @@ public class ReaderTextLIBSVM extends MatrixReader {
 		return ret;
 	}
 
-	@SuppressWarnings("unchecked")
 	private static MatrixBlock readLIBSVMMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest,
 			long rlen, long clen, int blen) throws IOException, DMLRuntimeException
 	{

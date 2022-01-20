@@ -21,6 +21,7 @@ package org.apache.sysds.api.mlcontext;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -130,7 +131,7 @@ public class MLContextConversionUtil {
 	 */
 	public static MatrixObject urlToMatrixObject(URL url, MatrixMetadata matrixMetadata) {
 		try (InputStream is = url.openStream()) {
-			List<String> lines = IOUtils.readLines(is);
+			List<String> lines = IOUtils.readLines(is, Charset.defaultCharset());
 			JavaRDD<String> javaRDD = jsc().parallelize(lines);
 			if ((matrixMetadata == null) || (matrixMetadata.getMatrixFormat() == MatrixFormat.CSV))
 				return javaRDDStringCSVToMatrixObject(javaRDD, matrixMetadata);

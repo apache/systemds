@@ -19,14 +19,14 @@
 
 package org.apache.sysds.test.functions.federated.multitenant;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
-import java.lang.Math;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-
-import static org.junit.Assert.fail;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -361,8 +361,8 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 			//wait for process, but obtain logs before to avoid blocking
 			String outputLog = null, errorLog = null;
 			try {
-				outputLog = IOUtils.toString(coord.getInputStream());
-				errorLog = IOUtils.toString(coord.getErrorStream());
+				outputLog = IOUtils.toString(coord.getInputStream(), Charset.defaultCharset());
+				errorLog = IOUtils.toString(coord.getErrorStream(), Charset.defaultCharset());
 				
 				coord.waitFor();
 			}

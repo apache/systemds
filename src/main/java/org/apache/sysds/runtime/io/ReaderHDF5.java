@@ -90,7 +90,6 @@ public class ReaderHDF5 extends MatrixReader {
 		return ret;
 	}
 
-	@SuppressWarnings("unchecked")
 	private static MatrixBlock readHDF5MatrixFromHDFS(Path path, JobConf job,
 		FileSystem fs, MatrixBlock dest, long rlen, long clen, int blen, String datasetName)
 		throws IOException, DMLRuntimeException {

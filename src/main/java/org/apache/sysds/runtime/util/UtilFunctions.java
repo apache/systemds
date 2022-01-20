@@ -884,26 +884,27 @@ public class UtilFunctions {
 
 		for (int i = 0; i < cols; i++) {
 			String[] values = (String[]) block.getColumnData(i);
-			int match_count = 0;
+			int matchCount = 0;
 			for (int j = 0; j < values.length; j++) {
-
-				if (values[j] == null || values[j].trim().isEmpty() || values[j].toUpperCase().equals("NULL") || values[j].equals("0")) continue; //skip null/blank entries
-				//check if value matches a date pattern
+				//skip null/blank entries
+				if (values[j] == null || values[j].trim().isEmpty() || values[j].toUpperCase().equals("NULL") || values[j].equals("0")) continue; 
 				String tmp = values[j];
-				if(DATE_FORMATS.keySet().parallelStream().anyMatch(e -> tmp.toLowerCase().matches(e))) match_count++;
+				//check if value matches any date pattern
+				if(DATE_FORMATS.keySet().parallelStream().anyMatch(e -> tmp.toLowerCase().matches(e))) matchCount++;
 			}
-			match_counter[i] = match_count;
+			match_counter[i] = matchCount;
 		}
 
-		int maxVal = Integer.MIN_VALUE;
+		int maxMatches = Integer.MIN_VALUE;
+		//get column with most matches -> date column
 		for (int i = 0; i < match_counter.length; i++) {
-			if (match_counter[i] > maxVal) {
-				maxVal = match_counter[i];
+			if (match_counter[i] > maxMatches) {
+				maxMatches = match_counter[i];
 				dateCol = i;
 			}
 		}
 
-		if (maxVal <= 0 || dateCol < 0){
+		if (maxMatches <= 0 || dateCol < 0){
 			//ERROR - no date column found
 			throw new DMLRuntimeException("No date column found.");
 		}
@@ -919,10 +920,11 @@ public class UtilFunctions {
 		}
 
 		for (int i = 0; i < values.length; i++) {
-			if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; //skip null/blank entries
-			//find pattern which matches values[i] -> increase count for this pattern
+			//skip null/blank entries
+			if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; 	
 			String tmp = values[i];
 			String dateFormat = getDateFormat(tmp);
+			//find pattern which matches values[i] -> increase count for this pattern
 			format_matches.put(dateFormat, format_matches.get(dateFormat) + 1);
 		}
 		//find format with the most occurences in values -> dominant format
@@ -962,18 +964,15 @@ public class UtilFunctions {
 		return newDate;
 	}
 
-	//new imports:
-	//import java.util.Date;
-	//import org.apache.commons.lang3.time.DateUtils;
-
 	public static FrameBlock dateProcessing (FrameBlock block, boolean convertToNumber, boolean convertToDominant, int valToAdd, String timeformatToAdd) {
 
 		int dateCol = findDateCol(block);
 		String[] values = (String[]) block.getColumnData(dateCol);
-
-		if (!convertToNumber && !convertToDominant && valToAdd != 0){ //only value to add
+		//only value to add -> no conversion to number/dominant
+		if (!convertToNumber && !convertToDominant && valToAdd != 0){ 
 			for (int i = 0; i< values.length; i++){
-				if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; //skip null/blank entries
+				//skip null/blank entries
+				if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; 
 				String currentFormat = getDateFormat(values[i]);
 				SimpleDateFormat curr = new SimpleDateFormat(currentFormat, Locale.US);
 				try {
@@ -985,12 +984,14 @@ public class UtilFunctions {
 				}
 			}
 		}
-
+		//convert to number (timestamp in milliseconds)
 		if (convertToNumber){
 			for (int i = 0; i< values.length; i++){
-				if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; //skip null/blank entries
+				//skip null/blank entries
+				if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; 
 				String currentFormat = getDateFormat(values[i]);
-				SimpleDateFormat curr = new SimpleDateFormat(currentFormat, Locale.US); //Locale.US needs to be used as otherwise dateformat like "dd MMM yyyy HH:mm" are not parsable
+				//Locale.US needs to be used as otherwise dateformat like "dd MMM yyyy HH:mm" are not parsable
+				SimpleDateFormat curr = new SimpleDateFormat(currentFormat, Locale.US);
 				try {
 					Date date = curr.parse(values[i]); //parse date string
 					block.set(i, dateCol, date.getTime()); //get timestamp in milliseconds
@@ -998,36 +999,35 @@ public class UtilFunctions {
 					throw new DMLRuntimeException(e);
 				}
 			}
-		}else if (convertToDominant){
+		}
+		//convert to dominant pattern in dateCol
+		else if (convertToDominant){
 			String dominantFormat = getDominantDateFormat(values);
 
 			for (int i = 0; i< values.length; i++){
-				if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; //skip null/blank entries
+				//skip null/blank entries
+				if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; 
 				String currentFormat = getDateFormat(values[i]);
-
+				//skip if format of values[i] == dominantFormat
 				if (currentFormat.equals(dominantFormat) && valToAdd == 0) continue;
-
+				//Locale.US needs to be used as otherwise dateformat like "dd MMM yyyy HH:mm" are not parsable
 				SimpleDateFormat curr = new SimpleDateFormat(currentFormat, Locale.US);
 				try {
-					Date date = curr.parse(values[i]);
-
+					Date date = curr.parse(values[i]); //parse date string
 					if (!currentFormat.equals(dominantFormat)){
 						curr.applyPattern(dominantFormat);
 					}
-					String newDate = curr.format(date);
+					String newDate = curr.format(date); //convert date to dominant date format
 					Date d = curr.parse(newDate);
 					if(valToAdd != 0){
-						date = addTimeToDate(d, valToAdd, timeformatToAdd);
+						date = addTimeToDate(d, valToAdd, timeformatToAdd); //add value to date
 					}
-					block.set(i, dateCol, curr.format(date));
-
+					block.set(i, dateCol, curr.format(date)); //convert back to datestring
 				} catch (ParseException e) {
 					throw new DMLRuntimeException(e);
 				}
-
 			}
 		}
-
 		return block;
 	}
 

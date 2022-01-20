@@ -18,6 +18,50 @@
 # under the License.
 #
 #------------------------------------------------------------
+
+# Built-in function dateProcessing: Identifies date-time column and provides the functionality to:
+#
+# 1. convert date to number
+# 2. find dominating pattern in the date column and convert all dates in the date column accordingly
+# 3. addition and substraction on date column
+#
+# USAGE INFORMATION:
+# ---------------------------------------------------------------------------------------------------------------------------
+# convertToNumber   convertToDominant   valToAdd   timeformatToAdd   MEANING
+# ---------------------------------------------------------------------------------------------------------------------------
+# TRUE              ---                 ---        ---               Date column gets converted to number (timestamp)        
+# FALSE             TRUE                ---        ---               Date column gets converted to dominant date format
+#                                                                    in the date column
+# FALSE             TRUE                10         H                 Date column gets converted to dominant date format
+#                                                                    in the date column and 10 hours are added to all
+#                                                                    dates in the date column
+# FALSE             FALSE               -15        m                 15 minutes get substracted from all dates in the 
+#                                                                    date column and remain in their original date format
+# ---------------------------------------------------------------------------------------------------------------------------
+#
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------------------------------------
+# NAME                TYPE               DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------------------------------------
+# X                   Frame[String]      ---         Input Frame
+# convertToNumber     Boolean            TRUE        Convert dates in date column to timestamps (in milliseconds)
+# convertToDominant   Boolean            FALSE       Convert dates in date column to dominant date format in date column
+# valToAdd            Integer            0           Amount of time to add to dates in date column
+# timeformatToAdd     String             s           Timeformat of the value to add (valToAdd) 
+#                                                    Supported timeformats: "ms" (milliseconds), "s" (seconds), "m" (minutes)
+#                                                    "H" (hours), "d" (days), "w" (weeks), "M" (months), "y" (years)
+#
+# ---------------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ---------------------------------------------------------------------------------------------------------------------------
+# NAME                TYPE               MEANING
+# ---------------------------------------------------------------------------------------------------------------------------
+# Y                   Frame[String]      Frame X with transformed date column based on input parameters
+# ---------------------------------------------------------------------------------------------------------------------------
+
+
 s_dateProcessing = function(Frame[String] X, Boolean convertToNumber=TRUE, Boolean convertToDominant=FALSE, Integer valToAdd=0, String timeformatToAdd="s") return (Frame[String] Y) {
   if( !convertToNumber & !convertToDominant & valToAdd == 0 )
     stop("Stopping due to invalid input. Input parameters do not process anything. (convertToNumber: " + convertToNumber + ", convertToDominant: " + convertToDominant + ", valToAdd: " + valToAdd)

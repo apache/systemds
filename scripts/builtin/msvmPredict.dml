@@ -20,21 +20,23 @@
 #-------------------------------------------------------------
 
 # This Scripts helps in applying an trained MSVM
-
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double  ---         matrix X of feature vectors to classify
-# W               Double  ---         matrix of the trained variables
-# ---------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE               DEFAULT     MEANING
+#-----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]     ---         matrix X of feature vectors to classify
+# W               Matrix[Double]     ---         matrix of the trained variables
+#-----------------------------------------------------------------------------------------------------------------------
+#
 # OUTPUT:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# Y^              Double  ---         Classification Labels Raw, meaning not modified to clean
-#                                     Labeles of 1's and -1's
-# Y               Double  ---         Classification Labels Maxed to ones and zeros.
+#-----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                          MEANING
+#-----------------------------------------------------------------------------------------------------------------------
+# YRaw            Matrix[Double]                Classification Labels Raw, meaning not modified to clean
+#                                               Labeles of 1's and -1's
+# Y               Matrix[Double]                Classification Labels Maxed to ones and zeros.
+#-----------------------------------------------------------------------------------------------------------------------
 
 m_msvmPredict = function(Matrix[Double] X, Matrix[Double] W)
   return(Matrix[Double] YRaw, Matrix[Double] Y)

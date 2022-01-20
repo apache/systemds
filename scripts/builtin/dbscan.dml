@@ -18,55 +18,64 @@
 # under the License.
 #
 #-------------------------------------------------------------
-#
+
 # Implements the DBSCAN clustering algorithm using Euclidian distance matrix
 #
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # NAME      TYPE             DEFAULT    MEANING
 # ----------------------------------------------------------------------------
 # X         Matrix[Double]   ---        The input Matrix to do DBSCAN on.
 # eps       Double           0.5        Maximum distance between two points for one to be considered reachable for the other.
-# minPts    Int              5          Number of points in a neighborhood for a point to be considered as a core point (includes the point itself).
+# minPts    Int              5          Number of points in a neighborhood for a point to be considered as a core point
+#                                       (includes the point itself).
+# ----------------------------------------------------------------------------------------------------------------------
 #
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# clusterMembers  Matrix[Double]        clustering Matrix
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_dbscan = function (Matrix[Double] X, Double eps = 0.5, Integer minPts = 5)
-    return (Matrix[Double] clusterMembers)
+    return (Matrix[Double] clusterMembers, Matrix[Double] clusterModel)
 {
-    #check input parameter assertions
-    if(minPts < 0) { stop("DBSCAN: Stopping due to invalid inputs: minPts should be greater than 0"); }
-    if(eps < 0) { stop("DBSCAN: Stopping due to invalid inputs: Epsilon (eps) should be greater than 0"); }
+  #check input parameter assertions
+  if(minPts < 0) { stop("DBSCAN: Stopping due to invalid inputs: minPts should be greater than 0"); }
+  if(eps < 0) { stop("DBSCAN: Stopping due to invalid inputs: Epsilon (eps) should be greater than 0"); }
 
-    UNASSIGNED = 0;
+  UNASSIGNED = 0;
 
-    num_records = nrow(X);
-    num_features = ncol(X);
+  num_records = nrow(X);
+  num_features = ncol(X);
 
-    neighbors = dist(X);
+  neighbors = dist(X);
 
-    #find same pts and set their distance to the smallest double representation
-    neighbors = replace(target = neighbors, pattern = 0, replacement = 2.225e-307)
-    neighbors = neighbors - diag(diag(neighbors));
+  #find same pts and set their distance to the smallest double representation
+  neighbors = replace(target = neighbors, pattern = 0, replacement = 2.225e-307)
+  neighbors = neighbors - diag(diag(neighbors));
 
-    # neighbors within eps
-    withinEps = ((neighbors <= eps) * (0 < neighbors));
-    corePts = rowSums(withinEps) + 1 >= minPts;
+  # neighbors within eps
+  withinEps = ((neighbors <= eps) * (0 < neighbors));
+  corePts = rowSums(withinEps) + 1 >= minPts;
 
-    clusterMembers = matrix(UNASSIGNED, num_records, 1);
+  clusterMembers = matrix(UNASSIGNED, num_records, 1);
+  clusterModel = matrix(UNASSIGNED, 0, num_features);
 
-    if (sum(corePts) != 0) {
-        # leave only density reachable pts
-        neighbors = (neighbors * corePts * withinEps) > 0;
+  if (sum(corePts) != 0) {
+    # leave only density reachable pts
+    neighbors = (neighbors * corePts * withinEps) > 0;
+    # border pts of multiple clusters
+    border = neighbors * (t(corePts) == 0 & colSums(neighbors) > 1) * seq(num_records, 1);
+    border = (border - colMaxs(border)) == 0;
+    neighbors = neighbors * border;
 
-        # border pts of multiple clusters
-        border = neighbors * (t(corePts) == 0 & colSums(neighbors) > 1) * seq(num_records, 1);
-        border = (border - colMaxs(border)) == 0;
-        neighbors = neighbors * border;
+    adjacency = (neighbors + t(neighbors)) > 0;
 
-        adjacency = (neighbors + t(neighbors)) > 0;
-
-        clusterMembers = components(G=adjacency, verbose=FALSE);
-        # noise to 0
-        clusterMembers = clusterMembers * (rowSums(adjacency) > 0);
-    }
+    clusterMembers = components(G=adjacency, verbose=FALSE);
+    # noise to 0
+    clusterMembers = clusterMembers * (rowSums(adjacency) > 0);
+    clusterModel = removeEmpty(target=X, margin="rows", select = (clusterMembers > 0))     
+  }
 }

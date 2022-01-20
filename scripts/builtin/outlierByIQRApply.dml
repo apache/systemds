@@ -1,0 +1,87 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Builtin function for repairing outliers by IQR 
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE             DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]   ---      Matrix X
+# Q1              Matrix[Double]   ---      first quartile
+# Q3              Matrix[Double]   ---      third quartile
+# IQR             Matrix[Double]   ---      Inter-quartile range
+# k               Double           --       a constant used to discern outliers k*IQR
+# repairMethod    Integer          1         values: 0 = delete rows having outliers,
+#                                               1 = replace outliers with zeros
+#                                               2 = replace outliers as missing values
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y               Matrix[Double]             Matrix X with no outliers
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# Y               Double   ---       Matrix X with no outliers
+
+m_outlierByIQRApply = function(Matrix[Double] X, Matrix[Double] Q1, Matrix[Double] Q3, Matrix[Double] IQR, Double k, Integer repairMethod) 
+  return(Matrix[Double] Y) 
+  # return(List[Unknown] out)
+{
+
+  upperBound = (Q3 + (k * IQR));
+  lowerBound = (Q1 - (k * IQR));
+  outlierFilter = X < lowerBound | X > upperBound
+  if(sum(outlierFilter) > 1) 
+    Y = filterOutliers(X, outlierFilter, repairMethod)
+  else Y = X
+
+}
+  
+filterOutliers = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 1)
+  return(Matrix[Double] fixed_X)
+{
+  rows = nrow(X)
+  cols = ncol(X)
+  if(repairMethod == 0) {
+    sel = rowMaxs(outlierFilter) == 0
+    X = removeEmpty(target = X, margin = "rows", select = sel)
+  }
+  else if(repairMethod == 1)
+    X = (outlierFilter == 0) * X
+  else if(repairMethod == 2)
+  {
+    outlierFilter = replace(target = (outlierFilter == 0), pattern = 0, replacement = NaN)
+    X = outlierFilter * X
+  }
+  else
+    stop("outlierByIQR: invalid argument - repair required 0-2 found: "+repairMethod)
+
+  fixed_X = X
+}
+

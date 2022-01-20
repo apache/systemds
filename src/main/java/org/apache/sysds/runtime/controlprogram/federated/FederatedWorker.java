@@ -46,10 +46,10 @@ public class FederatedWorker {
 	protected static Logger log = Logger.getLogger(FederatedWorker.class);
 
 	private int _port;
-	private final ExecutionContextMap _ecm;
+	private final FederatedLookupTable _flt;
 
 	public FederatedWorker(int port) {
-		_ecm = new ExecutionContextMap();
+		_flt = new FederatedLookupTable();
 		_port = (port == -1) ? DMLConfig.DEFAULT_FEDERATED_PORT : port;
 	}
 
@@ -77,7 +77,7 @@ public class FederatedWorker {
 							new ObjectDecoder(Integer.MAX_VALUE,
 								ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
 						cp.addLast("ObjectEncoder", new ObjectEncoder());
-						cp.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_ecm));
+						cp.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_flt));
 					}
 				}).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
 			log.info("Starting Federated Worker server at port: " + _port);

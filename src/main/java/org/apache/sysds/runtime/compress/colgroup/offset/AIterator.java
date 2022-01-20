@@ -25,22 +25,16 @@ import org.apache.commons.logging.LogFactory;
  * Iterator interface, that returns a iterator of the indexes (not offsets)
  */
 public abstract class AIterator {
-	protected static final Log LOG = LogFactory.getLog(AIterator.class.getName());
+	public static final Log LOG = LogFactory.getLog(AIterator.class.getName());
 
-	protected int index;
-	protected int dataIndex;
 	protected int offset;
 
 	/**
 	 * Main Constructor
 	 * 
-	 * @param index     The current index that correspond to an actual value in the dictionary.
-	 * @param dataIndex The current index int the offset.
-	 * @param offset    The current index in the uncompressed representation.
+	 * @param offset The current offset into in the uncompressed representation.
 	 */
-	protected AIterator(int index, int dataIndex, int offset) {
-		this.index = index;
-		this.dataIndex = dataIndex;
+	protected AIterator(int offset) {
 		this.offset = offset;
 	}
 
@@ -48,13 +42,6 @@ public abstract class AIterator {
 	 * Increment the pointers such that the both index and dataIndex is incremented to the next entry.
 	 */
 	public abstract void next();
-
-	/**
-	 * Get a boolean specifying if the iterator is done
-	 * 
-	 * @return A boolean that is true if there are more values contained in the Iterator.
-	 */
-	public abstract boolean hasNext();
 
 	/**
 	 * Get the current index value, note this correspond to a row index in the original matrix.
@@ -65,51 +52,59 @@ public abstract class AIterator {
 		return offset;
 	}
 
+	public void setOff(int off){
+		offset = off;
+	}
+
 	/**
-	 * Get the current index value and increment the pointers
+	 * Find out if the current offset is not exceeding the index given.
 	 * 
-	 * @return The current value pointed at.
+	 * @param ub The offset to not exceed
+	 * @return boolean if it is exceeded.
 	 */
-	public int valueAndIncrement() {
-		int x = offset;
-		next();
-		return x;
+	public boolean isNotOver(int ub) {
+		return offset < ub;
 	}
 
 	/**
 	 * Get the current data index associated with the index returned from value.
 	 * 
-	 * @return The data Index.
+	 * This index points to a position int the mapToData object, that then inturn can be used to lookup the dictionary
+	 * entry in ADictionary.
+	 * 
+	 * @return The Data Index.
 	 */
-	public int getDataIndex() {
-		return dataIndex;
-	}
+	public abstract int getDataIndex();
 
 	/**
-	 * Get the current data index and increment the pointers using the next operator.
+	 * Get the current offsets index, that points to the underlying offsets list.
 	 * 
-	 * @return The current data index.
+	 * This is available for debugging purposes, not to be used for the calling classes.
+	 * 
+	 * @return The Offsets Index.
 	 */
-	public int getDataIndexAndIncrement() {
-		int x = dataIndex;
-		next();
-		return x;
-	}
+	public abstract int getOffsetsIndex();
 
 	/**
 	 * Skip values until index is achieved.
 	 * 
-	 * @param index The index to skip to.
+	 * @param idx The index to skip to.
 	 * @return the index that follows or are equal to the skip to index.
 	 */
-	public int skipTo(int index) {
-		while(hasNext() && offset < index)
-			next();
-		return offset;
-	}
+	public abstract int skipTo(int idx);
 
 	/**
 	 * Copy the iterator with the current values.
 	 */
 	public abstract AIterator clone();
+
+	/**
+	 * Unsafe version of equals, note that it should only compare iterators stemming from the same Offset Object.
+	 * 
+	 * @param o The Iterator to compare
+	 * @return The result
+	 */
+	public boolean equals(AIterator o) {
+		return o.getOffsetsIndex() == getOffsetsIndex();
+	}
 }

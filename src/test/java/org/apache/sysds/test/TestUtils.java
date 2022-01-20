@@ -918,7 +918,7 @@ public class TestUtils
 				continue;
 			
 			if(sba.size(i) != sbe.size(i))
-				fail(message+"\nNumber of values are not equal in row: " + i);
+				fail(message+"\nNumber of values are not equal in row: " + i +"\nactual:"+ sba.get(i) +"\nexpected:"+ sbe.get(i));
 
 			final double[] e = sbe.values(i);
 			final double[] a = sba.values(i);
@@ -991,7 +991,7 @@ public class TestUtils
 		final int ar = actualMatrix.getNumRows();
 		final int ac = actualMatrix.getNumColumns();
 		if(er != ar || ec != ac)
-			fail("The number of rows and columns does not match in matrices");
+			fail("The number of rows and columns does not match in matrices expected: " + er + " " + ec + " actual: " + ar + " "+ ac);
 	}
 
 	public static void assertEqualColsAndRows(MatrixBlock expectedMatrix, MatrixBlock actualMatrix, String message) {

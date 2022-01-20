@@ -33,6 +33,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.utils.Statistics;
 
@@ -56,6 +57,7 @@ public class FederatedRequest implements Serializable {
 	private List<Object> _data;
 	private boolean _checkPrivacy;
 	private List<Long> _checksums;
+	private long _pid;
 
 	public FederatedRequest(RequestType method) {
 		this(method, FederationUtils.getNextFedDataID(), new ArrayList<>());
@@ -74,6 +76,7 @@ public class FederatedRequest implements Serializable {
 		_method = method;
 		_id = id;
 		_data = data;
+		_pid = Long.valueOf(IDHandler.obtainProcessID());
 		setCheckPrivacy();
 		if (DMLScript.LINEAGE && method == RequestType.PUT_VAR)
 			setChecksum();
@@ -93,6 +96,10 @@ public class FederatedRequest implements Serializable {
 
 	public void setTID(long tid) {
 		_tid = tid;
+	}
+
+	public long getPID() {
+		return _pid;
 	}
 
 	public Object getParam(int i) {

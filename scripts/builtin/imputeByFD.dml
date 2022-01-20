@@ -19,44 +19,40 @@
 #
 #-------------------------------------------------------------
 
-# Implements builtin for imputing missing values from observed values (if exist)
-# using robust functional dependencies 
+# Implements builtin for imputing missing values from observed values (if exist) using robust functional dependencies
+
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double    --       Matrix X 
-# source          Integer   --       source attribute to use for imputation and error correction
-# target          Integer   --       attribute to be fixed
-# threshold       Double    --       threshold value in interval [0, 1] for robust FDs 
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE             DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]   ---       Matrix X
+# source          Integer          ---       source attribute to use for imputation and error correction
+# target          Integer          ---       attribute to be fixed
+# threshold       Double           ---       threshold value in interval [0, 1] for robust FDs
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]             Matrix with possible imputations
+# ----------------------------------------------------------------------------------------------------------------------
 
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double   ---        Matrix with possible imputations 
-
-
-m_imputeByFD = function(Matrix[Double] X, Integer sourceAttribute, Integer targetAttribute, Double threshold, Boolean verbose = FALSE)
-  return(Matrix[Double] X)
+m_imputeByFD = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Boolean verbose = FALSE)
+  return(Matrix[Double] Y, Matrix[Double] Y_imp)
 {
-  # sanity checks
+  # # validation checks
   if( threshold < 0 | threshold > 1 )
     stop("Stopping due to invalid input, threshold required in interval [0, 1] found "+threshold)
 
-  if(sourceAttribute < 0 | sourceAttribute > ncol(X) | targetAttribute < 0 | targetAttribute > ncol(X))
-    stop("Stopping due to invalid source and target")
- 
-  if(min(X[,sourceAttribute]) < 1 | min(X[,targetAttribute]) < 1)
+  if(min(X) < 1 | min(Y) < 1)
   {
     print("imputeByFD: source or target contain values less than 1")
     
   }
   else {
     # impute missing values and fix errors
-    X[,targetAttribute] = imputeAndCorrect(X[,sourceAttribute], X[,targetAttribute], threshold) 
+    [Y, Y_imp] = imputeAndCorrect(X, Y, threshold) 
   }
 
   if(verbose)
@@ -64,31 +60,26 @@ m_imputeByFD = function(Matrix[Double] X, Integer sourceAttribute, Integer targe
 }
 
 imputeAndCorrect = function(Matrix[Double] X, Matrix[Double] Y, Double threshold)
-  return(Matrix[Double] imputed_Y) {
+  return(Matrix[Double] imputed_Y, Matrix[Double] filled) {
 
-  XY = cbind(X, Y)
-  
-  missing_mask = is.na(XY)
+  missing_mask_Y = is.na(Y)
   # replace the NaN values with zero
-  XY = replace(target = XY, pattern=NaN, replacement=1)
-
-  
+  X = replace(target = X, pattern=NaN, replacement=1)
+  Y = replace(target = Y, pattern=NaN, replacement=0)
+  maxVal = max(Y)+1
   # map the missing values to an arbitrary number (i.e., Max values + 1)
-  XY = missing_mask * (colMaxs(XY)+1) + XY
+  Y = (missing_mask_Y * maxVal) + (Y * (missing_mask_Y == 0))
   
   # create mapping between source and target
-  ctab = table(XY[,1], XY[,2], 1)
+  ctab = table(X, Y)
 
   # remove the table column representing missing values
-  if(sum(missing_mask[,2]) > 0 & ncol(ctab) > 1)
+  if(sum(missing_mask_Y) > 0 & ncol(ctab) > 1)
     ctab = ctab[,1:ncol(ctab)-1]
 
   ctab = ctab/(rowSums(ctab)) > threshold 
   
   # Get the most frequent mapped value of Y 
-  ans = (ctab == rowMaxs(ctab)) * t(seq(1, ncol(ctab))) # rowIndexMax(ctab)?
-  tabMax = rowSums(ans) != (ncol(ans) * ((ncol(ans))+1)/2) # vector for controlling max(0)
-  filled = rowMaxs(ans) * tabMax
-  imputed_Y = table(seq(1,nrow(X)), XY[,1]) %*% filled;
-  imputed_Y = replace(target=imputed_Y, pattern=0, replacement=NaN)
+  filled = rowIndexMax(ctab) #(ctab == rowMaxs(ctab)) * t(seq(1, ncol(ctab))) # 
+  imputed_Y = imputeByFDApply(X, filled)
 }

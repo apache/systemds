@@ -2244,6 +2244,7 @@ public class DMLTranslator
 		switch (source.getOpCode()) {
 
 		case EVAL:
+		case EVALLIST:
 			currBuiltinOp = new NaryOp(target.getName(), target.getDataType(), target.getValueType(),
 				OpOpN.EVAL, processAllExpressions(source.getAllExpr(), hops));
 			break;
@@ -2540,9 +2541,13 @@ public class DMLTranslator
 		case DROP_INVALID_TYPE:
 		case DROP_INVALID_LENGTH:
 		case VALUE_SWAP:
-		case MAP:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
+			break;
+		case MAP:
+			currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(),
+				target.getValueType(), OpOp3.valueOf(source.getOpCode().name()),
+				expr, expr2, (expr3==null) ? new LiteralOp(0L) : expr3);
 			break;
 		
 		case LOG:

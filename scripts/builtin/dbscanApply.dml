@@ -1,0 +1,58 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#
+# Implements the outlier detection/prediction algorithm using a DBScan model
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME              TYPE             DEFAULT    MEANING
+# ----------------------------------------------------------------------------
+# Xtest             Matrix[Double]   ---        The input Matrix to do outlier detection on.
+# clusterModel      Matrix[Double]   ---        Model of clusters to predict outliers against.
+# eps               Double           0.5        Maximum distance between two points for one to be considered reachable for the other.
+
+# OUTPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME              TYPE             DEFAULT    MEANING
+# ----------------------------------------------------------------------------
+# outlierPoints     Matrix[Double]   ---        Predicted outliers
+
+
+m_dbscanApply = function (Matrix[Double] Xtest, Matrix[Double] clusterModel, Double eps = 0.5)
+    return (Matrix[double] outlierPoints)
+{
+  num_features_Xtest = ncol(Xtest);
+  num_rows_Xtest = nrow(Xtest);
+  num_features_model = ncol(clusterModel);
+  num_rows_model = nrow(clusterModel);
+
+  if(num_features_Xtest != num_features_model) {stop("DBSCAN Outlier: Stopping due to invalid inputs: features need to match");}
+  if(eps < 0) { stop("DBSCAN Outlier: Stopping due to invalid inputs: Epsilon (eps) should be greater than 0"); }
+  if(num_rows_model <= 0) { stop("DBSCAN Outlier: Stopping due to invalid inputs: Model is empty"); }
+    
+  X = rbind(clusterModel, Xtest);
+  neighbors = dist(X);
+  neighbors = replace(target = neighbors, pattern = 0, replacement = 2.225e-307);
+  neighbors = neighbors - diag(diag(neighbors));
+  Xtest_dists = neighbors[(num_rows_model+1):nrow(X), 1:num_rows_model];
+  withinEps = ((Xtest_dists <= eps) * (0 < Xtest_dists));
+  outlierPoints = rowSums(withinEps) >= 1;
+}

@@ -205,6 +205,10 @@ public class ConfigurationManager
 		return compress.isEnabled();
 	}
 	
+	public static int getFederatedTimeout(){
+		return getDMLConfig().getIntValue(DMLConfig.FEDERATED_TIMEOUT);
+	}
+
 	///////////////////////////////////////
 	// Thread-local classes
 	

@@ -450,7 +450,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		catch(Exception e) {
 			if(DMLScript.STATISTICS)
 				tFedCommunication.stop();
-			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute UDF" + e.getMessage());
+			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute UDF" + e.getMessage(), e);
 		}
 	}
 

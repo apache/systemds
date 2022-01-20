@@ -41,25 +41,30 @@
 
 
 m_imputeByMedian = function(Matrix[Double] X, Matrix[Double] mask)
-return(Matrix[Double] X)
+return(Matrix[Double] X,  Matrix[Double] imputedVec)
+# return(List[Unknown] out)
 {
 
-  nX = removeEmpty(target=X, margin="cols", select=(mask==0))
-  cX = removeEmpty(target=X, margin="cols", select=mask)
-  Mask_n = is.na(nX);  
+  nX = X * (mask==0)
   nX = replace(target=nX, pattern=NaN, replacement=0);
   cols = ncol(nX)
   #  median imputation
   colMedian = matrix(0, 1, cols)
-  parfor(i in 1:cols, check=0)
-    colMedian[1, i] = median(X[,i])
-  X_n = nX + (Mask_n * colMedian)
-  # mode imputation
-  X_c = imputeByMode(cX)
-
-  p = table(seq(1, ncol(nX)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
-    select=t(mask==0)), ncol(nX), ncol(X))
-  q = table(seq(1, ncol(cX)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
-    select=t(mask)), ncol(cX), ncol(X))
-  X = (X_n %*% p) + (X_c %*% q)
+  for(i in 1:cols, check=0) {
+    if(sum(nX[,i]) == 0)
+      colMedian[1, i] = 0
+    else
+      colMedian[1, i] = median(nX[,i])
+  }
+  if(sum(mask) > 0)
+  {
+    # mode imputation
+    cX = X * mask
+    [X_c, colMode] = imputeByMode(cX)
+    imputedVec = colMedian + colMode
+  }  
+  else {
+    imputedVec = colMedian 
+  }
+  X = imputeByMedianApply(X, imputedVec)
 }

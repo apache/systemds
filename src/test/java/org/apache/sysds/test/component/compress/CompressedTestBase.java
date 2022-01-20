@@ -27,7 +27,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -95,8 +98,8 @@ public abstract class CompressedTestBase extends TestBase {
 	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.BOOLEAN, ValueRange.SMALL,
 		ValueRange.NEGATIVE};
 
-	protected static OverLapping[] overLapping = new OverLapping[] {OverLapping.PLUS_LARGE, OverLapping.MATRIX,
-		OverLapping.NONE, OverLapping.APPEND_CONST, OverLapping.C_BIND_SELF};
+	protected static OverLapping[] overLapping = new OverLapping[] {OverLapping.PLUS_LARGE, OverLapping.PLUS_ROW_VECTOR,
+		OverLapping.MATRIX, OverLapping.NONE, OverLapping.APPEND_CONST, OverLapping.C_BIND_SELF};
 
 	protected static CompressionSettingsBuilder[] usedCompressionSettings = new CompressionSettingsBuilder[] {
 		// CLA TESTS!
@@ -264,11 +267,24 @@ public abstract class CompressedTestBase extends TestBase {
 							cmb = ((CompressedMatrixBlock) cmb).squash(_k);
 					}
 				}
-				if(ov == OverLapping.PLUS || ov == OverLapping.PLUS_LARGE) {
-					ScalarOperator sop = ov == OverLapping.PLUS_LARGE ? new LeftScalarOperator(Plus.getPlusFnObject(),
-						-3142151) : new LeftScalarOperator(Plus.getPlusFnObject(), 5);
-					mb = mb.scalarOperations(sop, new MatrixBlock());
-					cmb = cmb.scalarOperations(sop, new MatrixBlock());
+				if(cmb instanceof CompressedMatrixBlock) {
+
+					if(ov == OverLapping.PLUS || ov == OverLapping.PLUS_LARGE) {
+						ScalarOperator sop = ov == OverLapping.PLUS_LARGE ? new LeftScalarOperator(Plus.getPlusFnObject(),
+							-3142151) : new LeftScalarOperator(Plus.getPlusFnObject(), 5);
+						mb = mb.scalarOperations(sop, new MatrixBlock());
+						cmb = cmb.scalarOperations(sop, new MatrixBlock());
+					}
+					else if(ov == OverLapping.PLUS_ROW_VECTOR) {
+
+						MatrixBlock v = TestUtils.generateTestMatrixBlock(1, cols, -1, 1, 1.0, 4);
+						BinaryOperator bop = new BinaryOperator(Plus.getPlusFnObject(), _k);
+						mb = mb.binaryOperations(bop, v, null);
+						cmb = cmb.binaryOperations(bop, v, null);
+						lossyTolerance = lossyTolerance + 2;
+					}
+					if(!(cmb instanceof CompressedMatrixBlock))
+						fail("Invalid construction, should result in compressed MatrixBlock");
 				}
 			}
 
@@ -285,6 +301,7 @@ public abstract class CompressedTestBase extends TestBase {
 				matrixRowsCols = null;
 			}
 			TestUtils.assertEqualColsAndRows(mb, cmb, bufferedToString);
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -375,7 +392,7 @@ public abstract class CompressedTestBase extends TestBase {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
-
+			((CompressedMatrixBlock) cmb).clearSoftReferenceToDecompressed();
 			MatrixBlock decompressedMatrixBlock = ((CompressedMatrixBlock) cmb).decompress(_k);
 			compareResultMatrices(mb, decompressedMatrixBlock, 1);
 			assertEquals(bufferedToString, mb.getNonZeros(), decompressedMatrixBlock.getNonZeros());
@@ -604,7 +621,6 @@ public abstract class CompressedTestBase extends TestBase {
 				return; // Early termination since the test does not test what we wanted.
 
 			// Make Operator
-			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
 			AggregateBinaryOperator abopSingle = InstructionUtils.getMatMultOperator(1);
 
 			// vector-matrix uncompressed
@@ -616,7 +632,7 @@ public abstract class CompressedTestBase extends TestBase {
 			ucRet = right.aggregateBinaryOperations(left, right, ucRet, abopSingle);
 
 			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb).aggregateBinaryOperations(compMatrix, cmb, new MatrixBlock(),
-				abop, transposeLeft, transposeRight);
+			abopSingle, transposeLeft, transposeRight);
 
 			compareResultMatrices(ucRet, ret2, 100);
 		}
@@ -834,6 +850,57 @@ public abstract class CompressedTestBase extends TestBase {
 		testBinaryMV(vf, vectorCols);
 	}
 
+	@Test
+	public void testBinaryVMPlusRow() {
+		testBinaryVMPlus(vectorCols);
+	}
+
+	@Test
+	public void testBinaryVMPlusCols() {
+		testBinaryVMPlus(vectorRows);
+	}
+
+	private static AtomicBoolean printedErrorForNotImplementedTestBinaryVMPlus = new AtomicBoolean(false);
+
+	public void testBinaryVMPlus(MatrixBlock vector) {
+		// This test verifies that left binary operations work. but they are not integrated into the system
+		// Since this operation is not supported in normal MatrixBlock.
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				// (rows * cols > 10000 && matrix.getNumRows() == rows && matrix.getNumColumns() == cols))
+				return; // Input was not compressed then just pass test
+			for(AColGroup g : ((CompressedMatrixBlock) cmb).getColGroups())
+				if(g instanceof ColGroupUncompressed)
+					return; // Not supported for colGroupUncompressed.
+			BinaryOperator bop = new BinaryOperator(Plus.getPlusFnObject(), _k);
+			MatrixBlock matrix = vector;
+			MatrixBlock ret2;
+			ucRet = mb.binaryOperations(bop, matrix, ucRet);
+			ret2 = ((CompressedMatrixBlock) cmb).binaryOperationsLeft(bop, matrix, new MatrixBlock());
+
+			compareResultMatrices(ucRet, ret2, 2);
+		}
+		catch(NotImplementedException e) {
+			if(! printedErrorForNotImplementedTestBinaryVMPlus.get()){
+				LOG.error("Failed Binary VM Plus: " + e.getMessage());
+				printedErrorForNotImplementedTestBinaryVMPlus.set(true);
+			}
+		}
+		catch(Exception e) {
+			if(e.getCause() instanceof ExecutionException && e.getCause().getCause() instanceof NotImplementedException) {
+				if(! printedErrorForNotImplementedTestBinaryVMPlus.get()){
+					LOG.error("Failed Binary VM Plus: " + e.getMessage());
+					printedErrorForNotImplementedTestBinaryVMPlus.set(true);
+				}
+			}
+			else {
+				e.printStackTrace();
+				fail("Not correct error message" + e.getMessage());
+			}
+		}
+	}
+
+
 	public void testBinaryMV(ValueFunction vf, MatrixBlock matrix) {
 		testBinaryMV(vf, matrix, true);
 	}
@@ -902,10 +969,13 @@ public abstract class CompressedTestBase extends TestBase {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
 				return;
-			MatrixBlock ret2 = cmb.slice(rl, ru, cl, cu);
-			MatrixBlock ret1 = mb.slice(rl, ru, cl, cu);
-			if(!(ret2 instanceof CompressedMatrixBlock))
-				assertEquals(ret1.getNonZeros(), ret2.getNonZeros());
+			final MatrixBlock ret2 = cmb.slice(rl, ru, cl, cu);
+			final MatrixBlock ret1 = mb.slice(rl, ru, cl, cu);
+			final long nnz1 = ret1.getNonZeros();
+			final long nnz2 = ret2.getNonZeros();
+			if(!(ret2 instanceof CompressedMatrixBlock) && nnz1 != nnz2)
+				fail(bufferedToString + "\nNot same number of non zeros " + nnz1 + " != " + nnz2);
+
 			compareResultMatrices(ret1, ret2, 1);
 		}
 		catch(Exception e) {

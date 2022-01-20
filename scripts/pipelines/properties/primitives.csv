@@ -1,7 +1,7 @@
 ED,MVI,OTLR,EC,SCALE,CI,DUMMY,DIM
-imputeByFd,imputeByMean,winsorize,imputeByMean,scale,abstain,dummycoding,m_pca
-outlierBySd,imputeByMedian,outlierBySd,imputeByMedian,,wtomeklink,,ppca
-outlierByIQR,mice,outlierByIQR,fillDefault,,SMOTE,,
-,fillDefault,,,,,,
-,imputeByFd,,,,,,
+imputeByFd,imputeByMean,winsorize,imputeByMean,scale,abstain,dummycoding,pca
+outlierBySd,imputeByMedian,outlierBySd,imputeByMedian,,tomeklink,frequencyEncode,ppca
+outlierByIQR,,outlierByIQR,fillDefault,,SMOTE,WoE,
+,fillDefault,,,,flipLabels,,
+,imputeByFd,,,,underSampling,,
 ,forward_fill,,,,,,

@@ -72,6 +72,10 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 		return _inputParams.stream().map(d -> d.getName()).collect(Collectors.toList());
 	} 
 	
+	public List<String> getOutputParamNames() {
+		return _outputParams.stream().map(d -> d.getName()).collect(Collectors.toList());
+	}
+	
 	public ArrayList<DataIdentifier> getInputParams(){
 		return _inputParams;
 	}

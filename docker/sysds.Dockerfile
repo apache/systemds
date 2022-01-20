@@ -50,7 +50,7 @@ RUN apt-get update -qq \
 	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn \
 	&& git clone --depth 1 https://github.com/apache/systemds.git systemds && \
 	cd /usr/src/systemds/ && \
-	mvn clean package -P distribution && \
+	mvn --no-transfer-progress clean package -P distribution && \
 	rm -r .git && \
 	rm -r .github && \
 	rm -r target/javadoc** && \
@@ -60,13 +60,13 @@ RUN apt-get update -qq \
 	rm -r target/hadoop-test && \
 	rm -r target/maven-archiver && \
 	rm -r target/systemds-** && \
-	rm -r docker && \
 	rm -r docs && \
 	rm -r src && \
 	rm -r /usr/lib/mvn && \
 	rm -r CONTRIBUTING.md && \
 	rm -r pom.xml && \ 
 	rm -r ~/.m2
+
 
 COPY docker/mountFolder/main.dml /input/main.dml
 

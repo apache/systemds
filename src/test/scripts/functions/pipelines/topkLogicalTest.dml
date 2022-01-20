@@ -61,37 +61,32 @@ else
 eY = eX[, ncol(eX)]
 eX = eX[, 1:ncol(eX) - 1]
 
-print("y classes \n"+toString(table(eY, 1)))
+
 getMask = getMask[, 1:ncol(getMask) - 1] # strip the mask of class label
 getFdMask = getFdMask[, 1:ncol(getFdMask) - 1] # strip the mask of class label
 getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
 
-metaList = list(mask=getMask, schema=getSchema, fd=as.matrix(0))
+metaList = list(mask=getMask, schema=getSchema, fd=as.matrix(0), applyFunc=as.frame("NULL"))
 
 logical =  frame([
-                 "7", "MVI", "OTLR", "ED", "EC", "CI", "DUMMY", "DIM", 
-                 "5", "ED",  "MVI",  "CI", "DUMMY", "DIM", "0", "0"
-                 ], rows=2, cols=8) 
-
-
+                 "2", "MVI", "DUMMY", 
+                 "2", "ED", "DUMMY",
+                 "2", "OTLR", "DUMMY", 
+                 "2", "EC", "DUMMY"
+                 ], rows=4, cols=3) 
 
 categories = frame(["ED", "MVI", "OTLR", "EC"], rows=1, cols=4)
-cmr = matrix("4 0.7 1", rows=1, cols=3)
+
 
 # doing holdout evaluation
 
 [trainX, trainY, testX, testY] = splitBalanced(eX, eY, trainTestSplit, FALSE)
-# split = nrow(eX) * trainTestSplit
-# trainX = eX[1:split,]
-# trainY = eY[1:split,]
-# testX = eX[split+1:nrow(eX),]
-# testY = eY[split+1:nrow(eY),]
 
 
-[bestLogical, score] = lg::enumerateLogical(X=trainX, y=trainY, Xtest=testX, ytest=testY,  cmr=cmr, 
-  cat=categories, population=logical, max_iter=max_iter, metaList = metaList, evaluationFunc="evalML",
+[bestLogical, score] = lg::enumerateLogical(X=trainX, y=trainY, Xtest=testX, ytest=testY, cat=categories,
+  population=logical, max_iter=max_iter, metaList = metaList, evaluationFunc="evalML",
   evalFunHp=matrix("1 1e-3 1e-9 100", rows=1, cols=4), primitives=primitives, param=param,
-	num_inst=num_inst, num_exec=num_exec, cv=FALSE, verbose=TRUE)
+	num_inst=num_inst, cv=FALSE, verbose=TRUE)
 
 print("score of pipeline: "+toString(score))
 print("bestLogical "+toString(bestLogical))
@@ -101,13 +96,10 @@ print("result satisfied ------------"+result)
 write(result , $O)
 
 
-
-# UDF for evaluation  
-# choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
 # UDF for evaluation  
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
 evalML = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
-  Matrix[Double] evalFunHp, Boolean trainML = FALSE)
+  Matrix[Double] evalFunHp)
   
 return(Matrix[Double] accuracy)
 {

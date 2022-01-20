@@ -19,20 +19,37 @@
 #
 #-------------------------------------------------------------
 
-m_winsorize = function(Matrix[Double] X, Double ql = 0.05, Double qu = 0.95, Boolean verbose) 
-return (Matrix[Double] Y) {
+# The winsorize-function removes outliers from the data. It does so by computing upper and
+# lower quartile range of the given data then it replaces any value that falls outside this range
+# (less than lower quartile range or more than upper quartile range).
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             DEFAULT         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]   ---            Input feature matrix
+# verbose   Boolean          FALSE          To print output on screen
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE                             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y        Matrix[Double]                   Matrix without outlier values
+# ----------------------------------------------------------------------------------------------------------------------
 
+m_winsorize = function(Matrix[Double] X, Double ql = 0.05, Double qu = 0.95, Boolean verbose) 
+return (Matrix[Double] Y, Matrix[Double] qLower, Matrix[Double] qUpper) {
+  qLower = matrix(0, rows=1, cols=ncol(X))
+  qUpper = matrix(0, rows=1, cols=ncol(X))
   Y = matrix(0, nrow(X), ncol(X))
   parfor(i in 1:ncol(X), check=0) {
     q1 = quantile(X[,i], ql)
     q2 = quantile(X[,i], qu)
-    Y[, i] = fixOutliersWinsorize(X[,i], q1, q2)
+    qLower[1, i] = q1
+    qUpper[1, i] = q2
   }
+  Y = winsorizeApply(X, qLower, qUpper)
 }
 
-fixOutliersWinsorize = function(Matrix[Double] X,  Double ql, Double qu) return (Matrix[Double] Y)
-{
-  # replace values outside [ql,qu] w/ ql and qu respectively
-  Y = ifelse(X < ql, ql, X);
-  Y = ifelse(Y > qu, qu, Y);
-}

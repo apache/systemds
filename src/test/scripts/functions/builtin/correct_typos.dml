@@ -20,6 +20,5 @@
 #-------------------------------------------------------------
 
 X = read($X, data_type="frame", format="csv", header=FALSE);
-nullMask = matrix(0, rows=nrow(X), cols=ncol(X))
-Y = correctTypos(X, nullMask, $frequency_threshold, $distance_threshold, $decapitalize, $correct, $is_verbose);
+[Y, ft, dt, dm, fr] = correctTypos(X, $frequency_threshold, $distance_threshold, $is_verbose);
 write(Y, $Y, format="csv")

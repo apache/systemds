@@ -19,22 +19,29 @@
 #
 #-------------------------------------------------------------
 
-
 # Builtin function for detecting and repairing outliers using standard deviation 
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double   ---       Matrix X  
-# k               Double   1.5       a constant used to discern outliers k*IQR 
-# isIterative     Boolean  TRUE      iterative repair or single repair 
-# repairMethod    Integer  1         values: 0 = delete rows having outliers, 
-#                                            1 = replace outliers with zeros 
-#                                            2 = replace outliers as missing values 
-# max_iterations  Integer  0         values: 0 = arbitrary number of iteraition until all outliers are removed, 
-#                                    n = any constant defined by user
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE             DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]   ---       Matrix X
+# k               Double           1.5       a constant used to discern outliers k*IQR
+# isIterative     Boolean          TRUE      iterative repair or single repair
+# repairMethod    Integer          1         values: 0 = delete rows having outliers,
+#                                               1 = replace outliers with zeros
+#                                               2 = replace outliers as missing values
+# max_iterations  Integer          0         values: 0 = arbitrary number of iteraition until all outliers are removed,
+#                                            n = any constant defined by user
+# verbose         Boolean          FALSE     flag specifying if logging information should be printed
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y               Matrix[Double]             Matrix X with no outliers
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 #Output(s)
@@ -44,7 +51,9 @@
 # Y               Double   ---       Matrix X with no outliers
 
 m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod = 1, 
-  Integer max_iterations, Boolean verbose = TRUE) return(Matrix[Double] Y) 
+  Integer max_iterations, Boolean verbose = TRUE) 
+  return(Matrix[Double] Y, Matrix[Double] Q1, Matrix[Double] Q3, Matrix[Double] IQR, Double k, Integer repairMethod) 
+  # return(List[Unknown] out)
 {
 
   sumPrevious = as.double(0)
@@ -81,6 +90,8 @@ m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod 
       print("output is a zero matrix due to iterative evaluation of outliers ")
     print("output:\n"+ toString(Y))
   }
+  bounds = rbind(lowerBound, upperBound)
+  out = list(Y, bounds)
 }
   
 fix_outliers_iqr = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 1)

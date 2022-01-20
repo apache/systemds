@@ -140,7 +140,7 @@ public abstract class AutomatedTestBase {
 	private static final String DEBUG_TEMP_DIR = "./tmp/";
 
 	/** Directory under which config files shared across tests are located. */
-	private static final String CONFIG_DIR = "./src/test/config/";
+	protected static final String CONFIG_DIR = "./src/test/config/";
 
 	/**
 	 * Location of the SystemDS config file that we use as a template when generating the configs for each test case.
@@ -1089,18 +1089,19 @@ public abstract class AutomatedTestBase {
 
 			curLocalTempDir.mkdirs();
 			TestUtils.clearDirectory(curLocalTempDir.getPath());
-
-			// Create a SystemDS config file for this test case based on default template
-			// from src/test/config or derive from custom configuration provided by test.
-			String configTemplate = FileUtils.readFileToString(getConfigTemplateFile(), "UTF-8");
-			String localTemp = curLocalTempDir.getPath();
-			String configContents = configTemplate
-				.replace(createXMLElement(DMLConfig.SCRATCH_SPACE, "scratch_space"),
-					createXMLElement(DMLConfig.SCRATCH_SPACE, localTemp + "/target/scratch_space"))
-				.replace(createXMLElement(DMLConfig.LOCAL_TMP_DIR, "/tmp/systemds"),
-					createXMLElement(DMLConfig.LOCAL_TMP_DIR, localTemp + "/localtmp"));
-
+			
 			if(!disableConfigFile){
+				// Create a SystemDS config file for this test case based on default template
+				// from src/test/config or derive from custom configuration provided by test.
+				String configTemplate = FileUtils.readFileToString(getConfigTemplateFile(), "UTF-8");
+				String localTemp = curLocalTempDir.getPath();
+				String testScratchSpace = "\n   "+ createXMLElement(DMLConfig.SCRATCH_SPACE, localTemp + "/target/scratch_space") + "\n   ";
+				String testTempSpace = createXMLElement(DMLConfig.LOCAL_TMP_DIR, localTemp + "/localtmp");
+				String configContents = configTemplate
+					// if the config had a tmp location remove it
+					.replace(createXMLElement(DMLConfig.SCRATCH_SPACE, "scratch_space"),"")
+					.replace(createXMLElement(DMLConfig.LOCAL_TMP_DIR, "/tmp/systemds"),"")
+					.replace("</root>", testScratchSpace + testTempSpace + "\n</root>");
 
 				FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 

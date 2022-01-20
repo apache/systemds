@@ -147,60 +147,68 @@ return(Boolean validForResources)
 #####################################
 # The function will apply a pipeline of string processing primitives on dirty data
 ######################################
-stringProcessing = function(Frame[Unknown] data, Matrix[Double] mask, 
+stringProcessing = function(Frame[Unknown] train, Frame[Unknown] test, Matrix[Double] mask, 
   Frame[String] schema, Boolean CorrectTypos, List[Unknown] ctx = list(prefix="--"))
-return(Frame[Unknown] processedData, Matrix[Double] M)
+return(Frame[Unknown] train, Frame[Unknown] test, Matrix[Double] M)
 { 
   M = mask
   prefix = as.scalar(ctx["prefix"]);
-  # step 1 fix swap values
-  print(prefix+" value swap fixing");
-  data = valueSwap(data, schema)
   
-  # step 2 fix invalid lengths
-  print(prefix+" fixing invalid lengths between 5th and 95th quantile");
+  # step 1 fix invalid lengths
   q0 = 0.05
-  q1 = 0.95
-  [data, M] = fixInvalidLengths(data, q0, q1)
+  q1 = 0.88
+  print(prefix+" fixing invalid lengths between "+q0+" and "+q1+" quantile");
+
+  [train, mask, qlow, qup] = fixInvalidLengths(train, mask, q0, q1)
+
+  
+  # step 2 fix swap values
+  print(prefix+" value swap fixing");
+  train = valueSwap(train, schema)
+  if(length(test) > 0)
+
   
   # step 3 drop invalid types
   print(prefix+" drop values with type mismatch");
-  data = dropInvalidType(data, schema)
+  train = dropInvalidType(train, schema)
+
   
   # step 4 do the case transformations
   print(prefix+" convert strings to lower case");
-  for(i in 1:ncol(mask))
-    if(as.scalar(schema[1,i]) == "STRING")
-      data[, i] = map(data[, i], "x -> x.toLowerCase()")
+  train = map(train, "x -> x.toLowerCase()")
+
+
+
+  # step 5 porter stemming on all features
+  print(prefix+" porter-stemming on all features");
+  train = map(train, "x -> PorterStemmer.stem(x)", 0)
+
   
-  # step 5 typo correction
+  if(length(test) > 0)
+  {
+    test = fixInvalidLengthsApply(test, mask, qlow, qup)
+    test = valueSwap(test, schema)
+    test = dropInvalidType(test, schema)
+    test = map(test, "x -> x.toLowerCase()")
+    test = map(test, "x -> PorterStemmer.stem(x)", 0)
+  }
+ 
+  # step 6 typo correction  
   if(CorrectTypos)
   {
-    # recode data to get null mask
-    if(sum(mask) > 0) {
-      # always recode the label
-      index = vectorToCsv(mask)
-      jspecR = "{ids:true, recode:["+index+"]}"
-      [eX, X_meta] = transformencode(target=data, spec=jspecR);
-    } 
-    # if no categorical value exist then just cast the frame into matrix
-    else
-      eX = as.matrix(data)
-    nullMask = is.na(eX)
     print(prefix+" correct typos in strings");
     # fix the typos
     for(i in 1:ncol(schema))
-      if(as.scalar(schema[1,i]) == "STRING")
-        data[, i] = correctTypos(data[, i], nullMask[, i], 0.2, 0.9, FALSE, TRUE, FALSE);
+      if(as.scalar(schema[1,i]) == "STRING") {
+        [train[, i], ft, dt, dm, fr] = correctTypos(train[, i], 0.2, 0.9, FALSE);
+        if(length(test) > 0)
+          test[, i] = correctTyposApply(test[, i], ft, dt, dm, fr);
+      }
   }
-  # step 6 porter stemming on all features
-  print(prefix+" porter-stemming on all features");
-  data = map(data, "x -> PorterStemmer.stem(x)")
   
   # TODO add deduplication
   print(prefix+" deduplication via entity resolution");
   
-  processedData = data
 }
 
 #####################################

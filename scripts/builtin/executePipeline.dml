@@ -19,96 +19,105 @@
 #
 #-------------------------------------------------------------
 
-s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, 
+# This function execute pipeline.
+#
+# INPUT   PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                TYPE               DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# logical             Frame[String]      NULL     ---
+# pipeline            Frame[String]      ---      ---
+# X                   Matrix[Double]     ---      ---
+# Y                   Matrix[Double]     ---      ---
+# Xtest               Matrix[Double]     ---      ---
+# Ytest               Matrix[Double]     ---      ---
+# metaList            List[Unknown]      ---      ---
+# hyperParameters     Matrix[Double]     ---      ---
+# hpForPruning        Matrix[Double]      0       ---
+# changesByOp         Matrix[Double]      0       ---
+# flagsCount          Integer            ---      ---
+# test                Boolean             FALSE   ---
+# verbose             Boolean            ---      ---
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X                   Matrix[Double]             ---
+# Y                   Matrix[Double]             ---
+# Xtest               Matrix[Double]             ---
+# Ytest               Matrix[Double]             ---
+# t2                  Double                     ---
+# hpForPruning        Matrix[Double]             ---
+# changesByOp         Matrix[Double]             ---
+# ----------------------------------------------------------------------------------------------------------------------
+
+s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[String] pipeline, Matrix[Double] Xtrain,  Matrix[Double] Ytrain, 
   Matrix[Double] Xtest,  Matrix[Double] Ytest, List[Unknown] metaList, Matrix[Double] hyperParameters, Matrix[Double] hpForPruning = as.matrix(0),
   Matrix[Double] changesByOp = as.matrix(0), Integer flagsCount, Boolean test = FALSE, Boolean verbose)
-  return (Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
+  return (Matrix[Double] Xtrain, Matrix[Double] Ytrain, Matrix[Double] Xtest, Matrix[Double] Ytest,
+    Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
 {
+
   mask=as.matrix(metaList['mask'])
   FD = as.matrix(metaList['fd'])
+  applyFunc = as.frame(metaList['applyFunc'])
 
-  cloneY = Y
-  Xorig = X
-  # # combine X and Y
-  n = nrow(X)
-  d = ncol(Xorig)
-  X = rbind(X, Xtest)
-  Y = rbind(Y, Ytest)
   testRow = nrow(Xtest)
-  Xout = X
+  Xout = Xtrain
   t1 = time()
-  #print("PIPELINE EXECUTION START ... "+toString(pipeline))
+  print("PIPELINE EXECUTION START ... "+toString(pipeline))
   if(verbose) {
-    print("checks   rows in X = "+nrow(X)+" rows in Y = "+nrow(Y)+" cols in X = "+ncol(X)+" col in Y = "+ncol(Y))
+    print("checks   rows in X = "+nrow(Xtrain)+" rows in Y = "+nrow(Ytrain)+" cols in X = "+ncol(Xtrain)+" col in Y = "+ncol(Ytrain))
     print("pipeline in execution "+toString(pipeline))
     print("pipeline hps "+toString(hyperParameters))
   }
   for(i in 1:ncol(pipeline)) {
-    trainEndIdx = (nrow(X) - nrow(Xtest))
-    testStIdx = trainEndIdx + 1
     op = as.scalar(pipeline[1,i])
     lgOp = as.scalar(logical[1,i])
-    
-    if(test == FALSE | lgOp != "CI") {
-       Xclone = X 
-      [hp, dataFlag, yFlag, executeFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
-      if(executeFlag == 1) {
-        X = eval(op, hp)
-        Xout = X
-        X = confirmData(X, Xclone, mask, dataFlag, yFlag)
-        # dataFlag 0 = only on numeric, 1 = on whole data
-        if(yFlag)
-        {
-          Y = X[, ncol(X)]
-          X = X[, 1:ncol(X) - 1]
-        }
-        X = confirmMeta(X, mask)
+    applyOp = toString(as.scalar(applyFunc[1,i]))
+    Xclone = Xtrain
+    XtestClone = Xtest
+    [hp, dataFlag, yFlag, executeFlag] = matrixToList(Xtrain, Ytrain, mask, FD, hyperParameters[i], flagsCount, op)
+    print("executing: ---------- "+toString(op))
+    if(executeFlag == 1) {
+      L = evalList(op, hp)
+      [L, O] = remove(L, 1);
+      Xtrain = as.matrix(O)
+      if(lgOp != "CI" & applyOp != "") {
+        [Xtest, executeFlag] = applyDataFlag(Xtest, mask, dataFlag)
+        L = append(L, list(X=Xtest));
+        Xtest = eval(applyOp, L);
+        Xtest = confirmData(Xtest, XtestClone, mask, dataFlag, yFlag)
       }
-      else {
-        print("not applying "+op+" executeFlag = 0")
+      Xout = Xtrain
+      Xtrain = confirmData(Xtrain, Xclone, mask, dataFlag, yFlag)
+
+      # dataFlag 0 = only on numeric, 1 = on whole data
+      if(yFlag) {
+        [L, Y] =  remove(L, 1);
+        Ytrain = as.matrix(Y)
       }
+      Xtrain = confirmMeta(Xtrain, mask)
     }
     else {
-      Xclone = X 
-      #print("not applying "+lgOp+" "+op+" on data test flag: "+test)
-      Xtest = X[testStIdx:nrow(X), ]
-      Ytest = Y[testStIdx:nrow(X), ]
-      X = X[1:trainEndIdx, ]
-      Y = Y[1:trainEndIdx, ]
-      [hp, dataFlag, yFlag, executeFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
-      if(executeFlag == 1)
-      {
-        X = eval(op, hp)
-        X = confirmData(X, Xclone, mask, dataFlag, yFlag)
-        # dataFlag 0 = only on numeric, 1 = on whole data
-        if(yFlag)
-        {
-          Y = X[, ncol(X)]
-          X = X[, 1:ncol(X) - 1]
-        }
-        X = confirmMeta(X, mask)
-        X = rbind(X, Xtest)
-        Y = rbind(Y, Ytest)
-      }
-      else {
-        print("not applying "+op+" executeFlag = 0")
-      }
+      print("not applying "+op+" executeFlag = 0")
     }
+    
+
     if(as.scalar(pipeline[1, i]) == "outlierBySd" | as.scalar(pipeline[1, i]) == "outlierByIQR" | as.scalar(pipeline[1, i]) == "imputeByFd") {
       changes = sum(abs(replace(target=Xout, pattern=NaN, replacement=0) - replace(target=as.matrix(hp[1]), pattern=NaN, replacement=0))  > 0.001 )
       [hpForPruning, changesByOp] = storeDataForPrunning(pipeline, hyperParameters, hpForPruning,  changesByOp, changes, i)
     }
   }
-  Xtest = X[testStIdx:nrow(X), ]
-  Ytest = Y[testStIdx:nrow(X), ]
-  X = X[1:trainEndIdx]
-  Y = Y[1:trainEndIdx]
+
   # # # do a quick validation check
   if(nrow(Xtest) != testRow)
     stop("executePipeline: test rows altered")
   t2 = floor((time() - t1) / 1e+6)
 
-  #print("PIPELINE EXECUTION ENDED: "+t2+" ms")
+  print("PIPELINE EXECUTION ENDED: "+t2+" ms")
 }
 
 # This function will convert the matrix row-vector into list
@@ -123,28 +132,11 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
   fDFlag = as.integer(as.scalar(p[1, ncol(p)-3]))
   maskFlag = as.integer(as.scalar(p[1, ncol(p)-4]))
   
-  executeFlag = 1
+
   ######################################################
   # CHECK FOR DATA FLAG
-  if(dataFlag == 0)
-  { 
-    if(sum(mask) == ncol(mask))
-      executeFlag = 0
-    else {
-      # take numerics out and remove categorical
-      X = removeEmpty(target=X, margin = "cols", select = (mask == 0))
-    }
-  }
-  else if(dataFlag == 1)
-  { 
-    if(sum(mask) == 0)
-      executeFlag = 0
-    else {
-      # take categorical out and remove numerics
-      X = removeEmpty(target=X, margin = "cols", select = mask)
-    }
-  } 
-  
+ 
+  [X, executeFlag] = applyDataFlag(X, mask, dataFlag)
   l = list(X)
     
   ######################################################
@@ -181,6 +173,30 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
 
 }
 
+applyDataFlag = function(Matrix[Double] X, Matrix[Double] mask, Integer dataFlag)
+return(Matrix[Double] X,Integer executeFlag)
+{
+  executeFlag = 1
+  if(dataFlag == 0)
+  { 
+    if(sum(mask) == ncol(mask))
+      executeFlag = 0
+    else {
+      # take numerics out and remove categorical
+      X = removeEmpty(target=X, margin = "cols", select = (mask == 0))
+    }
+  }
+  else if(dataFlag == 1)
+  { 
+    if(sum(mask) == 0)
+      executeFlag = 0
+    else {
+      # take categorical out and remove numerics
+      X = removeEmpty(target=X, margin = "cols", select = mask)
+    }
+  }
+}
+
 confirmMeta = function(Matrix[Double] X, Matrix[Double] mask)
 return (Matrix[Double] X)
 {
@@ -194,6 +210,9 @@ return (Matrix[Double] X)
     cat = removeEmpty(target=X, margin="cols", select = mask)
     # round categorical (if there is any floating  point)
     cat = round(cat)
+    less_than_1_mask = cat < 1
+    less_than_1 = less_than_1_mask * 9999
+    cat = (cat * (less_than_1_mask == 0)) +  less_than_1
     # reconstruct original X
     X = X * (mask == 0)
     q = table(seq(1, ncol(cat)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
@@ -264,6 +283,7 @@ return (Matrix[Double] X)
 }
 
 
+
 #######################################################################
 # Wrapper of transformencode OHE call, to call inside eval as a function
 # Inputs: The input dataset X, and  mask of the columns
@@ -271,20 +291,31 @@ return (Matrix[Double] X)
 #######################################################################
 
 dummycoding = function(Matrix[Double] X,  Matrix[Double] mask)
-return (Matrix[Double] dX_train) {
+return (Matrix[Double] X, String jspec, Frame[Unknown] meta) {
 
+  meta = as.frame("NULL")
+  jspec = ""
   if(sum(mask) > 0)
   {
-    X = replace(target=X, pattern=NaN, replacement=1)
+    X = replace(target=X, pattern=NaN, replacement=0)
     idx = vectorToCsv(mask)
     # specifications for one-hot encoding of categorical features
-    jspecDC = "{ids:true, dummycode:["+idx+"]}";
+    jspec = "{ids:true, dummycode:["+idx+"]}";
     # OHE of categorical features
-    [dX_train, dM] = transformencode(target=as.frame(X), spec=jspecDC);
+    [X, meta] = transformencode(target=as.frame(X), spec=jspec);
   }
-  else dX_train = X
 }
 
+
+dummycodingApply = function(Matrix[Double] X, String jspec, Frame[Unknown] meta)
+return (Matrix[Double] Y) {
+
+  if(jspec != "")
+  {
+   Y = transformapply(target=as.frame(X), spec=jspec, meta=meta);
+  }
+  else Y = X
+}
 
 #######################################################################
 # Wrapper of imputeByFD OHE call, to call inside eval as a function
@@ -293,27 +324,48 @@ return (Matrix[Double] dX_train) {
 #######################################################################
 
 imputeByFd = function(Matrix[Double] X, Matrix[Double] fdMask,  Double threshold)
-return (Matrix[Double] X_filled)
+return (Matrix[Double] X, Matrix[Double] fillMatrix)
 {
+  fillMatrix = as.matrix(0)
   if(sum(fdMask) > 0)
   {
+    t = replace(target=X, pattern=NaN, replacement=1)
     fdMask = removeEmpty(target=fdMask, margin="cols")
-    FD = discoverFD(X=replace(target=X, pattern=NaN, replacement=1), Mask=fdMask, threshold=threshold)
+    FD = discoverFD(X=t, Mask=fdMask, threshold=threshold)
     FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
     FD = FD > 0
+    fillMatrix = matrix(0, rows=ncol(FD) * ncol(FD), cols=max(t))
     if(sum(FD) > 0)
     {
-      for(i in 1: nrow(FD))
-      {
+      for(i in 1: nrow(FD)) {
         for(j in 1:ncol(FD)) {
           if(as.scalar(FD[i, j]) > 0 & (min(X[, i]) != 0) & (min(X[, j]) != 0) & (sum(FD[, j]) != nrow(FD))
-            & (as.scalar(fdMask[1, j]) != 0) & (as.scalar(fdMask[1, i]) != 0))
-            X = imputeByFD(X, i, j, threshold, FALSE)
+            & (as.scalar(fdMask[1, j]) != 0) & (as.scalar(fdMask[1, i]) != 0)) {
+            [t, imp] = imputeByFD(X[,i], X[,j], threshold, FALSE)
+            X[, j] = t  
+            fillMatrix[ncol(FD) * (i - 1) + j, 1:nrow(imp)] = t(imp)
+          }
         }
       }
     }
   }
-  X_filled = X
+}
+
+imputeByFdApply = function(Matrix[Double] X, Matrix[Double] fillMatrix)
+return (Matrix[Double] X)
+{
+  d = sqrt(nrow(fillMatrix))
+  for(i in 1: d)
+  {
+    for(j in 1:d) {
+      idx = d * (i - 1) + j
+      if(sum(fillMatrix[idx,]) > 0) {
+        imp = fillMatrix[idx, ]
+        imp = removeEmpty(target=t(imp), margin="rows")
+        X[, j] = imputeByFDApply(X[, i], imp)
+      }
+    }
+  }
 }
 
 #######################################################################
@@ -322,7 +374,7 @@ return (Matrix[Double] X_filled)
 #######################################################################
 
 forward_fill = function(Matrix[Double] X, Boolean op, Boolean verbose)
-return (Matrix[Double] X_filled)
+return (Matrix[Double] X_filled, Boolean op, Boolean verbose)
 { 
   option = ifelse(op, "locf", "nocb")
   X_filled = na_locf(X=X, option=option, verbose=verbose)
@@ -332,47 +384,47 @@ return (Matrix[Double] X_filled)
 
 # smote wrapper for doing relative over-sampling
 SMOTE  = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask, Integer remainingRatio, Boolean verbose)
-return (Matrix[Double] XY)
+return (Matrix[Double] X, Matrix[Double] Y)
 {
   # get the class count 
-  classes = table(Y[, 1], 1)
-  minClass = min(classes)
-  maxClass = max(classes)
-  diff = (maxClass - minClass)/sum(classes)
-  if(diff > 0.5)
-  {
-    #print("initiating oversampling")
-    XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
-    synthesized = matrix(0,0,0) # initialize variable
-    start_class = 1
-    end_class = 0
-    k = table(XY[, 1], 1)
-    getMax = max(k)
-    maxKIndex = as.scalar(rowIndexMax(t(k)))
-    outSet = matrix(0, 0, ncol(XY))
-    remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
-    remainingRatio-(remainingRatio%%100))
-    #print("remaining ratio: "+remainingRatio)
-    for(i in 1: nrow(k), check=0) {
-      end_class = end_class + as.scalar(classes[i])
-      class_t = XY[start_class:end_class, ]
-      if((i != maxKIndex)) {
-        synthesized = smote(class_t[, 2:ncol(XY)], mask, remainingRatio, 1, FALSE)
-        synthesized = cbind(matrix(as.scalar(class_t[2,1]), nrow(synthesized), 1), synthesized)
-        outSet = rbind(outSet, synthesized)
-      }
-      start_class = end_class + 1
-    }
-  
-    XY = rbind(XY, synthesized)
-    Y = XY[, 1]
-    X = XY[, 2:ncol(XY)]
-    XY = cbind(X,Y)
+  for(k in 1:max(Y)) {
     classes = table(Y, 1)
-  }
-  else { 
-    #print("smote not applicable")
-    XY = cbind(X, Y)
+    minClass = min(classes)
+    maxClass = max(classes)
+    diff = (maxClass - minClass)/sum(classes)
+    if(diff > 0.3)
+    {
+      #print("initiating oversampling")
+      XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
+      synthesized = matrix(0,0,0) # initialize variable
+      start_class = 1
+      end_class = 0
+      k = table(XY[, 1], 1)
+      getMax = max(k)
+      maxKIndex = as.scalar(rowIndexMax(t(k)))
+      outSet = matrix(0, 0, ncol(XY))
+      remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
+      remainingRatio-(remainingRatio%%100))
+      #print("remaining ratio: "+remainingRatio)
+      for(i in 1: nrow(k), check=0) {
+        end_class = end_class + as.scalar(classes[i])
+        class_t = XY[start_class:end_class, ]
+        if((i != maxKIndex)) {
+          synthesized = smote(class_t[, 2:ncol(XY)], mask, remainingRatio, 1, FALSE)
+          synthesized = cbind(matrix(as.scalar(class_t[2,1]), nrow(synthesized), 1), synthesized)
+          outSet = rbind(outSet, synthesized)
+        }
+        start_class = end_class + 1
+      }
+  
+      XY = rbind(XY, synthesized)
+      Y = XY[, 1]
+      X = XY[, 2:ncol(XY)]
+    }
+    else { 
+      print("smote not applicable")
+
+    }
   }
 }
 
@@ -381,60 +433,25 @@ return (Matrix[Double] XY)
 # The function will replace the null with default values
 ########################################################
 fillDefault = function(Matrix[Double] X)
+return(Matrix[Double] X, Matrix[Double] defaullt){
+  X = replace(target=X, pattern=NaN, replacement=0)
+  cmax = colMaxs(X)
+  cmin = colMins(X)
+  defaullt = round(cmax - cmin)
+  Mask = is.na(X)
+  Mask = Mask * defaullt
+  X = X + Mask
+}
+
+########################################################
+# The function will replace the null with default values
+########################################################
+fillDefaultApply = function(Matrix[Double] X, Matrix[Double] defaullt)
 return(Matrix[Double] X){
-  defaullt = round(colMaxs(X) - colMins(X))
   Mask = is.na(X)
   X = replace(target=X, pattern=NaN, replacement=0)
   Mask = Mask * defaullt
   X = X + Mask
- # print("fillDefault: no of NaNs "+sum(is.na(X)))
-}
-
-########################################################
-# A slightly changes version of PCA
-########################################################
-m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE)
-  return (Matrix[Double] Xout) 
-{
-
-  if(K < ncol(X) - 1) {
-    N = nrow(X);
-    D = ncol(X);
-
-    # perform z-scoring (centering and scaling)
-    [X, Centering, ScaleFactor] = scale(X, center, scale);
-
-    # co-variance matrix
-    mu = colSums(X)/N;
-    C = (t(X) %*% X)/(N-1) - (N/(N-1))*t(mu) %*% mu;
-    # compute eigen vectors and values
-    [evalues, evectors] = eigen(C);
-    if(nrow(evalues) > 1 & nrow(evectors) > 1)
-    {
-      decreasing_Idx = order(target=evalues,by=1,decreasing=TRUE,index.return=TRUE);
-      diagmat = table(seq(1,D),decreasing_Idx);
-      # sorts eigenvalues by decreasing order
-      evalues = diagmat %*% evalues;
-      # sorts eigenvectors column-wise in the order of decreasing eigenvalues
-      evectors = evectors %*% diagmat;
-
-      eval_dominant = evalues[1:K, 1];
-      evec_dominant = evectors[,1:K];
-
-      # Construct new data set by treating computed dominant eigenvectors as the basis vectors
-      Xout = X %*% evec_dominant;
-      Mout = evec_dominant;
-    }
-    else Xout = X # these elses could be removed via initiating Xout = X for now they are here for readability
-  }
-  else Xout = X
-  Xout = replace(target=Xout, pattern=1/0, replacement=0);
-}
-
-wtomeklink = function(Matrix[Double] X, Matrix[Double] y)
-return (Matrix[Double] XY) {
-  [Xunder, Yunder, rmv] = tomeklink(X, y)
-  XY = cbind(Xunder, Yunder)
 }
 
 storeDataForPrunning = function(Frame[Unknown] pipeline, Matrix[Double] hp, Matrix[Double] hpForPruning, Matrix[Double] changesByOp, Integer changes, Integer i)
@@ -446,3 +463,38 @@ return(Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
   }
 }
 
+########################################################
+# The function will flip the noisy labels
+########################################################
+flipLabels = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Integer maxIter =10, Boolean verbose = FALSE)
+return (Matrix[Double] X, Matrix[Double] Y)
+{
+  max_y = max(Y)
+  if(min(Y) != max(Y))
+  {
+    betas = multiLogReg(X=X, Y=Y, icpt=1, reg=1e-4, maxi=100, maxii=0, verbose=FALSE)
+    [prob, yhat, accuracy] = multiLogRegPredict(X, betas, Y, FALSE)
+    inc = ((yhat != Y) & (rowMaxs(prob) > threshold))
+    Xcor = removeEmpty(target = X, margin = "rows", select = (inc==0))
+    Ycor = removeEmpty(target = Y, margin = "rows", select = (inc==0))
+    while(sum(inc) > 0 & maxIter > 0)
+    {
+      # print("inc vector "+toString(inc))
+      Xinc = removeEmpty(target = X, margin = "rows", select = inc)
+      Yinc = removeEmpty(target = Y, margin = "rows", select = inc)
+      Yinc = matrix((max_y + 1), rows=nrow(Yinc), cols=1) - Yinc
+      [prob, yhat, accuracy] = multiLogRegPredict(Xinc, betas, Yinc, FALSE)
+      inc = ((yhat != Yinc) & (rowMaxs(prob) > threshold))
+      XcorI = removeEmpty(target = Xinc, margin = "rows", select = (inc==0))
+      YcorI = removeEmpty(target = Yinc, margin = "rows", select = (inc==0))
+      Xcor = rbind(Xcor, XcorI)
+      Ycor = rbind(Ycor, YcorI)
+      X = Xinc
+      Y = Yinc
+      print("maxIter: "+maxIter)
+      maxIter = maxIter - 1
+    }
+    X = Xcor
+    Y = Ycor
+  }
+}

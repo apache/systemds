@@ -27,7 +27,7 @@ import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class MapToFactory {
-	// private static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
+	// protected static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
 
 	public enum MAP_TYPE {
 		BIT, BYTE, CHAR, INT;
@@ -41,6 +41,7 @@ public class MapToFactory {
 
 	public static AMapToData create(int size, boolean zeros, IntArrayList[] values) {
 		AMapToData _data = MapToFactory.create(size, values.length + (zeros ? 1 : 0));
+
 		if(zeros)
 			_data.fill(values.length);
 
@@ -53,12 +54,19 @@ public class MapToFactory {
 		return _data;
 	}
 
+	/**
+	 * Create and allocate a map with the given size and support for upto the num tuples argument of values
+	 * 
+	 * @param size      The number of cells to allocate
+	 * @param numTuples The maximum value to be able to represent inside the map.
+	 * @return A new map
+	 */
 	public static AMapToData create(int size, int numTuples) {
-		if(numTuples <= 1)
+		if(numTuples <= 2)
 			return new MapToBit(numTuples, size);
-		else if(numTuples < 256)
+		else if(numTuples <= 256)
 			return new MapToByte(numTuples, size);
-		else if(numTuples <= (int) Character.MAX_VALUE)
+		else if(numTuples <= ((int) Character.MAX_VALUE) + 1)
 			return new MapToChar(numTuples, size);
 		else
 			return new MapToInt(numTuples, size);
@@ -79,15 +87,15 @@ public class MapToFactory {
 		AMapToData ret;
 		if(d instanceof MapToBit)
 			return d;
-		else if(numTuples <= 1)
+		else if(numTuples <= 2)
 			ret = new MapToBit(numTuples, size);
 		else if(d instanceof MapToByte)
 			return d;
-		else if(numTuples < 256)
+		else if(numTuples <= 256)
 			ret = new MapToByte(numTuples, size);
 		else if(d instanceof MapToChar)
 			return d;
-		else if(numTuples <= (int) Character.MAX_VALUE)
+		else if(numTuples <= (int) Character.MAX_VALUE + 1)
 			ret = new MapToChar(numTuples, size);
 		else // then the input was int and reshapes to int
 			return d;
@@ -123,17 +131,16 @@ public class MapToFactory {
 				ret = new MapToInt(numTuples, size);
 				break;
 		}
-
 		ret.copy(d);
 		return ret;
 	}
 
 	public static long estimateInMemorySize(int size, int numTuples) {
-		if(numTuples <= 1)
+		if(numTuples <= 2)
 			return MapToBit.getInMemorySize(size);
-		else if(numTuples < 256)
+		else if(numTuples <= 256)
 			return MapToByte.getInMemorySize(size);
-		else if(numTuples <= (int) Character.MAX_VALUE)
+		else if(numTuples <= ((int) Character.MAX_VALUE) + 1)
 			return MapToChar.getInMemorySize(size);
 		else
 			return MapToInt.getInMemorySize(size);

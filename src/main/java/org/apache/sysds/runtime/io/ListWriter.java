@@ -69,12 +69,8 @@ public class ListWriter
 					((CacheableData<?>)dat).exportData(lfname, fmtStr, props);
 				else if( dat instanceof ListObject )
 					writeListToHDFS((ListObject)dat, lfname, fmtStr, props);
-				else { //scalar
-					ScalarObject so = (ScalarObject) dat;
-					HDFSTool.writeObjectToHDFS(so.getValue(), lfname);
-					HDFSTool.writeScalarMetaDataFile(lfname +".mtd",
-						so.getValueType(), so.getPrivacyConstraint());
-				}
+				else //scalar
+					HDFSTool.writeScalarToHDFS((ScalarObject)dat, lfname);
 			}
 		}
 		catch(Exception ex) {

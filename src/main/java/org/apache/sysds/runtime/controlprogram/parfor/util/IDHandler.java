@@ -33,24 +33,21 @@ import java.net.InetAddress;
  */
 public class IDHandler 
 {
-	public static int extractIntID( String taskID )
-	{
+	public static int extractIntID( String taskID ) {
 		int maxlen = (int)(Math.log10(Integer.MAX_VALUE));
 		int intVal = (int)extractID( taskID, maxlen );
-		return intVal;		
-		
+		return intVal;
 	}
 
-	public static long concatIntIDsToLong( int part1, int part2 )
-	{
+	public static long concatIntIDsToLong( int part1, int part2 ) {
 		//big-endian version (in java uses only big endian)
 		long value = ((long)part1) << 32; //unsigned shift of part1 to first 4bytes
 		value = value | part2;            //bitwise OR with part2 (second 4bytes)
-		
+
 		//*-endian version 
 		//long value = ((long)part1)*(long)Math.pow(2, 32);
 		//value += part2;
-		
+
 		return value;
 	}
 
@@ -61,56 +58,59 @@ public class IDHandler
 	 * @param part if part is 1, use first 4 bytes. if part is 2, use second 4 bytes!
 	 * @return return int id, or -1 if part is not 1 or 2!
 	 */
-	public static int extractIntIDFromLong( long val, int part )
-	{
+	public static int extractIntIDFromLong( long val, int part ) {
 		int ret = -1;
 		if( part == 1 )
 			ret = (int)(val >>> 32);
 		else if( part == 2 )
 			ret = (int)val; 
-				
+
 		return ret;
 	}
-	
+
 	/**
 	 * Creates a unique identifier with the pattern &lt;process_id&gt;_&lt;host_ip&gt;.
 	 * 
 	 * @return distributed unique id
 	 */
-	public static String createDistributedUniqueID() 
-	{
+	public static String createDistributedUniqueID() {
 		String uuid = null;
-		
-		try
-		{
-			//get process id		 
-		    String pname = ManagementFactory.getRuntimeMXBean().getName(); //pid@hostname
-		    String pid = pname.split("@")[0];
-		    
-		    //get ip address
-		    InetAddress addr = InetAddress.getLocalHost();
-		    String host = addr.getHostAddress();
-		    	
-		    uuid = pid + "_" + host;
+
+		try {
+			String pid = obtainProcessID();
+
+			//get ip address
+			InetAddress addr = InetAddress.getLocalHost();
+			String host = addr.getHostAddress();
+
+			uuid = pid + "_" + host;
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			uuid = "0_0.0.0.0";
 		}
-		
+
 		return uuid;
 	}
 
-	private static long extractID( String taskID, int maxlen )
-	{
+	public static String obtainProcessID() {
+		//get process id
+		String pname = ManagementFactory.getRuntimeMXBean().getName(); //pid@hostname
+		String pid = pname.split("@")[0];
+		// TODO: change this as soon as we switch to a java version >= 9
+		// import java.lang.ProcessHandle;
+		// pid = ProcessHandle.current().pid();
+		return pid;
+	}
+
+	private static long extractID( String taskID, int maxlen ) {
 		//in: e.g., task_local_0002_m_000009 or task_201203111647_0898_m_000001
 		//out: e.g., 2000009
-		
+
 		//generic parsing for flexible taskID formats
 		char[] c = taskID.toCharArray(); //all chars
 		long value = 0; //1 catch leading zeros as well		
 		int count = 0;
-		
+
 		for( int i=c.length-1; i >= 0 && count<maxlen; i-- ) //start at end
 		{
 			if( c[i] >= 48 && c[i]<=57 )  //'0'-'9'
@@ -122,8 +122,7 @@ public class IDHandler
 				count++;
 			}
 		}
-		
+
 		return value;
 	}
-	
 }

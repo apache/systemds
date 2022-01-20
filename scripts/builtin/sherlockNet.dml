@@ -18,6 +18,33 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
+# This function implements Neural Network for Sherlock: A Deep Learning Approach to Semantic Data Type Detection
+# Trains a 2 hidden layer softmax classifier.
+#
+# REFERENCE:
+# [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
+# Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining.
+# 2019.]
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                    TYPE              DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X_train                 Matrix[Double]    ---      input data matrix, of shape (N, D)
+# y_train                 Matrix[Double]    ---      target matrix, of shape (N, K)
+# hidden_layer_neurons    int                        number of neurons per hidden layer
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                    TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# W                       Matrix[Double]             weights (parameters) matrix, of shape (D, M, 3).
+# b                       Matrix[Double]             biases vector, of shape (1, M, 3).
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 source("nn/layers/affine.dml") as affine
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/dropout.dml") as dropout
@@ -26,25 +53,8 @@ source("nn/layers/softmax.dml")as softmax
 source("nn/optim/adam.dml") as adam
 source("scripts/staging/entity-resolution/primitives/evaluation.dml") as evaluation
 
-# Implements Neural Network for Sherlock: A Deep Learning Approach to Semantic Data Type Detection
-#
-# [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
-# Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining.
-# 2019.]
-
-# Trains a 2 hidden layer softmax classifier.
-# ---------------------------------------------------------------------------------------------
-# NAME         TYPE      DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# X_train      Matrix    ---      input data matrix, of shape (N, D)
-# y_train      Matrix    ---      target matrix, of shape (N, K)
-# hidden_layer_neurons int        number of neurons per hidden layer
-# ---------------------------------------------------------------------------------------------
-# W            Matrix             weights (parameters) matrix, of shape (D, M, 3).
-# b            Matrix             biases vector, of shape (1, M, 3).
-
-train = function(matrix[double] X_train, matrix[double] y_train, int hidden_layer_neurons)
-  return (matrix[double] W1, matrix[double] b1, matrix[double] W2, matrix[double] b2, matrix[double] W3, matrix[double] b3) {
+train = function(Matrix[Double] X_train, Matrix[Double] y_train, int hidden_layer_neurons)
+  return (Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2, Matrix[Double] W3, Matrix[Double] b3) {
 
   # Generate input data
   N = nrow(X_train) # num examples
@@ -155,11 +165,11 @@ train = function(matrix[double] X_train, matrix[double] y_train, int hidden_laye
 # ---------------------------------------------------------------------------------------------
 # probs        Matrix             class probabilities of shape (N, K)
 
-predict = function(matrix[double] test_val,
-                    matrix[double] W1, matrix[double] b1,
-                    matrix[double] W2, matrix[double] b2,
-                    matrix[double] W3, matrix[double] b3)
-              return (matrix[double] probs) {
+predict = function(Matrix[Double] test_val,
+                    Matrix[Double] W1, Matrix[Double] b1,
+                    Matrix[Double] W2, Matrix[Double] b2,
+                    Matrix[Double] W3, Matrix[Double] b3)
+              return (Matrix[Double] probs) {
 
   N = nrow(test_val)
   K = ncol(W3) # num features
@@ -208,7 +218,7 @@ predict = function(matrix[double] test_val,
 # precision    double             scalar precission, of shape (1)
 # recall       double             scalar recall, of shape (1)
 
-eval = function(matrix[double] probs, matrix[double] Y)
+eval = function(Matrix[Double] probs, Matrix[Double] Y)
   return (double loss, double accuracy, double f1, double precision, double recall) {
   # Compute loss & accuracy
   loss = cross_entropy_loss::forward(probs, Y)

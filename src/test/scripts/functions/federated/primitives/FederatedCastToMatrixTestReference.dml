@@ -23,3 +23,6 @@ X = rbind(read($X1), read($X2))
 
 Z = as.matrix(X) 
 print(toString(Z[1]))
+
+sZ = sum(Z);
+print("Sum: " + sZ);

@@ -29,44 +29,31 @@ import org.apache.sysds.common.Types.ValueType;
  */
 public class CoVariance extends Lop 
 {
-
-	public CoVariance(Lop input1, DataType dt, ValueType vt, ExecType et) {
-		super(Lop.Type.CoVariance, dt, vt);
-		init(input1, null, null, et);
+	private final int _numThreads;
+	
+	public CoVariance(Lop input1, Lop input2, DataType dt, ValueType vt, int numThreads, ExecType et) {
+		this(input1, input2, null, dt, vt, numThreads, et);
 	}
 	
-	public CoVariance(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) {
-		this(input1, input2, null, dt, vt, et);
-	}
-	
-	public CoVariance(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) {
+	public CoVariance(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, int numThreads, ExecType et) {
 		super(Lop.Type.CoVariance, dt, vt);
 		init(input1, input2, input3, et);
+		_numThreads = numThreads;
 	}
 
 	private void init(Lop input1, Lop input2, Lop input3, ExecType et) {
-		/*
-		 * When et = MR: covariance lop will have a single input lop, which
-		 * denote the combined input data -- output of combinebinary, if unweighed;
-		 * and output combineteriaty (if weighted).
-		 * 
-		 * When et = CP: covariance lop must have at least two input lops, which
-		 * denote the two input columns on which covariance is computed. It also
-		 * takes an optional third arguments, when weighted covariance is computed.
-		 */
+		if ( input2 == null )
+			throw new LopsException(this.printErrorLocation() + "Invalid inputs to covariance lop.");
+	
 		addInput(input1);
 		input1.addOutput(this);
-
-		if ( input2 == null ) {
-			throw new LopsException(this.printErrorLocation() + "Invalid inputs to covariance lop.");
-		}
 		addInput(input2);
 		input2.addOutput(this);
-		
 		if ( input3 != null ) {
 			addInput(input3);
 			input3.addOutput(this);
 		}
+		
 		lps.setProperties(inputs, et);
 	}
 
@@ -102,18 +89,18 @@ public class CoVariance extends Lop
 
 		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
-
-		if( input2 != null ) {
-			sb.append( getInputs().get(1).prepInputOperand(input2));
-			sb.append( OPERAND_DELIMITOR );
-		}
-		
+		sb.append( getInputs().get(1).prepInputOperand(input2));
+		sb.append( OPERAND_DELIMITOR );
 		if( input3 != null ) {
 			sb.append( getInputs().get(2).prepInputOperand(input3));
 			sb.append( OPERAND_DELIMITOR );
 		}
 		
 		sb.append( prepOutputOperand(output));
+		if( getExecType() == ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append(_numThreads);
+		}
 		
 		return sb.toString();
 	}

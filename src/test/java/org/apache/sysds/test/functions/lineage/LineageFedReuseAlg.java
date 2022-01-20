@@ -98,23 +98,9 @@ public class LineageFedReuseAlg extends AutomatedTestBase {
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 			loadTestConfiguration(config);
 
-			// Run with federated matrix and without reuse
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "20", 
-				"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
-				"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-				"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + (cols + 1),
-				"in_Y=" + input("Y"), "cont=" + String.valueOf(contSplits).toUpperCase(), "out=" + expected("Z")};
-			runTest(true, false, null, -1);
-			long tsmmCount = Statistics.getCPHeavyHitterCount("tsmm");
-			long fed_tsmmCount = Statistics.getCPHeavyHitterCount("fed_tsmm");
-			long mmCount = Statistics.getCPHeavyHitterCount("ba+*");
-			long fed_mmCount = Statistics.getCPHeavyHitterCount("fed_ba+*");
-
 			// Run with federated matrix and with reuse
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "20", "-lineage", "reuse_full", 
+			programArgs = new String[] {"-stats", "20", "-lineage", "reuse_full",
 				"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
@@ -126,6 +112,20 @@ public class LineageFedReuseAlg extends AutomatedTestBase {
 			long fed_tsmmCount_reuse = Statistics.getCPHeavyHitterCount("fed_tsmm");
 			long mmCount_reuse = Statistics.getCPHeavyHitterCount("ba+*");
 			long fed_mmCount_reuse = Statistics.getCPHeavyHitterCount("fed_ba+*");
+
+			// Run with federated matrix and without reuse
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			programArgs = new String[] {"-stats", "20",
+				"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+				"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
+				"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + (cols + 1),
+				"in_Y=" + input("Y"), "cont=" + String.valueOf(contSplits).toUpperCase(), "out=" + expected("Z")};
+			runTest(true, false, null, -1);
+			long tsmmCount = Statistics.getCPHeavyHitterCount("tsmm");
+			long fed_tsmmCount = Statistics.getCPHeavyHitterCount("fed_tsmm");
+			long mmCount = Statistics.getCPHeavyHitterCount("ba+*");
+			long fed_mmCount = Statistics.getCPHeavyHitterCount("fed_ba+*");
 
 			// compare results 
 			compareResults(1e-2);

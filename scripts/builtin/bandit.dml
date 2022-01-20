@@ -19,6 +19,38 @@
 #
 #-------------------------------------------------------------
 
+# In The bandit function the objective is to find an arm that optimises a known functional of the unknown arm-reward distributions.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE               DEFAULT            MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X_train           Matrix[Double]     ---
+# Y_train           Matrix[Double]     ---
+# X_test            Matrix[Double]     ---
+# Y_test            Matrix[Double]     ---
+# metaList          List[Unknown]      ---
+# evaluationFunc    String             ---
+# evalFunHp         Matrix[Double]     ---
+# lp                Frame[Unknown]     ---
+# primitives        Frame[Unknown]     ---
+# params            Frame[Unknown]     ---
+# K                 Integer            3
+# R                 Integer            50
+# baseLineScore     Double
+# cv                Boolean
+# cvk               Integer            2
+# verbose           Boolean            TRUE
+# output            String             ""
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# perf      Boolean
+# ----------------------------------------------------------------------------------------------------------------------
+
 m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Double] X_test, Matrix[Double] Y_test, List[Unknown] metaList,
   String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] lp, Frame[Unknown] primitives, Frame[Unknown] param, Integer k = 3,
   Integer R=50, Double baseLineScore, Boolean cv,  Integer cvk = 2, Boolean verbose = TRUE, String output="")
@@ -83,8 +115,8 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
       }
       
       configurations = configurations[1:n_i, ]
-      [outPip,outHp, f] = run_with_hyperparam(lp, configurations, r_i, X_train, Y_train, X_test, Y_test, metaList,
-        evaluationFunc, evalFunHp, param, feaFrameOuter, cv, cvk, verbose)
+      [outPip,outHp, f] = run_with_hyperparam(lp=lp, ph_pip=configurations, r_i=r_i, X=X_train, Y=Y_train, Xtest=X_test, Ytest=Y_test, metaList=metaList,
+        evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, param=param, featureFrameOuter=feaFrameOuter, cv=cv, cvk=cvk)
       # sort the pipelines by order of accuracy decreasing
       a = order(target = outPip, by = 1, decreasing=TRUE, index.return=FALSE)
       b = order(target = outHp, by = 1, decreasing=TRUE, index.return=FALSE)
@@ -98,7 +130,8 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
 
       # sort the configurations for successive halving
       avergae_perf =  getMaxPerConf(outPip, nrow(configurations)) 
-      configurations = frameSort(cbind(avergae_perf, configurations), TRUE)
+      sortMask = matrix(1, rows=1, cols=ncol(configurations))
+      configurations = frameSort(cbind(avergae_perf, configurations), cbind(as.matrix(0), sortMask), TRUE)
       configurations = configurations[, 2:ncol(configurations)]
     }
     bracket_pipel = removeEmpty(target=bracket_pipel, margin="rows")
@@ -122,10 +155,16 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
   [bestPipeline, bestHyperparams] = extractTopK(pipeline, hparam, baseLineScore, k)
 
   bestAccuracy = as.matrix(bestPipeline[,1])
-  bestPipeline = bestPipeline[,2:ncol(bestPipeline)]
   bestHyperparams = bestHyperparams[,2:ncol(bestHyperparams)]
   imp = as.double(as.scalar(bestAccuracy[1, 1])) - as.double(baseLineScore)
   perf = imp > 0
+  applyFunc = bestPipeline[, 2:ncol(bestPipeline)]
+  for(k in 1:nrow(bestPipeline))
+  {
+    applyFunc[k, ] = getParamMeta(bestPipeline[k, 2:ncol(bestPipeline)], param)
+    bestPipeline[k, 1] = as.frame(ncol(bestPipeline) - 1)
+  }
+  bestPipeline = cbind(bestPipeline, applyFunc)
   if(verbose) {
     print("dirty accuracy "+toString(baseLineScore))  
     print("best logical pipelines \n"+toString(lp))  
@@ -145,7 +184,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
 }
 
 # this method will extract the physical pipelines for a given logical pipelines
-get_physical_configurations = function(Frame[String] logical, Scalar[int] numConfigs, 
+get_physical_configurations = function(Frame[String] logical, Scalar[int] numConfigs = 10, 
   Frame[Unknown] primitives)
   return(Frame[String] physical, Double min)
 {
@@ -197,6 +236,7 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] numCon
     paramLens[j,1] = nrow(vect);
   }
   min = prod(paramLens)
+  numConfigs = ifelse(numConfigs == 0, min, numConfigs)
   sample = ifelse(min > numConfigs, TRUE, FALSE)
   paramVals = matrix(0, ncol(logical), max(paramLens));
   for( j in 1:ncol(logical) ) {
@@ -204,12 +244,17 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] numCon
     paramVals[j,1:nrow(vect)] = t(vect);
   }
   cumLens = rev(cumprod(rev(paramLens))/rev(paramLens));
+  XI = table(seq(1,nrow(cumLens)), sample(nrow(cumLens),nrow(cumLens)))
+  cumLens = XI %*% cumLens
   # materialize hyper-parameter combinations 
   HP = matrix(0, min(numConfigs, min), ncol(logical));
+  pip = seq(1,nrow(HP))
   if(sample) 
-    pip = sample(numConfigs,numConfigs)
-  else pip = seq(1,nrow(HP))
-  for( i in 1:nrow(HP) ) {
+    pip = sample(nrow(HP),numConfigs)
+  XI = table(seq(1,nrow(pip)), sample(nrow(pip),nrow(pip)))
+  pip = XI %*% pip
+  
+  for( i in 1:nrow(HP)) {
     for( j in 1:ncol(logical) ) {
       HP[i,j] = paramVals[j,as.scalar((as.scalar(pip[i,1])/cumLens[j,1])%%paramLens[j,1]+1)];
     }
@@ -222,7 +267,7 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] numCon
 # this method will call the execute pipelines with their hyper-parameters
 run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer r_i, Matrix[Double] X, Matrix[Double] Y,
   Matrix[Double] Xtest, Matrix[Double] Ytest, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
-  Frame[Unknown] param, Frame[Unknown] featureFrameOuter, Boolean cv,  Integer cvk = 2, Boolean verbose)
+  Frame[Unknown] param, Frame[Unknown] featureFrameOuter, Boolean cv,  Integer cvk = 2, Boolean default = FALSE)
   return (Matrix[Double] output_operator, Matrix[Double] output_hyperparam, Frame[Unknown] featureFrameOuter)
 {
   output_hp = matrix(0, nrow(ph_pip)*r_i, ncol(lp) * 5 * 3)
@@ -242,12 +287,13 @@ run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer
   for(i in 1:nrow(ph_pip))
   {
     # execute configurations with r resources
-    [hp, no_of_res, no_of_flag_vars] = getHyperparam(ph_pip[i], param, r_i)
+    [hp, applyFunctions, no_of_res, no_of_flag_vars] = getHyperparam(ph_pip[i], param, r_i, default)
     if(ncol(featureFrameOuter) > 1)
       feaFrame = frame("", rows = no_of_res, cols = ncol(featureFrameOuter))
     pip_toString = pipToString(ph_pip[i])
     hpForPruning = matrix(0, rows=1, cols=ncol(lp))
     changesByOp = matrix(0, rows=1, cols=ncol(lp))
+    metaList["applyFunc"] = applyFunctions
     for(r in 1:no_of_res)
     {
       # as the matrix first block of r rows belongs to first operator and r+1 block of rows to second operator 
@@ -268,16 +314,17 @@ run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer
         {
           pipList = list(lp = lp, ph = ph_pip[i], hp = hp_matrix, flags = no_of_flag_vars)
           [evalFunOutput, hpForPruning, changesByOp] = crossV(X=X, y=Y, cvk=cvk, evalFunHp=evalFunHp, pipList=pipList, metaList=metaList, hpForPruning=hpForPruning, 
-          changesByOp=changesByOp, evalFunc=evaluationFunc, trainML = 0)
+          changesByOp=changesByOp, evalFunc=evaluationFunc)
         }
         else 
         {
-          [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp] = executePipeline(logical=lp, pipeline=ph_pip[i], X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList,
-            hyperParameters=hp_matrix, hpForPruning=hpForPruning, changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
+          [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp] = executePipeline(logical=lp, pipeline=ph_pip[i], 
+            Xtrain=X, Ytrain=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
+            changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
           if(max(eYtrain) == min(eYtrain)) 
             print("Y contains only one class")
           else 
-            evalFunOutput = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = 0))
+            evalFunOutput = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
         }
 
         # evalFunOutput = eval(evaluationFunc, argList)  
@@ -315,31 +362,23 @@ run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer
 }
 
 # extract the hyper-parameters for pipelines
-getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Integer no_of_res)
-  return (Matrix[Double] paramMatrix, Integer no_of_res, Integer NUM_META_FLAGS)
+getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Integer no_of_res, Boolean default)
+  return (Matrix[Double] paramMatrix, Frame[Unknown] applyFunc, Integer no_of_res, Integer NUM_META_FLAGS)
 {
 
   allParam = 0;
-  START_INDEX = 8 # value from where the hyper-params starts after skipping meta flags
   NUM_META_FLAGS = 5
+  NUM_DEFAULT_VALUES = 4
+
   # load the hyper-parameters values
   paramList = list()
   # store the row indexes of the operator matches
-  indexes = matrix(0, rows= ncol(pipeline), cols=1)
-  paramCount = matrix(0, rows= ncol(pipeline), cols=1)
-  parfor(k in 1:ncol(pipeline))
-  {
-    op = as.scalar(pipeline[1,k])
-    hasParam = map(hpList[,1], "x->x.split(\",\")[0].equals(\""+op+"\")")
-    # convert the boolean vector to 0/1 matrix representation
-    m_hasParam = hasParam == frame("true", rows=nrow(hasParam), cols=1)
-    m_hasParam = as.matrix(m_hasParam)
-    # compute the relevant index
-    index = m_hasParam * seq(1, nrow(m_hasParam))
-    index = as.scalar(removeEmpty(target = index, margin = "rows"))
-    indexes[k] = index
-    paramCount[k] = as.integer(as.scalar(hpList[index, 2]))
-  }
+  [applyFunc, indexes, paramCount] = getParamMeta(pipeline, hpList)
+
+  hpList = hpList[, 3:ncol(hpList)]
+  DEFAULT_INDEX = 7
+  START_INDEX = 11 # value from where the hyper-params starts after skipping meta flags
+
   # if there are no hyper-parameters than change the values of resources
   # so that the pipeline is only executed once and no resource are wasted, saving looping
   no_of_res = ifelse(sum(paramCount) > 0, no_of_res, 1)
@@ -354,49 +393,52 @@ getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Intege
     index = as.scalar(indexes[i])
     no_of_param = as.integer(as.scalar(paramCount[i]))
     # extract hasY and verbose flags
-    attachMask = matrix(as.scalar(hpList[index, 3]), rows=no_of_res, cols=1)
-    attachFD = matrix(as.scalar(hpList[index, 4]), rows=no_of_res, cols=1)
-    attachY = matrix(as.scalar(hpList[index, 5]), rows=no_of_res, cols=1)
-    isVerbose = matrix(as.scalar(hpList[index, 6]), rows=no_of_res, cols=1)
-    dataFlag = matrix(as.scalar(hpList[index, 7]), rows=no_of_res, cols=1)
-    
+    attachMask = matrix(as.scalar(hpList[index, 2]), rows=no_of_res, cols=1)
+    attachFD = matrix(as.scalar(hpList[index, 3]), rows=no_of_res, cols=1)
+    attachY = matrix(as.scalar(hpList[index, 4]), rows=no_of_res, cols=1)
+    isVerbose = matrix(as.scalar(hpList[index, 5]), rows=no_of_res, cols=1)
+    dataFlag = matrix(as.scalar(hpList[index, 6]), rows=no_of_res, cols=1)
     if(no_of_param > 0) {
       paramIdx = START_INDEX
       typeIdx = START_INDEX
       OpParam = matrix(0, rows=no_of_res, cols=max(paramCount))
-      
-      for(j in 1:no_of_param) {
-        type = as.scalar(hpList[index, typeIdx])
-        paramValIndex = (no_of_param) + paramIdx
-        minVal =  as.scalar(hpList[index, paramValIndex])
-        maxVal = as.scalar(hpList[index, paramValIndex + 1])
-        if(type == "FP") {
-          val = rand(rows=no_of_res, cols=1, min=minVal, max=maxVal, pdf="uniform");
-          OpParam[, j] = val;
-        }
-        else if(type == "INT") {
-          if(as.integer(maxVal) > no_of_res)
-            val = sample(as.integer(maxVal), no_of_res, FALSE)
-          else 
-            val = sample(as.integer(maxVal), no_of_res, TRUE)
-          less_than_min = val < as.integer(minVal);
-          val = (less_than_min * minVal) + val;
-          OpParam[, j] = val;
-        }
-        else if(type == "BOOL") {
-          if(maxVal == 1) {
-            s = sample(2, no_of_res, TRUE);
-            b = s - 1;
-            OpParam[, j] = b;
-          } 
+      if(default) {
+        OpParam[1, 1:no_of_param] = as.matrix(hpList[index, DEFAULT_INDEX:DEFAULT_INDEX+(no_of_param - 1)])
+      }
+      else {
+        for(j in 1:no_of_param) {
+          type = as.scalar(hpList[index, typeIdx])
+          paramValIndex = (no_of_param) + paramIdx
+          minVal =  as.scalar(hpList[index, paramValIndex])
+          maxVal = as.scalar(hpList[index, paramValIndex + 1])
+          if(type == "FP") {
+            val = rand(rows=no_of_res, cols=1, min=minVal, max=maxVal, pdf="uniform");
+            OpParam[, j] = val;
+          }
+          else if(type == "INT") {
+            if(as.integer(maxVal) > no_of_res)
+              val = sample(as.integer(maxVal), no_of_res, FALSE)
+            else 
+              val = sample(as.integer(maxVal), no_of_res, TRUE)
+            less_than_min = val < as.integer(minVal);
+            val = (less_than_min * minVal) + val;
+            OpParam[, j] = val;
+          }
+          else if(type == "BOOL") {
+            if(maxVal == 1) {
+              s = sample(2, no_of_res, TRUE);
+              b = s - 1;
+              OpParam[, j] = b;
+            } 
+            else
+              OpParam[, j] = matrix(0, rows=no_of_res, cols=1)
+          }
           else
-            OpParam[, j] = matrix(0, rows=no_of_res, cols=1)
-        }
-        else
-          print("invalid data type")  # TODO handle string set something like {,,}
+            print("invalid data type")  # TODO handle string set something like {,,}
           
-        paramIdx = paramIdx + 2
-        typeIdx = typeIdx + 1
+          paramIdx = paramIdx + 2
+          typeIdx = typeIdx + 1
+        }
       }
       # hyper-parameter vector contains no. of hp, values of hp, and flag values
       OpParam = cbind(matrix(no_of_param, rows=nrow(OpParam), cols=1),OpParam, attachMask,
@@ -459,7 +501,7 @@ extractTopK = function(Frame[Unknown] pipeline, Matrix[Double] hyperparam,
   # # add accuracy back
   pipeline = cbind(as.frame(forDedup[, ncol(pipeline)+1]), pipeline)
   hyperparam = order(target = hyperparam, by = 1, decreasing=TRUE, index.return=FALSE)
-  pipeline = frameSort(pipeline, TRUE)
+  pipeline = frameSort(pipeline, cbind(as.matrix(0), matrix(1, rows=1, cols=ncol(pipeline) - 1)), TRUE)
 
 
   # remove the row with accuracy less than test accuracy 
@@ -532,9 +574,8 @@ return (Matrix[Double] features)
   # OHE features 
   OHE = sum(colMaxs(X) * mask)
   features[1, 10] = OHE
-  tab = table(Y, 1)
-  distVal = nrow(tab)
-  if(nrow(Y) > 1 &  distVal <= 10)
+
+  if(nrow(Y) > 1 &  min(Y) >= 1)
   {
     ctab = table(Y, 1)
     features[1, 11] = nrow(ctab) # number of classes
@@ -598,7 +639,7 @@ return (String s)
 }
 
 crossV = function(Matrix[double] X, Matrix[double] y, Integer cvk, Matrix[Double] evalFunHp, List[Unknown] pipList, List[Unknown] metaList,
-  Matrix[Double] hpForPruning = as.matrix(0), Matrix[Double] changesByOp = as.matrix(0), String evalFunc, Integer trainML = 0) 
+  Matrix[Double] hpForPruning = as.matrix(0), Matrix[Double] changesByOp = as.matrix(0), String evalFunc) 
 return (Matrix[Double] output, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
 {
   accuracyMatrix = matrix(0, cvk, 1)
@@ -643,15 +684,17 @@ return (Matrix[Double] output, Matrix[Double] hpForPruning, Matrix[Double] chang
     if(as.scalar(pipList['flags']) != 0)
     {
       [trainX, trainy, testX, testy, Tr, hpForPruning, changesByOp] = executePipeline(logical=as.frame(pipList['lp']), pipeline=as.frame(pipList['ph']),
-        X=trainX, Y=trainy, Xtest= testX, Ytest=testy, metaList=metaList, hyperParameters=as.matrix(pipList['hp']), hpForPruning=hpForPruning,
+        Xtrain=trainX, Ytrain=trainy, Xtest= testX, Ytest=testy, metaList=metaList, hyperParameters=as.matrix(pipList['hp']), hpForPruning=hpForPruning,
         changesByOp=changesByOp, flagsCount=as.scalar(pipList['flags']), test=TRUE, verbose=FALSE)
     }
     # print("test out: "+nrow(testy))
-    res = eval(evalFunc, list(X=trainX, Y=trainy, Xtest=testX, Ytest=testy, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = trainML))
+    res = eval(evalFunc, list(X=trainX, Y=trainy, Xtest=testX, Ytest=testy, Xorig=as.matrix(0), evalFunHp=evalFunHp))
     accuracyMatrix[i] = res[1, 1]
     evalFunHp = res[, 2:ncol(res)]
   }
+  print("----- cv mean accuracy ---")
   accuracy = as.matrix(mean(accuracyMatrix))
+  print(toString(accuracy))
   output = cbind(accuracy, evalFunHp)
 }
 
@@ -676,4 +719,27 @@ return(Boolean execute)
     }
   }
   execute = !(changeCount > 0)
+}
+
+getParamMeta = function(Frame[Unknown] pipeline, Frame[Unknown] hpList)
+return(Frame[Unknown] applyFunc, Matrix[Double] indexes, Matrix[Double] paramCount)
+{
+  indexes = matrix(0, rows= ncol(pipeline), cols=1)
+  paramCount = matrix(0, rows= ncol(pipeline), cols=1)
+  applyList = hpList[, 1]
+  applyFunc = pipeline
+  parfor(k in 1:ncol(pipeline))
+  {
+    op = as.scalar(pipeline[1,k])
+    hasParam = map(hpList[,2], "x->x.split(\",\")[0].equals(\""+op+"\")")
+    # convert the boolean vector to 0/1 matrix representation
+    m_hasParam = hasParam == frame("true", rows=nrow(hasParam), cols=1)
+    m_hasParam = as.matrix(m_hasParam)
+    # compute the relevant index
+    index = m_hasParam * seq(1, nrow(m_hasParam))
+    index = as.scalar(removeEmpty(target = index, margin = "rows"))
+    indexes[k] = index
+    paramCount[k] = as.integer(as.scalar(hpList[index, 3]))
+    applyFunc[1, k] = as.scalar(hpList[index, 1])
+  }
 }

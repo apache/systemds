@@ -19,6 +19,34 @@
 #
 #-------------------------------------------------------------
 
+# This script will read the dirty and clean data, then it will apply the best pipeline on dirty data
+# and then will classify both cleaned dataset and check if the cleaned dataset is performing same as original dataset
+# in terms of classification accuracy
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE               DEFAULT            MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# trainData         Frame[Unknown]      ---
+# testData          Frame[Unknown]      ---
+# metaData          Frame[Unknown]      as.frame("NULL")
+# lp                Frame[Unknown]      ---
+# pip               Frame[Unknown]      ---
+# hp                Frame[Unknown]      ---
+# evaluationFunc    String              ---
+# evalFunHp         Matrix[Double]      ---
+# isLastLabel       Boolean             TRUE
+# correctTypos      Boolean             FALSE
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME           TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# result         Matrix[Double]   ---
+# ----------------------------------------------------------------------------------------------------------------------
+
 source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/builtin/bandit.dml") as bandit;
 s_applyAndEvaluate = function(Frame[Unknown] trainData, Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"),
@@ -26,13 +54,16 @@ s_applyAndEvaluate = function(Frame[Unknown] trainData, Frame[Unknown] testData,
   Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE)
 return (Matrix[Double] result)
 {
+  print("logical: "+toString(lp))
   no_of_flag_vars = 5
   schema = metaData[1, 1:ncol(metaData) - 1]
   mask = as.matrix(metaData[2, 1:ncol(metaData) - 1])
   fdMask = as.matrix(metaData[3, 1:ncol(metaData) - 1])
   maskY = as.integer(as.scalar(metaData[2, ncol(metaData)]))
-  metaList = list(mask=mask, schema=schema, fd=fdMask)
-
+  idx = as.scalar(pip[, 1]) + 1
+  metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=pip[, (idx+1):ncol(pip)])
+  pip = pip[, 2:idx]
+  ctx = list(prefix="----"); #TODO include seed
   # separate the label
   [Xtrain, Ytrain] = getLabel(trainData, isLastLabel)
   [Xtest, Ytest] = getLabel(testData, isLastLabel)
@@ -49,7 +80,7 @@ return (Matrix[Double] result)
   }
     # # # when the evaluation function is called first we also compute and keep hyperparams of target application
   dirtyScore = getDirtyScore(X=Xtrain, Y=eYtrain, Xtest=Xtest, Ytest=eYtest, metaList=metaList, evaluationFunc=evaluationFunc, evalFunHp=evalFunHp)
-  [Xtrain, Xtest] = runStringPipeline(Xtrain, Xtest, schema, mask, FALSE, correctTypos)
+  [Xtrain, Xtest] = runStringPipeline(Xtrain, Xtest, schema, mask, FALSE, correctTypos, ctx)
   
   # # # if mask has 1s then there are categorical features
   [eXtrain, eXtest] = recodeData(Xtrain, Xtest, mask, FALSE, "recode")
@@ -65,16 +96,16 @@ return (Matrix[Double] result)
   pipList = list(lp = lp, ph = pip, hp = hp_matrix, flags = no_of_flag_vars)
   # argList = list(X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, Xorig=clone_X, pipList=pipList, metaList=metaList, evalFunHp=evalFunHp, trainML=0)
   # # # now test accuracy
-  [eXtrain, eYtrain, eXtest, eYtest, a, b,Tr] = executePipeline(logical=lp, pipeline=pip, X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, metaList=metaList,
+  [eXtrain, eYtrain, eXtest, eYtest, a, b,Tr] = executePipeline(logical=lp, pipeline=pip, Xtrain=eXtrain, Ytrain=eYtrain, Xtest=eXtest, Ytest=eYtest, metaList=metaList,
     hyperParameters=hp_matrix, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
   
   if(max(eYtrain) == min(eYtrain)) 
     stop("Y contains only one class")
 
-  score = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtrain, Ytest=eYtrain, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = FALSE))
+  score = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtrain, Ytest=eYtrain, Xorig=as.matrix(0), evalFunHp=evalFunHp))
   trainAccuracy = as.scalar(score[1, 1])
   
-  score = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = FALSE))
+  score = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
   testAccuracy = as.scalar(score[1, 1])
 
   
@@ -85,17 +116,15 @@ return (Matrix[Double] result)
 }
 
 runStringPipeline = function(Frame[Unknown] Xtrain, Frame[Unknown] Xtest, Frame[String] schema,
-  Matrix[Double] mask, Boolean cv, Boolean correctTypos = FALSE)
+  Matrix[Double] mask, Boolean cv, Boolean correctTypos = FALSE, List[Unknown] ctx)
 return(Frame[Unknown] Xtrain, Frame[Unknown] Xtest)
 {
   if(cv)
-    Xtrain = utils::stringProcessing(data=Xtrain, mask=mask, schema=schema, CorrectTypos=correctTypos)
+    [Xtrain, Xtest] = utils::stringProcessing(train=Xtrain, test=Xtrain, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
   else
   {
     # # # binding train and test to use same dictionary for both
-    XAll = utils::stringProcessing(data=rbind(Xtrain, Xtest), mask=mask, schema=schema, CorrectTypos=correctTypos)
-    Xtrain = XAll[1:nrow(Xtrain),]
-    Xtest = XAll[nrow(Xtrain)+1:nrow(XAll),]
+    [Xtrain, Xtest] = utils::stringProcessing(train=Xtrain, test=Xtest, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
   }
 }
 
@@ -142,11 +171,11 @@ return(Double dirtyScore)
     if(as.scalar(dschema[1, i]) == "STRING" | as.scalar(dschema[1, i]) == "BOOLEAN")
       dmask[1, i] = 1
   mask = as.matrix(metaList['mask']) 
-  mask = ifelse(sum(mask == dmask) < ncol(mask), dmask, mask)
+  mask = ifelse(sum(mask == dmask) < ncol(mask), matrix(1, rows=1, cols=ncol(mask)), mask)
   [eXtrain, eXtest] = recodeData(X, Xtest, mask, FALSE, "recode")
-  eXtrain = replace(target=eXtrain, pattern=NaN, replacement=1)
-  eXtest = replace(target=eXtest, pattern=NaN, replacement=1)
+  eXtrain = replace(target=eXtrain, pattern=NaN, replacement=0)
+  eXtest = replace(target=eXtest, pattern=NaN, replacement=0)
   [eXtrain, eXtest] = recodeData(as.frame(eXtrain), as.frame(eXtest), mask, FALSE, "dummycode")
-  score = eval(evaluationFunc, list(X=eXtrain, Y=Y, Xtest=eXtest, Ytest=Ytest, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = FALSE))
+  score = eval(evaluationFunc, list(X=eXtrain, Y=Y, Xtest=eXtest, Ytest=Ytest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
   dirtyScore = as.scalar(score[1, 1])
 }

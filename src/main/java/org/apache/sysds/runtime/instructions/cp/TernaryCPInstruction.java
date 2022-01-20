@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 
 public class TernaryCPInstruction extends ComputationCPInstruction {
 	
-	private TernaryCPInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String str) {
+	protected TernaryCPInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String str) {
 		super(CPType.Ternary, op, in1, in2, in3, out, opcode, str);
 	}
 
@@ -40,7 +40,10 @@ public class TernaryCPInstruction extends ComputationCPInstruction {
 		CPOperand outOperand = new CPOperand(parts[4]);
 		int numThreads = parts.length>5 ? Integer.parseInt(parts[5]) : 1;
 		TernaryOperator op = InstructionUtils.parseTernaryOperator(opcode, numThreads);
-		return new TernaryCPInstruction(op, operand1, operand2, operand3, outOperand, opcode,str);
+		if(operand1.isFrame() && operand2.isScalar() && opcode.contains("map"))
+			return  new TernaryFrameScalarCPInstruction(op, operand1, operand2, operand3, outOperand, opcode, str);
+		else
+			return new TernaryCPInstruction(op, operand1, operand2, operand3, outOperand, opcode,str);
 	}
 	
 	@Override

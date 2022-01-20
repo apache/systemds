@@ -23,102 +23,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AMorphingMMColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingle;
 
 public final class CLALibUtils {
-	// private static final Log LOG = LogFactory.getLog(CLALibUtils.class.getName());
+	protected static final Log LOG = LogFactory.getLog(CLALibUtils.class.getName());
 
 	/**
-	 * Helper method to determine if the column groups contains SDC
+	 * Combine all column groups that are constant types, this include empty and const.
 	 * 
-	 * @param groups The ColumnGroups to analyze
-	 * @return A Boolean saying it there is >= 2 SDC Groups.
+	 * @param in A Compressed matrix.
 	 */
-	protected static boolean containsSDC(List<AColGroup> groups) {
-		for(AColGroup g : groups)
-			if(g instanceof ColGroupSDC || g instanceof ColGroupSDCSingle)
-				return true;
-		return false;
-	}
-
-	/**
-	 * Helper method to determine if the column groups contains SDC or Constant groups.
-	 * 
-	 * @param groups The ColumnGroups to analyze
-	 * @return A Boolean saying there is SDC groups or Constant groups.
-	 */
-	protected static boolean containsSDCOrConst(List<AColGroup> groups) {
-		for(AColGroup g : groups)
-			if(g instanceof ColGroupSDC || g instanceof ColGroupSDCSingle || g instanceof ColGroupConst)
-				return true;
-		return false;
-	}
-
-	/**
-	 * Helper method to filter out SDC Groups, to add their common value to the ConstV. This allows exploitation of the
-	 * common values in the SDC Groups.
-	 * 
-	 * @param groups The Column Groups
-	 * @param constV The Constant vector to add common values to.
-	 * @return The Filtered list of Column groups containing no SDC Groups but only SDCZero groups.
-	 */
-	protected static List<AColGroup> filterSDCGroups(List<AColGroup> groups, double[] constV) {
-		if(constV == null)
-			return groups;
-			
-		final List<AColGroup> filteredGroups = new ArrayList<>();
-		for(AColGroup g : groups) {
-			if(g instanceof ColGroupSDC)
-				filteredGroups.add(((ColGroupSDC) g).extractCommon(constV));
-			else if(g instanceof ColGroupSDCSingle)
-				filteredGroups.add(((ColGroupSDCSingle) g).extractCommon(constV));
-			else
-				filteredGroups.add(g);
-		}
-		return returnGroupIfFiniteNumbers(groups, filteredGroups, constV);
-	}
-
-	/**
-	 * Helper method to filter out SDC Groups and remove all constant groups, to reduce computation.
-	 * 
-	 * @param groups The Column Groups
-	 * @param constV The Constant vector to add common values from SDC and all values from constant groups
-	 * @return The Filtered list of Column groups containing no SDC Groups but only SDCZero groups.
-	 */
-	protected static List<AColGroup> filterGroups(List<AColGroup> groups, double[] constV) {
-		if(constV == null)
-			return groups;
-
-		final List<AColGroup> filteredGroups = new ArrayList<>();
-		for(AColGroup g : groups) {
-			if(g instanceof ColGroupSDC)
-				filteredGroups.add(((ColGroupSDC) g).extractCommon(constV));
-			else if(g instanceof ColGroupSDCSingle)
-				filteredGroups.add(((ColGroupSDCSingle) g).extractCommon(constV));
-			else if(g instanceof ColGroupEmpty)
-				continue;
-			else if(g instanceof ColGroupConst)
-				((ColGroupConst) g).addToCommon(constV);
-			else
-				filteredGroups.add(g);
-		}
-		return returnGroupIfFiniteNumbers(groups, filteredGroups, constV);
-	}
-
-	private static List<AColGroup> returnGroupIfFiniteNumbers(List<AColGroup> groups, List<AColGroup> filteredGroups,
-		double[] constV) {
-		for(double v : constV)
-			if(!Double.isFinite(v))
-				return groups;
-		return filteredGroups;
-	}
-
 	public static void combineConstColumns(CompressedMatrixBlock in) {
 		// Combine Constant type column groups, both empty and const.
 		List<AColGroup> e = new ArrayList<>();
@@ -147,6 +69,52 @@ public final class CLALibUtils {
 			o.add(combineConst(c));
 
 		in.allocateColGroupList(o);
+	}
+
+	/**
+	 * Helper method to determine if the column groups contains SDC or Constant groups.
+	 * 
+	 * @param groups The ColumnGroups to analyze
+	 * @return A Boolean saying there is SDC groups or Constant groups.
+	 */
+	protected static boolean shouldPreFilter(List<AColGroup> groups) {
+		for(AColGroup g : groups)
+			if(g instanceof AMorphingMMColGroup || g instanceof ColGroupConst)
+				return true;
+		return false;
+	}
+
+	/**
+	 * Helper method to filter out SDC Groups and remove all constant groups, to reduce computation.
+	 * 
+	 * @param groups The Column Groups
+	 * @param constV The Constant vector to add common values from SDC and all values from constant groups
+	 * @return The Filtered list of Column groups containing no SDC Groups but only SDCZero groups.
+	 */
+	protected static List<AColGroup> filterGroups(List<AColGroup> groups, double[] constV) {
+		if(constV == null)
+			return groups;
+
+		final List<AColGroup> filteredGroups = new ArrayList<>();
+		for(AColGroup g : groups) {
+			if(g instanceof AMorphingMMColGroup)
+				filteredGroups.add(((AMorphingMMColGroup) g).extractCommon(constV));
+			else if(g instanceof ColGroupEmpty)
+				continue;
+			else if(g instanceof ColGroupConst)
+				((ColGroupConst) g).addToCommon(constV);
+			else
+				filteredGroups.add(g);
+		}
+		return returnGroupIfFiniteNumbers(groups, filteredGroups, constV);
+	}
+
+	private static List<AColGroup> returnGroupIfFiniteNumbers(List<AColGroup> groups, List<AColGroup> filteredGroups,
+		double[] constV) {
+		for(double v : constV)
+			if(!Double.isFinite(v))
+				throw new NotImplementedException("Not handling if the values are not finite: " + Arrays.toString(constV));
+		return filteredGroups;
 	}
 
 	private static AColGroup combineEmpty(List<AColGroup> e) {

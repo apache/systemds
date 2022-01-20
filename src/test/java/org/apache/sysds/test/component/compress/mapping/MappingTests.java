@@ -64,7 +64,7 @@ public class MappingTests {
 			tests.add(new Object[] {4, t, 63, false});
 			tests.add(new Object[] {3, t, 64, false});
 			tests.add(new Object[] {3, t, 65, false});
-			tests.add(new Object[] {5, t, 64+63, false});
+			tests.add(new Object[] {5, t, 64 + 63, false});
 			tests.add(new Object[] {5, t, 1234, false});
 			tests.add(new Object[] {5, t, 13, true});
 		}
@@ -75,9 +75,9 @@ public class MappingTests {
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
-		final int max = MapToFactory.getUpperBoundValue(type);
+		final int max = Math.min(MapToFactory.getUpperBoundValue(type), ((int) Character.MAX_VALUE) + 3);
 		expected = new int[size];
-		m = genMap(MapToFactory.create(size, max), expected, max, fill, seed);
+		m = genMap(MapToFactory.create(size, max + 1), expected, max, fill, seed);
 	}
 
 	protected static AMapToData genMap(AMapToData m, int[] expected, int max, boolean fill, int seed) {
@@ -107,6 +107,7 @@ public class MappingTests {
 
 		// to make sure that the bit set is actually filled.
 		m.set(size - 1, max);
+
 		expected[size - 1] = max;
 		return m;
 	}
@@ -195,7 +196,7 @@ public class MappingTests {
 
 	@Test
 	public void replaceMax() {
-		int max = m.getUpperBoundValue();
+		int max = Math.min(MapToFactory.getUpperBoundValue(type), ((int) Character.MAX_VALUE) + 3);
 		m.replace(max, 0);
 
 		for(int i = 0; i < size; i++) {
@@ -203,6 +204,21 @@ public class MappingTests {
 			if(expected[i] != m.getIndex(i))
 				fail("Expected equals " + Arrays.toString(expected) + "\nbut got: " + m);
 		}
+	}
+
+	@Test
+	public void getCountsWithDefault() {
+		int nVal = m.getUnique();
+		int[] counts = m.getCounts(new int[nVal + 1], size + 10);
+		if(10 != counts[nVal])
+			fail("Incorrect number of unique values:" + m + "\n" + Arrays.toString(counts));
+
+	}
+
+	@Test
+	public void getCountsNoDefault() {
+		int nVal = m.getUnique();
+		m.getCounts(new int[nVal], size);
 	}
 
 	@Test
@@ -215,6 +231,13 @@ public class MappingTests {
 			if(expected[i] != m.getIndex(i))
 				fail("Expected equals " + Arrays.toString(expected) + "\nbut got: " + m);
 		}
+	}
+
+	@Test
+	public void getUnique() {
+		int u = m.getUnique();
+		final int max = Math.min(MapToFactory.getUpperBoundValue(type), ((int) Character.MAX_VALUE) + 3);
+		assertEquals(max + 1, u);
 	}
 
 	@Test

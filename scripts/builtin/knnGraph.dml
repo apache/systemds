@@ -22,7 +22,12 @@
 # Builtin for k nearest neighbor graph construction
 
 m_knnGraph = function(Matrix[double] X, integer k) return (Matrix[double] graph) {
-    distances = dist(X)
+    distances = dist(X);
+
+    for (i in 1:nrow(distances)) {
+            distances[i, i] = as.integer(2^64);
+        }
+
 
     graph = matrix(0, rows=nrow(distances), cols=ncol(distances));
     for (row in 1:nrow(distances)) {

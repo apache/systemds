@@ -129,6 +129,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
 			// Here we control the error message, therefore it is allowed to send the stack trace with the response
+			LOG.error("Exception in FederatedWorkerHandler while processing requests:\n"
+				+ Arrays.toString(requests), ex);
 			return new FederatedResponse(ResponseType.ERROR, ex);
 		}
 		catch(Exception ex) {
@@ -417,16 +419,16 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		ExecutionContext ec = ecm.get(request.getTID());
 
 		// get function and input parameters
-		FederatedUDF udf = (FederatedUDF) request.getParam(0);
-		Data[] inputs = Arrays.stream(udf.getInputIDs()).mapToObj(id -> ec.getVariable(String.valueOf(id)))
-			.map(PrivacyMonitor::handlePrivacy).toArray(Data[]::new);
-
-		// trace lineage
-		if(DMLScript.LINEAGE)
-			LineageItemUtils.traceFedUDF(ec, udf);
-
-		// reuse or execute user-defined function
 		try {
+			FederatedUDF udf = (FederatedUDF) request.getParam(0);
+			Data[] inputs = Arrays.stream(udf.getInputIDs()).mapToObj(id -> ec.getVariable(String.valueOf(id)))
+				.map(PrivacyMonitor::handlePrivacy).toArray(Data[]::new);
+
+			// trace lineage
+			if(DMLScript.LINEAGE)
+				LineageItemUtils.traceFedUDF(ec, udf);
+
+			// reuse or execute user-defined function
 			// reuse UDF outputs if available in lineage cache
 			FederatedResponse reuse = LineageCache.reuse(udf, ec);
 			if(reuse.isSuccessful())
@@ -441,6 +443,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			return res;
 		}
 		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
+			LOG.debug("FederatedWorkerHandler Privacy Constraint " +
+				"exception thrown when processing EXEC_UDF request ", ex);
 			throw ex;
 		}
 		catch(Exception ex) {

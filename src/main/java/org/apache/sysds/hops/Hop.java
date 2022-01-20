@@ -203,6 +203,10 @@ public abstract class Hop implements ParseInfo {
 		activatePrefetch = true;
 	}
 
+	public void deactivatePrefetch(){
+		activatePrefetch = false;
+	}
+
 	/**
 	 * Checks if prefetch is activated for this hop.
 	 * @return true if prefetch is activated

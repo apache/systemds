@@ -82,14 +82,29 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	@Override
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int estimate,
 		int nrUniqueUpperBound) {
-
+		// Extract primitive information from sample
 		final IEncode map = IEncode.createFromMatrixBlock(_sample, _transposed, colIndexes);
-		final EstimationFactors sampleFacts = map.computeSizeEstimation(colIndexes, _sampleSize, _data.getSparsity(), _data.getSparsity());
-		// EstimationFactors.computeSizeEstimation(colIndexes, map, false, _sampleSize,
-			// false);
+		// Get the facts for the sample
+		final EstimationFactors sampleFacts = map.computeSizeEstimation(colIndexes, _sampleSize, _data.getSparsity(),
+			_data.getSparsity());
+		// Scale the facts up to full size
 		final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, colIndexes, nrUniqueUpperBound);
 		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+	}
 
+	@Override
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSizeDeltaEncoded(int[] colIndexes, int estimate,
+		int nrUniqueUpperBound) {
+		// Don't use sample when doing estimation of delta encoding, instead we read from the start of the matrix until
+		// sample size. This guarantees that the delta values are actually represented in the full compression
+		final IEncode map = IEncode.createFromMatrixBlockDelta(_data, _transposed, colIndexes, _sampleSize);
+		// Get the Facts for the sample
+		final EstimationFactors sampleFacts = map.computeSizeEstimation(colIndexes, _sampleSize, _data.getSparsity(),
+			_data.getSparsity());
+		// TODO find out if we need to scale differently if we use delta (I suspect not)
+		// Scale sample
+		final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, colIndexes, nrUniqueUpperBound);
+		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
 	}
 
 	@Override
@@ -106,9 +121,10 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 			return null;
 
 		final IEncode map = g1.getMap().join(g2.getMap());
-		final EstimationFactors sampleFacts = map.computeSizeEstimation(joined, _sampleSize,_data.getSparsity(), _data.getSparsity());
-		//  EstimationFactors.computeSizeEstimation(joined, map,
-			// _cs.validCompressions.contains(CompressionType.RLE), map.size(), false);
+		final EstimationFactors sampleFacts = map.computeSizeEstimation(joined, _sampleSize, _data.getSparsity(),
+			_data.getSparsity());
+		// EstimationFactors.computeSizeEstimation(joined, map,
+		// _cs.validCompressions.contains(CompressionType.RLE), map.size(), false);
 
 		// result facts
 		final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, joined, joinedMaxDistinct);

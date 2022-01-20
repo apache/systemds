@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
@@ -178,9 +179,12 @@ public class FEDInstructionUtils {
 				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederatedExcept(FType.BROADCAST))) {
 				if(instruction.getOpcode().equals("append") )
 					fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
-				else if(instruction.getOpcode().equals("qpick"))
-					fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
-				else if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1).isFederated(FType.ROW) ||
+				else if(instruction.getOpcode().equals("qpick")) {
+					QuantilePickFEDInstruction qinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
+					if(!(qinst.getQPickType() == PickByCount.OperationTypes.IQM ||
+						(qinst.getQPickType() == PickByCount.OperationTypes.VALUEPICK && qinst.input2 == null)))
+						fedinst = qinst;
+				} else if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1).isFederated(FType.ROW) ||
 					ec.getMatrixObject(instruction.input2).isFederated(FType.ROW)))
 					fedinst = CovarianceFEDInstruction.parseInstruction(inst.getInstructionString());
 				else

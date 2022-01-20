@@ -47,24 +47,25 @@ import org.apache.sysds.conf.DMLConfig;
 public class FederatedWorker {
 	protected static Logger log = Logger.getLogger(FederatedWorker.class);
 
-	private int _port;
+	private final int _port;
 	private final FederatedLookupTable _flt;
 	private final FederatedReadCache _frc;
+	private final boolean _debug;
 
-	public FederatedWorker(int port) {
+	public FederatedWorker(int port, boolean debug) {
 		_flt = new FederatedLookupTable();
 		_frc = new FederatedReadCache();
 		_port = (port == -1) ? DMLConfig.DEFAULT_FEDERATED_PORT : port;
+		_debug = debug;
 	}
 
 	public void run() throws CertificateException, SSLException {
-		log.info("Setting up Federated Worker");
+		log.info("Setting up Federated Worker on port " + _port);
 		final int EVENT_LOOP_THREADS = Math.max(4, Runtime.getRuntime().availableProcessors() * 4);
 		NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
 		ThreadPoolExecutor workerTPE = new ThreadPoolExecutor(1, Integer.MAX_VALUE,
 			10, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(true));
 		NioEventLoopGroup workerGroup = new NioEventLoopGroup(EVENT_LOOP_THREADS, workerTPE);
-
 		ServerBootstrap b = new ServerBootstrap();
 		// TODO add ability to use real ssl files, not self signed certificates.
 		SelfSignedCertificate cert = new SelfSignedCertificate();
@@ -94,7 +95,10 @@ public class FederatedWorker {
 			f.channel().closeFuture().sync();
 		}
 		catch(Exception e) {
-			log.info("Federated worker interrupted");
+			log.error("Federated worker interrupted");
+			log.error(e.getMessage());
+			if ( _debug )
+				e.printStackTrace();
 		}
 		finally {
 			log.info("Federated Worker Shutting down.");

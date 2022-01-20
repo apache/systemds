@@ -115,4 +115,19 @@ public class MemoTable {
 			&& hopRelMemo.get(root.getHopRef().getHopID()).stream()
 			.anyMatch(h -> h.getFederatedOutput() == root.getFederatedOutput());
 	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append("Federated MemoTable has ").append(hopRelMemo.size()).append(" entries with the following values:");
+		sb.append("\n").append("{").append("\n");
+		for (Map.Entry<Long,List<HopRel>> hopEntry : hopRelMemo.entrySet()){
+			sb.append("  ").append(hopEntry.getKey()).append(":").append("\n");
+			for ( HopRel hopRel : hopEntry.getValue() ){
+				sb.append("    ").append(hopRel.getFederatedOutput()).append(" ").append(hopRel.getCost()).append("\n");
+			}
+		}
+		sb.append("\n");
+		return sb.toString();
+	}
 }

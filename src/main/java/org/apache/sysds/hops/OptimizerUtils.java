@@ -52,6 +52,7 @@ import org.apache.sysds.runtime.functionobjects.IntegerDivide;
 import org.apache.sysds.runtime.functionobjects.Modulus;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -60,6 +61,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 public class OptimizerUtils 
 {
@@ -215,6 +217,7 @@ public class OptimizerUtils
 	 * Compile federated instructions based on input federation state and privacy constraints.
 	 */
 	public static boolean FEDERATED_COMPILATION = false;
+	public static Map<Integer, FEDInstruction.FederatedOutput> FEDERATED_SPECS = new HashMap<>();
 	
 	/**
 	 * Specifies a multiplier computing the degree of parallelism of parallel

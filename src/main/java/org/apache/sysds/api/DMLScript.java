@@ -278,7 +278,7 @@ public class DMLScript
 			if(dmlOptions.fedWorker) {
 				loadConfiguration(fnameOptConfig);
 				try {
-					new FederatedWorker(dmlOptions.fedWorkerPort).run();
+					new FederatedWorker(dmlOptions.fedWorkerPort, dmlOptions.debug).run();
 				}
 				catch(CertificateException e) {
 					e.printStackTrace();

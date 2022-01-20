@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -852,10 +853,14 @@ public class UtilFunctions {
 		put("^\\d{8}\\s\\d{6}$", "yyyyMMdd HHmmss");
 	}};
 
-	public static long toMillis (String dateString) {
+	public static long toMillis(String dateString) {
+		return toMillis(dateString, getDateFormat(dateString));
+	}
+
+	public static long toMillis(String dateString, String dateFormat) {
 		long value = 0;
 		try {
-			value = new SimpleDateFormat(getDateFormat(dateString)).parse(dateString).getTime();
+			value = new SimpleDateFormat(dateFormat).parse(dateString).getTime();
 		}
 		catch(ParseException e) {
 			throw new DMLRuntimeException(e);
@@ -872,6 +877,32 @@ public class UtilFunctions {
 	private static String getDateFormat (String dateString) {
 		return DATE_FORMATS.keySet().parallelStream().filter(e -> dateString.toLowerCase().matches(e)).findFirst()
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
+	}
+
+	public static String dateFormat(String dateString, String outputFormat) {
+		try {
+			return dateFormat(dateString, getDateFormat(dateString), outputFormat);
+		}
+		catch(NullPointerException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+	public static String dateFormat(String dateString, String inputFormat, String outputFormat) {
+		Date value;
+		try {
+			value = new SimpleDateFormat(inputFormat).parse(dateString);
+		}
+		catch(ParseException e) {
+			throw new DMLRuntimeException(e);
+		}
+		String formatted = new SimpleDateFormat(outputFormat).format(value);
+		return formatted;
+	}
+
+	public static String dateFormat(long date, String outputFormat) {
+		Date value = new Date(date);
+		String formatted = new SimpleDateFormat(outputFormat).format(value);
+		return formatted;
 	}
 
 	public static String[] getSplittedStringAsArray (String input) {

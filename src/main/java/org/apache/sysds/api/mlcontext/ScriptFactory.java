@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -246,7 +247,7 @@ public class ScriptFactory {
 		}
 		String filePath = file.getPath();
 		try {
-			return FileUtils.readFileToString(file);
+			return FileUtils.readFileToString(file, Charset.defaultCharset());
 		} catch (IOException e) {
 			throw new MLContextException("Error trying to read script string from file: " + filePath, e);
 		}
@@ -272,12 +273,12 @@ public class ScriptFactory {
 				Path path = new Path(scriptFilePath);
 				FileSystem fs = IOUtilFunctions.getFileSystem(path);
 				try( FSDataInputStream fsdis = fs.open(path) ) {
-					return IOUtils.toString(fsdis);
+					return IOUtils.toString(fsdis, Charset.defaultCharset());
 				}
 			}
 			// from local file system
 			File scriptFile = new File(scriptFilePath);
-			return FileUtils.readFileToString(scriptFile);
+			return FileUtils.readFileToString(scriptFile, Charset.defaultCharset());
 		}
 		catch (IllegalArgumentException | IOException e) {
 			throw new MLContextException("Error trying to read script string from file: " + scriptFilePath, e);
@@ -298,7 +299,7 @@ public class ScriptFactory {
 			throw new MLContextException("InputStream is null");
 		}
 		try {
-			return IOUtils.toString(inputStream);
+			return IOUtils.toString(inputStream, Charset.defaultCharset());
 		} catch (IOException e) {
 			throw new MLContextException("Error trying to read script string from InputStream", e);
 		}
@@ -343,7 +344,7 @@ public class ScriptFactory {
 			throw new MLContextException("Currently only reading from http and https URLs is supported");
 		}
 		try( InputStream is = url.openStream() ) {
-			return IOUtils.toString(is);
+			return IOUtils.toString(is, Charset.defaultCharset());
 		} catch (IOException e) {
 			throw new MLContextException("Error trying to read script string from URL: " + url, e);
 		}

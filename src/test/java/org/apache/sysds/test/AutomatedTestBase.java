@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1198,7 +1199,7 @@ public abstract class AutomatedTestBase {
 			// if R < 4.0 on Windows is used, the file separator needs to be Windows style
 			if(System.getProperty("os.name").contains("Windows")) {
 				Process r_ver_cmd = Runtime.getRuntime().exec("RScript --version");
-				String r_ver = IOUtils.toString(r_ver_cmd.getErrorStream());
+				String r_ver = IOUtils.toString(r_ver_cmd.getErrorStream(), Charset.defaultCharset());
 				if(!r_ver.contains("4.0")) {
 					cmd = cmd.replace('/', '\\');
 					executionFile = executionFile.replace('/', '\\');
@@ -1212,8 +1213,8 @@ public abstract class AutomatedTestBase {
 			}
 			Process child = Runtime.getRuntime().exec(cmd);
 
-			outputR = IOUtils.toString(child.getInputStream());
-			errorString = IOUtils.toString(child.getErrorStream());
+			outputR = IOUtils.toString(child.getInputStream(), Charset.defaultCharset());
+			errorString = IOUtils.toString(child.getErrorStream(), Charset.defaultCharset());
 			
 			//
 			// To give any stream enough time to print all data, otherwise there

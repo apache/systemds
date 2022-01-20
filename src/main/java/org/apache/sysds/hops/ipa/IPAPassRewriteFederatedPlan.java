@@ -19,6 +19,8 @@
 
 package org.apache.sysds.hops.ipa;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -54,6 +56,7 @@ import java.util.Set;
  * The rewrite is only applied if federated compilation is activated in OptimizerUtils.
  */
 public class IPAPassRewriteFederatedPlan extends IPAPass {
+	private static final Log LOG = LogFactory.getLog(IPAPassRewriteFederatedPlan.class.getName());
 
 	private final static MemoTable hopRelMemo = new MemoTable();
 	private final static Set<Long> hopRelUpdatedFinal = new HashSet<>();
@@ -238,7 +241,21 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	private void updateFederatedOutput(Hop root, HopRel updateHopRel) {
 		root.setFederatedOutput(updateHopRel.getFederatedOutput());
 		root.setFederatedCost(updateHopRel.getCostObject());
+		forceFixedFedOut(root);
 		hopRelUpdatedFinal.add(root.getHopID());
+	}
+
+	/**
+	 * Set federated output to fixed value if FEDERATED_SPECS is activated for root hop.
+	 * @param root hop set to fixed fedout value as loaded from FEDERATED_SPECS
+	 */
+	private void forceFixedFedOut(Hop root){
+		if ( OptimizerUtils.FEDERATED_SPECS.containsKey(root.getBeginLine()) ){
+			FEDInstruction.FederatedOutput fedOutSpec = OptimizerUtils.FEDERATED_SPECS.get(root.getBeginLine());
+			root.setFederatedOutput(fedOutSpec);
+			if ( fedOutSpec.isForcedFederated() )
+				root.deactivatePrefetch();
+		}
 	}
 
 	/**
@@ -259,8 +276,10 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param root starting point for going through the Hop DAG to update the federatedOutput fields
 	 */
 	private void selectFederatedExecutionPlan(Hop root) {
-		visitFedPlanHop(root);
-		setFinalFedout(root);
+		if ( root != null ){
+			visitFedPlanHop(root);
+			setFinalFedout(root);
+		}
 	}
 
 	/**
@@ -274,6 +293,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 			return;
 		// If the currentHop has input, then the input should be visited depth-first
 		if(currentHop.getInput() != null && currentHop.getInput().size() > 0) {
+			debugLog(currentHop);
 			for(Hop input : currentHop.getInput())
 				visitFedPlanHop(input);
 		}
@@ -287,6 +307,24 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		if(hopRels.isEmpty())
 			hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE, hopRelMemo));
 		hopRelMemo.put(currentHop, hopRels);
+	}
+
+	/**
+	 * Write HOP visit to debug log if debug is activated.
+	 * @param currentHop hop written to log
+	 */
+	private void debugLog(Hop currentHop){
+		if ( LOG.isDebugEnabled() ){
+			LOG.debug("Visiting HOP: " + currentHop + " Input size: " + currentHop.getInput().size());
+			int index = 0;
+			for ( Hop hop : currentHop.getInput()){
+				if ( hop == null )
+					LOG.debug("Input at index is null: " + index);
+				else
+					LOG.debug("HOP input: " + hop + " at index " + index + " of " + currentHop);
+				index++;
+			}
+		}
 	}
 
 	/**

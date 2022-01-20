@@ -41,7 +41,7 @@ public class Dictionary extends ADictionary {
 
 	private static final long serialVersionUID = -6517136537249507753L;
 
-	private final double[] _values;
+	protected final double[] _values;
 
 	public Dictionary(double[] values) {
 		if(values == null || values.length == 0)

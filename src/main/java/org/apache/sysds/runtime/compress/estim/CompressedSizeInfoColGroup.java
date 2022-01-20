@@ -190,6 +190,7 @@ public class CompressedSizeInfoColGroup {
 	private static long getCompressionSize(int numCols, CompressionType ct, EstimationFactors fact) {
 		int nv;
 		switch(ct) {
+			case DeltaDDC: // TODO add proper extraction
 			case DDC:
 				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
 				// + 1 if the column contains zero

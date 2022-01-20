@@ -43,6 +43,16 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 	}
 
 	@Override
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSizeDeltaEncoded(int[] colIndexes, int estimate,
+		int nrUniqueUpperBound) {
+		final int _numRows = getNumRows();
+		final IEncode map = IEncode.createFromMatrixBlockDelta(_data, _cs.transposed, colIndexes);
+		final EstimationFactors em = map.computeSizeEstimation(colIndexes, _numRows, _data.getSparsity(),
+			_data.getSparsity());
+		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+	}
+
+	@Override
 	protected CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int joinedMaxDistinct) {
 		final int _numRows = getNumRows();
@@ -65,4 +75,5 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 	public final int getSampleSize() {
 		return getNumRows();
 	}
+
 }

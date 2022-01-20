@@ -106,6 +106,8 @@ public class ColGroupIO {
 				return new ColGroupRLE(nRows);
 			case DDC:
 				return new ColGroupDDC(nRows);
+			case DeltaDDC:
+				return new ColGroupDeltaDDC(nRows);
 			case CONST:
 				return new ColGroupConst();
 			case EMPTY:

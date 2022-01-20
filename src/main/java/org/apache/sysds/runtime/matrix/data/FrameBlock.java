@@ -2337,6 +2337,10 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				String[] arguments = args.split(";");
 				return EMAUtils.exponentialMovingAverageImputation(this, Integer.parseInt(arguments[0]), arguments[1],
 					Integer.parseInt(arguments[2]), Double.parseDouble(arguments[3]), Double.parseDouble(arguments[4]), Double.parseDouble(arguments[5]));
+			} else if (args.contains(":")) {
+				String[] arguments = args.split(":");
+				return UtilFunctions.dateProcessing(this, Boolean.parseBoolean(arguments[0].toLowerCase()), 
+					Boolean.parseBoolean(arguments[1].toLowerCase()), Integer.parseInt(arguments[2]), arguments[3]);
 			}
 		}
 		if(lambdaExpr.contains("jaccardSim"))

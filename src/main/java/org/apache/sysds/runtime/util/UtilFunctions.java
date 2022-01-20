@@ -24,9 +24,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -35,6 +37,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -872,6 +875,160 @@ public class UtilFunctions {
 	private static String getDateFormat (String dateString) {
 		return DATE_FORMATS.keySet().parallelStream().filter(e -> dateString.toLowerCase().matches(e)).findFirst()
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
+	}
+
+	private static int findDateCol (FrameBlock block) {
+		int cols = block.getNumColumns();
+		int[] match_counter = new int[cols];
+		int dateCol = -1;
+
+		for (int i = 0; i < cols; i++) {
+			String[] values = (String[]) block.getColumnData(i);
+			int match_count = 0;
+			for (int j = 0; j < values.length; j++) {
+
+				if (values[j] == null || values[j].trim().isEmpty() || values[j].toUpperCase().equals("NULL") || values[j].equals("0")) continue; //skip null/blank entries
+				//check if value matches a date pattern
+				String tmp = values[j];
+				if(DATE_FORMATS.keySet().parallelStream().anyMatch(e -> tmp.toLowerCase().matches(e))) match_count++;
+			}
+			match_counter[i] = match_count;
+		}
+
+		int maxVal = Integer.MIN_VALUE;
+		for (int i = 0; i < match_counter.length; i++) {
+			if (match_counter[i] > maxVal) {
+				maxVal = match_counter[i];
+				dateCol = i;
+			}
+		}
+
+		if (maxVal <= 0 || dateCol < 0){
+			//ERROR - no date column found
+			throw new DMLRuntimeException("No date column found.");
+		}
+		return dateCol;
+	}
+
+	private static String getDominantDateFormat (String[] values) {
+		Map<String, String> date_formats = DATE_FORMATS;
+
+		Map<String, Integer> format_matches = new HashMap<String, Integer>();
+		for (Map.Entry<String,String> entry : date_formats.entrySet()) {
+			format_matches.put(entry.getValue(), 0);
+		}
+
+		for (int i = 0; i < values.length; i++) {
+			if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; //skip null/blank entries
+			//find pattern which matches values[i] -> increase count for this pattern
+			String tmp = values[i];
+			String dateFormat = getDateFormat(tmp);
+			format_matches.put(dateFormat, format_matches.get(dateFormat) + 1);
+		}
+		//find format with the most occurences in values -> dominant format
+		String dominantFormat = format_matches.entrySet().stream().max((entry1, entry2) -> entry1.getValue() > entry2.getValue() ? 1 : -1).get().getKey();
+
+		return dominantFormat;
+	}
+
+	private static Date addTimeToDate (Date date, int amountToAdd, String timeformat) {
+		Date newDate;
+		switch (timeformat) {
+			case "ms": //milliseconds
+				newDate = DateUtils.addMilliseconds(date, amountToAdd);
+				break;
+			case "m": //minutes
+				newDate = DateUtils.addMinutes(date, amountToAdd);
+				break;
+			case "H": //hours
+				newDate = DateUtils.addHours(date, amountToAdd);
+				break;
+			case "d": //days
+				newDate = DateUtils.addDays(date, amountToAdd);
+				break;
+			case "w": //weeks
+				newDate = DateUtils.addWeeks(date, amountToAdd);
+				break;
+			case "M": //months
+				newDate = DateUtils.addMonths(date, amountToAdd);
+				break;
+			case "y": //years
+				newDate = DateUtils.addYears(date, amountToAdd);
+				break;
+			default: //seconds
+				newDate = DateUtils.addSeconds(date, amountToAdd);
+				break;
+		}
+		return newDate;
+	}
+
+	//new imports:
+	//import java.util.Date;
+	//import org.apache.commons.lang3.time.DateUtils;
+
+	public static FrameBlock dateProcessing (FrameBlock block, boolean convertToNumber, boolean convertToDominant, int valToAdd, String timeformatToAdd) {
+
+		int dateCol = findDateCol(block);
+		String[] values = (String[]) block.getColumnData(dateCol);
+
+		if (!convertToNumber && !convertToDominant && valToAdd != 0){ //only value to add
+			for (int i = 0; i< values.length; i++){
+				if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; //skip null/blank entries
+				String currentFormat = getDateFormat(values[i]);
+				SimpleDateFormat curr = new SimpleDateFormat(currentFormat, Locale.US);
+				try {
+					Date date = curr.parse(values[i]); //parse date string
+					date = addTimeToDate(date, valToAdd, timeformatToAdd); //add value to date
+					block.set(i, dateCol, curr.format(date)); //convert back to datestring
+				} catch (ParseException e) {
+					throw new DMLRuntimeException(e);
+				}
+			}
+		}
+
+		if (convertToNumber){
+			for (int i = 0; i< values.length; i++){
+				if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; //skip null/blank entries
+				String currentFormat = getDateFormat(values[i]);
+				SimpleDateFormat curr = new SimpleDateFormat(currentFormat, Locale.US); //Locale.US needs to be used as otherwise dateformat like "dd MMM yyyy HH:mm" are not parsable
+				try {
+					Date date = curr.parse(values[i]); //parse date string
+					block.set(i, dateCol, date.getTime()); //get timestamp in milliseconds
+				} catch (ParseException e) {
+					throw new DMLRuntimeException(e);
+				}
+			}
+		}else if (convertToDominant){
+			String dominantFormat = getDominantDateFormat(values);
+
+			for (int i = 0; i< values.length; i++){
+				if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL") || values[i].equals("0")) continue; //skip null/blank entries
+				String currentFormat = getDateFormat(values[i]);
+
+				if (currentFormat.equals(dominantFormat) && valToAdd == 0) continue;
+
+				SimpleDateFormat curr = new SimpleDateFormat(currentFormat, Locale.US);
+				try {
+					Date date = curr.parse(values[i]);
+
+					if (!currentFormat.equals(dominantFormat)){
+						curr.applyPattern(dominantFormat);
+					}
+					String newDate = curr.format(date);
+					Date d = curr.parse(newDate);
+					if(valToAdd != 0){
+						date = addTimeToDate(d, valToAdd, timeformatToAdd);
+					}
+					block.set(i, dateCol, curr.format(date));
+
+				} catch (ParseException e) {
+					throw new DMLRuntimeException(e);
+				}
+
+			}
+		}
+
+		return block;
 	}
 
 	public static String[] getSplittedStringAsArray (String input) {

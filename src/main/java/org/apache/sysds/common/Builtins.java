@@ -104,6 +104,7 @@ public enum Builtins {
 	CUMPROD("cumprod", false),
 	CUMSUM("cumsum", false),
 	CUMSUMPROD("cumsumprod", false),
+	DATEPROCESSING("dateProcessing",true),
 	DBSCAN("dbscan", true),
 	DBSCANAPPLY("dbscanApply", true),
 	DECISIONTREE("decisionTree", true),

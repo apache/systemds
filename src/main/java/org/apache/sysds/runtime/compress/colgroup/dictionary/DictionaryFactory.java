@@ -67,7 +67,7 @@ public class DictionaryFactory {
 			return Dictionary.getInMemorySize(nrValues * nrColumns);
 	}
 
-	public static ADictionary create(DblArrayCountHashMap map, int nCols, boolean addZeroTuple) {
+	public static ADictionary create(DblArrayCountHashMap map, int nCols, boolean addZeroTuple, boolean deltaEncoded) {
 		final ArrayList<DArrCounts> vals = map.extractValues();
 		final int nVals = vals.size();
 		final double[] resValues = new double[(nVals + (addZeroTuple ? 1 : 0)) * nCols];
@@ -75,7 +75,7 @@ public class DictionaryFactory {
 			final DArrCounts dac = vals.get(i);
 			System.arraycopy(dac.key.getData(), 0, resValues, dac.id * nCols, nCols);
 		}
-		return new Dictionary(resValues);
+		return deltaEncoded ? new DeltaDictionary(resValues, nCols) : new Dictionary(resValues);
 	}
 
 	public static ADictionary create(ABitmap ubm) {

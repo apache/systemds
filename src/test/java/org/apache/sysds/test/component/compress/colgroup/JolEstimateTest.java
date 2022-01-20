@@ -53,6 +53,7 @@ public abstract class JolEstimateTest {
 	protected static final Log LOG = LogFactory.getLog(JolEstimateTest.class.getName());
 
 	protected static final CompressionType ddc = CompressionType.DDC;
+	protected static final CompressionType delta = CompressionType.DeltaDDC;
 	protected static final CompressionType ole = CompressionType.OLE;
 	protected static final CompressionType rle = CompressionType.RLE;
 	protected static final CompressionType sdc = CompressionType.SDC;

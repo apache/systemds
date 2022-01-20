@@ -24,17 +24,14 @@
 m_knnGraph = function(Matrix[double] X, integer k) return (Matrix[double] graph) {
     distances = dist(X);
 
-    for (i in 1:nrow(distances)) {
-            distances[i, i] = as.integer(2^64);
-        }
 
 
     graph = matrix(0, rows=nrow(distances), cols=ncol(distances));
     for (row in 1:nrow(distances)) {
-        referent = kthSmallest(distances[row,], k);
+        referent = kthSmallest(distances[row,], k + 1);
         count = 0;
         for (col in 1:ncol(distances)) {
-            if ((as.scalar(distances[row, col]) <= referent) & (count < k)) {
+            if ((as.scalar(distances[row, col]) <= referent) & (count < k + 1)) {
                 graph[row, col] = 1;
                 count = count + 1;
             }
@@ -42,6 +39,10 @@ m_knnGraph = function(Matrix[double] X, integer k) return (Matrix[double] graph)
                 graph[row, col] = 0;
             }
         }
+    }
+
+    for (i in 1:nrow(graph)) {
+            graph[i, i] = 0;
     }
 }
 

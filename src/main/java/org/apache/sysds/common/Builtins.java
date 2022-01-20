@@ -157,6 +157,7 @@ public enum Builtins {
 	IMG_SAMPLE_PAIRING("img_sample_pairing", true),
 	IMG_INVERT("img_invert", true),
 	IMG_POSTERIZE("img_posterize", true),
+	IMPURITY_MEASURES("impurityMeasures", true),
 	IMPUTE_BY_MEAN("imputeByMean", true),
 	IMPUTE_BY_MEAN_APPLY("imputeByMeanApply", true),
 	IMPUTE_BY_MEDIAN("imputeByMedian", true),

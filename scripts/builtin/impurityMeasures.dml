@@ -1,0 +1,111 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This function computes the measure of impurity for the given dataset based on the passed method (gini or entropy).
+# The current version expects the target vector to contain only 0 or 1 values.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                  TYPE               DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X                     Matrix[Double]      ---        Feature matrix.
+# Y                     Matrix[Double]      ---        Target vector containing 0 and 1 values
+# R                     Matrix[Double]      ---        Vector indicating whether a feature is categorical or continuous.
+#                                                      1 denotes a continuous feature, larger values indicate the number
+#                                                      of categories.
+# method                String              ---        String indicating the method to use; either "entropy" or "gini".
+# ----------------------------------------------------------------------------------------------------------------------
+
+# Output(s)
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                  TYPE               DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# impurity_measures     Matrix[Double]      ---        Row vector containing information/gini gain for each feature of
+#                                                      the dataset.
+#                                                      In case of gini, the values denote the gini gains, i.e. how much
+#                                                      impurity was "removed" with the respective split. The higher the
+#                                                      value, the better the split.
+#                                                      In case of entropy, the values denote the information gains, i.e.
+#                                                      how much entropy was removed. The higher the information gain,
+#                                                      the better the split.
+# ----------------------------------------------------------------------------------------------------------------------
+
+m_impurityMeasures = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] R, String method)
+  return (Matrix[Double] impurity_measures)
+{
+  if (method != "entropy" & method != "gini") {
+    stop("Please specify the correct method - should be either entropy or gini.")
+  }
+
+  imp_measures = matrix(numeric(), nrow = 1, ncol = ncol(X))
+
+  for (i in 1:ncol(X)) {
+    feature_measure = getMeasure(X[,i], Y, R[,i], method)
+    imp_measures[1,i] = feature_measure
+  }
+  impurity_measures = imp_measures
+}
+
+getMeasure = function(Matrix[Double] feature, Matrix[Double] Y, Double n_categories, String method)
+  return (double impurity)
+{
+  n_true_labels = sum(Y)
+  n_false_labels = length(Y) - n_true_labels
+  parent_impurity = calcImpurity(n_true_labels, n_false_labels, length(feature), method)
+
+  # calculate the impurity after the split
+  new_impurity = 0
+  for (i in 1:n_categories) {
+    count_true = 0
+    count_false = 0
+    for (j in 1:length(feature)) {
+      if (feature[j] == i) {
+        if (Y[j] == 0) {
+          count_false = count_false + 1
+        } else {
+          count_true = count_true + 1
+        }
+      }
+    }
+    new_impurity = new_impurity + calcImpurity(count_true, count_false, length(feature), method)
+  }
+  impurity = parent_impurity - new_impurity
+}
+
+calcImpurity = function(Double n_true, Double n_false, Integer n_vars, String method)
+  return (double impurity)
+{
+  prob_true = n_true / (n_true + n_false)
+  prob_false = n_false / (n_true + n_false)
+  weight = (n_true + n_false) / n_vars
+
+  if (method == "entropy") {
+    if (prob_true == 1 | prob_false == 1) {
+      impurity = 0
+    }
+    else {
+      impurity = (-1) * weight * (prob_true * log2(prob_true) + prob_false * log2(prob_false))
+    }
+  } else if (method == "gini") {
+    impurity = weight * (prob_true * prob_true + prob_false * prob_false)
+  }
+  impurity = 0
+}

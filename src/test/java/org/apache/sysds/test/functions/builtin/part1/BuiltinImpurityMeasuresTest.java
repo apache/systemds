@@ -42,12 +42,33 @@ public class BuiltinImpurityMeasuresTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void basicTest() {
-		double[][] X = {{1, 1}, {2, 2}};
+	public void basicGiniTest() {
+		/*double[][] X = {{1, 1}, {2, 2}};
 		double[][] Y = {{1}, {0}};
-		double[][] R = {{2, 2}};
-		String method = "hi";
-		String method2 = "gini";
+		double[][] R = {{2, 2}};*/
+		double[][] X = {{1,1,2,1}, {1,3,1,2}, {2,1,1,2}, {3,2,1,1}, {1,3,2,1}};
+		double[][] Y = {{0}, {0}, {1}, {1}, {1}};
+		double[][] R = {{3, 3, 2, 2}};
+		/*double[][] X = {{1},{1},{1},{1},{1},{1},{2},{2},{2},{2}};
+		double[][] Y = {{0}, {0}, {0}, {0}, {0}, {1}, {1}, {1}, {1}, {1}};
+		double[][] R = {{2}};*/
+		String method = "gini";
+
+		runImpurityMeasuresTest(ExecType.SPARK, X, Y, R, method);
+	}
+
+	@Test
+	public void basicEntropyTest() {
+		/*double[][] X = {{1, 1}, {2, 2}};
+		double[][] Y = {{1}, {0}};
+		double[][] R = {{2, 2}};*/
+		double[][] X = {{1,1,2,1}, {1,3,1,2}, {2,1,1,2}, {3,2,1,1}, {1,3,2,1}};
+		double[][] Y = {{0}, {0}, {1}, {1}, {1}};
+		double[][] R = {{3, 3, 2, 2}};
+		/*double[][] X = {{1},{1},{1},{1},{1},{1},{2},{2},{2},{2}};
+		double[][] Y = {{0}, {0}, {0}, {0}, {0}, {1}, {1}, {1}, {1}, {1}};
+		double[][] R = {{2}};*/
+		String method = "entropy";
 
 		runImpurityMeasuresTest(ExecType.SPARK, X, Y, R, method);
 	}
@@ -61,9 +82,21 @@ public class BuiltinImpurityMeasuresTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-args", input("X"), input("Y"), input("R"), method, output("impurity_measures")};
+
 			HashMap<MatrixValue.CellIndex, Double> expected_measures = new HashMap<>();
-			expected_measures.put(new MatrixValue.CellIndex(1,1), 1.0);
-			expected_measures.put(new MatrixValue.CellIndex(1, 2), 1.0);
+			if(method.equals("gini")) {
+				expected_measures.put(new MatrixValue.CellIndex(1, 1), 0.2133333333);
+				expected_measures.put(new MatrixValue.CellIndex(1, 2), 0.0799999999);
+				expected_measures.put(new MatrixValue.CellIndex(1, 3), 0.0133333333);
+				expected_measures.put(new MatrixValue.CellIndex(1, 4), 0.0133333333);
+			}
+			// comparing with values from https://planetcalc.com/8421/
+			if(method.equals("entropy")) {
+				expected_measures.put(new MatrixValue.CellIndex(1, 1), 0.4199730940);
+				expected_measures.put(new MatrixValue.CellIndex(1, 2), 0.1709505945);
+				expected_measures.put(new MatrixValue.CellIndex(1, 3), 0.0199730940);
+				expected_measures.put(new MatrixValue.CellIndex(1, 4), 0.0199730940);
+			}
 
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);
@@ -74,6 +107,8 @@ public class BuiltinImpurityMeasuresTest extends AutomatedTestBase {
 
 			HashMap<MatrixValue.CellIndex, Double> actual_measures = readDMLMatrixFromOutputDir("impurity_measures");
 
+			System.out.println(actual_measures);
+			System.out.println(expected_measures);
 			TestUtils.compareMatrices(expected_measures, actual_measures, eps, "Expected measures", "Actual measures");
 		}
 		finally {

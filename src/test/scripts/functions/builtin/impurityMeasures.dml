@@ -22,6 +22,6 @@
 X = read($1)
 Y = read($2)
 R = read($3)
-impurity_measures = impurityMeasures(X = X, Y = Y, R = R, method = $4);
+IM = impurityMeasures(X = X, Y = Y, R = R, method = $4);
 
-write(impurity_measures, $5);
+write(IM, $5);

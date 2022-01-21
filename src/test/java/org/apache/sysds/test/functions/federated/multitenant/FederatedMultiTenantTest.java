@@ -104,11 +104,10 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 		runMultiTenantSameWorkerTest(OpType.SUM, 4, ExecMode.SPARK);
 	}
 
-//FIXME still runs into blocking
-//	@Test
-//	public void testSumSharedWorkersSP() {
-//		runMultiTenantSharedWorkerTest(OpType.SUM, 3, 9, ExecMode.SPARK);
-//	}
+	@Test
+	public void testSumSharedWorkersSP() {
+		runMultiTenantSharedWorkerTest(OpType.SUM, 3, 9, ExecMode.SPARK);
+	}
 
 	@Test
 	@Ignore
@@ -342,8 +341,7 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 		argsList.addAll(Arrays.asList(args));
 
 		ProcessBuilder processBuilder = new ProcessBuilder(ArrayUtils.addAll(new String[]{
-			path, "-cp", classpath, DMLScript.class.getName()}, argsList.toArray(new String[0])))
-			.redirectErrorStream(true);
+			path, "-cp", classpath, DMLScript.class.getName()}, argsList.toArray(new String[0])));
 		
 		Process process = null;
 		try {

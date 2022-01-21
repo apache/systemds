@@ -47,7 +47,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 /**
  * Base class for all transform encoders providing both a row and block interface for decoding frames to matrices.
@@ -95,19 +95,19 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 			long t = System.nanoTime()-t0;
 			switch (this.getTransformType()){
 				case RECODE:
-					Statistics.incTransformRecodeApplyTime(t);
+					TransformStatistics.incRecodeApplyTime(t);
 					break;
 				case BIN:
-					Statistics.incTransformBinningApplyTime(t);
+					TransformStatistics.incBinningApplyTime(t);
 					break;
 				case DUMMYCODE:
-					Statistics.incTransformDummyCodeApplyTime(t);
+					TransformStatistics.incDummyCodeApplyTime(t);
 					break;
 				case FEATURE_HASH:
-					Statistics.incTransformFeatureHashingApplyTime(t);
+					TransformStatistics.incFeatureHashingApplyTime(t);
 					break;
 				case PASS_THROUGH:
-					Statistics.incTransformPassThroughApplyTime(t);
+					TransformStatistics.incPassThroughApplyTime(t);
 					break;
 				default:
 					break;

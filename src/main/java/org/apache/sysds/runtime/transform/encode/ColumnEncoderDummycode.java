@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 public class ColumnEncoderDummycode extends ColumnEncoder {
 	private static final long serialVersionUID = 5832130477659116489L;
@@ -292,7 +292,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 				return null;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if (DMLScript.STATISTICS)
-				Statistics.incTransformDummyCodeApplyTime(System.nanoTime()-t0);
+				TransformStatistics.incDummyCodeApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 

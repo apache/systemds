@@ -63,7 +63,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.CodegenStatistics;
 
 /**
  * This cost-based plan selection algorithm chooses fused operators
@@ -148,7 +148,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			if( sumMatPoints >= 63 )
 				LOG.warn("Long overflow on maintaining codegen statistics "
 					+ "for a DAG with "+sumMatPoints+" interesting points.");
-			Statistics.incrementCodegenEnumAll(UtilFunctions.pow(2, sumMatPoints));
+			CodegenStatistics.incrementEnumAll(UtilFunctions.pow(2, sumMatPoints));
 		}
 	}
 	
@@ -246,7 +246,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			pKey = new PartitionSignature(part, matPoints.length, costs, C0, CN);
 			boolean[] plan = getPlan(pKey);
 			if( plan != null ) {
-				Statistics.incrementCodegenEnumAllP((rgraph!=null||!STRUCTURAL_PRUNING)?len:0);
+				CodegenStatistics.incrementEnumAllP((rgraph!=null||!STRUCTURAL_PRUNING)?len:0);
 				return plan;
 			}
 		}
@@ -314,9 +314,9 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		
 		if( DMLScript.STATISTICS ) {
-			Statistics.incrementCodegenEnumAllP((rgraph!=null||!STRUCTURAL_PRUNING)?len:0);
-			Statistics.incrementCodegenEnumEval(numEvalPlans);
-			Statistics.incrementCodegenEnumEvalP(numEvalPartPlans);
+			CodegenStatistics.incrementEnumAllP((rgraph!=null||!STRUCTURAL_PRUNING)?len:0);
+			CodegenStatistics.incrementEnumEval(numEvalPlans);
+			CodegenStatistics.incrementEnumEvalP(numEvalPartPlans);
 		}
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Enum: Optimal plan: "+Arrays.toString(bestPlan));
@@ -1025,8 +1025,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		if( DMLScript.STATISTICS ) {
 			if( plan != null )
-				Statistics.incrementCodegenPlanCacheHits();
-			Statistics.incrementCodegenPlanCacheTotal();
+				CodegenStatistics.incrementPlanCacheHits();
+			CodegenStatistics.incrementPlanCacheTotal();
 		}
 		return plan;
 	}

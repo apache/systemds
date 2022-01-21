@@ -28,7 +28,7 @@ import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoder.EncoderType;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 
@@ -128,21 +128,21 @@ public class EncoderFactory {
 			// create composite decoder of all created encoders
 			for(Entry<Integer, List<ColumnEncoder>> listEntry : colEncoders.entrySet()) {
 				if(DMLScript.STATISTICS)
-					Statistics.incTransformEncoderCount(listEntry.getValue().size());
+					TransformStatistics.incEncoderCount(listEntry.getValue().size());
 				lencoders.add(new ColumnEncoderComposite(listEntry.getValue()));
 			}
 			encoder = new MultiColumnEncoder(lencoders);
 			if(!oIDs.isEmpty()) {
 				encoder.addReplaceLegacyEncoder(new EncoderOmit(jSpec, colnames, schema.length, minCol, maxCol));
 				if(DMLScript.STATISTICS)
-					Statistics.incTransformEncoderCount(1);
+					TransformStatistics.incEncoderCount(1);
 			}
 			if(!mvIDs.isEmpty()) {
 				EncoderMVImpute ma = new EncoderMVImpute(jSpec, colnames, schema.length, minCol, maxCol);
 				ma.initRecodeIDList(rcIDs);
 				encoder.addReplaceLegacyEncoder(ma);
 				if(DMLScript.STATISTICS)
-					Statistics.incTransformEncoderCount(1);
+					TransformStatistics.incEncoderCount(1);
 			}
 
 			// initialize meta data w/ robustness for superset of cols

@@ -90,7 +90,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.ParForStatistics;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -760,7 +760,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			//maintain statistics
 			long tinit = (long) time.stop();
 			if( DMLScript.STATISTICS )
-				Statistics.incrementParForInitTime(tinit);
+				ParForStatistics.incrementInitTime(tinit);
 			if( _monitor ) 
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, tinit);
 			
@@ -1515,7 +1515,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			throw new DMLRuntimeException("PARFOR: Number of executed tasks does not match the number of created tasks: tasks "+numTasks+"/"+expTasks+", iters "+numIters+"/"+expIters+".");
 	
 		if( DMLScript.STATISTICS )
-			Statistics.incrementParForMergeTime((long) time.stop());
+			ParForStatistics.incrementMergeTime((long) time.stop());
 	}
 	
 	/**

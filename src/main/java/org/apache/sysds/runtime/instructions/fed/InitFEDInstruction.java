@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
@@ -122,8 +123,9 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 				int port = Integer.parseInt(parsedValues[1]);
 				String filePath = parsedValues[2];
 
-				// register the federated worker for federated statistics creation
-				FederatedStatistics.registerFedWorker(host, port);
+				if(DMLScript.FED_STATISTICS)
+					// register the federated worker for federated statistics creation
+					FederatedStatistics.registerFedWorker(host, port);
 
 				// get beginning and end of data ranges
 				List<Data> rangesData = ranges.getData();

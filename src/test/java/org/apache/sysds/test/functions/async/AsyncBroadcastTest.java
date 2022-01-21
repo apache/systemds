@@ -32,6 +32,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.SparkStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -100,7 +101,7 @@ public class AsyncBroadcastTest extends AutomatedTestBase {
 			long expected_successBC = 1;
 			long numBC = Statistics.getCPHeavyHitterCount("broadcast");
 			Assert.assertTrue("Violated Broadcast instruction count: "+numBC, numBC == expected_numBC);
-			long successBC = Statistics.getAsyncBroadcastCount();
+			long successBC = SparkStatistics.getAsyncBroadcastCount();
 			Assert.assertTrue("Violated successful Broadcast count: "+successBC, successBC == expected_successBC);
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;

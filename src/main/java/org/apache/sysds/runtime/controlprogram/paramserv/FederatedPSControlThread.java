@@ -56,7 +56,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.util.ProgramConverter;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.ParamServStatistics;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -442,8 +442,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			if(DMLScript.STATISTICS) {
 				long total = (long) tFedCommunication.stop();
 				long workerComputing = ((DoubleObject) responseData[1]).getLongValue();
-				Statistics.accFedPSWorkerComputing(workerComputing);
-				Statistics.accFedPSCommunicationTime(total - workerComputing);
+				ParamServStatistics.accFedWorkerComputing(workerComputing);
+				ParamServStatistics.accFedCommunicationTime(total - workerComputing);
 			}
 			return (ListObject) responseData[0];
 		}
@@ -580,7 +580,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	// Statistics methods
 	protected void accFedPSGradientWeightingTime(Timing time) {
 		if (DMLScript.STATISTICS && time != null)
-			Statistics.accFedPSGradientWeightingTime((long) time.stop());
+			ParamServStatistics.accFedGradientWeightingTime((long) time.stop());
 	}
 
 	@Override
@@ -591,7 +591,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	@Override
 	protected void incWorkerNumber() {
 		if (DMLScript.STATISTICS)
-			Statistics.incWorkerNumber();
+			ParamServStatistics.incWorkerNumber();
 	}
 
 	@Override

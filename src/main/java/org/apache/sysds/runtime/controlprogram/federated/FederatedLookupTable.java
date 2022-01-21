@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.log4j.Logger;
+import org.apache.sysds.api.DMLScript;
 
 /**
  * Lookup table mapping from a FedUniqueCoordID (funCID) to an
@@ -57,14 +58,19 @@ public class FederatedLookupTable {
 	 */
 	public ExecutionContextMap getECM(String host, long pid) {
 		log.trace("Getting the ExecutionContextMap for coordinator " + pid + "@" + host);
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		FedUniqueCoordID funCID = new FedUniqueCoordID(host, pid);
 		ExecutionContextMap ecm = _lookup_table.computeIfAbsent(funCID,
-			k -> new ExecutionContextMap());
+			k -> createNewECM());
 		if(ecm == null) {
 			log.error("Computing federated execution context map failed. "
 				+ "No valid resolution for " + funCID.toString() + " found.");
 			throw new FederatedWorkerHandlerException("Computing federated execution context map failed. "
 				+ "No valid resolution for " + funCID.toString() + " found.");
+		}
+		if(DMLScript.STATISTICS) {
+			FederatedStatistics.incFedLookupTableGetCount();
+			FederatedStatistics.incFedLookupTableGetTime(System.nanoTime() - t0);
 		}
 		return ecm;
 	}
@@ -80,6 +86,13 @@ public class FederatedLookupTable {
 	public boolean containsFunCID(String host, long pid) {
 		FedUniqueCoordID funCID = new FedUniqueCoordID(host, pid);
 		return _lookup_table.containsKey(funCID);
+	}
+
+	private ExecutionContextMap createNewECM() {
+		ExecutionContextMap ecm = new ExecutionContextMap();
+		if(DMLScript.STATISTICS)
+			FederatedStatistics.incFedLookupTableEntryCount();
+		return ecm;
 	}
 
 	@Override

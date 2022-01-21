@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 public class ColumnEncoderPassThrough extends ColumnEncoder {
 	private static final long serialVersionUID = -8473768154646831882L;
@@ -170,7 +170,7 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS)
-				Statistics.incTransformPassThroughApplyTime(System.nanoTime()-t0);
+				TransformStatistics.incPassThroughApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 

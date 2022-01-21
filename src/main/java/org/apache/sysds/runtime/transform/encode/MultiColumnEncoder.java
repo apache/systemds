@@ -58,7 +58,7 @@ import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.runtime.util.DependencyWrapperTask;
 import org.apache.sysds.runtime.util.IndexRange;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 public class MultiColumnEncoder implements Encoder {
 
@@ -400,7 +400,7 @@ public class MultiColumnEncoder implements Encoder {
 
 		if(DMLScript.STATISTICS) {
 			LOG.debug("Elapsed time for allocation: "+ ((double) System.nanoTime() - t0) / 1000000 + " ms");
-			Statistics.incTransformOutMatrixPreProcessingTime(System.nanoTime()-t0);
+			TransformStatistics.incOutMatrixPreProcessingTime(System.nanoTime()-t0);
 		}
 	}
 
@@ -420,7 +420,7 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		output.recomputeNonZeros();
 		if(DMLScript.STATISTICS)
-			Statistics.incTransformOutMatrixPostProcessingTime(System.nanoTime()-t0);
+			TransformStatistics.incOutMatrixPostProcessingTime(System.nanoTime()-t0);
 	}
 
 	@Override

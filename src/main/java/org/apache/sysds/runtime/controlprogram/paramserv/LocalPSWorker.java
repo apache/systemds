@@ -35,7 +35,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.util.CommonThreadPool;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.ParamServStatistics;
 
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
@@ -266,24 +266,24 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	@Override
 	protected void incWorkerNumber() {
 		if (DMLScript.STATISTICS)
-			Statistics.incWorkerNumber();
+			ParamServStatistics.incWorkerNumber();
 	}
 
 	@Override
 	protected void accLocalModelUpdateTime(Timing time) {
 		if (DMLScript.STATISTICS)
-			Statistics.accPSLocalModelUpdateTime((long) time.stop());
+			ParamServStatistics.accLocalModelUpdateTime((long) time.stop());
 	}
 
 	@Override
 	protected void accBatchIndexingTime(Timing time) {
 		if (DMLScript.STATISTICS)
-			Statistics.accPSBatchIndexingTime((long) time.stop());
+			ParamServStatistics.accBatchIndexingTime((long) time.stop());
 	}
 
 	@Override
 	protected void accGradientComputeTime(Timing time) {
 		if (DMLScript.STATISTICS)
-			Statistics.accPSGradientComputeTime((long) time.stop());
+			ParamServStatistics.accGradientComputeTime((long) time.stop());
 	}
 }

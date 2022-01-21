@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.SparkStatistics;
 import org.junit.Assert;
 
 public abstract class LocalInstruction extends AutomatedTestBase {
@@ -54,6 +55,8 @@ public abstract class LocalInstruction extends AutomatedTestBase {
 		OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
 		OptimizerUtils.ALLOW_SCRIPT_LEVEL_LOCAL_COMMAND = true;
 
+		setOutputBuffering(true);
+
 		try {
 			loadTestConfiguration(getTestConfiguration(testName));
 
@@ -65,7 +68,7 @@ public abstract class LocalInstruction extends AutomatedTestBase {
 
 			String ret = runTest(null).toString();
 			long actualCompressionCount = Statistics.getCPHeavyHitterCount("sp_compress");
-			long actualCollectCount = Statistics.getSparkCollectCount();
+			long actualCollectCount = SparkStatistics.getSparkCollectCount();
 			Assert.assertEquals(ret + "Compression count is incorrect", compressionCount, actualCompressionCount);
 			Assert.assertEquals(ret + "Collection count is incorrect", sparkCollectionCount, actualCollectCount);
 			Statistics.reset();

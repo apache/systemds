@@ -32,6 +32,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.SparkStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -109,7 +110,7 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			long expected_successPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
 			long numPF = Statistics.getCPHeavyHitterCount("prefetch");
 			Assert.assertTrue("Violated Prefetch instruction count: "+numPF, numPF == expected_numPF);
-			long successPF = Statistics.getAsyncPrefetchCount();
+			long successPF = SparkStatistics.getAsyncPrefetchCount();
 			Assert.assertTrue("Violated successful Prefetch count: "+successPF, successPF == expected_successPF);
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;

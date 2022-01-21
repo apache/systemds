@@ -38,8 +38,8 @@
 # ----------------------------------------------------------------------------------------------------------------------
 # NAME                  TYPE               DEFAULT     MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# IM                    Matrix[Double]      ---        Row vector containing information/gini gain for each feature of
-#                                                      the dataset.
+# IM                    Matrix[Double]      ---        (1 x ncol(X)) row vector containing information/gini gain for
+#                                                      each feature of the dataset.
 #                                                      In case of gini, the values denote the gini gains, i.e. how much
 #                                                      impurity was "removed" with the respective split. The higher the
 #                                                      value, the better the split.
@@ -58,12 +58,20 @@ m_impurityMeasures = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double]
   IM = matrix(0.0, rows = 1, cols = ncol(X))
 
   for (i in 1:ncol(X)) {
-    feature_measure = getMeasure(X[,i], Y, as.scalar(R[1,i]), method)
-    IM[1,i] = feature_measure
+    if (as.scalar(R[,i]) == 1) {
+      bins = 4 # todo: decide number of bins
+      binning_feature = applyBinning(X[,i], bins)
+      feature_measure = getMeasure(binning_feature, Y, bins, method)
+      IM[,i] = feature_measure
+    } else {
+      max_cat = max(X[,i])
+      feature_measure = getMeasure(X[,i], Y, max_cat, method)
+      IM[,i] = feature_measure
+    }
   }
 }
 
-getMeasure = function(Matrix[Double] feature, Matrix[Double] Y, Double n_categories, String method)
+getMeasure = function(Matrix[Double] feature, Matrix[Double] Y, Double max_cat, String method)
   return (Double gain)
 {
   n_true_labels = sum(Y)
@@ -72,19 +80,21 @@ getMeasure = function(Matrix[Double] feature, Matrix[Double] Y, Double n_categor
 
   # calculate the impurity after the split
   children_impurity = 0
-  for (i in 1:n_categories) {
+  for (i in 1:max_cat) {
     count_true = 0
     count_false = 0
     for (j in 1:length(feature)) {
-      if (as.scalar(feature[j]) == i) {
-        if (as.scalar(Y[j]) == 0) {
+      if (as.scalar(feature[j,]) == i) {
+        if (as.scalar(Y[j,]) == 0) {
           count_false += 1
         } else {
           count_true += 1
         }
       }
     }
-    children_impurity = children_impurity + calcImpurity(count_true, count_false, length(feature), method)
+    if (!(count_true == 0 & count_false == 0)) {
+      children_impurity = children_impurity + calcImpurity(count_true, count_false, length(feature), method)
+    }
   }
   gain = parent_impurity - children_impurity
 }
@@ -99,11 +109,32 @@ calcImpurity = function(Double n_true, Double n_false, Double n_vars, String met
 
   if (prob_true != 1 & prob_false != 1) { # if there is more than one class, calculate new impurity according to method.
     if (method == "entropy") {
-      scale_log = log(2) # doesn't change the result, just brings the calculation on the right scale for easier testing.
+      scale_log = log(2) # scales the result for easier testing.
       impurity = (-1) * weight * (prob_true * log(prob_true)/scale_log + prob_false * log(prob_false)/scale_log)
-      # impurity = (-1) * weight * (prob_true * log(prob_true) + prob_false * log(prob_false))
     } else if (method == "gini") {
       impurity = weight * (1 - (prob_true^2 + prob_false^2))
+    }
+  }
+}
+
+# for now not very efficient equal width binning...
+applyBinning = function(Matrix[Double] feature, Double bins)
+  return (Matrix[Double] output_f)
+{
+  n_bins = max(bins, nrow(feature))
+  max_v = max(feature)
+  min_v = min(feature)
+  width = (max_v - min_v) / n_bins
+  output_f = matrix(1, rows = nrow(feature), cols = 1)
+
+  for (i in 1:nrow(feature)) {
+    c_value = as.scalar(feature[i,])
+    filled = 0
+    for (j in 1:n_bins) {
+      if (c_value <= (min_v + j * width) & filled == 0) {
+        output_f[i,] = j
+        filled = 1
+      }
     }
   }
 }

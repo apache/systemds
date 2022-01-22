@@ -293,7 +293,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				// put meta data object in symbol table, read on first operation
 				cd.setMetaData(new MetaDataFormat(mc, fmt));
 				if(fmt == FileFormat.CSV)
-					cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, delim, DataExpression.DEFAULT_DELIM_SPARSE));
+					cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, delim,
+						DataExpression.DEFAULT_DELIM_SPARSE));
 				cd.enableCleanup(false); // guard against deletion
 
 				FederatedReadCache.setData(filename, cd);

@@ -59,7 +59,8 @@ public class FederatedWorker {
 		log.info("Setting up Federated Worker");
 		final int EVENT_LOOP_THREADS = Math.max(4, Runtime.getRuntime().availableProcessors() * 4);
 		NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
-		ThreadPoolExecutor workerTPE = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 10, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(true));
+		ThreadPoolExecutor workerTPE = new ThreadPoolExecutor(1, Integer.MAX_VALUE,
+			10, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(true));
 		NioEventLoopGroup workerGroup = new NioEventLoopGroup(EVENT_LOOP_THREADS, workerTPE);
 
 		ServerBootstrap b = new ServerBootstrap();

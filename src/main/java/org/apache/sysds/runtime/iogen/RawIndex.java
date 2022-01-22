@@ -143,7 +143,8 @@ public class RawIndex {
 			if(!flag)
 				eBitSet.set(i, false);
 		}
-		extractNumericDotEActualValues();
+		if(numberBitSet.cardinality() > 0)
+			extractNumericDotEActualValues();
 	}
 
 	public Pair<Integer, Integer> findValue(Object value, Types.ValueType valueType){

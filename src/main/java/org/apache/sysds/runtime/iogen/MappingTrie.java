@@ -32,12 +32,17 @@ import java.util.stream.Collectors;
 public class MappingTrie {
 
 	private MappingTrieNode root;
-
 	private int keyLevel;
+	private boolean inALine;
 
 	public MappingTrie() {
-		root = new MappingTrieNode(MappingTrieNode.Type.INNER);
-		keyLevel = 0;
+		this.root = new MappingTrieNode(MappingTrieNode.Type.INNER);
+		this.keyLevel = 0;
+		this.inALine = true;
+	}
+
+	public void setInALine(boolean inALine) {
+		this.inALine = inALine;
 	}
 
 	public void insert(String word, int rowIndex) {
@@ -150,7 +155,7 @@ public class MappingTrie {
 						.sorted((o1, o2) -> o2.length() - o1.length()).collect(Collectors.toList());
 
 					for(String ssi : sortedList) {
-						if(keyLevel == 0) {
+						if(keyLevel == 0 && inALine) {
 							boolean flagBest = true;
 							for(String k : keys) {
 								if(!k.startsWith(ssi)) {

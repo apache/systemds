@@ -29,53 +29,26 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public enum IndexProperties {
 		IDENTIFY, PREFIX, KEY;
-
 		@Override public String toString() {
 			return this.name().toUpperCase();
 		}
 	}
 
-	private  ArrayList<String>[] colKeyPattern;
-	private HashSet<String>[] endWithValueString;
+	private ColKeyTrie[] colKeyPattern;
 	private Types.ValueType[] schema;
 	private IndexProperties rowIndex;
-	private IndexProperties colIndex;
 
-	public CustomProperties(ArrayList<String>[] colKeyPattern, HashSet<String>[] endWithValueString) {
+	public CustomProperties(ColKeyTrie[] colKeyPattern, IndexProperties rowIndex) {
 		this.colKeyPattern = colKeyPattern;
-		this.endWithValueString = endWithValueString;
-	}
-
-	public ArrayList<String>[] getColKeyPattern() {
-		return colKeyPattern;
-	}
-
-	public void setColKeyPattern(ArrayList<String>[] colKeyPattern) {
-		this.colKeyPattern = colKeyPattern;
-	}
-
-	public HashSet<String>[] getEndWithValueString() {
-		return endWithValueString;
-	}
-
-	public void setEndWithValueString(HashSet<String>[] endWithValueString) {
-		this.endWithValueString = endWithValueString;
-	}
-
-	public IndexProperties getRowIndex() {
-		return rowIndex;
-	}
-
-	public void setRowIndex(IndexProperties rowIndex) {
 		this.rowIndex = rowIndex;
 	}
 
-	public IndexProperties getColIndex() {
-		return colIndex;
+	public ColKeyTrie[] getColKeyPattern() {
+		return colKeyPattern;
 	}
 
-	public void setColIndex(IndexProperties colIndex) {
-		this.colIndex = colIndex;
+	public void setColKeyPattern(ColKeyTrie[] colKeyPattern) {
+		this.colKeyPattern = colKeyPattern;
 	}
 
 	public Types.ValueType[] getSchema() {
@@ -84,5 +57,13 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public void setSchema(Types.ValueType[] schema) {
 		this.schema = schema;
+	}
+
+	public IndexProperties getRowIndex() {
+		return rowIndex;
+	}
+
+	public void setRowIndex(IndexProperties rowIndex) {
+		this.rowIndex = rowIndex;
 	}
 }

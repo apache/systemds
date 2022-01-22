@@ -68,7 +68,7 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 		src.append("while((str = br.readLine()) != null){ \n");
 		src.append("strLen = str.length(); \n");
 
-		ArrayList<String>[] colKeyPattern = properties.getColKeyPattern();
+		ArrayList<String>[] colKeyPattern = null; //properties.getColKeyPattern();
 		CodeGenTrie trie= new CodeGenTrie();
 		for(int c=0; c< colKeyPattern.length; c++){
 			trie.insert(c, Types.ValueType.FP64, colKeyPattern[c]);

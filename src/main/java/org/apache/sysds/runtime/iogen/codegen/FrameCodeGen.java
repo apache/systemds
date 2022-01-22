@@ -71,7 +71,7 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 		src.append("String str = value.toString(); \n");
 		src.append("strLen = str.length(); \n");
 
-		ArrayList<String>[] colKeyPattern = properties.getColKeyPattern();
+		ArrayList<String>[] colKeyPattern = null;//properties.getColKeyPattern();
 		CodeGenTrie trie = new CodeGenTrie();
 		for(int c = 0; c < colKeyPattern.length; c++) {
 			trie.insert(c, properties.getSchema()[c], colKeyPattern[c]);

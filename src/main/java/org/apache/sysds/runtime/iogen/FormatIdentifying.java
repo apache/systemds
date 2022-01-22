@@ -25,13 +25,12 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.HashSet;
 
 public class FormatIdentifying {
 
 	private int[][] mapRow;
-	private int[] mapRowPrevious;
+	private int[]   mapRowPrevious;
 	private int[][] mapCol;
 	private int[][] mapLen;
 	private ArrayList<RawIndex> sampleRawIndexes;
@@ -41,22 +40,17 @@ public class FormatIdentifying {
 	private int nlines;
 	private int windowSize = 20;
 	private int suffixStringLength = 100;
-	private final boolean isMatrix;
-	private int colIndexBeginFrom;
-	private int rowIndexBeginFrom;
 	private ReaderMapping mappingValues;
 	private CustomProperties properties;
 
 
 	public FormatIdentifying(String raw, MatrixBlock matrix) throws Exception {
 		this.mappingValues = new ReaderMapping(raw, matrix);
-		this.isMatrix = true;
 		this.runIdentification();
 	}
 
 	public FormatIdentifying(String raw, FrameBlock frame) throws Exception {
 		this.mappingValues = new ReaderMapping(raw, frame);
-		this.isMatrix = false;
 		this.runIdentification();
 	}
 
@@ -96,37 +90,143 @@ public class FormatIdentifying {
 			}
 		}
 
-		ColKeyTrie[] colKeyPattern;
+		KeyTrie[] colKeyPattern;
 		if(isSingleRow){
 			colKeyPattern = buildColsKeyPatternSingleRow();
 			properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.IDENTIFY);
 		}else {
-			colKeyPattern = buildColsKeyPatternMultiRow();
-			// TODO: distinguish row index is prefix or key
-		}
-		int a = 100;
 
-		// Build a Key-Pattern foreach column
-//		Pair<ArrayList<String>[], HashSet<String>[]> patternPair = buildKeyPattern();
-//		properties = new CustomProperties(patternPair.getKey(), patternPair.getValue());
-//
-//		// Check the row index format
-//		//verifyColsAtAllLines(patternPair.getKey());
-//
-//		properties.setRowIndex(CustomProperties.IndexProperties.IDENTIFY);
+			// Check the row index is a prefix string in sample raw
+			// if the row indexes are in the prefix of values, so we need to build a key pattern
+			// to extract row indexes
+			// to understanding row indexes are in sample raw we check just 3 column of data
+			// for build a key pattern ro row indexes we just selected a row
+			boolean flag;
+			int numberOfSelectedCols = 3;
+			int begin = 0;
+			boolean check, flagReconstruct;
+			int selectedRowIndex = 1;
+			HashSet<Integer> beginPos = new HashSet<>();
+			KeyTrie rowKeyPattern = null;
+
+			for(int c=0; c< Math.min(numberOfSelectedCols, ncols); c++){
+				Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
+				ArrayList<String> prefixStrings = colPrefixString.getKey();
+				ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
+				ArrayList<RawIndex> prefixRawIndex = new ArrayList<>();
+
+				MappingTrie trie = new MappingTrie();
+				int ri = 0;
+				for(String ps: prefixStrings )
+					trie.reverseInsert(ps, prefixStringRowIndexes.get(ri++));
+
+
+				do {
+					flag = trie.reConstruct();
+				}while(flag);
+
+				ArrayList<ArrayList<String>> keyPatterns = trie.getAllSequentialKeys();
+				for(ArrayList<String> kp: keyPatterns){
+					for(String ps: prefixStrings){
+						StringBuilder sb = new StringBuilder();
+						int currPos = 0;
+						for(String k: kp){
+							sb.append(ps.substring(currPos, ps.indexOf(k, currPos)));
+							currPos += sb.length() + k.length();
+						}
+						prefixRawIndex.add(new RawIndex(sb.toString()));
+					}
+				}
+
+				 flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
+				if(!flag) {
+					begin = 1;
+					flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
+				}
+				if(!flag) {
+					beginPos.clear();
+					break;
+				}
+				else
+					beginPos.add(begin);
+				if(c== numberOfSelectedCols -1){
+					ArrayList<String> rowPrefixStrings = new ArrayList<>();
+					MappingTrie rowTrie = new MappingTrie();
+					rowKeyPattern = new KeyTrie();
+					for(int ci = 0; c < ncols; c++) {
+						int cri = mapRow[selectedRowIndex][c];
+						if(cri != -1) {
+							String str = sampleRawIndexes.get(cri).getSubString(0, mapCol[selectedRowIndex][ci]);
+							RawIndex rawIndex = new RawIndex(str);
+							Pair<Integer,Integer> pair = rawIndex.findValue(selectedRowIndex+begin);
+							if(pair!=null) {
+								String pstr = str.substring(0, pair.getKey());
+								if(pstr.length() > 0) {
+									rowPrefixStrings.add(pstr);
+									rowTrie.insert(pstr, 1);
+								}
+								rowKeyPattern.insertSuffixKeys(str.substring(pair.getKey()+pair.getValue()).toCharArray());
+							}
+						}
+					}
+
+					do {
+						keyPatterns = rowTrie.getAllSequentialKeys();
+						check = false;
+						for(ArrayList<String> keyPattern : keyPatterns) {
+							boolean newCheck = checkKeyPatternIsUnique(rowPrefixStrings, keyPattern);
+							check |= newCheck;
+						}
+						if(!check){
+							flagReconstruct = trie.reConstruct();
+							if(!flagReconstruct)
+								break;
+						}
+					}while(!check);
+
+					rowKeyPattern.setPrefixKeyPattern(keyPatterns);
+				}
+			}
+
+			if(beginPos.size() == 1){
+				colKeyPattern = buildColsKeyPatternSingleRow();
+				properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.PREFIX, rowKeyPattern);
+			}
+			else {
+				colKeyPattern = buildColsKeyPatternMultiRow();
+				properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.KEY);
+			}
+		}
+	}
+
+	private boolean checkPrefixRowIndex(int colIndex, int beginPos, ArrayList<RawIndex> prefixRawIndex){
+		for(int r=0;r<nrows; r++){
+			int rowIndex = this.mapRow[r][colIndex];
+			if(rowIndex!=-1){
+				boolean flag = false;
+				for(RawIndex ri: prefixRawIndex) {
+					if(ri.findValue(r+ beginPos) != null) {
+						flag = true;
+						break;
+					}
+				}
+				if(!flag)
+					return false;
+			}
+		}
+		return true;
 	}
 
 	public CustomProperties getFormatProperties() {
 		return properties;
 	}
 
-	private ColKeyTrie[] buildColsKeyPatternSingleRow() {
+	private KeyTrie[] buildColsKeyPatternSingleRow() {
 		Pair<ArrayList<String>[], ArrayList<Integer>[]> prefixStrings = extractAllPrefixStringsOfColsSingleLine(false);
 		ArrayList<String>[] suffixStrings = extractAllSuffixStringsOfColsSingleLine();
-		ColKeyTrie[] colKeyPattens = new ColKeyTrie[ncols];
+		KeyTrie[] colKeyPattens = new KeyTrie[ncols];
 
 		for(int c=0; c<ncols; c++) {
-
 			MappingTrie trie = new MappingTrie();
 			int ri = 0;
 			for(String ps: prefixStrings.getKey()[c])
@@ -151,36 +251,13 @@ public class FormatIdentifying {
 			}while(!check);
 
 			if(check){
-				colKeyPattens[c] = new ColKeyTrie(keyPatterns);
+				colKeyPattens[c] = new KeyTrie(keyPatterns);
 				for(String suffix: suffixStrings[c]) {
 					colKeyPattens[c].insertSuffixKeys(suffix.substring(0,Math.min(suffixStringLength, suffix.length())).toCharArray());
 				}
 			}
 		}
 		return colKeyPattens;
-//
-//		///////////////////////////////////////////////////////
-//
-//		Pair<ArrayList<String>[], Pair<Integer, Integer>[]> prefixStrings = extractAllPrefixStringsOfCols(true);
-//		ArrayList<String>[] suffixStrings = extractAllSuffixStringsOfCols();
-//
-//		ColKeyTrie[] colKeyPattens = new ColKeyTrie[ncols];
-//
-//		ColKeyTrie[] colKeys = new ArrayList[ncols];
-//		HashSet<String>[] colKeyEndWithValueStrings = new HashSet[ncols];
-//
-//		// --------------------------------------
-//		for(int c = 0; c < ncols; c++) {
-//			Pair<ArrayList<String>, HashSet<String>> pair = buildKeyPatternForAColumn(c, mapRowPrevious[c]);
-//			if(pair != null) {
-//				colKeys[c] = pair.getKey();
-//				colKeyEndWithValueStrings[c] = pair.getValue();
-//			}
-//			else {
-//				return null;
-//			}
-//		}
-//		return new Pair<>(colKeys, colKeyEndWithValueStrings);
 	}
 
 	// Get all prefix strings of a column
@@ -188,21 +265,26 @@ public class FormatIdentifying {
 		ArrayList<String>[] prefixStrings = new ArrayList[ncols];
 		ArrayList<Integer>[] rowIndexes = new ArrayList[ncols];
 		for(int c=0; c< ncols; c++){
-			ArrayList<Integer> ri = new ArrayList<>();
-			ArrayList<String> prefixString = new ArrayList<>();
-			for(int r=0; r<nrows; r++){
-				int rowIndex = mapRow[r][c];
-				if(rowIndex!=-1){
-					ri.add(rowIndex);
-					String str = sampleRawIndexes.get(rowIndex).getSubString(0, mapCol[r][c]);
-					if(reverse)
-						prefixString.add(new StringBuilder(str).reverse().toString());
-					else
-						prefixString.add(str);
-				}
+			Pair<ArrayList<String>, ArrayList<Integer>> pair = extractAllPrefixStringsOfAColSingleLine(c, reverse);
+			prefixStrings[c] = pair.getKey();
+			rowIndexes[c] = pair.getValue();
+		}
+		return new Pair<>(prefixStrings, rowIndexes);
+	}
+
+	public Pair<ArrayList<String>, ArrayList<Integer>> extractAllPrefixStringsOfAColSingleLine(int colIndex, boolean reverse) {
+		ArrayList<String> prefixStrings = new ArrayList();
+		ArrayList<Integer> rowIndexes = new ArrayList();
+		for(int r = 0; r < nrows; r++) {
+			int rowIndex = mapRow[r][colIndex];
+			if(rowIndex != -1) {
+				rowIndexes.add(rowIndex);
+				String str = sampleRawIndexes.get(rowIndex).getSubString(0, mapCol[r][colIndex]);
+				if(reverse)
+					prefixStrings.add(new StringBuilder(str).reverse().toString());
+				else
+					prefixStrings.add(str);
 			}
-			prefixStrings[c] = prefixString;
-			rowIndexes[c] = ri;
 		}
 		return new Pair<>(prefixStrings, rowIndexes);
 	}
@@ -220,74 +302,6 @@ public class FormatIdentifying {
 			}
 		}
 		return result;
-	}
-
-	// Validate a key in a row of sample raw data
-	private HashSet<String> verifyColKeyInALine(int colIndex, int pLines, ArrayList<String> key) {
-		boolean flag = true;
-		HashSet<String> endWithValueString = new HashSet<>();
-		for(int r = 0; r < nrows; r++) {
-			int rowIndex = mapRow[r][colIndex];
-			if(rowIndex != -1) {
-				Pair<String, Integer> pair = getPreviousLines(rowIndex - pLines, rowIndex);
-				int currPos = 0;
-				for(String k : key) {
-					int index = pair.getKey().indexOf(k, currPos);
-					if(index != -1)
-						currPos = index + k.length();
-					else {
-						flag = false;
-						break;
-					}
-				}
-				int endDelimPos = pair.getValue() + mapCol[r][colIndex] + mapLen[r][colIndex];
-				endWithValueString.add(pair.getKey().substring(endDelimPos, Math.min(endDelimPos + 1, pair.getKey().length())));
-				if(!flag || currPos != pair.getValue() + mapCol[r][colIndex]) {
-					return null;
-				}
-			}
-		}
-		if(endWithValueString.size() == 0)
-			return null;
-		return endWithValueString;
-	}
-
-	// Check the row index pattern of columns
-	private void verifyColsAtAllLines(ArrayList<String>[] colKeyPattern){
-		Pair<HashSet<Integer>, HashSet<Integer>>[] colsRowsLineNumbers = new Pair[ncols];
-
-		boolean isRowIdentified = true;
-
-		HashSet<Integer> allCoveredLines = new HashSet<>();
-		ArrayList<Integer> colCandidatesForRowKey = new ArrayList<>();
-
-		for(int c = 0; c < ncols; c++){
-			Pair<HashSet<Integer>, HashSet<Integer>> colRowLineNumbers = verifyColKeyAtAllLines(c, colKeyPattern[c], mapRowPrevious[c]);
-			if(colRowLineNumbers != null) {
-				colsRowsLineNumbers[c] = colRowLineNumbers;
-				allCoveredLines.addAll(colRowLineNumbers.getKey());
-				if(colRowLineNumbers.getValue().size() == nrows)
-					colCandidatesForRowKey.add(c);
-			}
-			else {
-				// We have to find new key for column
-				isRowIdentified = false;
-				// *****************************************************************************************
-				//buildKeyPatternForAColumn()
-			}
-		}
-		isRowIdentified = allCoveredLines.size() == nrows | isRowIdentified;
-
-		// 1. find an interested col as a key. The prerequisite is all values have to be not null
-		if(colCandidatesForRowKey.size() > 0){
-
-		}
-		else {
-			// Here we have to find a hidden key
-		}
-
-
-
 	}
 
 	// Check the sequential list of keys are on a string
@@ -317,36 +331,6 @@ public class FormatIdentifying {
 		return new Pair<>(str, str.length() - sampleRawIndexes.get(endLine).getRawLength());
 	}
 
-	// Check the row index pattern of a column
-	private Pair<HashSet<Integer>, HashSet<Integer>> verifyColKeyAtAllLines(int colIndex, ArrayList<String> key, int pLines) {
-		HashSet<Integer> lineNumbers = new HashSet<>();
-		HashSet<Integer> rowNumbers = new HashSet<>();
-		HashMap<Integer, Integer> mapColRow = new HashMap<>();
-		for(int r = 0; r < nrows; r++) {
-			int lineNumber = mapRow[r][colIndex];
-			if(lineNumber != -1) {
-				mapColRow.put(lineNumber, mapCol[r][colIndex]);
-				rowNumbers.add(r);
-			}
-		}
-
-		for(int l = 0; l < nlines; l++) {
-			boolean flag = true;
-			Pair<String, Integer> pair = getPreviousLines(l - pLines, l);
-			int index = getIndexOfKeysOnString(pair.getKey(), key, 0);
-			if(index != -1) {
-				if(mapColRow.containsKey(l) && mapColRow.get(l) == index - pair.getValue())
-					lineNumbers.add(l);
-				else
-					flag = false;
-			}
-			if(!flag)
-				return null;
-		}
-		return new Pair<>(lineNumbers, rowNumbers);
-	}
-
-
 	/////////////////////////////////////////////////////////////////////////////
 	//                    Methods For Multi Lines Mapping                     //
 	////////////////////////////////////////////////////////////////////////////
@@ -357,11 +341,11 @@ public class FormatIdentifying {
 	// 3. Build key pattern for end of values
 
 	// Build key pattern tree for each column
-	private ColKeyTrie[] buildColsKeyPatternMultiRow(){
+	private KeyTrie[] buildColsKeyPatternMultiRow(){
 		Pair<ArrayList<String>[], Pair<Integer, Integer>[]> prefixStrings = extractAllPrefixStringsOfColsMultiLine(true);
 		ArrayList<String>[] suffixStrings = extractAllSuffixStringsOfColsMultiLine();
 
-		ColKeyTrie[] colKeyPattens = new ColKeyTrie[ncols];
+		KeyTrie[] colKeyPattens = new KeyTrie[ncols];
 		for(int c=0; c<ncols; c++){
 			// 1. Build Prefix Key Pattern
 			String colDelim = findStartWithIntersectOfStrings(prefixStrings.getKey()[c], prefixStrings.getValue()[c].getKey());
@@ -369,7 +353,7 @@ public class FormatIdentifying {
 			HashSet<String> intersect = new HashSet<>();
 			intersect.add(colDelim);
 
-			ColKeyTrie trie = new ColKeyTrie(colDelim);
+			KeyTrie trie = new KeyTrie(colDelim);
 			ArrayList<Pair<ArrayList<String>, ArrayList<String>>> remainedPrefixes = new ArrayList<>();
 			boolean check;
 			do {

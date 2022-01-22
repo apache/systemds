@@ -22,8 +22,6 @@ package org.apache.sysds.runtime.iogen;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
 
 public class CustomProperties extends FileFormatProperties implements Serializable {
 
@@ -34,20 +32,27 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		}
 	}
 
-	private ColKeyTrie[] colKeyPattern;
+	private KeyTrie[] colKeyPattern;
 	private Types.ValueType[] schema;
 	private IndexProperties rowIndex;
+	private KeyTrie rowKeyPattern;
 
-	public CustomProperties(ColKeyTrie[] colKeyPattern, IndexProperties rowIndex) {
+	public CustomProperties(KeyTrie[] colKeyPattern, IndexProperties rowIndex) {
 		this.colKeyPattern = colKeyPattern;
 		this.rowIndex = rowIndex;
 	}
 
-	public ColKeyTrie[] getColKeyPattern() {
+	public CustomProperties(KeyTrie[] colKeyPattern, IndexProperties rowIndex, KeyTrie rowKeyPattern) {
+		this.colKeyPattern = colKeyPattern;
+		this.rowIndex = rowIndex;
+		this.rowKeyPattern = rowKeyPattern;
+	}
+
+	public KeyTrie[] getColKeyPattern() {
 		return colKeyPattern;
 	}
 
-	public void setColKeyPattern(ColKeyTrie[] colKeyPattern) {
+	public void setColKeyPattern(KeyTrie[] colKeyPattern) {
 		this.colKeyPattern = colKeyPattern;
 	}
 

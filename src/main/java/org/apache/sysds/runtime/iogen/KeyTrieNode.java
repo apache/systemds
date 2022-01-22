@@ -23,19 +23,19 @@ package org.apache.sysds.runtime.iogen;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ColKeyTrieNode {
-	private final Map<String, ColKeyTrieNode> children;
+public class KeyTrieNode {
+	private final Map<String, KeyTrieNode> children;
 	private String key;
 	private boolean check;
 	private int count;
 
-	public ColKeyTrieNode() {
+	public KeyTrieNode() {
 		this.children = new HashMap<>();
 		this.check = false;
 		this.count = 1;
 	}
 
-	public ColKeyTrieNode(String key) {
+	public KeyTrieNode(String key) {
 		this.children = new HashMap<>();
 		this.key = key;
 		this.check = false;
@@ -46,7 +46,7 @@ public class ColKeyTrieNode {
 		this.count++;
 	}
 
-	public Map<String, ColKeyTrieNode> getChildren() {
+	public Map<String, KeyTrieNode> getChildren() {
 		return children;
 	}
 

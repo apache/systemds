@@ -34,6 +34,7 @@ public class MappingTrie {
 	private MappingTrieNode root;
 	private int keyLevel;
 	private boolean inALine;
+	private int windowSize = 50;
 
 	public MappingTrie() {
 		this.root = new MappingTrieNode(MappingTrieNode.Type.INNER);
@@ -95,7 +96,7 @@ public class MappingTrie {
 		if(sb.length() == 1)
 			result.add(sb.toString());
 		else {
-			for(int j = 1; j <= sb.length(); j++) {
+			for(int j = 1; j <= Math.min(sb.length(), windowSize); j++) {
 				for(int k = 0; k <= sb.length() - j; k++) {
 					result.add(sb.substring(k, k + j));
 				}

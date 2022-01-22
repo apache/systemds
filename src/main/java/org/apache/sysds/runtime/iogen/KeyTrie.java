@@ -23,25 +23,31 @@ package org.apache.sysds.runtime.iogen;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-public class ColKeyTrie {
+public class KeyTrie {
 
-	private ColKeyTrieNode rootPrefixKeys;
-	private ColKeyTrieNode rootSuffixKeys;
+	private KeyTrieNode rootPrefixKeys;
+	private KeyTrieNode rootSuffixKeys;
 	private ArrayList<ArrayList<String>> prefixKeyPattern;
 
-	public ColKeyTrie(ArrayList<ArrayList<String>> prefixKeyPattern) {
-		this.rootPrefixKeys = new ColKeyTrieNode("RootPrefixKeys");
-		this.rootSuffixKeys = new ColKeyTrieNode("RootSuffixKeys");
+	public KeyTrie() {
+		this.rootPrefixKeys = new KeyTrieNode("RootPrefixKeys");
+		this.rootSuffixKeys = new KeyTrieNode("RootSuffixKeys");
+		this.prefixKeyPattern = null;
+	}
+
+	public KeyTrie(ArrayList<ArrayList<String>> prefixKeyPattern) {
+		this.rootPrefixKeys = new KeyTrieNode("RootPrefixKeys");
+		this.rootSuffixKeys = new KeyTrieNode("RootSuffixKeys");
 		this.prefixKeyPattern = prefixKeyPattern;
 	}
 
-	public ColKeyTrie(String colDelim) {
-		this.rootPrefixKeys = new ColKeyTrieNode("RootPrefixKeys");
-		this.rootSuffixKeys = new ColKeyTrieNode("RootSuffixKeys");
+	public KeyTrie(String colDelim) {
+		this.rootPrefixKeys = new KeyTrieNode("RootPrefixKeys");
+		this.rootSuffixKeys = new KeyTrieNode("RootSuffixKeys");
 		this.prefixKeyPattern = null;
 
-		ColKeyTrieNode newNode;
-		newNode = new ColKeyTrieNode(colDelim);
+		KeyTrieNode newNode;
+		newNode = new KeyTrieNode(colDelim);
 		this.rootPrefixKeys.getChildren().put(colDelim, newNode);
 	}
 
@@ -61,7 +67,7 @@ public class ColKeyTrie {
 	}
 
 	public void setAPrefixPath(ArrayList<String> keys) {
-		ColKeyTrieNode currentNode = rootPrefixKeys;
+		KeyTrieNode currentNode = rootPrefixKeys;
 		for(String key : keys) {
 			if(currentNode.getChildren().containsKey(key)) {
 				currentNode = currentNode.getChildren().get(key);
@@ -70,8 +76,8 @@ public class ColKeyTrie {
 		}
 	}
 
-	private void insertKeys(ArrayList<String> keys, ColKeyTrieNode root) {
-		ColKeyTrieNode currentNode = root;
+	private void insertKeys(ArrayList<String> keys, KeyTrieNode root) {
+		KeyTrieNode currentNode = root;
 		int index = 0;
 		for(String key : keys) {
 			if(currentNode.getChildren().containsKey(key)) {
@@ -84,9 +90,9 @@ public class ColKeyTrie {
 				break;
 		}
 
-		ColKeyTrieNode newNode;
+		KeyTrieNode newNode;
 		for(int i = index; i < keys.size(); i++) {
-			newNode = new ColKeyTrieNode(keys.get(i));
+			newNode = new KeyTrieNode(keys.get(i));
 			currentNode.getChildren().put(keys.get(i), newNode);
 			currentNode = newNode;
 		}
@@ -102,7 +108,7 @@ public class ColKeyTrie {
 	public ArrayList<ArrayList<String>> getSuffixKeyPatterns() {
 		ArrayList<ArrayList<String>> result = new ArrayList<>();
 		for(String k : rootSuffixKeys.getChildren().keySet()) {
-			ColKeyTrieNode node = rootSuffixKeys.getChildren().get(k);
+			KeyTrieNode node = rootSuffixKeys.getChildren().get(k);
 			ArrayList<String> nk = new ArrayList<>();
 			nk.add(k);
 			int maxCount = node.getCount();
@@ -111,13 +117,13 @@ public class ColKeyTrie {
 		return result;
 	}
 
-	private ArrayList<ArrayList<String>> getKeyPatterns(ColKeyTrieNode root) {
+	private ArrayList<ArrayList<String>> getKeyPatterns(KeyTrieNode root) {
 		ArrayList<ArrayList<String>> result = new ArrayList<>();
 		getKeyPatterns(root, result, new ArrayList<>());
 		return result;
 	}
 
-	private void getKeyPatterns(ColKeyTrieNode node, ArrayList<ArrayList<String>> result, ArrayList<String> nodeKeys) {
+	private void getKeyPatterns(KeyTrieNode node, ArrayList<ArrayList<String>> result, ArrayList<String> nodeKeys) {
 
 		if(node.getChildren().size() == 0) {
 			result.add(nodeKeys);
@@ -125,7 +131,7 @@ public class ColKeyTrie {
 		}
 		else {
 			for(String k : node.getChildren().keySet()) {
-				ColKeyTrieNode child = node.getChildren().get(k);
+				KeyTrieNode child = node.getChildren().get(k);
 				ArrayList<String> tmpKeys = new ArrayList<>();
 				tmpKeys.addAll(nodeKeys);
 				tmpKeys.add(k);
@@ -134,12 +140,12 @@ public class ColKeyTrie {
 		}
 	}
 
-	private void getKeyPatterns2(ColKeyTrieNode node, ArrayList<ArrayList<String>> result, ArrayList<String> nodeKeys,
+	private void getKeyPatterns2(KeyTrieNode node, ArrayList<ArrayList<String>> result, ArrayList<String> nodeKeys,
 		int maxCount) {
 
 		if(node.getChildren().size() == 1 && node.getCount() == maxCount) {
 			String k = node.getChildren().keySet().iterator().next();
-			ColKeyTrieNode child = node.getChildren().get(k);
+			KeyTrieNode child = node.getChildren().get(k);
 			ArrayList<String> tmpKeys = new ArrayList<>();
 			tmpKeys.addAll(nodeKeys);
 			tmpKeys.add(k);
@@ -154,18 +160,22 @@ public class ColKeyTrie {
 		insertPrefixKeysConcurrent(rootPrefixKeys, keys);
 	}
 
-	private void insertPrefixKeysConcurrent(ColKeyTrieNode node, HashSet<String> keys) {
+	private void insertPrefixKeysConcurrent(KeyTrieNode node, HashSet<String> keys) {
 		if(node.getChildren().size() == 0) {
 			for(String k : keys) {
-				ColKeyTrieNode newNode = new ColKeyTrieNode(k);
+				KeyTrieNode newNode = new KeyTrieNode(k);
 				node.getChildren().put(k, newNode);
 			}
 		}
 		else {
 			for(String childKey : node.getChildren().keySet()) {
-				ColKeyTrieNode child = node.getChildren().get(childKey);
+				KeyTrieNode child = node.getChildren().get(childKey);
 				insertPrefixKeysConcurrent(child, keys);
 			}
 		}
+	}
+
+	public void setPrefixKeyPattern(ArrayList<ArrayList<String>> prefixKeyPattern) {
+		this.prefixKeyPattern = prefixKeyPattern;
 	}
 }

@@ -31,7 +31,7 @@ import org.apache.sysds.api.DMLScript;
  * ExecutionContextMap (ECM) so that every coordinator can address federated
  * variables with its own local sequential variable IDs. Therefore, the IDs
  * among different coordinators do not have to be distinct, as every
- * coordinator works with a seperate ECM at the FederatedWorker.
+ * coordinator works with a separate ECM at the FederatedWorker.
  */
 public class FederatedLookupTable {
 	// the NOHOST constant is needed for creating FederatedLocalData where there

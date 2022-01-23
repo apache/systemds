@@ -57,7 +57,7 @@ public class CompilerConfig
 		//statement blocks / program blocks. Since recompilation is done on the granularity 
 		//of program blocks this enables recompilation of subsequent operations according
 		//to the actual output size. This rewrite might limit the opportunity for piggybacking 
-		//and therefore should only be applied if dyanmic recompilation is enabled as well.
+		//and therefore should only be applied if dynamic recompilation is enabled as well.
 		ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS,
 		//Enables common subexpression elimination in dags for persistent reads based on 
 		//filenames and other relevant read meta data. Disabled for jmlc to allow binding of 

@@ -38,7 +38,7 @@ public class FederatedLookupTable {
 	// is no actual network connection (and hence no host either)
 	public static final String NOHOST = "nohost";
 
-	protected static Logger log = Logger.getLogger(FederatedLookupTable.class);
+	private static final Logger LOG = Logger.getLogger(FederatedLookupTable.class);
 
 	// stores the mapping between the funCID and the corresponding ExecutionContextMap
 	private final Map<FedUniqueCoordID, ExecutionContextMap> _lookup_table;
@@ -57,13 +57,13 @@ public class FederatedLookupTable {
 	 * @return ExecutionContextMap the ECM corresponding to the requesting coordinator
 	 */
 	public ExecutionContextMap getECM(String host, long pid) {
-		log.trace("Getting the ExecutionContextMap for coordinator " + pid + "@" + host);
+		LOG.trace("Getting the ExecutionContextMap for coordinator " + pid + "@" + host);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		FedUniqueCoordID funCID = new FedUniqueCoordID(host, pid);
 		ExecutionContextMap ecm = _lookup_table.computeIfAbsent(funCID,
 			k -> createNewECM());
 		if(ecm == null) {
-			log.error("Computing federated execution context map failed. "
+			LOG.error("Computing federated execution context map failed. "
 				+ "No valid resolution for " + funCID.toString() + " found.");
 			throw new FederatedWorkerHandlerException("Computing federated execution context map failed. "
 				+ "No valid resolution for " + funCID.toString() + " found.");

@@ -132,7 +132,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 				+ ", is a scalar and the output is set to be federated. Scalars cannot be federated. ");
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, true);
-		map.execute(getTID(), fr1);
+		map.execute(getTID(), true, fr1);
 
 		MatrixObject out = ec.getMatrixObject(output);
 		deriveNewOutputFedMapping(in, out, fr1);

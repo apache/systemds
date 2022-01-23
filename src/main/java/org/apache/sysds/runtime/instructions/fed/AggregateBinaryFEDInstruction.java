@@ -80,7 +80,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);
 
 			if ( _fedOut.isForcedFederated() ){
-				mo1.getFedMapping().execute(getTID(), fr1);
+				mo1.getFedMapping().execute(getTID(), true, fr1);
 				setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr1.getID(), ec);
 			}
 			else {

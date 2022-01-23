@@ -76,6 +76,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private static final Logger LOG = Logger.getLogger(FederatedWorkerHandler.class);
 
 	private final FederatedLookupTable _flt;
+	private final FederatedReadCache _frc;
 
 	/**
 	 * Create a Federated Worker Handler.
@@ -85,8 +86,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	 * 
 	 * @param flt The Federated Lookup Table of the current Federated Worker.
 	 */
-	public FederatedWorkerHandler(FederatedLookupTable flt) {
+	public FederatedWorkerHandler(FederatedLookupTable flt, FederatedReadCache frc) {
 		_flt = flt;
+		_frc = frc;
 	}
 
 	@Override
@@ -241,7 +243,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			// early throwing of exception to avoid infinitely waiting threads for data
 			throw new FederatedWorkerHandlerException("Could not recognize datatype");
 
-		CacheableData<?> cd = FederatedReadCache.get(filename);
+		CacheableData<?> cd = _frc.get(filename);
 		if(cd == null) {
 			try {
 				switch(dataType) {
@@ -297,9 +299,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 						DataExpression.DEFAULT_DELIM_SPARSE));
 				cd.enableCleanup(false); // guard against deletion
 
-				FederatedReadCache.setData(filename, cd);
+				_frc.setData(filename, cd);
 			} catch(Exception ex) {
-				FederatedReadCache.setInvalid(filename);
+				_frc.setInvalid(filename);
 				throw ex;
 			}
 		}

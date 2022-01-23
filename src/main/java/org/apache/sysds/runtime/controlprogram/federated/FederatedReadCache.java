@@ -28,10 +28,9 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 
 public class FederatedReadCache {
-
 	private static final Logger LOG = Logger.getLogger(FederatedReadCache.class);
 
-	private static Map<String, ReadCacheEntry> _rmap = new ConcurrentHashMap<>();
+	private Map<String, ReadCacheEntry> _rmap = new ConcurrentHashMap<>();
 
 	/**
 	 * Get the data from the ReadCacheEntry corresponding to the specified
@@ -42,7 +41,7 @@ public class FederatedReadCache {
 	 * @param fname the filename of the read data
 	 * @return the CacheableData object if it is cached, otherwise null
 	 */
-	public static CacheableData<?> get(String fname) {
+	public CacheableData<?> get(String fname) {
 		ReadCacheEntry tmp = _rmap.putIfAbsent(fname, new ReadCacheEntry());
 		return (tmp != null) ? tmp.get() : null;
 	}
@@ -53,7 +52,7 @@ public class FederatedReadCache {
 	 * @param fname the filename of the read data
 	 * @param data the CacheableData object for setting the ReadCacheEntry
 	 */
-	public static void setData(String fname, CacheableData<?> data) {
+	public void setData(String fname, CacheableData<?> data) {
 		LOG.trace("Setting the data for the ReadCacheEntry of file " + fname);
 		ReadCacheEntry rce = _rmap.get(fname);
 		if(rce == null)
@@ -67,7 +66,7 @@ public class FederatedReadCache {
 	 *
 	 * @param fname the filename of the read data
 	 */
-	public static void setInvalid(String fname) {
+	public void setInvalid(String fname) {
 		LOG.debug("Read of file " + fname + " failed. Setting the corresponding ReadCacheEntry to invalid.");
 		ReadCacheEntry rce = _rmap.get(fname);
 		if(rce == null)

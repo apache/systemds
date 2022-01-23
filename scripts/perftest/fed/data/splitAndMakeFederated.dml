@@ -31,6 +31,7 @@ nSplit = $nSplit;
 transposed = ifdef($transposed, FALSE);
 target = ifdef($target, data + "_fed.json");
 fmt = ifdef($fmt, "text");
+hostOffset = ifdef($hostOffset, 0);
 
 if(transposed) # for column partitions we simply transpose the data before splitting
   X = t(X);
@@ -50,7 +51,8 @@ for (counter in 1:nSplit) {
   X_part = X[beginDim:endDim, ]; # select the partition from the dataset
   write(X_part, data + counter, format=fmt); # write the partition to disk
   # collect the addresses and ranges for creating a federated object
-  addresses = append(addresses, as.scalar(hosts[counter]) + "/" + data + counter);
+  hostIX = counter + hostOffset;
+  addresses = append(addresses, as.scalar(hosts[hostIX]) + "/" + data + counter);
   if(transposed) {
     ranges = append(ranges, list(0, beginDim - 1));
     ranges = append(ranges, list(M, endDim));

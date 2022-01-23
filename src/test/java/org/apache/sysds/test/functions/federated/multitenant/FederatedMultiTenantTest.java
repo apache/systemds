@@ -19,26 +19,22 @@
 
 package org.apache.sysds.test.functions.federated.multitenant;
 
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
+import java.lang.Math;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 
-import org.apache.commons.io.IOUtils;
+import static org.junit.Assert.fail;
+
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -47,7 +43,7 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedMultiTenantTest extends AutomatedTestBase {
+public class FederatedMultiTenantTest extends MultiTenantTestBase {
 	private final static String TEST_NAME = "FederatedMultiTenantTest";
 
 	private final static String TEST_DIR = "functions/federated/multitenant/";
@@ -71,9 +67,6 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 				// {1000, 100, true},
 		});
 	}
-
-	private ArrayList<Process> workerProcesses = new ArrayList<>();
-	private ArrayList<Process> coordinatorProcesses = new ArrayList<>();
 
 	private enum OpType {
 		SUM,
@@ -105,6 +98,7 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testSumSharedWorkersSP() {
 		runMultiTenantSharedWorkerTest(OpType.SUM, 3, 9, ExecMode.SPARK);
 	}
@@ -116,6 +110,7 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testParforSumSharedWorkersCP() {
 		runMultiTenantSharedWorkerTest(OpType.PARFOR_SUM, 3, 9, ExecMode.SINGLE_NODE);
 	}
@@ -149,17 +144,9 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testWSigmoidSharedWorkersSP() {
 		runMultiTenantSharedWorkerTest(OpType.WSIGMOID, 3, 9, ExecMode.SPARK);
-	}
-
-	// ensure that the processes are killed - even if the test throws an exception
-	@After
-	public void stopAllProcesses() {
-		for(Process p : coordinatorProcesses)
-			p.destroyForcibly();
-		for(Process p : workerProcesses)
-			p.destroyForcibly();
 	}
 
 	private void runMultiTenantSameWorkerTest(OpType opType, int numCoordinators, ExecMode execMode) {
@@ -206,17 +193,20 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 		// start the coordinator processes
 		String scriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "100", "-fedStats", "100", "-nvargs",
-			"in_X1=" + TestUtils.federatedAddress(workerPorts[0], input("X1")),
-			"in_X2=" + TestUtils.federatedAddress(workerPorts[1], input("X2")),
-			"in_X3=" + TestUtils.federatedAddress(workerPorts[2], input("X3")),
-			"in_X4=" + TestUtils.federatedAddress(workerPorts[3], input("X4")),
+			"in_X1=" + TestUtils.federatedAddress(workerPorts[0], ""),
+			"in_X2=" + TestUtils.federatedAddress(workerPorts[1], ""),
+			"in_X3=" + TestUtils.federatedAddress(workerPorts[2], ""),
+			"in_X4=" + TestUtils.federatedAddress(workerPorts[3], ""),
+			"in=" + (baseDirectory+INPUT_DIR),
 			"rows=" + rows, "cols=" + cols, "testnum=" + Integer.toString(opType.ordinal()),
 			"rP=" + Boolean.toString(rowPartitioned).toUpperCase()};
 		for(int counter = 0; counter < numCoordinators; counter++)
-			coordinatorProcesses.add(startCoordinator(execMode, scriptName,
-				ArrayUtils.addAll(programArgs, "out_S=" + output("S" + counter))));
+			startCoordinator(execMode, scriptName,
+				ArrayUtils.addAll(programArgs, "out_S=" + output("S" + counter)));
 
-		joinCoordinatorsAndVerify(opType, execMode);
+		// wait for the coordinator processes to end and verify the results
+		String coordinatorOutput = waitForCoordinators();
+		verifyResults(opType, coordinatorOutput, execMode);
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
@@ -287,10 +277,13 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 				"in_X4=" + TestUtils.federatedAddress(workerPorts[workerIndexOffset + 3], input("X4")),
 				"rows=" + rows, "cols=" + cols, "testnum=" + Integer.toString(opType.ordinal()),
 				"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S" + counter)};
-			coordinatorProcesses.add(startCoordinator(execMode, scriptName, programArgs));
+			startCoordinator(execMode, scriptName, programArgs);
 		}
 
-		joinCoordinatorsAndVerify(opType, execMode);
+		// wait for the coordinator processes to end and verify the results
+		String coordinatorOutput = waitForCoordinators();
+		System.out.println(coordinatorOutput);
+		verifyResults(opType, coordinatorOutput, execMode);
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
@@ -304,78 +297,8 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}
 
-	private int[] startFedWorkers(int numFedWorkers) {
-		int[] ports = new int[numFedWorkers];
-		for(int counter = 0; counter < numFedWorkers; counter++) {
-			ports[counter] = getRandomAvailablePort();
-			@SuppressWarnings("deprecation")
-			Process tmpProcess = startLocalFedWorker(ports[counter]);
-			workerProcesses.add(tmpProcess);
-		}
-		return ports;
-	}
-
-	private Process startCoordinator(ExecMode execMode, String scriptPath, String[] args) {
-		String separator = System.getProperty("file.separator");
-		String classpath = System.getProperty("java.class.path");
-		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-
-		String em = null;
-		switch(execMode) {
-			case SINGLE_NODE:
-			em = "singlenode";
-			break;
-			case HYBRID:
-			em = "hybrid";
-			break;
-			case SPARK:
-			em = "spark";
-			break;
-		}
-
-		ArrayList<String> argsList = new ArrayList<>();
-		argsList.add("-f");
-		argsList.add(scriptPath);
-		argsList.add("-exec");
-		argsList.add(em);
-		argsList.addAll(Arrays.asList(args));
-
-		ProcessBuilder processBuilder = new ProcessBuilder(ArrayUtils.addAll(new String[]{
-			path, "-cp", classpath, DMLScript.class.getName()}, argsList.toArray(new String[0])));
-		
-		Process process = null;
-		try {
-			process = processBuilder.start();
-		} catch(IOException ioe) {
-			ioe.printStackTrace();
-		}
-		
-		return process;
-	}
-
-	private void joinCoordinatorsAndVerify(OpType opType, ExecMode execMode) {
-		// join the coordinator processes
-		for(int counter = 0; counter < coordinatorProcesses.size(); counter++) {
-			Process coord = coordinatorProcesses.get(counter);
-			
-			//wait for process, but obtain logs before to avoid blocking
-			String outputLog = null, errorLog = null;
-			try {
-				outputLog = IOUtils.toString(coord.getInputStream(), Charset.defaultCharset());
-				errorLog = IOUtils.toString(coord.getErrorStream(), Charset.defaultCharset());
-				
-				coord.waitFor();
-			}
-			catch(Exception ex) {
-				ex.printStackTrace();
-			}
-			
-			// get and print the output
-			System.out.println("Output of coordinator #" + Integer.toString(counter + 1) + ":\n");
-			System.out.println(outputLog);
-			System.out.println(errorLog);
-			Assert.assertTrue(checkForHeavyHitter(opType, outputLog, execMode));
-		}
+	private void verifyResults(OpType opType, String outputLog, ExecMode execMode) {
+		Assert.assertTrue(checkForHeavyHitter(opType, outputLog, execMode));
 
 		// compare the results via files
 		HashMap<CellIndex, Double> refResults = readDMLMatrixFromOutputDir("S" + 0);
@@ -387,16 +310,21 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 		}
 	}
 
-	private static boolean checkForHeavyHitter(OpType opType, String outputLog, ExecMode execMode) {
+	private boolean checkForHeavyHitter(OpType opType, String outputLog, ExecMode execMode) {
 		switch(opType) {
 			case SUM:
-				return outputLog.contains("fed_uak+");
+				return checkForHeavyHitter(outputLog, "fed_uak+");
 			case PARFOR_SUM:
-				return outputLog.contains(execMode == ExecMode.SPARK ? "fed_rblk" : "fed_uak+");
+				return checkForHeavyHitter(outputLog, execMode == ExecMode.SPARK ? "fed_rblk" : "fed_uak+");
 			case WSIGMOID:
-				return outputLog.contains("fed_wsigmoid");
+				return checkForHeavyHitter(outputLog, "fed_wsigmoid");
 			default:
 				return false;
 		}
+	}
+
+	private boolean checkForHeavyHitter(String outputLog, String hhString) {
+		int occurrences = StringUtils.countMatches(outputLog, hhString);
+		return (occurrences == coordinatorProcesses.size());
 	}
 }

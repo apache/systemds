@@ -26,23 +26,32 @@ import java.util.Map;
 
 public class CodeGenTrieNode {
 
+	public enum NodeType {
+		ROW, COL;
+		@Override public String toString() {
+			return this.name().toUpperCase();
+		}
+	}
 	private final Map<String, CodeGenTrieNode> children = new HashMap<>();
 	private boolean endOfCondition;
 	private int colIndex;
 	private Types.ValueType valueType;
 	private String key;
 	private HashSet<String> naStrings;
+	private final NodeType type;
 
-	public CodeGenTrieNode() {
+	public CodeGenTrieNode(NodeType type) {
 		this.endOfCondition = false;
+		this.type = type;
 	}
 
-	public CodeGenTrieNode(int colIndex, String key) {
+	public CodeGenTrieNode(int colIndex, String key, NodeType type) {
 		this.colIndex = colIndex;
 		this.key = key;
+		this.type = type;
 	}
 
-	public CodeGenTrieNode(boolean endOfCondition, int colIndex, Types.ValueType valueType, String key, HashSet<String> naStrings) {
+	public CodeGenTrieNode(boolean endOfCondition, int colIndex, Types.ValueType valueType, String key, HashSet<String> naStrings, NodeType type) {
 		this.endOfCondition = endOfCondition;
 		this.colIndex = colIndex;
 		this.valueType = valueType;
@@ -50,7 +59,7 @@ public class CodeGenTrieNode {
 		if(endOfCondition){
 			this.naStrings = naStrings;
 		}
-
+		this.type = type;
 	}
 
 	public String geValueCode(String destination, String currPos){
@@ -134,5 +143,9 @@ public class CodeGenTrieNode {
 
 	public void setKey(String key) {
 		this.key = key;
+	}
+
+	public NodeType getType() {
+		return type;
 	}
 }

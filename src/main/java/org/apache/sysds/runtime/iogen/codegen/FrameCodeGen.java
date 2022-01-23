@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.iogen.codegen;
 
 import org.apache.sysds.runtime.iogen.CustomProperties;
 import org.apache.sysds.runtime.iogen.template.TemplateCodeGenBase;
-import java.util.ArrayList;
 
 public class FrameCodeGen extends TemplateCodeGenBase {
 
@@ -71,14 +70,10 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 		src.append("String str = value.toString(); \n");
 		src.append("strLen = str.length(); \n");
 
-		ArrayList<String>[] colKeyPattern = null;//properties.getColKeyPattern();
-		CodeGenTrie trie = new CodeGenTrie();
-		for(int c = 0; c < colKeyPattern.length; c++) {
-			trie.insert(c, properties.getSchema()[c], colKeyPattern[c]);
-		}
-		src.append(trie.getJavaCode("dest.set"));
-
+		CodeGenTrie trie = new CodeGenTrie(properties, "dest.set");
+		src.append(trie.getJavaCode());
 		src.append("row++; \n");
+
 		src.append("}} \n");
 		src.append("finally { \n");
 		src.append("IOUtilFunctions.closeSilently(reader); \n");

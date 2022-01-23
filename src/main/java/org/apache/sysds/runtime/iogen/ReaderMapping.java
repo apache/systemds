@@ -37,8 +37,8 @@ public class ReaderMapping {
 	private int[][] mapCol;
 	private int[][] mapLen;
 	private boolean mapped;
-	private int nrows;
-	private int ncols;
+	private final int nrows;
+	private final int ncols;
 	private int nlines;
 	private ArrayList<RawIndex> sampleRawIndexes;
 	private MatrixBlock sampleMatrix;
@@ -90,17 +90,7 @@ public class ReaderMapping {
 		this.nlines = nlines;
 	}
 
-	private boolean isSchemaNumeric() {
-		if(isMatrix)
-			return true;
-
-		boolean result = true;
-		for(Types.ValueType vt : schema)
-			result &= vt.isNumeric();
-		return result;
-	}
-
-	private void runMapping(boolean isIndexMapping) throws Exception {
+	private void runMapping(boolean isIndexMapping) {
 		mapped = findMapping(isIndexMapping);
 	}
 

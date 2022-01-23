@@ -60,7 +60,7 @@ jobs:
           "**.functions.builtin.part2.**",
           "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.iogen.**,**.functions.jmlc.**,**.functions.lineage.**",
           "**.functions.dnn.**,**.functions.paramserv.**",
-          "**.functions.misc.**,**.functions.mlcontext.**",
+          "**.functions.recompile.**,**.functions.misc.**,**.functions.mlcontext.**",
           "**.functions.nary.**,**.functions.quaternary.**",
           "**.functions.parfor.**,**.functions.pipelines.**,**.functions.privacy.**",
           "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",

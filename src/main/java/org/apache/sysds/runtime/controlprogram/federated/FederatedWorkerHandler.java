@@ -244,10 +244,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			throw new FederatedWorkerHandlerException("Could not recognize datatype");
 
 		ExecutionContext ec = ecm.get(tid);
-		LineageItem tmpLI = new LineageItem(filename);
+		LineageItem linItem = new LineageItem(filename);
 
 		CacheableData<?> cd = null;
-		if(!LineageCache.reuseRead(Long.toString(id), dataType, tmpLI, ec)) {
+		if(!LineageCache.reuseRead(Long.toString(id), dataType, linItem, ec)) {
 			long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
 			try {
 				switch(dataType) {
@@ -304,7 +304,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				cd.enableCleanup(false); // guard against deletion
 			} catch(Exception ex) {
 				if(!ReuseCacheType.isNone() && dataType == DataType.MATRIX)
-					LineageCache.putReadObject(null, tmpLI, ec, 0); // removing the placeholder
+					LineageCache.putReadObject(null, linItem, ec, 0); // removing the placeholder
 				throw ex;
 			}
 			long t1 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
@@ -312,24 +312,19 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			ec.setVariable(String.valueOf(id), cd);
 
 			if(!ReuseCacheType.isNone() && dataType == DataType.MATRIX)
-				LineageCache.putReadObject(cd, tmpLI, ec, t1 - t0);
+				LineageCache.putReadObject(cd, linItem, ec, t1 - t0);
 		}
 
 		if(DMLScript.LINEAGE)
 			// create a literal type lineage item with the file name
-			ec.getLineage().set(String.valueOf(id), tmpLI);
+			ec.getLineage().set(String.valueOf(id), linItem);
 
 		if(dataType == Types.DataType.FRAME) {
-			try {
-				FrameObject frameObject = (FrameObject) cd;
-				frameObject.acquireRead();
-				frameObject.refreshMetaData(); // get block schema
-				frameObject.release();
-				return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
-			} catch(NullPointerException npe) {
-				throw new FederatedWorkerHandlerException("Data should never be null at this point. "
-					+ "Either set by lineage or read from fs", npe);
-			}
+			FrameObject frameObject = (FrameObject) cd;
+			frameObject.acquireRead();
+			frameObject.refreshMetaData(); // get block schema
+			frameObject.release();
+			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
 		}
 		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
 	}

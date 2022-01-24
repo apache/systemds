@@ -161,7 +161,6 @@ public class FederatedReuseReadTest extends MultiTenantTestBase {
 
 		// wait for the coordinator processes to end and verify the results
 		String coordinatorOutput = waitForCoordinators();
-		System.out.println(coordinatorOutput);
 		verifyResults(opType, coordinatorOutput, execMode);
 
 		// check that federated input files are still existing

@@ -197,38 +197,6 @@ public class LineageCache
 		
 		return reuse;
 	}
-
-	public static boolean reuseRead(String outName, DataType dataType, LineageItem li, ExecutionContext ec) {
-		if (ReuseCacheType.isNone() || dataType != DataType.MATRIX)
-			return false;
-
-		LineageCacheEntry e = null;
-		synchronized(_cache) {
-			if(LineageCache.probe(li)) {
-				e = LineageCache.getIntern(li);
-			}
-			else {
-				putIntern(li, dataType, null, null, 0);
-				return false; // direct return after placing the placeholder
-			}
-		}
-
-		if(e != null && e.isMatrixValue()) {
-			MatrixBlock mb = e.getMBValue(); // waiting if the value is not set yet
-			if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
-				return false;  // the executing thread removed this entry from cache
-			ec.setMatrixOutput(outName, e.getMBValue());
-
-			if (DMLScript.STATISTICS) { //increment saved time
-				FederatedStatistics.incFedReuseReadHitCount();
-				FederatedStatistics.incFedReuseReadBytesCount(mb);
-				LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
-			}
-
-			return true;
-		}
-		return false;
-	}
 	
 	public static boolean reuse(List<String> outNames, List<DataIdentifier> outParams, 
 			int numOutputs, LineageItem[] liInputs, String name, ExecutionContext ec)
@@ -397,7 +365,39 @@ public class LineageCache
 		}
 		return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
 	}
-	
+
+	public static boolean reuseRead(String outName, DataType dataType, LineageItem li, ExecutionContext ec) {
+		if (ReuseCacheType.isNone() || dataType != DataType.MATRIX)
+			return false;
+
+		LineageCacheEntry e = null;
+		synchronized(_cache) {
+			if(LineageCache.probe(li)) {
+				e = LineageCache.getIntern(li);
+			}
+			else {
+				putIntern(li, dataType, null, null, 0);
+				return false; // direct return after placing the placeholder
+			}
+		}
+
+		if(e != null && e.isMatrixValue()) {
+			MatrixBlock mb = e.getMBValue(); // waiting if the value is not set yet
+			if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+				return false;  // the executing thread removed this entry from cache
+			ec.setMatrixOutput(outName, e.getMBValue());
+
+			if (DMLScript.STATISTICS) { //increment saved time
+				FederatedStatistics.incFedReuseReadHitCount();
+				FederatedStatistics.incFedReuseReadBytesCount(mb);
+				LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
+			}
+
+			return true;
+		}
+		return false;
+	}
+
 	public static boolean probe(LineageItem key) {
 		//TODO problematic as after probe the matrix might be kicked out of cache
 		boolean p = _cache.containsKey(key);  // in cache or in disk
@@ -576,23 +576,6 @@ public class LineageCache
 		}
 	}
 
-	public static void putReadObject(Data data, LineageItem li, ExecutionContext ec,
-		long computetime) {
-
-		LineageCacheEntry entry = getIntern(li);
-		if(entry != null && data instanceof MatrixObject) {
-			MatrixBlock mb = ((MatrixObject)data).acquireRead();
-			synchronized(_cache) {
-				entry.setValue(mb, computetime);
-			}
-		}
-		else {
-			synchronized(_cache) {
-				removePlaceholder(li);
-			}
-		}
-	}
-
 	public static void putValue(List<DataIdentifier> outputs,
 		LineageItem[] liInputs, String name, ExecutionContext ec, long computetime)
 	{
@@ -679,7 +662,38 @@ public class LineageCache
 			LineageCacheEviction.addEntry(entry);
 		}
 	}
-	
+
+	public static void putReadObject(Data data, LineageItem li, ExecutionContext ec,
+		long computetime) {
+		if(ReuseCacheType.isNone())
+			return;
+
+		LineageCacheEntry entry = getIntern(li);
+		if(entry != null && data instanceof MatrixObject) {
+			MatrixBlock mb = ((MatrixObject)data).acquireRead();
+			synchronized(_cache) {
+				long size = mb != null ? mb.getInMemorySize() : 0;
+
+				//remove the placeholder if the entry is bigger than the cache.
+				if (size > LineageCacheEviction.getCacheLimit()) {
+					removePlaceholder(li);
+				}
+
+				//make space for the data
+				if (!LineageCacheEviction.isBelowThreshold(size))
+					LineageCacheEviction.makeSpace(_cache, size);
+				LineageCacheEviction.updateSize(size, true);
+
+				entry.setValue(mb, computetime);
+			}
+		}
+		else {
+			synchronized(_cache) {
+				removePlaceholder(li);
+			}
+		}
+	}
+
 	public static void resetCache() {
 		synchronized (_cache) {
 			_cache.clear();

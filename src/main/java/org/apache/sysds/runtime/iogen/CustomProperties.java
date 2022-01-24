@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.iogen;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import java.io.Serializable;
+import java.util.HashSet;
 
 public class CustomProperties extends FileFormatProperties implements Serializable {
 
@@ -50,6 +51,13 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public KeyTrie[] getColKeyPattern() {
 		return colKeyPattern;
+	}
+
+	public HashSet<String>[] endWithValueStrings(){
+		HashSet<String>[] endWithValueString =  new HashSet[colKeyPattern.length];
+		for(int i=0; i< colKeyPattern.length; i++)
+			endWithValueString[i] = colKeyPattern[i].getFirstSuffixKeyPatterns();
+		return endWithValueString;
 	}
 
 	public void setColKeyPattern(KeyTrie[] colKeyPattern) {

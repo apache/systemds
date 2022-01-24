@@ -19,11 +19,8 @@
 
 package org.apache.sysds.runtime.iogen.codegen;
 
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.iogen.CustomProperties;
 import org.apache.sysds.runtime.iogen.template.TemplateCodeGenBase;
-
-import java.util.ArrayList;
 
 public class MatrixCodeGen extends TemplateCodeGenBase {
 
@@ -62,7 +59,7 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 		src.append("int row = rowPos.intValue(); \n");
 		src.append("long lnnz = 0; \n");
 		src.append("int index, endPos, strLen; \n");
-		src.append("HashSet<String>[] endWithValueString = _props.getEndWithValueString(); \n");
+		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
 		src.append("BufferedReader br = new BufferedReader(new InputStreamReader(is)); \n");
 		src.append("try { \n");
 		src.append("while((str = br.readLine()) != null){ \n");
@@ -70,7 +67,6 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 
 		CodeGenTrie trie= new CodeGenTrie(properties, "dest.appendValue");
 		src.append(trie.getJavaCode());
-		src.append("row++; \n");
 
 		src.append("} \n");
 		src.append("} \n");

@@ -63,7 +63,7 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 		src.append("Text value = new Text(); \n");
 		src.append("int row = rl; \n");
 		src.append("long lnnz = 0; \n");
-		src.append("HashSet<String>[] endWithValueString = _props.getEndWithValueString(); \n");
+		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
 		src.append("int index, endPos, strLen; \n");
 		src.append("try { \n");
 		src.append("while(reader.next(key, value)){ \n");
@@ -72,7 +72,6 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 
 		CodeGenTrie trie = new CodeGenTrie(properties, "dest.set");
 		src.append(trie.getJavaCode());
-		src.append("row++; \n");
 
 		src.append("}} \n");
 		src.append("finally { \n");

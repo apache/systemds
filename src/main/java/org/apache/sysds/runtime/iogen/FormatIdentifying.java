@@ -184,6 +184,14 @@ public class FormatIdentifying {
 						}
 					}while(!check);
 
+					if(keyPatterns.size() == 0){
+						ArrayList<ArrayList<String>> kpl = new ArrayList<>();
+						ArrayList<String> kpli = new ArrayList<>();
+						kpli.add("");
+						kpl.add(kpli);
+						keyPatterns = kpl;
+					}
+
 					rowKeyPattern.setPrefixKeyPattern(keyPatterns);
 				}
 			}
@@ -193,6 +201,7 @@ public class FormatIdentifying {
 				properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.PREFIX, rowKeyPattern);
 			}
 			else {
+				//buildRowKeyPatternMultiRow();
 				colKeyPattern = buildColsKeyPatternMultiRow();
 				properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.KEY);
 			}
@@ -340,6 +349,92 @@ public class FormatIdentifying {
 	// 2. Build key pattern tree for each column
 	// 3. Build key pattern for end of values
 
+//	private KeyTrie[] buildRowKeyPatternMultiRow(){
+//		Pair<ArrayList<String>, Pair<Integer, Integer>> prefixStrings = extractAllPrefixStringsOfRows();
+//
+//		for(String s: prefixStrings.getKey())
+//			System.out.println(s.replace("\n", ""));
+//
+//		MappingTrie mappingTrie = new MappingTrie();
+//		mappingTrie.setInALine(false);
+//		for(String s: prefixStrings.getKey())
+//			mappingTrie.reverseInsert(s, 0);
+//
+//		boolean flag;
+//		do {
+//			flag = mappingTrie.reConstruct();
+//		}while(flag);
+//		//mappingTrie.reConstruct();
+//		ArrayList<ArrayList<String>> aa = mappingTrie.getAllSequentialKeys();
+//
+//		for(ArrayList<String> l: aa) {
+//			for(String s : l)
+//				System.out.print(s + "  -  ");
+//			System.out.println();
+//		}
+//		//System.out.println(">>> ");
+//		return null;
+//	}
+
+	private Pair<ArrayList<String>, Pair<Integer, Integer>> extractAllPrefixStringsOfRows(){
+
+		ArrayList<String> result = new ArrayList();
+		Pair<Integer, Integer> minmax = new Pair();
+		BitSet[] tmpUsedLines = new BitSet[nlines];
+		BitSet[] usedLines = new BitSet[nlines];
+		int[] minIndexRow = new int[nrows];
+		for(int r=0; r<nrows; r++) {
+			tmpUsedLines[r] = new BitSet();
+			minIndexRow[r] = nlines;
+		}
+
+		for(int r=0; r<nrows; r++)
+			for(int c=0; c<ncols;c++)
+				if(mapRow[r][c]!=-1) {
+					tmpUsedLines[r].set(mapRow[r][c]);
+					minIndexRow[r] = Math.min(minIndexRow[r], mapRow[r][c]);
+				}
+
+		for(int r=0; r<nrows; r++) {
+			usedLines[r] = new BitSet(nlines);
+			for(int i=0; i<nrows; i++) {
+				if(i!=r)
+					usedLines[r].or(tmpUsedLines[i]);
+			}
+		}
+
+		int min = 0;
+		int max = 0;
+		for(int r=0; r<nrows;r++) {
+
+			int rowIndex = minIndexRow[r];
+			if(rowIndex == -1)
+				continue;
+			StringBuilder sb = new StringBuilder();
+			int lastLine = 0;
+			for(int i = rowIndex - 1; i >= 0; i--)
+				if(usedLines[r].get(i)) {
+					lastLine = i;
+					break;
+				}
+			if(lastLine ==0)
+				continue;
+			for(int i = lastLine; i <= rowIndex; i++) {
+				if(sampleRawIndexes.get(i).getRawLength() > 0)
+					sb.append(sampleRawIndexes.get(i).getRaw()).append("\n");
+			}
+			if(lastLine < rowIndex)
+				sb.deleteCharAt(sb.length() - 1);
+
+			result.add(sb.toString());
+			max = Math.max(max, sb.length());
+			if(sb.length() < min || min == 0)
+				min = sb.length();
+			minmax = new Pair<>(min, max);
+		}
+		return new Pair<>(result, minmax);
+	}
+
 	// Build key pattern tree for each column
 	private KeyTrie[] buildColsKeyPatternMultiRow(){
 		Pair<ArrayList<String>[], Pair<Integer, Integer>[]> prefixStrings = extractAllPrefixStringsOfColsMultiLine(true);
@@ -376,8 +471,9 @@ public class FormatIdentifying {
 							remainedPrefix.add(getRemainedSubstring(ps, keyPattern));
 
 						intersect = findStartWithIntersectOfStrings(remainedPrefix);
-						if(intersect != null)
+						if(intersect != null) {
 							trie.insertPrefixKeysConcurrent(intersect);
+						}
 						else {
 							remainedPrefixes.add(new Pair<>(keyPattern, remainedPrefix));
 							flag = false;

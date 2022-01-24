@@ -46,15 +46,17 @@ public class CodeGenTrie {
 		for(int c=0; c< properties.getColKeyPattern().length; c++){
 			KeyTrie keyTrie = properties.getColKeyPattern()[c];
 			Types.ValueType vt = properties.getSchema() == null? Types.ValueType.FP64 : properties.getSchema()[c];
-			for(ArrayList<String> keys : keyTrie.getPrefixKeyPatterns())
+			//keyTrie.getReversePrefixKeyPatterns()
+			ArrayList<ArrayList<String>> ss = keyTrie.getReversePrefixKeyPatterns();
+			for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
 				this.insert(rootCol, c, vt, keys);
 		}
 
 		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX){
 			KeyTrie keyTrie = properties.getRowKeyPattern();
 			Types.ValueType vt = Types.ValueType.FP32;
-			for(ArrayList<String> keys : keyTrie.getPrefixKeyPatterns())
-				this.insert(rootCol, -1, vt, keys);
+			for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
+				this.insert(rootRow, -1, vt, keys);
 		}
 	}
 
@@ -81,13 +83,20 @@ public class CodeGenTrie {
 		StringBuilder src = new StringBuilder();
 		switch(properties.getRowIndex()){
 			case IDENTIFY:
-				getJavaRowIdentifyCode(rootCol, src, "0");
+				getJavaCode(rootCol, src, "0");
+				src.append("row++; \n");
 				break;
 			case PREFIX:
+				getJavaCode(rootRow, src, "0");
+				getJavaCode(rootCol, src, "0");
 				break;
 			case KEY:
+				// TODO: Generate code for split stream as records
+				//  and then increase the row number
+				getJavaCode(rootCol, src, "0");
 				break;
 		}
+
 		return src.toString();
 	}
 
@@ -101,7 +110,7 @@ public class CodeGenTrie {
 		return base + "_" + result;
 	}
 
-	private void getJavaRowIdentifyCode(CodeGenTrieNode node, StringBuilder src, String currPos){
+	private void getJavaCode(CodeGenTrieNode node, StringBuilder src, String currPos){
 		String currPosVariable = getRandomName("curPos");
 		if(node.getChildren().size() ==0 || node.isEndOfCondition()){
 			String key = node.getKey();
@@ -127,7 +136,7 @@ public class CodeGenTrie {
 
 			for(String key : node.getChildren().keySet()) {
 				CodeGenTrieNode child = node.getChildren().get(key);
-				getJavaRowIdentifyCode(child, src, currPos);
+				getJavaCode(child, src, currPos);
 			}
 			if(node.getKey() != null) {
 				src.append("}\n");

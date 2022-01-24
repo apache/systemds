@@ -21,6 +21,7 @@
 package org.apache.sysds.runtime.iogen;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 
 public class KeyTrie {
@@ -105,6 +106,21 @@ public class KeyTrie {
 			return getKeyPatterns(rootPrefixKeys);
 	}
 
+	public ArrayList<ArrayList<String>> getReversePrefixKeyPatterns() {
+		if(this.prefixKeyPattern!=null)
+			return prefixKeyPattern;
+		else {
+			ArrayList<ArrayList<String>> kps = getKeyPatterns(rootPrefixKeys);
+			for(ArrayList<String> l : kps) {
+				Collections.reverse(l);
+				for(int i = 0; i < l.size(); i++) {
+					l.set(i, new StringBuilder(l.get(i)).reverse().toString());
+				}
+			}
+			return kps;
+		}
+	}
+
 	public ArrayList<ArrayList<String>> getSuffixKeyPatterns() {
 		ArrayList<ArrayList<String>> result = new ArrayList<>();
 		for(String k : rootSuffixKeys.getChildren().keySet()) {
@@ -112,9 +128,18 @@ public class KeyTrie {
 			ArrayList<String> nk = new ArrayList<>();
 			nk.add(k);
 			int maxCount = node.getCount();
-			getKeyPatterns2(node, result, nk, maxCount);
+			getSuffixKeyPatterns(node, result, nk, maxCount);
 		}
 		return result;
+	}
+
+	public HashSet<String> getFirstSuffixKeyPatterns(){
+		ArrayList<ArrayList<String>> suffixKeyPattern = getSuffixKeyPatterns();
+		HashSet<String> suffixString = new HashSet<>();
+		for(ArrayList<String> kp: suffixKeyPattern){
+			suffixString.add(kp.get(0));
+		}
+		return suffixString;
 	}
 
 	private ArrayList<ArrayList<String>> getKeyPatterns(KeyTrieNode root) {
@@ -140,7 +165,7 @@ public class KeyTrie {
 		}
 	}
 
-	private void getKeyPatterns2(KeyTrieNode node, ArrayList<ArrayList<String>> result, ArrayList<String> nodeKeys,
+	private void getSuffixKeyPatterns(KeyTrieNode node, ArrayList<ArrayList<String>> result, ArrayList<String> nodeKeys,
 		int maxCount) {
 
 		if(node.getChildren().size() == 1 && node.getCount() == maxCount) {
@@ -149,7 +174,7 @@ public class KeyTrie {
 			ArrayList<String> tmpKeys = new ArrayList<>();
 			tmpKeys.addAll(nodeKeys);
 			tmpKeys.add(k);
-			getKeyPatterns2(child, result, tmpKeys, maxCount);
+			getSuffixKeyPatterns(child, result, tmpKeys, maxCount);
 		}
 		else
 			result.add(nodeKeys);
@@ -158,6 +183,7 @@ public class KeyTrie {
 
 	public void insertPrefixKeysConcurrent(HashSet<String> keys) {
 		insertPrefixKeysConcurrent(rootPrefixKeys, keys);
+		ArrayList<ArrayList<String>> ss =getPrefixKeyPatterns();
 	}
 
 	private void insertPrefixKeysConcurrent(KeyTrieNode node, HashSet<String> keys) {

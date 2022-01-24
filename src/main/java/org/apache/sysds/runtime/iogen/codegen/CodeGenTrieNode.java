@@ -63,6 +63,24 @@ public class CodeGenTrieNode {
 	}
 
 	public String geValueCode(String destination, String currPos){
+		if(this.type == NodeType.ROW)
+			return this.getRowPrefixValueCode(currPos);
+		else
+			return this.getColValueCode(destination, currPos);
+	}
+
+	private String getRowPrefixValueCode(String currPos){
+		StringBuilder src = new StringBuilder();
+		String subStr;
+
+		src.append("endPos = getEndPos(str, strLen, "+ currPos+", endWithValueStringRow); \n");
+		subStr = "str.substring("+currPos+",endPos)";
+
+		src.append("row = ").append("Integer.parseInt("+subStr+"); \n");
+		return src.toString();
+	}
+
+	private String getColValueCode(String destination, String currPos){
 
 		StringBuilder src = new StringBuilder();
 		String subStr;

@@ -182,6 +182,12 @@ public class MappingTrie {
 										break;
 								}
 								while(true);
+//								if(count==1)
+//									lastCount = 1;
+//								else {
+//									lastCount = 0;
+//									break;
+//								}
 								if(lastCount != 0 && lastCount != count) {
 									lastCount = 0;
 									break;
@@ -317,7 +323,7 @@ public class MappingTrie {
 			}
 		}
 
-		// revert list avd values of list
+		// revert list and values of list
 		for(ArrayList<String> l: distinctKeys){
 			Collections.reverse(l);
 			for(int i=0; i<l.size(); i++){

@@ -160,8 +160,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		getAndLoadTestConfiguration("aggregation");
 		String HOME = SCRIPT_DIR + TEST_DIR_fed;
 
-		double[][] A = getRandomMatrix(rows, cols, -10, 10, 1, 1);
-		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols), new PrivacyConstraint(privacyLevel));
+		double[][] A = getRandomMatrix(rows/2, cols, -10, 10, 1, 1);
+		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows/2, cols, blocksize, (rows/2) * cols), new PrivacyConstraint(privacyLevel));
 		int port = getRandomAvailablePort();
 		Thread t = startLocalFedWorkerThread(port);
 
@@ -177,8 +177,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		for(double[] doubles : A) {
 			sum += Arrays.stream(doubles).sum();
 		}
-		sum *= 2;
-		
+
 		if ( expectedException == null )
 			writeExpectedScalar("S", sum);
 

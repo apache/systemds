@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -40,7 +41,7 @@ public class LineageItem {
 	private final BooleanArray32 _specialValueBits;  // TODO: Move this to a new subclass
 	// map from thread id to visited flag to allow concurrent checks through the
 	// lineage trace
-	private Map<Long, Boolean> _visited = new HashMap<>();
+	private Map<Long, Boolean> _visited = new ConcurrentHashMap<>();
 	
 	public enum LineageItemType {Literal, Creation, Instruction, Dedup}
 	public static final String dedupItemOpcode = "dedup";

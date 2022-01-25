@@ -39,7 +39,7 @@ public class FormatIdentifying {
 	private static int ncols;
 	private int nlines;
 	private int windowSize = 20;
-	private int suffixStringLength = 100;
+	private int suffixStringLength = 50;
 	private ReaderMapping mappingValues;
 	private CustomProperties properties;
 
@@ -99,15 +99,28 @@ public class FormatIdentifying {
 			// Check the row index is a prefix string in sample raw
 			// if the row indexes are in the prefix of values, so we need to build a key pattern
 			// to extract row indexes
-			// to understanding row indexes are in sample raw we check just 3 column of data
-			// for build a key pattern ro row indexes we just selected a row
+			// for understanding row indexes are in sample raw we check just 3 column of data
+			// for build a key pattern related to row indexes we just selected a row
 			boolean flag;
 			int numberOfSelectedCols = 3;
 			int begin = 0;
 			boolean check, flagReconstruct;
-			int selectedRowIndex = 1;
+			int[] selectedRowIndex = new int[2];
 			HashSet<Integer> beginPos = new HashSet<>();
 			KeyTrie rowKeyPattern = null;
+
+			// Select two none zero row as a row index candidate
+
+			int index = 0;
+			for(int r=1; r<nrows;r++) {
+				for(int c = 0; c < ncols; c++)
+					if(mapRow[r][c]!=-1){
+						selectedRowIndex[index++] = r;
+						break;
+					}
+				if(index >1)
+					break;
+			}
 
 			for(int c=0; c< Math.min(numberOfSelectedCols, ncols); c++){
 				Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
@@ -119,7 +132,6 @@ public class FormatIdentifying {
 				int ri = 0;
 				for(String ps: prefixStrings )
 					trie.reverseInsert(ps, prefixStringRowIndexes.get(ri++));
-
 
 				do {
 					flag = trie.reConstruct();
@@ -153,32 +165,39 @@ public class FormatIdentifying {
 					ArrayList<String> rowPrefixStrings = new ArrayList<>();
 					MappingTrie rowTrie = new MappingTrie();
 					rowKeyPattern = new KeyTrie();
-					for(int ci = 0; c < ncols; c++) {
-						int cri = mapRow[selectedRowIndex][c];
-						if(cri != -1) {
-							String str = sampleRawIndexes.get(cri).getSubString(0, mapCol[selectedRowIndex][ci]);
-							RawIndex rawIndex = new RawIndex(str);
-							Pair<Integer,Integer> pair = rawIndex.findValue(selectedRowIndex+begin);
-							if(pair!=null) {
-								String pstr = str.substring(0, pair.getKey());
-								if(pstr.length() > 0) {
-									rowPrefixStrings.add(pstr);
-									rowTrie.insert(pstr, 1);
+					for(int si: selectedRowIndex) {
+						for(int ci = 0; ci < ncols; ci++) {
+							int cri = mapRow[si][ci];
+							if(cri != -1) {
+								String str = sampleRawIndexes.get(cri).getSubString(0, mapCol[si][ci]);
+								RawIndex rawIndex = new RawIndex(str);
+								Pair<Integer, Integer> pair = rawIndex.findValue(si + begin);
+								if(pair != null) {
+									String pstr = str.substring(0, pair.getKey());
+									if(pstr.length() > 0) {
+										rowPrefixStrings.add(pstr);
+										rowTrie.insert(pstr, 1);
+									}
+									rowKeyPattern.insertSuffixKeys(str.substring(pair.getKey() + pair.getValue()).toCharArray());
 								}
-								rowKeyPattern.insertSuffixKeys(str.substring(pair.getKey()+pair.getValue()).toCharArray());
 							}
 						}
 					}
 
 					do {
+						ArrayList<ArrayList<String>> selectedKeyPatterns = new ArrayList<>();
 						keyPatterns = rowTrie.getAllSequentialKeys();
 						check = false;
 						for(ArrayList<String> keyPattern : keyPatterns) {
 							boolean newCheck = checkKeyPatternIsUnique(rowPrefixStrings, keyPattern);
 							check |= newCheck;
+							if(newCheck)
+								selectedKeyPatterns.add(keyPattern);
 						}
-						if(!check){
-							flagReconstruct = trie.reConstruct();
+						if(check)
+							keyPatterns = selectedKeyPatterns;
+						else {
+							flagReconstruct = rowTrie.reConstruct();
 							if(!flagReconstruct)
 								break;
 						}
@@ -191,7 +210,6 @@ public class FormatIdentifying {
 						kpl.add(kpli);
 						keyPatterns = kpl;
 					}
-
 					rowKeyPattern.setPrefixKeyPattern(keyPatterns);
 				}
 			}
@@ -199,9 +217,13 @@ public class FormatIdentifying {
 			if(beginPos.size() == 1){
 				colKeyPattern = buildColsKeyPatternSingleRow();
 				properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.PREFIX, rowKeyPattern);
+				Integer bpos = beginPos.iterator().next();
+				if(bpos>0)
+					properties.setRowIndexBegin("-"+bpos);
+				else
+					properties.setRowIndexBegin("");
 			}
 			else {
-				//buildRowKeyPatternMultiRow();
 				colKeyPattern = buildColsKeyPatternMultiRow();
 				properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.KEY);
 			}
@@ -244,15 +266,20 @@ public class FormatIdentifying {
 			boolean check;
 			boolean flagReconstruct;
 			ArrayList<ArrayList<String>> keyPatterns;
+
 			do {
+				ArrayList<ArrayList<String>> selectedKeyPatterns = new ArrayList<>();
 				keyPatterns = trie.getAllSequentialKeys();
 				check = false;
 				for(ArrayList<String> keyPattern : keyPatterns) {
 					boolean newCheck = checkKeyPatternIsUnique(prefixStrings.getKey()[c], keyPattern);
 					check |= newCheck;
+					if(newCheck)
+						selectedKeyPatterns.add(keyPattern);
 				}
-
-				if(!check){
+				if(check)
+					keyPatterns = selectedKeyPatterns;
+				else {
 					flagReconstruct = trie.reConstruct();
 					if(!flagReconstruct)
 						break;
@@ -313,33 +340,6 @@ public class FormatIdentifying {
 		return result;
 	}
 
-	// Check the sequential list of keys are on a string
-	private Integer getIndexOfKeysOnString(String str, ArrayList<String> key, int beginPos) {
-		int currPos = beginPos;
-		boolean flag = true;
-		for(String k : key) {
-			int index = str.indexOf(k, currPos);
-			if(index != -1)
-				currPos = index + k.length();
-			else {
-				flag = false;
-				break;
-			}
-		}
-		if(flag)
-			return currPos;
-		else
-			return -1;
-	}
-
-	private Pair<String, Integer> getPreviousLines(int beginLine, int endLine){
-		StringBuilder sb = new StringBuilder();
-		for(int i= Math.max(0, beginLine); i <= endLine; i++)
-			sb.append(sampleRawIndexes.get(i).getRaw());
-		String str = sb.toString();
-		return new Pair<>(str, str.length() - sampleRawIndexes.get(endLine).getRawLength());
-	}
-
 	/////////////////////////////////////////////////////////////////////////////
 	//                    Methods For Multi Lines Mapping                     //
 	////////////////////////////////////////////////////////////////////////////
@@ -348,92 +348,6 @@ public class FormatIdentifying {
 	// 1.  Extract all prefix strings per column
 	// 2. Build key pattern tree for each column
 	// 3. Build key pattern for end of values
-
-//	private KeyTrie[] buildRowKeyPatternMultiRow(){
-//		Pair<ArrayList<String>, Pair<Integer, Integer>> prefixStrings = extractAllPrefixStringsOfRows();
-//
-//		for(String s: prefixStrings.getKey())
-//			System.out.println(s.replace("\n", ""));
-//
-//		MappingTrie mappingTrie = new MappingTrie();
-//		mappingTrie.setInALine(false);
-//		for(String s: prefixStrings.getKey())
-//			mappingTrie.reverseInsert(s, 0);
-//
-//		boolean flag;
-//		do {
-//			flag = mappingTrie.reConstruct();
-//		}while(flag);
-//		//mappingTrie.reConstruct();
-//		ArrayList<ArrayList<String>> aa = mappingTrie.getAllSequentialKeys();
-//
-//		for(ArrayList<String> l: aa) {
-//			for(String s : l)
-//				System.out.print(s + "  -  ");
-//			System.out.println();
-//		}
-//		//System.out.println(">>> ");
-//		return null;
-//	}
-
-	private Pair<ArrayList<String>, Pair<Integer, Integer>> extractAllPrefixStringsOfRows(){
-
-		ArrayList<String> result = new ArrayList();
-		Pair<Integer, Integer> minmax = new Pair();
-		BitSet[] tmpUsedLines = new BitSet[nlines];
-		BitSet[] usedLines = new BitSet[nlines];
-		int[] minIndexRow = new int[nrows];
-		for(int r=0; r<nrows; r++) {
-			tmpUsedLines[r] = new BitSet();
-			minIndexRow[r] = nlines;
-		}
-
-		for(int r=0; r<nrows; r++)
-			for(int c=0; c<ncols;c++)
-				if(mapRow[r][c]!=-1) {
-					tmpUsedLines[r].set(mapRow[r][c]);
-					minIndexRow[r] = Math.min(minIndexRow[r], mapRow[r][c]);
-				}
-
-		for(int r=0; r<nrows; r++) {
-			usedLines[r] = new BitSet(nlines);
-			for(int i=0; i<nrows; i++) {
-				if(i!=r)
-					usedLines[r].or(tmpUsedLines[i]);
-			}
-		}
-
-		int min = 0;
-		int max = 0;
-		for(int r=0; r<nrows;r++) {
-
-			int rowIndex = minIndexRow[r];
-			if(rowIndex == -1)
-				continue;
-			StringBuilder sb = new StringBuilder();
-			int lastLine = 0;
-			for(int i = rowIndex - 1; i >= 0; i--)
-				if(usedLines[r].get(i)) {
-					lastLine = i;
-					break;
-				}
-			if(lastLine ==0)
-				continue;
-			for(int i = lastLine; i <= rowIndex; i++) {
-				if(sampleRawIndexes.get(i).getRawLength() > 0)
-					sb.append(sampleRawIndexes.get(i).getRaw()).append("\n");
-			}
-			if(lastLine < rowIndex)
-				sb.deleteCharAt(sb.length() - 1);
-
-			result.add(sb.toString());
-			max = Math.max(max, sb.length());
-			if(sb.length() < min || min == 0)
-				min = sb.length();
-			minmax = new Pair<>(min, max);
-		}
-		return new Pair<>(result, minmax);
-	}
 
 	// Build key pattern tree for each column
 	private KeyTrie[] buildColsKeyPatternMultiRow(){
@@ -606,6 +520,12 @@ public class FormatIdentifying {
 	}
 
 	private boolean checkKeyPatternIsUnique(ArrayList<String> prefixStrings, ArrayList<String> keys){
+		if(keys.size() == 1){
+			String k = keys.get(0);
+			if (k.length() == 0)
+				return true;
+		}
+
 		for(String ps: prefixStrings){
 			int currentPos = 0;
 			int patternCount = 0;
@@ -626,6 +546,7 @@ public class FormatIdentifying {
 
 	// Check the sequential list of keys are on a string
 	private Pair<Integer, Integer> getIndexOfKeyPatternOnString(String str, ArrayList<String> key, int beginPos) {
+
 		int currPos = beginPos;
 		boolean flag = true;
 		int startPos = -1;

@@ -39,6 +39,7 @@ public class CodeGenTrieNode {
 	private String key;
 	private HashSet<String> naStrings;
 	private final NodeType type;
+	private String rowIndexBeginPos;
 
 	public CodeGenTrieNode(NodeType type) {
 		this.endOfCondition = false;
@@ -72,27 +73,29 @@ public class CodeGenTrieNode {
 	private String getRowPrefixValueCode(String currPos){
 		StringBuilder src = new StringBuilder();
 		String subStr;
-
 		src.append("endPos = getEndPos(str, strLen, "+ currPos+", endWithValueStringRow); \n");
 		subStr = "str.substring("+currPos+",endPos)";
-
-		src.append("row = ").append("Integer.parseInt("+subStr+"); \n");
+		if(rowIndexBeginPos.length() > 0)
+			src.append("row = ").append("Integer.parseInt("+subStr+") "+rowIndexBeginPos+"; \n");
+		else
+			src.append("row = ").append("Integer.parseInt("+subStr+"); \n");
 		return src.toString();
 	}
 
 	private String getColValueCode(String destination, String currPos){
 
 		StringBuilder src = new StringBuilder();
-		String subStr;
 
 		src.append("endPos = getEndPos(str, strLen, "+ currPos+", endWithValueString["+colIndex+"]); \n");
-		subStr = "str.substring("+currPos+",endPos)";
+		src.append("String cellStr"+colIndex+" = str.substring("+currPos+",endPos); \n");
 
 		if(valueType.isNumeric()) {
-			src.append(getParsCode(subStr));
+			src.append("if ( cellStr"+colIndex+".length() > 0 ){\n");
+			src.append(getParsCode("cellStr"+colIndex));
 			src.append("if(cellValue"+colIndex+" != 0) { \n");
 			src.append(destination).append("(row, " + colIndex + ", cellValue"+colIndex+"); \n");
 			src.append("lnnz++;\n");
+			src.append("}\n");
 			src.append("}\n");
 		}
 		else if(valueType == Types.ValueType.STRING || valueType == Types.ValueType.BOOLEAN){
@@ -108,20 +111,21 @@ public class CodeGenTrieNode {
 				sb.append("}\n");
 			}
 			else
-				src.append(getParsCode(subStr));
+				src.append(getParsCode("cellStr"+colIndex));
 			src.append(destination).append("(row, " + colIndex + ", cellValue"+colIndex+"); \n");
 		}
 		return src.toString();
 	}
 
 	private String getParsCode(String subStr) {
+		String cellValue = "cellValue"+colIndex;
 		switch(valueType ) {
-			case STRING:  return "String cellValue"+colIndex+" = "+subStr+"; \n";
-			case BOOLEAN: return "Boolean cellValue"+colIndex+" = Boolean.parseBoolean("+subStr+"); \n";
-			case INT32:   return "Integer cellValue"+colIndex+" = Integer.parseInt("+subStr+"); \n";
-			case INT64:   return "Long cellValue"+colIndex+" = Long.parseLong("+subStr+"); \n";
-			case FP64:    return "Double cellValue"+colIndex+" = Double.parseDouble("+subStr+"); \n";
-			case FP32:    return "Float cellValue"+colIndex+" = Float.parseFloat("+subStr+"); \n";
+			case STRING:  return "String "+cellValue+" = "+subStr+"; \n";
+			case BOOLEAN: return "Boolean "+cellValue+"; \n try{ "+cellValue+"= Boolean.parseBoolean("+subStr+");} catch(Exception e){"+cellValue+"=false;} \n";
+			case INT32:   return "Integer "+cellValue+"; \n try{ "+cellValue+"= Integer.parseInt("+subStr+");} catch(Exception e){"+cellValue+" = 0;} \n";
+			case INT64:   return "Long "+cellValue+"; \n try{"+cellValue+"= Long.parseLong("+subStr+"); } catch(Exception e){"+cellValue+" = 0l;} \n";
+			case FP64:    return "Double "+cellValue+"; \n try{ "+cellValue+"= Double.parseDouble("+subStr+"); } catch(Exception e){"+cellValue+" = 0d;}\n";
+			case FP32:    return "Float "+cellValue+"; \n try{ "+cellValue+"= Float.parseFloat("+subStr+");} catch(Exception e){"+cellValue+" = 0f;} \n";
 			default: throw new RuntimeException("Unsupported value type: "+valueType);
 		}
 	}
@@ -165,5 +169,13 @@ public class CodeGenTrieNode {
 
 	public NodeType getType() {
 		return type;
+	}
+
+	public String getRowIndexBeginPos() {
+		return rowIndexBeginPos;
+	}
+
+	public void setRowIndexBeginPos(String rowIndexBeginPos) {
+		this.rowIndexBeginPos = rowIndexBeginPos;
 	}
 }

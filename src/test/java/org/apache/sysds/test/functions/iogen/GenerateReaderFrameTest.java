@@ -181,7 +181,8 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
 
 			FrameReader fr= gr.getReader();
-			FrameBlock grFrame = fr.readFrameFromHDFS(dataPath,schema,names,data.length, clen);
+			FrameBlock frameBlock = fr.readFrameFromHDFS(dataPath,schema,names,data.length, clen);
+
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

@@ -61,6 +61,8 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 		src.append("int index, endPos, strLen; \n");
 		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
 		src.append("BufferedReader br = new BufferedReader(new InputStreamReader(is)); \n");
+		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX)
+			src.append("HashSet<String> endWithValueStringRow = _props.endWithValueStringsRow(); \n");
 		src.append("try { \n");
 		src.append("while((str = br.readLine()) != null){ \n");
 		src.append("strLen = str.length(); \n");

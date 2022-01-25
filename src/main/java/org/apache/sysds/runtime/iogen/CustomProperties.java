@@ -37,6 +37,7 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private Types.ValueType[] schema;
 	private IndexProperties rowIndex;
 	private KeyTrie rowKeyPattern;
+	private String rowIndexBegin;
 
 	public CustomProperties(KeyTrie[] colKeyPattern, IndexProperties rowIndex) {
 		this.colKeyPattern = colKeyPattern;
@@ -58,6 +59,10 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		for(int i=0; i< colKeyPattern.length; i++)
 			endWithValueString[i] = colKeyPattern[i].getFirstSuffixKeyPatterns();
 		return endWithValueString;
+	}
+
+	public HashSet<String> endWithValueStringsRow(){
+		return rowKeyPattern.getFirstSuffixKeyPatterns();
 	}
 
 	public void setColKeyPattern(KeyTrie[] colKeyPattern) {
@@ -86,5 +91,13 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public void setRowKeyPattern(KeyTrie rowKeyPattern) {
 		this.rowKeyPattern = rowKeyPattern;
+	}
+
+	public String getRowIndexBegin() {
+		return rowIndexBegin;
+	}
+
+	public void setRowIndexBegin(String rowIndexBegin) {
+		this.rowIndexBegin = rowIndexBegin;
 	}
 }

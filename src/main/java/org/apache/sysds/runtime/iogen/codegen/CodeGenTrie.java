@@ -45,9 +45,7 @@ public class CodeGenTrie {
 	private void buildPrefixTree(){
 		for(int c=0; c< properties.getColKeyPattern().length; c++){
 			KeyTrie keyTrie = properties.getColKeyPattern()[c];
-			Types.ValueType vt = properties.getSchema() == null? Types.ValueType.FP64 : properties.getSchema()[c];
-			//keyTrie.getReversePrefixKeyPatterns()
-			ArrayList<ArrayList<String>> ss = keyTrie.getReversePrefixKeyPatterns();
+			Types.ValueType vt = properties.getSchema() == null ? Types.ValueType.FP64 : properties.getSchema()[c];
 			for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
 				this.insert(rootCol, c, vt, keys);
 		}
@@ -74,6 +72,7 @@ public class CodeGenTrie {
 		CodeGenTrieNode newNode;
 		for(int i = rci; i < keys.size(); i++) {
 			newNode = new CodeGenTrieNode(i == keys.size() - 1, index, valueType, keys.get(i), new HashSet<>(), root.getType());
+			newNode.setRowIndexBeginPos(properties.getRowIndexBegin());
 			currentNode.getChildren().put(keys.get(i), newNode);
 			currentNode = newNode;
 		}
@@ -111,42 +110,42 @@ public class CodeGenTrie {
 	}
 
 	private void getJavaCode(CodeGenTrieNode node, StringBuilder src, String currPos){
-		String currPosVariable = getRandomName("curPos");
-		if(node.getChildren().size() ==0 || node.isEndOfCondition()){
-			String key = node.getKey();
-			if(key.length() > 0){
-				src.append("index = str.indexOf(\""+node.getKey().replace("\"", "\\\"")+"\", "+currPos+"); \n");
-				src.append("if(index != -1) { \n");
-				src.append("int "+currPosVariable + " = index + "+ key.length()+"; \n");
-				src.append(node.geValueCode(destination, currPosVariable));
-				currPos = currPosVariable;
-			}
-			else
-				src.append(node.geValueCode(destination, "0"));
-		}
+		if(node.isEndOfCondition())
+			src.append(node.geValueCode(destination, currPos));
 
 		if(node.getChildren().size() > 0) {
-			if(node.getKey() != null) {
-				currPosVariable = getRandomName("curPos");
-				src.append("index = str.indexOf(\"" + node.getKey().replace("\"", "\\\"") + "\", " + currPos + "); \n");
-				src.append("if(index != -1) { \n");
-				src.append("int " + currPosVariable + " = index + " + node.getKey().length() + "; \n");
-				currPos = currPosVariable;
-			}
-
-			for(String key : node.getChildren().keySet()) {
-				CodeGenTrieNode child = node.getChildren().get(key);
-				getJavaCode(child, src, currPos);
-			}
-			if(node.getKey() != null) {
-				src.append("}\n");
-			}
-		}
-
-		if(node.getChildren().size() ==0 || node.isEndOfCondition()){
-			String key = node.getKey();
-			if(key.length() > 0)
-				src.append("} \n");
+			String currPosVariable;
+//			if(node.getKey() != null) {
+//				currPosVariable = getRandomName("curPos");
+//				src.append("index = str.indexOf(\"" + node.getKey().replace("\"", "\\\"") + "\", " + currPos + "); \n");
+//				src.append("if(index != -1) { \n");
+//				src.append("int " + currPosVariable + " = index + " + node.getKey().length() + "; \n");
+//				currPos = currPosVariable;
+//
+//				for(String key : node.getChildren().keySet()) {
+//					CodeGenTrieNode child = node.getChildren().get(key);
+//					getJavaCode(child, src, currPos);
+//				}
+//					src.append("} \n");
+//			}
+//			else {
+				for(String key : node.getChildren().keySet()) {
+					if(key.length()>0){
+						currPosVariable = getRandomName("curPos");
+						if(node.getKey() == null)
+							src.append("index = str.indexOf(\"" + key.replace("\"", "\\\"") + "\"); \n");
+						else
+							src.append("index = str.indexOf(\"" + key.replace("\"", "\\\"") + "\", " + currPos + "); \n");
+							src.append("if(index != -1) { \n");
+							src.append("int " + currPosVariable + " = index + " + key.length() + "; \n");
+							currPos = currPosVariable;
+					}
+					CodeGenTrieNode child = node.getChildren().get(key);
+					getJavaCode(child, src, currPos);
+					if(key.length()>0)
+						src.append("} \n");
+				}
+			//}
 		}
 	}
 }

@@ -576,6 +576,7 @@
 						<configuration>
 							<excludes>
 								<exclude>scripts/perftest/results/**</exclude>
+								<exclude>scripts/perftest/temp/**</exclude>
 								<exclude>.gitignore</exclude>
 								<exclude>src/main/python/.gitignore</exclude>
 								<exclude>.gitmodules</exclude>

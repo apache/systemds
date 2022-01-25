@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.iogen.codegen.MatrixCodeGen;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
+import java.util.Random;
 
 /*
    Generate Reader has two steps:
@@ -62,6 +63,15 @@ public abstract class GenerateReader {
 		}
 	}
 
+	public String getRandomClassName() {
+		Random r = new Random();
+		int low = 0;
+		int high = 100000000;
+		int result = r.nextInt(high - low) + low;
+
+		return "GIOReader_" + result;
+	}
+
 
 	// Generate Reader for Matrix
 	public static class GenerateReaderMatrix extends GenerateReader {
@@ -77,7 +87,7 @@ public abstract class GenerateReader {
 		}
 
 		public MatrixReader getReader() throws Exception {
-			String className = "GIOMatrixReader";
+			String className = getRandomClassName();
 			MatrixCodeGen src = new MatrixCodeGen(properties, className);
 
 			// constructor with arguments as CustomProperties
@@ -102,7 +112,7 @@ public abstract class GenerateReader {
 		}
 
 		public FrameReader getReader() throws Exception {
-			String className = "GIOFrameReader";
+			String className = getRandomClassName();
 			FrameCodeGen src = new FrameCodeGen(properties, className);
 
 			// constructor with arguments as CustomProperties

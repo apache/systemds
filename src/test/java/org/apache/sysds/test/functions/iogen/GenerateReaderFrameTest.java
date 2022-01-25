@@ -179,7 +179,6 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 
 			FrameReader fr = gr.getReader();
 			FrameBlock frameBlock = fr.readFrameFromHDFS(dataPath, schema, data.length, clen);
-
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

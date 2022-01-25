@@ -63,7 +63,8 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 		}
 	}
 
-	@SuppressWarnings("unused") protected void runGenerateReaderTest() {
+	@SuppressWarnings("unused")
+	protected void runGenerateReaderTest() {
 
 		Types.ExecMode oldPlatform = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;

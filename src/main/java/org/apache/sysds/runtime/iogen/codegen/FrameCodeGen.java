@@ -55,7 +55,8 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 
 	}
 
-	@Override public String generateCodeJava() {
+	@Override
+	public String generateCodeJava() {
 
 		StringBuilder src = new StringBuilder();
 		src.append("RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL); \n");
@@ -84,7 +85,8 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 		return javaTemplate.replace(code, src.toString());
 	}
 
-	@Override public String generateCodeCPP() {
+	@Override
+	public String generateCodeCPP() {
 		return null;
 	}
 }

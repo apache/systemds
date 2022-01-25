@@ -302,37 +302,6 @@ public class RawIndex {
 		}
 	}
 
-	public void printBitSets() {
-		//		String numberBitSetStrng;
-				String dotBitSetString="";
-				String eBitSetString="";
-				String plusMinusBitSetString="";
-		//		String minusBitSetStrng;
-		//		for(int i=0; i<rawLength;i++){
-		//			numberBitSet.toString();
-		//		}
-		for(int i=0; i<rawLength;i++){
-			if(dotBitSet.get(i))
-				dotBitSetString+="1";
-			else
-				dotBitSetString+="0";
-
-			if(eBitSet.get(i))
-				eBitSetString+="1";
-			else
-				eBitSetString+="0";
-
-			if(plusMinusBitSet.get(i))
-				plusMinusBitSetString+="1";
-			else
-				plusMinusBitSetString+="0";
-		}
-		System.out.println("DOT="+dotBitSetString);
-		System.out.println("E  ="+eBitSetString);
-		System.out.println("+- ="+plusMinusBitSetString);
-
-	}
-
 	public void cloneReservedPositions(){
 		this.backupReservedPositions = (BitSet) this.reservedPositions.clone();
 	}

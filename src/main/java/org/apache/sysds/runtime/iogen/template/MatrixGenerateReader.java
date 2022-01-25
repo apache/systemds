@@ -76,7 +76,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return rows;
 	}
 
-	@Override public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz)
+	@Override
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz)
 		throws IOException, DMLRuntimeException {
 
 		MatrixBlock ret = null;
@@ -94,7 +95,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return ret;
 	}
 
-	@Override public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz)
+	@Override
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz)
 		throws IOException, DMLRuntimeException {
 
 		MatrixBlock ret = null;
@@ -104,7 +106,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return ret;
 	}
 
-	@SuppressWarnings("unchecked") private MatrixBlock readMatrixFromHDFS(Path path, JobConf job, FileSystem fs,
+	@SuppressWarnings("unchecked")
+	private MatrixBlock readMatrixFromHDFS(Path path, JobConf job, FileSystem fs,
 		MatrixBlock dest, long rlen, long clen, int blen) throws IOException, DMLRuntimeException {
 
 		//prepare file paths in alphanumeric order

@@ -28,7 +28,8 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public enum IndexProperties {
 		IDENTIFY, PREFIX, KEY;
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			return this.name().toUpperCase();
 		}
 	}

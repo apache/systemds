@@ -28,7 +28,8 @@ public class CodeGenTrieNode {
 
 	public enum NodeType {
 		ROW, COL;
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			return this.name().toUpperCase();
 		}
 	}

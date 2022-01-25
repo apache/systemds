@@ -81,7 +81,8 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 		return javaTemplate.replace(code, src.toString());
 	}
 
-	@Override public String generateCodeCPP() {
+	@Override
+	public String generateCodeCPP() {
 		return null;
 	}
 }

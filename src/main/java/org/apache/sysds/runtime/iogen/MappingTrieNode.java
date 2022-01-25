@@ -27,7 +27,8 @@ public class MappingTrieNode {
 
 	public enum Type {
 		INNER, END, IGNORE;
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			return this.name().toUpperCase();
 		}
 	}

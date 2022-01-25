@@ -44,7 +44,8 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 
 	protected abstract String getTestName();
 
-	@Override public void setUp() {
+	@Override
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(getTestName(), new TestConfiguration(TEST_DIR, getTestName(), new String[] {"Y"}));
 	}

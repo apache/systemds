@@ -393,7 +393,9 @@ public class ColGroupFactory {
 		// use a Map that is at least char size.
 		final int nVal = cg.getNumVals() < 16 ? 16 : Math.max(cg.getNumVals(), 257);
 		if(cs.transposed) {
-			LibMatrixReorg.transposeInPlace(raw, k);
+			LOG.warn("In-effecient transpose back of the input matrix to do delta encoding");
+			// throw new NotImplementedException("not implemented delta encoding of transposed matrix");
+			raw = LibMatrixReorg.transposeInPlace(raw, k);
 			cs.transposed = false;
 		}
 		// Delta encode the raw data

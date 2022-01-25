@@ -93,6 +93,20 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	}
 
 	@Override
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSizeDeltaEncoded(int[] colIndexes, int estimate,
+		int nrUniqueUpperBound) {
+
+		final IEncode map = IEncode.createFromMatrixBlockDelta(_data, _transposed, colIndexes, _sampleSize);
+		// TODO find out if we need to scale differently if we use delta
+		final EstimationFactors sampleFacts = map.computeSizeEstimation(colIndexes, _sampleSize, _data.getSparsity(), _data.getSparsity());
+		// EstimationFactors.computeSizeEstimation(colIndexes, map, false, _sampleSize,
+			// false);
+		final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, colIndexes, nrUniqueUpperBound);
+		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+
+	}
+
+	@Override
 	protected int worstCaseUpperBound(int[] columns) {
 		if(getNumColumns() == columns.length)
 			return Math.min(getNumRows(), (int) _data.getNonZeros());

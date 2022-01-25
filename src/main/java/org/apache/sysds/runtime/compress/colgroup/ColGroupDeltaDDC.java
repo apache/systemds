@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -8,56 +27,55 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
- * Class to encapsulate information about a column group that is first delta encoded then encoded with dense
- * dictionary encoding (DeltaDDC).
+ * Class to encapsulate information about a column group that is first delta encoded then encoded with dense dictionary
+ * encoding (DeltaDDC).
  */
 public class ColGroupDeltaDDC extends ColGroupDDC {
 
-    /**
-     * Constructor for serialization
-     *
-     * @param numRows number of rows
-     */
-    protected ColGroupDeltaDDC(int numRows) {
-        super(numRows);
-    }
+	/**
+	 * Constructor for serialization
+	 *
+	 * @param numRows number of rows
+	 */
+	protected ColGroupDeltaDDC(int numRows) {
+		super(numRows);
+	}
 
-    protected ColGroupDeltaDDC(int[] colIndices, int numRows, ADictionary dict, AMapToData data, int[] cachedCounts) {
-        super(colIndices, numRows, dict, data, cachedCounts);
-        _zeros = false;
-        _data = data;
-    }
+	protected ColGroupDeltaDDC(int[] colIndices, int numRows, ADictionary dict, AMapToData data, int[] cachedCounts) {
+		super(colIndices, numRows, dict, data, cachedCounts);
+		_zeros = false;
+		_data = data;
+	}
 
-    public CompressionType getCompType() {
-        return CompressionType.DeltaDDC;
-    }
+	public CompressionType getCompType() {
+		return CompressionType.DeltaDDC;
+	}
 
-    @Override
-    protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
-                                                         double[] values) {
-        final int nCol = _colIndexes.length;
-        for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
-            final double[] c = db.values(offT);
-            final int off = db.pos(offT) + offC;
-            final int rowIndex = _data.getIndex(i) * nCol;
-            final int prevOff = (off == 0) ? off : off - nCol;
-            for(int j = 0; j < nCol; j++) {
-                // Here we use the values in the previous row to compute current values along with the delta
-                double newValue = c[prevOff + j] + values[rowIndex + j];
-                c[off + _colIndexes[j]] += newValue;
-            }
-        }
-    }
+	@Override
+	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values) {
+		final int nCol = _colIndexes.length;
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT) + offC;
+			final int rowIndex = _data.getIndex(i) * nCol;
+			final int prevOff = (off == 0) ? off : off - nCol;
+			for(int j = 0; j < nCol; j++) {
+				// Here we use the values in the previous row to compute current values along with the delta
+				double newValue = c[prevOff + j] + values[rowIndex + j];
+				c[off + _colIndexes[j]] += newValue;
+			}
+		}
+	}
 
-    @Override
-    protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
-                                                          double[] values) {
-        throw new NotImplementedException();
-    }
+	@Override
+	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		double[] values) {
+		throw new NotImplementedException();
+	}
 
-    @Override
-    public AColGroup scalarOperation(ScalarOperator op) {
-        return new ColGroupDeltaDDC(_colIndexes, _numRows, _dict.applyScalarOp(op), _data,
-                getCachedCounts());
-    }
+	@Override
+	public AColGroup scalarOperation(ScalarOperator op) {
+		return new ColGroupDeltaDDC(_colIndexes, _numRows, _dict.applyScalarOp(op), _data, getCachedCounts());
+	}
 }

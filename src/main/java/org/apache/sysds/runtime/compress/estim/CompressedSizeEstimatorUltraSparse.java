@@ -95,6 +95,24 @@ public class CompressedSizeEstimatorUltraSparse extends CompressedSizeEstimator 
 	}
 
 	@Override
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSizeDeltaEncoded(int[] colIndexes, int estimate,
+		int nrUniqueUpperBound) {
+
+		// TODO do something different.
+		final int _numRows = getNumRows();
+		if(colIndexes.length == 1)
+			return new CompressedSizeInfoColGroup(colIndexes, oneColumnFacts, _data.getSparsity());
+		else {
+			final double sparsity = _data.getSparsity();
+			final int nCols = colIndexes.length;
+			final int scaledDistinct = (int) Math.min(Math.pow(nDistinct, nCols), Integer.MAX_VALUE);
+			final int largestOff = (int) ((double) _numRows * (1 - sparsity * nCols));
+			final EstimationFactors facts = new EstimationFactors(nCols, scaledDistinct, _numRows, largestOff, sparsity);
+			return new CompressedSizeInfoColGroup(colIndexes, facts, _data.getSparsity());
+		}
+	}
+
+	@Override
 	protected CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int joinedMaxDistinct) {
 		throw new NotImplementedException();

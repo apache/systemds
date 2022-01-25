@@ -54,6 +54,14 @@ public interface IEncode {
 			return createWithReader(m, rowCols, transposed);
 	}
 
+	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, int[] rowCols){
+		return createFromMatrixBlockDelta(m, transposed, rowCols, transposed ? m.getNumColumns() : m.getNumRows());
+	}
+
+	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, int[] rowCols, int nVals){
+		throw new NotImplementedException();
+	}
+
 	public static IEncode createFromMatrixBlock(MatrixBlock m, boolean transposed, int rowCol) {
 		if(m.isEmpty())
 			return new EmptyEncoding();

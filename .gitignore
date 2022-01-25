@@ -37,6 +37,10 @@ buildNumber.properties
 .metadata
 .cache*
 
+src/main/java/org/apache/sysds/parser/dml/Dml.interp
+src/main/java/org/apache/sysds/parser/dml/DmlLexer.interp
+src/main/java/org/apache/sysds/parser/dml/.antlr
+
 # Documentation artifacts
 .jekyll-cache/
 _site/

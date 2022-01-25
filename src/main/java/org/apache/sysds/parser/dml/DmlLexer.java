@@ -1,4 +1,4 @@
-// Generated from org\apache\sysds\parser\dml\Dml.g4 by ANTLR 4.5.3
+// Generated from org/apache/sysds/parser/dml/Dml.g4 by ANTLR 4.8
 package org.apache.sysds.parser.dml;
 
 /*
@@ -31,7 +31,7 @@ import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class DmlLexer extends Lexer {
-	static { RuntimeMetaData.checkVersion("4.5.3", RuntimeMetaData.VERSION); }
+	static { RuntimeMetaData.checkVersion("4.8", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
 	protected static final PredictionContextCache _sharedContextCache =
@@ -48,42 +48,55 @@ public class DmlLexer extends Lexer {
 		ID=60, INT=61, DOUBLE=62, DIGIT=63, ALPHABET=64, COMMANDLINE_NAMED_ID=65, 
 		COMMANDLINE_POSITION_ID=66, STRING=67, LINE_COMMENT=68, MULTILINE_BLOCK_COMMENT=69, 
 		WHITESPACE=70;
+	public static String[] channelNames = {
+		"DEFAULT_TOKEN_CHANNEL", "HIDDEN"
+	};
+
 	public static String[] modeNames = {
 		"DEFAULT_MODE"
 	};
 
-	public static final String[] ruleNames = {
-		"T__0", "T__1", "T__2", "T__3", "T__4", "T__5", "T__6", "T__7", "T__8", 
-		"T__9", "T__10", "T__11", "T__12", "T__13", "T__14", "T__15", "T__16", 
-		"T__17", "T__18", "T__19", "T__20", "T__21", "T__22", "T__23", "T__24", 
-		"T__25", "T__26", "T__27", "T__28", "T__29", "T__30", "T__31", "T__32", 
-		"T__33", "T__34", "T__35", "T__36", "T__37", "T__38", "T__39", "T__40", 
-		"T__41", "T__42", "T__43", "T__44", "T__45", "T__46", "T__47", "T__48", 
-		"T__49", "T__50", "T__51", "T__52", "T__53", "T__54", "T__55", "T__56", 
-		"T__57", "T__58", "ID", "INT", "DOUBLE", "DIGIT", "ALPHABET", "EXP", "COMMANDLINE_NAMED_ID", 
-		"COMMANDLINE_POSITION_ID", "STRING", "ESC", "LINE_COMMENT", "MULTILINE_BLOCK_COMMENT", 
-		"WHITESPACE"
-	};
+	private static String[] makeRuleNames() {
+		return new String[] {
+			"T__0", "T__1", "T__2", "T__3", "T__4", "T__5", "T__6", "T__7", "T__8", 
+			"T__9", "T__10", "T__11", "T__12", "T__13", "T__14", "T__15", "T__16", 
+			"T__17", "T__18", "T__19", "T__20", "T__21", "T__22", "T__23", "T__24", 
+			"T__25", "T__26", "T__27", "T__28", "T__29", "T__30", "T__31", "T__32", 
+			"T__33", "T__34", "T__35", "T__36", "T__37", "T__38", "T__39", "T__40", 
+			"T__41", "T__42", "T__43", "T__44", "T__45", "T__46", "T__47", "T__48", 
+			"T__49", "T__50", "T__51", "T__52", "T__53", "T__54", "T__55", "T__56", 
+			"T__57", "T__58", "ID", "INT", "DOUBLE", "DIGIT", "ALPHABET", "EXP", 
+			"COMMANDLINE_NAMED_ID", "COMMANDLINE_POSITION_ID", "STRING", "ESC", "LINE_COMMENT", 
+			"MULTILINE_BLOCK_COMMENT", "WHITESPACE"
+		};
+	}
+	public static final String[] ruleNames = makeRuleNames();
 
-	private static final String[] _LITERAL_NAMES = {
-		null, "'source'", "'('", "')'", "'as'", "';'", "'setwd'", "'='", "'<-'", 
-		"','", "'['", "']'", "'ifdef'", "'+='", "'if'", "'{'", "'}'", "'else'", 
-		"'for'", "'in'", "'parfor'", "'while'", "':'", "'function'", "'return'", 
-		"'externalFunction'", "'implemented'", "'^'", "'-'", "'+'", "'%*%'", "'%/%'", 
-		"'%%'", "'*'", "'/'", "'>'", "'>='", "'<'", "'<='", "'=='", "'!='", "'!'", 
-		"'&'", "'&&'", "'|'", "'||'", "'TRUE'", "'FALSE'", "'int'", "'integer'", 
-		"'string'", "'boolean'", "'double'", "'unknown'", "'Int'", "'Integer'", 
-		"'String'", "'Boolean'", "'Double'", "'Unknown'"
-	};
-	private static final String[] _SYMBOLIC_NAMES = {
-		null, null, null, null, null, null, null, null, null, null, null, null, 
-		null, null, null, null, null, null, null, null, null, null, null, null, 
-		null, null, null, null, null, null, null, null, null, null, null, null, 
-		null, null, null, null, null, null, null, null, null, null, null, null, 
-		null, null, null, null, null, null, null, null, null, null, null, null, 
-		"ID", "INT", "DOUBLE", "DIGIT", "ALPHABET", "COMMANDLINE_NAMED_ID", "COMMANDLINE_POSITION_ID", 
-		"STRING", "LINE_COMMENT", "MULTILINE_BLOCK_COMMENT", "WHITESPACE"
-	};
+	private static String[] makeLiteralNames() {
+		return new String[] {
+			null, "'source'", "'('", "')'", "'as'", "';'", "'setwd'", "'='", "'<-'", 
+			"','", "'['", "']'", "'ifdef'", "'+='", "'if'", "'{'", "'}'", "'else'", 
+			"'for'", "'in'", "'parfor'", "'while'", "':'", "'function'", "'return'", 
+			"'externalFunction'", "'implemented'", "'^'", "'-'", "'+'", "'%*%'", 
+			"'%/%'", "'%%'", "'*'", "'/'", "'>'", "'>='", "'<'", "'<='", "'=='", 
+			"'!='", "'!'", "'&'", "'&&'", "'|'", "'||'", "'TRUE'", "'FALSE'", "'int'", 
+			"'integer'", "'string'", "'boolean'", "'double'", "'unknown'", "'Int'", 
+			"'Integer'", "'String'", "'Boolean'", "'Double'", "'Unknown'"
+		};
+	}
+	private static final String[] _LITERAL_NAMES = makeLiteralNames();
+	private static String[] makeSymbolicNames() {
+		return new String[] {
+			null, null, null, null, null, null, null, null, null, null, null, null, 
+			null, null, null, null, null, null, null, null, null, null, null, null, 
+			null, null, null, null, null, null, null, null, null, null, null, null, 
+			null, null, null, null, null, null, null, null, null, null, null, null, 
+			null, null, null, null, null, null, null, null, null, null, null, null, 
+			"ID", "INT", "DOUBLE", "DIGIT", "ALPHABET", "COMMANDLINE_NAMED_ID", "COMMANDLINE_POSITION_ID", 
+			"STRING", "LINE_COMMENT", "MULTILINE_BLOCK_COMMENT", "WHITESPACE"
+		};
+	}
+	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
 	public static final Vocabulary VOCABULARY = new VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES);
 
 	/**
@@ -133,13 +146,16 @@ public class DmlLexer extends Lexer {
 	public String getSerializedATN() { return _serializedATN; }
 
 	@Override
+	public String[] getChannelNames() { return channelNames; }
+
+	@Override
 	public String[] getModeNames() { return modeNames; }
 
 	@Override
 	public ATN getATN() { return _ATN; }
 
 	public static final String _serializedATN =
-		"\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\2H\u02bd\b\1\4\2\t"+
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\2H\u02bd\b\1\4\2\t"+
 		"\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13"+
 		"\t\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22"+
 		"\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31\t\31"+
@@ -186,19 +202,19 @@ public class DmlLexer extends Lexer {
 		"A\"C#E$G%I&K\'M(O)Q*S+U,W-Y.[/]\60_\61a\62c\63e\64g\65i\66k\67m8o9q:s"+
 		";u<w=y>{?}@\177A\u0081B\u0083\2\u0085C\u0087D\u0089E\u008b\2\u008dF\u008f"+
 		"G\u0091H\3\2\n\4\2NNnn\4\2C\\c|\4\2GGgg\4\2--//\4\2$$^^\4\2))^^\n\2$$"+
-		"))^^ddhhppttvv\5\2\13\f\17\17\"\"\u02eb\2\3\3\2\2\2\2\5\3\2\2\2\2\7\3"+
-		"\2\2\2\2\t\3\2\2\2\2\13\3\2\2\2\2\r\3\2\2\2\2\17\3\2\2\2\2\21\3\2\2\2"+
-		"\2\23\3\2\2\2\2\25\3\2\2\2\2\27\3\2\2\2\2\31\3\2\2\2\2\33\3\2\2\2\2\35"+
-		"\3\2\2\2\2\37\3\2\2\2\2!\3\2\2\2\2#\3\2\2\2\2%\3\2\2\2\2\'\3\2\2\2\2)"+
-		"\3\2\2\2\2+\3\2\2\2\2-\3\2\2\2\2/\3\2\2\2\2\61\3\2\2\2\2\63\3\2\2\2\2"+
-		"\65\3\2\2\2\2\67\3\2\2\2\29\3\2\2\2\2;\3\2\2\2\2=\3\2\2\2\2?\3\2\2\2\2"+
-		"A\3\2\2\2\2C\3\2\2\2\2E\3\2\2\2\2G\3\2\2\2\2I\3\2\2\2\2K\3\2\2\2\2M\3"+
-		"\2\2\2\2O\3\2\2\2\2Q\3\2\2\2\2S\3\2\2\2\2U\3\2\2\2\2W\3\2\2\2\2Y\3\2\2"+
-		"\2\2[\3\2\2\2\2]\3\2\2\2\2_\3\2\2\2\2a\3\2\2\2\2c\3\2\2\2\2e\3\2\2\2\2"+
-		"g\3\2\2\2\2i\3\2\2\2\2k\3\2\2\2\2m\3\2\2\2\2o\3\2\2\2\2q\3\2\2\2\2s\3"+
-		"\2\2\2\2u\3\2\2\2\2w\3\2\2\2\2y\3\2\2\2\2{\3\2\2\2\2}\3\2\2\2\2\177\3"+
-		"\2\2\2\2\u0081\3\2\2\2\2\u0085\3\2\2\2\2\u0087\3\2\2\2\2\u0089\3\2\2\2"+
-		"\2\u008d\3\2\2\2\2\u008f\3\2\2\2\2\u0091\3\2\2\2\3\u0093\3\2\2\2\5\u009a"+
+		"))^^ddhhppttvv\5\2\13\f\17\17\"\"\2\u02eb\2\3\3\2\2\2\2\5\3\2\2\2\2\7"+
+		"\3\2\2\2\2\t\3\2\2\2\2\13\3\2\2\2\2\r\3\2\2\2\2\17\3\2\2\2\2\21\3\2\2"+
+		"\2\2\23\3\2\2\2\2\25\3\2\2\2\2\27\3\2\2\2\2\31\3\2\2\2\2\33\3\2\2\2\2"+
+		"\35\3\2\2\2\2\37\3\2\2\2\2!\3\2\2\2\2#\3\2\2\2\2%\3\2\2\2\2\'\3\2\2\2"+
+		"\2)\3\2\2\2\2+\3\2\2\2\2-\3\2\2\2\2/\3\2\2\2\2\61\3\2\2\2\2\63\3\2\2\2"+
+		"\2\65\3\2\2\2\2\67\3\2\2\2\29\3\2\2\2\2;\3\2\2\2\2=\3\2\2\2\2?\3\2\2\2"+
+		"\2A\3\2\2\2\2C\3\2\2\2\2E\3\2\2\2\2G\3\2\2\2\2I\3\2\2\2\2K\3\2\2\2\2M"+
+		"\3\2\2\2\2O\3\2\2\2\2Q\3\2\2\2\2S\3\2\2\2\2U\3\2\2\2\2W\3\2\2\2\2Y\3\2"+
+		"\2\2\2[\3\2\2\2\2]\3\2\2\2\2_\3\2\2\2\2a\3\2\2\2\2c\3\2\2\2\2e\3\2\2\2"+
+		"\2g\3\2\2\2\2i\3\2\2\2\2k\3\2\2\2\2m\3\2\2\2\2o\3\2\2\2\2q\3\2\2\2\2s"+
+		"\3\2\2\2\2u\3\2\2\2\2w\3\2\2\2\2y\3\2\2\2\2{\3\2\2\2\2}\3\2\2\2\2\177"+
+		"\3\2\2\2\2\u0081\3\2\2\2\2\u0085\3\2\2\2\2\u0087\3\2\2\2\2\u0089\3\2\2"+
+		"\2\2\u008d\3\2\2\2\2\u008f\3\2\2\2\2\u0091\3\2\2\2\3\u0093\3\2\2\2\5\u009a"+
 		"\3\2\2\2\7\u009c\3\2\2\2\t\u009e\3\2\2\2\13\u00a1\3\2\2\2\r\u00a3\3\2"+
 		"\2\2\17\u00a9\3\2\2\2\21\u00ab\3\2\2\2\23\u00ae\3\2\2\2\25\u00b0\3\2\2"+
 		"\2\27\u00b2\3\2\2\2\31\u00b4\3\2\2\2\33\u00ba\3\2\2\2\35\u00bd\3\2\2\2"+

@@ -115,37 +115,22 @@ public class CodeGenTrie {
 
 		if(node.getChildren().size() > 0) {
 			String currPosVariable;
-//			if(node.getKey() != null) {
-//				currPosVariable = getRandomName("curPos");
-//				src.append("index = str.indexOf(\"" + node.getKey().replace("\"", "\\\"") + "\", " + currPos + "); \n");
-//				src.append("if(index != -1) { \n");
-//				src.append("int " + currPosVariable + " = index + " + node.getKey().length() + "; \n");
-//				currPos = currPosVariable;
-//
-//				for(String key : node.getChildren().keySet()) {
-//					CodeGenTrieNode child = node.getChildren().get(key);
-//					getJavaCode(child, src, currPos);
-//				}
-//					src.append("} \n");
-//			}
-//			else {
-				for(String key : node.getChildren().keySet()) {
-					if(key.length()>0){
-						currPosVariable = getRandomName("curPos");
-						if(node.getKey() == null)
-							src.append("index = str.indexOf(\"" + key.replace("\"", "\\\"") + "\"); \n");
-						else
-							src.append("index = str.indexOf(\"" + key.replace("\"", "\\\"") + "\", " + currPos + "); \n");
-							src.append("if(index != -1) { \n");
-							src.append("int " + currPosVariable + " = index + " + key.length() + "; \n");
-							currPos = currPosVariable;
-					}
-					CodeGenTrieNode child = node.getChildren().get(key);
-					getJavaCode(child, src, currPos);
-					if(key.length()>0)
-						src.append("} \n");
+			for(String key : node.getChildren().keySet()) {
+				if(key.length() > 0) {
+					currPosVariable = getRandomName("curPos");
+					if(node.getKey() == null)
+						src.append("index = str.indexOf(\"" + key.replace("\"", "\\\"") + "\"); \n");
+					else
+						src.append("index = str.indexOf(\"" + key.replace("\"", "\\\"") + "\", " + currPos + "); \n");
+					src.append("if(index != -1) { \n");
+					src.append("int " + currPosVariable + " = index + " + key.length() + "; \n");
+					currPos = currPosVariable;
 				}
-			//}
+				CodeGenTrieNode child = node.getChildren().get(key);
+				getJavaCode(child, src, currPos);
+				if(key.length() > 0)
+					src.append("} \n");
+			}
 		}
 	}
 }

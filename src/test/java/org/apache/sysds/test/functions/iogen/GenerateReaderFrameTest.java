@@ -53,8 +53,6 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 	//	Types.ValueType.BOOLEAN
 	};
 
-	protected Types.ValueType[] types1= { Types.ValueType.BOOLEAN};
-
 	protected abstract String getTestName();
 
 	@Override public void setUp() {
@@ -63,7 +61,6 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 	}
 
 	protected String getRandomString(int length) {
-		//String alphabet1 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
 		String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 		StringBuilder salt = new StringBuilder();
 		Random rnd = new Random();
@@ -168,11 +165,11 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			TestConfiguration config = getTestConfiguration(getTestName());
 			loadTestConfiguration(config);
 
-			FrameBlock sampleFrame = new FrameBlock(schema, names, data);
+			FrameBlock sampleFrame = new FrameBlock(schema, data);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			File directory = new File(HOME);
-			if (! directory.exists()){
+			if(!directory.exists()) {
 				directory.mkdir();
 			}
 			String dataPath = HOME + "frame_data.raw";
@@ -180,8 +177,8 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			writeRawString(sampleRaw, dataPath);
 			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
 
-			FrameReader fr= gr.getReader();
-			FrameBlock frameBlock = fr.readFrameFromHDFS(dataPath,schema,names,data.length, clen);
+			FrameReader fr = gr.getReader();
+			FrameBlock frameBlock = fr.readFrameFromHDFS(dataPath, schema, data.length, clen);
 
 		}
 		catch(Exception exception) {

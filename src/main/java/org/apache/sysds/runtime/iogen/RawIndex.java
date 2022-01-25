@@ -150,8 +150,13 @@ public class RawIndex {
 	public Pair<Integer, Integer> findValue(Object value, Types.ValueType valueType){
 		if(valueType.isNumeric())
 			return findValue(UtilFunctions.getDouble(value));
-		else if(valueType == Types.ValueType.STRING)
-			return findValue(UtilFunctions.objectToString(value));
+		else if(valueType == Types.ValueType.STRING){
+			String os = UtilFunctions.objectToString(value);
+			if(os == null || os.length() == 0)
+				return null;
+			else
+				return findValue(UtilFunctions.objectToString(value));
+		}
 //		else if(valueType == Types.ValueType.BOOLEAN)
 //			return findValue(UtilFunctions.objectToString())
 		else

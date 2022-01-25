@@ -64,7 +64,8 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 		src.append("int row = rl; \n");
 		src.append("long lnnz = 0; \n");
 		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
-		src.append("HashSet<String> endWithValueStringRow = _props.endWithValueStringsRow(); \n");
+		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX)
+			src.append("HashSet<String> endWithValueStringRow = _props.endWithValueStringsRow(); \n");
 		src.append("int index, endPos, strLen; \n");
 		src.append("try { \n");
 		src.append("while(reader.next(key, value)){ \n");

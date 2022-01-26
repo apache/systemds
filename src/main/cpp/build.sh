@@ -66,3 +66,8 @@ ldd lib/libsystemds_mkl-Linux-x86_64.so | grep -v $gcc_toolkit"\|$linux_loader\|
 echo "Non-standard dependencies for libsystemds_openblas-linux-x86_64.so"
 ldd lib/libsystemds_openblas-Linux-x86_64.so | grep -v $gcc_toolkit"\|$linux_loader\|"$openblas
 echo "-----------------------------------------------------------------------"
+
+# compile HE
+cmake he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
+cmake --build HE --target install --config Release
+rm -R HE

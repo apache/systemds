@@ -33,7 +33,15 @@ def cspline(X: Matrix,
             Y: Matrix,
             inp_x: float,
             **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param monotonically: there is no duplicates points in X
+    :param inp_x: the given input x, for which the cspline will find predicted y
+    :param mode: Specifies the method for cspline (DS - Direct Solve, CG - Conjugate Gradient)
+    :param tol: Tolerance (epsilon); conjugate graduent procedure terminates early if
+    :param L2: the beta-residual is less than tolerance * its initial norm
+    :param maxi: Maximum number of conjugate gradient iterations, 0 = no maximum
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'Y': Y, 'inp_x': inp_x}
     params_dict.update(kwargs)
     

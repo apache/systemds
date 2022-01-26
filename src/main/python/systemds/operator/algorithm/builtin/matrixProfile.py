@@ -32,13 +32,12 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def matrixProfile(ts: Matrix,
                   **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param ts: Time series to profile
     :param window_size: Sliding window size
-    :param sample_percent: Degree of approximation 
-    :param between: one (1 
+    :param sample_percent: Degree of approximation
+    :param between: one (1
     :param computes: solution)
     :param is_verbose: Print debug information
-    :return: 'OperationNode' containing the computed matrix profile & indices of least distances 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'ts': ts}
     params_dict.update(kwargs)

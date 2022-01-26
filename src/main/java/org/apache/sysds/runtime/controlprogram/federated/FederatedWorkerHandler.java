@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.Instruction.IType;
 import org.apache.sysds.runtime.instructions.InstructionParser;
@@ -68,6 +69,7 @@ import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.ParamServStatistics;
 
 /**
  * Note: federated worker handler created for every command; and concurrent parfor threads at coordinator need separate
@@ -78,6 +80,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private final FederatedLookupTable _flt;
 	private final FederatedReadCache _frc;
+	private Timing _timing = null;
+
 
 	/**
 	 * Create a Federated Worker Handler.
@@ -93,6 +97,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		_frc = frc;
 	}
 
+	public FederatedWorkerHandler(FederatedLookupTable flt, FederatedReadCache frc, Timing timing) {
+		this(flt, frc);
+		_timing = timing;
+	}
+
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) {
 		ctx.writeAndFlush(createResponse(msg, ctx.channel().remoteAddress()))
@@ -104,6 +113,14 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse createResponse(Object msg, SocketAddress remoteAddress) {
+		try {
+			if (_timing != null) {
+				ParamServStatistics.accFedNetworkTime((long) _timing.stop());
+			}
+		} catch (RuntimeException ignored) {
+			// ignore timing if it wasn't started yet
+		}
+
 		String host;
 		if(remoteAddress instanceof InetSocketAddress) {
 			host = ((InetSocketAddress) remoteAddress).getHostString();
@@ -117,7 +134,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			host = FederatedLookupTable.NOHOST;
 		}
 
-		return createResponse(msg, host);
+		FederatedResponse res = createResponse(msg, host);
+		if (_timing != null) {
+			_timing.start();
+		}
+		return res;
 	}
 
 	private FederatedResponse createResponse(Object msg, String remoteHost) {

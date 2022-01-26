@@ -70,6 +70,8 @@ public class FederatedStatistics {
 	private static final LongAdder executeInstructionCount = new LongAdder();
 	private static final LongAdder executeUDFCount = new LongAdder();
 	private static final LongAdder asyncPrefetchCount = new LongAdder();
+	private static final LongAdder bytesSent = new LongAdder();
+	private static final LongAdder bytesReceived = new LongAdder();
 
 	// stats on the federated worker itself
 	private static final LongAdder fedLookupTableGetCount = new LongAdder();
@@ -77,6 +79,18 @@ public class FederatedStatistics {
 	private static final LongAdder fedLookupTableEntryCount = new LongAdder();
 	private static final LongAdder fedReuseReadHitCount = new LongAdder();
 	private static final LongAdder fedReuseReadBytesCount = new LongAdder();
+	private static final LongAdder fedBytesSent = new LongAdder();
+	private static final LongAdder fedBytesReceived = new LongAdder();
+
+	public static void logServerTraffic(long read, long written) {
+		bytesReceived.add(read);
+		bytesSent.add(written);
+	}
+
+	public static void logWorkerTraffic(long read, long written) {
+		fedBytesReceived.add(read);
+		fedBytesSent.add(written);
+	}
 
 	public static synchronized void incFederated(RequestType rqt, List<Object> data){
 		switch (rqt) {
@@ -141,6 +155,11 @@ public class FederatedStatistics {
 		fedLookupTableEntryCount.reset();
 		fedReuseReadHitCount.reset();
 		fedReuseReadBytesCount.reset();
+
+		bytesSent.reset();
+		bytesReceived.reset();
+		fedBytesSent.reset();
+		fedBytesReceived.reset();
 	}
 
 	public static String displayFedIOExecStatistics() {
@@ -171,6 +190,19 @@ public class FederatedStatistics {
 		return "";
 	}
 
+	public static String displayNetworkTrafficStatistics() {
+		return "Server I/O bytes (read/written):\t" +
+				bytesReceived.longValue() +
+				"/" +
+				bytesSent.longValue() +
+				"\n" +
+				"Worker I/O bytes (read/written):\t" +
+				fedBytesReceived.longValue() +
+				"/" +
+				fedBytesSent.longValue() +
+				"\n";
+	}
+
 
 	public static void registerFedWorker(String host, int port) {
 		_fedWorkerAddresses.add(new ImmutablePair<>(host, Integer.valueOf(port)));
@@ -195,6 +227,7 @@ public class FederatedStatistics {
 		sb.append(displayGCStats(fedStats.gcStats));
 		sb.append(displayMultiTenantStats(fedStats.mtStats));
 		sb.append(displayHeavyHitters(fedStats.heavyHitters, numHeavyHitters));
+		sb.append(displayNetworkTrafficStatistics());
 		return sb.toString();
 	}
 

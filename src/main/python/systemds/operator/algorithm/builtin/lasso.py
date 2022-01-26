@@ -33,12 +33,11 @@ def lasso(X: Matrix,
           y: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param X: input feature matrix
-    :param y: matrix Y columns of the design matrix
     :param tol: target convergence tolerance
     :param M: history length
     :param tau: regularization component
     :param maxi: maximum number of iterations until convergence
+    :param verbose: if the builtin should be verbose
     :return: 'OperationNode' containing  
     """
     params_dict = {'X': X, 'y': y}

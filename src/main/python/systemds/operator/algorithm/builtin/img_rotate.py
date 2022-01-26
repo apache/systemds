@@ -33,10 +33,9 @@ def img_rotate(img_in: Matrix,
                radians: float,
                fill_value: float):
     """
-    :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param radians: The value by which to rotate in radian.
     :param fill_value: The background color revealed by the rotation
-    :return: 'OperationNode' containing output image as 2d matrix with top left corner at [1, 1] 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'img_in': img_in, 'radians': radians, 'fill_value': fill_value}
     return Matrix(img_in.sds_context,

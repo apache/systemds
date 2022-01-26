@@ -34,14 +34,12 @@ def hospitalResidencyMatch(R: Matrix,
                            capacity: Matrix,
                            **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param R: Residents matrix R.
     :param It: an ORDERED  matrix.
-    :param H: Hospitals matrix H.
     :param It: an UNORDRED matrix.
-    :param capacity: capacity of Hospitals matrix C.
     :param It: a [n*1] matrix with non zero values.
     :param with: and vice-versa (higher is better).
-    :return: 'OperationNode' containing result matrix & result matrix & an ordered  matrix, this means that resident 1 (row 1) likes hospital 2 the most, followed by hospital 1 and hospital 3. & unordered, this would mean that resident 1 (row 1) likes hospital 3 the most (since the value at [1,3] is the row max), & 1 (2.0 preference value) and hospital 2 (1.0 preference value). & an unordered matrix this means that hospital 1 (row 1) likes resident 1 the most (since the value at [1,1] is the row max). & matched with hospital 3 (since [1,3] is non-zero) at a preference level of 2.0. & matched with hospital 1 (since [2,1] is non-zero) at a preference level of 1.0. & matched with hospital 2 (since [3,2] is non-zero) at a preference level of 2.0. 
+    :param verbose: If the operation is verbose
+    :return: 'OperationNode' containing an ordered  matrix, this means that resident 1 (row 1) likes hospital 2 the most, followed by hospital 1 and hospital 3. & unordered, this would mean that resident 1 (row 1) likes hospital 3 the most (since the value at [1,3] is the row max), & 1 (2.0 preference value) and hospital 2 (1.0 preference value). & an unordered matrix this means that hospital 1 (row 1) likes resident 1 the most (since the value at [1,1] is the row max). & matched with hospital 3 (since [1,3] is non-zero) at a preference level of 2.0. & matched with hospital 1 (since [2,1] is non-zero) at a preference level of 1.0. & matched with hospital 2 (since [3,2] is non-zero) at a preference level of 2.0. 
     """
     params_dict = {'R': R, 'H': H, 'capacity': capacity}
     params_dict.update(kwargs)

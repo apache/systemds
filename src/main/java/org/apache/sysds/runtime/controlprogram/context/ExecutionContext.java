@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
+import org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption.SEALClient;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -78,6 +79,8 @@ public class ExecutionContext {
 
 	//lineage map, cache, prepared dedup blocks
 	protected Lineage _lineage;
+
+	protected SEALClient _seal_client;
 
 	/**
 	 * List of {@link GPUContext}s owned by this {@link ExecutionContext}
@@ -142,6 +145,14 @@ public class ExecutionContext {
 
 	public long getTID() {
 		return _tid;
+	}
+
+	public void setSealClient(SEALClient seal_client) {
+		_seal_client = seal_client;
+	}
+
+	public SEALClient getSealClient() {
+		return _seal_client;
 	}
 
 	/**

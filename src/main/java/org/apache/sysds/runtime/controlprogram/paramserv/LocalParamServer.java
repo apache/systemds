@@ -39,7 +39,7 @@ public class LocalParamServer extends ParamServer {
 			workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches, modelAvg);
 	}
 
-	private LocalParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
+	protected LocalParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
 		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc, int numBatchesPerEpoch,
 		MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg)
 	{

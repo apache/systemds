@@ -27,10 +27,7 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -44,6 +41,8 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.log4j.Logger;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 
 public class FederatedWorker {
@@ -53,6 +52,7 @@ public class FederatedWorker {
 	private final FederatedLookupTable _flt;
 	private final FederatedReadCache _frc;
 	private final boolean _debug;
+	private Timing networkTimer = new Timing();
 
 	public FederatedWorker(int port, boolean debug) {
 		_flt = new FederatedLookupTable();
@@ -83,16 +83,16 @@ public class FederatedWorker {
 					@Override
 					public void initChannel(SocketChannel ch) {
 						ChannelPipeline cp = ch.pipeline();
-
 						if(ConfigurationManager.getDMLConfig()
 							.getBooleanValue(DMLConfig.USE_SSL_FEDERATED_COMMUNICATION)) {
 							cp.addLast(cont2.newHandler(ch.alloc()));
 						}
+						cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logWorkerTraffic));
 						cp.addLast("ObjectDecoder",
 							new ObjectDecoder(Integer.MAX_VALUE,
 								ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
 						cp.addLast("ObjectEncoder", new ObjectEncoder());
-						cp.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_flt, _frc));
+						cp.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_flt, _frc, networkTimer));
 					}
 				}).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
 			log.info("Starting Federated Worker server at port: " + _port);

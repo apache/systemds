@@ -388,6 +388,18 @@ public class ListObject extends Data implements Externalizable {
 					ScalarObject so = (ScalarObject) d;
 					out.writeObject(so.getStringValue());
 					break;
+				case ENCRYPTED_CIPHER:
+				case ENCRYPTED_PLAIN:
+					Encrypted e = (Encrypted) d;
+					int[] dims = e.getDims();
+					dc = e.getDataCharacteristics();
+					out.writeObject(dims);
+					out.writeObject(dc.getRows());
+					out.writeObject(dc.getCols());
+					out.writeObject(dc.getBlocksize());
+					out.writeObject(dc.getNonZeros());
+					out.writeObject(e.getData());
+					break;
 				default:
 					throw new DMLRuntimeException("Unable to serialize datatype " + dataType);
 			}
@@ -453,6 +465,21 @@ public class ListObject extends Data implements Externalizable {
 							throw new DMLRuntimeException("Unable to parse valuetype " + valueType);
 					}
 					d = so;
+					break;
+				case ENCRYPTED_CIPHER:
+				case ENCRYPTED_PLAIN:
+					int[] dims = (int[]) in.readObject();
+					rows = (long) in.readObject();
+					cols = (long) in.readObject();
+					blockSize = (int) in.readObject();
+					nonZeros = (long) in.readObject();
+					byte[] data = (byte[])in.readObject();
+					DataCharacteristics dc = new MatrixCharacteristics(rows, cols, blockSize, nonZeros);
+					if (dataType == DataType.ENCRYPTED_CIPHER) {
+						d = new CiphertextMatrix(dims, dc, data);
+					} else {
+						d = new PlaintextMatrix(dims, dc, data);
+					}
 					break;
 				default:
 					throw new DMLRuntimeException("Unable to deserialize datatype " + dataType);

@@ -32,7 +32,11 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def scale(X: Matrix,
           center: bool,
           scale: bool):
-    
+    """
+    :param Center: Indicates whether or not to center the feature matrix
+    :param Scale: Indicates whether or not to scale the feature matrix
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'center': center, 'scale': scale}
     
     vX_0 = Matrix(X.sds_context, '')

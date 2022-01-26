@@ -675,6 +675,8 @@ public class Statistics
 		if(DMLScript.FED_STATISTICS) {
 			sb.append("\n");
 			sb.append(FederatedStatistics.displayStatistics(DMLScript.FED_STATISTICS_COUNT));
+			sb.append("\n");
+			sb.append(ParamServStatistics.displayFloStatistics());
 		}
 
 		return sb.toString();

@@ -33,6 +33,14 @@ def imputeByMedian(X: Matrix,
                    mask: Matrix):
     
     params_dict = {'X': X, 'mask': mask}
-    return Matrix(X.sds_context,
-        'imputeByMedian',
-        named_input_nodes=params_dict)
+    
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
+
+    op = MultiReturn(X.sds_context, 'imputeByMedian', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

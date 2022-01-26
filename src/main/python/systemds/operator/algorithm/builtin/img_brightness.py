@@ -32,7 +32,11 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def img_brightness(img_in: Matrix,
                    value: float,
                    channel_max: int):
-    
+    """
+    :param value: The amount of brightness to be changed for the image
+    :param channel_max: Maximum value of the brightness of the image
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'img_in': img_in, 'value': value, 'channel_max': channel_max}
     return Matrix(img_in.sds_context,
         'img_brightness',

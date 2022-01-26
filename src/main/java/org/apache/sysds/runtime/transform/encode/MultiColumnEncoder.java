@@ -141,7 +141,7 @@ public class MultiColumnEncoder implements Encoder {
 	 * BuildTask:                   Build an encoder
 	 * ColumnCompositeUpdateDCTask: Update domain size of a DC encoder based on #distincts, #bins, K
 	 * ColumnMetaDataTask:          Fill up metadata of an encoder
-	 * ApplyTasksWrapperTask:       Wrapper task for an Apply
+	 * ApplyTasksWrapperTask:       Wrapper task for an Apply task
 	 * UpdateOutputColTask:         Set starting offsets of the DC columns
 	 */
 	private List<DependencyTask<?>> getEncodeTasks(CacheBlock in, MatrixBlock out, DependencyThreadPool pool) {
@@ -150,6 +150,7 @@ public class MultiColumnEncoder implements Encoder {
 		Map<Integer[], Integer[]> depMap = new HashMap<>();
 		boolean hasDC = getColumnEncoders(ColumnEncoderDummycode.class).size() > 0;
 		boolean applyOffsetDep = false;
+		boolean independentUpdateDC = false;
 		_meta = new FrameBlock(in.getNumColumns(), ValueType.STRING);
 		// Create the output and metadata allocation tasks
 		tasks.add(DependencyThreadPool.createDependencyTask(new InitOutputMatrixTask(this, in, out)));
@@ -160,15 +161,36 @@ public class MultiColumnEncoder implements Encoder {
 			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in);
 			tasks.addAll(buildTasks);
 			if(buildTasks.size() > 0) {
-				// Apply Task depends on build completion task
-				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},      //ApplyTask
-					new Integer[] {tasks.size() - 1, tasks.size()});            //BuildTask
-				// getMetaDataTask depends on build completion
-				depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2}, //MetaDataTask
-					new Integer[] {tasks.size() - 1, tasks.size()});           //BuildTask
-				// AllocMetaTask depends on the build completion tasks
-				depMap.put(new Integer[] {1, 2},                               //AllocMetaTask (2nd task)
-					new Integer[] {tasks.size() - 1, tasks.size()});           //BuildTask
+				// Check if any Build independent UpdateDC task (Bin+DC, FH+DC)
+				if (e.hasEncoder(ColumnEncoderDummycode.class) 
+					&& buildTasks.size() > 1  //filter out FH
+					&& !buildTasks.get(buildTasks.size()-2).hasDependency(buildTasks.get(buildTasks.size()-1)))
+						independentUpdateDC = true;
+				
+				// Independent UpdateDC task
+				if (independentUpdateDC) {
+					// Apply Task depends on task prior to UpdateDC (Build/MergePartialBuild)
+					depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},     //ApplyTask
+						new Integer[] {tasks.size() - 2, tasks.size() - 1});       //BuildTask
+					// getMetaDataTask depends on task prior to UpdateDC 
+					depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2}, //MetaDataTask
+						new Integer[] {tasks.size() - 2, tasks.size() - 1});       //BuildTask
+				}
+				else { 
+					// Apply Task depends on the last task (Build/MergePartial/UpdateDC)
+					depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},     //ApplyTask
+						new Integer[] {tasks.size() - 1, tasks.size()});           //Build/UpdateDC
+					// getMetaDataTask depends on build completion
+					depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2}, //MetaDataTask
+						new Integer[] {tasks.size() - 1, tasks.size()});           //Build/UpdateDC
+				}
+				// AllocMetaTask never depends on the UpdateDC task
+				if (e.hasEncoder(ColumnEncoderDummycode.class) && buildTasks.size() > 1)
+					depMap.put(new Integer[] {1, 2},                               //AllocMetaTask (2nd task)
+						new Integer[] {tasks.size() - 2, tasks.size()-1});         //BuildTask
+				else
+					depMap.put(new Integer[] {1, 2},                               //AllocMetaTask (2nd task)
+						new Integer[] {tasks.size() - 1, tasks.size()});           //BuildTask
 			}
 
 			// getMetaDataTask depends on AllocMeta task
@@ -356,8 +378,8 @@ public class MultiColumnEncoder implements Encoder {
 			if (MatrixBlock.DEFAULT_SPARSEBLOCK != SparseBlock.Type.CSR
 					&& MatrixBlock.DEFAULT_SPARSEBLOCK != SparseBlock.Type.MCSR)
 				throw new RuntimeException("Transformapply is only supported for MCSR and CSR output matrix");
-			boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
-			mcsr = false; //force CSR for transformencode
+			//boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+			boolean mcsr = false; //force CSR for transformencode
 			if (mcsr) {
 				output.allocateBlock();
 				SparseBlock block = output.getSparseBlock();
@@ -461,7 +483,7 @@ public class MultiColumnEncoder implements Encoder {
 				columnEncoder.getMetaData(meta);
 		}
 
-		//_columnEncoders.stream().parallel().forEach(columnEncoder -> 
+		//_columnEncoders.stream().parallel().forEach(columnEncoder ->
 		//		columnEncoder.getMetaData(meta));
 		if(_legacyOmit != null)
 			_legacyOmit.getMetaData(meta);

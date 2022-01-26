@@ -148,7 +148,7 @@ public class DependencyThreadPool {
 		List<List<? extends Callable<?>>> dependencies) {
 		if(dependencies != null && tasks.size() != dependencies.size())
 			throw new DMLRuntimeException(
-				"Could not create DependencyTasks since the input array sizes are where mismatched");
+				"Could not create DependencyTasks since the input array sizes are mismatching");
 		List<DependencyTask<?>> ret = new ArrayList<>();
 		Map<Callable<?>, DependencyTask<?>> map = new HashMap<>();
 		for(Callable<?> task : tasks) {

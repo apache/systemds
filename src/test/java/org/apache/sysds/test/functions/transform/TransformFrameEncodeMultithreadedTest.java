@@ -56,13 +56,14 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	private final static String SPEC7 = "homes3/homes.tfspec_binDummy.json"; // recode+dummy
 	private final static String SPEC8 = "homes3/homes.tfspec_hash.json";
 	private final static String SPEC9 = "homes3/homes.tfspec_hash_recode.json";
+	private final static String SPEC10 = "homes3/homes.tfspec_hash_dummy.json";
 
 	private static final int[] BIN_col3 = new int[] {1, 4, 2, 3, 3, 2, 4};
 	private static final int[] BIN_col8 = new int[] {1, 2, 2, 2, 2, 2, 3};
 
 	public enum TransformType {
 		RECODE, DUMMY, DUMMY_ALL, // to test sparse
-		RECODE_DUMMY, BIN, BIN_DUMMY, HASH, HASH_RECODE,
+		RECODE_DUMMY, BIN, BIN_DUMMY, HASH, HASH_RECODE, HASH_DUMMY
 	}
 
 	@Override
@@ -112,6 +113,11 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void testHomesHashDummyCodeNonStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_DUMMY, false);
+	}
+
+	@Test
 	public void testHomesRecodeStaged() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.RECODE, true);
 	}
@@ -151,6 +157,11 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_RECODE, true);
 	}
 
+	@Test
+	public void testHomesHashDummyCodeStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_DUMMY, true);
+	}
+
 	private void runTransformTest(ExecMode rt, String ofmt, TransformType type, boolean staged) {
 
 		// set transform specification
@@ -187,6 +198,10 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 				break;
 			case HASH_RECODE:
 				SPEC = SPEC9;
+				DATASET = DATASET1;
+				break;
+			case HASH_DUMMY:
+				SPEC = SPEC10;
 				DATASET = DATASET1;
 				break;
 		}

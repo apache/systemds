@@ -63,18 +63,18 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 		src.append("BufferedReader br = new BufferedReader(new InputStreamReader(is)); \n");
 		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX)
 			src.append("HashSet<String> endWithValueStringRow = _props.endWithValueStringsRow(); \n");
-		src.append("try { \n");
-		src.append("while((str = br.readLine()) != null){ \n");
-		src.append("strLen = str.length(); \n");
+//		src.append("try { \n");
+//		src.append("while((str = br.readLine()) != null){ \n");
+//		src.append("strLen = str.length(); \n");
 
 		CodeGenTrie trie= new CodeGenTrie(properties, "dest.appendValue");
 		src.append(trie.getJavaCode());
 
-		src.append("} \n");
-		src.append("} \n");
-		src.append("finally { \n");
-		src.append("IOUtilFunctions.closeSilently(br); \n");
-		src.append("}");
+//		src.append("} \n");
+//		src.append("} \n");
+//		src.append("finally { \n");
+//		src.append("IOUtilFunctions.closeSilently(br); \n");
+//		src.append("}");
 		src.append("rowPos.setValue(row); \n");
 		src.append("return lnnz; \n");
 

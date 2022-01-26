@@ -161,4 +161,39 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		}
 		return endPos;
 	}
+
+	//src.append("String str; \n");
+	//		src.append("int row = rowPos.intValue(); \n");
+	//		src.append("long lnnz = 0; \n");
+	//		src.append("int index, endPos, strLen; \n");
+	//		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
+	//		src.append("BufferedReader br = new BufferedReader(new InputStreamReader(is)); \n");
+	//		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX)
+	//			src.append("HashSet<String> endWithValueStringRow = _props.endWithValueStringsRow(); \n");
+	//		src.append("try { \n");
+	//		src.append("while((str = br.readLine()) != null){ \n");
+	//		src.append("strLen = str.length(); \n");
+
+	protected String getStringChunkOfBufferReader(BufferedReader br, String remainedStr,int chunkSize){
+		StringBuilder sb = new StringBuilder();
+		String str;
+		int readSize = 0;
+		try {
+			while((str = br.readLine()) != null && readSize<chunkSize) {
+				sb.append(str).append("\n");
+				readSize += str.length();
+			}
+		}
+		catch(Exception ex){
+
+		}
+		if(sb.length() >0) {
+			if(remainedStr!=null && remainedStr.length() >0)
+				return remainedStr + sb;
+			else
+				return sb.toString();
+		}
+		else
+			return null;
+	}
 }

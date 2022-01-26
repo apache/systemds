@@ -90,8 +90,27 @@ public class CodeGenTrie {
 				getJavaCode(rootCol, src, "0");
 				break;
 			case KEY:
-
+				src.append("String strChunk, remainedStr = null; \n");
+				src.append("int chunkSize = 2048; \n");
+				src.append("int recordIndex = 0; \n");
+				src.append("try { \n");
+				src.append("do{ \n");
+				src.append("strChunk = getStringChunkOfBufferReader(br, remainedStr, chunkSize); \n");
+				src.append("System.out.println(strChunk); \n");
+				src.append("if(strChunk == null || strChunk.length() == 0) break; \n");
+				src.append("do { \n");
+				ArrayList<ArrayList<String>> kp = properties.getRowKeyPattern().getPrefixKeyPatterns();
+				getJavaRowCode(src, kp, kp);
 				getJavaCode(rootCol, src, "0");
+				src.append("row++; \n");
+				src.append("}while(true); \n");
+				src.append("remainedStr = strChunk.substring(recordIndex); \n");
+
+				src.append("}while(true); \n");
+				src.append("} \n");
+				src.append("finally { \n");
+				src.append("IOUtilFunctions.closeSilently(br); \n");
+				src.append("} \n");
 				break;
 		}
 
@@ -131,5 +150,27 @@ public class CodeGenTrie {
 					src.append("} \n");
 			}
 		}
+	}
+
+	private void getJavaRowCode(StringBuilder src, ArrayList<ArrayList<String>> rowBeginPattern,
+								ArrayList<ArrayList<String>> rowEndPattern){
+
+		// TODO: we have to extend it to multi patterns
+		// now, we assumed each row can have single pattern for begin and end
+
+		for(ArrayList<String> kb: rowBeginPattern){
+			for(String k: kb){
+				src.append("recordIndex = strChunk.indexOf(\""+k+"\", recordIndex); \n");
+				src.append("if(recordIndex == -1) break; \n");
+			}
+			src.append("recordIndex +="+ kb.get(kb.size() -1).length()+"; \n");
+			break;
+		}
+		src.append("int recordBeginPos = recordIndex; \n");
+		String endKey = rowEndPattern.get(0).get(0);
+		src.append("recordIndex = strChunk.indexOf(\""+endKey+"\", recordBeginPos);");
+		src.append("if(recordIndex == -1) break; \n");
+		src.append("str = strChunk.substring(recordBeginPos, recordIndex); \n");
+		src.append("strLen = str.length(); \n");
 	}
 }

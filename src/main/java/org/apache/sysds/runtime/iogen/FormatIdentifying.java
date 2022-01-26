@@ -427,7 +427,6 @@ public class FormatIdentifying {
 			str = sampleRawIndexes.get(minList[r]).getRaw().substring(0, minColPos[r]);
 			if(str.length() > 0)
 				sb.append(str);
-			System.out.println(beginLine+"  "+nlines+"  "+minList[r]);
 			recordBoundaries.add(sb.toString());
 		}
 		recordBoundaries.remove(recordBoundaries.size()-1);

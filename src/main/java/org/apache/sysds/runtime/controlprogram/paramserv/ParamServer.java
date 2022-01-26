@@ -19,10 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
@@ -326,30 +323,8 @@ public abstract class ParamServer
 					_accModels = ParamservUtils.accrueGradients(_accModels, weightParams, true);
 
 					if(allFinished()) {
-						_model = setParams(_ec, _accModels, _model);
-						if (DMLScript.STATISTICS && tAgg != null)
-							ParamServStatistics.accAggregationTime((long) tAgg.stop());
-						_accModels = null; //reset for next accumulation
-
-						// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
-						// In the BSP batch case that occurs after the sync counter reaches the number of batches and in the
-						// BSP epoch case every time
-						if(_numBatchesPerEpoch != -1 && (_freq == Statement.PSFrequency.EPOCH || (_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
-
-							if(LOG.isInfoEnabled())
-								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
-							time_epoch();
-							if(_validationPossible) {
-								validate();
-							}
-							_epochCounter++;
-							_syncCounter = 0;
-						}
-						// Broadcast the updated model
+						updateAndBroadcastModel(_accModels, tAgg);
 						resetFinishedStates();
-						broadcastModel(true);
-						if(LOG.isDebugEnabled())
-							LOG.debug("Global parameter is broadcasted successfully ");
 					}
 					break;
 				}
@@ -365,7 +340,33 @@ public abstract class ParamServer
 		}
 	}
 
-	protected  ListObject weightModels(ListObject params, int numWorkers) {
+	protected void updateAndBroadcastModel(ListObject new_model, Timing tAgg) {
+		_model = setParams(_ec, new_model, _model);
+		if (DMLScript.STATISTICS && tAgg != null)
+			ParamServStatistics.accAggregationTime((long) tAgg.stop());
+		_accModels = null; //reset for next accumulation
+
+		// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
+		// In the BSP batch case that occurs after the sync counter reaches the number of batches and in the
+		// BSP epoch case every time
+		if(_numBatchesPerEpoch != -1 && (_freq == Statement.PSFrequency.EPOCH || (_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
+
+			if(LOG.isInfoEnabled())
+				LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
+			time_epoch();
+			if(_validationPossible) {
+				validate();
+			}
+			_epochCounter++;
+			_syncCounter = 0;
+		}
+		// Broadcast the updated model
+		broadcastModel(true);
+		if(LOG.isDebugEnabled())
+			LOG.debug("Global parameter is broadcasted successfully ");
+	}
+
+	protected ListObject weightModels(ListObject params, int numWorkers) {
 		double _averagingFactor = 1d / numWorkers;
 
 		if( _averagingFactor != 1) {
@@ -470,6 +471,10 @@ public abstract class ParamServer
 
 		if(tValidate != null)
 			ParamServStatistics.accValidationTime((long) tValidate.stop());
+	}
+
+	public int getNumWorkers() {
+		return _numWorkers;
 	}
 
 	public FunctionCallCPInstruction getAggInst() {

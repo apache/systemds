@@ -1,0 +1,61 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("src/test/scripts/functions/federated/paramserv/TwoNN.dml") as TwoNN
+source("src/test/scripts/functions/federated/paramserv/TwoNNModelAvg.dml") as TwoNNModelAvg
+source("src/test/scripts/functions/federated/paramserv/CNN.dml") as CNN
+source("src/test/scripts/functions/federated/paramserv/CNNModelAvg.dml") as CNNModelAvg
+
+
+# create federated input matrices
+features = read($features)
+labels = read($labels)
+
+if($network_type == "TwoNN") {
+  if(!as.logical($modelAvg)) {
+    model = TwoNN::train_paramserv(features, labels, matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighting, $eta, $seed)
+    print("Test results:")
+    [loss_test, accuracy_test] = TwoNN::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, list())
+    print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
+  }
+  else if (as.logical($modelAvg)){
+    model = TwoNNModelAvg::train_paramserv(features, labels, matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighting, $eta, $seed, $modelAvg)
+    print("Test results:")
+    [loss_test, accuracy_test] = TwoNNModelAvg::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, list())
+    print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
+  }
+}
+else if($network_type == "CNN") {
+  if(!as.logical($modelAvg)) {
+    model = CNN::train_paramserv(features, labels, matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighting, $eta, $channels, $hin, $win, $seed)
+    print("Test results:")
+    hyperparams = list(learning_rate=$eta, C=$channels, Hin=$hin, Win=$win)
+    [loss_test, accuracy_test] = CNN::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, hyperparams)
+    print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
+  }
+  else if (as.logical($modelAvg)){
+    model = CNNModelAvg::train_paramserv(features, labels, matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), 0, $epochs, $utype, $freq, $batch_size, $scheme, $runtime_balancing, $weighting, $eta, $channels, $hin, $win, $seed, $modelAvg)
+    print("Test results:")
+    hyperparams = list(learning_rate=$eta, C=$channels, Hin=$hin, Win=$win)
+    [loss_test, accuracy_test] = CNNModelAvg::validate(matrix(0, rows=100, cols=784), matrix(0, rows=100, cols=10), model, hyperparams)
+    print("[+] test loss: " + loss_test + ", test accuracy: " + accuracy_test + "\n")
+  }
+}

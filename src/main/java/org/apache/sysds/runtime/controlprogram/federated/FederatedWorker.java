@@ -33,6 +33,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
@@ -53,6 +54,9 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import io.netty.handler.codec.serialization.ObjectDecoder;
+import io.netty.handler.codec.serialization.ClassResolvers;
 
 public class FederatedWorker {
 	protected static Logger log = Logger.getLogger(FederatedWorker.class);
@@ -62,6 +66,7 @@ public class FederatedWorker {
 	private final FederatedReadCache _frc;
 	private final FederatedWorkloadAnalyzer _fan;
 	private final boolean _debug;
+	private Timing networkTimer = new Timing();
 
 	public FederatedWorker(int port, boolean debug) {
 		_flt = new FederatedLookupTable();
@@ -183,10 +188,19 @@ public class FederatedWorker {
 				@Override
 				public void initChannel(SocketChannel ch) {
 					final ChannelPipeline cp = ch.pipeline();
+					if(ConfigurationManager.getDMLConfig()
+						.getBooleanValue(DMLConfig.USE_SSL_FEDERATED_COMMUNICATION)) {
+						cp.addLast(cont2.newHandler(ch.alloc()));
+					}
 					if(ssl)
 						cp.addLast(cont2.newHandler(ch.alloc()));
+					cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logWorkerTraffic));
+					cp.addLast("ObjectDecoder",
+						new ObjectDecoder(Integer.MAX_VALUE,
+							ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
+					cp.addLast("ObjectEncoder", new ObjectEncoder());
 					cp.addLast(FederationUtils.decoder(), new FederatedResponseEncoder());
-					cp.addLast(new FederatedWorkerHandler(_flt, _frc, _fan));
+					cp.addLast(new FederatedWorkerHandler(_flt, _frc, _fan, networkTimer));
 				}
 			};
 		}

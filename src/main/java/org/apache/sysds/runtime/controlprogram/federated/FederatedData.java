@@ -35,6 +35,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MetaData;
 
@@ -193,6 +194,7 @@ public class FederatedData {
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
 				final ChannelPipeline cp = ch.pipeline();
+				cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logServerTraffic));
 				if(ssl)
 					cp.addLast(createSSLHandler(ch, address));
 				if(timeout > -1)

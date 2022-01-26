@@ -44,7 +44,7 @@ public class Types
 	 * Data types (tensor, matrix, scalar, frame, object, unknown).
 	 */
 	public enum DataType {
-		TENSOR, MATRIX, SCALAR, FRAME, LIST, UNKNOWN;
+		TENSOR, MATRIX, SCALAR, FRAME, LIST, ENCRYPTED_CIPHER, ENCRYPTED_PLAIN, UNKNOWN;
 		
 		public boolean isMatrix() {
 			return this == MATRIX;

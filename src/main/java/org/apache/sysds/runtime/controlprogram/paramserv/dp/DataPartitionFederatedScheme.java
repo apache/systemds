@@ -87,6 +87,7 @@ public abstract class DataPartitionFederatedScheme {
 						new MatrixCharacteristics(range.getSize(0), range.getSize(1)),
 						Types.FileFormat.BINARY)
 				);
+				slice.setPrivacyConstraints(fedMatrix.getPrivacyConstraint());
 
 				// Create new federation map
 				List<Pair<FederatedRange, FederatedData>> newFedHashMap = new ArrayList<>();

@@ -76,6 +76,7 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_SEED = "seed";
 	public static final String PS_MODELAVG = "modelAvg";
 	public static final String PS_NBATCHES = "nbatches";
+	public static final String PS_HE = "he";
 	public enum PSModeType {
 		FEDERATED, LOCAL, REMOTE_SPARK
 	}
@@ -123,7 +124,6 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_FED_GRADIENTS_FNAME = "1701-NCC-gradients_fname";
 	public static final String PS_FED_AGGREGATION_FNAME = "1701-NCC-aggregation_fname";
 	public static final String PS_FED_MODEL_VARID = "1701-NCC-model_varid";
-
 
 	public abstract boolean controlStatement();
 	

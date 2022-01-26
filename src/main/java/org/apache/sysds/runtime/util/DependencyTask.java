@@ -68,10 +68,14 @@ public class DependencyTask<E> implements Comparable<DependencyTask<?>>, Callabl
 			return isReady();
 		}
 	}
-
+	
 	public void addDependent(DependencyTask<?> dependencyTask) {
 		_dependantTasks.add(dependencyTask);
 		dependencyTask._rdy += 1;
+	}
+	
+	public boolean hasDependency (DependencyTask<?> dependencyTask) {
+		return _dependantTasks.contains(dependencyTask);
 	}
 
 	@Override

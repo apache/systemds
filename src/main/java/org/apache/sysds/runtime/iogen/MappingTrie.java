@@ -194,6 +194,7 @@ public class MappingTrie {
 								}
 								else if(lastCount == 0)
 									lastCount = count;
+
 							}
 							if(lastCount != 0)
 								return ssi;

@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class FormatIdentifying {
@@ -224,8 +225,9 @@ public class FormatIdentifying {
 					properties.setRowIndexBegin("");
 			}
 			else {
+				KeyTrie rowDelimPattern = new KeyTrie(findRowDelimiters());
 				colKeyPattern = buildColsKeyPatternMultiRow();
-				properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.KEY);
+				properties = new CustomProperties(colKeyPattern, rowDelimPattern);
 			}
 		}
 	}
@@ -348,6 +350,111 @@ public class FormatIdentifying {
 	// 1.  Extract all prefix strings per column
 	// 2. Build key pattern tree for each column
 	// 3. Build key pattern for end of values
+
+	private ArrayList<ArrayList<String>> findRowDelimiters(){
+		ArrayList<ArrayList<String>> keyPattern = new ArrayList<>();
+		Hirschberg hirschberg = new Hirschberg();
+		int misMatchPenalty = 3;
+		int gapPenalty = 2;
+
+		//extract all lines are in record boundary
+		ArrayList<String> recordBoundaries = new ArrayList<>();
+		BitSet[] tmpUsedLines = new BitSet[nlines];
+		BitSet[] usedLines = new BitSet[nlines];
+		int[] minList = new int[nrows];
+		HashMap<Integer, Integer> maxColPos = new HashMap<>();
+		int[] minColPos = new int[nrows];
+		for(int r=0; r<nrows; r++)
+			tmpUsedLines[r] = new BitSet();
+
+		for(int r=0; r<nrows; r++) {
+			int min = nlines;
+			int minPos = 0;
+			for(int c = 0; c < ncols; c++)
+				if(mapRow[r][c] != -1) {
+					tmpUsedLines[r].set(mapRow[r][c]);
+					if(mapRow[r][c] <= min){
+						min = mapRow[r][c];
+						if(minPos !=0)
+							minPos = Math.min(minPos, mapCol[r][c]);
+						else
+							minPos = mapCol[r][c];
+
+					}
+					if(maxColPos.containsKey(mapRow[r][c]))
+						maxColPos.put(mapRow[r][c], Math.max(maxColPos.get(mapRow[r][c]), mapCol[r][c]+mapLen[r][c]));
+					else
+						maxColPos.put(mapRow[r][c], mapCol[r][c]+mapLen[r][c]);
+				}
+			minList[r] = min;
+			minColPos[r] = minPos;
+		}
+
+		for(int r=0; r<nrows; r++) {
+			usedLines[r] = new BitSet(nlines);
+			for(int i=0; i<nrows; i++) {
+				if(i!=r)
+					usedLines[r].or(tmpUsedLines[i]);
+			}
+		}
+
+		for(int r = 0; r < nrows; r++) {
+			int beginLine = minList[r];
+			for(; beginLine >= 0; beginLine--)
+				if(usedLines[r].get(beginLine))
+					break;
+
+			StringBuilder sb = new StringBuilder();
+			beginLine = Math.max(beginLine, 0);
+
+			if(beginLine+1 == nlines)
+				continue;
+
+			Integer subStrPos = 0;
+			if(maxColPos.containsKey(beginLine))
+				subStrPos = maxColPos.get(beginLine);
+
+			String str = sampleRawIndexes.get(beginLine).getRaw().substring(subStrPos);
+			if(str.length() >0) {
+				sb.append(str).append("\n");
+			}
+			for(int i = beginLine+1 ; i < minList[r]; i++){
+				str = sampleRawIndexes.get(i).getRaw();
+				if(str.length() > 0)
+					sb.append(str).append("\n");
+			}
+
+			str = sampleRawIndexes.get(minList[r]).getRaw().substring(0, minColPos[r]);
+			if(str.length() > 0)
+				sb.append(str);
+			System.out.println(beginLine+"  "+nlines+"  "+minList[r]);
+			recordBoundaries.add(sb.toString());
+		}
+		recordBoundaries.remove(recordBoundaries.size()-1);
+
+		String str1 = recordBoundaries.get(0);
+		String str2 = recordBoundaries.get(1);
+		Pair<ArrayList<String>, String> pattern = hirschberg.getLCS(str1, str2, misMatchPenalty, gapPenalty);
+		if(pattern != null) {
+			String intersect = pattern.getValue();
+			ArrayList<String> intersectPattern = pattern.getKey();
+			for(int i = 2; i < recordBoundaries.size(); i++) {
+				pattern = hirschberg.getLCS(intersect, recordBoundaries.get(i), misMatchPenalty, gapPenalty);
+				if(pattern != null) {
+					intersect = pattern.getValue();
+					intersectPattern = pattern.getKey();
+				}
+				else
+					intersect = null;
+			}
+			if(intersect != null && intersect.length() > 0) {
+				keyPattern.add(intersectPattern);
+				return keyPattern;
+			}
+		}
+		return null;
+	}
+
 
 	// Build key pattern tree for each column
 	private KeyTrie[] buildColsKeyPatternMultiRow(){

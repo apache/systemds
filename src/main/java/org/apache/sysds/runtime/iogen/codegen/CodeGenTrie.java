@@ -90,8 +90,7 @@ public class CodeGenTrie {
 				getJavaCode(rootCol, src, "0");
 				break;
 			case KEY:
-				// TODO: Generate code for split stream as records
-				//  and then increase the row number
+
 				getJavaCode(rootCol, src, "0");
 				break;
 		}

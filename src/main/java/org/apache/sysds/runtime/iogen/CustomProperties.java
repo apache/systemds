@@ -45,6 +45,12 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		this.rowIndex = rowIndex;
 	}
 
+	public CustomProperties(KeyTrie[] colKeyPattern, KeyTrie rowKeyPattern) {
+		this.colKeyPattern = colKeyPattern;
+		this.rowIndex = IndexProperties.KEY;
+		this.rowKeyPattern = rowKeyPattern;
+	}
+
 	public CustomProperties(KeyTrie[] colKeyPattern, IndexProperties rowIndex, KeyTrie rowKeyPattern) {
 		this.colKeyPattern = colKeyPattern;
 		this.rowIndex = rowIndex;

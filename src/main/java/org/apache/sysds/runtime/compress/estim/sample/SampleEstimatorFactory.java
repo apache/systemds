@@ -22,42 +22,64 @@ package org.apache.sysds.runtime.compress.estim.sample;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 public class SampleEstimatorFactory {
 
-	protected static final Log LOG = LogFactory.getLog(SampleEstimatorFactory.class.getName());
+	// private static final Log LOG = LogFactory.getLog(SampleEstimatorFactory.class.getName());
 
 	public enum EstimationType {
 		HassAndStokes, ShlosserEstimator, ShlosserJackknifeEstimator, SmoothedJackknifeEstimator,
 	}
 
+	/**
+	 * Estimate a distinct number of values based on frequencies.
+	 * 
+	 * @param frequencies A list of frequencies of unique values, NOTE all values contained should be larger than zero
+	 * @param nRows       The total number of rows to consider, NOTE should always be larger or equal to sum(frequencies)
+	 * @param sampleSize  The size of the sample, NOTE this should ideally be scaled to match the sum(frequencies) and
+	 *                    should always be lower or equal to nRows
+	 * @param type        The type of estimator to use
+	 * @param solveCache  A solve cache to avoid repeated calculations
+	 * @return A estimated number of unique values
+	 */
 	public static int distinctCount(int[] frequencies, int nRows, int sampleSize, EstimationType type,
 		HashMap<Integer, Double> solveCache) {
-		final int numVals = frequencies.length;
+
+		if(frequencies == null || frequencies.length == 0)
+			// Frequencies for some reason is allocated as null or all values in the sample are zeros.
+			return 0;
 		try {
+			// Invert histogram
 			int[] invHist = getInvertedFrequencyHistogram(frequencies);
-			switch(type) {
-				case HassAndStokes:
-					return HassAndStokes.distinctCount(numVals, invHist, nRows, sampleSize, solveCache);
-				case ShlosserEstimator:
-					return ShlosserEstimator.distinctCount(numVals, invHist, nRows, sampleSize);
-				case ShlosserJackknifeEstimator:
-					return ShlosserJackknifeEstimator.distinctCount(numVals, frequencies, invHist, nRows, sampleSize);
-				case SmoothedJackknifeEstimator:
-					return SmoothedJackknifeEstimator.distinctCount(numVals, invHist, nRows, sampleSize);
-				default:
-					throw new NotImplementedException("Type not yet supported for counting distinct: " + type);
-			}
+			// estimate distinct
+			int est = distinctCountWithHistogram(frequencies.length, invHist, frequencies, nRows, sampleSize, type,
+				solveCache);
+			// Number of unique is trivially bounded by
+			// lower: the number of observed uniques in the sample
+			// upper: the number of rows minus the observed uniques total count, plus the observed number of uniques.
+			return Math.min(Math.max(frequencies.length, est), nRows - sampleSize + frequencies.length);
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException(
-				"Error while estimating distinct count with arguments:\n" + numVals + " frequencies:\n"
-					+ Arrays.toString(frequencies) + "\n nrows: " + nRows + " " + sampleSize + " type: " + type,
+				"Error while estimating distinct count with arguments:\n\tfrequencies:" + Arrays.toString(frequencies)
+					+ " nrows: " + nRows + " sampleSize: " + sampleSize + " type: " + type + " solveCache: " + solveCache,
 				e);
+		}
+	}
+
+	private static int distinctCountWithHistogram(int numVals, int[] invHist, int[] frequencies, int nRows,
+		int sampleSize, EstimationType type, HashMap<Integer, Double> solveCache) {
+		switch(type) {
+			case ShlosserEstimator:
+				return ShlosserEstimator.distinctCount(numVals, invHist, nRows, sampleSize);
+			case ShlosserJackknifeEstimator:
+				return ShlosserJackknifeEstimator.distinctCount(numVals, frequencies, invHist, nRows, sampleSize);
+			case SmoothedJackknifeEstimator:
+				return SmoothedJackknifeEstimator.distinctCount(numVals, invHist, nRows, sampleSize);
+			case HassAndStokes:
+			default:
+				return HassAndStokes.distinctCount(numVals, invHist, nRows, sampleSize, solveCache);
 		}
 	}
 
@@ -73,10 +95,8 @@ public class SampleEstimatorFactory {
 
 		// create frequency histogram
 		int[] freqCounts = new int[maxCount];
-		for(int i = 0; i < numVals; i++) {
-			if(frequencies[i] != 0)
-				freqCounts[frequencies[i] - 1]++;
-		}
+		for(int i = 0; i < numVals; i++)
+			freqCounts[frequencies[i] - 1]++;
 
 		return freqCounts;
 	}

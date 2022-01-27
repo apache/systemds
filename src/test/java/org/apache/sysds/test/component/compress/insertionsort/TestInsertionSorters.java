@@ -51,6 +51,20 @@ public class TestInsertionSorters {
 	private final IntArrayList[] offsets;
 	private final int negativeIndex;
 
+	public TestInsertionSorters(int numRows, int[][] data, SORT_TYPE st, int negativeIndex, int[] expectedIndexes,
+		int[] expectedData) {
+		this.data = data;
+		this.st = st;
+		this.expectedIndexes = expectedIndexes;
+		this.expectedData = expectedData;
+		this.numRows = numRows;
+		this.negativeIndex = negativeIndex;
+
+		offsets = new IntArrayList[data.length];
+		for(int i = 0; i < data.length; i++)
+			offsets[i] = new IntArrayList(data[i]);
+	}
+
 	@Parameters
 	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
@@ -139,21 +153,6 @@ public class TestInsertionSorters {
 		}
 
 		return new Object[] {size, ar, t, 0, expectedIndexes, expectedData};
-	}
-
-	public TestInsertionSorters(int numRows, int[][] data, SORT_TYPE st, int negativeIndex, int[] expectedIndexes,
-		int[] expectedData) {
-		this.data = data;
-		this.st = st;
-		this.expectedIndexes = expectedIndexes;
-		this.expectedData = expectedData;
-		this.numRows = numRows;
-		this.negativeIndex = negativeIndex;
-
-		offsets = new IntArrayList[data.length];
-		for(int i = 0; i < data.length; i++)
-			offsets[i] = new IntArrayList(data[i]);
-
 	}
 
 	@Test

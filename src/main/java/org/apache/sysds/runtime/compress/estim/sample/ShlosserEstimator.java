@@ -41,7 +41,7 @@ public class ShlosserEstimator {
 			numerSum += Math.pow(oneMinusQ, iPlusOne) * freqCounts[i];
 			denomSum += iPlusOne * q * Math.pow(oneMinusQ, i) * freqCounts[i];
 		}
-		int estimate = (int) Math.round(numVals + freqCounts[0] * numerSum / denomSum);
-		return estimate < 1 ? 1 : estimate;
+		return (int) Math.round(numVals + freqCounts[0] * numerSum / denomSum);
+		
 	}
 }

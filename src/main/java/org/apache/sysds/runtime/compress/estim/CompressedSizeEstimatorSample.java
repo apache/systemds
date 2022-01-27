@@ -150,8 +150,8 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
 			final int numOffs = calculateOffs(sampleFacts, _sampleSize, numRows, scalingFactor, numZerosInSample);
 
-			final int totalCardinality = getEstimatedDistinctCount(sampleFacts.frequencies, nrUniqueUpperBound, numRows,
-				sampleFacts.numOffs);
+			final int totalCardinality = SampleEstimatorFactory.distinctCount(sampleFacts.frequencies, numOffs,
+				sampleFacts.numOffs, _cs.estimationType, _solveCache);
 
 			final int totalNumRuns = getNumRuns(map, sampleFacts.numVals, _sampleSize, numRows);
 
@@ -171,10 +171,8 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		final int numCols = getNumColumns();
 		if(numCols == 1)
 			return (int) _data.getNonZeros();
-		else {
-			final double C = Math.max(1 - (double) sampleFacts.numSingle / sampleSize, (double) sampleSize / numRows);
-			return (int) Math.ceil(numRows - scalingFactor * C * numZerosInSample);
-		}
+		else 
+			return numRows - (int) Math.floor(numZerosInSample * scalingFactor);
 	}
 
 	private double calculateSparsity(int[] colIndexes, double scalingFactor, double sampleValue) {
@@ -204,12 +202,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		else
 			// if all others aren't available use the samples value.
 			return sampleValue;
-	}
-
-	private int getEstimatedDistinctCount(int[] freq, int upperBound, int numOffs, int numOffsInSample) {
-		final int est = SampleEstimatorFactory.distinctCount(freq, numOffs, numOffsInSample, _cs.estimationType,
-			_solveCache);
-		return Math.min(est, upperBound);
 	}
 
 	private int getNumRuns(IEncode map, int numVals, int sampleSize, int totalNumRows) {

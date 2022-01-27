@@ -16,7 +16,7 @@ nrows=-1
 mx_mem="$(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024 * 1024)))g"
 
 delimiter="\t"
-declare -a  datasets=("aminer_author")
+declare -a  datasets=("aminer_paper")
 declare -a  main_classes=( "GIOFrameExperimentHDFS")
 
 for (( i = 0; i < 1; i++ )); do
@@ -27,7 +27,7 @@ for (( i = 0; i < 1; i++ )); do
 
           for sr in 100 200 300 400 500 600 700 800 900 1000
           do
-            for p in 7 #0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
+            for p in 5 #0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
               do
                   schema_file_name="$root_data_path/$d/$d$sep$p.schema"
                   sample_raw_fileName="$root_data_path/$d/sample_$sr$sep$p.raw"

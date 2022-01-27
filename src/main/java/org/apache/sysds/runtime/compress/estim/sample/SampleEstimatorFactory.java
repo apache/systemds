@@ -22,14 +22,11 @@ package org.apache.sysds.runtime.compress.estim.sample;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 public class SampleEstimatorFactory {
 
-	protected static final Log LOG = LogFactory.getLog(SampleEstimatorFactory.class.getName());
+	// private static final Log LOG = LogFactory.getLog(SampleEstimatorFactory.class.getName());
 
 	public enum EstimationType {
 		HassAndStokes, ShlosserEstimator, ShlosserJackknifeEstimator, SmoothedJackknifeEstimator,
@@ -37,27 +34,48 @@ public class SampleEstimatorFactory {
 
 	public static int distinctCount(int[] frequencies, int nRows, int sampleSize, EstimationType type,
 		HashMap<Integer, Double> solveCache) {
-		final int numVals = frequencies.length;
+
+		if(frequencies == null) // Frequencies for some reason is allocated as null
+			return 0;
+
+		int numVals = frequencies.length;
+
+		// all values in the sample are zeros.
+		if(numVals == 0)
+			return 0;
+
+		int s = 0;
+		for(int i : frequencies)
+			s+= i;
+		if(s != sampleSize)
+			throw new DMLCompressionException("Invalid call: " + sampleSize + " " + Arrays.toString(frequencies) );
+
 		try {
 			int[] invHist = getInvertedFrequencyHistogram(frequencies);
-			switch(type) {
-				case HassAndStokes:
-					return HassAndStokes.distinctCount(numVals, invHist, nRows, sampleSize, solveCache);
-				case ShlosserEstimator:
-					return ShlosserEstimator.distinctCount(numVals, invHist, nRows, sampleSize);
-				case ShlosserJackknifeEstimator:
-					return ShlosserJackknifeEstimator.distinctCount(numVals, frequencies, invHist, nRows, sampleSize);
-				case SmoothedJackknifeEstimator:
-					return SmoothedJackknifeEstimator.distinctCount(numVals, invHist, nRows, sampleSize);
-				default:
-					throw new NotImplementedException("Type not yet supported for counting distinct: " + type);
-			}
+			int est = distinctCountWithHistogram(numVals, invHist, frequencies, nRows, sampleSize, type, solveCache);
+
+			// Number of unique is trivially bounded by the sampled number of uniques and the number of rows.
+			return Math.min(Math.max(numVals, est), nRows);
 		}
 		catch(Exception e) {
-			throw new DMLCompressionException(
-				"Error while estimating distinct count with arguments:\n" + numVals + " frequencies:\n"
-					+ Arrays.toString(frequencies) + "\n nrows: " + nRows + " " + sampleSize + " type: " + type,
-				e);
+			throw new DMLCompressionException("Error while estimating distinct count with arguments:\n\t numVals:"
+				+ numVals + " frequencies:" + Arrays.toString(frequencies) + " nrows: " + nRows + " sampleSize: "
+				+ sampleSize + " type: " + type + " solveCache: " + solveCache, e);
+		}
+	}
+
+	public static int distinctCountWithHistogram(int numVals, int[] invHist, int[] frequencies, int nRows,
+		int sampleSize, EstimationType type, HashMap<Integer, Double> solveCache) {
+		switch(type) {
+			case ShlosserEstimator:
+				return ShlosserEstimator.distinctCount(numVals, invHist, nRows, sampleSize);
+			case ShlosserJackknifeEstimator:
+				return ShlosserJackknifeEstimator.distinctCount(numVals, frequencies, invHist, nRows, sampleSize);
+			case SmoothedJackknifeEstimator:
+				return SmoothedJackknifeEstimator.distinctCount(numVals, invHist, nRows, sampleSize);
+			case HassAndStokes:
+			default:
+				return HassAndStokes.distinctCount(numVals, invHist, nRows, sampleSize, solveCache);
 		}
 	}
 

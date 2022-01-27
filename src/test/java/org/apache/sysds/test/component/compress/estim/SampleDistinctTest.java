@@ -1,0 +1,199 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.sysds.test.component.compress.estim;
+
+import static org.junit.Assert.assertEquals;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+
+import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
+import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
+@RunWith(value = Parameterized.class)
+public class SampleDistinctTest {
+
+	private final int[] frequencies;
+	private final int total;
+	private final EstimationType type;
+	private final HashMap<Integer, Double> solveCache;
+
+	public SampleDistinctTest(int[] frequencies, EstimationType type, HashMap<Integer, Double> solveCache) {
+		this.frequencies = frequencies;
+		this.type = type;
+		this.solveCache = solveCache;
+		int t = 0;
+		if(frequencies!= null)
+			for(int f : frequencies)
+				t += f;
+		total = t;
+	}
+
+	@Parameters
+	public static Collection<Object[]> data() {
+		ArrayList<Object[]> tests = new ArrayList<>();
+		HashMap<Integer, Double> solveCache = new HashMap<>();
+
+		for(EstimationType type : EstimationType.values()) {
+			tests.add(new Object[] {null, type, solveCache});
+			tests.add(new Object[] {new int[]{}, type, solveCache});
+			tests.add(new Object[] {new int[] {97, 6, 56, 4, 242, 123, 2}, type, solveCache});
+			tests.add(new Object[] {new int[] {6, 5}, type, solveCache});
+			tests.add(new Object[] {new int[] {2, 1, 1, 1, 1, 1}, type, solveCache});
+			tests.add(new Object[] {new int[] {5, 4, 2, 2, 1, 1, 1, 1, 1}, type, solveCache});
+			tests.add(new Object[] {new int[] {7, 7, 7, 7, 6, 5, 4, 4, 3, 3, 2, 1, 1}, type, solveCache});
+			tests.add(new Object[] {new int[] {413, 37, 20, 37, 32, 37, 4, 17, 1, 3, 1, 1, 1}, type, solveCache});
+			tests.add(new Object[] {new int[] {414, 37, 20, 37, 32, 37, 4, 17, 1, 3, 1, 1, 1}, type, solveCache});
+			tests.add(new Object[] {new int[] {415, 37, 20, 37, 32, 37, 4, 17, 1, 3, 1, 1, 1}, type, solveCache});
+			tests.add(new Object[] {new int[] {416, 37, 20, 37, 32, 37, 4, 17, 1, 3, 1, 1, 1}, type, solveCache});
+			tests.add(new Object[] {new int[] {417, 37, 20, 37, 32, 37, 4, 17, 1, 3, 1, 1, 1}, type, solveCache});
+
+			tests.add(new Object[] {new int[] {1, 1, 1, 1, 1, 1, 1, 1, 1}, type, solveCache});
+			tests.add(new Object[] {new int[] {500, 500, 500, 500}, type, solveCache});
+			tests.add(new Object[] {new int[] {500, 400, 300, 200}, type, solveCache});
+			tests.add(new Object[] {new int[] {1000, 400, 300, 200}, type, solveCache});
+			tests.add(new Object[] {new int[] {1000, 400, 300, 200, 2, 2, 2, 2, 4, 2, 13, 3, 2, 1, 4, 2, 3, 2, 2, 2, 2, 2,
+				2, 2, 1, 1, 1, 1, 1, 3, 4, 2, 1, 3, 2}, type, solveCache});
+			tests.add(new Object[] {new int[] {1000, 400, 300, 200, 2, 2, 2, 2, 4, 2, 13, 3, 2, 1, 4, 2, 3, 2, 2, 2, 2, 2,
+				2, 2, 1, 1, 1, 1, 1, 3, 4, 2, 1, 3, 2, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+				10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}, type, solveCache});
+
+			tests.add(new Object[] {
+				new int[] {1500, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+					9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1, 1, 1, 1, 1, 1, 1, 1},
+				type, solveCache});
+		}
+
+		return tests;
+	}
+
+	@Test
+	public void testDistinctCountIsCorrectIfSampleIs100Percent() {
+		// Sample 100%
+		int nRows = total;
+		int sampleSize = total;
+
+		int c = SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+		if(frequencies == null)
+			assertEquals(0, c);
+		else if(frequencies.length != c) {
+			String m = "incorrect estimate with type; " + type + " est: " + c + " frequencies: "
+				+ Arrays.toString(frequencies);
+			assertEquals(m, frequencies.length, c);
+		}
+	}
+
+	@Test
+	public void testDistinctCountDenseFive() {
+		// Sample 20%
+		int nRows = total * 5;
+		int sampleSize = total;
+
+		SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	}
+
+	@Test
+	public void testDistinctCountDense100() {
+		// Sample 1%
+		int nRows = total * 100;
+		int sampleSize = total;
+		SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	}
+
+	@Test
+	public void testDistinctCountDense1000() {
+		// Sample 0.1%
+		int nRows = total * 1000;
+		int sampleSize = total;
+		SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	}
+
+	@Test
+	public void testDistinctCountDense10000() {
+		// Sample 0.01%
+		int nRows = total * 10000;
+		int sampleSize = total;
+		SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	}
+
+	// @Test
+	// public void testDistinctCountSparseTwoFive() {
+	// 	int nRows = total * 5;
+	// 	int sampleSize = total * 2;
+	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	// }
+
+	// @Test
+	// public void testDistinctCountSparseTwo100() {
+	// 	int nRows = total * 100;
+	// 	int sampleSize = total * 2;
+	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	// }
+
+	// @Test
+	// public void testDistinctCountSparseTwo1000() {
+	// 	int nRows = total * 1000;
+	// 	int sampleSize = total * 2;
+	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	// }
+
+	// @Test
+	// public void testDistinctCountSparseTwo10000() {
+	// 	int nRows = total * 10000;
+	// 	int sampleSize = total * 2;
+	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	// }
+
+	// @Test
+	// public void testDistinctCountSparseFive100() {
+	// 	int nRows = total * 100;
+	// 	int sampleSize = total * 5;
+	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	// }
+
+	// @Test
+	// public void testDistinctCountSparseFive1000() {
+	// 	int nRows = total * 1000;
+	// 	int sampleSize = total * 5;
+	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	// }
+
+	// @Test
+	// public void testDistinctCountSparseFive10000() {
+	// 	int nRows = total * 10000;
+	// 	int sampleSize = total * 5;
+	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	// }
+
+	// @Test
+	// public void testDistinctCountSpecific() {
+	// 	if(total < 604) {
+	// 		int nRows = 16000;
+	// 		int sampleSize = 604;
+	// 		SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+	// 	}
+	// }
+}

@@ -25,7 +25,7 @@ do
   for d in "${datasets[@]}"; do
     ./resultPath.sh $home_log $d$ro $result_path
     data_file_name="$root_data_path/$d/$d.data"
-    for sr in 300 #200 300 400 500 600 700 800 900 1000
+    for sr in 100 200 300 400 500 600 700 800 900 1000
       do
         for p in 7 #0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
          do

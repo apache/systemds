@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.compress.estim;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -152,6 +153,9 @@ public class SampleDistinctTest {
 				+ Arrays.toString(frequencies);
 			assertEquals(m, frequencies.length, c);
 		}
+		else if(c < frequencies.length)
+			fail("estimate is lower than observed elements");
+		else if(c > Math.ceil((double)total / p) - frequencies.length + total)
+			fail("estimate "+c+" is larger than theoretical max uniques " + (Math.ceil((double)total / p) - frequencies.length + total));
 	}
-
 }

@@ -33,14 +33,15 @@ public class SampleEstimatorFactory {
 	}
 
 	/**
-	 * estimate a distinct count based on frequencies
+	 * Estimate a distinct number of values based on frequencies.
 	 * 
-	 * @param frequencies A list of frequencies of unique values
-	 * @param nRows       The total number of rows to consider
-	 * @param sampleSize  The size of the sample, NOTE this should ideally be scaled to match the sum(frequencies)
-	 * @param type        the Type of estimator to use
+	 * @param frequencies A list of frequencies of unique values, NOTE all values contained should be larger than zero
+	 * @param nRows       The total number of rows to consider, NOTE should always be larger or equal to sum(frequencies)
+	 * @param sampleSize  The size of the sample, NOTE this should ideally be scaled to match the sum(frequencies) and
+	 *                    should always be lower or equal to nRows
+	 * @param type        The type of estimator to use
 	 * @param solveCache  A solve cache to avoid repeated calculations
-	 * @return A bounded number of unique values.
+	 * @return A estimated number of unique values
 	 */
 	public static int distinctCount(int[] frequencies, int nRows, int sampleSize, EstimationType type,
 		HashMap<Integer, Double> solveCache) {
@@ -48,14 +49,13 @@ public class SampleEstimatorFactory {
 		if(frequencies == null || frequencies.length == 0)
 			// Frequencies for some reason is allocated as null or all values in the sample are zeros.
 			return 0;
-
 		try {
 			// Invert histogram
 			int[] invHist = getInvertedFrequencyHistogram(frequencies);
 			// estimate distinct
 			int est = distinctCountWithHistogram(frequencies.length, invHist, frequencies, nRows, sampleSize, type,
 				solveCache);
-			// Number of unique is trivially bounded by 
+			// Number of unique is trivially bounded by
 			// lower: the number of observed uniques in the sample
 			// upper: the number of rows minus the observed uniques total count, plus the observed number of uniques.
 			return Math.min(Math.max(frequencies.length, est), nRows - sampleSize + frequencies.length);
@@ -95,10 +95,8 @@ public class SampleEstimatorFactory {
 
 		// create frequency histogram
 		int[] freqCounts = new int[maxCount];
-		for(int i = 0; i < numVals; i++) {
-			if(frequencies[i] != 0)
-				freqCounts[frequencies[i] - 1]++;
-		}
+		for(int i = 0; i < numVals; i++)
+			freqCounts[frequencies[i] - 1]++;
 
 		return freqCounts;
 	}

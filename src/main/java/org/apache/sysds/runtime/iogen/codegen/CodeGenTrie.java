@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.iogen.codegen;
 
+import com.google.gson.Gson;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.iogen.CustomProperties;
 import org.apache.sysds.runtime.iogen.KeyTrie;
@@ -45,6 +46,10 @@ public class CodeGenTrie {
 	private void buildPrefixTree(){
 		for(int c=0; c< properties.getColKeyPattern().length; c++){
 			KeyTrie keyTrie = properties.getColKeyPattern()[c];
+
+			Gson gson = new Gson();
+			System.out.println(gson.toJson(keyTrie.getPrefixKeyPatterns()));
+
 			Types.ValueType vt = properties.getSchema() == null ? Types.ValueType.FP64 : properties.getSchema()[c];
 			for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
 				this.insert(rootCol, c, vt, keys);

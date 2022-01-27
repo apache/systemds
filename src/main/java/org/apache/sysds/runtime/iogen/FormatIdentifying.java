@@ -259,54 +259,10 @@ public class FormatIdentifying {
 		ArrayList<String>[] suffixStrings = extractAllSuffixStringsOfColsSingleLine();
 		KeyTrie[] colKeyPattens = new KeyTrie[ncols];
 
-		// Clean prefix strings
-		for(int c =0; c< ncols; c++) {
-			ArrayList<String> list = prefixStrings.getKey()[c];
-			String token = null;
-			boolean flag = true;
-			for(int w = 1; w < windowSize && flag; w++) {
-				HashSet<String> wts = new HashSet<>();
-				for(String s : list) {
-					if(s.length() < w)
-						flag = false;
-					else
-						wts.add(s.substring(s.length()-w));
-				}
-
-				if(flag) {
-					if(wts.size() == 1)
-						token = wts.iterator().next();
-					else {
-						for(String t : wts) {
-							int count = 0;
-							for(String s : list) {
-								if(s.endsWith(t))
-									count++;
-							}
-							float percent = (float) count / list.size();
-							if(percent >= 0.9)
-								token = t;
-						}
-					}
-				}
-				else if(wts.size() == 0)
-					token = "";
-			}
-			if(token == null)
-				throw new RuntimeException("can't build a key pattern for the column: "+ c);
-
-			if(token.length() > 0){
-				ArrayList<String> newList = new ArrayList<>();
-				for(String s: list){
-					if(s.endsWith(token))
-						newList.add(s);
-				}
-				prefixStrings.getKey()[c] = newList;
-			}
-		}
+		// clean prefix strings
 
 
-		for(int c=0; c<ncols; c++) {
+		for(int c=0; c<nrows; c++) {
 			MappingTrie trie = new MappingTrie();
 			int ri = 0;
 			for(String ps: prefixStrings.getKey()[c])

@@ -77,4 +77,15 @@ public class FrameSingleRowNestedTest extends GenerateReaderFrameTest {
 		data = new String[][] {{"1", "2", "3", "4", "5"}, {"6", "7", "8", "9", "10"}, {"11", "12", "13", "14", "15"}};
 		runGenerateReaderTest();
 	}
+
+	@Test
+	public void test6() {
+		sampleRaw = "{\"index\":207,\"name\":\"Nuno Guimarães\",\"affiliations\":[\"ISCTEUniversity Institute of Lisbon, Lisbon, Portugal\"],\"paperCount\":1,\"citationNumber\":0,\"hIndex\":0.0,\"researchInterests\":[\"mental state\",\"mental workload\",\"higher mental workload\",\"mental load\",\"mental workload evaluation\",\"mental workload pattern\",\"ecological reading situation\",\"reading condition\",\"visual user interface\",\"EEG signal\"]}\n"+
+		"{\"index\":208,\"name\":\" Nguyen Minh Nhut\",\"affiliations\":[\"Data Mining Department, Institute for Infocomm Research (I2R), 1 Fusionopolis Way, Connexis (South Tower), Singapore 138632\"],\"paperCount\":1,\"citationNumber\":0,\"hIndex\":0.0,\"researchInterests\":[\"system health monitoring\",\"sensor node\",\"adaptive classification system architecture\",\"effective health monitoring system\",\"proposed system\",\"real-time adaptive classification system\",\"adaptive sampling frequency\",\"different sampling\",\"different sampling rate\",\"individual sensor\"]}\n\n"+
+		"{\"index\":209,\"name\":\"Louis Janus\",\"affiliations\":[\"\"],\"paperCount\":1,\"citationNumber\":0,\"hIndex\":0.0,\"researchInterests\":[\"language instruction\"]}";
+		schema = new Types.ValueType[] {Types.ValueType.INT32, Types.ValueType.STRING, Types.ValueType.FP64,
+			Types.ValueType.FP32, Types.ValueType.INT64};
+		data = new String[][] {{"1", "2", "3", "4", "5"}, {"6", "7", "8", "9", "10"}, {"11", "12", "13", "14", "15"}};
+		runGenerateReaderTest();
+	}
 }

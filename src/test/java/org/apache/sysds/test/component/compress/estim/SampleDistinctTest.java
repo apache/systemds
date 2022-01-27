@@ -95,105 +95,63 @@ public class SampleDistinctTest {
 		// Sample 100%
 		int nRows = total;
 		int sampleSize = total;
-
 		int c = SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+		verify(c, 1.0);
+	}
+
+	@Test
+	public void test20p() {
+		// Sample 20%
+		int nRows = total * 5;
+		int sampleSize = total;
+		int c = SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+		verify(c, 0.2);
+	}
+
+	@Test
+	public void test1p() {
+		// Sample 1%
+		int nRows = total * 100;
+		int sampleSize = total;
+		int c = SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+		verify(c, 0.01);
+	}
+
+	@Test
+	public void test01p() {
+		// Sample 0.1%
+		int nRows = total * 1000;
+		int sampleSize = total;
+		int c = SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+		verify(c, 0.001);
+	}
+
+	@Test
+	public void test001p() {
+		// Sample 0.01%
+		int nRows = total * 10000;
+		int sampleSize = total;
+		int c = SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+		verify(c, 0.0001);
+	}
+
+	@Test
+	public void test0001p() {
+		// Sample 0.001%
+		int nRows = total * 100000;
+		int sampleSize = total;
+		int c = SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
+		verify(c, 0.00001);
+	}
+
+	private void verify(int c, double p){
 		if(frequencies == null)
 			assertEquals(0, c);
-		else if(frequencies.length != c) {
+		else if(p == 1.0 && frequencies.length != c) {
 			String m = "incorrect estimate with type; " + type + " est: " + c + " frequencies: "
 				+ Arrays.toString(frequencies);
 			assertEquals(m, frequencies.length, c);
 		}
 	}
 
-	@Test
-	public void testDistinctCountDenseFive() {
-		// Sample 20%
-		int nRows = total * 5;
-		int sampleSize = total;
-
-		SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	}
-
-	@Test
-	public void testDistinctCountDense100() {
-		// Sample 1%
-		int nRows = total * 100;
-		int sampleSize = total;
-		SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	}
-
-	@Test
-	public void testDistinctCountDense1000() {
-		// Sample 0.1%
-		int nRows = total * 1000;
-		int sampleSize = total;
-		SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	}
-
-	@Test
-	public void testDistinctCountDense10000() {
-		// Sample 0.01%
-		int nRows = total * 10000;
-		int sampleSize = total;
-		SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	}
-
-	// @Test
-	// public void testDistinctCountSparseTwoFive() {
-	// 	int nRows = total * 5;
-	// 	int sampleSize = total * 2;
-	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	// }
-
-	// @Test
-	// public void testDistinctCountSparseTwo100() {
-	// 	int nRows = total * 100;
-	// 	int sampleSize = total * 2;
-	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	// }
-
-	// @Test
-	// public void testDistinctCountSparseTwo1000() {
-	// 	int nRows = total * 1000;
-	// 	int sampleSize = total * 2;
-	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	// }
-
-	// @Test
-	// public void testDistinctCountSparseTwo10000() {
-	// 	int nRows = total * 10000;
-	// 	int sampleSize = total * 2;
-	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	// }
-
-	// @Test
-	// public void testDistinctCountSparseFive100() {
-	// 	int nRows = total * 100;
-	// 	int sampleSize = total * 5;
-	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	// }
-
-	// @Test
-	// public void testDistinctCountSparseFive1000() {
-	// 	int nRows = total * 1000;
-	// 	int sampleSize = total * 5;
-	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	// }
-
-	// @Test
-	// public void testDistinctCountSparseFive10000() {
-	// 	int nRows = total * 10000;
-	// 	int sampleSize = total * 5;
-	// 	SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	// }
-
-	// @Test
-	// public void testDistinctCountSpecific() {
-	// 	if(total < 604) {
-	// 		int nRows = 16000;
-	// 		int sampleSize = 604;
-	// 		SampleEstimatorFactory.distinctCount(frequencies, nRows, sampleSize, type, solveCache);
-	// 	}
-	// }
 }

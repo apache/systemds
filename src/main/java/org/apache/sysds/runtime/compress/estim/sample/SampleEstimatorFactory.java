@@ -32,35 +32,39 @@ public class SampleEstimatorFactory {
 		HassAndStokes, ShlosserEstimator, ShlosserJackknifeEstimator, SmoothedJackknifeEstimator,
 	}
 
+	/**
+	 * estimate a distinct count based on frequencies
+	 * 
+	 * @param frequencies A list of frequencies of unique values
+	 * @param nRows       The total number of rows to consider
+	 * @param sampleSize  The size of the sample, NOTE this should ideally be scaled to match the sum(frequencies)
+	 * @param type        the Type of estimator to use
+	 * @param solveCache  A solve cache to avoid repeated calculations
+	 * @return A bounded number of unique values.
+	 */
 	public static int distinctCount(int[] frequencies, int nRows, int sampleSize, EstimationType type,
 		HashMap<Integer, Double> solveCache) {
 
-		if(frequencies == null) // Frequencies for some reason is allocated as null
+		if(frequencies == null || frequencies.length == 0)
+			// Frequencies for some reason is allocated as null or all values in the sample are zeros.
 			return 0;
-
-		int numVals = frequencies.length;
-
-		// all values in the sample are zeros.
-		if(numVals == 0)
-			return 0;
-
-		int s = 0;
-		for(int i : frequencies)
-			s+= i;
-		if(s != sampleSize)
-			throw new DMLCompressionException("Invalid call: " + sampleSize + " " + Arrays.toString(frequencies) );
 
 		try {
+			// Invert histogram
 			int[] invHist = getInvertedFrequencyHistogram(frequencies);
-			int est = distinctCountWithHistogram(numVals, invHist, frequencies, nRows, sampleSize, type, solveCache);
-
-			// Number of unique is trivially bounded by the sampled number of uniques and the number of rows.
-			return Math.min(Math.max(numVals, est), nRows);
+			// estimate distinct
+			int est = distinctCountWithHistogram(frequencies.length, invHist, frequencies, nRows, sampleSize, type,
+				solveCache);
+			// Number of unique is trivially bounded by 
+			// lower: the number of observed uniques in the sample
+			// upper: the number of rows minus the observed uniques total count, plus the observed number of uniques.
+			return Math.min(Math.max(frequencies.length, est), nRows - sampleSize + frequencies.length);
 		}
 		catch(Exception e) {
-			throw new DMLCompressionException("Error while estimating distinct count with arguments:\n\t numVals:"
-				+ numVals + " frequencies:" + Arrays.toString(frequencies) + " nrows: " + nRows + " sampleSize: "
-				+ sampleSize + " type: " + type + " solveCache: " + solveCache, e);
+			throw new DMLCompressionException(
+				"Error while estimating distinct count with arguments:\n\tfrequencies:" + Arrays.toString(frequencies)
+					+ " nrows: " + nRows + " sampleSize: " + sampleSize + " type: " + type + " solveCache: " + solveCache,
+				e);
 		}
 	}
 

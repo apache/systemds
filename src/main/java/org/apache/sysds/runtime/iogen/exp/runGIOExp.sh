@@ -17,7 +17,7 @@ mx_mem="$(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024 * 1024))
 
 delimiter="\t"
 declare -a  datasets=("aminer_paper")
-declare -a  main_classes=( "GIOFrameExperimentHDFS")
+declare -a  main_classes=("GIOFrameExperimentHDFS") #SYSDSFrameExperimentHDFS GIOFrameExperimentHDFS
 
 for (( i = 0; i < 1; i++ )); do
       for mc in "${main_classes[@]}"; do
@@ -25,10 +25,14 @@ for (( i = 0; i < 1; i++ )); do
           ./resultPath.sh $home_log $d$i $mc
           data_file_name="$root_data_path/$d/$d.data"
 
-          for sr in 100 200 300 400 500 600 700 800 900 1000
+          for sr in 100 #200 300 400 500 600 700 800 900 1000
           do
-            for p in 5 #0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
+            for p in 11 #0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
               do
+                  #schema_file_name="$root_data_path/$d/$d.schema"
+                  #sample_raw_fileName="$root_data_path/$d/sample_$sr$sep$p.raw"
+                  #sample_frame_file_name="$root_data_path/$d/sample_$sr$sep$p.frame"
+
                   schema_file_name="$root_data_path/$d/$d$sep$p.schema"
                   sample_raw_fileName="$root_data_path/$d/sample_$sr$sep$p.raw"
                   sample_frame_file_name="$root_data_path/$d/sample_$sr$sep$p.frame"

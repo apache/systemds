@@ -68,7 +68,7 @@ public class SampleEstimatorFactory {
 		}
 	}
 
-	public static int distinctCountWithHistogram(int numVals, int[] invHist, int[] frequencies, int nRows,
+	private static int distinctCountWithHistogram(int numVals, int[] invHist, int[] frequencies, int nRows,
 		int sampleSize, EstimationType type, HashMap<Integer, Double> solveCache) {
 		switch(type) {
 			case ShlosserEstimator:

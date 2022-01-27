@@ -251,16 +251,16 @@ public class MatrixGRRowColIdentifyTest extends GenerateReaderMatrixTest {
 
 	@Test
 	public void test13() throws Exception {
-		String sampleRawFileName = "/media/sfathollahzadeh/Windows1/saeedData/GIODataset/flat/aminer/aminer_author/sample_300_7.raw";
-		String sampleFrameFileName = "/media/sfathollahzadeh/Windows1/saeedData/GIODataset/flat/aminer/aminer_author/sample_300_7.frame";
-		Integer sampleNRows = 300;
+		String sampleRawFileName = "/home/saeed/Documents/Dataset/GIODataset/flat/aminer_paper/sample_100_5.raw";
+		String sampleFrameFileName = "/home/saeed/Documents/Dataset/GIODataset/flat/aminer_paper/sample_100_5.frame";
+		Integer sampleNRows = 100;
 		String delimiter = "\\t";
-		String schemaFileName = "/media/sfathollahzadeh/Windows1/saeedData/GIODataset/flat/aminer/aminer_author/aminer_author_7.schema";
-		String dataFileName = "/media/sfathollahzadeh/Windows1/saeedData/GIODataset/flat/aminer/aminer_author/aminer_author.data";
+		String schemaFileName = "/home/saeed/Documents/Dataset/GIODataset/flat/aminer_paper/aminer_paper.schema";
+		String dataFileName = "/home/saeed/Documents/Dataset/GIODataset/flat/aminer_paper/aminer_paper.data";
 
 		Float percent = 7f;//Float.parseFloat(args[6]);
-		String datasetName = "aminer_author";//args[7];
-		String LOG_HOME ="/media/sfathollahzadeh/Windows1/saeedData/GIOLog";//args[8];
+		String datasetName = "aminer_paper";//args[7];
+		String LOG_HOME ="/home/saeed/Documents/ExpLog";//args[8];
 
 		if(delimiter.equals("\\t"))
 			delimiter = "\t";

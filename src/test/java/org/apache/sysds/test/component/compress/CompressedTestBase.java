@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.component.compress;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -192,7 +191,7 @@ public abstract class CompressedTestBase extends TestBase {
 						for(int i = 0; i < colIndexes.length; i++)
 							colIndexes[i] = i;
 						cmb = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
-						((CompressedMatrixBlock) cmb).allocateColGroup(new ColGroupUncompressed(colIndexes, mb, false));
+						((CompressedMatrixBlock) cmb).allocateColGroup(ColGroupUncompressed.create(colIndexes, mb, false));
 					}
 				}
 				else {
@@ -390,7 +389,9 @@ public abstract class CompressedTestBase extends TestBase {
 			((CompressedMatrixBlock) cmb).clearSoftReferenceToDecompressed();
 			MatrixBlock decompressedMatrixBlock = ((CompressedMatrixBlock) cmb).decompress(_k);
 			compareResultMatrices(mb, decompressedMatrixBlock, 1);
-			assertEquals(bufferedToString, mb.getNonZeros(), decompressedMatrixBlock.getNonZeros());
+			if(mb.getNonZeros() != decompressedMatrixBlock.getNonZeros())
+				fail(bufferedToString + "\n NonZeros not equivalent: expected:" + mb.getNonZeros() + " was: "
+					+ decompressedMatrixBlock.getNonZeros());
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -449,7 +450,6 @@ public abstract class CompressedTestBase extends TestBase {
 		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(3, rows, 0.9, 1.5, 1.0, 3);
 		testLeftMatrixMatrix(matrix);
 	}
-
 
 	@Test
 	public void testLeftMatrixMatrixMultConst() {
@@ -634,7 +634,7 @@ public abstract class CompressedTestBase extends TestBase {
 			ucRet = right.aggregateBinaryOperations(left, right, ucRet, abopSingle);
 
 			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb).aggregateBinaryOperations(compMatrix, cmb, new MatrixBlock(),
-			abopSingle, transposeLeft, transposeRight);
+				abopSingle, transposeLeft, transposeRight);
 
 			compareResultMatrices(ucRet, ret2, 100);
 		}

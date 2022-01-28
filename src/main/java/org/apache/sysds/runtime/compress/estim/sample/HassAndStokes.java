@@ -159,6 +159,7 @@ public class HassAndStokes {
 		// NOTE the cache does not work currently since the number of rows considered each call can change now
 		// This happens because the sampled estimator now considers nonzeros or offsets calculated and therefore know upper
 		// bounds of the number of offsets that are lower than the maximum number of rows.
+		
 		// if(solveCache.containsKey(nj))
 		// 	synchronized(solveCache) {
 		// 		return solveCache.get(nj);

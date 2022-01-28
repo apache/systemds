@@ -207,18 +207,14 @@ public class MappingTests {
 	}
 
 	@Test
-	public void getCountsWithDefault() {
-		int nVal = m.getUnique();
-		int[] counts = m.getCounts(new int[nVal + 1], size + 10);
-		if(10 != counts[nVal])
-			fail("Incorrect number of unique values:" + m + "\n" + Arrays.toString(counts));
-
-	}
-
-	@Test
 	public void getCountsNoDefault() {
 		int nVal = m.getUnique();
-		m.getCounts(new int[nVal], size);
+		int[] counts = m.getCounts(new int[nVal]);
+		int sum = 0;
+		for(int v : counts)
+			sum += v;
+		if(sum != size)
+			fail("Incorrect number of unique values.");
 	}
 
 	@Test

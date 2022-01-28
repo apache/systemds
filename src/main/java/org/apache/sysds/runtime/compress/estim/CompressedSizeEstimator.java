@@ -138,16 +138,6 @@ public abstract class CompressedSizeEstimator {
 	}
 
 	/**
-	 * Method used for compressing into one type of colGroup
-	 * 
-	 * @return CompressedSizeInfo on a compressed colGroup compressing the entire matrix into a single colGroup type.
-	 */
-	public CompressedSizeInfoColGroup estimateCompressedColGroupSize() {
-		int[] colIndexes = makeColIndexes();
-		return estimateCompressedColGroupSize(colIndexes);
-	}
-
-	/**
 	 * Method for extracting Compressed Size Info of specified columns, together in a single ColGroup
 	 * 
 	 * @param colIndexes The columns to group together inside a ColGroup
@@ -299,9 +289,5 @@ public abstract class CompressedSizeEstimator {
 		public CompressedSizeInfoColGroup call() {
 			return _estimator.estimateCompressedColGroupSize(_cols);
 		}
-	}
-
-	private int[] makeColIndexes() {
-		return Util.genColsIndices(getNumColumns());
 	}
 }

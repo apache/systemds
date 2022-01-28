@@ -20,7 +20,7 @@
 package org.apache.sysds.test.component.compress.colgroup;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.junit.Test;
 
@@ -28,71 +28,71 @@ public class NegativeConstTests {
 
 	@Test(expected = DMLCompressionException.class)
 	public void testConstConstruction_01() {
-		ColGroupFactory.genColGroupConst(-1, 14);
+		ColGroupConst.create(-1, 14);
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void testConstConstruction_02() {
-		ColGroupFactory.genColGroupConst(0, 14);
+		ColGroupConst.create(0, 14);
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void testConstConstruction_03() {
-		ColGroupFactory.genColGroupConst(new int[] {}, 0);
+		ColGroupConst.create(new int[] {}, 0);
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void testConstConstruction_05() {
-		ColGroupFactory.genColGroupConst(new int[] {0, 1, 2}, new double[] {1, 2});
+		ColGroupConst.create(new int[] {0, 1, 2}, new double[] {1, 2});
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void testConstConstruction_06() {
-		ColGroupFactory.genColGroupConst(new int[] {0, 1}, new double[] {1, 2, 4});
+		ColGroupConst.create(new int[] {0, 1}, new double[] {1, 2, 4});
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void testConstConstruction_07() {
-		ColGroupFactory.genColGroupConst(2, new Dictionary(new double[] {1, 2, 4}));
+		ColGroupConst.create(2, new Dictionary(new double[] {1, 2, 4}));
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void testConstConstruction_08() {
-		ColGroupFactory.genColGroupConst(4, new Dictionary(new double[] {1, 2, 4}));
+		ColGroupConst.create(4, new Dictionary(new double[] {1, 2, 4}));
 	}
 
 	@Test
 	public void testConstConstruction_allowed_01() {
-		ColGroupFactory.genColGroupConst(new int[] {0, 1, 2, 3}, 0);
+		ColGroupConst.create(new int[] {0, 1, 2, 3}, 0);
 	}
 
 	@Test
 	public void testConstConstruction_allowed_02() {
-		ColGroupFactory.genColGroupConst(3, new Dictionary(new double[] {1, 2, 4}));
+		ColGroupConst.create(3, new Dictionary(new double[] {1, 2, 4}));
 	}
 
 	@Test
 	public void testConstConstruction_allowed_03() {
-		ColGroupFactory.genColGroupConst(new double[] {1, 2, 4});
+		ColGroupConst.create(new double[] {1, 2, 4});
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testConstConstruction_null_01() {
-		ColGroupFactory.genColGroupConst(null, 0);
+		ColGroupConst.create(null, 0);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testConstConstruction_null_02() {
-		ColGroupFactory.genColGroupConst(null, null);
+		ColGroupConst.create(null, null);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testConstConstruction_null_03() {
-		ColGroupFactory.genColGroupConst(0, null);
+		ColGroupConst.create(0, null);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testConstConstruction_null_04() {
-		ColGroupFactory.genColGroupConst(null);
+		ColGroupConst.create(null);
 	}
 }

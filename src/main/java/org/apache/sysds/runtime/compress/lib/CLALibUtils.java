@@ -31,7 +31,6 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AMorphingMMColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 
 public final class CLALibUtils {
 	protected static final Log LOG = LogFactory.getLog(CLALibUtils.class.getName());
@@ -134,7 +133,7 @@ public final class CLALibUtils {
 				values[outId] = colVals[i];
 			}
 		}
-		return ColGroupFactory.genColGroupConst(resCols, values);
+		return ColGroupConst.create(resCols, values);
 	}
 
 	private static int[] combineColIndexes(List<AColGroup> gs) {

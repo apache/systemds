@@ -41,18 +41,18 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
-import org.apache.sysds.runtime.compress.colgroup.AColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupIO;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.lib.CLALibAppend;
 import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
+import org.apache.sysds.runtime.compress.lib.CLALibCMOps;
 import org.apache.sysds.runtime.compress.lib.CLALibCompAgg;
 import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
-import org.apache.sysds.runtime.compress.lib.CLALibReExpand;
+import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
 import org.apache.sysds.runtime.compress.lib.CLALibSquash;
@@ -275,10 +275,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			nonZeros = nnz;
 		}
 
-		if(nonZeros == 0) {
-			ColGroupEmpty cg = ColGroupEmpty.generate(getNumColumns());
-			allocateColGroup(cg);
-		}
+		if(nonZeros == 0) // If there is no nonzeros then reallocate into single empty column group.
+			allocateColGroup(ColGroupEmpty.create(getNumColumns()));
 
 		return nonZeros;
 	}
@@ -468,7 +466,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, AggregateBinaryOperator op) {
+	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
+		AggregateBinaryOperator op) {
 		checkAggregateBinaryOperations(m1, m2, op);
 		return CLALibMatrixMult.matrixMultiply(m1, m2, ret, op.getNumThreads(), false, false);
 	}
@@ -636,13 +635,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock rexpandOperations(MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore,
 		int k) {
-		if(rows) {
-			printDecompressWarning("rexpandOperations");
-			MatrixBlock tmp = getUncompressed();
-			return tmp.rexpandOperations(ret, max, rows, cast, ignore, k);
-		}
-		else
-			return CLALibReExpand.reExpand(this, ret, max, cast, ignore, k);
+		return CLALibRexpand.rexpand(this, ret, max, rows, cast, ignore, k);
 	}
 
 	@Override
@@ -713,29 +706,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public CM_COV_Object cmOperations(CMOperator op) {
-		if(isEmpty())
-			return super.cmOperations(op);
-		else if(_colGroups.size() == 1 && _colGroups.get(0) instanceof AColGroupValue) {
-			AColGroupValue g = (AColGroupValue) _colGroups.get(0);
-			MatrixBlock vals = g.getValuesAsBlock();
-			MatrixBlock counts = getCountsAsBlock(g.getCounts());
-			if(counts.isEmpty())
-				return vals.cmOperations(op);
-			return vals.cmOperations(op, counts);
-		}
-		else
-			return getUncompressed("cmOperations").cmOperations(op);
-	}
-
-	private static MatrixBlock getCountsAsBlock(int[] counts) {
-		if(counts != null) {
-			MatrixBlock ret = new MatrixBlock(counts.length, 1, false);
-			for(int i = 0; i < counts.length; i++)
-				ret.quickSetValue(i, 0, counts[i]);
-			return ret;
-		}
-		else
-			return new MatrixBlock(1, 1, false);
+		return CLALibCMOps.centralMoment(this, op);
 	}
 
 	@Override

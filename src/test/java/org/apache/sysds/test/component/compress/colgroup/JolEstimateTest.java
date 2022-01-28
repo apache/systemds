@@ -151,7 +151,7 @@ public abstract class JolEstimateTest {
 		if(cg == null)
 			return;
 		try {
-			if( mbt.getNumColumns() > 10000 )
+			if(mbt.getNumColumns() > 10000)
 				tolerance = tolerance * 0.95;
 			final CompressionSettings cs = csb.setSamplingRatio(ratio).setMinimumSampleSize(10)
 				.setValidCompressions(EnumSet.of(getCT())).create();
@@ -161,7 +161,7 @@ public abstract class JolEstimateTest {
 				Math.max(10, (int) (mbt.getNumColumns() * ratio)), 1);
 
 			final int sampleSize = est.getSampleSize();
-			final CompressedSizeInfoColGroup cInfo = est.estimateCompressedColGroupSize();
+			final CompressedSizeInfoColGroup cInfo = est.estimateCompressedColGroupSize(colIndexes);
 			// LOG.error(cg);
 			final int estimateNUniques = cInfo.getNumVals();
 			final long estimateCSI = cInfo.getCompressionSize(cg.getCompType());
@@ -177,9 +177,7 @@ public abstract class JolEstimateTest {
 
 				fail("CSI Sampled estimate size is not in tolerance range \n" + rangeString + "\nActual number uniques:"
 					+ actualNumberUnique + " estimated Uniques: " + estimateNUniques + "\nSampleSize of total rows:: "
-					+ sampleSize + " " + mbt.getNumColumns() + "\n" + cInfo
-				// + "\n" + mbt + "\n" + cg
-				);
+					+ sampleSize + " " + mbt.getNumColumns() + "\n" + cInfo + "\n" + mbt + "\n" + cg);
 			}
 
 		}

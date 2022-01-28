@@ -34,7 +34,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -300,7 +300,7 @@ public class CLALibBinaryCellOp {
 		if(smallestSize == Integer.MAX_VALUE) {
 			// if there was no smallest colgroup
 			ADictionary newDict = new MatrixBlockDictionary(m2, nCol);
-			newColGroups.add(ColGroupFactory.genColGroupConst(nCol, newDict));
+			newColGroups.add(ColGroupConst.create(nCol, newDict));
 		}
 		else {
 			// apply to the found group
@@ -331,7 +331,7 @@ public class CLALibBinaryCellOp {
 			CompressedMatrixBlock mf1 = new CompressedMatrixBlock(m1);
 			double[] constV = new double[nCols];
 			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
-			filteredGroups.add(ColGroupFactory.genColGroupConst(constV));
+			filteredGroups.add(ColGroupConst.create(constV));
 			mf1.allocateColGroupList(filteredGroups);
 			m1 = mf1;
 		}

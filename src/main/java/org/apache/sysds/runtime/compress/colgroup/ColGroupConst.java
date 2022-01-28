@@ -29,12 +29,15 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 public class ColGroupConst extends AColGroupCompressed {
@@ -72,6 +75,80 @@ public class ColGroupConst extends AColGroupCompressed {
 			return new ColGroupEmpty(colIndices);
 		else
 			return new ColGroupConst(colIndices, dict);
+	}
+
+	/**
+	 * Generate a constant column group.
+	 * 
+	 * @param values The value vector that contains all the unique values for each column in the matrix.
+	 * @return A Constant column group.
+	 */
+	public static AColGroup create(double[] values) {
+		final int[] colIndices = Util.genColsIndices(values.length);
+		return create(colIndices, values);
+	}
+
+	/**
+	 * Generate a constant column group.
+	 * 
+	 * It is assumed that the column group is intended for use, therefore zero value is allowed.
+	 * 
+	 * @param cols  The specific column indexes that is contained in this constant group.
+	 * @param value The value contained in all cells.
+	 * @return A Constant column group.
+	 */
+	public static AColGroup create(int[] cols, double value) {
+		final int numCols = cols.length;
+		double[] values = new double[numCols];
+		for(int i = 0; i < numCols; i++)
+			values[i] = value;
+		return create(cols, values);
+	}
+
+	/**
+	 * Generate a constant column group.
+	 * 
+	 * @param cols   The specific column indexes that is contained in this constant group.
+	 * @param values The value vector that contains all the unique values for each column in the matrix.
+	 * @return A Constant column group.
+	 */
+	public static AColGroup create(int[] cols, double[] values) {
+		if(cols.length != values.length)
+			throw new DMLCompressionException("Invalid size of values compared to columns");
+		ADictionary dict = new Dictionary(values);
+		return ColGroupConst.create(cols, dict);
+	}
+
+	/**
+	 * Generate a constant column group.
+	 * 
+	 * @param numCols The number of columns.
+	 * @param dict    The dictionary to contain int the Constant group.
+	 * @return A Constant column group.
+	 */
+	public static AColGroup create(int numCols, ADictionary dict) {
+		if(numCols != dict.getValues().length)
+			throw new DMLCompressionException(
+				"Invalid construction of const column group with different number of columns in arguments");
+		final int[] colIndices = Util.genColsIndices(numCols);
+		return ColGroupConst.create(colIndices, dict);
+	}
+
+	/**
+	 * Generate a constant column group.
+	 * 
+	 * @param numCols The number of columns
+	 * @param value   The value contained in all cells.
+	 * @return A Constant column group.
+	 */
+	public static AColGroup create(int numCols, double value) {
+		if(numCols <= 0)
+			throw new DMLCompressionException("Invalid construction of constant column group with cols: " + numCols);
+		final int[] colIndices = Util.genColsIndices(numCols);
+
+		if(value == 0)
+			return new ColGroupEmpty(colIndices);
+		return ColGroupConst.create(colIndices, value);
 	}
 
 	@Override
@@ -167,7 +244,6 @@ public class ColGroupConst extends AColGroupCompressed {
 
 	@Override
 	protected void computeSumSq(double[] c, int nRows) {
-
 		c[0] += _dict.sumSq(new int[] {nRows}, _colIndexes.length);
 	}
 
@@ -178,7 +254,7 @@ public class ColGroupConst extends AColGroupCompressed {
 
 	@Override
 	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
-		double vals = preAgg[0];
+		final double vals = preAgg[0];
 		for(int rix = rl; rix < ru; rix++)
 			c[rix] += vals;
 	}
@@ -209,7 +285,7 @@ public class ColGroupConst extends AColGroupCompressed {
 			if(ret.isEmpty())
 				return null;
 			ADictionary d = new MatrixBlockDictionary(ret, cr);
-			return ColGroupFactory.genColGroupConst(cr, d);
+			return create(cr, d);
 		}
 		else {
 			throw new NotImplementedException();
@@ -323,7 +399,6 @@ public class ColGroupConst extends AColGroupCompressed {
 	@Override
 	protected void computeColProduct(double[] c, int nRows) {
 		throw new NotImplementedException();
-
 	}
 
 	@Override
@@ -334,7 +409,6 @@ public class ColGroupConst extends AColGroupCompressed {
 	@Override
 	protected double[] preAggSumSqRows() {
 		return _dict.sumAllRowsToDoubleSq(_colIndexes.length);
-
 	}
 
 	@Override
@@ -353,5 +427,21 @@ public class ColGroupConst extends AColGroupCompressed {
 		size += _dict.getInMemorySize();
 		size += 8; // dict reference
 		return size;
+	}
+
+	@Override
+	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+		CM_COV_Object ret = new CM_COV_Object();
+		op.fn.execute(ret, _dict.getValue(0), nRows);
+		return ret;
+	}
+
+	@Override
+	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
+		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.length);
+		if(d == null)
+			return ColGroupEmpty.create(max);
+		else
+			return create(max, d);
 	}
 }

@@ -158,7 +158,6 @@ public interface IEncode {
 		AOffset o = OffsetFactory.createOffset(sb.indexes(row), apos, alen);
 
 		final int zero = m.getNumColumns() - o.getSize();
-
 		return new SparseEncoding(d, o, zero, counts, m.getNumColumns());
 	}
 
@@ -208,7 +207,6 @@ public interface IEncode {
 			// Iteration 2, make final map
 			for(int i = off, r = 0; i < end; i += nCol, r++)
 				d.set(r, map.get(vals[i]));
-
 			return new DenseEncoding(d, counts);
 		}
 	}
@@ -263,7 +261,6 @@ public interface IEncode {
 		AOffset o = OffsetFactory.createOffset(offsets);
 
 		final int zero = m.getNumRows() - sumCounts;
-
 		return new SparseEncoding(d, o, zero, counts, m.getNumRows());
 	}
 
@@ -306,6 +303,7 @@ public interface IEncode {
 		else {
 			// TODO add Common group, that allows to allocate with one of the map entries as the common value.
 			// the input was fully dense.
+
 			final int[] counts = map.getUnorderedCountsAndReplaceWithUIDs();
 			return createWithReaderDense(m, map, counts, rowCols, nRows, transposed);
 		}

@@ -22,13 +22,14 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -101,7 +102,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public double aggregate(double init, Builtin fn, double[] reference) {
+	public double aggregateWithReference(double init, Builtin fn, double[] reference) {
 		throw new NotImplementedException();
 	}
 
@@ -121,7 +122,12 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] aggregateRows(Builtin fn, double[] reference) {
+	public double[] aggregateRowsWithDefault(Builtin fn, double[] defaultTuple) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public double[] aggregateRowsWithReference(Builtin fn, double[] reference) {
 		throw new NotImplementedException();
 	}
 
@@ -169,26 +175,6 @@ public class QDictionary extends ADictionary {
 		throw new NotImplementedException();
 	}
 
-	@Override
-	public QDictionary applyScalarOp(ScalarOperator op, double newVal, int numCols) {
-		double[] temp = getValues();
-		double max = Math.abs(newVal);
-		for(int i = 0; i < size(); i++) {
-			temp[i] = op.executeScalar(temp[i]);
-			double absTemp = Math.abs(temp[i]);
-			if(absTemp > max) {
-				max = absTemp;
-			}
-		}
-		double scale = max / (double) (Byte.MAX_VALUE);
-		byte[] res = new byte[size() + numCols];
-		for(int i = 0; i < size(); i++) {
-			res[i] = (byte) Math.round(temp[i] / scale);
-		}
-		Arrays.fill(res, size(), size() + numCols, (byte) Math.round(newVal / scale));
-		return new QDictionary(res, scale);
-	}
-
 	private int size() {
 		return _values.length;
 	}
@@ -196,12 +182,6 @@ public class QDictionary extends ADictionary {
 	@Override
 	public QDictionary clone() {
 		return new QDictionary(_values.clone(), _scale);
-	}
-
-	@Override
-	public QDictionary cloneAndExtend(int len) {
-		byte[] ret = Arrays.copyOf(_values, _values.length + len);
-		return new QDictionary(ret, _scale);
 	}
 
 	@Override
@@ -247,6 +227,16 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
+	public double[] sumAllRowsToDoubleWithDefault(double[] defaultTuple) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public double[] sumAllRowsToDoubleWithReference(double[] reference) {
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public double[] sumAllRowsToDoubleSq(int nrColumns) {
 		final int numVals = getNumberOfValues(nrColumns);
 		double[] ret = new double[numVals];
@@ -256,7 +246,12 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] sumAllRowsToDoubleSq(double[] reference) {
+	public double[] sumAllRowsToDoubleSqWithDefault(double[] defaultTuple) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public double[] sumAllRowsToDoubleSqWithReference(double[] reference) {
 		throw new NotImplementedException();
 	}
 
@@ -286,7 +281,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public double sumRowSq(int k, int nrColumns, double[] reference) {
+	public double sumRowSqWithReference(int k, int nrColumns, double[] reference) {
 		throw new NotImplementedException();
 	}
 
@@ -306,7 +301,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public void colSumSq(double[] c, int[] counts, int[] colIndexes, double[] reference) {
+	public void colSumSqWithReference(double[] c, int[] counts, int[] colIndexes, double[] reference) {
 		throw new NotImplementedException();
 	}
 
@@ -321,28 +316,8 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public double sumSq(int[] counts, double[] reference) {
+	public double sumSqWithReference(int[] counts, double[] reference) {
 		throw new NotImplementedException("Not Implemented");
-	}
-
-	@Override
-	public void addMaxAndMin(double[] ret, int[] colIndexes) {
-		byte[] mins = new byte[colIndexes.length];
-		byte[] maxs = new byte[colIndexes.length];
-		for(int i = 0; i < colIndexes.length; i++) {
-			mins[i] = _values[i];
-			maxs[i] = _values[i];
-		}
-		for(int i = colIndexes.length; i < _values.length; i++) {
-			int idx = i % colIndexes.length;
-			mins[idx] = (byte) Math.min(_values[i], mins[idx]);
-			maxs[idx] = (byte) Math.max(_values[i], maxs[idx]);
-		}
-		for(int i = 0; i < colIndexes.length; i++) {
-			int idy = colIndexes[i] * 2;
-			ret[idy] += mins[i] * _scale;
-			ret[idy + 1] += maxs[i] * _scale;
-		}
 	}
 
 	public String getString(int colIndexes) {
@@ -374,17 +349,6 @@ public class QDictionary extends ADictionary {
 		return new QDictionary(newDictValues, _scale);
 	}
 
-	public ADictionary reExpandColumns(int max) {
-		byte[] newDictValues = new byte[_values.length * max];
-
-		for(int i = 0, offset = 0; i < _values.length; i++, offset += max) {
-			int val = _values[i] - 1;
-			newDictValues[offset + val] = 1;
-		}
-
-		return new QDictionary(newDictValues, 1.0);
-	}
-
 	@Override
 	public boolean containsValue(double pattern) {
 		if(Double.isNaN(pattern) || Double.isInfinite(pattern))
@@ -393,7 +357,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean containsValue(double pattern, double[] reference) {
+	public boolean containsValueWithReference(double pattern, double[] reference) {
 		throw new NotImplementedException();
 	}
 
@@ -414,8 +378,13 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public long getNumberNonZeros(int[] counts, double[] reference, int nRows) {
+	public long getNumberNonZerosWithReference(int[] counts, double[] reference, int nRows) {
 		throw new NotImplementedException("not implemented yet");
+	}
+
+	@Override
+	public void addToEntry(Dictionary d, int fr, int to) {
+		throw new NotImplementedException("Not implemented yet");
 	}
 
 	@Override
@@ -426,11 +395,6 @@ public class QDictionary extends ADictionary {
 	@Override
 	public boolean isLossy() {
 		return false;
-	}
-
-	@Override
-	public double[] getTuple(int index, int nCol) {
-		return null;
 	}
 
 	@Override
@@ -449,7 +413,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes, double[] reference) {
+	public void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference) {
 		throw new NotImplementedException();
 	}
 
@@ -470,12 +434,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary replace(double pattern, double replace, double[] reference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public ADictionary replaceZeroAndExtend(double replace, int nCol) {
+	public ADictionary replaceWithReference(double pattern, double replace, double[] reference) {
 		throw new NotImplementedException();
 	}
 
@@ -490,11 +449,6 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyBinaryRowOpLeftAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
-		throw new NotImplementedException();
-	}
-
-	@Override
 	public ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes) {
 		throw new NotImplementedException();
 	}
@@ -505,29 +459,47 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyBinaryRowOpRightAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
+	public ADictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary applyScalarOp(ScalarOperator op, double[] reference, double[] newReference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+	public ADictionary binOpLeftWithReference(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
 		double[] newReference) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+	public ADictionary binOpRightWithReference(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
 		double[] newReference) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public double[] sumAllRowsToDouble(double[] reference) {
+	public CM_COV_Object centralMoment(CM_COV_Object ret, ValueFunction fn, int[] counts, int nRows) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public CM_COV_Object centralMomentWithReference(CM_COV_Object ret, ValueFunction fn, int[] counts, double reference,
+		int nRows) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
+		throw new NotImplementedException();
+		// byte[] newDictValues = new byte[_values.length * max];
+		// for(int i = 0, offset = 0; i < _values.length; i++, offset += max) {
+		// int val = _values[i] - 1;
+		// newDictValues[offset + val] = 1;
+		// }
+
+		// return new QDictionary(newDictValues, 1.0);
+	}
+
+	@Override
+	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, double reference) {
 		throw new NotImplementedException();
 	}
 }

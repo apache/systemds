@@ -115,7 +115,7 @@ public class CLALibLeftMultBy {
 	}
 
 	public static void leftMultByTransposeSelf(CompressedMatrixBlock cmb, MatrixBlock ret, int k) {
-		// final boolean overlapping = cmb.isOverlapping();
+
 		final List<AColGroup> groups = cmb.getColGroups();
 		final int numColumns = cmb.getNumColumns();
 		final int numRows = cmb.getNumRows();
@@ -518,7 +518,8 @@ public class CLALibLeftMultBy {
 
 			if(a instanceof APreAgg) {
 				APreAgg g = (APreAgg) a;
-				g.forceMatrixBlockDictionary();
+				//TODO remove call to force matrix block
+				g.forceMatrixBlockDictionary(); 
 				ColGroupValues.add(g);
 			}
 			else
@@ -535,8 +536,9 @@ public class CLALibLeftMultBy {
 	private static void MMPreaggregate(APreAgg cg, MatrixBlock preAgg, MatrixBlock tmpRes, MatrixBlock ret, int rl,
 		int ru) {
 		preAgg.recomputeNonZeros();
+		// TODO remove call to getDictionary().
 		final MatrixBlock dict = ((MatrixBlockDictionary) cg.getDictionary()).getMatrixBlock();
-		tmpRes.reset(ru - rl, dict.getNumColumns(), false);
+		tmpRes.reset(ru - rl,  cg.getNumCols(), false);
 		try {
 			LibMatrixMult.matrixMult(preAgg, dict, tmpRes);
 			addMatrixToResult(tmpRes, ret, cg.getColIndices(), rl, ru);
@@ -544,7 +546,7 @@ public class CLALibLeftMultBy {
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException("Failed MM with preAggregate:\n" + preAgg.getNumRows() + " "
-				+ preAgg.getNumColumns() + "\n dict:\n" + dict.getNumRows() + " " + dict.getNumColumns(), e);
+				+ preAgg.getNumColumns() + "\n dict:\n" + dict.getNumRows() + " " + dict.getNumColumns() + "\n" + cg, e);
 		}
 	}
 

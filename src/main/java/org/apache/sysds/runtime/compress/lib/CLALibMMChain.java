@@ -26,7 +26,7 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -101,7 +101,7 @@ public class CLALibMMChain {
 			final double[] constV = new double[nCol];
 			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
 
-			AColGroup c = ColGroupFactory.genColGroupConst(constV);
+			AColGroup c = ColGroupConst.create(constV);
 			filteredGroups.add(c);
 			x.allocateColGroupList(filteredGroups);
 			return x;

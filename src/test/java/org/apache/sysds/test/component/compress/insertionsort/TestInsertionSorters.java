@@ -41,6 +41,8 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(value = Parameterized.class)
 public class TestInsertionSorters {
 
+	private static final int materializeSizeDef = MaterializeSort.CACHE_BLOCK;
+
 	public final int[][] data;
 	public final SORT_TYPE st;
 	public final int numRows;
@@ -185,6 +187,6 @@ public class TestInsertionSorters {
 
 	@AfterClass
 	public static void setCacheAfter() {
-		MaterializeSort.CACHE_BLOCK = 1000;
+		MaterializeSort.CACHE_BLOCK = materializeSizeDef;
 	}
 }

@@ -30,9 +30,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -501,8 +503,8 @@ public abstract class AColGroup implements Serializable {
 	public abstract double getMax();
 
 	/**
-	 * Get a copy of this column group. Depending on which column group is copied it is a deep or shallow copy. If the
-	 * primitives for the underlying column groups is Immutable then only shallow copies is performed.
+	 * Get a copy of this column group note this is only a shallow copy. Meaning only the object wrapping index
+	 * structures, column indexes and dictionaries are copied.
 	 * 
 	 * @return Get a copy of this column group.
 	 */
@@ -541,6 +543,26 @@ public abstract class AColGroup implements Serializable {
 	 * @param nRows The number of rows in the column group.
 	 */
 	public abstract void computeColSums(double[] c, int nRows);
+
+	/**
+	 * Central Moment instruction executed on a column group.
+	 * 
+	 * @param op    The Operator to use.
+	 * @param nRows The number of rows contained in the ColumnGroup.
+	 * @return A Central Moment object.
+	 */
+	public abstract CM_COV_Object centralMoment(CMOperator op, int nRows);
+
+	/**
+	 * Expand the column group to multiple columns. (one hot encode the column group)
+	 * 
+	 * @param max    The number of columns to expand to and cutoff values at.
+	 * @param ignore If zero and negative values should be ignored.
+	 * @param cast   If the double values contained should be cast to whole numbers.
+	 * @param nRows  The number of rows in the column group.
+	 * @return A new column group containing max number of columns.
+	 */
+	public abstract AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows);
 
 	@Override
 	public String toString() {

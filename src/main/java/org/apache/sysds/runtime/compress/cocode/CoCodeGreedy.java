@@ -20,13 +20,14 @@
 package org.apache.sysds.runtime.compress.cocode;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
@@ -132,7 +133,6 @@ public class CoCodeGreedy extends AColumnCoCoder {
 
 	protected static void parallelFirstJoin(List<ColIndexes> workSet, Memorizer mem, ICostEstimate cEst, int k) {
 		try {
-
 			ExecutorService pool = CommonThreadPool.get(k);
 			List<JoinTask> tasks = new ArrayList<>();
 			for(int i = 0; i < workSet.size(); i++)
@@ -154,7 +154,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 			pool.shutdown();
 		}
 		catch(Exception e) {
-			throw new DMLRuntimeException("failed to join column groups", e);
+			throw new DMLCompressionException("Failed parallelize first level all join all", e);
 		}
 	}
 
@@ -170,8 +170,14 @@ public class CoCodeGreedy extends AColumnCoCoder {
 
 		@Override
 		public Object call() {
-			_m.getOrCreate(_c1, _c2);
-			return null;
+			try {
+				_m.getOrCreate(_c1, _c2);
+				return null;
+			}
+			catch(Exception e) {
+				throw new DMLCompressionException(
+					"Failed to join columns : " + Arrays.toString(_c1._indexes) + " + " + Arrays.toString(_c2._indexes), e);
+			}
 		}
 	}
 }

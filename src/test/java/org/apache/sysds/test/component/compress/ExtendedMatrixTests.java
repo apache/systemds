@@ -81,7 +81,7 @@ public class ExtendedMatrixTests extends CompressedTestBase {
 		OverLapping ov = OverLapping.NONE;
 
 		// empty matrix compression ... (technically not a compressed matrix.)
-		tests.add(new Object[]{SparsityType.EMPTY, ValueType.RAND, vr, csb(), mt, ov, 1, null });
+		tests.add(new Object[] {SparsityType.EMPTY, ValueType.RAND, vr, csb(), mt, ov, 1, null});
 
 		for(CompressionSettingsBuilder cs : usedCompressionSettings)
 			tests.add(new Object[] {st, vt, vr, cs, mt, ov, 1, null});
@@ -89,7 +89,7 @@ public class ExtendedMatrixTests extends CompressedTestBase {
 		ov = OverLapping.PLUS_ROW_VECTOR;
 		for(CompressionSettingsBuilder cs : usedCompressionSettings)
 			tests.add(new Object[] {st, vt, vr, cs, mt, ov, 1, null});
-		
+
 		return tests;
 	}
 
@@ -323,7 +323,7 @@ public class ExtendedMatrixTests extends CompressedTestBase {
 	}
 
 	@Test
-	@Ignore 
+	@Ignore
 	// Currently ignored because of division with zero.
 	public void testScalarLeftOpDivide() {
 		double addValue = 14.0;
@@ -465,12 +465,12 @@ public class ExtendedMatrixTests extends CompressedTestBase {
 		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(50, rows, 0.9, 1.5, 1.0, 3);
 		testLeftMatrixMatrix(matrix);
 	}
-	
+
 	@Test
-	public void testCompactEmptyBlock(){
-		if(cmb instanceof CompressedMatrixBlock){
+	public void testCompactEmptyBlock() {
+		if(cmb instanceof CompressedMatrixBlock) {
 			cmb.compactEmptyBlock();
-			if(cmb.isEmpty()){
+			if(cmb.isEmpty()) {
 				CompressedMatrixBlock cm = (CompressedMatrixBlock) cmb;
 				assertTrue(null == cm.getSoftReferenceToDecompressed());
 			}

@@ -32,7 +32,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -106,7 +106,7 @@ public class CLALibDecompress {
 			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
 			for(AColGroup g : filteredGroups)
 				g.decompressToDenseBlock(ret, 0, nRows, rowOffset, colOffset);
-			AColGroup cRet = ColGroupFactory.genColGroupConst(constV);
+			AColGroup cRet = ColGroupConst.create(constV);
 			cRet.decompressToDenseBlock(ret, 0, nRows, rowOffset, colOffset);
 		}
 		else {

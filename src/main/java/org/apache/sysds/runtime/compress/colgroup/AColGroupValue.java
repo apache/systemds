@@ -36,7 +36,9 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictiona
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
 
 /**
  * Base class for column groups encoded with value dictionary. This include column groups such as DDC OLE and RLE.
@@ -51,6 +53,8 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	/**
 	 * ColGroup Implementation Contains zero tuple. Note this is not if it contains a zero value. If false then the
 	 * stored values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
+	 * 
+	 * TODO remove
 	 */
 	protected boolean _zeros = false;
 
@@ -173,19 +177,8 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		return _dict.getNumberOfValues(_colIndexes.length);
 	}
 
-	public final ADictionary getDictionary() {
+	public ADictionary getDictionary() {
 		return _dict;
-	}
-
-	public final MatrixBlock getValuesAsBlock() {
-		_dict = _dict.getMBDict(_colIndexes.length);
-		MatrixBlock ret = ((MatrixBlockDictionary) _dict).getMatrixBlock();
-		if(_zeros) {
-			MatrixBlock tmp = new MatrixBlock();
-			ret.append(new MatrixBlock(1, _colIndexes.length, 0), tmp, false);
-			return tmp;
-		}
-		return ret;
 	}
 
 	/**
@@ -202,7 +195,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		int[] ret = getCachedCounts();
 
 		if(ret == null) {
-			ret = getCounts(new int[getNumValues() + (_zeros ? 1 : 0)]);
+			ret = getCounts(new int[getNumValues()]);
 			counts = new SoftReference<>(ret);
 		}
 
@@ -318,7 +311,6 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		long ret = super.getExactSizeOnDisk();
 		ret += 1; // zeros boolean
 		ret += _dict.getExactSizeOnDisk();
-
 		return ret;
 	}
 
@@ -350,6 +342,11 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
+	protected void computeColProduct(double[] c, int nRows) {
+		_dict.colProduct(c, getCounts(), _colIndexes);
+	}
+
+	@Override
 	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
 		throw new NotImplementedException();
 	}
@@ -375,10 +372,6 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	protected void computeColProduct(double[] c, int nRows) {
-		_dict.colProduct(c, getCounts(), _colIndexes);
-	}
-
 	protected Object clone() {
 		try {
 			return super.clone();
@@ -388,21 +381,17 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		}
 	}
 
-	public AColGroup copyAndSet(double[] newDictionary) {
-		return copyAndSet(new Dictionary(newDictionary));
-	}
-
-	public AColGroup copyAndSet(ADictionary newDictionary) {
+	protected AColGroup copyAndSet(ADictionary newDictionary) {
 		AColGroupValue clone = (AColGroupValue) this.clone();
 		clone._dict = newDictionary;
 		return clone;
 	}
 
-	public AColGroup copyAndSet(int[] colIndexes, double[] newDictionary) {
+	private AColGroup copyAndSet(int[] colIndexes, double[] newDictionary) {
 		return copyAndSet(colIndexes, new Dictionary(newDictionary));
 	}
 
-	public AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+	private AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
 		AColGroupValue clone = (AColGroupValue) this.clone();
 		clone._dict = newDictionary;
 		clone.setColIndices(colIndexes);
@@ -416,7 +405,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 
 	@Override
 	protected AColGroup sliceSingleColumn(int idx) {
-		final AColGroupValue ret = (AColGroupValue) copy();
+		final AColGroupValue ret = (AColGroupValue) this.clone();
 		ret._colIndexes = new int[] {0};
 		if(_colIndexes.length == 1)
 			ret._dict = ret._dict.clone();
@@ -428,7 +417,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-		final AColGroupValue ret = (AColGroupValue) copy();
+		final AColGroupValue ret = (AColGroupValue) this.clone();
 		ret._dict = ret._dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
 		ret._colIndexes = outputCols;
 		return ret;
@@ -502,6 +491,20 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	public AColGroup replace(double pattern, double replace) {
 		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length);
 		return copyAndSet(replaced);
+	}
+
+	@Override
+	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+		return _dict.centralMoment(op.fn, getCounts(), nRows);
+	}
+
+	@Override
+	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows){
+		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.length);
+		if(d == null)
+			return ColGroupEmpty.create(max);
+		else
+			return copyAndSet(d);
 	}
 
 	@Override

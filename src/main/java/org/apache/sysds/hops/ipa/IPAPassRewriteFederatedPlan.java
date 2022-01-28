@@ -293,6 +293,8 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	private void selectFederatedExecutionPlan(Hop root) {
 		if ( root != null ){
 			visitFedPlanHop(root);
+			if ( HopRewriteUtils.isTerminalHop(root) )
+				terminalHops.add(root);
 		}
 	}
 
@@ -305,8 +307,6 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		// If the currentHop is in the hopRelMemo table, it means that it has been visited
 		if(hopRelMemo.containsHop(currentHop))
 			return;
-		if ( HopRewriteUtils.isTerminalHop(currentHop) )
-			terminalHops.add(currentHop);
 		// If the currentHop has input, then the input should be visited depth-first
 		if(currentHop.getInput() != null && currentHop.getInput().size() > 0) {
 			debugLog(currentHop);

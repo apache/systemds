@@ -55,7 +55,6 @@ import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -85,92 +84,14 @@ public class ColGroupFactory {
 		for(CompressedSizeInfoColGroup g : csi.getInfo())
 			g.clearMap();
 
-		if(in.isEmpty())
-			return genEmpty(in, compSettings);
+		if(in.isEmpty()) {
+			AColGroup empty = ColGroupEmpty.create(compSettings.transposed ? in.getNumRows() : in.getNumColumns());
+			return Collections.singletonList(empty);
+		}
 		else if(k <= 1)
 			return compressColGroupsSingleThreaded(in, csi, compSettings);
 		else
 			return compressColGroupsParallel(in, csi, compSettings, k);
-	}
-
-	/**
-	 * Generate a constant column group.
-	 * 
-	 * @param numCols The number of columns
-	 * @param value   The value contained in all cells.
-	 * @return A Constant column group.
-	 */
-	public static AColGroup genColGroupConst(int numCols, double value) {
-		if(numCols <= 0)
-			throw new DMLCompressionException("Invalid construction of constant column group with cols: " + numCols);
-		final int[] colIndices = Util.genColsIndices(numCols);
-
-		if(value == 0)
-			return new ColGroupEmpty(colIndices);
-		return genColGroupConst(colIndices, value);
-	}
-
-	/**
-	 * Generate a constant column group.
-	 * 
-	 * @param values The value vector that contains all the unique values for each column in the matrix.
-	 * @return A Constant column group.
-	 */
-	public static AColGroup genColGroupConst(double[] values) {
-		final int[] colIndices = Util.genColsIndices(values.length);
-		return genColGroupConst(colIndices, values);
-	}
-
-	/**
-	 * Generate a constant column group.
-	 * 
-	 * It is assumed that the column group is intended for use, therefore zero value is allowed.
-	 * 
-	 * @param cols  The specific column indexes that is contained in this constant group.
-	 * @param value The value contained in all cells.
-	 * @return A Constant column group.
-	 */
-	public static AColGroup genColGroupConst(int[] cols, double value) {
-		final int numCols = cols.length;
-		double[] values = new double[numCols];
-		for(int i = 0; i < numCols; i++)
-			values[i] = value;
-		return genColGroupConst(cols, values);
-	}
-
-	/**
-	 * Generate a constant column group.
-	 * 
-	 * @param cols   The specific column indexes that is contained in this constant group.
-	 * @param values The value vector that contains all the unique values for each column in the matrix.
-	 * @return A Constant column group.
-	 */
-	public static AColGroup genColGroupConst(int[] cols, double[] values) {
-		if(cols.length != values.length)
-			throw new DMLCompressionException("Invalid size of values compared to columns");
-		ADictionary dict = new Dictionary(values);
-		return ColGroupConst.create(cols, dict);
-	}
-
-	/**
-	 * Generate a constant column group.
-	 * 
-	 * @param numCols The number of columns.
-	 * @param dict    The dictionary to contain int the Constant group.
-	 * @return A Constant column group.
-	 */
-	public static AColGroup genColGroupConst(int numCols, ADictionary dict) {
-		if(numCols != dict.getValues().length)
-			throw new DMLCompressionException(
-				"Invalid construction of const column group with different number of columns in arguments");
-		final int[] colIndices = Util.genColsIndices(numCols);
-		return ColGroupConst.create(colIndices, dict);
-	}
-
-	private static List<AColGroup> genEmpty(MatrixBlock in, CompressionSettings compSettings) {
-		List<AColGroup> ret = new ArrayList<>(1);
-		ret.add(genColGroupConst(compSettings.transposed ? in.getNumRows() : in.getNumColumns(), 0));
-		return ret;
 	}
 
 	private static List<AColGroup> compressColGroupsSingleThreaded(MatrixBlock in, CompressedSizeInfo csi,
@@ -218,36 +139,6 @@ public class ColGroupFactory {
 			ret.get(i % k).add(groups.get(i));
 
 		return ret;
-	}
-
-	static class CompressTask implements Callable<Collection<AColGroup>> {
-		private final MatrixBlock _in;
-		private final List<CompressedSizeInfoColGroup> _groups;
-		private final CompressionSettings _compSettings;
-		private final int _k;
-
-		protected CompressTask(MatrixBlock in, List<CompressedSizeInfoColGroup> groups, CompressionSettings compSettings,
-			int k) {
-			_in = in;
-			_groups = groups;
-			_compSettings = compSettings;
-			_k = k;
-		}
-
-		@Override
-		public Collection<AColGroup> call() {
-			try {
-				ArrayList<AColGroup> res = new ArrayList<>();
-				Tmp tmpMap = new Tmp();
-				for(CompressedSizeInfoColGroup g : _groups)
-					res.addAll(compressColGroup(_in, _compSettings, tmpMap, g, _k));
-				return res;
-			}
-			catch(Exception e) {
-				e.printStackTrace();
-				throw e;
-			}
-		}
 	}
 
 	private static Collection<AColGroup> compressColGroup(MatrixBlock in, CompressionSettings compSettings, Tmp tmpMap,
@@ -330,7 +221,7 @@ public class ColGroupFactory {
 		CompressionType estimatedBestCompressionType = cg.getBestCompressionType();
 
 		if(estimatedBestCompressionType == CompressionType.UNCOMPRESSED) // don't construct mapping if uncompressed
-			return new ColGroupUncompressed(colIndexes, in, cs.transposed);
+			return ColGroupUncompressed.create(colIndexes, in, cs.transposed);
 		else if(estimatedBestCompressionType == CompressionType.SDC && colIndexes.length == 1 && in.isInSparseFormat() &&
 			cs.transposed) // Leverage the Sparse matrix, to construct SDC group
 			return compressSDCFromSparseTransposedBlock(in, colIndexes, in.getNumColumns(),
@@ -372,10 +263,12 @@ public class ColGroupFactory {
 				return compressRLE(colIndexes, rlen, ubm, cs, tupleSparsity);
 			case OLE:
 				return compressOLE(colIndexes, rlen, ubm, cs, tupleSparsity);
+			case CONST: // in case somehow one requested const, but it was not const fall back to SDC.
+				LOG.warn("Requested const on non constant column, fallback to SDC");
 			case SDC:
 				return compressSDC(colIndexes, rlen, ubm, cs, tupleSparsity);
 			default:
-				throw new DMLCompressionException("Not implemented compression of " + compType + "in factory.");
+				throw new DMLCompressionException("Not implemented compression of " + compType + " in factory.");
 		}
 	}
 
@@ -501,34 +394,6 @@ public class ColGroupFactory {
 		return DataConverter.convertToMatrixBlock(ret);
 	}
 
-	static class readToMapDDCTask implements Callable<Boolean> {
-		private final int[] _colIndexes;
-		private final MatrixBlock _raw;
-		private final DblArrayCountHashMap _map;
-		private final CompressionSettings _cs;
-		private final AMapToData _data;
-		private final int _rl;
-		private final int _ru;
-		private final int _fill;
-
-		protected readToMapDDCTask(int[] colIndexes, MatrixBlock raw, DblArrayCountHashMap map, CompressionSettings cs,
-			AMapToData data, int rl, int ru, int fill) {
-			_colIndexes = colIndexes;
-			_raw = raw;
-			_map = map;
-			_cs = cs;
-			_data = data;
-			_rl = rl;
-			_ru = ru;
-			_fill = fill;
-		}
-
-		@Override
-		public Boolean call() {
-			return Boolean.valueOf(readToMapDDC(_colIndexes, _raw, _map, _cs, _data, _rl, _ru, _fill));
-		}
-	}
-
 	private static AColGroup compressSDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,
 		double tupleSparsity) {
 
@@ -555,55 +420,43 @@ public class ColGroupFactory {
 				return new ColGroupSDCSingleZeros(colIndexes, rlen, dict, off, null);
 			}
 			else {
-				LOG.warn("fix three dictionary allocations");
-				ADictionary dict = DictionaryFactory.create(ubm, 1.0);
-				dict = DictionaryFactory.moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
-				if(tupleSparsity < 0.4)
-					dict = dict.getMBDict(colIndexes.length);
-				return setupSingleValueSDCColGroup(colIndexes, rlen, ubm, dict);
+				double[] defaultTuple = new double[colIndexes.length];
+				ADictionary dict = DictionaryFactory.create(ubm, largestIndex, defaultTuple, 1.0, numZeros > 0);
+				return compressSDCSingle(colIndexes, rlen, ubm, dict, defaultTuple);
 			}
 		}
 		else if(numZeros >= largestOffset) {
 			ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
-			return setupMultiValueZeroColGroup(colIndexes, rlen, ubm, dict, cs);
+			return compressSDCZero(colIndexes, rlen, ubm, dict, cs);
 		}
 		else {
-			LOG.warn("fix three dictionary allocations");
-			ADictionary dict = DictionaryFactory.create(ubm, 1.0);
-			dict = DictionaryFactory.moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
-			if(tupleSparsity < 0.4 && colIndexes.length > 4)
-				dict = dict.getMBDict(colIndexes.length);
-			return setupMultiValueColGroup(colIndexes, numZeros, rlen, ubm, largestIndex, dict, cs);
+			double[] defaultTuple = new double[colIndexes.length];
+			ADictionary dict = DictionaryFactory.create(ubm, largestIndex, defaultTuple, 1.0, numZeros > 0);
+			return compressSDCNormal(colIndexes, numZeros, rlen, ubm, largestIndex, dict, defaultTuple, cs);
 		}
 	}
 
-	private static AColGroup setupMultiValueZeroColGroup(int[] colIndexes, int rlen, ABitmap ubm, ADictionary dict,
+	private static AColGroup compressSDCZero(int[] colIndexes, int rlen, ABitmap ubm, ADictionary dict,
 		CompressionSettings cs) {
 		IntArrayList[] offsets = ubm.getOffsetList();
 		AInsertionSorter s = InsertionSorterFactory.create(rlen, offsets, cs.sdcSortType);
 		AOffset indexes = OffsetFactory.createOffset(s.getIndexes());
 		AMapToData data = s.getData();
-		int[] counts = new int[offsets.length + 1];
-		int sum = 0;
-		for(int i = 0; i < offsets.length; i++) {
-			counts[i] = offsets[i].size();
-			sum += counts[i];
-		}
-		counts[offsets.length] = rlen - sum;
-		return ColGroupSDCZeros.create(colIndexes, rlen, dict, indexes, data, counts);
+		return ColGroupSDCZeros.create(colIndexes, rlen, dict, indexes, data, null);
 	}
 
-	private static AColGroup setupMultiValueColGroup(int[] colIndexes, int numZeros, int rlen, ABitmap ubm,
-		int largestIndex, ADictionary dict, CompressionSettings cs) {
+	private static AColGroup compressSDCNormal(int[] colIndexes, int numZeros, int rlen, ABitmap ubm, int largestIndex,
+		ADictionary dict, double[] defaultTuple, CompressionSettings cs) {
 		IntArrayList[] offsets = ubm.getOffsetList();
 		AInsertionSorter s = InsertionSorterFactory.createNegative(rlen, offsets, largestIndex, cs.sdcSortType);
 		AOffset indexes = OffsetFactory.createOffset(s.getIndexes());
 		AMapToData _data = s.getData();
 		_data = MapToFactory.resize(_data, _data.getUnique() - 1);
-		return ColGroupSDC.create(colIndexes, rlen, dict, indexes, _data, null);
+		return ColGroupSDC.create(colIndexes, rlen, dict, defaultTuple, indexes, _data, null);
 	}
 
-	private static AColGroup setupSingleValueSDCColGroup(int[] colIndexes, int rlen, ABitmap ubm, ADictionary dict) {
+	private static AColGroup compressSDCSingle(int[] colIndexes, int rlen, ABitmap ubm, ADictionary dict,
+		double[] defaultTuple) {
 		IntArrayList inv = ubm.getOffsetsList(0);
 		int[] indexes = new int[rlen - inv.size()];
 		int p = 0;
@@ -620,7 +473,7 @@ public class ColGroupFactory {
 			indexes[p++] = v++;
 		AOffset off = OffsetFactory.createOffset(indexes);
 
-		return new ColGroupSDCSingle(colIndexes, rlen, dict, off, null);
+		return new ColGroupSDCSingle(colIndexes, rlen, dict, defaultTuple, off, null);
 	}
 
 	private static AColGroup compressDDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,
@@ -714,18 +567,15 @@ public class ColGroupFactory {
 
 		if(entries[0].count < rlen - sb.size(sbRow)) {
 			// If the zero is the default value.
-			final int[] counts = new int[entries.length + 1];
+			final int[] counts = new int[entries.length];
 			final double[] dict = new double[entries.length];
-			int sum = 0;
 			for(int i = 0; i < entries.length; i++) {
 				final DCounts x = entries[i];
 				counts[i] = x.count;
-				sum += x.count;
 				dict[i] = x.key;
 				x.count = i;
 			}
 
-			counts[entries.length] = rlen - sum;
 			final AOffset offsets = OffsetFactory.createOffset(sb.indexes(sbRow), apos, alen);
 			if(entries.length <= 1)
 				return new ColGroupSDCSingleZeros(cols, rlen, new Dictionary(dict), offsets, counts);
@@ -742,6 +592,65 @@ public class ColGroupFactory {
 			return compressSDC(cols, rlen, ubm, cs, 1.0);
 		}
 	}
+
+	static class CompressTask implements Callable<Collection<AColGroup>> {
+		private final MatrixBlock _in;
+		private final List<CompressedSizeInfoColGroup> _groups;
+		private final CompressionSettings _compSettings;
+		private final int _k;
+
+		protected CompressTask(MatrixBlock in, List<CompressedSizeInfoColGroup> groups, CompressionSettings compSettings,
+			int k) {
+			_in = in;
+			_groups = groups;
+			_compSettings = compSettings;
+			_k = k;
+		}
+
+		@Override
+		public Collection<AColGroup> call() {
+			try {
+				ArrayList<AColGroup> res = new ArrayList<>();
+				Tmp tmpMap = new Tmp();
+				for(CompressedSizeInfoColGroup g : _groups)
+					res.addAll(compressColGroup(_in, _compSettings, tmpMap, g, _k));
+				return res;
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				throw e;
+			}
+		}
+	}
+
+	static class readToMapDDCTask implements Callable<Boolean> {
+		private final int[] _colIndexes;
+		private final MatrixBlock _raw;
+		private final DblArrayCountHashMap _map;
+		private final CompressionSettings _cs;
+		private final AMapToData _data;
+		private final int _rl;
+		private final int _ru;
+		private final int _fill;
+
+		protected readToMapDDCTask(int[] colIndexes, MatrixBlock raw, DblArrayCountHashMap map, CompressionSettings cs,
+			AMapToData data, int rl, int ru, int fill) {
+			_colIndexes = colIndexes;
+			_raw = raw;
+			_map = map;
+			_cs = cs;
+			_data = data;
+			_rl = rl;
+			_ru = ru;
+			_fill = fill;
+		}
+
+		@Override
+		public Boolean call() {
+			return Boolean.valueOf(readToMapDDC(_colIndexes, _raw, _map, _cs, _data, _rl, _ru, _fill));
+		}
+	}
+
 
 	/**
 	 * Temp reuse object, to contain intermediates for compressing column groups that can be used by the same thread

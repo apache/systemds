@@ -25,6 +25,8 @@ import java.io.Serializable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -219,19 +221,47 @@ public abstract class AMapToData implements Serializable {
 	public abstract void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes);
 
 	/**
-	 * Get the number of counts of each unique value contained in this map.
+	 * Get the number of counts of each unique value contained in this map. Note that in the case the mapping is shorter
+	 * than number of rows the counts sum to the number of mapped values not the number of rows.
 	 * 
 	 * @param counts The object to return.
-	 * @param nRows  The number of rows in the calling column group.
 	 * @return the Counts
 	 */
-	public int[] getCounts(int[] counts, int nRows) {
-		final int nonDefaultLength = size();
-		for(int i = 0; i < nonDefaultLength; i++)
-			counts[getIndex(i)]++;
-		counts[counts.length - 1] += nRows - nonDefaultLength;
-		return counts;
+	public abstract int[] getCounts(int[] counts);
+
+	/**
+	 * PreAggregate into dictionary.
+	 * 
+	 * @param tm   Map of other side
+	 * @param td   Dictionary to take values from (other side dictionary)
+	 * @param ret  The output dictionary to aggregate into
+	 * @param nCol The number of columns
+	 */
+	public final void preAggregateDDC(AMapToData tm, ADictionary td, Dictionary ret, int nCol) {
+		if(nCol == 1)
+			preAggregateDDCSingleCol(tm, td, ret);
+		else
+			preAggregateDDCMultiCol(tm, td, ret, nCol);
 	}
+
+	/**
+	 * PreAggregate into dictionary guaranteed to only have one column tuples.
+	 * 
+	 * @param tm  Map of other side
+	 * @param td  Dictionary to take values from (other side dictionary)
+	 * @param ret The output dictionary to aggregate into
+	 */
+	protected abstract void preAggregateDDCSingleCol(AMapToData tm, ADictionary td, Dictionary ret);
+
+	/**
+	 * PreAggregate into dictionary guaranteed to multiple column tuples.
+	 * 
+	 * @param tm   Map of other side
+	 * @param td   Dictionary to take values from (other side dictionary)
+	 * @param ret  The output dictionary to aggregate into
+	 * @param nCol The number of columns
+	 */
+	protected abstract void preAggregateDDCMultiCol(AMapToData tm, ADictionary td, Dictionary ret, int nCol);
 
 	/**
 	 * Copy the values in this map into another mapping object.

@@ -86,28 +86,27 @@ public class DictionaryFactory {
 	}
 
 	public static ADictionary create(ABitmap ubm, double sparsity) {
+		final int nCol = ubm.getNumColumns();
 		if(ubm instanceof Bitmap)
 			return new Dictionary(((Bitmap) ubm).getValues());
-		else if(sparsity < 0.4 && ubm instanceof MultiColBitmap) {
-			final int nCols = ubm.getNumColumns();
+		else if(sparsity < 0.4 && nCol > 4 && ubm instanceof MultiColBitmap) {
 			final MultiColBitmap mcbm = (MultiColBitmap) ubm;
 
-			final MatrixBlock m = new MatrixBlock(ubm.getNumValues(), nCols, true);
+			final MatrixBlock m = new MatrixBlock(ubm.getNumValues(), nCol, true);
 			m.allocateSparseRowsBlock();
 			final SparseBlock sb = m.getSparseBlock();
 
 			final int nVals = ubm.getNumValues();
 			for(int i = 0; i < nVals; i++) {
 				final double[] tuple = mcbm.getValues(i);
-				for(int col = 0; col < nCols; col++)
+				for(int col = 0; col < nCol; col++)
 					sb.append(i, col, tuple[col]);
 			}
 			m.recomputeNonZeros();
-			return new MatrixBlockDictionary(m, nCols);
+			return new MatrixBlockDictionary(m, nCol);
 		}
 		else if(ubm instanceof MultiColBitmap) {
 			MultiColBitmap mcbm = (MultiColBitmap) ubm;
-			final int nCol = ubm.getNumColumns();
 			final int nVals = ubm.getNumValues();
 			double[] resValues = new double[nVals * nCol];
 			for(int i = 0; i < nVals; i++)
@@ -116,6 +115,37 @@ public class DictionaryFactory {
 			return new Dictionary(resValues);
 		}
 		throw new NotImplementedException("Not implemented creation of bitmap type : " + ubm.getClass().getSimpleName());
+	}
+
+	public static ADictionary create(ABitmap ubm, int defaultIndex, double[] defaultTuple, double sparsity,
+		boolean addZero) {
+		final int nCol = ubm.getNumColumns();
+		final int nVal = ubm.getNumValues() - (addZero ? 0 : 1);
+		if(nCol > 4 && sparsity < 0.4) {
+			// return sparse
+			throw new NotImplementedException("Not supported sparse allocation yet");
+		}
+		else {
+			double[] dict = new double[nCol * nVal];
+			if(ubm instanceof Bitmap) {
+				final double[] bmv = ((Bitmap) ubm).getValues();
+				System.arraycopy(bmv, 0, dict, 0, defaultIndex);
+				defaultTuple[0] = bmv[defaultIndex];
+				System.arraycopy(bmv, defaultIndex + 1, dict, defaultIndex, bmv.length - defaultIndex - 1);
+			}
+			else if(ubm instanceof MultiColBitmap) {
+				MultiColBitmap mcbm = (MultiColBitmap) ubm;
+				for(int i = 0; i < defaultIndex; i++)
+					System.arraycopy(mcbm.getValues(i), 0, dict, i * nCol, nCol);
+				System.arraycopy(mcbm.getValues(defaultIndex), 0, defaultTuple, 0, nCol);
+				for(int i = defaultIndex; i < ubm.getNumValues() - 1; i++)
+					System.arraycopy(mcbm.getValues(i + 1), 0, dict, i * nCol, nCol);
+			}
+			else
+				throw new NotImplementedException("not supported ABitmap of type:" + ubm.getClass().getSimpleName());
+
+			return new Dictionary(dict);
+		}
 	}
 
 	public static ADictionary createWithAppendedZeroTuple(ABitmap ubm, double sparsity) {
@@ -131,7 +161,7 @@ public class DictionaryFactory {
 		}
 
 		final MultiColBitmap mcbm = (MultiColBitmap) ubm;
-		if(sparsity < 0.4) {
+		if(sparsity < 0.4 && nCols > 4) {
 			final MatrixBlock m = new MatrixBlock(nRows, nCols, true);
 			m.allocateSparseRowsBlock();
 			final SparseBlock sb = m.getSparseBlock();
@@ -150,56 +180,5 @@ public class DictionaryFactory {
 			System.arraycopy(mcbm.getValues(i), 0, resValues, i * nCols, nCols);
 
 		return new Dictionary(resValues);
-
-	}
-
-	public static ADictionary moveFrequentToLastDictionaryEntry(ADictionary dict, ABitmap ubm, int nRow,
-		int largestIndex) {
-		LOG.warn("Inefficient moving of tuples.");
-		final int zeros = nRow - (int) ubm.getNumOffsets();
-		final int nCol = ubm.getNumColumns();
-		final int largestIndexSize = ubm.getOffsetsList(largestIndex).size();
-		if(dict instanceof MatrixBlockDictionary) {
-			MatrixBlockDictionary mbd = (MatrixBlockDictionary) dict;
-			MatrixBlock mb = mbd.getMatrixBlock();
-			if(mb.isEmpty()) 
-				throw new DMLCompressionException("Should not construct or use a empty dictionary ever.");
-			else if(mb.isInSparseFormat()) {
-				throw new NotImplementedException(); // and should not be
-			}
-			else
-				return moveToLastDictionaryEntryDense(mb.getDenseBlockValues(), largestIndex, zeros, nCol,
-					largestIndexSize);
-		}
-		else
-			return moveToLastDictionaryEntryDense(dict.getValues(), largestIndex, zeros, nCol, largestIndexSize);
-
-	}
-
-	private static ADictionary moveToLastDictionaryEntryDense(double[] values, int indexToMove, int zeros, int nCol,
-		int largestIndexSize) {
-		final int offsetToLargest = indexToMove * nCol;
-
-		if(zeros == 0) {
-			final double[] swap = new double[nCol];
-			System.arraycopy(values, offsetToLargest, swap, 0, nCol);
-			for(int i = offsetToLargest; i < values.length - nCol; i++)
-				values[i] = values[i + nCol];
-
-			System.arraycopy(swap, 0, values, values.length - nCol, nCol);
-			return new Dictionary(values);
-		}
-
-		final double[] newDict = new double[values.length + nCol];
-
-		if(zeros > largestIndexSize)
-			System.arraycopy(values, 0, newDict, 0, values.length);
-		else {
-			System.arraycopy(values, 0, newDict, 0, offsetToLargest);
-			System.arraycopy(values, offsetToLargest + nCol, newDict, offsetToLargest,
-				values.length - offsetToLargest - nCol);
-			System.arraycopy(values, offsetToLargest, newDict, newDict.length - nCol, nCol);
-		}
-		return new Dictionary(newDict);
 	}
 }

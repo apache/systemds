@@ -35,7 +35,7 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -434,7 +434,7 @@ public class CLALibCompAgg {
 		if(shouldFilter) {
 			final double[] constV = new double[nCol];
 			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
-			final AColGroup cRet = ColGroupFactory.genColGroupConst(constV);
+			final AColGroup cRet = ColGroupConst.create(constV);
 			filteredGroups.add(cRet);
 			for(int i = 0; i < nRow; i += blklen)
 				tasks.add(new UAOverlappingTask(filteredGroups, ret, i, Math.min(i + blklen, nRow), op, nCol));

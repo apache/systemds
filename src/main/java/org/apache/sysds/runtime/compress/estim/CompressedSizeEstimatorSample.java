@@ -25,6 +25,7 @@ import java.util.Random;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
@@ -119,16 +120,25 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		CompressedSizeInfoColGroup g2, int joinedMaxDistinct) {
 		if((long) g1.getNumVals() * g2.getNumVals() > (long) Integer.MAX_VALUE)
 			return null;
+		try {
 
-		final IEncode map = g1.getMap().join(g2.getMap());
-		final EstimationFactors sampleFacts = map.computeSizeEstimation(joined, _sampleSize, _data.getSparsity(),
-			_data.getSparsity());
-		// EstimationFactors.computeSizeEstimation(joined, map,
-		// _cs.validCompressions.contains(CompressionType.RLE), map.size(), false);
+			final IEncode map = g1.getMap().join(g2.getMap());
+			final EstimationFactors sampleFacts = map.computeSizeEstimation(joined, _sampleSize, _data.getSparsity(),
+				_data.getSparsity());
+			try {
 
+				final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, joined, joinedMaxDistinct);
+				return new CompressedSizeInfoColGroup(joined, em, _cs.validCompressions, map);
+			}
+			catch(Exception e) {
+				throw new DMLCompressionException("failed to scale Estimation factors with :\n" + map + "\n" + sampleFacts,
+					e);
+			}
+		}
+		catch(Exception e) {
+			throw new DMLCompressionException("failed to join compression estimation groups", e);
+		}
 		// result facts
-		final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, joined, joinedMaxDistinct);
-		return new CompressedSizeInfoColGroup(joined, em, _cs.validCompressions, map);
 	}
 
 	private EstimationFactors estimateCompressionFactors(EstimationFactors sampleFacts, IEncode map, int[] colIndexes,
@@ -171,7 +181,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		final int numCols = getNumColumns();
 		if(numCols == 1)
 			return (int) _data.getNonZeros();
-		else 
+		else
 			return numRows - (int) Math.floor(numZerosInSample * scalingFactor);
 	}
 

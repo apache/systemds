@@ -35,23 +35,16 @@ public class DenseEncoding implements IEncode {
 	protected DenseEncoding(AMapToData map, int[] counts) {
 		this.map = map;
 		this.counts = counts;
-		if(map.getUnique() == 0)
-			throw new DMLCompressionException("Invalid Dense Encoding");
-	}
-
-	/**
-	 * Protected constructor that also counts the frequencies of the values.
-	 * 
-	 * @param map The Map.
-	 */
-	protected DenseEncoding(AMapToData map) {
-		this.map = map;
-		final int nUnique = map.getUnique();
-		if(nUnique == 0)
-			throw new DMLCompressionException("Invalid Dense Encoding");
-		this.counts = new int[nUnique];
-		for(int i = 0; i < map.size(); i++)
-			counts[map.getIndex(i)]++;
+		// for debugging correctness and efficiency but should be guaranteed by implementations creating the Dense encoding:
+		// if(map.getUnique() == 0)
+		// 	throw new DMLCompressionException("Invalid Dense Encoding");
+		// if(map.getUnique() != counts.length)
+		// 	throw new DMLCompressionException(
+		// 		"Invalid number of counts not matching map:" + map.getUnique() + "  " + counts.length);
+		// int u = map.getUnique();
+		// for(int i = 0; i < map.size(); i++)
+		// 	if(map.getIndex(i) >= u)
+		// 		throw new DMLCompressionException("Invalid values contained in map:" + map.getUnique() + "  " + map);
 	}
 
 	@Override
@@ -78,53 +71,60 @@ public class DenseEncoding implements IEncode {
 		final int[] m = new int[(int) maxUnique];
 		final AMapToData d = MapToFactory.create(nRows, (int) maxUnique);
 
+		// iterate through indexes that are in the sparse encoding
 		final AIterator itr = e.off.getIterator();
 		final int fr = e.off.getOffsetToLast();
 
 		int newUID = 1;
 		int r = 0;
-		for(; r < fr; r++) {
+		for(; r <= fr; r++) {
 			final int ir = itr.value();
 			if(ir == r) {
-				
-				final int nv = map.getIndex(r) + e.map.getIndex(itr.getDataIndex()) * nVl;
-				itr.next();
+				final int nv = map.getIndex(ir) + e.map.getIndex(itr.getDataIndex()) * nVl;
 				newUID = addVal(nv, r, m, newUID, d);
+				if(ir >= fr) {
+					r++;
+					break;
+				}
+				else {
+					itr.next();
+				}
 			}
 			else {
 				final int nv = map.getIndex(r) + defR;
 				newUID = addVal(nv, r, m, newUID, d);
 			}
 		}
-		// add last offset
-		newUID = addVal(map.getIndex(r) + e.map.getIndex(itr.getDataIndex()) * nVl, r++, m, newUID, d);
 
-		// add remaining rows.
 		for(; r < nRows; r++) {
 			final int nv = map.getIndex(r) + defR;
 			newUID = addVal(nv, r, m, newUID, d);
 		}
 
 		// set unique.
-		d.setUnique(newUID - 1);
-		return new DenseEncoding(d);
+		d.setUnique(newUID-1);
+		return joinDenseCount(d);
 	}
 
-	protected static int addVal(int nv, int r, int[] m, int newUID, AMapToData d) {
-		final int mapV = m[nv];
-		if(mapV == 0) {
-			d.set(r, newUID - 1);
-			m[nv] = newUID++;
-		}
+	private static int addVal(int nv, int r, int[] m, int newId, AMapToData d) {
+		if(m[nv] == 0)
+			d.set(r, (m[nv] = newId++) - 1);
 		else
-			d.set(r, mapV - 1);
-		return newUID;
+			d.set(r, m[nv] - 1);
+		return newId;
 	}
 
 	protected DenseEncoding joinDense(DenseEncoding e) {
 		if(map == e.map)
 			return this; // unlikely to happen but cheap to compute
-		return new DenseEncoding(MapToFactory.join(map, e.map));
+		final AMapToData d = MapToFactory.join(map, e.map);
+		return joinDenseCount(d);
+	}
+
+	protected static DenseEncoding joinDenseCount(AMapToData d) {
+		int[] counts = new int[d.getUnique()];
+		d.getCounts(counts);
+		return new DenseEncoding(d, counts);
 	}
 
 	@Override
@@ -152,7 +152,6 @@ public class DenseEncoding implements IEncode {
 
 		return new EstimationFactors(cols.length, counts.length, nRows, largestOffs, counts, 0, 0, nRows, false, false,
 			matrixSparsity, tupleSparsity);
-
 	}
 
 	@Override
@@ -167,5 +166,4 @@ public class DenseEncoding implements IEncode {
 		sb.append(Arrays.toString(counts));
 		return sb.toString();
 	}
-
 }

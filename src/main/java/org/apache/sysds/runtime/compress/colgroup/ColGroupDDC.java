@@ -146,9 +146,7 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public int[] getCounts(int[] counts) {
-		for(int i = 0; i < _numRows; i++)
-			counts[_data.getIndex(i)]++;
-		return counts;
+		return _data.getCounts(counts);
 	}
 
 	@Override
@@ -182,9 +180,7 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		final int nCol = that._colIndexes.length;
-		for(int r = 0; r < _numRows; r++)
-			that._dict.addToEntry(ret, that._data.getIndex(r), this._data.getIndex(r), nCol);
+		_data.preAggregateDDC(that._data, that._dict, ret, that._colIndexes.length);
 	}
 
 	@Override

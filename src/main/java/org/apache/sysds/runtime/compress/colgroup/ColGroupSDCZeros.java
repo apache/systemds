@@ -51,10 +51,10 @@ public class ColGroupSDCZeros extends APreAgg {
 	private static final long serialVersionUID = -3703199743391937991L;
 
 	/** Sparse row indexes for the data */
-	protected transient AOffset _indexes;
+	protected AOffset _indexes;
 
 	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
-	protected transient AMapToData _data;
+	protected AMapToData _data;
 
 	/**
 	 * Constructor for serialization
@@ -393,7 +393,7 @@ public class ColGroupSDCZeros extends APreAgg {
 
 	@Override
 	public int[] getCounts(int[] counts) {
-		return _data.getCounts(counts, _numRows);
+		return _data.getCounts(counts);
 	}
 
 	@Override
@@ -427,25 +427,37 @@ public class ColGroupSDCZeros extends APreAgg {
 		boolean isSparseSafeOp = op.sparseSafe || val0 == 0;
 		if(isSparseSafeOp)
 			return create(_colIndexes, _numRows, _dict.applyScalarOp(op), _indexes, _data, getCachedCounts());
+		else if(op.fn instanceof Plus) {
+			double[] reference = new double[_colIndexes.length];
+			for(int i = 0; i < _colIndexes.length; i++)
+				reference[i] = val0;
+			return ColGroupPFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
+		}
 		else {
-			ADictionary rValues = _dict.applyScalarOp(op, val0, getNumCols());
-			return ColGroupSDC.create(_colIndexes, _numRows, rValues, _indexes, _data, getCachedCounts());
+			ADictionary newDict = _dict.applyScalarOp(op);
+			double[] defaultTuple = new double[_colIndexes.length];
+			for(int i = 0; i < _colIndexes.length; i++)
+				defaultTuple[i] = val0;
+			return ColGroupSDC.create(_colIndexes, _numRows, newDict, defaultTuple, _indexes, _data, getCachedCounts());
 		}
 	}
 
 	@Override
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
 		if(isRowSafe) {
-			ADictionary ret = _dict.binOpLeft(op, v, _colIndexes);
-			return create(_colIndexes, _numRows, ret, _indexes, _data, getCachedCounts());
+			ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
+			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts());
 		}
 		else if(op.fn instanceof Plus) {
-			double[] def = ColGroupUtils.binaryDefRowLeft(op, v, _colIndexes);
-			return ColGroupPFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), def);
+			double[] reference = ColGroupUtils.binaryDefRowLeft(op, v, _colIndexes);
+			return ColGroupPFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
 		}
 		else {
-			ADictionary ret = _dict.applyBinaryRowOpLeftAppendNewEntry(op, v, _colIndexes);
-			return ColGroupSDC.create(_colIndexes, _numRows, ret, _indexes, _data, getCachedCounts());
+			ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
+			double[] defaultTuple = new double[_colIndexes.length];
+			for(int i = 0; i < _colIndexes.length; i++)
+				defaultTuple[i] = op.fn.execute(v[_colIndexes[i]], 0);
+			return ColGroupSDC.create(_colIndexes, _numRows, newDict, defaultTuple, _indexes, _data, getCachedCounts());
 		}
 	}
 
@@ -460,8 +472,11 @@ public class ColGroupSDCZeros extends APreAgg {
 			return ColGroupPFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), def);
 		}
 		else {
-			ADictionary ret = _dict.applyBinaryRowOpRightAppendNewEntry(op, v, _colIndexes);
-			return ColGroupSDC.create(_colIndexes, _numRows, ret, _indexes, _data, getCachedCounts());
+			ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);
+			double[] defaultTuple = new double[_colIndexes.length];
+			for(int i = 0; i < _colIndexes.length; i++)
+				defaultTuple[i] = op.fn.execute(0, v[_colIndexes[i]]);
+			return ColGroupSDC.create(_colIndexes, _numRows, newDict, defaultTuple, _indexes, _data, getCachedCounts());
 		}
 	}
 
@@ -591,15 +606,15 @@ public class ColGroupSDCZeros extends APreAgg {
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		if(pattern == 0)
-			return replaceZero(replace);
 		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length);
-		return copyAndSet(replaced);
-	}
-
-	private AColGroup replaceZero(double replace) {
-		ADictionary replaced = _dict.replaceZeroAndExtend(replace, _colIndexes.length);
-		return ColGroupSDC.create(_colIndexes, _numRows, replaced, _indexes, _data, getCachedCounts());
+		if(pattern == 0) {
+			double[] defaultTuple = new double[_colIndexes.length];
+			for(int i = 0; i < _colIndexes.length; i++)
+				defaultTuple[i] = replace;
+			return ColGroupSDC.create(_colIndexes, _numRows, replaced, defaultTuple, _indexes, _data, getCachedCounts());
+		}
+		else
+			return copyAndSet(replaced);
 	}
 
 	@Override

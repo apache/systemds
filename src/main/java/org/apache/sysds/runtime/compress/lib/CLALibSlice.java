@@ -26,7 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -66,7 +66,7 @@ public class CLALibSlice {
 			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
 			for(AColGroup g : filteredGroups)
 				g.decompressToDenseBlock(db, rl, rue, -rl, 0);
-			AColGroup cRet = ColGroupFactory.genColGroupConst(constV);
+			AColGroup cRet = ColGroupConst.create(constV);
 			cRet.decompressToDenseBlock(db, rl, rue, -rl, 0);
 		}
 		else

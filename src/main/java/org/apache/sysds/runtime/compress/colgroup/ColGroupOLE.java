@@ -160,14 +160,18 @@ public class ColGroupOLE extends AColGroupOffset {
 			return new ColGroupOLE(_colIndexes, _numRows, false, _dict.applyScalarOp(op), _data, _ptr, getCachedCounts());
 		}
 
-		ADictionary rvalues = _dict.applyScalarOp(op, val0, getNumCols());
-		char[] lbitmap = genOffsetBitmap(loff, loff.length);
-		char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
-		System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
-		int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
-		rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
+		throw new NotImplementedException(
+			"Not implemented because dictionaries no longer should support extending by a tuple"
+				+ " Ideally implement a modification such that OLE becomes SDC group when materializing Zero tuples");
 
-		return new ColGroupOLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
+		// ADictionary rvalues = _dict.applyScalarOp(op, val0, getNumCols());
+		// char[] lbitmap = genOffsetBitmap(loff, loff.length);
+		// char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
+		// System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
+		// int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
+		// rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
+
+		// return new ColGroupOLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
 	}
 
 	@Override

@@ -36,7 +36,9 @@ import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
@@ -57,7 +59,7 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 	protected AOffset _indexes;
 
 	/** Pointers to row indexes in the dictionary. */
-	protected transient AMapToData _data;
+	protected AMapToData _data;
 
 	/** Reference values in this column group */
 	protected double[] _reference;
@@ -94,7 +96,7 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 			if(allZero)
 				return new ColGroupEmpty(colIndices);
 			else
-				return ColGroupFactory.genColGroupConst(colIndices, reference);
+				return ColGroupConst.create(colIndices, reference);
 		}
 		return new ColGroupPFOR(colIndices, numRows, dict, indexes, data, cachedCounts, reference);
 	}
@@ -118,13 +120,20 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 
 	@Override
 	public int[] getCounts(int[] counts) {
-		return _data.getCounts(counts, _numRows);
+		return _data.getCounts(counts);
 	}
 
 	private final double refSum() {
 		double ret = 0;
 		for(double d : _reference)
 			ret += d;
+		return ret;
+	}
+
+	private final double refSumSq() {
+		double ret = 0;
+		for(double d : _reference)
+			ret += d * d;
 		return ret;
 	}
 
@@ -161,7 +170,7 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
 		else {
-			final ADictionary newDict = _dict.applyScalarOp(op, _reference, newRef);
+			final ADictionary newDict = _dict.applyScalarOpWithReference(op, _reference, newRef);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
 	}
@@ -172,14 +181,15 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 		for(int i = 0; i < _reference.length; i++)
 			newRef[i] = op.fn.execute(v[_colIndexes[i]], _reference[i]);
 
-		if(op.fn instanceof Plus || op.fn instanceof Minus)
+		if(op.fn instanceof Plus || op.fn instanceof Minus) // only edit reference
 			return create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), newRef);
 		else if(op.fn instanceof Multiply || op.fn instanceof Divide) {
+			// possible to simply process on dict and keep reference
 			final ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
-		else {
-			final ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes, _reference, newRef);
+		else { // have to apply reference while processing
+			final ADictionary newDict = _dict.binOpLeftWithReference(op, v, _colIndexes, _reference, newRef);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
 	}
@@ -189,14 +199,16 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 		final double[] newRef = new double[_reference.length];
 		for(int i = 0; i < _reference.length; i++)
 			newRef[i] = op.fn.execute(_reference[i], v[_colIndexes[i]]);
-		if(op.fn instanceof Plus || op.fn instanceof Minus)
+
+		if(op.fn instanceof Plus || op.fn instanceof Minus)// only edit reference
 			return new ColGroupPFOR(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), newRef);
 		else if(op.fn instanceof Multiply || op.fn instanceof Divide) {
+			// possible to simply process on dict and keep reference
 			final ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);
 			return new ColGroupPFOR(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
-		else {
-			final ADictionary newDict = _dict.binOpRight(op, v, _colIndexes, _reference, newRef);
+		else { // have to apply reference while processing
+			final ADictionary newDict = _dict.binOpRightWithReference(op, v, _colIndexes, _reference, newRef);
 			return new ColGroupPFOR(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 		}
 	}
@@ -230,6 +242,15 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 	}
 
 	@Override
+	public long estimateInMemorySize() {
+		long size = super.estimateInMemorySize();
+		size += _indexes.getInMemorySize();
+		size += _data.getInMemorySize();
+		size += 8 * _colIndexes.length;
+		return size;
+	}
+
+	@Override
 	public AColGroup replace(double pattern, double replace) {
 		boolean patternInReference = false;
 		for(double d : _reference)
@@ -243,7 +264,7 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 			// _dict.replace(pattern, replace, _reference, _newReplace);
 		}
 		else {
-			final ADictionary newDict = _dict.replace(pattern, replace, _reference);
+			final ADictionary newDict = _dict.replaceWithReference(pattern, replace, _reference);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), _reference);
 		}
 
@@ -264,46 +285,58 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 
 	@Override
 	protected double computeMxx(double c, Builtin builtin) {
-		return _dict.aggregate(c, builtin, _reference);
+		return _dict.aggregateWithReference(c, builtin, _reference);
 	}
 
 	@Override
 	protected void computeColMxx(double[] c, Builtin builtin) {
-		_dict.aggregateCols(c, builtin, _colIndexes, _reference);
+		_dict.aggregateColsWithReference(c, builtin, _colIndexes, _reference);
 	}
 
 	@Override
 	protected void computeSum(double[] c, int nRows) {
+		// trick,use normal sum
 		super.computeSum(c, nRows);
+		// and add all sum of reference multiplied with nrows.
 		final double refSum = refSum();
 		c[0] += refSum * nRows;
 	}
 
 	@Override
 	public void computeColSums(double[] c, int nRows) {
+		// trick, use the normal sum
 		super.computeColSums(c, nRows);
+		// and add reference multiplied with number of rows.
 		for(int i = 0; i < _colIndexes.length; i++)
 			c[_colIndexes[i]] += _reference[i] * nRows;
 	}
 
 	@Override
 	protected void computeSumSq(double[] c, int nRows) {
-		c[0] += _dict.sumSq(getCounts(), _reference);
+		// square sum the dictionary.
+		c[0] += _dict.sumSqWithReference(getCounts(), _reference);
+		final double refSum = refSumSq();
+		// Square sum of the reference values only for the rows that is not represented in the Offsets.
+		c[0] += refSum * (_numRows - _data.size());
 	}
 
 	@Override
 	protected void computeColSumsSq(double[] c, int nRows) {
-		_dict.colSumSq(c, getCounts(), _colIndexes, _reference);
+		// square sum the dictionary
+		_dict.colSumSqWithReference(c, getCounts(), _colIndexes, _reference);
+		// Square sum of the reference values only for the rows that is not represented in the Offsets.
+		for(int i = 0; i < _colIndexes.length; i++) // correct for the reference sum.
+			c[_colIndexes[i]] += _reference[i] * _reference[i] * (_numRows - _data.size());
 	}
 
 	@Override
 	protected double[] preAggSumRows() {
-		return _dict.sumAllRowsToDouble(_reference);
+		return _dict.sumAllRowsToDoubleWithReference(_reference);
 	}
 
 	@Override
 	protected double[] preAggSumSqRows() {
-		return _dict.sumAllRowsToDoubleSq(_reference);
+		return _dict.sumAllRowsToDoubleSqWithReference(_reference);
 	}
 
 	@Override
@@ -313,7 +346,7 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 
 	@Override
 	protected double[] preAggBuiltinRows(Builtin builtin) {
-		return _dict.aggregateRows(builtin, _reference);
+		return _dict.aggregateRowsWithReference(builtin, _reference);
 	}
 
 	@Override
@@ -358,7 +391,7 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 		else if(Double.isNaN(pattern) || Double.isInfinite(pattern))
 			return containsInfOrNan(pattern) || _dict.containsValue(pattern);
 		else
-			return _dict.containsValue(pattern, _reference);
+			return _dict.containsValueWithReference(pattern, _reference);
 	}
 
 	private boolean containsInfOrNan(double pattern) {
@@ -378,8 +411,12 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 
 	@Override
 	public long getNumberNonZeros(int nRows) {
-		int[] counts = getCounts();
-		return (long) _dict.getNumberNonZeros(counts, _reference, nRows);
+		final int[] counts = getCounts();
+		final int count = _numRows - _data.size();
+		long c = _dict.getNumberNonZerosWithReference(counts, _reference, nRows);
+		for(int x = 0; x < _colIndexes.length; x++)
+			c += _reference[x] != 0 ? count : 0;
+		return c;
 	}
 
 	@Override
@@ -387,5 +424,20 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 		for(int i = 0; i < _colIndexes.length; i++)
 			constV[_colIndexes[i]] += _reference[i];
 		return ColGroupSDCZeros.create(_colIndexes, _numRows, _dict, _indexes, _data, getCounts());
+	}
+
+	@Override
+	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
+		ADictionary d = _dict.rexpandColsWithReference(max, ignore, cast, _reference[0]);
+		return  ColGroupSDC.rexpandCols(max, ignore, cast, nRows, d, _indexes, _data, getCachedCounts(), _reference[0]);
+	}
+
+	@Override
+	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+		// should be guaranteed to be one column therefore only one reference value.
+		CM_COV_Object ret = _dict.centralMomentWithReference(op.fn, getCounts(), _reference[0], nRows);
+		int count = _numRows - _data.size();
+		op.fn.execute(ret, _reference[0], count);
+		return ret;
 	}
 }

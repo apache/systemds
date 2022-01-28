@@ -54,8 +54,8 @@ public class SmoothedJackknifeEstimator {
 		 * However, for large values of nRows, Gamma.gamma returns NAN
 		 * (factorial of a very large number).
 		 * 
-		 * The following implementation solves this problem by levaraging the
-		 * cancelations that show up when expanding the factorials in the
+		 * The following implementation solves this problem by leveraging the
+		 * cancellations that show up when expanding the factorials in the
 		 * numerator and the denominator.
 		 * 
 		 * 

@@ -38,7 +38,6 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -116,7 +115,7 @@ public class CLALibRightMultBy {
 			containsNull = RMMParallel(filteredGroups, that, retCg, k);
 
 		if(constV != null) {
-			AColGroup cRet = ColGroupFactory.genColGroupConst(constV).rightMultByMatrix(that);
+			AColGroup cRet = ColGroupConst.create(constV).rightMultByMatrix(that);
 			if(cRet != null)
 				retCg.add(cRet);
 		}
@@ -156,7 +155,7 @@ public class CLALibRightMultBy {
 			RMMParallel(filteredGroups, that, retCg, k);
 
 		if(constV != null) {
-			ColGroupConst cRet = (ColGroupConst) ColGroupFactory.genColGroupConst(constV).rightMultByMatrix(that);
+			ColGroupConst cRet = (ColGroupConst) ColGroupConst.create(constV).rightMultByMatrix(that);
 			constV = cRet.getValues(); // overwrite constV
 		}
 

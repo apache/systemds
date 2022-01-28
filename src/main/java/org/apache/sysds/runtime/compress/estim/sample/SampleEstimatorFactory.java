@@ -96,7 +96,8 @@ public class SampleEstimatorFactory {
 		// create frequency histogram
 		int[] freqCounts = new int[maxCount];
 		for(int i = 0; i < numVals; i++)
-			freqCounts[frequencies[i] - 1]++;
+			if(frequencies[i] != 0)
+				freqCounts[frequencies[i] - 1]++;
 
 		return freqCounts;
 	}

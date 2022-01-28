@@ -62,5 +62,4 @@ public class ConstEncoding implements IEncode {
 		return new EstimationFactors(cols.length, 1, nRows, nRows, counts, 0, 0, nRows, false, false, matrixSparsity,
 			tupleSparsity);
 	}
-
 }

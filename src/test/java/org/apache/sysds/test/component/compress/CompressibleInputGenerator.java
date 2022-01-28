@@ -155,31 +155,30 @@ public class CompressibleInputGenerator {
 			}
 		}
 	}
-	
-	private static void ole(MatrixBlock output, int nrUnique, int max, int min, double sparsity, int seed,
-	boolean transpose) {
-		
-		// chose some random values
-			final Random r = new Random(seed);
-			final List<Double> values = getNRandomValues(nrUnique, r, max, min);
-		if(transpose && output.isInSparseFormat() && output.getNumRows() == 1){
-			int nV = (int)Math.round((double)output.getNumColumns() * sparsity);
 
-			for(int i = 0 ; i < nV; i ++){
-				double d =  values.get(r.nextInt(nrUnique));
+	private static void ole(MatrixBlock output, int nrUnique, int max, int min, double sparsity, int seed,
+		boolean transpose) {
+
+		// chose some random values
+		final Random r = new Random(seed);
+		final List<Double> values = getNRandomValues(nrUnique, r, max, min);
+		if(transpose && output.isInSparseFormat() && output.getNumRows() == 1) {
+			int nV = (int) Math.round((double) output.getNumColumns() * sparsity);
+
+			for(int i = 0; i < nV; i++) {
+				double d = values.get(r.nextInt(nrUnique));
 				output.appendValue(0, r.nextInt(output.getNumColumns()), d);
 			}
 			output.getSparseBlock().sort();
 			return;
 		}
 
-
 		final int cols = transpose ? output.getNumRows() : output.getNumColumns();
 		final int rows = transpose ? output.getNumColumns() : output.getNumRows();
 
 		// Generate the first column.
 		for(int x = 0; x < rows; x++) {
-			double d =  values.get(r.nextInt(nrUnique));
+			double d = values.get(r.nextInt(nrUnique));
 			if(transpose && output.isInSparseFormat())
 				output.appendValue(0, x, d);
 			else if(transpose)
@@ -194,7 +193,7 @@ public class CompressibleInputGenerator {
 		for(int y = 1; y < cols; y++) {
 			for(int x = 0; x < rows; x++) {
 				if(r.nextDouble() < sparsity) {
-					if(transpose && output.isInSparseFormat()){
+					if(transpose && output.isInSparseFormat()) {
 						int v = (int) (output.getValue(0, x) * (double) y);
 						double d = Math.abs(v % ((int) (diff))) + min;
 						output.appendValue(y, x, d);
@@ -213,17 +212,17 @@ public class CompressibleInputGenerator {
 			}
 		}
 
-		if(transpose && output.isInSparseFormat()){
+		if(transpose && output.isInSparseFormat()) {
 			SparseBlock sb = output.getSparseBlock();
 			double[] r0 = sb.values(0);
-			for(int i = 0; i < r0.length; i++){
+			for(int i = 0; i < r0.length; i++) {
 				if(r.nextDouble() > sparsity) {
 					r0[i] = 0;
 				}
 			}
 			sb.get(0).compact();
 		}
-		else{
+		else {
 			for(int x = 0; x < rows; x++) {
 				if(r.nextDouble() > sparsity) {
 					if(transpose)
@@ -257,7 +256,6 @@ public class CompressibleInputGenerator {
 			double v = Math.round(((r.nextDouble() * (max - min)) + min) * 100) / 100;
 			values.add(Math.floor(v));
 		}
-		// LOG.debug(values);
 		return values;
 	}
 }

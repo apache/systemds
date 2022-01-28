@@ -189,7 +189,7 @@ public abstract class AColGroupCompressed extends AColGroup {
 		if(values == null)
 			return;
 		final int nCol = colIndexes.length;
-		final int nRow = values.length / colIndexes.length;
+		final int nRow = counts.length;
 		for(int k = 0; k < nRow; k++) {
 			final int offTmp = nCol * k;
 			final int scale = counts[k];
@@ -204,7 +204,7 @@ public abstract class AColGroupCompressed extends AColGroup {
 	}
 
 	protected static void tsmmSparse(double[] result, int numColumns, SparseBlock sb, int[] counts, int[] colIndexes) {
-		for(int row = 0; row < sb.numRows(); row++) {
+		for(int row = 0; row < counts.length; row++) {
 			if(sb.isEmpty(row))
 				continue;
 			final int apos = sb.pos(row);

@@ -21,13 +21,17 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 public class ColGroupEmpty extends AColGroupCompressed {
@@ -47,12 +51,8 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		super(colIndices);
 	}
 
-	public static ColGroupEmpty generate(int nCol) {
-		int[] cols = new int[nCol];
-		for(int i = 0; i < nCol; i++) {
-			cols[i] = i;
-		}
-		return new ColGroupEmpty(cols);
+	public static ColGroupEmpty create(int nCol) {
+		return new ColGroupEmpty(Util.genColsIndices(nCol));
 	}
 
 	@Override
@@ -174,7 +174,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	@Override
 	public AColGroup replace(double pattern, double replace) {
 		if(pattern == 0)
-			return ColGroupFactory.genColGroupConst(_colIndexes, replace);
+			return ColGroupConst.create(_colIndexes, replace);
 		else
 			return new ColGroupEmpty(_colIndexes);
 	}
@@ -269,5 +269,21 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	@Override
 	protected double[] preAggBuiltinRows(Builtin builtin) {
 		return null;
+	}
+
+	@Override
+	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+		CM_COV_Object ret = new CM_COV_Object();
+		op.fn.execute(ret, 0.0, nRows);
+		return ret;
+	}
+
+	@Override
+	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
+		if(!ignore)
+			throw new DMLRuntimeException(
+				"Invalid input to rexpand since it contains zero use ignore flag to encode anyway");
+		else
+			return create(max);
 	}
 }

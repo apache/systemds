@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -150,5 +152,27 @@ public class MapToInt extends AMapToData {
 	@Override
 	public int getUpperBoundValue() {
 		return Integer.MAX_VALUE;
+	}
+
+	@Override
+	public int[] getCounts(int[] counts){
+		final int sz = size();
+		for(int i = 0; i < sz; i++)
+			counts[_data[i]]++;
+		return counts;
+	}
+
+	@Override
+	public void preAggregateDDCSingleCol(AMapToData tm, ADictionary td, Dictionary ret) {
+		final int nRows = size();
+		for(int r = 0; r < nRows; r++)
+			td.addToEntry(ret, tm.getIndex(r), getIndex(r));
+	}
+
+	@Override
+	public void preAggregateDDCMultiCol(AMapToData tm, ADictionary td, Dictionary ret, int nCol) {
+		final int nRows = size();
+		for(int r = 0; r < nRows; r++)
+			td.addToEntry(ret, tm.getIndex(r), getIndex(r), nCol);
 	}
 }

@@ -139,9 +139,9 @@ public class CompressedSingleTests {
 		CompressionSettingsBuilder b = new CompressionSettingsBuilder();
 		b = b.addValidCompression(CompressionType.CONST).setLossy(true).setLossy(false).setSortValuesByLength(true)
 			.setAllowSharedDictionary(true).setColumnPartitioner(CoCoderFactory.PartitionerType.BIN_PACKING)
-			.setMaxColGroupCoCode(3).setEstimationType(EstimationType.ShlosserJackknifeEstimator)
-			.clearValidCompression().setSamplingRatio(0.2).setSeed(1342).setCoCodePercentage(0.22)
-			.setMinimumSampleSize(1342).setCostType(CostEstimatorFactory.CostType.MEMORY);
+			.setMaxColGroupCoCode(3).setEstimationType(EstimationType.ShlosserJackknifeEstimator).clearValidCompression()
+			.setSamplingRatio(0.2).setSeed(1342).setCoCodePercentage(0.22).setMinimumSampleSize(1342)
+			.setCostType(CostEstimatorFactory.CostType.MEMORY);
 		CompressionSettings s = b.create();
 		b = b.copySettings(s);
 	}

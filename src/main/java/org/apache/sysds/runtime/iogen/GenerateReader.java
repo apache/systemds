@@ -120,7 +120,7 @@ public abstract class GenerateReader {
 			Class[] cArg = new Class[1];
 			cArg[0] = CustomProperties.class;
 			String js = src.generateCodeJava();
-			System.out.println(js);
+			//System.out.println(js);
 			frameReader = (FrameReader) CodegenUtils.compileClass(className, src.generateCodeJava()).getDeclaredConstructor(cArg).newInstance(properties);
 
 			return frameReader;

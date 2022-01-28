@@ -251,12 +251,12 @@ public class MatrixGRRowColIdentifyTest extends GenerateReaderMatrixTest {
 
 	@Test
 	public void test13() throws Exception {
-		String sampleRawFileName = "/home/saeed/Documents/Dataset/GIODataset/flat/aminer_paper/sample_100_5.raw";
-		String sampleFrameFileName = "/home/saeed/Documents/Dataset/GIODataset/flat/aminer_paper/sample_100_5.frame";
-		Integer sampleNRows = 100;
+		String sampleRawFileName = "/home/saeed/Documents/Dataset/GIODataset/json/aminer_paper/sample_1000_11.raw";
+		String sampleFrameFileName = "/home/saeed/Documents/Dataset/GIODataset/json/aminer_paper/sample_1000_11.frame";
+		Integer sampleNRows = 1000;
 		String delimiter = "\\t";
-		String schemaFileName = "/home/saeed/Documents/Dataset/GIODataset/flat/aminer_paper/aminer_paper.schema";
-		String dataFileName = "/home/saeed/Documents/Dataset/GIODataset/flat/aminer_paper/aminer_paper.data";
+		String schemaFileName = "/home/saeed/Documents/Dataset/GIODataset/json/aminer_paper/aminer_paper_11.schema";
+		String dataFileName = "/home/saeed/Documents/Dataset/GIODataset/json/aminer_paper/aminer_paper.data";
 
 		Float percent = 7f;//Float.parseFloat(args[6]);
 		String datasetName = "aminer_paper";//args[7];

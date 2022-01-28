@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+
 
 public class FormatIdentifying {
 
@@ -34,6 +36,7 @@ public class FormatIdentifying {
 	private int[]   mapRowPrevious;
 	private int[][] mapCol;
 	private int[][] mapLen;
+	private int NaN;
 	private ArrayList<RawIndex> sampleRawIndexes;
 
 	private static int nrows;
@@ -69,29 +72,21 @@ public class FormatIdentifying {
 		nrows = mappingValues.getNrows();
 		ncols = mappingValues.getNcols();
 		nlines = mappingValues.getNlines();
+		NaN = (ncols * nrows) - mappingValues.getNaN();
 
 		// Check the map row:
 		// If all cells of a row mapped to a single line of sample raw, it is a single row mapping
 		// If all cells of a row mapped to multiple lines of sample raw, it is a multi row mapping
 
-		boolean isSingleRow = true;
-		for(int r=0; r<nrows && isSingleRow; r++){
-			int rowIndex = -1;
-			int c = 0;
-			for(; c<ncols;c++){
-				if(mapRow[r][c] !=-1) {
-					rowIndex = mapRow[r][c];
-					break;
-				}
-			}
-			for(; c< ncols && isSingleRow; c++){
-				if(mapRow[r][c] !=-1) {
-					isSingleRow = mapRow[r][c] == rowIndex;
-				}
-			}
-		}
+		boolean isSingleRow = false;
+		int missedCount = 0;
+		for(int r=0; r<nrows; r++)
+			missedCount += ncols - mostCommonScore(mapRow[r]);
+		if ((float)missedCount/ NaN <0.07)
+			isSingleRow = true;
 
 		KeyTrie[] colKeyPattern;
+
 		if(isSingleRow){
 			colKeyPattern = buildColsKeyPatternSingleRow();
 			properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.IDENTIFY);
@@ -254,6 +249,27 @@ public class FormatIdentifying {
 		return properties;
 	}
 
+	private Integer mostCommonScore(int[] list) {
+		Map<Integer, Integer> map = new HashMap<>();
+		int nan = 0;
+		for (Integer t : list) {
+			if (t != -1) {
+				Integer val = map.get(t);
+				map.put(t, val == null ? 1 : val + 1);
+			} else
+				nan++;
+		}
+		if (map.size() == 0)
+			return nan;
+
+		Map.Entry<Integer, Integer> max = null;
+		for (Map.Entry<Integer, Integer> e : map.entrySet()) {
+			if (max == null || e.getValue() > max.getValue())
+				max = e;
+		}
+		return max.getValue() + nan;
+	}
+
 	private KeyTrie[] buildColsKeyPatternSingleRow() {
 		Pair<ArrayList<String>[], ArrayList<Integer>[]> prefixStrings = extractAllPrefixStringsOfColsSingleLine(false);
 		ArrayList<String>[] suffixStrings = extractAllSuffixStringsOfColsSingleLine();
@@ -284,7 +300,7 @@ public class FormatIdentifying {
 									count++;
 							}
 							float percent = (float) count / list.size();
-							if(percent >= 0.9)
+							if(percent >= 0.60)
 								token = t;
 						}
 					}

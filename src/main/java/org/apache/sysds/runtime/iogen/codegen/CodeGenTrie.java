@@ -114,7 +114,7 @@ public class CodeGenTrie {
 			src.append(node.geValueCode(destination, currPos));
 
 		if(node.getChildren().size() > 0) {
-			String currPosVariable;
+			String currPosVariable = currPos;
 			for(String key : node.getChildren().keySet()) {
 				if(key.length() > 0) {
 					currPosVariable = getRandomName("curPos");
@@ -124,10 +124,9 @@ public class CodeGenTrie {
 						src.append("index = str.indexOf(\"" + key.replace("\"", "\\\"") + "\", " + currPos + "); \n");
 					src.append("if(index != -1) { \n");
 					src.append("int " + currPosVariable + " = index + " + key.length() + "; \n");
-					currPos = currPosVariable;
 				}
 				CodeGenTrieNode child = node.getChildren().get(key);
-				getJavaCode(child, src, currPos);
+				getJavaCode(child, src, currPosVariable);
 				if(key.length() > 0)
 					src.append("} \n");
 			}

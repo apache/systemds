@@ -31,6 +31,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.cost.HopRel;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
@@ -59,7 +60,14 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	private static final Log LOG = LogFactory.getLog(IPAPassRewriteFederatedPlan.class.getName());
 
 	private final static MemoTable hopRelMemo = new MemoTable();
+	/**
+	 * IDs of hops for which the final fedout value has been set.
+	 */
 	private final static Set<Long> hopRelUpdatedFinal = new HashSet<>();
+	/**
+	 * Terminal hops in DML program given to this rewriter.
+	 */
+	private final static List<Hop> terminalHops = new ArrayList<>();
 
 	/**
 	 * Indicates if an IPA pass is applicable for the current configuration.
@@ -86,19 +94,19 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph,
 		FunctionCallSizeInfo fcallSizes) {
 		rewriteStatementBlocks(prog, prog.getStatementBlocks());
+		setFinalFedouts();
 		return false;
 	}
 
 	/**
-	 * Estimates cost and selects a federated execution plan
-	 * by setting the federated output value of each hop in the statement blocks.
+	 * Estimates cost and enumerates federated execution plans in hopRelMemo.
 	 * The method calls the contained statement blocks recursively.
 	 *
 	 * @param prog dml program
 	 * @param sbs  list of statement blocks
 	 * @return list of statement blocks with the federated output value updated for each hop
 	 */
-	public ArrayList<StatementBlock> rewriteStatementBlocks(DMLProgram prog, List<StatementBlock> sbs) {
+	private ArrayList<StatementBlock> rewriteStatementBlocks(DMLProgram prog, List<StatementBlock> sbs) {
 		ArrayList<StatementBlock> rewrittenStmBlocks = new ArrayList<>();
 		for(StatementBlock stmBlock : sbs)
 			rewrittenStmBlocks.addAll(rewriteStatementBlock(prog, stmBlock));
@@ -106,8 +114,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	}
 
 	/**
-	 * Estimates cost and selects a federated execution plan
-	 * by setting the federated output value of each hop in the statement blocks.
+	 * Estimates cost and enumerates federated execution plans in hopRelMemo.
 	 * The method calls the contained statement blocks recursively.
 	 *
 	 * @param prog dml program
@@ -183,6 +190,14 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 			}
 		}
 		return new ArrayList<>(Collections.singletonList(sb));
+	}
+
+	/**
+	 * Set final fedouts of all hops starting from terminal hops.
+	 */
+	private void setFinalFedouts(){
+		for ( Hop root : terminalHops)
+			setFinalFedout(root);
 	}
 
 	/**
@@ -278,7 +293,8 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	private void selectFederatedExecutionPlan(Hop root) {
 		if ( root != null ){
 			visitFedPlanHop(root);
-			setFinalFedout(root);
+			if ( HopRewriteUtils.isTerminalHop(root) )
+				terminalHops.add(root);
 		}
 	}
 

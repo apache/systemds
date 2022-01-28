@@ -1611,7 +1611,7 @@ public class DMLTranslator
 			throw e;
 		}
 		catch ( Exception e ) {
-			throw new ParseException("An Parsing exception occured", e);
+			throw new ParseException("A Parsing exception occurred", e);
 		}
 	}
 

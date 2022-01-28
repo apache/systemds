@@ -95,10 +95,11 @@ public class FederatedWorker {
 			f.channel().closeFuture().sync();
 		}
 		catch(Exception e) {
-			log.error("Federated worker interrupted");
-			log.error(e.getMessage());
-			if ( _debug )
+			log.info("Federated worker interrupted");
+			if ( _debug ){
+				log.error(e.getMessage());
 				e.printStackTrace();
+			}
 		}
 		finally {
 			log.info("Federated Worker Shutting down.");

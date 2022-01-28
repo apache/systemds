@@ -25,7 +25,10 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+
 
 public class FormatIdentifying {
 
@@ -33,6 +36,7 @@ public class FormatIdentifying {
 	private int[]   mapRowPrevious;
 	private int[][] mapCol;
 	private int[][] mapLen;
+	private int NaN;
 	private ArrayList<RawIndex> sampleRawIndexes;
 
 	private static int nrows;
@@ -68,29 +72,21 @@ public class FormatIdentifying {
 		nrows = mappingValues.getNrows();
 		ncols = mappingValues.getNcols();
 		nlines = mappingValues.getNlines();
+		NaN = (ncols * nrows) - mappingValues.getNaN();
 
 		// Check the map row:
 		// If all cells of a row mapped to a single line of sample raw, it is a single row mapping
 		// If all cells of a row mapped to multiple lines of sample raw, it is a multi row mapping
 
-		boolean isSingleRow = true;
-		for(int r=0; r<nrows && isSingleRow; r++){
-			int rowIndex = -1;
-			int c = 0;
-			for(; c<ncols;c++){
-				if(mapRow[r][c] !=-1) {
-					rowIndex = mapRow[r][c];
-					break;
-				}
-			}
-			for(; c< ncols && isSingleRow; c++){
-				if(mapRow[r][c] !=-1) {
-					isSingleRow = mapRow[r][c] == rowIndex;
-				}
-			}
-		}
+		boolean isSingleRow = false;
+		int missedCount = 0;
+		for(int r=0; r<nrows; r++)
+			missedCount += ncols - mostCommonScore(mapRow[r]);
+		if ((float)missedCount/ NaN <0.07)
+			isSingleRow = true;
 
 		KeyTrie[] colKeyPattern;
+
 		if(isSingleRow){
 			colKeyPattern = buildColsKeyPatternSingleRow();
 			properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.IDENTIFY);
@@ -252,10 +248,77 @@ public class FormatIdentifying {
 		return properties;
 	}
 
+	private Integer mostCommonScore(int[] list) {
+		Map<Integer, Integer> map = new HashMap<>();
+		int nan = 0;
+		for (Integer t : list) {
+			if (t != -1) {
+				Integer val = map.get(t);
+				map.put(t, val == null ? 1 : val + 1);
+			} else
+				nan++;
+		}
+		if (map.size() == 0)
+			return nan;
+
+		Map.Entry<Integer, Integer> max = null;
+		for (Map.Entry<Integer, Integer> e : map.entrySet()) {
+			if (max == null || e.getValue() > max.getValue())
+				max = e;
+		}
+		return max.getValue() + nan;
+	}
+
 	private KeyTrie[] buildColsKeyPatternSingleRow() {
 		Pair<ArrayList<String>[], ArrayList<Integer>[]> prefixStrings = extractAllPrefixStringsOfColsSingleLine(false);
 		ArrayList<String>[] suffixStrings = extractAllSuffixStringsOfColsSingleLine();
 		KeyTrie[] colKeyPattens = new KeyTrie[ncols];
+
+		// Clean prefix strings
+		for(int c =0; c< ncols; c++) {
+			ArrayList<String> list = prefixStrings.getKey()[c];
+			String token = null;
+			boolean flag = true;
+			for(int w = 1; w < windowSize && flag; w++) {
+				HashSet<String> wts = new HashSet<>();
+				for(String s : list) {
+					if(s.length() < w)
+						flag = false;
+					else
+						wts.add(s.substring(s.length()-w));
+				}
+
+				if(flag) {
+					if(wts.size() == 1)
+						token = wts.iterator().next();
+					else {
+						for(String t : wts) {
+							int count = 0;
+							for(String s : list) {
+								if(s.endsWith(t))
+									count++;
+							}
+							float percent = (float) count / list.size();
+							if(percent >= 0.90)
+								token = t;
+						}
+					}
+				}
+				else if(wts.size() == 0)
+					token = "";
+			}
+			if(token == null)
+				throw new RuntimeException("can't build a key pattern for the column: "+ c);
+
+			if(token.length() > 0){
+				ArrayList<String> newList = new ArrayList<>();
+				for(String s: list){
+					if(s.endsWith(token))
+						newList.add(s);
+				}
+				prefixStrings.getKey()[c] = newList;
+			}
+		}
 
 		for(int c=0; c<ncols; c++) {
 			MappingTrie trie = new MappingTrie();

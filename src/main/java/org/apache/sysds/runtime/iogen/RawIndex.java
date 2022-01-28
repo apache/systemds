@@ -153,9 +153,9 @@ public class RawIndex {
         }
 //		else if(valueType == Types.ValueType.BOOLEAN)
 //			return findValue(UtilFunctions.objectToString())
-        else
-            return null;
-    }
+		else
+			return null;
+	}
 
     public Pair<Integer, Integer> findValue(double value) {
 //		extractNumericActualValues();

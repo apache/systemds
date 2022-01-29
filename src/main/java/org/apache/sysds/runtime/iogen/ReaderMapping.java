@@ -108,9 +108,9 @@ public class ReaderMapping {
 		int itRow = 0;
 		for(int r = 0; r < nrows; r++) {
 			for(int c = 0; c < ncols; c++) {
-				if(isIndexMapping || ((this.isMatrix && this.sampleMatrix.getValue(r, c) != 0) ||
-						(!this.isMatrix && ((!schema[c].isNumeric() && this.sampleFrame.get(r,c)!=null) ||
-								(schema[c].isNumeric() && this.sampleFrame.getDouble(r,c)!=0))))) {
+				if(isIndexMapping || ((this.isMatrix && this.sampleMatrix.getValue(r,
+					c) != 0) || (!this.isMatrix && ((!schema[c].isNumeric() && this.sampleFrame.get(r,
+					c) != null) || (schema[c].isNumeric() && this.sampleFrame.getDouble(r, c) != 0))))) {
 					HashSet<Integer> checkedLines = new HashSet<>();
 					while(checkedLines.size() < nlines) {
 						RawIndex ri = sampleRawIndexes.get(itRow);
@@ -137,10 +137,9 @@ public class ReaderMapping {
 		boolean flagMap = true;
 		for(int r = 0; r < nrows && flagMap; r++)
 			for(int c = 0; c < ncols && flagMap; c++)
-				if(mapRow[r][c] == -1 && (
-						(!this.isMatrix && this.sampleFrame.get(r,c) != null) ||
-								(!this.isMatrix && ((!schema[c].isNumeric() && this.sampleFrame.get(r,c)!=null) ||
-										(schema[c].isNumeric() && this.sampleFrame.getDouble(r,c)!=0))))) {
+				if(mapRow[r][c] == -1 && ((!this.isMatrix && this.sampleFrame.get(r,
+					c) != null) || (!this.isMatrix && ((!schema[c].isNumeric() && this.sampleFrame.get(r,
+					c) != null) || (schema[c].isNumeric() && this.sampleFrame.getDouble(r, c) != 0))))) {
 					flagMap = false;
 				}
 		return flagMap;

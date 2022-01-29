@@ -99,14 +99,14 @@ public class KeyTrie {
 	}
 
 	public ArrayList<ArrayList<String>> getPrefixKeyPatterns() {
-		if(this.prefixKeyPattern!=null)
+		if(this.prefixKeyPattern != null)
 			return prefixKeyPattern;
 		else
 			return getKeyPatterns(rootPrefixKeys);
 	}
 
 	public ArrayList<ArrayList<String>> getReversePrefixKeyPatterns() {
-		if(this.prefixKeyPattern!=null)
+		if(this.prefixKeyPattern != null)
 			return prefixKeyPattern;
 		else {
 			ArrayList<ArrayList<String>> kps = getKeyPatterns(rootPrefixKeys);
@@ -132,10 +132,10 @@ public class KeyTrie {
 		return result;
 	}
 
-	public HashSet<String> getFirstSuffixKeyPatterns(){
+	public HashSet<String> getFirstSuffixKeyPatterns() {
 		ArrayList<ArrayList<String>> suffixKeyPattern = getSuffixKeyPatterns();
 		HashSet<String> suffixString = new HashSet<>();
-		for(ArrayList<String> kp: suffixKeyPattern){
+		for(ArrayList<String> kp : suffixKeyPattern) {
 			suffixString.add(kp.get(0));
 		}
 		return suffixString;
@@ -182,7 +182,7 @@ public class KeyTrie {
 
 	public void insertPrefixKeysConcurrent(HashSet<String> keys) {
 		insertPrefixKeysConcurrent(rootPrefixKeys, keys);
-		ArrayList<ArrayList<String>> ss =getPrefixKeyPatterns();
+		ArrayList<ArrayList<String>> ss = getPrefixKeyPatterns();
 	}
 
 	private void insertPrefixKeysConcurrent(KeyTrieNode node, HashSet<String> keys) {

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -269,6 +270,25 @@ public class FormatIdentifying {
 		return max.getValue() + nan;
 	}
 
+	private Integer mostCommonValue(int[] list) {
+		Map<Integer, Integer> map = new HashMap<>();
+		for (Integer t : list) {
+			if (t != -1) {
+				Integer val = map.get(t);
+				map.put(t, val == null ? 1 : val + 1);
+			}
+		}
+		if (map.size() == 0)
+			return -1;
+
+		Map.Entry<Integer, Integer> max = null;
+		for (Map.Entry<Integer, Integer> e : map.entrySet()) {
+			if (max == null || e.getValue() > max.getValue())
+				max = e;
+		}
+		return max.getKey();
+	}
+
 	private KeyTrie[] buildColsKeyPatternSingleRow() {
 		Pair<ArrayList<String>[], ArrayList<Integer>[]> prefixStrings = extractAllPrefixStringsOfColsSingleLine(false);
 		ArrayList<String>[] suffixStrings = extractAllSuffixStringsOfColsSingleLine();
@@ -284,8 +304,13 @@ public class FormatIdentifying {
 				for(String s : list) {
 					if(s.length() < w)
 						flag = false;
-					else
-						wts.add(s.substring(s.length()-w));
+					else {
+						String subStr = s.substring(s.length() - w);
+						if (!subStr.contains(Lop.OPERAND_DELIMITOR))
+							wts.add(subStr);
+						else
+							flag = false;
+					}
 				}
 
 				if(flag) {
@@ -307,10 +332,23 @@ public class FormatIdentifying {
 				else if(wts.size() == 0)
 					token = "";
 			}
-			if(token == null)
-				throw new RuntimeException("can't build a key pattern for the column: "+ c);
-
-			if(token.length() > 0){
+			if(token == null) {
+				int[] listLength = new int[nrows];
+				for (int r = 0; r< nrows; r++)
+					listLength[r] = mapCol[r][c];
+				int commonLength = mostCommonValue(listLength);
+				if (commonLength == 0){
+					ArrayList<String> newList = new ArrayList<>();
+					for(String s: list){
+						if(s.length() == 0)
+							newList.add(s);
+					}
+					prefixStrings.getKey()[c] = newList;
+				}
+				else
+					throw new RuntimeException("can't build a key pattern for the column: " + c);
+			}
+			else if(token.length() > 0){
 				ArrayList<String> newList = new ArrayList<>();
 				for(String s: list){
 					if(s.endsWith(token))
@@ -323,31 +361,48 @@ public class FormatIdentifying {
 		for(int c=0; c<ncols; c++) {
 			MappingTrie trie = new MappingTrie();
 			int ri = 0;
+			boolean check;
+			boolean flagReconstruct;
+			ArrayList<ArrayList<String>> keyPatterns = null;
+
+
 			for(String ps: prefixStrings.getKey()[c])
 				trie.reverseInsert(ps, prefixStrings.getValue()[c].get(ri++));
 
-			boolean check;
-			boolean flagReconstruct;
-			ArrayList<ArrayList<String>> keyPatterns;
-
-			do {
-				ArrayList<ArrayList<String>> selectedKeyPatterns = new ArrayList<>();
-				keyPatterns = trie.getAllSequentialKeys();
-				check = false;
-				for(ArrayList<String> keyPattern : keyPatterns) {
-					boolean newCheck = checkKeyPatternIsUnique(prefixStrings.getKey()[c], keyPattern);
-					check |= newCheck;
-					if(newCheck)
-						selectedKeyPatterns.add(keyPattern);
+			if (trie.getRoot().getChildren().size() == 1){
+				String[] splitPattern= prefixStrings.getKey()[c].get(0).split(Lop.OPERAND_DELIMITOR);
+				ArrayList<String> reverseSplitPattern = new ArrayList<>();
+				for (String ps: splitPattern)
+					if (ps.length() > 0)
+						reverseSplitPattern.add(ps);
+				if (reverseSplitPattern.size() == 0)
+					reverseSplitPattern.add("");
+				check = checkKeyPatternIsUnique(prefixStrings.getKey()[c], reverseSplitPattern);
+				if (check) {
+					keyPatterns = new ArrayList<>();
+					keyPatterns.add(reverseSplitPattern);
 				}
-				if(check)
-					keyPatterns = selectedKeyPatterns;
-				else {
-					flagReconstruct = trie.reConstruct();
-					if(!flagReconstruct)
-						break;
-				}
-			}while(!check);
+			}
+			else {
+				do {
+					ArrayList<ArrayList<String>> selectedKeyPatterns = new ArrayList<>();
+					keyPatterns = trie.getAllSequentialKeys();
+					check = false;
+					for (ArrayList<String> keyPattern : keyPatterns) {
+						boolean newCheck = checkKeyPatternIsUnique(prefixStrings.getKey()[c], keyPattern);
+						check |= newCheck;
+						if (newCheck)
+							selectedKeyPatterns.add(keyPattern);
+					}
+					if (check)
+						keyPatterns = selectedKeyPatterns;
+					else {
+						flagReconstruct = trie.reConstruct();
+						if (!flagReconstruct)
+							break;
+					}
+				} while (!check);
+			}
 
 			if(check){
 				colKeyPattens[c] = new KeyTrie(keyPatterns);
@@ -378,7 +433,7 @@ public class FormatIdentifying {
 			int rowIndex = mapRow[r][colIndex];
 			if(rowIndex != -1) {
 				rowIndexes.add(rowIndex);
-				String str = sampleRawIndexes.get(rowIndex).getSubString(0, mapCol[r][colIndex]);
+				String str = sampleRawIndexes.get(rowIndex).getRemainedTexts(mapCol[r][colIndex]);//sampleRawIndexes.get(rowIndex).getSubString(0, mapCol[r][colIndex]);
 				if(reverse)
 					prefixStrings.add(new StringBuilder(str).reverse().toString());
 				else

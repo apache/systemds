@@ -51,10 +51,12 @@ public class FederatedWorker {
 
 	private final int _port;
 	private final FederatedLookupTable _flt;
+	private final FederatedReadCache _frc;
 	private final boolean _debug;
 
 	public FederatedWorker(int port, boolean debug) {
 		_flt = new FederatedLookupTable();
+		_frc = new FederatedReadCache();
 		_port = (port == -1) ? DMLConfig.DEFAULT_FEDERATED_PORT : port;
 		_debug = debug;
 
@@ -90,7 +92,7 @@ public class FederatedWorker {
 							new ObjectDecoder(Integer.MAX_VALUE,
 								ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
 						cp.addLast("ObjectEncoder", new ObjectEncoder());
-						cp.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_flt));
+						cp.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_flt, _frc));
 					}
 				}).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
 			log.info("Starting Federated Worker server at port: " + _port);

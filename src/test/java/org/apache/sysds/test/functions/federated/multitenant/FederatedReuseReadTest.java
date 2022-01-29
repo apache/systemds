@@ -82,28 +82,51 @@ public class FederatedReuseReadTest extends MultiTenantTestBase {
 
 	@Test
 	public void testPlusScalarCP() {
-		runReuseReadTest(OpType.PLUS_SCALAR, 3, ExecMode.SINGLE_NODE);
+		runReuseReadTest(OpType.PLUS_SCALAR, 3, ExecMode.SINGLE_NODE, false);
 	}
 
 	@Test
 	@Ignore
 	public void testPlusScalarSP() {
-		runReuseReadTest(OpType.PLUS_SCALAR, 3, ExecMode.SPARK);
+		runReuseReadTest(OpType.PLUS_SCALAR, 3, ExecMode.SPARK, false);
+	}
+
+	@Test
+	@Ignore
+	public void testPlusScalarLineageCP() {
+		runReuseReadTest(OpType.PLUS_SCALAR, 3, ExecMode.SINGLE_NODE, true);
+	}
+
+	@Test
+	public void testPlusScalarLineageSP() {
+		runReuseReadTest(OpType.PLUS_SCALAR, 3, ExecMode.SPARK, true);
 	}
 
 	@Test
 	public void testModifiedValCP() {
 		//TODO with 4 runs sporadically into non-terminating state
-		runReuseReadTest(OpType.MODIFIED_VAL, 3, ExecMode.SINGLE_NODE);
+		runReuseReadTest(OpType.MODIFIED_VAL, 3, ExecMode.SINGLE_NODE, false);
 	}
 
 	@Test
 	@Ignore
 	public void testModifiedValSP() {
-		runReuseReadTest(OpType.MODIFIED_VAL, 4, ExecMode.SPARK);
+		runReuseReadTest(OpType.MODIFIED_VAL, 4, ExecMode.SPARK, false);
 	}
 
-	private void runReuseReadTest(OpType opType, int numCoordinators, ExecMode execMode) {
+	@Test
+	@Ignore
+	public void testModifiedValLineageCP() {
+		//TODO with 4 runs sporadically into non-terminating state
+		runReuseReadTest(OpType.MODIFIED_VAL, 3, ExecMode.SINGLE_NODE, true);
+	}
+
+	@Test
+	public void testModifiedValLineageSP() {
+		runReuseReadTest(OpType.MODIFIED_VAL, 4, ExecMode.SPARK, true);
+	}
+
+	private void runReuseReadTest(OpType opType, int numCoordinators, ExecMode execMode, boolean lineage) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -135,7 +158,7 @@ public class FederatedReuseReadTest extends MultiTenantTestBase {
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
 
-		int[] workerPorts = startFedWorkers(4, new String[]{"-lineage", "reuse"});
+		int[] workerPorts = startFedWorkers(4, lineage ? new String[]{"-lineage", "reuse"} : null);
 
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {

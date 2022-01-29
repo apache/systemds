@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.matrix.data.Pair;
 
 import java.util.ArrayList;
@@ -74,6 +75,26 @@ public class MappingTrie {
 			return node;
 	}
 
+	public void insertKeys(ArrayList<String> keys) {
+		MappingTrieNode currentNode = root;
+		int index = 0;
+		for(String key : keys) {
+			if(currentNode.getChildren().containsKey(key)) {
+				currentNode = currentNode.getChildren().get(key);
+				index++;
+			}
+			else
+				break;
+		}
+
+		MappingTrieNode newNode;
+		for(int i = index; i < keys.size(); i++) {
+			newNode = new MappingTrieNode();
+			currentNode.getChildren().put(keys.get(i), newNode);
+			currentNode = newNode;
+		}
+	}
+
 	public Set<String> getAllSubStringsOfStringContainIntersect(String str, BitSet bitSet) {
 		HashSet<String> result = new HashSet<>();
 		StringBuilder sb = new StringBuilder();
@@ -98,7 +119,9 @@ public class MappingTrie {
 		else {
 			for(int j = 1; j <= Math.min(sb.length(), windowSize); j++) {
 				for(int k = 0; k <= sb.length() - j; k++) {
-					result.add(sb.substring(k, k + j));
+					String subStr = sb.substring(k, k + j);
+					if (!subStr.contains(Lop.OPERAND_DELIMITOR))
+						result.add(subStr);
 				}
 			}
 		}
@@ -288,7 +311,12 @@ public class MappingTrie {
 			for(Pair<String, ArrayList<Integer>> n : k)
 				if(n.getKey() != null) {
 					if(level < keyLevel || keyLevel == 0) {
-						kl.add(n.getKey());
+						String[] splitText = n.getKey().split(Lop.OPERAND_DELIMITOR,-1);
+						String str = splitText[0];
+						if (str.length() == 0 && splitText.length >1)
+							str = splitText[1];
+
+						kl.add(str);
 						level++;
 					}
 					else

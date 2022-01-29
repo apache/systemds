@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.iogen.codegen;
 
-import com.google.gson.Gson;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.iogen.CustomProperties;
 import org.apache.sysds.runtime.iogen.KeyTrie;
@@ -47,15 +46,19 @@ public class CodeGenTrie {
 		for(int c=0; c< properties.getColKeyPattern().length; c++){
 			KeyTrie keyTrie = properties.getColKeyPattern()[c];
 			Types.ValueType vt = properties.getSchema() == null ? Types.ValueType.FP64 : properties.getSchema()[c];
-			for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
-				this.insert(rootCol, c, vt, keys);
+			if (keyTrie != null) {
+				for (ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
+					this.insert(rootCol, c, vt, keys);
+			}
 		}
 
 		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX){
 			KeyTrie keyTrie = properties.getRowKeyPattern();
 			Types.ValueType vt = Types.ValueType.FP32;
-			for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
-				this.insert(rootRow, -1, vt, keys);
+			if (keyTrie != null) {
+				for (ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
+					this.insert(rootRow, -1, vt, keys);
+			}
 		}
 	}
 

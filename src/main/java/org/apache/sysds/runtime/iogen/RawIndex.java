@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.iogen;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -300,6 +301,25 @@ public class RawIndex {
         } catch (Exception e) {
 
         }
+    }
+
+    public String getRemainedTexts(int endPos) {
+        StringBuilder sb = new StringBuilder();
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < endPos; i++) {
+            if (!reservedPositions.get(i))
+                sb.append(raw.charAt(i));
+            else {
+                if (sb.length() > 0) {
+                    result.append(Lop.OPERAND_DELIMITOR).append(sb);
+                    sb = new StringBuilder();
+                }
+            }
+        }
+        if (sb.length() > 0)
+            result.append(Lop.OPERAND_DELIMITOR).append(sb);
+
+        return result.toString();
     }
 
     public void cloneReservedPositions() {

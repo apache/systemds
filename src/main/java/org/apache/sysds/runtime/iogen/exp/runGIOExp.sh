@@ -7,8 +7,8 @@ LOG4JPROP="$systemDS_Home/scripts/perftest/conf/log4j.properties"
 jar_file_path="$systemDS_Home/target/SystemDS.jar"
 lib_files_path="$systemDS_Home/target/lib/*"
 #-----------------------------------------------------------------
-root_data_path="/home/saeed/Documents/Dataset/GIODataset/json"
-home_log="/home/saeed/Documents/ExpLog/json/"
+root_data_path="/home/saeed/Documents/Dataset/GIODataset/libsvm"
+home_log="/home/saeed/Documents/ExpLog/libsvm/"
 cpp_base_src="" #"/home/sfathollahzadeh/Documents/GitHub/papers/2022-icde-gIO/experiments/benchmark/RapidJSONCPP/src/at/tugraz"
 sep="_"
 nrows=-1
@@ -25,7 +25,7 @@ for (( i = 0; i < 1; i++ )); do
           ./resultPath.sh $home_log $d$i $mc
           data_file_name="$root_data_path/$d/$d.data"
 
-          for sr in 1000 #200 300 400 500 600 700 800 900 1000
+          for sr in 1000 1100 1200 1300 1400 1500 1600 1700 1800 1900 2000
           do
             for p in 11 #0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0
               do

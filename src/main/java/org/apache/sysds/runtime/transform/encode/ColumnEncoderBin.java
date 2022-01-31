@@ -106,6 +106,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	protected double getCode(CacheBlock in, int row){
 		// find the right bucket for a single row
+		double bin = 0;
 		if( _binMins.length == 0 || _binMaxs.length == 0 ) {
 			LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
 			return 1; //robustness in case of missing bins
@@ -114,15 +115,24 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		double inVal = in.getDoubleNaN(row, _colID - 1);
 		if (Double.isNaN(inVal) || inVal < _binMins[0] || inVal > _binMaxs[_binMaxs.length-1])
 			return Double.NaN;
-		int ix = Arrays.binarySearch(_binMaxs, inVal);
-		return ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+		if (_binMethod == BinMethod.EQUI_HEIGHT) {
+			int ix = Arrays.binarySearch(_binMaxs, inVal);
+			bin = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+		}
+		if (_binMethod == BinMethod.EQUI_WIDTH) {
+			//TODO: Skip computing bin boundaries for equi-width
+			double binWidth = (_binMaxs[_binMaxs.length - 1] - _binMins[0]) / _numBin;
+			double code = Math.ceil((inVal - _binMins[0]) / binWidth);
+			bin = (code == 0) ? code + 1 : code;
+		}
+		return bin;
 	}
 	
 	@Override
 	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
 		// find the right bucket for a block of rows
 		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
-		double codes[] = new double[endInd-startInd];
+		double[] codes = new double[endInd-startInd];
 		for (int i=startInd; i<endInd; i++) {
 			if (_binMins.length == 0 || _binMaxs.length == 0) {
 				LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
@@ -134,8 +144,16 @@ public class ColumnEncoderBin extends ColumnEncoder {
 				codes[i-startInd] = Double.NaN;
 				continue;
 			}
-			int ix = Arrays.binarySearch(_binMaxs, inVal);
-			codes[i-startInd] = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+			if (_binMethod == BinMethod.EQUI_HEIGHT) {
+				int ix = Arrays.binarySearch(_binMaxs, inVal);
+				codes[i-startInd] = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+			}
+			if (_binMethod == BinMethod.EQUI_WIDTH) {
+				//TODO: Skip computing bin boundaries for equi-width
+				double binWidth = (_binMaxs[_binMaxs.length - 1] - _binMins[0]) / _numBin;
+				double bin = Math.ceil((inVal - _binMins[0]) / binWidth);
+				codes[i - startInd] = bin == 0 ? bin + 1 : bin;
+			}
 		}
 		return codes;
 	}

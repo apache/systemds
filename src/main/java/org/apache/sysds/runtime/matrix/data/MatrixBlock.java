@@ -5501,19 +5501,22 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		MatrixBlock that = checkType(thatVal);
 		MatrixBlock that2 = checkType(that2Val);
 		CTable ctable = CTable.getCTableFnObject();
-		
+		int k = OptimizerUtils.getTransformNumThreads();
 		//sparse-unsafe ctable execution
 		//(because input values of 0 are invalid and have to result in errors) 
-		if(resultBlock == null) 
-		{
-			for( int i=0; i<rlen; i++ )
-				for( int j=0; j<clen; j++ )
-				{
-					double v1 = this.quickGetValue(i, j);
-					double v2 = that.quickGetValue(i, j);
-					double w = that2.quickGetValue(i, j);
-					ctable.execute(v1, v2, w, false, resultMap);
-				}		
+		if(resultBlock == null) {
+			if (k > 1 && clen == 1)
+				//TODO: Find the optimum k during compilation
+				ctable.execute(this, that, that2, resultMap, k);
+			else {
+				for(int i = 0; i < rlen; i++)
+					for(int j = 0; j < clen; j++) {
+						double v1 = this.quickGetValue(i, j);
+						double v2 = that.quickGetValue(i, j);
+						double w = that2.quickGetValue(i, j);
+						ctable.execute(v1, v2, w, false, resultMap);
+					}
+			}
 		}
 		else 
 		{

@@ -19,19 +19,19 @@
 
 package org.apache.sysds.test.functions.aggregate;
 
-import java.util.HashMap;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.HashMap;
 
 /**
  * NOTES:
@@ -555,7 +555,7 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, false, ExecType.SPARK, false, false);
 	}
-	
+
 	@Test
 	public void testRowIndexMinSparseMatrixNoRewritesSP() 
 	{

@@ -216,7 +216,7 @@ public class OperationsOnMatrixValues
 			MatrixValue valueOut, AggregateUnaryOperator op,int blen) {
 		//operate on the value indexes first
 		op.indexFn.execute(indexesIn, indexesOut);
-		
+
 		//perform on the value
 		valueIn.aggregateUnaryOperations(op, valueOut, blen, indexesIn);
 	}

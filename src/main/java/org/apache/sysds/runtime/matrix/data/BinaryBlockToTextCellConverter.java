@@ -62,8 +62,11 @@ Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 	@Override
 	public void convert(MatrixIndexes k1, MatrixBlock v1) {
 		reset();
-		startIndexes.setIndexes(UtilFunctions.computeCellIndex(k1.getRowIndex(), brow,0), 
-				UtilFunctions.computeCellIndex(k1.getColumnIndex(),bcolumn,0));
+
+		long rIndex = UtilFunctions.computeCellIndex(k1.getRowIndex(), brow,0);
+		long cIndex = UtilFunctions.computeCellIndex(k1.getColumnIndex(),bcolumn,0);
+
+		startIndexes.setIndexes(rIndex, cIndex);
 		sparse=v1.isInSparseFormat();
 		thisBlockWidth=v1.getNumColumns();
 		if(sparse)

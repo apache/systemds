@@ -96,7 +96,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "uacvar"  , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uamax"   , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uarmax"  , CPType.AggregateUnary);
-		String2CPInstructionType.put( "uarimax", CPType.AggregateUnary);
+		String2CPInstructionType.put( "uarimax" , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacmax"  , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uamin"   , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uarmin"  , CPType.AggregateUnary);
@@ -110,13 +110,15 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "uac*"    , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uatrace" , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uaktrace", CPType.AggregateUnary);
-		String2CPInstructionType.put( "nrow"    ,CPType.AggregateUnary);
-		String2CPInstructionType.put( "ncol"    ,CPType.AggregateUnary);
-		String2CPInstructionType.put( "length"  ,CPType.AggregateUnary);
-		String2CPInstructionType.put( "exists"  ,CPType.AggregateUnary);
-		String2CPInstructionType.put( "lineage" ,CPType.AggregateUnary);
+		String2CPInstructionType.put( "nrow"    , CPType.AggregateUnary);
+		String2CPInstructionType.put( "ncol"    , CPType.AggregateUnary);
+		String2CPInstructionType.put( "length"  , CPType.AggregateUnary);
+		String2CPInstructionType.put( "exists"  , CPType.AggregateUnary);
+		String2CPInstructionType.put( "lineage" , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacd"    , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacdap"  , CPType.AggregateUnary);
+		String2CPInstructionType.put( "uacdapr" , CPType.AggregateUnary);
+		String2CPInstructionType.put( "uacdapc" , CPType.AggregateUnary);
 
 		String2CPInstructionType.put( "uaggouterchain", CPType.UaggOuterChain);
 		

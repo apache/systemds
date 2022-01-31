@@ -19,12 +19,6 @@
 
 package org.apache.sysds.test.functions.aggregate;
 
-import java.util.HashMap;
-
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
@@ -33,6 +27,12 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.HashMap;
 
 /**
  * 
@@ -244,7 +244,7 @@ public class FullAggregateTest extends AutomatedTestBase
 	{
 		runColAggregateOperationTest(OpType.SUM, false, false, ExecType.SPARK);
 	}
-	
+
 	@Test
 	public void testMeanDenseMatrixSP() 
 	{
@@ -262,13 +262,13 @@ public class FullAggregateTest extends AutomatedTestBase
 	{
 		runColAggregateOperationTest(OpType.MIN, false, false, ExecType.SPARK);
 	}
-	
+
 	@Test
 	public void testProdDenseMatrixSP() 
 	{
 		runColAggregateOperationTest(OpType.PROD, false, false, ExecType.SPARK);
 	}
-	
+
 	@Test
 	public void testTraceDenseMatrixSP() 
 	{

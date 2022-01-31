@@ -19,31 +19,36 @@
 
 package org.apache.sysds.test.functions.countDistinct;
 
-import org.apache.sysds.common.Types.ExecType;
-import org.junit.Test;
+import org.apache.sysds.common.Types;
 
-public class CountDistinct extends CountDistinctBase {
+public class CountDistinctApproxCol extends CountDistinctRowOrColBase {
 
-	public String TEST_NAME = "countDistinct";
-	public String TEST_DIR = "functions/countDistinct/";
-	public String TEST_CLASS_DIR = TEST_DIR + CountDistinct.class.getSimpleName() + "/";
+    private final static String TEST_NAME = "CountDistinctApproxCol";
+    private final static String TEST_DIR = "functions/countDistinct/";
+    private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApproxCol.class.getSimpleName() + "/";
 
-	protected String getTestClassDir() {
-		return TEST_CLASS_DIR;
-	}
+    @Override
+    protected String getTestClassDir() {
+        return TEST_CLASS_DIR;
+    }
 
-	protected String getTestName() {
-		return TEST_NAME;
-	}
+    @Override
+    protected String getTestName() {
+        return TEST_NAME;
+    }
 
-	protected String getTestDir() {
-		return TEST_DIR;
-	}
+    @Override
+    protected String getTestDir() {
+        return TEST_DIR;
+    }
 
-	@Test
-	public void testSimple1by1() {
-		// test simple 1 by 1.
-		ExecType ex = ExecType.CP;
-		countDistinctTest(1, 1, 1, 1.0, ex, 0.00001);
-	}
+    @Override
+    protected Types.Direction getDirection() {
+        return Types.Direction.Col;
+    }
+
+    @Override
+    public void setUp() {
+        super.addTestConfiguration();
+    }
 }

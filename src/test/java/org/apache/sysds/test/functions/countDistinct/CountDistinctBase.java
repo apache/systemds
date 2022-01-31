@@ -19,111 +19,88 @@
 
 package org.apache.sysds.test.functions.countDistinct;
 
-import static org.junit.Assert.assertTrue;
-
 import org.apache.sysds.common.Types;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 public abstract class CountDistinctBase extends AutomatedTestBase {
+    protected double percentTolerance = 0.0;
+    protected double baseTolerance = 0.0001;
 
-	protected abstract String getTestClassDir();
+    protected abstract String getTestClassDir();
 
-	protected abstract String getTestName();
+    protected abstract String getTestName();
 
-	protected abstract String getTestDir();
+    protected abstract String getTestDir();
 
-	@Override
-	public void setUp() {
-		TestUtils.clearAssertionInformation();
-		addTestConfiguration(getTestName(),
-			new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"A.scalar"}));
-	}
+    protected void addTestConfiguration() {
+        TestUtils.clearAssertionInformation();
+        addTestConfiguration(getTestName(),
+                new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"A.scalar"}));
+    }
 
-	protected double percentTolerance = 0.0;
-	protected double baseTolerance = 0.0001;
+    @Override
+    public abstract void setUp();
 
-	@Test
-	public void testSmall() {
-		ExecType ex = ExecType.CP;
-		double tolerance = baseTolerance + 50 * percentTolerance;
-		countDistinctTest(50, 50, 50, 1.0, ex, tolerance);
-	}
+    public void countDistinctScalarTest(long numberDistinct, int cols, int rows, double sparsity,
+                                  Types.ExecType instType, double tolerance) {
+        countDistinctTest(Types.Direction.RowCol, numberDistinct, cols, rows, sparsity, instType, tolerance);
+    }
 
-	@Test
-	public void testLarge() {
-		ExecType ex = ExecType.CP;
-		double tolerance = baseTolerance + 800 * percentTolerance;
-		countDistinctTest(800, 1000, 1000, 1.0, ex, tolerance);
-	}
+    public void countDistinctMatrixTest(Types.Direction dir, long numberDistinct, int cols, int rows, double sparsity,
+                                        Types.ExecType instType, double tolerance) {
+        countDistinctTest(dir, numberDistinct, cols, rows, sparsity, instType, tolerance);
+    }
 
-	@Test
-	public void testXLarge() {
-		ExecType ex = ExecType.CP;
-		double tolerance = baseTolerance + 1723 * percentTolerance;
-		countDistinctTest(1723, 5000, 2000, 1.0, ex, tolerance);
-	}
+    public void countDistinctTest(Types.Direction dir, long numberDistinct, int cols, int rows, double sparsity,
+                                  Types.ExecType instType, double tolerance) {
 
-	@Test
-	public void test1Unique() {
-		ExecType ex = ExecType.CP;
-		double tolerance = 0.00001;
-		countDistinctTest(1, 100, 1000, 1.0, ex, tolerance);
-	}
+        Types.ExecMode platformOld = setExecMode(instType);
+        try {
+            loadTestConfiguration(getTestConfiguration(getTestName()));
+            String HOME = SCRIPT_DIR + getTestDir();
+            fullDMLScriptName = HOME + getTestName() + ".dml";
+            String outputPath = output("A");
 
-	@Test
-	public void test2Unique() {
-		ExecType ex = ExecType.CP;
-		double tolerance = 0.00001;
-		countDistinctTest(2, 100, 1000, 1.0, ex, tolerance);
-	}
+            programArgs = new String[] {"-args", String.valueOf(numberDistinct), String.valueOf(rows),
+                    String.valueOf(cols), String.valueOf(sparsity), outputPath};
 
-	@Test
-	public void test120Unique() {
-		ExecType ex = ExecType.CP;
-		double tolerance = 0.00001 + 120 * percentTolerance;
-		countDistinctTest(120, 100, 1000, 1.0, ex, tolerance);
-	}
+            runTest(true, false, null, -1);
 
-	@Test
-	public void testSparse500Unique() {
-		ExecType ex = ExecType.CP;
-		double tolerance = 0.00001 + 500 * percentTolerance;
-		countDistinctTest(500, 100, 640000, 0.1, ex, tolerance);
-	}
+            if (dir.isRowCol()) {
+                writeExpectedScalar("A", numberDistinct);
+            } else {
+                double[][] expectedMatrix = getExpectedMatrixRowOrCol(dir, cols, rows, numberDistinct);
+                writeExpectedMatrix("A", expectedMatrix);
+            }
+            compareResults(tolerance);
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            assertTrue("Exception in execution: " + e.getMessage(), false);
+        }
+        finally {
+            rtplatform = platformOld;
+        }
+    }
 
-	@Test
-	public void testSparse120Unique(){
-		ExecType ex = ExecType.CP;
-		double tolerance = 0.00001 + 120 * percentTolerance;
-		countDistinctTest(120, 100, 64000, 0.1, ex, tolerance);
-	}
+    private double[][] getExpectedMatrixRowOrCol(Types.Direction dir, int cols, int rows, long expectedValue) {
+        double[][] expectedResult;
+        if (dir.isRow()) {
+            expectedResult = new double[rows][1];
+            for (int i = 0; i < rows; ++i) {
+                expectedResult[i][0] = expectedValue;
+            }
+        } else {
+            expectedResult = new double[1][cols];
+            for (int i = 0; i < cols; ++i) {
+                expectedResult[0][i] = expectedValue;
+            }
+        }
 
-	public void countDistinctTest(int numberDistinct, int cols, int rows, double sparsity,
-		ExecType instType, double tolerance) {
-		Types.ExecMode platformOld = setExecMode(instType);
-		try {
-			loadTestConfiguration(getTestConfiguration(getTestName()));
-			String HOME = SCRIPT_DIR + getTestDir();
-			fullDMLScriptName = HOME + getTestName() + ".dml";
-			String out = output("A");
-			System.out.println(out);
-			programArgs = new String[] {"-args", String.valueOf(numberDistinct), String.valueOf(rows),
-				String.valueOf(cols), String.valueOf(sparsity), out};
-
-			runTest(true, false, null, -1);
-			writeExpectedScalar("A", numberDistinct);
-			compareResults(tolerance);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			assertTrue("Exception in execution: " + e.getMessage(), false);
-		}
-		finally {
-			rtplatform = platformOld;
-		}
-	}
+        return expectedResult;
+    }
 }

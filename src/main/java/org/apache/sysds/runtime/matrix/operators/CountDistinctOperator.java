@@ -19,30 +19,28 @@
 
 package org.apache.sysds.runtime.matrix.operators;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.functionobjects.IndexFunction;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction.AUType;
 import org.apache.sysds.utils.Hash.HashType;
 
 public class CountDistinctOperator extends Operator {
 	private static final long serialVersionUID = 7615123453265129670L;
 
-	public final CountDistinctTypes operatorType;
-	public final HashType hashType;
-
-	public enum CountDistinctTypes { // The different supported types of counting.
-		COUNT, // Baseline naive implementation, iterate though, add to hashMap.
-		KMV, // K-Minimum Values algorithm.
-		HLL // HyperLogLog algorithm.
-	}
+	private final CountDistinctOperatorTypes operatorType;
+	private final HashType hashType;
+	private Types.Direction direction;
+	private IndexFunction indexFunction;
 
 	public CountDistinctOperator(AUType opType) {
 		super(true);
 		switch (opType) {
 			case COUNT_DISTINCT:
-				this.operatorType = CountDistinctTypes.COUNT;
+				this.operatorType = CountDistinctOperatorTypes.COUNT;
 				break;
 			case COUNT_DISTINCT_APPROX:
-				this.operatorType = CountDistinctTypes.KMV;
+				this.operatorType = CountDistinctOperatorTypes.KMV;
 				break;
 			default:
 				throw new DMLRuntimeException(opType + " not supported for CountDistinct Operator");
@@ -50,15 +48,46 @@ public class CountDistinctOperator extends Operator {
 		this.hashType = HashType.LinearHash;
 	}
 
-	public CountDistinctOperator(CountDistinctTypes operatorType) {
+	public CountDistinctOperator(CountDistinctOperatorTypes operatorType) {
 		super(true);
 		this.operatorType = operatorType;
 		this.hashType = HashType.StandardJava;
 	}
 
-	public CountDistinctOperator(CountDistinctTypes operatorType, HashType hashType) {
+	public CountDistinctOperator(CountDistinctOperatorTypes operatorType, HashType hashType) {
 		super(true);
 		this.operatorType = operatorType;
 		this.hashType = hashType;
+	}
+
+	public CountDistinctOperator(CountDistinctOperatorTypes operatorType, IndexFunction indexFunction, HashType hashType) {
+		super(true);
+		this.operatorType = operatorType;
+		this.indexFunction = indexFunction;
+		this.hashType = hashType;
+	}
+
+	public CountDistinctOperatorTypes getOperatorType() {
+		return operatorType;
+	}
+
+	public IndexFunction getIndexFunction() {
+		return indexFunction;
+	}
+
+	public HashType getHashType() {
+		return hashType;
+	}
+
+	public Types.Direction getDirection() {
+		return direction;
+	}
+
+	public void setDirection(Types.Direction direction) {
+		this.direction = direction;
+	}
+
+	public void setIndexFunction(IndexFunction indexFunction) {
+		this.indexFunction = indexFunction;
 	}
 }

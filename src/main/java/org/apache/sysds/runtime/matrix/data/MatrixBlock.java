@@ -5770,7 +5770,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				+ block.getClass().getSimpleName());
 		return (MatrixBlock) block;
 	}
-	
+
 	/**
 	 * Indicates if concurrent modifications of disjoint rows are thread-safe.
 	 * 

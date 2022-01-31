@@ -348,8 +348,11 @@ public class PartialAggregate extends Lop
 			}
 			
 			case COUNT_DISTINCT_APPROX: {
-				if(dir == Direction.RowCol )
-					return "uacdap";
+				switch (dir) {
+					case RowCol: return "uacdap";
+					case Row: return "uacdapr";
+					case Col: return "uacdapc";
+				}
 				break;
 			}
 		}

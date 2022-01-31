@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -28,6 +29,9 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.data.BasicTensorBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.ReduceAll;
+import org.apache.sysds.runtime.functionobjects.ReduceCol;
+import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageDedupUtils;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -82,8 +86,28 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 			in1, out, AUType.COUNT_DISTINCT, opcode, str);
 		}
 		else if(opcode.equalsIgnoreCase("uacdap")){
-			return new AggregateUnaryCPInstruction(new SimpleOperator(null),
-			in1, out, AUType.COUNT_DISTINCT_APPROX, opcode, str);
+			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX);
+			op.setDirection(Types.Direction.RowCol);
+			op.setIndexFunction(ReduceAll.getReduceAllFnObject());
+
+			return new AggregateUnaryCPInstruction(op, in1, out, AUType.COUNT_DISTINCT_APPROX,
+					opcode, str);
+		}
+		else if(opcode.equalsIgnoreCase("uacdapr")){
+			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX);
+			op.setDirection(Types.Direction.Row);
+			op.setIndexFunction(ReduceCol.getReduceColFnObject());
+
+			return new AggregateUnaryCPInstruction(op, in1, out, AUType.COUNT_DISTINCT_APPROX,
+					opcode, str);
+		}
+		else if(opcode.equalsIgnoreCase("uacdapc")){
+			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX);
+			op.setDirection(Types.Direction.Col);
+			op.setIndexFunction(ReduceRow.getReduceRowFnObject());
+
+			return new AggregateUnaryCPInstruction(op, in1, out, AUType.COUNT_DISTINCT_APPROX,
+					opcode, str);
 		}
 		else if(opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin")){
 			// parse with number of outputs
@@ -171,8 +195,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				ec.setScalarOutput(output_name, new StringObject(out));
 				break;
 			}
-			case COUNT_DISTINCT:
-			case COUNT_DISTINCT_APPROX: {
+			case COUNT_DISTINCT: {
 				if( !ec.getVariables().keySet().contains(input1.getName()) )
 					throw new DMLRuntimeException("Variable '" + input1.getName() + "' does not exist.");
 				MatrixBlock input = ec.getMatrixInput(input1.getName());
@@ -180,6 +203,45 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				int res = LibMatrixCountDistinct.estimateDistinctValues(input, op);
 				ec.releaseMatrixInput(input1.getName());
 				ec.setScalarOutput(output_name, new IntObject(res));
+				break;
+			}
+			case COUNT_DISTINCT_APPROX: {
+				if(!ec.getVariables().keySet().contains(input1.getName())) {
+					throw new DMLRuntimeException("Variable '" + input1.getName() + "' does not exist.");
+				}
+
+				MatrixBlock input = ec.getMatrixInput(input1.getName());
+				if (!(_optr instanceof CountDistinctOperator)) {
+					throw new DMLRuntimeException("Operator should be instance of " + CountDistinctOperator.class.getSimpleName());
+				}
+
+				CountDistinctOperator op = (CountDistinctOperator) _optr;  // It is safe to cast at this point
+
+				if (op.getDirection().isRowCol()) {
+					int res = LibMatrixCountDistinct.estimateDistinctValues(input, op);
+					ec.releaseMatrixInput(input1.getName());
+					ec.setScalarOutput(output_name, new IntObject(res));
+
+				} else if (op.getDirection().isRow()) {
+					MatrixBlock res = input.slice(0, input.getNumRows() - 1, 0, 0);
+					for (int i = 0; i < input.getNumRows(); ++i) {
+						res.setValue(i, 0, LibMatrixCountDistinct.estimateDistinctValues(input.slice(i, i), op));
+					}
+					ec.releaseMatrixInput(input1.getName());
+					ec.setMatrixOutput(output_name, res);
+
+				} else if (op.getDirection().isCol()) {
+					MatrixBlock res = input.slice(0, 0, 0, input.getNumColumns() - 1);
+					for (int j = 0; j < input.getNumColumns(); ++j) {
+						res.setValue(0, j, LibMatrixCountDistinct.estimateDistinctValues(input.slice(0, input.getNumRows() - 1, j, j), op));
+					}
+					ec.releaseMatrixInput(input1.getName());
+					ec.setMatrixOutput(output_name, res);
+
+				} else {
+					throw new DMLRuntimeException("Direction for CountDistinctOperator not recognized");
+				}
+
 				break;
 			}
 			default: {

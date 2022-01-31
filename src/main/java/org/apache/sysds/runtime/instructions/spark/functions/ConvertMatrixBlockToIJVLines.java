@@ -40,8 +40,11 @@ public class ConvertMatrixBlockToIJVLines implements FlatMapFunction<Tuple2<Matr
 	public Iterator<String> call(Tuple2<MatrixIndexes, MatrixBlock> kv) {
 		final BinaryBlockToTextCellConverter converter = new BinaryBlockToTextCellConverter();
 		converter.setBlockSize(blen, blen);
-		converter.convert(kv._1, kv._2);
-		
+
+		MatrixIndexes ixIn = kv._1();
+		MatrixBlock blkIn = kv._2();
+		converter.convert(ixIn, blkIn);
+
 		Iterable<String> ret = new Iterable<String>() {
 			@Override
 			public Iterator<String> iterator() {

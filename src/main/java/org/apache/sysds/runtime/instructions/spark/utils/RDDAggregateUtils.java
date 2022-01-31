@@ -277,7 +277,7 @@ public class RDDAggregateUtils
 							    new MergeBlocksFunction(false) );
 	}
 
-	private static class CreateCorrBlockCombinerFunction implements Function<MatrixBlock, CorrMatrixBlock> 
+	private static class CreateCorrBlockCombinerFunction implements Function<MatrixBlock, CorrMatrixBlock>
 	{
 		private static final long serialVersionUID = -3666451526776017343L;
 
@@ -286,15 +286,15 @@ public class RDDAggregateUtils
 		public CreateCorrBlockCombinerFunction(boolean deep) {
 			_deep = deep;
 		}
-		
+
 		@Override
-		public CorrMatrixBlock call(MatrixBlock arg0) 
-			throws Exception 
+		public CorrMatrixBlock call(MatrixBlock arg0)
+				throws Exception
 		{
 			//deep copy to allow update in-place
 			return new CorrMatrixBlock(
-				_deep ? new MatrixBlock(arg0) : arg0);
-		}	
+					_deep ? new MatrixBlock(arg0) : arg0);
+		}
 	}
 
 	private static class MergeSumBlockValueFunction implements Function2<CorrMatrixBlock, MatrixBlock, CorrMatrixBlock> 

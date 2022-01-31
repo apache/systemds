@@ -42,6 +42,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.AggregateTernarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.AggregateUnarySketchSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendMSPInstruction;
@@ -62,6 +63,7 @@ import org.apache.sysds.runtime.instructions.spark.CumulativeOffsetSPInstruction
 import org.apache.sysds.runtime.instructions.spark.DeCompressionSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.DnnSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.IndexingSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.LIBSVMReblockSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MapmmChainSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MatrixReshapeSPInstruction;
@@ -87,7 +89,7 @@ import org.apache.sysds.runtime.instructions.spark.UnaryFrameSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ZipmmSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.LIBSVMReblockSPInstruction;
+
 
 public class SPInstructionParser extends InstructionParser
 {
@@ -110,7 +112,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "uacvar"  , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uamax"   , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uarmax"  , SPType.AggregateUnary);
-		String2SPInstructionType.put( "uarimax" ,  SPType.AggregateUnary);
+		String2SPInstructionType.put( "uarimax" , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uacmax"  , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uamin"   , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uarmin"  , SPType.AggregateUnary);
@@ -124,6 +126,12 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "uac*"    , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uatrace" , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uaktrace", SPType.AggregateUnary);
+		String2SPInstructionType.put( "uacdap"  , SPType.AggregateUnary);
+
+		// Aggregate unary sketch operators
+		String2SPInstructionType.put( "uacdap" , SPType.AggregateUnarySketch);
+		String2SPInstructionType.put( "uacdapr", SPType.AggregateUnarySketch);
+		String2SPInstructionType.put( "uacdapc", SPType.AggregateUnarySketch);
 
 		//binary aggregate operators (matrix multiplication operators)
 		String2SPInstructionType.put( "mapmm"      , SPType.MAPMM);
@@ -387,6 +395,9 @@ public class SPInstructionParser extends InstructionParser
 
 			case AggregateUnary:
 				return AggregateUnarySPInstruction.parseInstruction(str);
+
+			case AggregateUnarySketch:
+				return AggregateUnarySketchSPInstruction.parseInstruction(str);
 
 			case AggregateTernary:
 				return AggregateTernarySPInstruction.parseInstruction(str);

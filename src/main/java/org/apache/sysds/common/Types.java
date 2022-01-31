@@ -153,6 +153,9 @@ public class Types
 		public boolean isCol() {
 			return this == Col;
 		}
+		public boolean isRowCol() {
+			return this == RowCol;
+		}
 		@Override
 		public String toString() {
 			switch(this) {

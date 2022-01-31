@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -245,6 +246,7 @@ public class DMLConfig
 	private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
 		if (_documentBuilder == null) {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);  // Prevent XML Injection
 			factory.setIgnoringComments(true); //ignore XML comments
 			_documentBuilder = factory.newDocumentBuilder();
 		}

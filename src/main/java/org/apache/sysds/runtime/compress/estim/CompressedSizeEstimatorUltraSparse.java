@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
-import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDistinctTypes;
+import org.apache.sysds.runtime.matrix.operators.CountDistinctOperatorTypes;
 
 /**
  * UltraSparse compressed size estimator (examines entire dataset).
@@ -39,7 +39,7 @@ public class CompressedSizeEstimatorUltraSparse extends CompressedSizeEstimator 
 
 	private CompressedSizeEstimatorUltraSparse(MatrixBlock data, CompressionSettings compSettings) {
 		super(data, compSettings);
-		CountDistinctOperator op = new CountDistinctOperator(CountDistinctTypes.COUNT);
+		CountDistinctOperator op = new CountDistinctOperator(CountDistinctOperatorTypes.COUNT);
 		final int _numRows = getNumRows();
 
 		if(LOG.isDebugEnabled()) {

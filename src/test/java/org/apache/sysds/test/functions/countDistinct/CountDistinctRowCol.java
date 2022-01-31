@@ -22,42 +22,34 @@ package org.apache.sysds.test.functions.countDistinct;
 import org.apache.sysds.common.Types.ExecType;
 import org.junit.Test;
 
-public class CountDistinctApprox extends CountDistinctBase {
+public class CountDistinctRowCol extends CountDistinctRowColBase {
 
-	private final static String TEST_NAME = "countDistinctApprox";
-	private final static String TEST_DIR = "functions/countDistinct/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApprox.class.getSimpleName() + "/";
+	public String TEST_NAME = "countDistinct";
+	public String TEST_DIR = "functions/countDistinct/";
+	public String TEST_CLASS_DIR = TEST_DIR + CountDistinctRowCol.class.getSimpleName() + "/";
 
-	public CountDistinctApprox() {
-		percentTolerance = 0.1;
-	}
-
-	@Test
-	public void testXXLarge() {
-		ExecType ex = ExecType.CP;
-		double tolerance = 9000 * percentTolerance;
-		countDistinctTest(9000, 10000, 5000, 0.1, ex, tolerance);
-	}
-
-	@Test
-	public void testSparse500Unique(){
-		ExecType ex = ExecType.CP;
-		double tolerance = 0.00001 + 120 * percentTolerance;
-		countDistinctTest(500, 100, 100000, 0.1, ex, tolerance);
-	}
-
-	@Override
 	protected String getTestClassDir() {
 		return TEST_CLASS_DIR;
 	}
 
-	@Override
 	protected String getTestName() {
 		return TEST_NAME;
 	}
 
-	@Override
 	protected String getTestDir() {
 		return TEST_DIR;
+	}
+
+	@Override
+	public void setUp() {
+		super.addTestConfiguration();
+		super.percentTolerance = 0.0;
+	}
+
+	@Test
+	public void testSimple1by1() {
+		// test simple 1 by 1.
+		ExecType ex = ExecType.CP;
+		countDistinctScalarTest(1, 1, 1, 1.0, ex, 0.00001);
 	}
 }

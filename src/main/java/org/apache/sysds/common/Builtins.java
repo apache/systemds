@@ -93,7 +93,6 @@ public enum Builtins {
 	COS("cos", false),
 	COSH("cosh", false),
 	COUNT_DISTINCT("countDistinct",false),
-	COUNT_DISTINCT_APPROX("countDistinctApprox",false),
 	COV("cov", false),
 	COX("cox", true),
 	CSPLINE("cspline", true),
@@ -306,6 +305,7 @@ public enum Builtins {
 	//parameterized builtin functions
 	AUTODIFF("autoDiff", false, true),
 	CDF("cdf", false, true),
+	COUNT_DISTINCT_APPROX("countDistinctApprox", false, true),
 	CVLM("cvlm", true, false),
 	GROUPEDAGG("aggregate", "groupedAggregate", false, true),
 	INVCDF("icdf", false, true),

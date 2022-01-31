@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.matrix;
 
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -27,10 +28,11 @@ import java.util.Collection;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
-import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDistinctTypes;
+import org.apache.sysds.runtime.matrix.operators.CountDistinctOperatorTypes;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Hash.HashType;
@@ -42,9 +44,9 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(value = Parameterized.class)
 public class CountDistinctTest {
 
-	private static CountDistinctTypes[] esT = new CountDistinctTypes[] {
+	private static CountDistinctOperatorTypes[] esT = new CountDistinctOperatorTypes[] {
 		// The different types of Estimators
-		CountDistinctTypes.COUNT, CountDistinctTypes.KMV, CountDistinctTypes.HLL};
+		CountDistinctOperatorTypes.COUNT, CountDistinctOperatorTypes.KMV, CountDistinctOperatorTypes.HLL};
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -86,26 +88,26 @@ public class CountDistinctTest {
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024, 10241, 0, 3000, 0.1, 7)));
 		actualUnique.add(3000L);
 
-		for(CountDistinctTypes et : esT) {
+		for(CountDistinctOperatorTypes et : esT) {
 			for(HashType ht : HashType.values()) {
-				if((ht == HashType.ExpHash && et == CountDistinctTypes.KMV) ||
-					(ht == HashType.StandardJava && et == CountDistinctTypes.KMV)) {
+				if((ht == HashType.ExpHash && et == CountDistinctOperatorTypes.KMV) ||
+					(ht == HashType.StandardJava && et == CountDistinctOperatorTypes.KMV)) {
 					String errorMessage = "Invalid hashing configuration using " + ht + " and " + et;
-					tests.add(new Object[] {et, inputs.get(0), actualUnique.get(0), ht, new DMLException(),
-						errorMessage, 0.0});
+					tests.add(
+						new Object[] {et, inputs.get(0), actualUnique.get(0), ht,  new DMLException(), errorMessage, 0.0});
 				}
-				else if(et == CountDistinctTypes.HLL) {
+				else if(et == CountDistinctOperatorTypes.HLL) {
 					tests.add(new Object[] {et, inputs.get(0), actualUnique.get(0), ht, new NotImplementedException(),
 						"HyperLogLog not implemented", 0.0});
 				}
-				else if(et != CountDistinctTypes.COUNT) {
+				else if(et != CountDistinctOperatorTypes.COUNT) {
 					for(int i = 0; i < inputs.size(); i++) {
 						// allowing the estimate to be 15% off
 						tests.add(new Object[] {et, inputs.get(i), actualUnique.get(i), ht, null, null, 0.15});
 					}
 				}
 			}
-			if(et == CountDistinctTypes.COUNT) {
+			if(et == CountDistinctOperatorTypes.COUNT) {
 				for(int i = 0; i < inputs.size(); i++) {
 					tests.add(new Object[] {et, inputs.get(i), actualUnique.get(i), null, null, null, 0.0001});
 				}
@@ -115,7 +117,7 @@ public class CountDistinctTest {
 	}
 
 	@Parameterized.Parameter
-	public CountDistinctTypes et;
+	public CountDistinctOperatorTypes et;
 	@Parameterized.Parameter(1)
 	public MatrixBlock in;
 	@Parameterized.Parameter(2)
@@ -135,36 +137,28 @@ public class CountDistinctTest {
 
 	@Test
 	public void testEstimation() {
-
-		Integer out = 0;
-		CountDistinctOperator op = new CountDistinctOperator(et, ht);
 		try {
-			if(expectedException != null){
-				assertThrows(expectedException.getClass(),  () -> {LibMatrixCountDistinct.estimateDistinctValues(in, op);});
-				return;
+			CountDistinctOperator op = new CountDistinctOperator(et, ht).setDirection(Types.Direction.RowCol);
+			if(expectedException != null) {
+				assertThrows(expectedException.getClass(), () -> {
+					LibMatrixCountDistinct.estimateDistinctValues(in, op);
+				});
 			}
-			else
-				out = LibMatrixCountDistinct.estimateDistinctValues(in, op);
-		}
-		catch(DMLException e) {
-			throw e;
-		}
-		catch(NotImplementedException e) {
-			throw e;
+			else {
+				int out = LibMatrixCountDistinct.estimateDistinctValues(in, op);
+				int count = out;
+				boolean success = Math.abs(nrUnique - count) <= nrUnique * epsilon;
+				StringBuilder sb = new StringBuilder();
+				sb.append(this.toString());
+				sb.append("\n" + count + " unique values, actual:" + nrUnique + " with eps of " + epsilon);
+				assertTrue(sb.toString(), success);
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(this.toString());
 		}
 
-		int count = out;
-		boolean success = Math.abs(nrUnique - count) <= nrUnique * epsilon;
-		if(!success){
-			StringBuilder sb = new StringBuilder();
-			sb.append(this.toString());
-			sb.append("\n" + count + " unique values, actual:" + nrUnique + " with eps of " + epsilon);
-			fail(sb.toString());
-		}
 	}
 
 	@Override

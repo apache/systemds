@@ -223,7 +223,7 @@ public class Builtin extends ValueFunction
 				// compared and performs just the value part of the comparison. We
 				// return an integer cast down to a double, since the aggregation
 				// API doesn't have any way to return anything but a double. The
-				// integer returned takes on three posssible values: //
+				// integer returned takes on three possible values: //
 				// .     0 => keep the index associated with in1 //
 				// .     1 => use the index associated with in2 //
 				// .     2 => use whichever index is higher (tie in value) //

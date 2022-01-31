@@ -30,6 +30,22 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
+import org.apache.sysds.common.Types.OpOp3;
+import org.apache.sysds.common.Types.OpOpDG;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.OpOpDnn;
+import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.common.Types.ParamBuiltinOp;
+import org.apache.sysds.common.Types.ReOrgOp;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp;
@@ -62,22 +78,6 @@ import org.apache.sysds.hops.rewrite.ProgramRewriter;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.compile.Dag;
-import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.common.Builtins;
-import org.apache.sysds.common.Types.AggOp;
-import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.Direction;
-import org.apache.sysds.common.Types.FileFormat;
-import org.apache.sysds.common.Types.OpOp1;
-import org.apache.sysds.common.Types.OpOp2;
-import org.apache.sysds.common.Types.OpOp3;
-import org.apache.sysds.common.Types.OpOpDG;
-import org.apache.sysds.common.Types.OpOpData;
-import org.apache.sysds.common.Types.OpOpDnn;
-import org.apache.sysds.common.Types.OpOpN;
-import org.apache.sysds.common.Types.ParamBuiltinOp;
-import org.apache.sysds.common.Types.ReOrgOp;
-import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.parser.PrintStatement.PRINTTYPE;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
@@ -90,7 +90,6 @@ import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
-
 
 public class DMLTranslator 
 {
@@ -2035,6 +2034,29 @@ public class DMLTranslator
 					target.getValueType(), ParamBuiltinOp.LIST, paramHops);
 				break;
 
+			case COUNT_DISTINCT_APPROX:
+				// Default direction and data type
+				Direction dir = Direction.RowCol;
+				DataType dataType = DataType.SCALAR;
+
+				LiteralOp dirOp = (LiteralOp) paramHops.get("dir");
+				if (dirOp != null) {
+					String dirString = dirOp.getStringValue().toUpperCase();
+					if (dirString.equals(Direction.RowCol.toString())) {
+						dir = Direction.RowCol;
+						dataType = DataType.SCALAR;
+					} else if (dirString.equals(Direction.Row.toString())) {
+						dir = Direction.Row;
+						dataType = DataType.MATRIX;
+					} else if (dirString.equals(Direction.Col.toString())) {
+						dir = Direction.Col;
+						dataType = DataType.MATRIX;
+					}
+				}
+
+				currBuiltinOp = new AggUnaryOp(target.getName(), dataType, target.getValueType(),
+						AggOp.valueOf(source.getOpCode().name()), dir, paramHops.get("data"));
+				break;
 			default:
 				throw new ParseException(source.printErrorLocation() + 
 					"processParameterizedBuiltinFunctionExpression() -- Unknown operation: " + source.getOpCode());
@@ -2335,11 +2357,9 @@ public class DMLTranslator
 		case PROD:
 		case VAR:
 		case COUNT_DISTINCT:
-		case COUNT_DISTINCT_APPROX:
 			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.SCALAR, target.getValueType(),
-				AggOp.valueOf(source.getOpCode().name()), Direction.RowCol, expr);
+					AggOp.valueOf(source.getOpCode().name()), Direction.RowCol, expr);
 			break;
-
 		case MEAN:
 			if ( expr2 == null ) {
 				// example: x = mean(Y);

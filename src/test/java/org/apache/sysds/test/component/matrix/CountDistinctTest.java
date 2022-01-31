@@ -19,11 +19,9 @@
 
 package org.apache.sysds.test.component.matrix;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
@@ -38,6 +36,9 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 @RunWith(value = Parameterized.class)
 public class CountDistinctTest {
@@ -146,7 +147,8 @@ public class CountDistinctTest {
 		}
 
 		Integer out = 0;
-		CountDistinctOperator op = new CountDistinctOperator(et, ht);
+		CountDistinctOperator op = new CountDistinctOperator(et, ht)
+				.setDirection(Types.Direction.RowCol);
 		try {
 			out = LibMatrixCountDistinct.estimateDistinctValues(in, op);
 		}

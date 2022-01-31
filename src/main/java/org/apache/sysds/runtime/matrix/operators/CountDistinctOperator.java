@@ -71,23 +71,25 @@ public class CountDistinctOperator extends Operator {
 		return operatorType;
 	}
 
+	public HashType getHashType() {
+		return hashType;
+	}
+
 	public IndexFunction getIndexFunction() {
 		return indexFunction;
 	}
 
-	public HashType getHashType() {
-		return hashType;
+	public CountDistinctOperator setIndexFunction(IndexFunction indexFunction) {
+		this.indexFunction = indexFunction;
+		return this;
 	}
 
 	public Types.Direction getDirection() {
 		return direction;
 	}
 
-	public void setDirection(Types.Direction direction) {
+	public CountDistinctOperator setDirection(Types.Direction direction) {
 		this.direction = direction;
-	}
-
-	public void setIndexFunction(IndexFunction indexFunction) {
-		this.indexFunction = indexFunction;
+		return this;
 	}
 }

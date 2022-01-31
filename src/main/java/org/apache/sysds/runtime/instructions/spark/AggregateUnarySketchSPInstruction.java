@@ -55,14 +55,14 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
         this.op = (CountDistinctOperator) super.getOperator();
 
         if (opcode.equals("uacdap")) {
-            this.op.setDirection(Types.Direction.RowCol);
-            this.op.setIndexFunction(ReduceAll.getReduceAllFnObject());
+            this.op.setDirection(Types.Direction.RowCol)
+                    .setIndexFunction(ReduceAll.getReduceAllFnObject());
         } else if (opcode.equals("uacdapr")) {
-            this.op.setDirection(Types.Direction.Row);
-            this.op.setIndexFunction(ReduceCol.getReduceColFnObject());
+            this.op.setDirection(Types.Direction.Row)
+                    .setIndexFunction(ReduceCol.getReduceColFnObject());
         } else if (opcode.equals("uacdapc")) {
-            this.op.setDirection(Types.Direction.Col);
-            this.op.setIndexFunction(ReduceRow.getReduceRowFnObject());
+            this.op.setDirection(Types.Direction.Col)
+                    .setIndexFunction(ReduceRow.getReduceRowFnObject());
         } else {
             throw new DMLException("Unrecognized opcode " + opcode);
         }

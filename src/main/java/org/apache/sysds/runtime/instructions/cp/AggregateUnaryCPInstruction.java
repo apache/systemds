@@ -86,25 +86,25 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 			in1, out, AUType.COUNT_DISTINCT, opcode, str);
 		}
 		else if(opcode.equalsIgnoreCase("uacdap")){
-			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX);
-			op.setDirection(Types.Direction.RowCol);
-			op.setIndexFunction(ReduceAll.getReduceAllFnObject());
+			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX)
+					.setDirection(Types.Direction.RowCol)
+					.setIndexFunction(ReduceAll.getReduceAllFnObject());
 
 			return new AggregateUnaryCPInstruction(op, in1, out, AUType.COUNT_DISTINCT_APPROX,
 					opcode, str);
 		}
 		else if(opcode.equalsIgnoreCase("uacdapr")){
-			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX);
-			op.setDirection(Types.Direction.Row);
-			op.setIndexFunction(ReduceCol.getReduceColFnObject());
+			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX)
+					.setDirection(Types.Direction.Row)
+					.setIndexFunction(ReduceCol.getReduceColFnObject());
 
 			return new AggregateUnaryCPInstruction(op, in1, out, AUType.COUNT_DISTINCT_APPROX,
 					opcode, str);
 		}
 		else if(opcode.equalsIgnoreCase("uacdapc")){
-			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX);
-			op.setDirection(Types.Direction.Col);
-			op.setIndexFunction(ReduceRow.getReduceRowFnObject());
+			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX)
+					.setDirection(Types.Direction.Col)
+					.setIndexFunction(ReduceRow.getReduceRowFnObject());
 
 			return new AggregateUnaryCPInstruction(op, in1, out, AUType.COUNT_DISTINCT_APPROX,
 					opcode, str);

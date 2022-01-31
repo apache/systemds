@@ -19,10 +19,12 @@
 
 package org.apache.sysds.runtime.iogen.codegen;
 
+import com.google.gson.Gson;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.iogen.CustomProperties;
 import org.apache.sysds.runtime.iogen.KeyTrie;
 
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
@@ -33,7 +35,7 @@ public class CodeGenTrie {
 	private final CustomProperties properties;
 	private final String destination;
 
-	public CodeGenTrie(CustomProperties properties, String destination){
+	public CodeGenTrie(CustomProperties properties, String destination) {
 		this.rootCol = new CodeGenTrieNode(CodeGenTrieNode.NodeType.COL);
 		this.rootRow = new CodeGenTrieNode(CodeGenTrieNode.NodeType.ROW);
 		this.properties = properties;
@@ -42,27 +44,29 @@ public class CodeGenTrie {
 	}
 
 	// Build Trie for Col and Row Key Patterns
-	private void buildPrefixTree(){
-		for(int c=0; c< properties.getColKeyPattern().length; c++){
+	private void buildPrefixTree() {
+		for(int c = 0; c < properties.getColKeyPattern().length; c++) {
 			KeyTrie keyTrie = properties.getColKeyPattern()[c];
 			Types.ValueType vt = properties.getSchema() == null ? Types.ValueType.FP64 : properties.getSchema()[c];
-			if (keyTrie != null) {
-				for (ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
+			Gson gson = new Gson();
+			System.out.println(gson.toJson(keyTrie.getPrefixKeyPatterns()));
+			if(keyTrie != null) {
+				for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
 					this.insert(rootCol, c, vt, keys);
 			}
 		}
 
-		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX){
+		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX) {
 			KeyTrie keyTrie = properties.getRowKeyPattern();
 			Types.ValueType vt = Types.ValueType.FP32;
-			if (keyTrie != null) {
-				for (ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
+			if(keyTrie != null) {
+				for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
 					this.insert(rootRow, -1, vt, keys);
 			}
 		}
 	}
 
-	private void insert(CodeGenTrieNode root ,int index, Types.ValueType valueType, ArrayList<String> keys) {
+	private void insert(CodeGenTrieNode root, int index, Types.ValueType valueType, ArrayList<String> keys) {
 		CodeGenTrieNode currentNode = root;
 		int rci = 0;
 		for(String key : keys) {
@@ -73,18 +77,25 @@ public class CodeGenTrie {
 			else
 				break;
 		}
-		CodeGenTrieNode newNode;
-		for(int i = rci; i < keys.size(); i++) {
-			newNode = new CodeGenTrieNode(i == keys.size() - 1, index, valueType, keys.get(i), new HashSet<>(), root.getType());
-			newNode.setRowIndexBeginPos(properties.getRowIndexBegin());
-			currentNode.getChildren().put(keys.get(i), newNode);
-			currentNode = newNode;
+		if(rci == keys.size()) {
+			currentNode.setEndOfCondition(true);
+			currentNode.setColIndex(index);
+		}
+		else {
+			CodeGenTrieNode newNode;
+			for(int i = rci; i < keys.size(); i++) {
+				newNode = new CodeGenTrieNode(i == keys.size() - 1, index, valueType, keys.get(i), new HashSet<>(),
+					root.getType());
+				newNode.setRowIndexBeginPos(properties.getRowIndexBegin());
+				currentNode.getChildren().put(keys.get(i), newNode);
+				currentNode = newNode;
+			}
 		}
 	}
 
-	public String getJavaCode(){
+	public String getJavaCode() {
 		StringBuilder src = new StringBuilder();
-		switch(properties.getRowIndex()){
+		switch(properties.getRowIndex()) {
 			case IDENTIFY:
 				getJavaCode(rootCol, src, "0");
 				src.append("row++; \n");
@@ -121,7 +132,6 @@ public class CodeGenTrie {
 		return src.toString();
 	}
 
-
 	public String getRandomName(String base) {
 		Random r = new Random();
 		int low = 0;
@@ -131,7 +141,7 @@ public class CodeGenTrie {
 		return base + "_" + result;
 	}
 
-	private void getJavaCode(CodeGenTrieNode node, StringBuilder src, String currPos){
+	private void getJavaCode(CodeGenTrieNode node, StringBuilder src, String currPos) {
 		if(node.isEndOfCondition())
 			src.append(node.geValueCode(destination, currPos));
 

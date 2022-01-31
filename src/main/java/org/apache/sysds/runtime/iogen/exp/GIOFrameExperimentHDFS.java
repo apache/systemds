@@ -26,7 +26,7 @@ public class GIOFrameExperimentHDFS extends GIOMain {
             HashSet<String> valueSet = new HashSet<>();
             for (int r = 0; r < sampleFrameStrings.length; r++)
                 valueSet.add(sampleFrameStrings[r][c]);
-            if (valueSet.size() > 3) {
+            if (valueSet.size() > 0) {
                 ArrayList<String> tempList = new ArrayList<>();
                 for (int r = 0; r < sampleFrameStrings.length; r++) {
                     tempList.add(sampleFrameStrings[r][c]);

@@ -251,12 +251,12 @@ public class MatrixGRRowColIdentifyTest extends GenerateReaderMatrixTest {
 
 	@Test
 	public void test13() throws Exception {
-		String sampleRawFileName = "/home/saeed/Documents/Dataset/GIODataset/csv/aminer_paper/sample_1000_11.raw";
-		String sampleFrameFileName = "/home/saeed/Documents/Dataset/GIODataset/csv/aminer_paper/sample_1000_11.frame";
+		String sampleRawFileName = "/home/saeed/Documents/Dataset/GIODataset/aminer/csv/Q2/sample_aminer_author1000_5.raw";
+		String sampleFrameFileName = "/home/saeed/Documents/Dataset/GIODataset/aminer/csv/Q2/sample_aminer_author1000_5.frame";
 		Integer sampleNRows = 1000;
 		String delimiter = "\\t";
-		String schemaFileName = "/home/saeed/Documents/Dataset/GIODataset/csv/aminer_paper/aminer_paper_11.schema";
-		String dataFileName = "/home/saeed/Documents/Dataset/GIODataset/csv/aminer_paper/aminer_paper.data";
+		String schemaFileName = "/home/saeed/Documents/Dataset/GIODataset/aminer/csv/Q2/aminer_author_5.schema";
+		String dataFileName = "/home/saeed/Documents/Dataset/GIODataset/aminer/csv/aminer_author.data";
 
 		Float percent = 7f;//Float.parseFloat(args[6]);
 		String datasetName = "aminer_paper";//args[7];
@@ -278,7 +278,7 @@ public class MatrixGRRowColIdentifyTest extends GenerateReaderMatrixTest {
 			HashSet<String> valueSet = new HashSet<>();
 			for(int r=0; r<sampleFrameStrings.length;r++)
 				valueSet.add(sampleFrameStrings[r][c]);
-			if(valueSet.size()>3){
+			if(valueSet.size()>0){
 				ArrayList<String> tempList = new ArrayList<>();
 				for(int r=0; r<sampleFrameStrings.length;r++) {
 					tempList.add(sampleFrameStrings[r][c]);

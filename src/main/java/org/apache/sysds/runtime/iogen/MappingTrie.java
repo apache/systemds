@@ -35,7 +35,7 @@ public class MappingTrie {
 	private MappingTrieNode root;
 	private int keyLevel;
 	private boolean inALine;
-	private int windowSize = 50;
+	private int windowSize = 100;
 
 	public MappingTrie() {
 		this.root = new MappingTrieNode(MappingTrieNode.Type.INNER);
@@ -58,6 +58,7 @@ public class MappingTrie {
 		tmpList.add(rowIndex);
 		this.insert(new StringBuilder(word).reverse().toString(), tmpList);
 	}
+
 	public void insert(String word, ArrayList<Integer> rowIndexes) {
 		MappingTrieNode newNode;
 		if(root.getChildren().containsKey(word))
@@ -69,6 +70,12 @@ public class MappingTrie {
 	}
 
 	public MappingTrieNode getFistMultiChildNode(MappingTrieNode node) {
+
+		if(node.getNodeType() == MappingTrieNode.Type.INNER && node.getChildren().size() == 1) {
+			String nkey = node.getChildren().keySet().iterator().next();
+			if(node.getChildren().get(nkey).getRowIndexes().size() > 1)
+				return node;
+		}
 		if(node.getChildren().size() == 1 && node.getNodeType() != MappingTrieNode.Type.END)
 			return getFistMultiChildNode(node.getChildren().get(node.getChildren().keySet().iterator().next()));
 		else
@@ -106,7 +113,7 @@ public class MappingTrie {
 				sb = new StringBuilder();
 			}
 		}
-		if(sb.length() > 0){
+		if(sb.length() > 0) {
 			getAllSubStrings(result, sb);
 		}
 
@@ -119,9 +126,7 @@ public class MappingTrie {
 		else {
 			for(int j = 1; j <= Math.min(sb.length(), windowSize); j++) {
 				for(int k = 0; k <= sb.length() - j; k++) {
-					String subStr = sb.substring(k, k + j);
-					if (!subStr.contains(Lop.OPERAND_DELIMITOR))
-						result.add(subStr);
+					result.add(sb.substring(k, k + j));
 				}
 			}
 		}
@@ -132,8 +137,23 @@ public class MappingTrie {
 			return null;
 		else {
 			Set<String> keys = node.getChildren().keySet();
-			if(keys.size() == 1)
-				return String.valueOf(keys.iterator().next().charAt(0));
+			if(keys.size() == 1) {
+				String[] splitText = keys.iterator().next().split(Lop.OPERAND_DELIMITOR, -1);
+				String str = splitText[0];
+				if(str.length() == 0 && splitText.length > 1)
+					str = splitText[1];
+				return String.valueOf(str.charAt(0));
+			}
+
+			Set<String> newKeys = new HashSet<>();
+			for(String k : keys) {
+				String[] splitText = k.split(Lop.OPERAND_DELIMITOR, -1);
+				String str = splitText[0];
+				if(str.length() == 0 && splitText.length > 1)
+					str = splitText[1];
+				newKeys.add(str);
+			}
+			keys = newKeys;
 
 			boolean flag = false;
 			int maxKeyLength = 0;
@@ -250,7 +270,7 @@ public class MappingTrie {
 
 			for(String k : node.getChildren().keySet()) {
 				String key = k.substring(k.indexOf(intersect) + intersect.length());
-				if(key.length() > 0) {
+				if(key.length() > 0 && !key.equals(Lop.OPERAND_DELIMITOR)) {
 					intersectTrie.insert(key, node.getChildren().get(k).getRowIndexes());
 					intersectRowIndexes.addAll(node.getChildren().get(k).getRowIndexes());
 				}
@@ -289,7 +309,6 @@ public class MappingTrie {
 			int level = 0;
 			for(Pair<String, ArrayList<Integer>> n : k) {
 				if(n.getKey() != null) {
-
 					if(level == keyLevel - 1 || keyLevel == 0) {
 						indexOrder.add(new Pair<>(index, n.getValue().size()));
 						break;
@@ -311,9 +330,9 @@ public class MappingTrie {
 			for(Pair<String, ArrayList<Integer>> n : k)
 				if(n.getKey() != null) {
 					if(level < keyLevel || keyLevel == 0) {
-						String[] splitText = n.getKey().split(Lop.OPERAND_DELIMITOR,-1);
+						String[] splitText = n.getKey().split(Lop.OPERAND_DELIMITOR, -1);
 						String str = splitText[0];
-						if (str.length() == 0 && splitText.length >1)
+						if(str.length() == 0 && splitText.length > 1)
 							str = splitText[1];
 
 						kl.add(str);
@@ -353,9 +372,9 @@ public class MappingTrie {
 		}
 
 		// revert list and values of list
-		for(ArrayList<String> l: distinctKeys){
+		for(ArrayList<String> l : distinctKeys) {
 			Collections.reverse(l);
-			for(int i=0; i<l.size(); i++){
+			for(int i = 0; i < l.size(); i++) {
 				l.set(i, new StringBuilder(l.get(i)).reverse().toString());
 			}
 		}

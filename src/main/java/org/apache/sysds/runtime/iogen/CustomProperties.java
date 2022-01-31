@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.iogen;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatProperties;
+
 import java.io.Serializable;
 import java.util.HashSet;
 
@@ -28,6 +29,7 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public enum IndexProperties {
 		IDENTIFY, PREFIX, KEY;
+
 		@Override
 		public String toString() {
 			return this.name().toUpperCase();
@@ -61,15 +63,15 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		return colKeyPattern;
 	}
 
-	public HashSet<String>[] endWithValueStrings(){
-		HashSet<String>[] endWithValueString =  new HashSet[colKeyPattern.length];
-		for(int i=0; i< colKeyPattern.length; i++)
-			if (colKeyPattern[i]!=null)
+	public HashSet<String>[] endWithValueStrings() {
+		HashSet<String>[] endWithValueString = new HashSet[colKeyPattern.length];
+		for(int i = 0; i < colKeyPattern.length; i++)
+			if(colKeyPattern[i] != null)
 				endWithValueString[i] = colKeyPattern[i].getFirstSuffixKeyPatterns();
 		return endWithValueString;
 	}
 
-	public HashSet<String> endWithValueStringsRow(){
+	public HashSet<String> endWithValueStringsRow() {
 		return rowKeyPattern.getFirstSuffixKeyPatterns();
 	}
 

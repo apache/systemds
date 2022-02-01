@@ -27,7 +27,7 @@
 # NAME          TYPE              DEFAULT     MEANING
 # ----------------------------------------------------------------------------------------------------------------------
 # X             Matrix[Double]    ---         Feature matrix X; note that X needs to be both recoded and dummy coded
-# Y             Matrix[Double]    ---         Label matrix Y; note that Y needs to be both recoded and dummy coded
+# y             Matrix[Double]    ---         Label matrix y; note that y needs to be both recoded and dummy coded
 # R             Matrix[Double]    Matrix      Matrix R; 1xn vector which for each feature in X contains the following information
 #                                             - R[,1]: 1 (scalar feature)
 #                                             - R[,2]: 2 (categorical feature)

@@ -2419,7 +2419,7 @@ M = xgboost(X = X, y = y, R = R, sml_type = 1, num_trees = 3, learning_rate = 0.
 | NAME                  | TYPE           | DEFAULT  | Description |
 | :------               | :------------- | -------- | :---------- |
 | X                     | Matrix[Double] |   ---    | Feature matrix X; categorical features needs to be one-hot-encoded |
-| Y                     | Matrix[Double] |   ---    | Label matrix Y |
+| y                     | Matrix[Double] |   ---    | Label matrix y |
 | R                     | Matrix[Double] |   ---    | Matrix R; 1xn vector which for each feature in X contains the following information |
 |                       |                |          |   - R[,2]: 1 (scalar feature) |
 |                       |                |          |   - R[,1]: 2 (categorical feature) |
@@ -2448,7 +2448,7 @@ Y = matrix("1.0
             7.0
             8.0", rows=5, cols=1)
 R = matrix("1.0 1.0 1.0 1.0 1.0", rows=1, cols=5)
-M = xgboost(X = X, Y = Y, R = R)
+M = xgboost(X = X, y = Y, R = R)
 ```
 
 
@@ -2499,6 +2499,6 @@ Y = matrix("1.0
             7.0
             8.0", rows=5, cols=1)
 R = matrix("1.0 1.0 1.0 1.0 1.0", rows=1, cols=5)
-M = xgboost(X = X, Y = Y, R = R, num_trees = 10, learning_rate = 0.4)
+M = xgboost(X = X, y = Y, R = R, num_trees = 10, learning_rate = 0.4)
 P = xgboostPredictRegression(X = X, M = M, learning_rate = 0.4)
 ```

@@ -1,4 +1,4 @@
-package org.apache.sysds.runtime.iogen.exp;
+package org.apache.sysds.runtime.iogen.GIO;
 
 import org.apache.sysds.common.Types;
 
@@ -16,35 +16,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
 public class Util {
-
-	// Load Random 2D data from file
-	private double[][] load2DData(String fileName, int nrows, int ncols) throws Exception {
-
-		Path path = Paths.get(fileName);
-		FileChannel inStreamRegularFile = FileChannel.open(path);
-		int bufferSize = ncols * 8;
-
-		double[][] result = new double[nrows][ncols];
-		try {
-			for(int r = 0; r < nrows; r++) {
-				inStreamRegularFile.position((long) r * ncols * 8);
-				ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
-				inStreamRegularFile.read(buffer);
-				buffer.flip();
-
-				for(int c = 0; c < ncols; c++) {
-					result[r][c] = buffer.getDouble();
-				}
-			}
-			inStreamRegularFile.close();
-		}
-		catch(IOException e) {
-			throw new Exception("Can't read matrix from ByteArray", e);
-		}
-		return result;
-	}
 
 	public String readEntireTextFile(String fileName) throws IOException {
 		String text = new String(Files.readAllBytes(Paths.get(fileName)), StandardCharsets.UTF_8);
@@ -75,25 +49,31 @@ public class Util {
 		return result;
 	}
 
-	public String[][] loadFrameData(String fileName, int nrows, int ncols, String delimiter)
+	public String[][] loadFrameData(String fileName, int ncols, String delimiter)
 		throws IOException {
-		String[][] result = new String[nrows][ncols];
+		ArrayList<String[]> sampleRawLines = new ArrayList<>();
 
 		try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
 			String line;
-			int row = 0;
 			while((line = br.readLine()) != null) {
 				String[] data = line.split(delimiter);
+				String[] colsData = new String[ncols];
 				for(int i = 0; i < data.length; i++) {
 					String[] value = data[i].split("::");
 					if(value.length ==2) {
 						int col = Integer.parseInt(value[0]);
-						result[row][col] = value[1];
+						colsData[col] = value[1];
 					}
 				}
-				row++;
+				sampleRawLines.add(colsData);
 			}
 		}
+
+		int nrows = sampleRawLines.size();
+		String[][] result = new String[nrows][ncols];
+		for(int i=0; i< nrows; i++)
+			result[i] = sampleRawLines.get(i);
+
 		return result;
 	}
 }

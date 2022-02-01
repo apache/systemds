@@ -3,7 +3,7 @@ package org.apache.sysds.runtime.iogen.exp;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReaderTextCSV;
-import org.apache.sysds.runtime.io.FrameReaderTextCell;
+import org.apache.sysds.runtime.iogen.GIO.Util;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 public class SYSDSFrameExperimentHDFS extends GIOMain {

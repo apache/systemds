@@ -22,12 +22,11 @@ package org.apache.sysds.test.functions.iogen.Identify;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.iogen.GenerateReader;
-import org.apache.sysds.runtime.iogen.exp.Util;
+import org.apache.sysds.runtime.iogen.GIO.Util;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.test.functions.iogen.GenerateReaderMatrixTest;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;

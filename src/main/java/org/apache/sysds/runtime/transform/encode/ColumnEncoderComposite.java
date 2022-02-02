@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -358,12 +357,12 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public Set<Integer> getSparseRowsWZeros(){
+	public List<Integer> getSparseRowsWZeros(){
 		return _columnEncoders.stream().map(ColumnEncoder::getSparseRowsWZeros).flatMap(l -> {
 					if(l == null)
 						return null;
 					return l.stream();
-				}).collect(Collectors.toSet());
+				}).collect(Collectors.toList());
 	}
 
 

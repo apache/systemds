@@ -30,10 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -428,18 +425,36 @@ public class MultiColumnEncoder implements Encoder {
 
 	private void outputMatrixPostProcessing(MatrixBlock output){
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		Set<Integer> indexSet = _columnEncoders.stream()
+		int k = OptimizerUtils.getTransformNumThreads();
+		ForkJoinPool myPool = new ForkJoinPool(k);
+		List<Integer> indexSet = _columnEncoders.stream().parallel()
 				.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
 					if(l == null)
 						return null;
 					return l.stream();
-				}).collect(Collectors.toSet());
-		if(!indexSet.stream().allMatch(Objects::isNull)){
-			for(Integer row : indexSet){
-				// TODO: Maybe MT in special cases when the number of rows is large
-				output.getSparseBlock().get(row).compact();
+				}).collect(Collectors.toList());
+
+		if (k == 1) {
+			if(!indexSet.stream().parallel().allMatch(Objects::isNull)) {
+				for(Integer row : indexSet)
+					output.getSparseBlock().get(row).compact();
 			}
 		}
+		else {
+			try {
+				if(!indexSet.stream().allMatch(Objects::isNull)) {
+					myPool.submit(() -> {
+						indexSet.stream().parallel().forEach(row -> {
+							output.getSparseBlock().get(row).compact();
+						});
+					}).get();
+				}
+			}
+			catch(Exception ex) {
+				throw new DMLRuntimeException(ex);
+			}
+		}
+		myPool.shutdown();
 		output.recomputeNonZeros();
 		if(DMLScript.STATISTICS)
 			TransformStatistics.incOutMatrixPostProcessingTime(System.nanoTime()-t0);

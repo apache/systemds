@@ -24,10 +24,7 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -89,7 +86,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		}
 		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
 		mcsr = false; //force CSR for transformencode
-		Set<Integer> sparseRowsWZeros = null;
+		ArrayList<Integer> sparseRowsWZeros = null;
 		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
 			// Since the recoded values are already offset in the output matrix (same as input at this point)
@@ -111,7 +108,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 				double val = out.getSparseBlock().get(r).values()[index];
 				if(Double.isNaN(val)){
 					if(sparseRowsWZeros == null)
-						sparseRowsWZeros = new HashSet<>();
+						sparseRowsWZeros = new ArrayList<>();
 					sparseRowsWZeros.add(r);
 					out.getSparseBlock().get(r).values()[index] = 0;
 					continue;
@@ -126,7 +123,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 				double val = csrblock.values()[rptr[r]+index];
 				if(Double.isNaN(val)){
 					if(sparseRowsWZeros == null)
-						sparseRowsWZeros = new HashSet<>();
+						sparseRowsWZeros = new ArrayList<>();
 					sparseRowsWZeros.add(r);
 					csrblock.values()[rptr[r]+index] = 0; //test
 					continue;
@@ -137,7 +134,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 				csrblock.values()[rptr[r]+index] = 1;
 			}
 		}
-		if(sparseRowsWZeros != null){
+		if(sparseRowsWZeros != null) {
 			addSparseRowsWZeros(sparseRowsWZeros);
 		}
 	}

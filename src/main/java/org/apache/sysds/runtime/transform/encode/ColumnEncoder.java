@@ -29,9 +29,7 @@ import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
@@ -56,10 +54,10 @@ import org.apache.sysds.utils.stats.TransformStatistics;
 public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder> {
 	protected static final Log LOG = LogFactory.getLog(ColumnEncoder.class.getName());
 	protected static final int APPLY_ROW_BLOCKS_PER_COLUMN = 1;
-	public static int BUILD_ROW_BLOCKS_PER_COLUMN = 1;
+	public static int BUILD_ROW_BLOCKS_PER_COLUMN = -1;
 	private static final long serialVersionUID = 2299156350718979064L;
 	protected int _colID;
-	protected Set<Integer> _sparseRowsWZeros = null;
+	protected ArrayList<Integer> _sparseRowsWZeros = null;
 
 	protected enum TransformType{
 		BIN, RECODE, DUMMYCODE, FEATURE_HASH, PASS_THROUGH, N_A
@@ -354,14 +352,14 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		return new ColumnApplyTask<>(this, in, out, outputCol, startRow, blk);
 	}
 
-	public Set<Integer> getSparseRowsWZeros(){
+	public List<Integer> getSparseRowsWZeros(){
 		return _sparseRowsWZeros;
 	}
 
-	protected void addSparseRowsWZeros(Set<Integer> sparseRowsWZeros){
+	protected void addSparseRowsWZeros(ArrayList<Integer> sparseRowsWZeros){
 		synchronized (this){
 			if(_sparseRowsWZeros == null)
-				_sparseRowsWZeros = new HashSet<>();
+				_sparseRowsWZeros = new ArrayList<>();
 			_sparseRowsWZeros.addAll(sparseRowsWZeros);
 		}
 	}
@@ -371,7 +369,10 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 	protected int getNumBuildRowPartitions(){
-		return ConfigurationManager.getParallelBuildBlocks();
+		if (BUILD_ROW_BLOCKS_PER_COLUMN == -1)
+			return ConfigurationManager.getParallelBuildBlocks();
+		else
+			return BUILD_ROW_BLOCKS_PER_COLUMN;
 	}
 
 	public enum EncoderType {

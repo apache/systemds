@@ -383,7 +383,7 @@ public class LineageCache
 
 		if(e != null && e.isMatrixValue()) {
 			MatrixBlock mb = e.getMBValue(); // waiting if the value is not set yet
-			if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+			if (mb == null || e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 				return false;  // the executing thread removed this entry from cache
 			ec.setMatrixOutput(outName, e.getMBValue());
 
@@ -668,7 +668,7 @@ public class LineageCache
 		if(ReuseCacheType.isNone())
 			return;
 
-		LineageCacheEntry entry = getIntern(li);
+		LineageCacheEntry entry = _cache.get(li);
 		if(entry != null && data instanceof MatrixObject) {
 			MatrixBlock mb = ((MatrixObject)data).acquireRead();
 			synchronized(_cache) {

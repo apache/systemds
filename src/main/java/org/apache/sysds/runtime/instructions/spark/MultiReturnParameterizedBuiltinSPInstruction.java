@@ -315,16 +315,22 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			}
 			// handle bin boundaries
 			else if(_encoder.containsEncoderForID(colID, ColumnEncoderBin.class)) {
-				double min = Double.MAX_VALUE;
-				double max = -Double.MAX_VALUE;
-				while(iter.hasNext()) {
-					double value = Double.parseDouble(iter.next().toString());
-					min = Math.min(min, value);
-					max = Math.max(max, value);
-				}
 				ColumnEncoderBin baEncoder = _encoder.getColumnEncoder(colID, ColumnEncoderBin.class);
-				assert baEncoder != null;
-				baEncoder.computeBins(min, max);
+				if (baEncoder.getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_WIDTH) {
+					double min = Double.MAX_VALUE;
+					double max = -Double.MAX_VALUE;
+					while(iter.hasNext()) {
+						double value = Double.parseDouble(iter.next().toString());
+						min = Math.min(min, value);
+						max = Math.max(max, value);
+					}
+					assert baEncoder != null;
+					baEncoder.computeBins(min, max);
+				}
+				else //TODO: support equi-height
+					throw new DMLRuntimeException("Binning method "+baEncoder.getBinMethod().toString()
+						+" is not support for Spark");
+
 				double[] binMins = baEncoder.getBinMins();
 				double[] binMaxs = baEncoder.getBinMaxs();
 				for(int i = 0; i < binMins.length; i++) {

@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
@@ -352,8 +354,12 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		return new ColumnApplyTask<>(this, in, out, outputCol, startRow, blk);
 	}
 
-	public List<Integer> getSparseRowsWZeros(){
-		return _sparseRowsWZeros;
+	public Set<Integer> getSparseRowsWZeros(){
+		if (_sparseRowsWZeros != null) {
+			return new HashSet<Integer>(_sparseRowsWZeros);
+		}
+		else
+			return null;
 	}
 
 	protected void addSparseRowsWZeros(ArrayList<Integer> sparseRowsWZeros){

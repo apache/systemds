@@ -64,6 +64,7 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.utils.Statistics;
@@ -428,6 +429,12 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			&& !(ec instanceof SparkExecutionContext) ) {
 			ecm.convertToSparkCtx();
 			ec = ecm.get(request.getTID());
+		}
+
+		// set the number of threads according to the number of processors on the federated worker
+		if(receivedInstruction.getOperator() instanceof MultiThreadedOperator) {
+			int numProcessors = Runtime.getRuntime().availableProcessors();
+			((MultiThreadedOperator)receivedInstruction.getOperator()).setNumThreads(numProcessors);
 		}
 
 		BasicProgramBlock pb = new BasicProgramBlock(null);

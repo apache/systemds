@@ -50,12 +50,11 @@ import org.apache.sysds.runtime.functionobjects.Power;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.functionobjects.Xor;
 
-public class BinaryOperator extends Operator {
+public class BinaryOperator extends MultiThreadedOperator {
 	private static final long serialVersionUID = -2547950181558989209L;
 
 	public final ValueFunction fn;
 	public final boolean commutative;
-	private int _k = 1; // num threads
 	
 	public BinaryOperator(ValueFunction p) {
 		this(p, 1);
@@ -70,17 +69,9 @@ public class BinaryOperator extends Operator {
 		fn = p;
 		commutative = p instanceof Plus || p instanceof Multiply || p instanceof And || p instanceof Or ||
 			p instanceof Xor || p instanceof Minus1Multiply;
-		_k = k;
+		_numThreads = k;
 	}
 
-	public void setNumThreads(int k) {
-		_k = k;
-	}
-	
-	public int getNumThreads() {
-		return _k;
-	}
-	
 	/**
 	 * Method for getting the hop binary operator type for a given function object.
 	 * This is used in order to use a common code path for consistency between 

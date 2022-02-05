@@ -24,14 +24,13 @@ import org.apache.sysds.runtime.functionobjects.IndexFunction;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 
 
-public class AggregateTernaryOperator extends Operator
+public class AggregateTernaryOperator extends MultiThreadedOperator
 {
 	private static final long serialVersionUID = 4251745081160216784L;
 	
 	public final ValueFunction binaryFn;
 	public final AggregateOperator aggOp;
 	public final IndexFunction indexFn;
-	private final int k; //num threads
 	
 	public AggregateTernaryOperator(ValueFunction inner, AggregateOperator outer, IndexFunction ixfun) {
 		//default degree of parallelism is 1 (e.g., for distributed operations)
@@ -44,10 +43,6 @@ public class AggregateTernaryOperator extends Operator
 		binaryFn = inner;
 		aggOp = outer;
 		indexFn = ixfun;
-		k = numThreads;
-	}
-	
-	public int getNumThreads() {
-		return k;
+		_numThreads = numThreads;
 	}
 }

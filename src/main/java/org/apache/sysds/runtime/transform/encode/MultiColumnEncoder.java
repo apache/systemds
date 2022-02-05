@@ -427,22 +427,28 @@ public class MultiColumnEncoder implements Encoder {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		int k = OptimizerUtils.getTransformNumThreads();
 		ForkJoinPool myPool = new ForkJoinPool(k);
-		List<Integer> indexSet = _columnEncoders.stream().parallel()
-				.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
-					if(l == null)
-						return null;
-					return l.stream();
-				}).collect(Collectors.toList());
-
 		if (k == 1) {
-			if(!indexSet.stream().parallel().allMatch(Objects::isNull)) {
+			Set<Integer> indexSet = _columnEncoders.stream()
+					.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
+						if(l == null)
+							return null;
+						return l.stream();
+					}).collect(Collectors.toSet());
+
+			if(!indexSet.stream().allMatch(Objects::isNull)) {
 				for(Integer row : indexSet)
 					output.getSparseBlock().get(row).compact();
 			}
 		}
 		else {
 			try {
-				if(!indexSet.stream().allMatch(Objects::isNull)) {
+				Set<Integer> indexSet = _columnEncoders.stream().parallel()
+					.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
+						if(l == null)
+							return null;
+						return l.stream();
+					}).collect(Collectors.toSet());
+				if(!indexSet.stream().parallel().allMatch(Objects::isNull)) {
 					myPool.submit(() -> {
 						indexSet.stream().parallel().forEach(row -> {
 							output.getSparseBlock().get(row).compact();

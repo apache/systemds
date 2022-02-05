@@ -217,7 +217,7 @@ public class PartialAggregate extends Lop
 	}
 
 	/**
-	 * Instruction generation for for CP and Spark
+	 * Instruction generation for CP and Spark
 	 */
 	@Override
 	public String getInstructions(String input1, String output) 

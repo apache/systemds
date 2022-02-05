@@ -23,7 +23,7 @@ import org.apache.sysds.common.Types;
 
 public class CountDistinctApproxRow extends CountDistinctRowOrColBase {
 
-    private final static String TEST_NAME = "CountDistinctApproxRow";
+    private final static String TEST_NAME = "countDistinctApproxRow";
     private final static String TEST_DIR = "functions/countDistinct/";
     private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApproxRow.class.getSimpleName() + "/";
 

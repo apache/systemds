@@ -33,6 +33,7 @@
 # numB         Integer            ---        Maximum number of parameters in model B (pass the max because the size
 #                                            may vary with parameters like icpt or multi-class classification)
 # params       List[String]       ---        List of varied hyper-parameter names
+# dataArgs     List[String]       ---        List of data parameters (to identify data parameters by name i.e. list("X", "Y"))
 # paramValues  List[Unknown]      ---        List of matrices providing the parameter values as
 #                                            columnvectors for position-aligned hyper-parameters in 'params'
 # trainArgs    List[Unknown]      ---        named List of arguments to pass to the 'train' function, where
@@ -58,20 +59,21 @@
 
 m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String predict,
     Integer numB=ncol(X), List[String] params, List[Unknown] paramValues,
-    List[Unknown] trainArgs = list(), List[Unknown] predictArgs = list(),
+    List[Unknown] trainArgs = list(), List[Unknown] dataArgs = list(), List[Unknown] predictArgs = list(),
     Boolean cv = FALSE, Integer cvk = 5, Boolean verbose = TRUE)
   return (Matrix[Double] B, Frame[Unknown] opt)
 {
   # Step 0) handling default arguments, which require access to passed data
   if( length(trainArgs) == 0 )
     trainArgs = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
+  if( length(dataArgs) == 0 )
+    dataArgs = list("X", "y");  
   if( length(predictArgs) == 0 )
     predictArgs = list(X, y);
   if( cv & cvk <= 1 ) {
     print("gridSearch: called with cv=TRUE but cvk="+cvk+", set to default cvk=5.")
     cvk = 5;
   }
-
   # Step 1) preparation of parameters, lengths, and values in convenient form
   numParams = length(params);
   paramLens = matrix(0, numParams, 1);
@@ -106,6 +108,8 @@ m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String
 
   # with cross-validation
   if( cv ) {
+    yidx = as.scalar(dataArgs[2])
+    xidx = as.scalar(dataArgs[1])
     # a) create folds
     foldsX = list(); foldsY = list();
     fs = ceil(nrow(X)/cvk);
@@ -125,8 +129,8 @@ m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String
       for( k in 1:cvk ) {
         [tmpX, testX] = remove(foldsX, k);
         [tmpy, testy] = remove(foldsY, k);
-        ltrainArgs['X'] = rbind(tmpX);
-        ltrainArgs['y'] = rbind(tmpy);
+        ltrainArgs[xidx] = rbind(tmpX);
+        ltrainArgs[yidx] = rbind(tmpy);
         lbeta = t(eval(train, ltrainArgs));
         cvbeta[,1:length(lbeta)] = cvbeta[,1:length(lbeta)] + matrix(lbeta, 1, length(lbeta));
         lpredictArgs[1] = as.matrix(testX);

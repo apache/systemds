@@ -35,8 +35,6 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.lineage.Lineage;
-import org.apache.sysds.runtime.lineage.LineageItem;
 
 public class FederatedRequest implements Serializable {
 	private static final long serialVersionUID = 5946781306963870394L;
@@ -73,10 +71,9 @@ public class FederatedRequest implements Serializable {
 		this(method, id, Arrays.asList(data));
 	}
 
-	public FederatedRequest(RequestType method, long id, LineageItem linItem, Object ... data) {
+	public FederatedRequest(RequestType method, String linTrace, long id, Object ... data) {
 		this(method, id, Arrays.asList(data));
-		if (linItem != null && DMLScript.LINEAGE && method == RequestType.PUT_VAR)
-			setLineageTrace(linItem);
+		_lineageTrace = linTrace;
 	}
 
 	public FederatedRequest(RequestType method, long id, List<Object> data) {
@@ -194,12 +191,6 @@ public class FederatedRequest implements Serializable {
 
 	public String getLineageTrace() {
 		return _lineageTrace;
-	}
-
-	private void setLineageTrace(LineageItem linItem) {
-		if(getParam(0) instanceof CacheBlock || getParam(0) instanceof ScalarObject) {
-			_lineageTrace = Lineage.serializeSingleTrace(linItem);
-		}
 	}
 
 	@Override

@@ -86,6 +86,7 @@
 				<include>*:commons-cli*</include>
 				<include>*:commons-collections*</include>
 				<include>*:commons-configuration*</include>
+				<include>*:commons-compress*</include>
 				<!-- <include>*:commons-httpclient*</include> -->
 				<include>*:commons-io*</include>
 				<include>*:commons-lang</include>

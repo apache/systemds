@@ -48,9 +48,9 @@ public class CodeGenTrie {
 		for(int c = 0; c < properties.getColKeyPattern().length; c++) {
 			KeyTrie keyTrie = properties.getColKeyPattern()[c];
 			Types.ValueType vt = properties.getSchema() == null ? Types.ValueType.FP64 : properties.getSchema()[c];
-			Gson gson = new Gson();
-			System.out.println(gson.toJson(keyTrie.getPrefixKeyPatterns()));
+			//Gson gson = new Gson();
 			if(keyTrie != null) {
+				//System.out.println(c+":  "+gson.toJson(keyTrie.getPrefixKeyPatterns()));
 				for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
 					this.insert(rootCol, c, vt, keys);
 			}

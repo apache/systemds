@@ -17,11 +17,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Util {
 
 	public String readEntireTextFile(String fileName) throws IOException {
-		String text = new String(Files.readAllBytes(Paths.get(fileName)), StandardCharsets.UTF_8);
+		String text = Files.readString(Paths.get(fileName));
 		return text;
 	}
 
@@ -49,11 +51,23 @@ public class Util {
 		return result;
 	}
 
+	public Map<String, Integer> getSchemaMap(String fileName) throws IOException {
+		Map<String, Integer> schemaMap = new HashMap<>();
+		try(BufferedReader br = new BufferedReader(new FileReader(fileName,StandardCharsets.UTF_8))) {
+			String line;
+			while((line = br.readLine()) != null) {
+				String[] colSchema = line.split(",");
+				schemaMap.put(colSchema[0], Integer.parseInt(colSchema[1]));
+			}
+		}
+		return schemaMap;
+	}
+
 	public String[][] loadFrameData(String fileName, int ncols, String delimiter)
 		throws IOException {
 		ArrayList<String[]> sampleRawLines = new ArrayList<>();
 
-		try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+		try(BufferedReader br = new BufferedReader(new FileReader(fileName,StandardCharsets.UTF_8))) {
 			String line;
 			while((line = br.readLine()) != null) {
 				String[] data = line.split(delimiter);

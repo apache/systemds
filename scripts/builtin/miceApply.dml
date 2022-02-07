@@ -1,0 +1,172 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This Builtin function implements multiple imputation using Chained Equations (MICE)
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE              DEFAULT    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X              Matrix[Double]    ---       Data Matrix (Recoded Matrix for categorical features)
+# mtea           Matrix[Double]    ---       A meta matrix with each rows storing values 1) mask of original matrix, 
+#                                              2) information of columns with missing values on  original data 0 for no missing value in column and 1 otherwise
+#                                              3) dist values in each columns in original data 1 for continuous columns and colMax for categorical
+# threshold      Double            0.8       confidence value [0, 1] for robust imputation, values will only be imputed
+#                                              if the predicted value has probability greater than threshold,
+#                                              only applicable for categorical data
+# dM             Frame[Unknown]                meta frame from OHE on original data
+# betaList       List[Unknown]    --         List of machine learning models trained for each column imputation
+# verbose        Boolean           FALSE     Boolean value.
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# output          Matrix[Double]               imputed dataset
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# Assumption missing value are represented with empty string i.e ",," in CSV file  
+# variables with suffix n are storing continuos/numeric data and variables with 
+# suffix c are storing categorical data
+
+m_miceApply = function(Matrix[Double] X, Matrix[Double] meta, Double threshold, Frame[String] dM, List[Unknown] betaList)
+  return(Matrix[Double] output)
+{
+
+  lastIndex = ncol(X)
+  # if all features are numeric add a categorical features
+  # if all features are categorical add a numeric features
+  if(ncol(meta) > ncol(X))
+    X = cbind(X, matrix(1, nrow(X), 1))
+  
+  if(ncol(meta) != ncol(X))
+    stop("micApply Dimension mismatch: the columns in X != columns in meta:"+ncol(X)+" vs "+ncol(meta))
+  
+
+  mask = meta[1]
+  fitMissing = meta[2]
+  dist = meta[3]
+  sumMax = sum(mask);
+  
+  Mask1 = is.na(X)
+  X = replace(target=X, pattern=NaN, replacement=0);
+  [betaList, vec] = remove(betaList, 1)
+  imputationVec = as.matrix(vec)
+  X1 = X + (Mask1 * imputationVec)
+  d = ncol(X1)
+  n = nrow(X1)
+  
+  # compute index of categorical features
+  index = vectorToCsv(mask)
+  # specifications for one-hot encoding of categorical features
+  jspecDC = "{ids:true, dummycode:["+index+"]}";
+  
+  Mask_Filled = Mask1 # use this to store predictions for missing values
+  weightMatrix = Mask1 # uses this to keep track of probabilities less than threshold
+  inverseMask = Mask1 == 0
+  # OHE of categorical features
+  dX = transformapply(target=as.frame(X1), spec=jspecDC, meta=dM);
+  i=1; j=1; in_c=1;
+
+  while(i < ncol(dX))
+  {
+    j = (i + as.scalar(dist[1,in_c])) - 1 # index value for iterating OHE columns
+    if(sum(Mask1[, in_c]) > 0 & as.scalar(mask[, in_c]) == 0 & as.scalar(fitMissing[, in_c]) > 0) # impute numeric features
+    {
+      # construct column selector
+      selX = matrix(1,1,ncol(dX))
+      selX[1,i:j] = matrix(0,1,as.scalar(dist[1,in_c]))
+      selY = cbind(matrix(1,1,in_c-1), as.matrix(0), matrix(1,1,d-in_c));
+      # prepare train data set X and Y
+      slice1 = removeEmpty(target = dX, margin = "rows", select = inverseMask[,in_c])
+      slice1a = removeEmpty(target = X1, margin = "rows", select = inverseMask[,in_c])
+      train_X = removeEmpty(target = slice1, margin = "cols", select = selX);
+      train_Y = slice1a[,in_c]
+
+      # prepare score data set X and Y for imputing Y
+      slice2 = removeEmpty(target = dX, margin = "rows", select = Mask1[,in_c])
+      slice2a = removeEmpty(target = X1, margin = "rows", select = Mask1[,in_c])
+      test_X =  removeEmpty(target = slice2, margin = "cols", select = selX);
+      test_Y = slice2a[,in_c]
+      beta = as.matrix(betaList[in_c])
+      # learn a regression line
+      pred = lmPredict(X=test_X, B=beta, ytest= matrix(0,1,1), icpt=1, verbose = FALSE)
+      # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
+      R = removeEmpty(target=Mask_Filled[1:n, in_c] * seq(1,n), margin="rows");
+      # TODO modify removeEmpty to return zero row and n columns
+      if(!(nrow(R) == 1 & as.scalar(R[1,1] == 0))) 
+        Mask_Filled[1:n,in_c] = table(R, 1, pred, n, 1);
+   
+    }
+    else if (sum(Mask1[, in_c]) > 0 & as.scalar(mask[, in_c]) != 0 & as.scalar(fitMissing[, in_c]) > 0) # impute categorical features
+    {
+      # construct column selector
+      selX = matrix(1,1,ncol(dX))
+      selX[1,i:j] = matrix(0,1,as.scalar(dist[1,in_c]))
+      selY = cbind(matrix(1,1,in_c-1), as.matrix(0), matrix(1,1,d-in_c));
+      # prepare train data set X and Y
+      slice1 = removeEmpty(target = dX, margin = "rows", select = inverseMask[,in_c])
+      slice1a = removeEmpty(target = X1, margin = "rows", select = inverseMask[,in_c])
+      train_X = removeEmpty(target = slice1, margin = "cols", select = selX);
+      train_Y = slice1a[,in_c]
+      # prepare score data set X and Y for imputing Y
+      slice2 = removeEmpty(target = dX, margin = "rows", select = Mask1[,in_c])
+      slice2a = removeEmpty(target = X1, margin = "rows", select = Mask1[,in_c])
+      test_X =  removeEmpty(target = slice2, margin = "cols", select = selX);
+      test_Y = slice2a[,in_c]
+      # train classification model
+      if(min(train_Y) == max(train_Y)) { # if the train_Y has only one class then do not train
+        pred = matrix(min(train_Y), nrow(test_Y), 1)
+        prob = matrix(1, nrow(test_Y), 1)
+      }
+      else {
+        beta = as.matrix(betaList[in_c])
+        # predicting missing values 
+        [prob,pred,acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
+        prob = rowMaxs(prob)
+      }
+
+      validThreshold = prob > threshold
+      pred = (pred * validThreshold) + (test_Y * (validThreshold == 0))
+      # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
+      R = removeEmpty(target=Mask_Filled[1:n,in_c] * seq(1,n), margin="rows");
+      wR = removeEmpty(target=weightMatrix[, in_c] * seq(1,n), margin="rows");
+      #TODO modify removeEmpty to return zero row and n columns
+      if(!(nrow(R) == 1 & as.scalar(R[1,1] == 0))) {
+        Mask_Filled[,in_c] = table(R, 1, pred, n, 1);
+        weightMatrix[, in_c] = table(wR, 1, prob, n, 1)
+      }
+
+    }
+    i = as.integer(j)+1
+    in_c = in_c + 1
+  }
+  X1 = X + Mask_Filled
+  
+  # Finalize the predictions, if the weight for some predictions is less than threshold than do not fill-in
+  # leave the values as NaN as we do not have enough confidence about the prediction
+  invalidImputations = (weightMatrix < threshold) & (weightMatrix > 0)
+  makeNas = replace(target = invalidImputations, pattern = 1, replacement = NaN)
+  X1 = X1 + makeNas
+  output = X1[,1:lastIndex]
+}
+

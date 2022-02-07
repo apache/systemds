@@ -206,6 +206,7 @@ public enum Builtins {
 	MEAN("mean", "avg", false),
 	MEDIAN("median", false),
 	MICE("mice", true),
+	MICE_APPLY("miceApply", true),
 	MIN("min", "pmin", false),
 	MOMENT("moment", "centralMoment", false),
 	MSVM("msvm", true),

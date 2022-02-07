@@ -251,11 +251,13 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		CacheableData<?> cd = null;
 
 		if(!LineageCache.reuseFedRead(Long.toString(id), dataType, linItem, ec)) {
-			// Lookup read cache if 1) not available in lineage cache, 2) reuse is disabled now,
-			// 3) we skipped storing in lineage cache due to other constraints
-			// Note: We don't copy the readcache entries to lineage cache once enabled.
-			// Hence, it is necessary to lookup both the caches.
-			cd = _frc.get(filename);
+			// Lookup read cache if reuse is disabled and we skipped storing in the
+			// lineage cache due to other constraints
+			// FIXME: It is possible that lineage reuse is enabled later. In that case
+			//  read cache may not be empty. Hence, it may be necessary to lookup both
+			//  the caches.
+			if (ReuseCacheType.isNone() || dataType != DataType.MATRIX)
+				cd = _frc.get(filename);
 			try {
 				if(cd == null) { // data is neither in lineage cache nor in read cache
 					long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;

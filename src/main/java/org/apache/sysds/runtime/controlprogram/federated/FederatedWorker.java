@@ -40,9 +40,11 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
+import org.apache.sysds.api.DMLScript;
 import org.apache.log4j.Logger;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 
 public class FederatedWorker {
 	protected static Logger log = Logger.getLogger(FederatedWorker.class);
@@ -57,6 +59,10 @@ public class FederatedWorker {
 		_frc = new FederatedReadCache();
 		_port = (port == -1) ? DMLConfig.DEFAULT_FEDERATED_PORT : port;
 		_debug = debug;
+
+		LineageCacheConfig.setConfig(DMLScript.LINEAGE_REUSE);
+		LineageCacheConfig.setCachePolicy(DMLScript.LINEAGE_POLICY);
+		LineageCacheConfig.setEstimator(DMLScript.LINEAGE_ESTIMATE);
 	}
 
 	public void run() throws CertificateException, SSLException {

@@ -246,74 +246,44 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			// early throwing of exception to avoid infinitely waiting threads for data
 			throw new FederatedWorkerHandlerException("Could not recognize datatype");
 
-		CacheableData<?> cd = _frc.get(filename);
-		if(cd == null) {
+		ExecutionContext ec = ecm.get(tid);
+		LineageItem linItem = new LineageItem(filename);
+		CacheableData<?> cd = null;
+
+		if(!LineageCache.reuseFedRead(Long.toString(id), dataType, linItem, ec)) {
+			// Lookup read cache if 1) not available in lineage cache, 2) reuse is disabled now,
+			// 3) we skipped storing in lineage cache due to other constraints
+			// Note: We don't copy the readcache entries to lineage cache once enabled.
+			// Hence, it is necessary to lookup both the caches.
+			cd = _frc.get(filename);
 			try {
-				switch(dataType) {
-					case MATRIX:
-						cd = new MatrixObject(Types.ValueType.FP64, filename);
-						break;
-					case FRAME:
-						cd = new FrameObject(filename);
-						break;
-					default:
-						throw new FederatedWorkerHandlerException("Could not recognize datatype");
+				if(cd == null) { // data is neither in lineage cache nor in read cache
+					long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
+					cd = readDataNoReuse(filename, dataType, mc); // actual read of the data
+					long t1 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
+					if(!ReuseCacheType.isNone() && dataType == DataType.MATRIX)
+						// put the object into the lineage cache
+						// FIXME: As we lazily read the actual data, this computetime
+						//  only records the metadata read. A small computetime wrongly
+						//  dictates the cache eviction logic to remove this entry early.
+						LineageCache.putFedReadObject(cd, linItem, ec, t1 - t0);
+					else
+						_frc.setData(filename, cd); // set the data into the read cache entry
 				}
+				ec.setVariable(String.valueOf(id), cd);
 
-				FileFormat fmt = null;
-				boolean header = false;
-				String delim = null;
-				FileSystem fs = null;
-				MetaDataAll mtd;
-
-				try {
-					final String mtdName = DataExpression.getMTDFileName(filename);
-					Path path = new Path(mtdName);
-					fs = IOUtilFunctions.getFileSystem(mtdName);
-					try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-						mtd = new MetaDataAll(br);
-						if(!mtd.mtdExists())
-							throw new FederatedWorkerHandlerException("Could not parse metadata file");
-						mc.setRows(mtd.getDim1());
-						mc.setCols(mtd.getDim2());
-						mc.setNonZeros(mtd.getNnz());
-						header = mtd.getHasHeader();
-						cd = mtd.parseAndSetPrivacyConstraint(cd);
-						fmt = mtd.getFileFormat();
-						delim = mtd.getDelim();
-					}
-				}
-				catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
-					throw ex;
-				}
-				catch(Exception ex) {
-					String msg = "Exception of type " + ex.getClass() + " thrown when processing READ request";
-					LOG.error(msg, ex);
-					throw new DMLRuntimeException(msg);
-				}
-				finally {
-					IOUtilFunctions.closeSilently(fs);
-				}
-
-				// put meta data object in symbol table, read on first operation
-				cd.setMetaData(new MetaDataFormat(mc, fmt));
-				if(fmt == FileFormat.CSV)
-					cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, delim,
-						DataExpression.DEFAULT_DELIM_SPARSE));
-				cd.enableCleanup(false); // guard against deletion
-
-				_frc.setData(filename, cd);
 			} catch(Exception ex) {
-				_frc.setInvalid(filename);
+				if(!ReuseCacheType.isNone() && dataType == DataType.MATRIX)
+					LineageCache.putFedReadObject(null, linItem, ec, 0); // removing the placeholder
+				else
+					_frc.setInvalid(filename);
 				throw ex;
 			}
 		}
 
-		ecm.get(tid).setVariable(String.valueOf(id), cd);
-
 		if(DMLScript.LINEAGE)
 			// create a literal type lineage item with the file name
-			ecm.get(tid).getLineage().set(String.valueOf(id), new LineageItem(filename));
+			ec.getLineage().set(String.valueOf(id), linItem);
 
 		if(dataType == Types.DataType.FRAME) {
 			FrameObject frameObject = (FrameObject) cd;
@@ -323,6 +293,66 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
 		}
 		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
+	}
+
+	private CacheableData<?> readDataNoReuse(String filename, DataType dataType,
+		MatrixCharacteristics mc) {
+		CacheableData<?> cd = null;
+
+		switch(dataType) {
+			case MATRIX:
+				cd = new MatrixObject(Types.ValueType.FP64, filename);
+				break;
+			case FRAME:
+				cd = new FrameObject(filename);
+				break;
+			default:
+				throw new FederatedWorkerHandlerException("Could not recognize datatype");
+		}
+
+		FileFormat fmt = null;
+		boolean header = false;
+		String delim = null;
+		FileSystem fs = null;
+		MetaDataAll mtd;
+
+		try {
+			final String mtdName = DataExpression.getMTDFileName(filename);
+			Path path = new Path(mtdName);
+			fs = IOUtilFunctions.getFileSystem(mtdName);
+			try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
+				mtd = new MetaDataAll(br);
+				if(!mtd.mtdExists())
+					throw new FederatedWorkerHandlerException("Could not parse metadata file");
+				mc.setRows(mtd.getDim1());
+				mc.setCols(mtd.getDim2());
+				mc.setNonZeros(mtd.getNnz());
+				header = mtd.getHasHeader();
+				cd = mtd.parseAndSetPrivacyConstraint(cd);
+				fmt = mtd.getFileFormat();
+				delim = mtd.getDelim();
+			}
+		}
+		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
+			throw ex;
+		}
+		catch(Exception ex) {
+			String msg = "Exception of type " + ex.getClass() + " thrown when processing READ request";
+			LOG.error(msg, ex);
+			throw new DMLRuntimeException(msg);
+		}
+		finally {
+			IOUtilFunctions.closeSilently(fs);
+		}
+
+		// put meta data object in symbol table, read on first operation
+		cd.setMetaData(new MetaDataFormat(mc, fmt));
+		if(fmt == FileFormat.CSV)
+			cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, delim,
+				DataExpression.DEFAULT_DELIM_SPARSE));
+		cd.enableCleanup(false); // guard against deletion
+
+		return cd;
 	}
 
 	private FederatedResponse putVariable(FederatedRequest request, ExecutionContextMap ecm) {

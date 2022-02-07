@@ -37,8 +37,9 @@ import javax.net.ssl.SSLException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.CacheStatsCollection;
@@ -74,8 +75,8 @@ public class FederatedStatistics {
 	private static final LongAdder fedLookupTableGetCount = new LongAdder();
 	private static final LongAdder fedLookupTableGetTime = new LongAdder(); // in milli sec
 	private static final LongAdder fedLookupTableEntryCount = new LongAdder();
-	private static final LongAdder fedReadCacheHitCount = new LongAdder();
-	private static final LongAdder fedReadCacheBytesCount = new LongAdder();
+	private static final LongAdder fedReuseReadHitCount = new LongAdder();
+	private static final LongAdder fedReuseReadBytesCount = new LongAdder();
 
 	public static synchronized void incFederated(RequestType rqt, List<Object> data){
 		switch (rqt) {
@@ -138,8 +139,8 @@ public class FederatedStatistics {
 		fedLookupTableGetCount.reset();
 		fedLookupTableGetTime.reset();
 		fedLookupTableEntryCount.reset();
-		fedReadCacheHitCount.reset();
-		fedReadCacheBytesCount.reset();
+		fedReuseReadHitCount.reset();
+		fedReuseReadBytesCount.reset();
 	}
 
 	public static String displayFedIOExecStatistics() {
@@ -218,7 +219,7 @@ public class FederatedStatistics {
 	private static String displayMultiTenantStats(MultiTenantStatsCollection mtsc) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(displayFedLookupTableStats(mtsc.fLTGetCount, mtsc.fLTEntryCount, mtsc.fLTGetTime));
-		sb.append(displayFedReadCacheStats(mtsc.readCacheHits, mtsc.readCacheBytes));
+		sb.append(displayFedReuseReadStats(mtsc.reuseReadHits, mtsc.reuseReadBytes));
 		return sb.toString();
 	}
 
@@ -340,12 +341,12 @@ public class FederatedStatistics {
 		return fedLookupTableEntryCount.longValue();
 	}
 
-	public static long getFedReadCacheHitCount() {
-		return fedReadCacheHitCount.longValue();
+	public static long getFedReuseReadHitCount() {
+		return fedReuseReadHitCount.longValue();
 	}
 
-	public static long getFedReadCacheBytesCount() {
-		return fedReadCacheBytesCount.longValue();
+	public static long getFedReuseReadBytesCount() {
+		return fedReuseReadBytesCount.longValue();
 	}
 
 	public static void incFedLookupTableGetCount() {
@@ -360,12 +361,16 @@ public class FederatedStatistics {
 		fedLookupTableEntryCount.increment();
 	}
 
-	public static void incFedReadCacheHitCount() {
-		fedReadCacheHitCount.increment();
+	public static void incFedReuseReadHitCount() {
+		fedReuseReadHitCount.increment();
 	}
 
-	public static void incFedReadCacheBytesCount(CacheableData<?> data) {
-		fedReadCacheBytesCount.add(data.getDataSize());
+	public static void incFedReuseReadBytesCount(CacheableData<?> data) {
+		fedReuseReadBytesCount.add(data.getDataSize());
+	}
+
+	public static void incFedReuseReadBytesCount(CacheBlock cb) {
+		fedReuseReadBytesCount.add(cb.getInMemorySize());
 	}
 
 	public static String displayFedLookupTableStats() {
@@ -383,16 +388,16 @@ public class FederatedStatistics {
 		return "";
 	}
 
-	public static String displayFedReadCacheStats() {
-		return displayFedReadCacheStats(fedReadCacheHitCount.longValue(),
-			fedReadCacheBytesCount.longValue());
+	public static String displayFedReuseReadStats() {
+		return displayFedReuseReadStats(fedReuseReadHitCount.longValue(),
+			fedReuseReadBytesCount.longValue());
 	}
 
-	public static String displayFedReadCacheStats(long rcHits, long rcBytes) {
-		if(rcHits > 0) {
+	public static String displayFedReuseReadStats(long rrHits, long rrBytes) {
+		if(rrHits > 0) {
 			StringBuilder sb = new StringBuilder();
-			sb.append("Fed ReadCache (Hits, Bytes):\t" +
-				rcHits + "/" + rcBytes + ".\n");
+			sb.append("Fed ReuseRead (Hits, Bytes):\t" +
+				rrHits + "/" + rrBytes + ".\n");
 			return sb.toString();
 		}
 		return "";
@@ -515,23 +520,23 @@ public class FederatedStatistics {
 				fLTGetCount = getFedLookupTableGetCount();
 				fLTGetTime = ((double)getFedLookupTableGetTime()) / 1000000000; // in sec
 				fLTEntryCount = getFedLookupTableEntryCount();
-				readCacheHits = getFedReadCacheHitCount();
-				readCacheBytes = getFedReadCacheBytesCount();
+				reuseReadHits = getFedReuseReadHitCount();
+				reuseReadBytes = getFedReuseReadBytesCount();
 			}
 
 			private void aggregate(MultiTenantStatsCollection that) {
 				fLTGetCount += that.fLTGetCount;
 				fLTGetTime += that.fLTGetTime;
 				fLTEntryCount += that.fLTEntryCount;
-				readCacheHits += that.readCacheHits;
-				readCacheBytes += that.readCacheBytes;
+				reuseReadHits += that.reuseReadHits;
+				reuseReadBytes += that.reuseReadBytes;
 			}
 
 			private long fLTGetCount = 0;
 			private double fLTGetTime = 0;
 			private long fLTEntryCount = 0;
-			private long readCacheHits = 0;
-			private long readCacheBytes = 0;
+			private long reuseReadHits = 0;
+			private long reuseReadBytes = 0;
 		}
 
 		private CacheStatsCollection cacheStats = new CacheStatsCollection();

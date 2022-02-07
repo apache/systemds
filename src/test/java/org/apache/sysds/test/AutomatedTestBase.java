@@ -41,6 +41,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1540,6 +1541,11 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
+	@Deprecated
+	protected Process startLocalFedWorker(int port) {
+		return startLocalFedWorker(port, null);
+	}
+
 	/**
 	 * Start new JVM for a federated worker at the port.
 	 * 
@@ -1548,13 +1554,14 @@ public abstract class AutomatedTestBase {
 	 * @return the process associated with the worker.
 	 */
 	@Deprecated
-	protected Process startLocalFedWorker(int port) {
+	protected Process startLocalFedWorker(int port, String[] addArgs) {
 		Process process = null;
 		String separator = System.getProperty("file.separator");
 		String classpath = System.getProperty("java.class.path");
 		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-		ProcessBuilder processBuilder = new ProcessBuilder(path, "-cp", classpath, DMLScript.class.getName(), "-w",
-			Integer.toString(port), "-stats");
+		String[] args = ArrayUtils.addAll(new String[]{path, "-cp", classpath, DMLScript.class.getName(),
+			"-w", Integer.toString(port), "-stats"}, addArgs);
+		ProcessBuilder processBuilder = new ProcessBuilder(args);
 
 		try {
 			process = processBuilder.start();

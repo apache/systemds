@@ -49,6 +49,10 @@ public abstract class MultiTenantTestBase extends AutomatedTestBase {
 			p.destroyForcibly();
 	}
 
+	protected int[] startFedWorkers(int numFedWorkers) {
+		return startFedWorkers(numFedWorkers, null);
+	}
+
 	/**
 	 * Start numFedWorkers federated worker processes on available ports and add
 	 * them to the workerProcesses
@@ -56,12 +60,12 @@ public abstract class MultiTenantTestBase extends AutomatedTestBase {
 	 * @param numFedWorkers the number of federated workers to start
 	 * @return int[] the ports of the created federated workers
 	 */
-	protected int[] startFedWorkers(int numFedWorkers) {
+	protected int[] startFedWorkers(int numFedWorkers, String[] addArgs) {
 		int[] ports = new int[numFedWorkers];
 		for(int counter = 0; counter < numFedWorkers; counter++) {
 			ports[counter] = getRandomAvailablePort();
 			@SuppressWarnings("deprecation")
-			Process tmpProcess = startLocalFedWorker(ports[counter]);
+			Process tmpProcess = startLocalFedWorker(ports[counter], addArgs);
 			workerProcesses.add(tmpProcess);
 		}
 		return ports;

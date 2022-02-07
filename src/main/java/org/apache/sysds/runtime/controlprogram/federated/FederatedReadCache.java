@@ -98,8 +98,8 @@ public class FederatedReadCache {
 			}
 
 			if(DMLScript.STATISTICS) {
-				FederatedStatistics.incFedReadCacheHitCount();
-				FederatedStatistics.incFedReadCacheBytesCount(_data);
+				FederatedStatistics.incFedReuseReadHitCount();
+				FederatedStatistics.incFedReuseReadBytesCount(_data);
 			}
 
 			//comes here if data is placed or the entry is removed by the running thread

@@ -39,11 +39,15 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_dbscan = function (Matrix[Double] X, Double eps = 0.5, Integer minPts = 5)
-    return (Matrix[Double] clusterMembers, Matrix[Double] clusterModel)
+    return (Matrix[Double] X, Matrix[Double] clusterModel, Double eps)
 {
   #check input parameter assertions
   if(minPts < 0) { stop("DBSCAN: Stopping due to invalid inputs: minPts should be greater than 0"); }
-  if(eps < 0) { stop("DBSCAN: Stopping due to invalid inputs: Epsilon (eps) should be greater than 0"); }
+  if(eps < 0) 
+  { 
+    print("DBSCAN: Epsilon (eps) should be greater than 0. Setting eps = 0.5");
+    eps = 0.5
+  }
 
   UNASSIGNED = 0;
 
@@ -76,6 +80,7 @@ m_dbscan = function (Matrix[Double] X, Double eps = 0.5, Integer minPts = 5)
     clusterMembers = components(G=adjacency, verbose=FALSE);
     # noise to 0
     clusterMembers = clusterMembers * (rowSums(adjacency) > 0);
-    clusterModel = removeEmpty(target=X, margin="rows", select = (clusterMembers > 0))     
+    clusterModel = removeEmpty(target=X, margin="rows", select = (clusterMembers > 0))
+    X = clusterMembers
   }
 }

@@ -86,7 +86,7 @@ public class BuiltinDbscanApplyTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-nvargs",
+			programArgs = new String[]{"-nvargs",
 				"X=" + input("A"), "Y=" + input("B"),"Z=" + output("C"), "eps=" + epsDB, "minPts=" + minPts};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = getRCmd(inputDir(), inputDir(), Double.toString(epsDB), Integer.toString(minPts), expectedDir());

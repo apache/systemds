@@ -419,10 +419,23 @@ public class LibMatrixAgg
 		return out;
 	}
 
+	/**
+	 * Single threaded Covariance and Central Moment operations
+	 * 
+	 * CM = Central Moment
+	 * 
+	 * COV = Covariance 
+	 * 
+	 * @param in1 Main input matrix
+	 * @param in2 Second input matrix
+	 * @param in3 Third input matrix (not output since output is returned)
+	 * @param fn Value function to apply
+	 * @return Central Moment or Covariance object
+	 */
 	public static CM_COV_Object aggregateCmCov(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn) {
 		CM_COV_Object cmobj = new CM_COV_Object();
 		
-		// empty block handling (important for result corretness, otherwise
+		// empty block handling (important for result correctness, otherwise
 		// we get a NaN due to 0/0 on reading out the required result)
 		if( in1.isEmptyBlock(false) && fn instanceof CM ) {
 			fn.execute(cmobj, 0.0, in1.getNumRows());
@@ -432,6 +445,20 @@ public class LibMatrixAgg
 		return aggregateCmCov(in1, in2, in3, fn, 0, in1.getNumRows());
 	}
 	
+	/**
+	 * Multi threaded Covariance and Central Moment operations
+	 * 
+	 * CM = Central Moment
+	 * 
+	 * COV = Covariance 
+	 * 
+	 * @param in1 Main input matrix
+	 * @param in2 Second input matrix
+	 * @param in3 Third input matrix (not output since output is returned)
+	 * @param fn Value function to apply
+	 * @param k Parallelization degree
+	 * @return Central Moment or Covariance object
+	 */
 	public static CM_COV_Object aggregateCmCov(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn, int k) {
 		if( in1.isEmptyBlock(false) || !satisfiesMultiThreadingConstraints(in1, k) )
 			return aggregateCmCov(in1, in2, in3, fn);

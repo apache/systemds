@@ -52,6 +52,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCOO;
@@ -221,6 +222,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		denseBlock = dBlock;
 	}
 
+	public MatrixBlock(int rl, int cl, double[] vals){
+		rlen = rl;
+		clen = cl;
+		sparse = false;
+		denseBlock = new DenseBlockFP64(new int[] {rl,cl}, vals);
+		nonZeros = vals.length;
+	}
 
 	protected MatrixBlock(boolean empty){
 		// do nothing
@@ -4708,13 +4716,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	public CM_COV_Object cmOperations(CMOperator op) {
-		// dimension check for input column vectors
-		if ( this.getNumColumns() != 1) {
-			throw new DMLRuntimeException("Central Moment cannot be computed on [" 
-					+ this.getNumRows() + "," + this.getNumColumns() + "] matrix.");
-		}
-		
+		checkCMOperations(this, op);
 		return LibMatrixAgg.aggregateCmCov(this, null, null, op.fn, op.getNumThreads());
+	}
+
+	public static void checkCMOperations(MatrixBlock mb, CMOperator op){
+		// dimension check for input column vectors
+		if ( mb.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Central Moment cannot be computed on [" 
+					+ mb.getNumRows() + "," + mb.getNumColumns() + "] matrix.");
+		}
 	}
 		
 	public CM_COV_Object cmOperations(CMOperator op, MatrixBlock weights) {

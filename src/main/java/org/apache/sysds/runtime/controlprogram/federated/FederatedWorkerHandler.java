@@ -260,15 +260,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				cd = _frc.get(filename);
 			try {
 				if(cd == null) { // data is neither in lineage cache nor in read cache
-					long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
 					cd = readDataNoReuse(filename, dataType, mc); // actual read of the data
-					long t1 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
 					if(!ReuseCacheType.isNone() && dataType == DataType.MATRIX)
 						// put the object into the lineage cache
-						// FIXME: As we lazily read the actual data, this computetime
-						//  only records the metadata read. A small computetime wrongly
-						//  dictates the cache eviction logic to remove this entry early.
-						LineageCache.putFedReadObject(cd, linItem, ec, t1 - t0);
+						LineageCache.putFedReadObject(cd, linItem, ec);
 					else
 						_frc.setData(filename, cd); // set the data into the read cache entry
 				}
@@ -276,7 +271,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 			} catch(Exception ex) {
 				if(!ReuseCacheType.isNone() && dataType == DataType.MATRIX)
-					LineageCache.putFedReadObject(null, linItem, ec, 0); // removing the placeholder
+					LineageCache.putFedReadObject(null, linItem, ec); // removing the placeholder
 				else
 					_frc.setInvalid(filename);
 				throw ex;

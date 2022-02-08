@@ -70,7 +70,7 @@ public class BuiltinImpurityMeasuresTest extends AutomatedTestBase {
 	public void GiniTest3() {
 		double[][] X = {{1,1,2,1}, {1,3,1,2}, {2,1,1,2}, {3,2,1,1}, {1,3,2,1}};
 		double[][] Y = {{0}, {0}, {1}, {1}, {1}};
-		double[][] R = {{3, 3, 2, 2}};
+		double[][] R = {{2, 2, 2, 2}};
 		HashMap<MatrixValue.CellIndex, Double> expected_m = new HashMap<>();
 		expected_m.put(new MatrixValue.CellIndex(1, 1), 0.2133333333);
 		expected_m.put(new MatrixValue.CellIndex(1, 2), 0.0799999999);
@@ -82,8 +82,36 @@ public class BuiltinImpurityMeasuresTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void GiniPlayTennisTest() {
+		double[][] X = {{1,1,1,1},
+						{1,1,1,2},
+						{2,1,1,1},
+						{3,2,1,1},
+						{3,3,2,1},
+						{3,3,2,2},
+						{2,3,2,2},
+						{1,2,1,1},
+						{1,3,2,1},
+						{3,2,2,1},
+						{1,2,2,2},
+						{2,2,1,2},
+						{2,1,2,1},
+						{3,2,1,2}};
+		double[][] Y = {{0}, {0}, {1}, {1}, {1}, {0}, {1}, {0}, {1}, {1}, {1}, {1}, {1}, {0}};
+		double[][] R = {{2, 2, 2, 2}};
+		HashMap<MatrixValue.CellIndex, Double> expected_m = new HashMap<>();
+		expected_m.put(new MatrixValue.CellIndex(1, 1), 0.1163265306);
+		expected_m.put(new MatrixValue.CellIndex(1, 2), 0.0187074829);
+		expected_m.put(new MatrixValue.CellIndex(1, 3), 0.0918367346);
+		expected_m.put(new MatrixValue.CellIndex(1, 4), 0.0306122448);
+		String method = "gini";
+
+		runImpurityMeasuresTest(ExecType.SPARK, X, Y, R, method, expected_m);
+	}
+
+	@Test
 	public void GiniWithContinuousValues1() {
-		double[][] X = {{1.5}, {12.6}, {3.4}, {14.2}};
+		double[][] X = {{10.3}, {31.2}, {9.5}, {34.3}};
 		double[][] Y = {{0}, {1}, {0}, {1}};
 		double[][] R = {{1}};
 		HashMap<MatrixValue.CellIndex, Double> expected_m = new HashMap<>();
@@ -95,11 +123,13 @@ public class BuiltinImpurityMeasuresTest extends AutomatedTestBase {
 
 	@Test
 	public void GiniWithContinuousValues2() {
-		double[][] X = {{1.5}, {12.6}, {3.4}, {14.2}};
+		double[][] X = {{1.5, 23.7, 2929.6}, {12.6, 80.2, 2823.3}, {3.4, 238.2, 832.2}, {14.2, 282.1, 23.1}};
 		double[][] Y = {{0}, {1}, {0}, {1}};
-		double[][] R = {{1}};
+		double[][] R = {{1, 1, 1}};
 		HashMap<MatrixValue.CellIndex, Double> expected_m = new HashMap<>();
 		expected_m.put(new MatrixValue.CellIndex(1, 1), 0.5);
+		expected_m.put(new MatrixValue.CellIndex(1, 2), 0.0);
+		expected_m.put(new MatrixValue.CellIndex(1, 3), 0.25);
 		String method = "gini";
 
 		runImpurityMeasuresTest(ExecType.SPARK, X, Y, R, method, expected_m);
@@ -135,12 +165,66 @@ public class BuiltinImpurityMeasuresTest extends AutomatedTestBase {
 	public void EntropyTest3() {
 		double[][] X = {{1,1,2,1}, {1,3,1,2}, {2,1,1,2}, {3,2,1,1}, {1,3,2,1}};
 		double[][] Y = {{0}, {0}, {1}, {1}, {1}};
-		double[][] R = {{3, 3, 2, 2}};
+		double[][] R = {{2, 2, 2, 2}};
 		HashMap<MatrixValue.CellIndex, Double> expected_m = new HashMap<>();
 		expected_m.put(new MatrixValue.CellIndex(1, 1), 0.4199730940);
 		expected_m.put(new MatrixValue.CellIndex(1, 2), 0.1709505945);
 		expected_m.put(new MatrixValue.CellIndex(1, 3), 0.0199730940);
 		expected_m.put(new MatrixValue.CellIndex(1, 4), 0.0199730940);
+		String method = "entropy";
+
+		runImpurityMeasuresTest(ExecType.SPARK, X, Y, R, method, expected_m);
+	}
+
+	@Test
+	public void EntropyPlayTennisTest() {
+		double[][] X = {{1,1,1,1},
+						{1,1,1,2},
+						{2,1,1,1},
+						{3,2,1,1},
+						{3,3,2,1},
+						{3,3,2,2},
+						{2,3,2,2},
+						{1,2,1,1},
+						{1,3,2,1},
+						{3,2,2,1},
+						{1,2,2,2},
+						{2,2,1,2},
+						{2,1,2,1},
+						{3,2,1,2}};
+		double[][] Y = {{0}, {0}, {1}, {1}, {1}, {0}, {1}, {0}, {1}, {1}, {1}, {1}, {1}, {0}};
+		double[][] R = {{2, 2, 2, 2}};
+		HashMap<MatrixValue.CellIndex, Double> expected_m = new HashMap<>();
+		expected_m.put(new MatrixValue.CellIndex(1, 1), 0.2467498198);
+		expected_m.put(new MatrixValue.CellIndex(1, 2), 0.0292225657);
+		expected_m.put(new MatrixValue.CellIndex(1, 3), 0.1518355014);
+		expected_m.put(new MatrixValue.CellIndex(1, 4), 0.0481270304);
+		String method = "entropy";
+
+		runImpurityMeasuresTest(ExecType.SPARK, X, Y, R, method, expected_m);
+	}
+
+	@Test
+	public void EntropyWithContinuousValues1() {
+		double[][] X = {{10.3}, {31.2}, {9.5}, {34.3}};
+		double[][] Y = {{0}, {1}, {0}, {1}};
+		double[][] R = {{1}};
+		HashMap<MatrixValue.CellIndex, Double> expected_m = new HashMap<>();
+		expected_m.put(new MatrixValue.CellIndex(1, 1), 1.0);
+		String method = "entropy";
+
+		runImpurityMeasuresTest(ExecType.SPARK, X, Y, R, method, expected_m);
+	}
+
+	@Test
+	public void EntropyWithContinuousValues2() {
+		double[][] X = {{1.5, 23.7, 2929.6}, {12.6, 80.2, 2823.3}, {3.4, 238.2, 832.2}, {14.2, 282.1, 23.1}};
+		double[][] Y = {{0}, {1}, {0}, {1}};
+		double[][] R = {{1, 1, 1}};
+		HashMap<MatrixValue.CellIndex, Double> expected_m = new HashMap<>();
+		expected_m.put(new MatrixValue.CellIndex(1, 1), 1.0);
+		expected_m.put(new MatrixValue.CellIndex(1, 2), 0.0);
+		expected_m.put(new MatrixValue.CellIndex(1, 3), 0.5);
 		String method = "entropy";
 
 		runImpurityMeasuresTest(ExecType.SPARK, X, Y, R, method, expected_m);

@@ -50,6 +50,7 @@ limitations under the License.
     * [`img_brightness`-Function](#img_brightness-function)
     * [`img_crop`-Function](#img_crop-function)
     * [`img_mirror`-Function](#img_mirror-function)
+    * [`impurityMeasures`-Function](#impurityMeasures-function)
     * [`imputeByFD`-Function](#imputeByFD-function)
     * [`intersect`-Function](#intersect-function)
     * [`KMeans`-Function](#KMeans-function)
@@ -1015,6 +1016,50 @@ img_mirror(img_in, horizontal_axis)
 ```r
 A = rand(rows = 3, cols = 3, min = 0, max = 255)
 B = img_mirror(img_in = A, horizontal_axis = TRUE)
+```
+
+
+## `impurityMeasures`-Function
+
+`impurityMeasures()` computes the measure of impurity for each feature of the given dataset based on the passed method (gini or entropy).
+
+### Usage
+
+```r
+IM = impurityMeasures(X = X, Y = Y, R = R, n_bins = 20, method = "gini");
+```
+
+### Arguments
+
+| Name       | Type            | Default | Description |
+| :--------- | :-------------- | :------ | :---------- |
+| X          | Matrix[Double]  | ---     | Feature matrix X |
+| Y          | Matrix[Double]  | ---     | Target vector Y containing only 0 or 1 values |
+| R          | Matrix[Double]  | ---     | Row vector R indicating whether a feature is categorical or continuous. 1 denotes a continuous feature, 2 denotes a categorical feature. |
+| n_bins     | Integer         | `20`    | Number of equi-width bins for binning in case of scale features. |
+| method     | String          | ---     | String indicating the method to use; either "entropy" or "gini". |
+
+### Returns
+
+| Name | Type           | Description |
+| :--- | :------------- | :---------- |
+| IM   | Matrix[Double] | (1 x ncol(X)) row vector containing information/gini gain for each feature of the dataset. In case of gini, the values denote the gini gains, i.e. how much impurity was removed with the respective split. The higher the value, the better the split. In case of entropy, the values denote the information gain, i.e. how much entropy was removed. The higher the information gain, the better the split. |
+
+### Example
+
+```r
+X = matrix("4.0 3.0 2.8 3.5
+            2.4 1.0 3.4 2.9
+            1.1 1.0 4.9 3.4
+            5.0 2.0 1.4 1.8
+            1.1 3.0 1.0 1.9", rows=5, cols=4)
+Y = matrix("1.0
+            0.0
+            0.0
+            1.0
+            0.0", rows=5, cols=1)
+R = matrix("1.0 2.0 1.0 1.0", rows=1, cols=4)
+IM = impurityMeasures(X = X, Y = Y, R = R, method = "entropy")
 ```
 
 

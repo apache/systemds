@@ -250,18 +250,15 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		LineageItem linItem = new LineageItem(filename);
 		CacheableData<?> cd = null;
 
-		if(!LineageCache.reuseFedRead(Long.toString(id), dataType, linItem, ec)) {
+		boolean linReuse = (!ReuseCacheType.isNone() && dataType == DataType.MATRIX);
+		if(!linReuse || !LineageCache.reuseFedRead(Long.toString(id), dataType, linItem, ec)) {
 			// Lookup read cache if reuse is disabled and we skipped storing in the
 			// lineage cache due to other constraints
-			// FIXME: It is possible that lineage reuse is enabled later. In that case
-			//  read cache may not be empty. Hence, it may be necessary to lookup both
-			//  the caches.
-			if (ReuseCacheType.isNone() || dataType != DataType.MATRIX)
-				cd = _frc.get(filename);
+			cd = _frc.get(filename, !linReuse);
 			try {
 				if(cd == null) { // data is neither in lineage cache nor in read cache
 					cd = readDataNoReuse(filename, dataType, mc); // actual read of the data
-					if(!ReuseCacheType.isNone() && dataType == DataType.MATRIX)
+					if(linReuse)
 						// put the object into the lineage cache
 						LineageCache.putFedReadObject(cd, linItem, ec);
 					else
@@ -270,7 +267,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				ec.setVariable(String.valueOf(id), cd);
 
 			} catch(Exception ex) {
-				if(!ReuseCacheType.isNone() && dataType == DataType.MATRIX)
+				if(linReuse)
 					LineageCache.putFedReadObject(null, linItem, ec); // removing the placeholder
 				else
 					_frc.setInvalid(filename);

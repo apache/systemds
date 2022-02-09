@@ -86,14 +86,6 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 	}
 
 	@Override
-	public void postprocessInstruction(ExecutionContext ec) {
-		super.postprocessInstruction(ec);
-
-		if(DMLScript.LINEAGE && output.getDataType().isMatrixOrFrame())
-			((CacheableData<?>)ec.getVariable(output)).setCacheLineage(getLineageItem(ec).getValue());
-	}
-
-	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		return Pair.of(output.getName(),
 			new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, input1,input2,input3)));

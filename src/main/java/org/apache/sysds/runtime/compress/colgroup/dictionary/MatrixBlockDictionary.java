@@ -995,36 +995,65 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public void addToEntry(Dictionary d, int fr, int to) {
-		double[] v = d.getValues();
-		v[to] += _data.getDouble(fr, 1);
-	}
-
-	@Override
-	public void addToEntry(Dictionary d, int fr, int to, int nCol) {
-		double[] v = d.getValues();
+	public void addToEntry(final double[] v, final int fr, final int to, final int nCol) {
 		if(_data.isEmpty())
 			return;
 		else if(_data.isInSparseFormat()) {
-			SparseBlock sb = _data.getSparseBlock();
-			if(sb.isEmpty(fr))
+			final SparseBlock sb = _data.getSparseBlock();
+			if(sb == null)
 				return;
-			final int apos = sb.pos(fr);
-			final int alen = sb.size(fr) + apos;
-			final int[] aix = sb.indexes(fr);
-			final double[] avals = sb.values(fr);
-			final int offsetTo = nCol * to;
-			for(int j = apos; j < alen; j++) {
-				v[offsetTo + aix[j]] += avals[j];
-			}
+			addToEntrySparse(sb, v, fr, to * nCol, nCol);
+		}
+		else
+			addToEntryDense(_data.getDenseBlockValues(), v, fr * nCol, to * nCol, nCol);
+	}
+
+	private static final void addToEntrySparse(final SparseBlock sb, final double[] v, final int fr, final int st,
+		final int nCol) {
+		if(sb.isEmpty(fr))
+			return;
+		final int apos = sb.pos(fr);
+		final int alen = sb.size(fr) + apos;
+		final int[] aix = sb.indexes(fr);
+		final double[] avals = sb.values(fr);
+		for(int j = apos; j < alen; j++)
+			v[st + aix[j]] += avals[j];
+	}
+
+	private static final void addToEntryDense(final double[] thisV, final double[] v, final int sf, final int st,
+		final int nCol) {
+		for(int i = sf, j = st; i < sf + nCol; i++, j++)
+			v[j] += thisV[i];
+	}
+
+	@Override
+	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
+		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
+		if(_data.isEmpty())
+			return;
+		else if(_data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			if(sb == null)
+				return;
+			addToEntrySparse(sb, v, f1, t1 * nCol, nCol);
+			addToEntrySparse(sb, v, f2, t2 * nCol, nCol);
+			addToEntrySparse(sb, v, f3, t3 * nCol, nCol);
+			addToEntrySparse(sb, v, f4, t4 * nCol, nCol);
+			addToEntrySparse(sb, v, f5, t5 * nCol, nCol);
+			addToEntrySparse(sb, v, f6, t6 * nCol, nCol);
+			addToEntrySparse(sb, v, f7, t7 * nCol, nCol);
+			addToEntrySparse(sb, v, f8, t8 * nCol, nCol);
 		}
 		else {
-			final int sf = nCol * fr; // start from
-			final int ef = sf + nCol; // end from
 			final double[] thisV = _data.getDenseBlockValues();
-			for(int i = sf, j = nCol * to; i < ef; i++, j++) {
-				v[j] += thisV[i];
-			}
+			addToEntryDense(thisV, v, f1 * nCol, t1 * nCol, nCol);
+			addToEntryDense(thisV, v, f2 * nCol, t2 * nCol, nCol);
+			addToEntryDense(thisV, v, f3 * nCol, t3 * nCol, nCol);
+			addToEntryDense(thisV, v, f4 * nCol, t4 * nCol, nCol);
+			addToEntryDense(thisV, v, f5 * nCol, t5 * nCol, nCol);
+			addToEntryDense(thisV, v, f6 * nCol, t6 * nCol, nCol);
+			addToEntryDense(thisV, v, f7 * nCol, t7 * nCol, nCol);
+			addToEntryDense(thisV, v, f8 * nCol, t8 * nCol, nCol);
 		}
 	}
 

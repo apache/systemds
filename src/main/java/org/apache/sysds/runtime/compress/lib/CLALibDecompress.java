@@ -116,7 +116,6 @@ public class CLALibDecompress {
 	}
 
 	private static MatrixBlock decompressExecute(CompressedMatrixBlock cmb, int k) {
-
 		if(cmb.isEmpty())
 			return new MatrixBlock(cmb.getNumRows(), cmb.getNumColumns(), true);
 		// Copy column groups to make sure we can modify the list if we want to.

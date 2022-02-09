@@ -23,6 +23,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -117,6 +118,16 @@ public class OffsetByte extends AOffset {
 	}
 
 	@Override
+	public AOffsetIterator getOffsetIterator() {
+		if(noOverHalf)
+			return new OffsetByteIteratorNoOverHalf();
+		else if(noZero)
+			return new OffsetByteIteratorNoZero();
+		else
+			return new OffsetByteIterator();
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(OffsetFactory.OFF_TYPE.BYTE.ordinal());
 		out.writeInt(offsetToFirst);
@@ -132,12 +143,16 @@ public class OffsetByte extends AOffset {
 
 	@Override
 	public int getSize() {
-		int size = 1;
-		for(byte b : offsets)
-			if(b != 0)
-				size++;
-
-		return size;
+		if(noZero)
+			return offsets.length + 1;
+		else{
+			int size = 1;
+			for(byte b : offsets)
+				if(b != 0)
+					size++;
+	
+			return size;
+		}
 	}
 
 	@Override
@@ -606,6 +621,18 @@ public class OffsetByte extends AOffset {
 		}
 	}
 
+	@Override
+	protected final void preAggregateDenseMapRowInt(double[] mV, int off, double[] preAV, int cu, int nVal, int[] data,
+		AIterator it) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected final void preAggregateDenseMapRowsInt(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
+		int nVal, int[] data, AIterator it) {
+		throw new NotImplementedException();
+	}
+
 	private class IterateByteOffset extends AIterator {
 
 		protected int index;
@@ -738,6 +765,58 @@ public class OffsetByte extends AOffset {
 		@Override
 		public IterateByteOffsetNoOverHalf clone() {
 			return new IterateByteOffsetNoOverHalf(index, dataIndex, offset);
+		}
+	}
+
+	private class OffsetByteIteratorNoOverHalf extends AOffsetIterator {
+
+		protected int index;
+
+		private OffsetByteIteratorNoOverHalf() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		@Override
+		public int next() {
+			return offset += offsets[index++];
+		}
+	}
+
+	private class OffsetByteIterator extends AOffsetIterator {
+
+		protected int index;
+
+		private OffsetByteIterator() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		@Override
+		public int next() {
+			byte v = offsets[index];
+			while(v == 0) {
+				offset += maxV;
+				index++;
+				v = offsets[index];
+			}
+			index++;
+			return offset += v & 0xFF;
+		}
+	}
+
+	private class OffsetByteIteratorNoZero extends AOffsetIterator {
+
+		protected int index;
+
+		private OffsetByteIteratorNoZero() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		@Override
+		public int next() {
+			return offset += offsets[index++] & 0xFF;
 		}
 	}
 }

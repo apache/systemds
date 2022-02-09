@@ -36,6 +36,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysds.common.Types.CorrectionLocationType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -507,9 +508,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
-		if(isOverlapping())
+		if(isOverlapping()){
+			
 			return getUncompressed("replaceOperations " + pattern + " -> " + replacement).replaceOperations(result,
 				pattern, replacement);
+		}
 		else {
 			CompressedMatrixBlock ret = new CompressedMatrixBlock(getNumRows(), getNumColumns());
 			final List<AColGroup> prev = getColGroups();
@@ -934,9 +937,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		MatrixBlock d_compressed = getCachedDecompressed();
 		if(d_compressed != null)
 			return d_compressed;
-		if(isEmpty())
+		else if(isEmpty())
 			return new MatrixBlock(getNumRows(), getNumColumns(), true);
-		return this.decompress(InfrastructureAnalyzer.getLocalParallelism());
+		else if(ConfigurationManager.isParallelMatrixOperations())
+			return this.decompress(InfrastructureAnalyzer.getLocalParallelism());
+		else
+			return this.decompress(1);
 	}
 
 	public MatrixBlock getUncompressed(String operation) {

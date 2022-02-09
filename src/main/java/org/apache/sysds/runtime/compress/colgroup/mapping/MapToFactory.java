@@ -32,7 +32,7 @@ public class MapToFactory {
 	protected static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
 
 	public enum MAP_TYPE {
-		BIT, BYTE, CHAR, INT;
+		BIT, UBYTE, BYTE, CHAR, INT;
 	}
 
 	public static AMapToData create(int size, ABitmap ubm) {
@@ -73,6 +73,8 @@ public class MapToFactory {
 	public static AMapToData create(int size, int numTuples) {
 		if(numTuples <= 2 && size > 32)
 			return new MapToBit(numTuples, size);
+		else if(numTuples <= 127)
+			return new MapToUByte(numTuples, size);
 		else if(numTuples <= 256)
 			return new MapToByte(numTuples, size);
 		else if(numTuples <= ((int) Character.MAX_VALUE) + 1)
@@ -98,6 +100,13 @@ public class MapToFactory {
 			return d;
 		else if(numTuples <= 2 && size > 32)
 			ret = new MapToBit(numTuples, size);
+		else if(d instanceof MapToUByte)
+			return d;
+		else if(numTuples <= 127){
+			if(d instanceof MapToByte)
+				return ((MapToByte)d).toUByte();
+			ret = new MapToUByte(numTuples, size);
+		}
 		else if(d instanceof MapToByte)
 			return d;
 		else if(numTuples <= 256)
@@ -129,6 +138,9 @@ public class MapToFactory {
 			case BIT:
 				ret = new MapToBit(numTuples, size);
 				break;
+			case UBYTE:
+				ret = new MapToUByte(numTuples, size);
+				break;
 			case BYTE:
 				ret = new MapToByte(numTuples, size);
 				break;
@@ -147,6 +159,8 @@ public class MapToFactory {
 	public static long estimateInMemorySize(int size, int numTuples) {
 		if(numTuples <= 2 && size > 32)
 			return MapToBit.getInMemorySize(size);
+		else if(numTuples <= 127)
+			return MapToByte.getInMemorySize(size);
 		else if(numTuples <= 256)
 			return MapToByte.getInMemorySize(size);
 		else if(numTuples <= ((int) Character.MAX_VALUE) + 1)
@@ -160,6 +174,8 @@ public class MapToFactory {
 		switch(t) {
 			case BIT:
 				return MapToBit.readFields(in);
+			case UBYTE:
+				return MapToUByte.readFields(in);
 			case BYTE:
 				return MapToByte.readFields(in);
 			case CHAR:
@@ -174,6 +190,8 @@ public class MapToFactory {
 		switch(t) {
 			case BIT:
 				return 1;
+			case UBYTE:
+				return 127;
 			case BYTE:
 				return 255;
 			case CHAR:

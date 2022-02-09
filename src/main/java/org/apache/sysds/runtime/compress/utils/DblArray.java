@@ -69,7 +69,16 @@ public class DblArray {
 	}
 
 	public boolean equals(DblArray that) {
-		return this.hashCode() == that.hashCode() && Arrays.equals(this._arr, that._arr);
+		return this._arr == that._arr || // same object
+			(this.hashCode() == that.hashCode() && dblArrEq(this._arr, that._arr));
+	}
+
+	private static boolean dblArrEq(double[] a, double[] b) {
+		// it is assumed that the arrays always is same size.
+		for(int i = 0; i < a.length; i++)
+			if(a[i] != b[i])
+				return false;
+		return true;
 	}
 
 	@Override

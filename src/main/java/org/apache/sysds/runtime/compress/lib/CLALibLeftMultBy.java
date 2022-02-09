@@ -114,23 +114,32 @@ public class CLALibLeftMultBy {
 		return ret;
 	}
 
+	/**
+	 * Self left Matrix multiplication (tsmm)
+	 * 
+	 * t(x) %*% x
+	 * 
+	 * @param cmb Compressed matrix to multiply
+	 * @param ret The output matrix to put the result into
+	 * @param k   The parallelization degree allowed
+	 */
 	public static void leftMultByTransposeSelf(CompressedMatrixBlock cmb, MatrixBlock ret, int k) {
-
 		final List<AColGroup> groups = cmb.getColGroups();
 		final int numColumns = cmb.getNumColumns();
 		final int numRows = cmb.getNumRows();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
-		final double[] constV = shouldFilter ? new double[numColumns] : null;
-		final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
+		final boolean overlapping = cmb.isOverlapping();
 
-		// TODO add parallel again
-		tsmmColGroups(filteredGroups, ret, numRows);
-
-		if(constV != null)
+		if(shouldFilter) {
+			final double[] constV = new double[numColumns];
+			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
+			tsmmColGroups(filteredGroups, ret, numRows, overlapping, k);
 			addCorrectionLayer(filteredGroups, ret, numRows, numColumns, constV);
+		}
+		else
+			tsmmColGroups(groups, ret, numRows, overlapping, k);
 
-		long nnz = LibMatrixMult.copyUpperToLowerTriangle(ret);
-		ret.setNonZeros(nnz);
+		ret.setNonZeros(LibMatrixMult.copyUpperToLowerTriangle(ret));
 		ret.examSparsity();
 	}
 
@@ -204,14 +213,48 @@ public class CLALibLeftMultBy {
 		return ret;
 	}
 
-	private static void tsmmColGroups(List<AColGroup> filteredGroups, MatrixBlock ret, int nRows) {
-		for(int i = 0; i < filteredGroups.size(); i++) {
-			final AColGroup g = filteredGroups.get(i);
-			g.tsmm(ret, nRows);
-			for(int j = i + 1; j < filteredGroups.size(); j++) {
-				final AColGroup h = filteredGroups.get(j);
-				g.tsmmAColGroup(h, ret);
+	private static void tsmmColGroups(List<AColGroup> groups, MatrixBlock ret, int nRows, boolean overlapping, int k) {
+		if(k <= 1)
+			tsmmColGroupsSingleThread(groups, ret, nRows);
+		else if(overlapping)
+			tsmmColGroupsMultiThreadOverlapping(groups, ret, nRows, k);
+		else
+			tsmmColGroupsMultiThread(groups, ret, nRows, k);
+	}
+
+	private static void tsmmColGroupsSingleThread(List<AColGroup> groups, MatrixBlock ret, int nRows) {
+		for(int i = 0; i < groups.size(); i++) {
+			final AColGroup g = groups.get(i);
+			g.tsmm(ret, nRows); // self
+			for(int j = i + 1; j < groups.size(); j++) {
+				final AColGroup h = groups.get(j);
+				g.tsmmAColGroup(h, ret); // all remaining others
 			}
+		}
+	}
+
+	private static void tsmmColGroupsMultiThreadOverlapping(List<AColGroup> groups, MatrixBlock ret, int nRows, int k) {
+		LOG.warn("fallback to single threaded for now");
+		tsmmColGroupsSingleThread(groups, ret, nRows);
+	}
+
+	private static void tsmmColGroupsMultiThread(List<AColGroup> groups, MatrixBlock ret, int nRows, int k) {
+		final ExecutorService pool = CommonThreadPool.get(k);
+		final ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
+		for(int i = 0; i < groups.size(); i++) {
+			final AColGroup g = groups.get(i);
+			tasks.add(new TSMMTask(g, ret, nRows)); // self
+			for(int j = i + 1; j < groups.size(); j++)
+				tasks.add(new TSMMColGroupTask(g, groups.get(j), ret)); // all remaining others
+		}
+
+		try {
+			for(Future<MatrixBlock> future : pool.invokeAll(tasks))
+				future.get();
+			pool.shutdown();
+		}
+		catch(InterruptedException | ExecutionException e) {
+			throw new DMLRuntimeException(e);
 		}
 	}
 
@@ -366,36 +409,6 @@ public class CLALibLeftMultBy {
 		}
 	}
 
-	private static class LMMTask implements Callable<MatrixBlock> {
-		private final List<AColGroup> _groups;
-		private final MatrixBlock _that;
-		private final MatrixBlock _ret;
-		private final int _rl;
-		private final int _ru;
-		private final double[] _rowSums;
-
-		protected LMMTask(List<AColGroup> groups, MatrixBlock that, MatrixBlock ret, int rl, int ru, double[] rowSums) {
-			_groups = groups;
-			_that = that;
-			_ret = ret;
-			_rl = rl;
-			_ru = ru;
-			_rowSums = rowSums;
-		}
-
-		@Override
-		public MatrixBlock call() {
-			try {
-				LMMPrimitive(_groups, _that, _ret, _rl, _ru, _rowSums);
-			}
-			catch(Exception e) {
-				e.printStackTrace();
-				throw new DMLRuntimeException(e);
-			}
-			return _ret;
-		}
-	}
-
 	private static void LMMPrimitive(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int rl, int ru,
 		double[] rowSums) {
 		if(that.isInSparseFormat())
@@ -518,8 +531,8 @@ public class CLALibLeftMultBy {
 
 			if(a instanceof APreAgg) {
 				APreAgg g = (APreAgg) a;
-				//TODO remove call to force matrix block
-				g.forceMatrixBlockDictionary(); 
+				// TODO remove call to force matrix block
+				g.forceMatrixBlockDictionary();
 				ColGroupValues.add(g);
 			}
 			else
@@ -538,7 +551,7 @@ public class CLALibLeftMultBy {
 		preAgg.recomputeNonZeros();
 		// TODO remove call to getDictionary().
 		final MatrixBlock dict = ((MatrixBlockDictionary) cg.getDictionary()).getMatrixBlock();
-		tmpRes.reset(ru - rl,  cg.getNumCols(), false);
+		tmpRes.reset(ru - rl, cg.getNumCols(), false);
 		try {
 			LibMatrixMult.matrixMult(preAgg, dict, tmpRes);
 			addMatrixToResult(tmpRes, ret, cg.getColIndices(), rl, ru);
@@ -577,4 +590,84 @@ public class CLALibLeftMultBy {
 			}
 		}
 	}
+
+	private static class LMMTask implements Callable<MatrixBlock> {
+		private final List<AColGroup> _groups;
+		private final MatrixBlock _that;
+		private final MatrixBlock _ret;
+		private final int _rl;
+		private final int _ru;
+		private final double[] _rowSums;
+
+		protected LMMTask(List<AColGroup> groups, MatrixBlock that, MatrixBlock ret, int rl, int ru, double[] rowSums) {
+			_groups = groups;
+			_that = that;
+			_ret = ret;
+			_rl = rl;
+			_ru = ru;
+			_rowSums = rowSums;
+		}
+
+		@Override
+		public MatrixBlock call() {
+			try {
+				LMMPrimitive(_groups, _that, _ret, _rl, _ru, _rowSums);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				throw new DMLRuntimeException(e);
+			}
+			return _ret;
+		}
+	}
+
+	private static class TSMMTask implements Callable<MatrixBlock> {
+		private final AColGroup _g;
+		private final MatrixBlock _ret;
+		private final int _nRows;
+
+		protected TSMMTask(AColGroup g, MatrixBlock ret, int nRows) {
+			_g = g;
+			_ret = ret;
+			_nRows = nRows;
+
+		}
+
+		@Override
+		public MatrixBlock call() {
+			try {
+				_g.tsmm(_ret, _nRows);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				throw new DMLRuntimeException(e);
+			}
+			return _ret;
+		}
+	}
+
+	private static class TSMMColGroupTask implements Callable<MatrixBlock> {
+		private final AColGroup _g;
+		private final AColGroup _h;
+		private final MatrixBlock _ret;
+
+		protected TSMMColGroupTask(AColGroup g, AColGroup h, MatrixBlock ret) {
+			_g = g;
+			_h = h;
+			_ret = ret;
+		}
+
+		@Override
+		public MatrixBlock call() {
+			try {
+				_g.tsmmAColGroup(_h, _ret);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				throw new DMLRuntimeException(e);
+			}
+			return _ret;
+		}
+	}
+
 }

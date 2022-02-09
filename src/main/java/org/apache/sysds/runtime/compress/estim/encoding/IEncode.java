@@ -267,7 +267,7 @@ public interface IEncode {
 	public static IEncode createWithReader(MatrixBlock m, int[] rowCols, boolean transposed) {
 		final ReaderColumnSelection reader1 = ReaderColumnSelection.createReader(m, rowCols, transposed);
 		final int nRows = transposed ? m.getNumColumns() : m.getNumRows();
-		final DblArrayCountHashMap map = new DblArrayCountHashMap(16);
+		final DblArrayCountHashMap map = new DblArrayCountHashMap(16, rowCols.length);
 		final IntArrayList offsets = new IntArrayList();
 		DblArray cellVals = reader1.nextRow();
 

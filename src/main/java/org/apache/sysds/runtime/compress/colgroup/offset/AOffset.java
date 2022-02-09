@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -58,11 +59,18 @@ public abstract class AOffset implements Serializable {
 	private Map<Integer, AIterator> memorizer = null;
 
 	/**
-	 * Get an iterator of the offsets.
+	 * Get an iterator of the offsets while also maintaining the data index pointer.
 	 * 
 	 * @return AIterator that iterate through index and dictionary offset values.
 	 */
 	public abstract AIterator getIterator();
+
+	/**
+	 * Get an OffsetIterator of current offsets not maintaining the data index.
+	 * 
+	 * @return AIterator that iterator through the delta offsets.
+	 */
+	public abstract AOffsetIterator getOffsetIterator();
 
 	/**
 	 * Get an iterator that is pointing at a specific offset.
@@ -169,6 +177,26 @@ public abstract class AOffset implements Serializable {
 	public abstract int getOffsetsLength();
 
 	public final void preAggregateDenseMap(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
+		int[] data) {
+		// multi row iterator.
+		final AIterator it = getIterator(cl);
+		if(it == null)
+			return;
+		else if(it.offset > cu)
+			cacheIterator(it, cu); // cache this iterator.
+		else if(rl == ru - 1) {
+			final DenseBlock db = m.getDenseBlock();
+			final double[] mV = db.values(rl);
+			final int off = db.pos(rl);
+			preAggregateDenseMapRowInt(mV, off, preAV, cu, nVal, data, it);
+		}
+		else {
+			final DenseBlock db = m.getDenseBlock();
+			preAggregateDenseMapRowsInt(db, preAV, rl, ru, cl, cu, nVal, data, it);
+		}
+	}
+
+	public final void preAggregateDenseMap(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
 		char[] data) {
 		// multi row iterator.
 		final AIterator it = getIterator(cl);
@@ -228,6 +256,9 @@ public abstract class AOffset implements Serializable {
 		}
 	}
 
+	protected abstract void preAggregateDenseMapRowInt(double[] mV, int off, double[] preAV, int cu, int nVal,
+		int[] data, AIterator it);
+
 	protected abstract void preAggregateDenseMapRowByte(double[] mV, int off, double[] preAV, int cu, int nVal,
 		byte[] data, AIterator it);
 
@@ -236,6 +267,9 @@ public abstract class AOffset implements Serializable {
 
 	protected abstract void preAggregateDenseMapRowBit(double[] mV, int off, double[] preAV, int cu, int nVal,
 		BitSet data, AIterator it);
+
+	protected abstract void preAggregateDenseMapRowsInt(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
+		int nVal, int[] data, AIterator it);
 
 	protected abstract void preAggregateDenseMapRowsChar(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
 		int nVal, char[] data, AIterator it);
@@ -285,6 +319,14 @@ public abstract class AOffset implements Serializable {
 			for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
 				preAV[offOut] += vals[off];
 		}
+	}
+
+	public final void preAggregateSparseMap(SparseBlock sb, double[] preAV, int rl, int ru, int nVal, int[] data) {
+		final AIterator it = getIterator();
+		if(rl == ru - 1)
+			preAggregateSparseMapRow(sb, preAV, rl, nVal, data, it);
+		else
+			throw new NotImplementedException("MultiRow Preaggregation not supported yet");
 	}
 
 	public final void preAggregateSparseMap(SparseBlock sb, double[] preAV, int rl, int ru, int nVal, char[] data) {
@@ -364,6 +406,32 @@ public abstract class AOffset implements Serializable {
 		}
 	}
 
+	private void preAggregateSparseMapRow(SparseBlock sb, double[] preAV, int r, int nVal, int[] data, AIterator it) {
+		final int apos = sb.pos(r);
+		final int alen = sb.size(r) + apos;
+		final int[] aix = sb.indexes(r);
+		final double[] avals = sb.values(r);
+
+		final int maxId = data.length - 1;
+		int j = apos;
+		while(j < alen) {
+			if(aix[j] == it.offset) {
+				preAV[data[it.getDataIndex()]] += avals[j++];
+				if(it.getDataIndex() >= maxId)
+					break;
+				it.next();
+			}
+			else if(aix[j] < it.offset) {
+				j++;
+			}
+			else {
+				if(it.getDataIndex() >= maxId)
+					break;
+				it.next();
+			}
+		}
+	}
+
 	private void preAggregateSparseMapRow(SparseBlock sb, double[] preAV, int r, int nVal, BitSet data, AIterator it) {
 		final int apos = sb.pos(r);
 		final int alen = sb.size(r) + apos;
@@ -387,7 +455,70 @@ public abstract class AOffset implements Serializable {
 			j++;
 		if(j != alen && aix[j] == it.offset)
 			preAV[data.get(it.getDataIndex()) ? 1 : 0] += avals[j];
+	}
 
+	public void preAggregateSDCZ_SDCZMultiCol_char_char(ADictionary td, AOffset of, double[] dv, int nCol, char[] m,
+		char[] tm) {
+
+		final AOffsetIterator itThat = getOffsetIterator();
+		final AOffsetIterator itThis = of.getOffsetIterator();
+		final int tSize = tm.length - 1, size = m.length - 1;
+		int i = 0, j = 0;
+
+		while(i < tSize && j < size) {
+			final int tv = itThat.offset;
+			final int v = itThis.offset;
+			if(tv == v) {
+				final int fr = tm[i];
+				final int to = m[j];
+				td.addToEntry(dv, fr, to, nCol);
+				itThat.next();
+				itThis.next();
+				i++;
+				j++;
+			}
+			else if(tv < v) {
+				itThat.next();
+				i++;
+			}
+			else {
+				itThis.next();
+				j++;
+			}
+		}
+
+		int tv = itThat.offset;
+		int v = itThis.offset;
+		if(tv == v) {
+			final int fr = tm[i];
+			final int to = m[j];
+			td.addToEntry(dv, fr, to, nCol);
+			return;
+		}
+
+		while(i < tSize && tv < v) { // this is at final
+			itThat.next();
+			i++;
+			tv = itThat.offset;
+			if(tv == v) {
+				final int fr = tm[i];
+				final int to = m[j];
+				td.addToEntry(dv, fr, to, nCol);
+				return;
+			}
+		}
+
+		while(j < size && v < tv) { // that is at final
+			itThis.next();
+			j++;
+			v = itThis.offset;
+			if(tv == v) {
+				final int fr = tm[i];
+				final int to = m[j];
+				td.addToEntry(dv, fr, to, nCol);
+				return;
+			}
+		}
 	}
 
 	@Override

@@ -422,10 +422,11 @@ public class ColGroupSDCSingleZeros extends APreAgg {
 		final AIterator itThis = _indexes.getIterator();
 		final int nCol = that._colIndexes.length;
 		final int finalOffThis = _indexes.getOffsetToLast();
+		final double[] v = ret.getValues();
 
 		while(true) {
 			final int fr = that._data.getIndex(itThis.value());
-			that._dict.addToEntry(ret, fr, 0, nCol);
+			that._dict.addToEntry(v, fr, 0, nCol);
 			if(itThis.value() >= finalOffThis)
 				break;
 			else
@@ -440,10 +441,11 @@ public class ColGroupSDCSingleZeros extends APreAgg {
 		final int nCol = that._colIndexes.length;
 		final int finalOffThis = _indexes.getOffsetToLast();
 		final int finalOffThat = that._indexes.getOffsetToLast();
+		final double[] v = ret.getValues();
 
 		while(true) {
 			if(itThat.value() == itThis.value()) {
-				that._dict.addToEntry(ret, that._data.getIndex(itThat.getDataIndex()), 0, nCol);
+				that._dict.addToEntry(v, that._data.getIndex(itThat.getDataIndex()), 0, nCol);
 				if(itThat.value() >= finalOffThat)
 					break;
 				else
@@ -475,10 +477,11 @@ public class ColGroupSDCSingleZeros extends APreAgg {
 		final AIterator itThis = _indexes.getIterator();
 		final int finalOffThis = _indexes.getOffsetToLast();
 		final int finalOffThat = that._indexes.getOffsetToLast();
+		final double[] v = ret.getValues();
 
 		while(true) {
 			if(itThat.value() == itThis.value()) {
-				that._dict.addToEntry(ret, 0, 0, nCol);
+				that._dict.addToEntry(v, 0, 0, nCol);
 				if(itThat.value() >= finalOffThat)
 					break;
 				else

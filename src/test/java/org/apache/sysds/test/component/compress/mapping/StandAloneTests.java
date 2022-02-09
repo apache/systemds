@@ -172,8 +172,6 @@ public class StandAloneTests {
 		assertEquals(MapToBit.getInMemorySize(1), MapToBit.getInMemorySize(64));
 	}
 
-
-
 	@Test
 	public void sameMemoryUsageChar() {
 		assertEquals(MapToChar.getInMemorySize(9), MapToChar.getInMemorySize(10));

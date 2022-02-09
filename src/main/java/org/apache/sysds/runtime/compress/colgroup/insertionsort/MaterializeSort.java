@@ -33,35 +33,29 @@ public class MaterializeSort extends AInsertionSorter {
 	private final AMapToData md;
 	private final int[] skip;
 
-	private final int placeholder;
 	private int off = 0;
 
 	protected MaterializeSort(int endLength, int numRows, IntArrayList[] offsets) {
 		super(endLength, numRows, offsets);
-		placeholder = _numLabels + 1;
-		// + 1 to ensure that the _numLabels is exceeded.
-		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), Math.max(placeholder, 3));
+		// + 1 to ensure that the _numLabels is possible to represent in the map.
+		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), _numLabels + 1);
 		skip = new int[offsets.length];
 		for(int block = 0; block < _numRows; block += CACHE_BLOCK)
 			insert(block, Math.min(block + CACHE_BLOCK, _numRows));
-		
 	}
 
 	protected MaterializeSort(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex) {
 		super(endLength, numRows, offsets, negativeIndex);
-
-		placeholder = _numLabels;
-		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), Math.max(placeholder, 3));
+		// + 1 to ensure that the _numLabels is possible to represent in the map.
+		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), _numLabels + 1);
 		skip = new int[offsets.length];
-
-		for(int block = 0; block < _numRows; block += CACHE_BLOCK) 
+		for(int block = 0; block < _numRows; block += CACHE_BLOCK)
 			insertWithNegative(block, Math.min(block + CACHE_BLOCK, _numRows));
-		
 	}
 
 	private void insert(int rl, int ru) {
 		try {
-			md.fill(placeholder);
+			md.fill(_numLabels);
 			materializeInsert(rl, ru);
 			filterInsert(rl, ru);
 		}
@@ -69,7 +63,10 @@ public class MaterializeSort extends AInsertionSorter {
 			int sum = 0;
 			for(IntArrayList o : _offsets)
 				sum += o.size();
-			throw new DMLCompressionException("Failed normal materialize sorting with list of " + _offsets.length + " with sum (aka output size): " + sum + " requested Size: " + _indexes.length + " range: " + rl + " " + ru , e);
+			throw new DMLCompressionException(
+				"Failed normal materialize sorting with list of " + _offsets.length + " with sum (aka output size): " + sum
+					+ " requested Size: " + _indexes.length + " range: " + rl + " " + ru,
+				e);
 		}
 	}
 
@@ -88,13 +85,13 @@ public class MaterializeSort extends AInsertionSorter {
 		final int len = ru - rl;
 		for(int i = 0; i < len; i++) {
 			final int idx = md.getIndex(i);
-			if(idx != placeholder)
+			if(idx != _numLabels)
 				set(off++, i + rl, idx);
 		}
 	}
 
 	private void insertWithNegative(int rl, int ru) {
-		md.fill(placeholder);
+		md.fill(_numLabels);
 
 		for(int i = 0; i < _offsets.length; i++) {
 			IntArrayList of = _offsets[i];

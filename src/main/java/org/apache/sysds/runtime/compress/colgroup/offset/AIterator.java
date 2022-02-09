@@ -22,7 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Iterator interface, that returns a iterator of the indexes (not offsets)
+ * Iterator interface, that returns a iterator of the indexes while also maintaining a data index.
  */
 public abstract class AIterator {
 	public static final Log LOG = LogFactory.getLog(AIterator.class.getName());
@@ -52,7 +52,7 @@ public abstract class AIterator {
 		return offset;
 	}
 
-	public void setOff(int off){
+	public void setOff(int off) {
 		offset = off;
 	}
 

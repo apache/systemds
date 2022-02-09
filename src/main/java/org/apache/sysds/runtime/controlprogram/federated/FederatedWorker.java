@@ -56,8 +56,8 @@ public class FederatedWorker {
 
 	public FederatedWorker(int port, boolean debug) {
 		_flt = new FederatedLookupTable();
-		_port = (port == -1) ? DMLConfig.DEFAULT_FEDERATED_PORT : port;
 		_frc = new FederatedReadCache();
+		_port = (port == -1) ? DMLConfig.DEFAULT_FEDERATED_PORT : port;
 		_debug = debug;
 
 		LineageCacheConfig.setConfig(DMLScript.LINEAGE_REUSE);

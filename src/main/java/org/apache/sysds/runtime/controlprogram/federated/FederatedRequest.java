@@ -57,7 +57,7 @@ public class FederatedRequest implements Serializable {
 	private boolean _checkPrivacy;
 	private List<Long> _checksums;
 	private long _pid;
-	private String _lineageTrace;
+	private String _lineageTrace; // the serialized lineage trace of a put object
 
 	public FederatedRequest(RequestType method) {
 		this(method, FederationUtils.getNextFedDataID(), new ArrayList<>());

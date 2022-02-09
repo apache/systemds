@@ -98,7 +98,7 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	}
 
 	@Test
-	@Ignore // FIXME: not working for col partitioned because of an issue with MapMMSPInstruction
+	@Ignore // TODO: allow for reuse of respective spark instructions
 	public void testMatrixMultSP() {
 		runLineageTraceReuseTest(OpType.MM, 4, ExecMode.SPARK);
 	}
@@ -171,7 +171,6 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 
 		// wait for the coordinator processes to end and verify the results
 		String coordinatorOutput = waitForCoordinators();
-		System.out.println(coordinatorOutput);
 		verifyResults(opType, coordinatorOutput, execMode);
 
 		// check that federated input files are still existing
@@ -212,7 +211,7 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 			case MM:
 				retVal = checkForHeavyHitter(outputLog, (execMode == ExecMode.SPARK) ? "fed_mapmm" : "fed_ba+*");
 				if(rowPartitioned)
-					retVal &= checkForHeavyHitter(outputLog, "fed_uak+");
+					retVal &= checkForHeavyHitter(outputLog, (execMode == ExecMode.SPARK) ? "fed_rblk" : "fed_uak+");
 				break;
 			case PARFOR_ADD:
 				retVal = checkForHeavyHitter(outputLog, "fed_-");

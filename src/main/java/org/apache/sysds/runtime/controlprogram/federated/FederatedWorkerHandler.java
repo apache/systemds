@@ -87,6 +87,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	 * separate execution contexts at the federated sites too
 	 * 
 	 * @param flt The Federated Lookup Table of the current Federated Worker.
+	 * @param frc read cache shared by all worker handlers
 	 */
 	public FederatedWorkerHandler(FederatedLookupTable flt, FederatedReadCache frc) {
 		_flt = flt;
@@ -274,11 +275,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					_frc.setInvalid(filename);
 				throw ex;
 			}
-
-			if(DMLScript.LINEAGE)
-				// create a literal type lineage item with the file name
-				ec.getLineage().set(String.valueOf(id), linItem);
 		}
+
+		if(DMLScript.LINEAGE)
+			// create a literal type lineage item with the file name
+			ec.getLineage().set(String.valueOf(id), linItem);
 
 		if(dataType == Types.DataType.FRAME) {
 			try {

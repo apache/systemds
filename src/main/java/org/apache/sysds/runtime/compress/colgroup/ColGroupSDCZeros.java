@@ -514,57 +514,12 @@ public class ColGroupSDCZeros extends APreAgg {
 
 	@Override
 	public void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		final AIterator itThis = _indexes.getIterator();
-		final int nCol = that._colIndexes.length;
-
-		final int finalOffThis = _indexes.getOffsetToLast();
-		while(true) {
-			final int fr = that._data.getIndex(itThis.value());
-			final int to = _data.getIndex(itThis.getDataIndex());
-			that._dict.addToEntry(ret, fr, to, nCol);
-			if(itThis.value() >= finalOffThis)
-				break;
-			else
-				itThis.next();
-		}
+		_data.preAggregateSDCZ_DDC(that._data, that._dict, _indexes, ret, that._colIndexes.length);
 	}
 
 	@Override
 	public void preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		final AIterator itThat = that._indexes.getIterator();
-		final AIterator itThis = _indexes.getIterator();
-
-		final int finalOffThis = _indexes.getOffsetToLast();
-		final int finalOffThat = that._indexes.getOffsetToLast();
-
-		final int nCol = that._colIndexes.length;
-		while(true) {
-			if(itThat.value() == itThis.value()) {
-				final int fr = that._data.getIndex(itThat.getDataIndex());
-				final int to = _data.getIndex(itThis.getDataIndex());
-				that._dict.addToEntry(ret, fr, to, nCol);
-				if(itThat.value() >= finalOffThat)
-					break;
-				else
-					itThat.next();
-				if(itThis.value() >= finalOffThis)
-					break;
-				else
-					itThis.next();
-			}
-			else if(itThat.value() < itThis.value()) {
-				if(itThat.value() >= finalOffThat)
-					break;
-				else
-					itThat.next();
-			}
-			else {
-				if(itThis.value() >= finalOffThis)
-					break;
-				else
-					itThis.next();
-			}
-		}
+		_data.preAggregateSDCZ_SDCZ(that._data, that._dict, that._indexes, _indexes, ret, that._colIndexes.length);
 	}
 
 	@Override
@@ -575,11 +530,12 @@ public class ColGroupSDCZeros extends APreAgg {
 
 		final int finalOffThis = _indexes.getOffsetToLast();
 		final int finalOffThat = that._indexes.getOffsetToLast();
+		final double[] v = ret.getValues();
 
 		while(true) {
 			if(itThat.value() == itThis.value()) {
 				final int to = _data.getIndex(itThis.getDataIndex());
-				that._dict.addToEntry(ret, 0, to, nCol);
+				that._dict.addToEntry(v, 0, to, nCol);
 				if(itThat.value() >= finalOffThat)
 					break;
 				else

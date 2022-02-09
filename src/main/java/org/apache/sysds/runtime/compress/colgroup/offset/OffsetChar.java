@@ -23,6 +23,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -34,6 +35,7 @@ public class OffsetChar extends AOffset {
 	private final char[] offsets;
 	private final int offsetToFirst;
 	private final int offsetToLast;
+	private final boolean noZero;
 
 	public OffsetChar(int[] indexes) {
 		this(indexes, 0, indexes.length);
@@ -69,17 +71,34 @@ public class OffsetChar extends AOffset {
 
 			ov = nv;
 		}
+		this.noZero = getNoZero();
 	}
 
 	private OffsetChar(char[] offsets, int offsetToFirst, int offsetToLast) {
 		this.offsets = offsets;
 		this.offsetToFirst = offsetToFirst;
 		this.offsetToLast = offsetToLast;
+		this.noZero = getNoZero();
+	}
+
+	private boolean getNoZero() {
+		boolean noZero = true;
+		for(char b : offsets)
+			if(b == 0) {
+				noZero = false;
+				break;
+			}
+		return noZero;
 	}
 
 	@Override
 	public IterateCharOffset getIterator() {
 		return new IterateCharOffset();
+	}
+
+	@Override
+	public AOffsetIterator getOffsetIterator() {
+		return new OffsetCharIterator();
 	}
 
 	@Override
@@ -95,13 +114,13 @@ public class OffsetChar extends AOffset {
 	public long getInMemorySize() {
 		return estimateInMemorySize(offsets.length);
 	}
-	
+
 	public static long estimateInMemorySize(int nOffs) {
 		long size = 16 + 4 + 4 + 8; // object header plus int plus reference
 		size += MemoryEstimates.charArrayCost(nOffs);
 		return size;
 	}
-	
+
 	@Override
 	public long getExactSizeOnDisk() {
 		return 1 + 4 + 4 + offsets.length * 2;
@@ -109,12 +128,16 @@ public class OffsetChar extends AOffset {
 
 	@Override
 	public int getSize() {
-		int size = 1;
-		for(char b : offsets) {
-			if(b != 0)
-				size++;
+		if(noZero)
+			return offsets.length + 1;
+		else {
+			int size = 1;
+			for(char b : offsets) {
+				if(b != 0)
+					size++;
+			}
+			return size;
 		}
-		return size;
 	}
 
 	@Override
@@ -143,7 +166,6 @@ public class OffsetChar extends AOffset {
 		}
 		return new OffsetChar(offsets, offsetToFirst, offsetToLast);
 	}
-
 
 	@Override
 	protected final void preAggregateDenseMapRowByte(double[] mV, int off, double[] preAV, int cu, int nVal, byte[] data,
@@ -286,6 +308,18 @@ public class OffsetChar extends AOffset {
 		}
 	}
 
+	@Override
+	protected final void preAggregateDenseMapRowInt(double[] mV, int off, double[] preAV, int cu, int nVal, int[] data,
+		AIterator it) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected final void preAggregateDenseMapRowsInt(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
+		int nVal, int[] data, AIterator it) {
+		throw new NotImplementedException();
+	}
+
 	private class IterateCharOffset extends AIterator {
 
 		protected int index;
@@ -342,6 +376,28 @@ public class OffsetChar extends AOffset {
 		@Override
 		public int getOffsetsIndex() {
 			return index;
+		}
+	}
+
+	private class OffsetCharIterator extends AOffsetIterator {
+
+		protected int index;
+
+		private OffsetCharIterator() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		@Override
+		public int next() {
+			char v = offsets[index];
+			while(v == 0) {
+				offset += maxV;
+				index++;
+				v = offsets[index];
+			}
+			index++;
+			return offset += v & 0xFF;
 		}
 	}
 }

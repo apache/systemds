@@ -300,7 +300,7 @@ public class ColGroupFactory {
 		final int fill = data.getUpperBoundValue();
 		data.fill(fill);
 
-		DblArrayCountHashMap map = new DblArrayCountHashMap(cg.getNumVals());
+		DblArrayCountHashMap map = new DblArrayCountHashMap(cg.getNumVals(), colIndexes.length);
 		boolean extra;
 		if(rlen < CompressionSettings.PAR_DDC_THRESHOLD || k == 1)
 			extra = readToMapDDC(colIndexes, raw, map, cs, data, 0, rlen, fill);

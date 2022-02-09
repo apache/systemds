@@ -38,9 +38,9 @@ public class MaterializeSort extends AInsertionSorter {
 
 	protected MaterializeSort(int endLength, int numRows, IntArrayList[] offsets) {
 		super(endLength, numRows, offsets);
-		placeholder = _numLabels + 1;
+		placeholder = _numLabels + 10;
 		// + 1 to ensure that the _numLabels is exceeded.
-		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), Math.max(placeholder, 3));
+		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), Math.max(placeholder + 1, 3));
 		skip = new int[offsets.length];
 		for(int block = 0; block < _numRows; block += CACHE_BLOCK)
 			insert(block, Math.min(block + CACHE_BLOCK, _numRows));
@@ -51,7 +51,7 @@ public class MaterializeSort extends AInsertionSorter {
 		super(endLength, numRows, offsets, negativeIndex);
 
 		placeholder = _numLabels;
-		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), Math.max(placeholder, 3));
+		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), Math.max(placeholder + 1, 3));
 		skip = new int[offsets.length];
 
 		for(int block = 0; block < _numRows; block += CACHE_BLOCK) 

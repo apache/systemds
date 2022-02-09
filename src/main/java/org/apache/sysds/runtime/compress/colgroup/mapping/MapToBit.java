@@ -26,7 +26,6 @@ import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -180,55 +179,49 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public void preAggregateDDCSingleCol(AMapToData tm, ADictionary td, Dictionary ret) {
+	public void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v) {
 		if(tm instanceof MapToBit)
-			preAggregateDDCSingleColBitBit((MapToBit) tm, td, ret);
-		else {
-			final int nRows = size();
-			for(int r = 0; r < nRows; r++)
-				td.addToEntry(ret, tm.getIndex(r), getIndex(r));
-		}
+			preAggregateDDCSingleColBitBit((MapToBit) tm, td, v);
+		else
+			for(int r = 0; r < size(); r++)
+				v[getIndex(r)] += td[tm.getIndex(r)];
 	}
 
-	private void preAggregateDDCSingleColBitBit(MapToBit tmb, ADictionary td, Dictionary ret) {
+	private void preAggregateDDCSingleColBitBit(MapToBit tmb, double[] td, double[] v) {
 
 		JoinBitSets j = new JoinBitSets(tmb._data, _data, _size);
 
-		final double[] tv = td.getValues();
-		final double[] rv = ret.getValues();
-
 		// multiply and scale with actual values
-		rv[1] += tv[1] * j.tt;
-		rv[0] += tv[1] * j.ft;
-		rv[1] += tv[0] * j.tf;
-		rv[0] += tv[0] * j.ff;
+		v[1] += td[1] * j.tt;
+		v[0] += td[1] * j.ft;
+		v[1] += td[0] * j.tf;
+		v[0] += td[0] * j.ff;
 	}
 
 	@Override
-	public void preAggregateDDCMultiCol(AMapToData tm, ADictionary td, Dictionary ret, int nCol) {
+	public void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
 		if(tm instanceof MapToBit)
-			preAggregateDDCMultiColBitBit((MapToBit) tm, td, ret, nCol);
+			preAggregateDDCMultiColBitBit((MapToBit) tm, td, v, nCol);
 		else {
 			final int nRows = size();
 			for(int r = 0; r < nRows; r++)
-				td.addToEntry(ret, tm.getIndex(r), getIndex(r), nCol);
+				td.addToEntry(v, tm.getIndex(r), getIndex(r), nCol);
 		}
 	}
 
-	private void preAggregateDDCMultiColBitBit(MapToBit tmb, ADictionary td, Dictionary ret, int nCol) {
+	private void preAggregateDDCMultiColBitBit(MapToBit tmb, ADictionary td, double[] v, int nCol) {
 
 		JoinBitSets j = new JoinBitSets(tmb._data, _data, _size);
 
 		final double[] tv = td.getValues();
-		final double[] rv = ret.getValues();
 
 		// multiply and scale with actual values
 		for(int i = 0; i < nCol; i++) {
 			final int off = nCol + i;
-			rv[i] += tv[i] * j.ff;
-			rv[off] += tv[i] * j.tf;
-			rv[off] += tv[off] * j.tt;
-			rv[i] += tv[off] * j.ft;
+			v[i] += tv[i] * j.ff;
+			v[off] += tv[i] * j.tf;
+			v[off] += tv[off] * j.tt;
+			v[i] += tv[off] * j.ft;
 		}
 	}
 

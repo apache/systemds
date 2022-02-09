@@ -123,8 +123,6 @@ public abstract class APreAgg extends AColGroupValue {
 	public final Dictionary preAggregateThatIndexStructure(APreAgg that) {
 		int outputLength = that._colIndexes.length * this.getNumValues();
 		Dictionary ret = new Dictionary(new double[outputLength]);
-		String cThis = this.getClass().getSimpleName();
-		String cThat = that.getClass().getSimpleName();
 
 		if(that instanceof ColGroupDDC)
 			preAggregateThatDDCStructure((ColGroupDDC) that, ret);
@@ -132,9 +130,12 @@ public abstract class APreAgg extends AColGroupValue {
 			preAggregateThatSDCSingleZerosStructure((ColGroupSDCSingleZeros) that, ret);
 		else if(that instanceof ColGroupSDCZeros)
 			preAggregateThatSDCZerosStructure((ColGroupSDCZeros) that, ret);
-		else
+		else {
+			final String cThis = this.getClass().getSimpleName();
+			final String cThat = that.getClass().getSimpleName();
 			throw new NotImplementedException(
 				"Not supported pre aggregate using index structure of :" + cThat + " in " + cThis);
+		}
 		return ret;
 	}
 
@@ -150,17 +151,8 @@ public abstract class APreAgg extends AColGroupValue {
 
 	protected abstract boolean sameIndexStructure(AColGroupCompressed that);
 
-	public int getPreAggregateSize(){
+	public int getPreAggregateSize() {
 		return getNumValues();
-	}
-
-
-	private final ADictionary preAggLeft(APreAgg lhs) {
-		return lhs.preAggregateThatIndexStructure(this);
-	}
-
-	private final ADictionary preAggRight(APreAgg lhs) {
-		return this.preAggregateThatIndexStructure(lhs);
 	}
 
 	private void tsmmAColGroupValue(APreAgg lg, MatrixBlock result) {
@@ -179,10 +171,12 @@ public abstract class APreAgg extends AColGroupValue {
 			boolean left = !shouldPreAggregateLeft(lg);
 			if(left) {
 				l = lg._dict.getValues();
-				r = preAggLeft(lg).getValues();
+				// leftAgg
+				r = lg.preAggregateThatIndexStructure(this).getValues();
 			}
 			else {
-				l = preAggRight(lg).getValues();
+				// rightAgg
+				l = this.preAggregateThatIndexStructure(lg).getValues();
 				r = _dict.getValues();
 			}
 			MMDenseToUpperTriangle(l, r, leftIdx, rightIdx, result);
@@ -203,10 +197,10 @@ public abstract class APreAgg extends AColGroupValue {
 				MMDictsWithScaling(lDict, rDict, leftIdx, rightIdx, result, c);
 		}
 		else {
-			if(shouldPreAggregateLeft(lhs))
-				MMDicts(lDict, preAggLeft(lhs), leftIdx, rightIdx, result);
-			else
-				MMDicts(preAggRight(lhs), rDict, leftIdx, rightIdx, result);
+			if(shouldPreAggregateLeft(lhs)) // left preAgg
+				MMDicts(lDict, lhs.preAggregateThatIndexStructure(this), leftIdx, rightIdx, result);
+			else // right preAgg
+				MMDicts(this.preAggregateThatIndexStructure(lhs), rDict, leftIdx, rightIdx, result);
 		}
 	}
 

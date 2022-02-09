@@ -383,12 +383,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public void addToEntry(Dictionary d, int fr, int to) {
-		throw new NotImplementedException("Not implemented yet");
-	}
-
-	@Override
-	public void addToEntry(Dictionary d, int fr, int to, int nCol) {
+	public void addToEntry(double[] v, int fr, int to, int nCol) {
 		throw new NotImplementedException("Not implemented yet");
 	}
 

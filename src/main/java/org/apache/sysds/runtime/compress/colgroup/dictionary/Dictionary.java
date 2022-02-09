@@ -575,16 +575,10 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public void addToEntry(Dictionary d, int fr, int to){
-		d.getValues()[to] += _values[fr];
-	}
-
-	@Override
-	public void addToEntry(Dictionary d, int fr, int to, int nCol) {
+	public void addToEntry(double[] v, int fr, int to, int nCol) {
 		final int sf = fr * nCol; // start from
 		final int ef = sf + nCol; // end from
 		final int st = to * nCol; // start to
-		final double[] v = d.getValues();
 		for(int i = sf, j = st; i < ef; i++, j++)
 			v[j] += _values[i];
 	}

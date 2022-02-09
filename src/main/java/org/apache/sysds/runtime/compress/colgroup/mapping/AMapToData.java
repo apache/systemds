@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -230,38 +231,244 @@ public abstract class AMapToData implements Serializable {
 	public abstract int[] getCounts(int[] counts);
 
 	/**
-	 * PreAggregate into dictionary.
+	 * PreAggregate into dictionary with two sides of DDC.
 	 * 
 	 * @param tm   Map of other side
 	 * @param td   Dictionary to take values from (other side dictionary)
 	 * @param ret  The output dictionary to aggregate into
 	 * @param nCol The number of columns
 	 */
-	public final void preAggregateDDC(AMapToData tm, ADictionary td, Dictionary ret, int nCol) {
+	public final void preAggregateDDC_DDC(AMapToData tm, ADictionary td, Dictionary ret, int nCol) {
 		if(nCol == 1)
-			preAggregateDDCSingleCol(tm, td, ret);
+			preAggregateDDC_DDCSingleCol(tm, td.getValues(), ret.getValues());
 		else
-			preAggregateDDCMultiCol(tm, td, ret, nCol);
+			preAggregateDDC_DDCMultiCol(tm, td, ret.getValues(), nCol);
 	}
 
 	/**
-	 * PreAggregate into dictionary guaranteed to only have one column tuples.
+	 * PreAggregate into dictionary with two sides of DDC guaranteed to only have one column tuples.
 	 * 
 	 * @param tm  Map of other side
 	 * @param td  Dictionary to take values from (other side dictionary)
 	 * @param ret The output dictionary to aggregate into
 	 */
-	protected abstract void preAggregateDDCSingleCol(AMapToData tm, ADictionary td, Dictionary ret);
+	protected abstract void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v);
 
 	/**
-	 * PreAggregate into dictionary guaranteed to multiple column tuples.
+	 * PreAggregate into dictionary with two sides of DDC guaranteed to multiple column tuples.
 	 * 
 	 * @param tm   Map of other side
 	 * @param td   Dictionary to take values from (other side dictionary)
 	 * @param ret  The output dictionary to aggregate into
 	 * @param nCol The number of columns
 	 */
-	protected abstract void preAggregateDDCMultiCol(AMapToData tm, ADictionary td, Dictionary ret, int nCol);
+	protected abstract void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol);
+
+	/**
+	 * PreAggregate into SDCZero dictionary from DDC dictionary.
+	 * 
+	 * @param tm   Map of other side
+	 * @param td   Dictionary to take values from (other side dictionary)
+	 * @param ret  The output dictionary to aggregate into
+	 * @param nCol The number of columns in output and td dictionary
+	 */
+	public final void preAggregateDDC_SDCZ(AMapToData tm, ADictionary td, AOffset tof, Dictionary ret, int nCol) {
+		if(nCol == 1)
+			preAggregateDDC_SDCZSingleCol(tm, td.getValues(), tof, ret.getValues());
+		else
+			preAggregateDDC_SDCZMultiCol(tm, td, tof, ret.getValues(), nCol);
+	}
+
+	public void preAggregateDDC_SDCZSingleCol(AMapToData tm, double[] td, AOffset tof, double[] v) {
+		final AOffsetIterator itThat = tof.getOffsetIterator();
+		final int size = tm.size() - 1;
+		for(int i = 0; i < size; i++) {
+			final int to = getIndex(itThat.value());
+			final int fr = tm.getIndex(i);
+			v[to] += td[fr];
+			itThat.next();
+		}
+		final int to = getIndex(itThat.value());
+		final int fr = tm.getIndex(size);
+		v[to] += td[fr];
+	}
+
+	public void preAggregateDDC_SDCZMultiCol(AMapToData tm, ADictionary td, AOffset tof, double[] v, int nCol) {
+		final AOffsetIterator itThat = tof.getOffsetIterator();
+		final int size = tm.size() - 1;
+		for(int i = 0; i < size; i++) {
+			final int to = getIndex(itThat.value());
+			final int fr = tm.getIndex(i);
+			td.addToEntry(v, fr, to, nCol);
+			itThat.next();
+		}
+		final int to = getIndex(itThat.value());
+		final int fr = tm.getIndex(size);
+		td.addToEntry(v, fr, to, nCol);
+	}
+
+	/**
+	 * PreAggregate into DDC dictionary from SDCZero dictionary.
+	 * 
+	 * @param tm   Map of other side
+	 * @param td   Dictionary to take values from (other side dictionary)
+	 * @param of   Offsets of the SDC to look into DDC
+	 * @param ret  The output dictionary to aggregate into
+	 * @param nCol The number of columns in output and td dictionary
+	 */
+	public final void preAggregateSDCZ_DDC(AMapToData tm, ADictionary td, AOffset of, Dictionary ret, int nCol) {
+		if(nCol == 1)
+			preAggregateSDCZ_DDCSingleCol(tm, td.getValues(), of, ret.getValues());
+		else
+			preAggregateSDCZ_DDCMultiCol(tm, td, of, ret.getValues(), nCol);
+	}
+
+	protected void preAggregateSDCZ_DDCSingleCol(AMapToData tm, double[] td, AOffset of, double[] v) {
+		final AOffsetIterator itThis = of.getOffsetIterator();
+		final int size = size() - 1;
+
+		for(int i = 0; i < size; i++) {
+			final int to = getIndex(i);
+			final int fr = tm.getIndex(itThis.value());
+			v[to] += td[fr];
+			itThis.next();
+		}
+		final int to = getIndex(size);
+		final int fr = tm.getIndex(itThis.value());
+		v[to] += td[fr];
+	}
+
+	protected void preAggregateSDCZ_DDCMultiCol(AMapToData tm, ADictionary td, AOffset of, double[] v, int nCol) {
+		final AOffsetIterator itThis = of.getOffsetIterator();
+		final int size = size() - 1;
+
+		for(int i = 0; i < size; i++) {
+			final int to = getIndex(i);
+			final int fr = tm.getIndex(itThis.value());
+			td.addToEntry(v, fr, to, nCol);
+			itThis.next();
+		}
+		final int to = getIndex(size);
+		final int fr = tm.getIndex(itThis.value());
+		td.addToEntry(v, fr, to, nCol);
+	}
+
+	public final void preAggregateSDCZ_SDCZ(AMapToData tm, ADictionary td, AOffset tof, AOffset of, Dictionary ret,
+		int nCol) {
+		if(nCol == 1)
+			preAggregateSDCZ_SDCZSingleCol(tm, td.getValues(), tof, of, ret.getValues());
+		else
+			preAggregateSDCZ_SDCZMultiCol(tm, td, tof, of, ret.getValues(), nCol);
+	}
+
+	private final void preAggregateSDCZ_SDCZSingleCol(AMapToData tm, double[] td, AOffset tof, AOffset of, double[] dv) {
+		final AOffsetIterator itThat = tof.getOffsetIterator();
+		final AOffsetIterator itThis = of.getOffsetIterator();
+		final int tSize = tm.size() - 1, size = size() - 1;
+		preAggregateSDCZ_SDCZSingleCol(tm, td, dv, itThat, itThis, tSize, size);
+	}
+
+	protected void preAggregateSDCZ_SDCZSingleCol(AMapToData tm, double[] td, double[] dv, AOffsetIterator itThat,
+		AOffsetIterator itThis, int tSize, int size) {
+
+		int i = 0, j = 0;
+
+		// main preAggregate process
+		while(i < tSize && j < size) {
+			final int tv = itThat.value();
+			final int v = itThis.value();
+			if(tv == v) {
+				final int fr = tm.getIndex(i);
+				final int to = getIndex(j);
+				dv[to] += td[fr];
+				itThat.next();
+				itThis.next();
+				i++;
+				j++;
+			}
+			else if(tv < v) {
+				itThat.next();
+				i++;
+			}
+			else {
+				itThis.next();
+				j++;
+			}
+		}
+
+		// Remaining part (very small so not really main performance bottleneck)
+		preAggregateSDCZ_SDCZMultiCol_tail(tm, this, new Dictionary(td), dv, 1, itThat, itThis, tSize, size, i, j);
+	}
+
+	protected void preAggregateSDCZ_SDCZMultiCol(AMapToData tm, ADictionary td, AOffset tof, AOffset of, double[] dv,
+		int nCol) {
+		final AOffsetIterator itThat = tof.getOffsetIterator();
+		final AOffsetIterator itThis = of.getOffsetIterator();
+		final int tSize = tm.size() - 1, size = size() - 1;
+		int i = 0, j = 0;
+
+		// main preAggregate process
+		while(i < tSize && j < size) {
+			final int tv = itThat.value();
+			final int v = itThis.value();
+			if(tv == v) {
+				final int fr = tm.getIndex(i);
+				final int to = getIndex(j);
+				td.addToEntry(dv, fr, to, nCol);
+				itThat.next();
+				itThis.next();
+				i++;
+				j++;
+			}
+			else if(tv < v) {
+				itThat.next();
+				i++;
+			}
+			else {
+				itThis.next();
+				j++;
+			}
+		}
+
+		// Remaining part (very small so not really main performance bottleneck)
+		preAggregateSDCZ_SDCZMultiCol_tail(tm, this, td, dv, nCol, itThat, itThis, tSize, size, i, j);
+	}
+
+	protected static void preAggregateSDCZ_SDCZMultiCol_tail(AMapToData tm, AMapToData m, ADictionary td, double[] dv,
+		int nCol, AOffsetIterator itThat, AOffsetIterator itThis, int tSize, int size, int i, int j) {
+		int tv = itThat.value();
+		int v = itThis.value();
+		if(tv == v) {
+			final int fr = tm.getIndex(i);
+			final int to = m.getIndex(j);
+			td.addToEntry(dv, fr, to, nCol);
+			return;
+		}
+
+		while(i < tSize && tv < v) { // this is at final
+			itThat.next();
+			i++;
+			tv = itThat.value();
+			if(tv == v) {
+				final int fr = tm.getIndex(i);
+				final int to = m.getIndex(j);
+				td.addToEntry(dv, fr, to, nCol);
+				return;
+			}
+		}
+
+		while(j < size && v < tv) { // that is at final
+			itThis.next();
+			j++;
+			v = itThis.value();
+			if(tv == v) {
+				final int fr = tm.getIndex(i);
+				final int to = m.getIndex(j);
+				td.addToEntry(dv, fr, to, nCol);
+				return;
+			}
+		}
+	}
 
 	/**
 	 * Copy the values in this map into another mapping object.

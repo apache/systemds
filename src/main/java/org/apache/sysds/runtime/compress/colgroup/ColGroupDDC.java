@@ -180,22 +180,12 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		_data.preAggregateDDC(that._data, that._dict, ret, that._colIndexes.length);
+		_data.preAggregateDDC_DDC(that._data, that._dict, ret, that._colIndexes.length);
 	}
 
 	@Override
 	public void preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		final AIterator itThat = that._indexes.getIterator();
-		final int nCol = that._colIndexes.length;
-		final int finalOff = that._indexes.getOffsetToLast();
-		while(true) {
-			final int to = _data.getIndex(itThat.value());
-			final int fr = that._data.getIndex(itThat.getDataIndex());
-			that._dict.addToEntry(ret, fr, to, nCol);
-			if(itThat.value() == finalOff)
-				break;
-			itThat.next();
-		}
+		_data.preAggregateDDC_SDCZ(that._data, that._dict, that._indexes, ret, that._colIndexes.length);
 	}
 
 	@Override
@@ -203,9 +193,10 @@ public class ColGroupDDC extends APreAgg {
 		final AIterator itThat = that._indexes.getIterator();
 		final int nCol = that._colIndexes.length;
 		final int finalOff = that._indexes.getOffsetToLast();
+		final double[] v = ret.getValues();
 		while(true) {
 			final int to = _data.getIndex(itThat.value());
-			that._dict.addToEntry(ret, 0, to, nCol);
+			that._dict.addToEntry(v, 0, to, nCol);
 			if(itThat.value() == finalOff)
 				break;
 			itThat.next();

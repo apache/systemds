@@ -26,7 +26,6 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -183,7 +182,7 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
-	public int[] getCounts(int[] counts){
+	public int[] getCounts(int[] counts) {
 		final int sz = size();
 		for(int i = 0; i < sz; i++)
 			counts[_data[i]]++;
@@ -191,16 +190,33 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
-	public void preAggregateDDCSingleCol(AMapToData tm, ADictionary td, Dictionary ret) {
-		final int nRows = size();
-		for(int r = 0; r < nRows; r++)
-			td.addToEntry(ret, tm.getIndex(r), getIndex(r));
+	public void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v) {
+		for(int r = 0; r < size(); r++)
+			v[getIndex(r)] += td[tm.getIndex(r)];
 	}
 
 	@Override
-	public void preAggregateDDCMultiCol(AMapToData tm, ADictionary td, Dictionary ret, int nCol) {
+	public void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
 		final int nRows = size();
 		for(int r = 0; r < nRows; r++)
-			td.addToEntry(ret, tm.getIndex(r), getIndex(r), nCol);
+			td.addToEntry(v, tm.getIndex(r), getIndex(r), nCol);
 	}
+
+	// @Override
+	// public void preAggregateSDCZ_SDCZMultiCol(AMapToData tm, ADictionary td, AOffset tof, AOffset of, Dictionary ret,
+	// int nCol) {
+	// tm.preAggregateSDCZ_SDCZMultiCol_char(td, tof, of, ret, nCol, _data);
+	// }
+
+	// @Override
+	// public void preAggregateSDCZ_SDCZMultiCol_char(ADictionary td, AOffset tof, AOffset of, Dictionary ret, int nCol,
+	// char[] m) {
+	// preAggregateSDCZ_SDCZMultiCol_char_char(td, tof, of, ret, nCol, m, _data);
+	// }
+
+	// private static void preAggregateSDCZ_SDCZMultiCol_char_char(ADictionary td, AOffset tof, AOffset of, Dictionary
+	// ret,
+	// int nCol, char[] m, char[] tm) {
+	// tof.preAggregateSDCZ_SDCZMultiCol_char_char(td, of, ret, nCol, m, tm);
+	// }
 }

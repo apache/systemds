@@ -995,14 +995,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public void addToEntry(Dictionary d, int fr, int to) {
-		double[] v = d.getValues();
-		v[to] += _data.getDouble(fr, 1);
-	}
-
-	@Override
-	public void addToEntry(Dictionary d, int fr, int to, int nCol) {
-		double[] v = d.getValues();
+	public void addToEntry(final double[] v, final int fr, final int to, final int nCol) {
 		if(_data.isEmpty())
 			return;
 		else if(_data.isInSparseFormat()) {
@@ -1020,9 +1013,9 @@ public class MatrixBlockDictionary extends ADictionary {
 		}
 		else {
 			final int sf = nCol * fr; // start from
-			final int ef = sf + nCol; // end from
+			final int st = nCol * to; // start to
 			final double[] thisV = _data.getDenseBlockValues();
-			for(int i = sf, j = nCol * to; i < ef; i++, j++) {
+			for(int i = sf, j = st; i < sf + nCol; i++, j++) {
 				v[j] += thisV[i];
 			}
 		}

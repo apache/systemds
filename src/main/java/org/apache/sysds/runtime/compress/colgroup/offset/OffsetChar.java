@@ -23,6 +23,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -83,6 +84,11 @@ public class OffsetChar extends AOffset {
 	}
 
 	@Override
+	public AOffsetIterator getOffsetIterator(){
+		return new OffsetCharIterator();
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(OffsetFactory.OFF_TYPE.CHAR.ordinal());
 		out.writeInt(offsetToFirst);
@@ -95,13 +101,13 @@ public class OffsetChar extends AOffset {
 	public long getInMemorySize() {
 		return estimateInMemorySize(offsets.length);
 	}
-	
+
 	public static long estimateInMemorySize(int nOffs) {
 		long size = 16 + 4 + 4 + 8; // object header plus int plus reference
 		size += MemoryEstimates.charArrayCost(nOffs);
 		return size;
 	}
-	
+
 	@Override
 	public long getExactSizeOnDisk() {
 		return 1 + 4 + 4 + offsets.length * 2;
@@ -143,7 +149,6 @@ public class OffsetChar extends AOffset {
 		}
 		return new OffsetChar(offsets, offsetToFirst, offsetToLast);
 	}
-
 
 	@Override
 	protected final void preAggregateDenseMapRowByte(double[] mV, int off, double[] preAV, int cu, int nVal, byte[] data,
@@ -286,6 +291,18 @@ public class OffsetChar extends AOffset {
 		}
 	}
 
+	@Override
+	protected final void preAggregateDenseMapRowInt(double[] mV, int off, double[] preAV, int cu, int nVal, int[] data,
+		AIterator it) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected final void preAggregateDenseMapRowsInt(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
+		int nVal, int[] data, AIterator it) {
+		throw new NotImplementedException();
+	}
+
 	private class IterateCharOffset extends AIterator {
 
 		protected int index;
@@ -342,6 +359,28 @@ public class OffsetChar extends AOffset {
 		@Override
 		public int getOffsetsIndex() {
 			return index;
+		}
+	}
+
+	private class OffsetCharIterator extends AOffsetIterator {
+
+		protected int index;
+
+		private OffsetCharIterator() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		@Override
+		public void next() {
+			char v = offsets[index];
+			while(v == 0) {
+				offset += maxV;
+				index++;
+				v = offsets[index];
+			}
+			offset += v & 0xFF;
+			index++;
 		}
 	}
 }

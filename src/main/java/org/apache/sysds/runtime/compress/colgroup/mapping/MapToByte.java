@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -229,13 +230,13 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public int[] getCounts(int[] counts){
+	public int[] getCounts(int[] counts) {
 		final int sz = size();
-		if(getUnique() < 127){
+		if(getUnique() < 127) {
 			for(int i = 0; i < sz; i++)
 				counts[_data[i]]++;
 		}
-		else{
+		else {
 			for(int i = 0; i < sz; i++)
 				counts[getIndex(i)]++;
 		}
@@ -243,16 +244,209 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public void preAggregateDDCSingleCol(AMapToData tm, ADictionary td, Dictionary ret) {
-		final int nRows = size();
-		for(int r = 0; r < nRows; r++)
-			td.addToEntry(ret, tm.getIndex(r), getIndex(r));
+	protected void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v) {
+		if(getUnique() < 127)
+			preAggregateDDC_DDCSingleCol_ubyte(tm, td, v);
+		else
+			preAggregateDDC_DDCSingleCol_byte(tm, td, v);
+	}
+
+	private void preAggregateDDC_DDCSingleCol_ubyte(AMapToData tm, double[] td, double[] v) {
+		for(int r = 0; r < _data.length; r++)
+			v[_data[r]] += td[tm.getIndex(r)];
+	}
+
+	private void preAggregateDDC_DDCSingleCol_byte(AMapToData tm, double[] td, double[] v) {
+		for(int r = 0; r < _data.length; r++)
+			v[_data[r] & 0xFF] += td[tm.getIndex(r)];
 	}
 
 	@Override
-	public void preAggregateDDCMultiCol(AMapToData tm, ADictionary td, Dictionary ret, int nCol) {
-		final int nRows = size();
-		for(int r = 0; r < nRows; r++)
-			td.addToEntry(ret, tm.getIndex(r), getIndex(r), nCol);
+	protected void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
+		if(getUnique() < 127)
+			preAggregateDDC_DDCMultiCol_ubyte(tm, td, v, nCol);
+		else
+			preAggregateDDC_DDCMultiCol_byte(tm, td, v, nCol);
 	}
+
+	private final void preAggregateDDC_DDCMultiCol_ubyte(AMapToData tm, ADictionary td, double[] v, int nCol) {
+		for(int r = 0; r < _data.length; r++)
+			td.addToEntry(v, tm.getIndex(r), _data[r], nCol);
+	}
+
+	private final void preAggregateDDC_DDCMultiCol_byte(AMapToData tm, ADictionary td, double[] v, int nCol) {
+		for(int r = 0; r < _data.length; r++)
+			td.addToEntry(v, tm.getIndex(r), _data[r] & 0xFF, nCol);
+	}
+
+	@Override
+	protected void preAggregateSDCZ_DDCSingleCol(AMapToData tm, double[] td, AOffset of, double[] v) {
+		final AOffsetIterator it = of.getOffsetIterator();
+		final int size = _data.length - 1;
+
+		if(getUnique() < 127)
+			preAggregateSDCZ_DDCSingleCol_ubyte(tm, td, of, v, it, size);
+		else
+			preAggregateSDCZ_DDCSingleCol_byte(tm, td, of, v, it, size);
+
+	}
+
+	private final void preAggregateSDCZ_DDCSingleCol_ubyte(AMapToData tm, double[] td, AOffset of, double[] v,
+		AOffsetIterator it, final int size) {
+		for(int i = 0; i < size; i++) {
+			v[_data[i]] += td[tm.getIndex(it.value())];
+			it.next();
+		}
+		v[_data[size]] += td[tm.getIndex(it.value())];
+	}
+
+	private final void preAggregateSDCZ_DDCSingleCol_byte(AMapToData tm, double[] td, AOffset of, double[] v,
+		AOffsetIterator it, int size) {
+		for(int i = 0; i < size; i++) {
+			v[_data[i] & 0xFF] += td[tm.getIndex(it.value())];
+			it.next();
+		}
+		v[_data[size] & 0xFF] += td[tm.getIndex(it.value())];
+	}
+
+	@Override
+	protected void preAggregateSDCZ_SDCZSingleCol(AMapToData tm, double[] td, double[] dv, AOffsetIterator itThat,
+		AOffsetIterator itThis, int tSize, int size) {
+		if(getUnique() < 127)
+			preAggregateSDCZ_SDCZSingleCol_ubyte(tm, td, dv, itThat, itThis, tSize, size);
+		else
+			preAggregateSDCZ_SDCZSingleCol_byte(tm, td, dv, itThat, itThis, tSize, size);
+	}
+
+	private void preAggregateSDCZ_SDCZSingleCol_ubyte(AMapToData tm, double[] td, double[] dv, AOffsetIterator itThat,
+		AOffsetIterator itThis, int tSize, int size) {
+
+		int i = 0, j = 0;
+
+		// main preAggregate process
+		while(i < tSize && j < size) {
+			final int tv = itThat.value();
+			final int v = itThis.value();
+			if(tv == v) {
+				final int fr = tm.getIndex(i);
+				dv[_data[j]] += td[fr];
+				itThat.next();
+				itThis.next();
+				i++;
+				j++;
+			}
+			else if(tv < v) {
+				itThat.next();
+				i++;
+			}
+			else {
+				itThis.next();
+				j++;
+			}
+		}
+
+		// Remaining part (very small so not really main performance bottleneck)
+		preAggregateSDCZ_SDCZMultiCol_tail(tm, this, new Dictionary(td), dv, 1, itThat, itThis, tSize, size, i, j);
+	}
+
+	private void preAggregateSDCZ_SDCZSingleCol_byte(AMapToData tm, double[] td, double[] dv, AOffsetIterator itThat,
+		AOffsetIterator itThis, int tSize, int size) {
+		if(tm instanceof MapToByte) {
+
+			final byte[] tmb = ((MapToByte) tm)._data;
+			if(tm.getUnique() < 127)
+				preAggregateSDCZ_SDCZSingleCol_byte_ubyte(tm, tmb, td, dv, itThat, itThis, tSize, size);
+			else
+				preAggregateSDCZ_SDCZSingleCol_byte_byte(tm, tmb, td, dv, itThat, itThis, tSize, size);
+		}
+		else {
+			int i = 0, j = 0;
+
+			// main preAggregate process
+			while(i < tSize && j < size) {
+				final int tv = itThat.value();
+				final int v = itThis.value();
+				if(tv == v) {
+					final int fr = tm.getIndex(i);
+					dv[_data[j] & 0xFF] += td[fr];
+					itThat.next();
+					itThis.next();
+					i++;
+					j++;
+				}
+				else if(tv < v) {
+					itThat.next();
+					i++;
+				}
+				else {
+					itThis.next();
+					j++;
+				}
+			}
+
+			// Remaining part (very small so not really main performance bottleneck)
+			preAggregateSDCZ_SDCZMultiCol_tail(tm, this, new Dictionary(td), dv, 1, itThat, itThis, tSize, size, i, j);
+		}
+	}
+
+	private void preAggregateSDCZ_SDCZSingleCol_byte_ubyte(AMapToData tm, byte[] tmb, double[] td, double[] dv,
+		AOffsetIterator itThat, AOffsetIterator itThis, int tSize, int size) {
+
+		int i = 0, j = 0;
+
+		// main preAggregate process
+		while(i < tSize && j < size) {
+			final int tv = itThat.value();
+			final int v = itThis.value();
+			if(tv == v) {
+				dv[_data[j] & 0xFF] += td[tmb[i]];
+				itThat.next();
+				itThis.next();
+				i++;
+				j++;
+			}
+			else if(tv < v) {
+				itThat.next();
+				i++;
+			}
+			else {
+				itThis.next();
+				j++;
+			}
+		}
+
+		// Remaining part (very small so not really main performance bottleneck)
+		preAggregateSDCZ_SDCZMultiCol_tail(tm, this, new Dictionary(td), dv, 1, itThat, itThis, tSize, size, i, j);
+	}
+
+	private void preAggregateSDCZ_SDCZSingleCol_byte_byte(AMapToData tm, byte[] tmb, double[] td, double[] dv,
+		AOffsetIterator itThat, AOffsetIterator itThis, int tSize, int size) {
+
+		int i = 0, j = 0;
+
+		// main preAggregate process
+		while(i < tSize && j < size) {
+			final int tv = itThat.value();
+			final int v = itThis.value();
+			if(tv == v) {
+				dv[_data[j] & 0xFF] += td[tmb[i] & 0xFF];
+				itThat.next();
+				itThis.next();
+				i++;
+				j++;
+			}
+			else if(tv < v) {
+				itThat.next();
+				i++;
+			}
+			else {
+				itThis.next();
+				j++;
+			}
+		}
+
+		// Remaining part (very small so not really main performance bottleneck)
+		preAggregateSDCZ_SDCZMultiCol_tail(tm, this, new Dictionary(td), dv, 1, itThat, itThis, tSize, size, i, j);
+	}
+
 }

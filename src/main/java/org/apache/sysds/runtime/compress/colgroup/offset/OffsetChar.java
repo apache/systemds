@@ -35,6 +35,7 @@ public class OffsetChar extends AOffset {
 	private final char[] offsets;
 	private final int offsetToFirst;
 	private final int offsetToLast;
+	private final boolean noZero;
 
 	public OffsetChar(int[] indexes) {
 		this(indexes, 0, indexes.length);
@@ -70,12 +71,24 @@ public class OffsetChar extends AOffset {
 
 			ov = nv;
 		}
+		this.noZero = getNoZero();
 	}
 
 	private OffsetChar(char[] offsets, int offsetToFirst, int offsetToLast) {
 		this.offsets = offsets;
 		this.offsetToFirst = offsetToFirst;
 		this.offsetToLast = offsetToLast;
+		this.noZero = getNoZero();
+	}
+
+	private boolean getNoZero() {
+		boolean noZero = true;
+		for(char b : offsets)
+			if(b == 0) {
+				noZero = false;
+				break;
+			}
+		return noZero;
 	}
 
 	@Override
@@ -84,7 +97,7 @@ public class OffsetChar extends AOffset {
 	}
 
 	@Override
-	public AOffsetIterator getOffsetIterator(){
+	public AOffsetIterator getOffsetIterator() {
 		return new OffsetCharIterator();
 	}
 
@@ -115,12 +128,16 @@ public class OffsetChar extends AOffset {
 
 	@Override
 	public int getSize() {
-		int size = 1;
-		for(char b : offsets) {
-			if(b != 0)
-				size++;
+		if(noZero)
+			return offsets.length + 1;
+		else {
+			int size = 1;
+			for(char b : offsets) {
+				if(b != 0)
+					size++;
+			}
+			return size;
 		}
-		return size;
 	}
 
 	@Override

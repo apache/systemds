@@ -143,12 +143,16 @@ public class OffsetByte extends AOffset {
 
 	@Override
 	public int getSize() {
-		int size = 1;
-		for(byte b : offsets)
-			if(b != 0)
-				size++;
-
-		return size;
+		if(noZero)
+			return offsets.length + 1;
+		else{
+			int size = 1;
+			for(byte b : offsets)
+				if(b != 0)
+					size++;
+	
+			return size;
+		}
 	}
 
 	@Override

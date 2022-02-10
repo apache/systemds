@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Random;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -44,7 +43,7 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(value = Parameterized.class)
 public class MappingPreAggregateTests {
 
-	protected static final Log LOG = LogFactory.getLog(MappingTests.class.getName());
+	protected static final Log LOG = LogFactory.getLog(MappingPreAggregateTests.class.getName());
 
 	public final int seed;
 	public final MAP_TYPE type;
@@ -78,6 +77,7 @@ public class MappingPreAggregateTests {
 			tests.add(new Object[] {5, 10, t, 1234});
 			tests.add(new Object[] {5, 10, t, 13});
 			tests.add(new Object[] {51, 10, t, 3241});
+			tests.add(new Object[] {5, 180, t, 1000});
 		}
 
 		for(MAP_TYPE t : new MAP_TYPE[] {MAP_TYPE.CHAR, MAP_TYPE.INT}) {
@@ -265,42 +265,15 @@ public class MappingPreAggregateTests {
 
 	@Test
 	public void testPreAggregateSparseSingleRowWithIndexes() {
-		switch(type) {
-			case INT:
+		try {
+			if(!sb.isInSparseFormat())
 				return;
-			default:
-				try {
-					if(!sb.isInSparseFormat())
-						return;
-
-					double[] pre = new double[m.getUnique()];
-					m.preAggregateSparse(sb.getSparseBlock(), pre, 0, 1, o);
-					// compareRes(preRef, pre, 0);
-				}
-				catch(Exception e) {
-					e.printStackTrace();
-					fail(e.toString());
-				}
+			double[] pre = new double[m.getUnique()];
+			m.preAggregateSparse(sb.getSparseBlock(), pre, 0, 1, o);
 		}
-	}
-
-	@Test(expected = NotImplementedException.class)
-	public void testPreAggregateDenseSingleRowWithIndexesExceptionExpected() {
-		switch(type) {
-			case INT:
-				m.preAggregateDense(mb, null, 0, 1, 0, size, o);
-			default:
-				throw new NotImplementedException();
-		}
-	}
-
-	@Test(expected = NotImplementedException.class)
-	public void testPreAggregateSparseSingleRowWithIndexesExceptionExpected() {
-		switch(type) {
-			case INT:
-				m.preAggregateSparse(null, null, 0, 1, o);
-			default:
-				throw new NotImplementedException();
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.toString());
 		}
 	}
 

@@ -30,7 +30,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -58,7 +57,7 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
 //			{1000, 1, false},
-			{12, 1, true}
+			{16, 1, true}
 		});
 	}
 
@@ -84,26 +83,24 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 	public void federatedMedianCP() { federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME2, -1); }
 
 	@Test
-	@Ignore
 	public void federatedIQRCP() { federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME3, -1); }
 
 	@Test
 	public void federatedQuantilesCP() { federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME4, -1); }
 
-//	@Test
-//	public void federatedQuantile1SP() { federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.25); }
-//
-//	@Test
-//	public void federatedQuantile2SP() { federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.5); }
-//
-//	@Test
-//	public void federatedQuantile3SP() { federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.75); }
-//
-//	@Test
-//	public void federatedMedianSP() { federatedQuartile(Types.ExecMode.SPARK, TEST_NAME2, -1); }
+	@Test
+	public void federatedQuantile1SP() { federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.25); }
 
 	@Test
-	@Ignore
+	public void federatedQuantile2SP() { federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.5); }
+
+	@Test
+	public void federatedQuantile3SP() { federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.75); }
+
+	@Test
+	public void federatedMedianSP() { federatedQuartile(Types.ExecMode.SPARK, TEST_NAME2, -1); }
+
+	@Test
 	public void federatedIQRSP() { federatedQuartile(Types.ExecMode.SPARK, TEST_NAME3, -1); }
 
 	@Test

@@ -125,6 +125,9 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			input2.isScalar() ? new double[] {ec.getScalarInput(input2).getDoubleValue()} : null) :
 			(average ? new double[] {0.5} : _type == OperationTypes.IQM ? new double[] {0.25, 0.75} : null);
 
+		if (input2 != null && input2.isMatrix())
+			ec.releaseMatrixInput(input2.getName());
+
 		// Find min and max
 		long varID = FederationUtils.getNextFedDataID();
 		List<double[]> minMax = new ArrayList<>();
@@ -207,8 +210,8 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			T hist = createHistogram(in, vectorLength, bucketsWithIndex[i].right.left, bucketsWithIndex[i].right.right, nextNumBuckets, bucketsWithIndex[i].left, false);
 
 			if(_type == OperationTypes.IQM) {
-				left = i == 0 ? hist instanceof ImmutablePair ?  ((ImmutablePair<Double, Double>)hist).left : (Double) hist : left;
-				right = i == 1 ? hist instanceof ImmutablePair ? ((ImmutablePair<Double, Double>)hist).right : (Double) hist : right;
+				left = i == 0 ? hist instanceof ImmutablePair ?  ((ImmutablePair<Double, Double>)hist).right : (Double) hist : left;
+				right = i == 1 ? hist instanceof ImmutablePair ? ((ImmutablePair<Double, Double>)hist).left : (Double) hist : right;
 			} else {
 				if(hist instanceof ImmutablePair)
 					retBuckets.put(i, hist); // set value if returned double instead of bin
@@ -221,30 +224,33 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			ImmutablePair<Double, Double> IQMRange = new ImmutablePair(left, right);
 			getSingleQuantileResult(IQMRange, ec, in.getFedMapping(), varID, false, true, vectorLength);
 		}
-		else if(!retBuckets.isEmpty()) {
-			// Search for values within bucket range where it as returned
-			in.getFedMapping().mapParallel(varID, (range, data) -> {
-				try {
-					FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-						-1,
-						new QuantilePickFEDInstruction.GetValuesInRanges(data.getVarID(), quantiles.length, (HashMap<Integer, ImmutablePair<Double, Double>>) retBuckets))).get();
-					if(!response.isSuccessful())
-						response.throwExceptionFromResponse();
+		else {
+			if(!retBuckets.isEmpty()) {
+				// Search for values within bucket range where it as returned
+				in.getFedMapping().mapParallel(varID, (range, data) -> {
+					try {
+						FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
+							FederatedRequest.RequestType.EXEC_UDF,
+							-1,
+							new QuantilePickFEDInstruction.GetValuesInRanges(data.getVarID(), quantiles.length, (HashMap<Integer, ImmutablePair<Double, Double>>) retBuckets))).get();
+						if(!response.isSuccessful())
+							response.throwExceptionFromResponse();
 
-					// Add results by row
-					MatrixBlock tmp = (MatrixBlock) response.getData()[0];
-					synchronized(out) {
-						out.binaryOperationsInPlace(InstructionUtils.parseBinaryOperator("+"), tmp);
+						// Add results by row
+						MatrixBlock tmp = (MatrixBlock) response.getData()[0];
+						synchronized(out) {
+							out.binaryOperationsInPlace(InstructionUtils.parseBinaryOperator("+"), tmp);
+						}
+						return null;
 					}
-					return null;
-				}
-				catch(Exception e) {
-					throw new DMLRuntimeException(e);
-				}
-			});
-		}
+					catch(Exception e) {
+						throw new DMLRuntimeException(e);
+					}
+				});
+			}
 
-		ec.setMatrixOutput(output.getName(), out);
+			ec.setMatrixOutput(output.getName(), out);
+		}
 	}
 
 	private <T> void getSingleQuantileResult(T ret, ExecutionContext ec, FederationMap fedMap, long varID, boolean average, boolean isIQM, int vectorLength) {
@@ -531,6 +537,9 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 		assert res.size() == 1;
 
+		if (input2 != null && input2.isMatrix())
+			ec.releaseMatrixInput(input2.getName());
+
 		if(output.isScalar())
 			ec.setScalarOutput(output.getName(), new DoubleObject((double) res.get(0)));
 		else
@@ -593,9 +602,11 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 			// FIXME better search, e.g. sort in QSort and binary search
 			for(double val : values) {
-				if(_range.left <= val && val <= _range.right)
+				// different conditions for IQM and simple QPICK
+				if((!_sumInRange && _range.left <= val && val <= _range.right) ||
+					(_sumInRange && _range.left < val && val <= _range.right))
 					res += val;
-				if(1 < i++ && !_sumInRange)
+				if(i++ > 2 && !_sumInRange)
 					break;
 			}
 

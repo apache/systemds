@@ -38,7 +38,11 @@ public abstract class AOffsetIterator {
 		this.offset = offset;
 	}
 
-	/** Increment the pointer */
+	/**
+	 * Increment the pointer and return the new offset gained
+	 * 
+	 * @return The new offset.
+	 */
 	public abstract int next();
 
 	/**

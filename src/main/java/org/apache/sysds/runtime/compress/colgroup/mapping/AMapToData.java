@@ -307,6 +307,7 @@ public abstract class AMapToData implements Serializable {
 	 * 
 	 * @param tm   Map of other side
 	 * @param td   Dictionary to take values from (other side dictionary)
+	 * @param tof  The offset index structure of the SDC side
 	 * @param ret  The output dictionary to aggregate into
 	 * @param nCol The number of columns in output and td dictionary
 	 */
@@ -444,7 +445,7 @@ public abstract class AMapToData implements Serializable {
 		AOffsetIterator itThis, int tSize, int size) {
 
 		int i = 0, j = 0, tv = itThat.value(), v = itThis.value();
-		
+
 		// main preAggregate process
 		while(i < tSize && j < size) {
 			if(tv == v) {

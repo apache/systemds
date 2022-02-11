@@ -54,6 +54,8 @@ public class CodeGenTrie {
 				for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
 					this.insert(rootCol, c, vt, keys);
 			}
+//			else
+//				System.out.println(">>>>>>>>>>>>>>>>>>>>> "+c);
 		}
 
 		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX) {
@@ -151,9 +153,9 @@ public class CodeGenTrie {
 				if(key.length() > 0) {
 					currPosVariable = getRandomName("curPos");
 					if(node.getKey() == null)
-						src.append("index = str.indexOf(\"" + key.replace("\"", "\\\"") + "\"); \n");
+						src.append("index = str.indexOf(\"" + key.replace("\\\"","\"").replace("\"", "\\\"") + "\"); \n");
 					else
-						src.append("index = str.indexOf(\"" + key.replace("\"", "\\\"") + "\", " + currPos + "); \n");
+						src.append("index = str.indexOf(\"" + key.replace("\\\"","\"").replace("\"", "\\\"") + "\", " + currPos + "); \n");
 					src.append("if(index != -1) { \n");
 					src.append("int " + currPosVariable + " = index + " + key.length() + "; \n");
 				}

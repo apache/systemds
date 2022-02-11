@@ -325,7 +325,7 @@ public class FormatIdentifying {
 									count++;
 							}
 							float percent = (float) count / list.size();
-							if(percent >= 0.60)
+							if(percent >= 1)
 								token = t;
 						}
 					}

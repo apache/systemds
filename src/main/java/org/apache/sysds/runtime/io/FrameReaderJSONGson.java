@@ -1,10 +1,10 @@
 package org.apache.sysds.runtime.io;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.ValueNode;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -25,14 +25,15 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static org.apache.sysds.runtime.io.FrameReader.*;
+import static org.apache.sysds.runtime.io.FrameReader.checkValidInputFile;
+import static org.apache.sysds.runtime.io.FrameReader.createOutputFrameBlock;
+import static org.apache.sysds.runtime.io.FrameReader.createOutputSchema;
 
-
-public class FrameReaderJSONJackson
+public class FrameReaderJSONGson
 {
 	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, Map<String, Integer> schemaMap,
 		long rlen, long clen) throws IOException, DMLRuntimeException
@@ -80,8 +81,8 @@ public class FrameReaderJSONJackson
 		int row = currentRow;
 		try {
 			while (reader.next(key, value)) {
-				ObjectMapper mapper = new ObjectMapper();
-				JsonNode root = mapper.readTree(value.toString());
+				JsonParser jsonParser = new JsonParser();
+				JsonElement root= jsonParser.parse(value.toString());
 				Map<String, String> map = new HashMap<>();
 				addKeys("", root, map, new ArrayList<>());
 				for (Map.Entry<String, Integer> entry : schemaMap.entrySet()) {
@@ -98,18 +99,18 @@ public class FrameReaderJSONJackson
 		}
 		return row;
 	}
-	private static void addKeys(String currentPath, JsonNode jsonNode, Map<String, String> map, List<Integer> suffix) {
-		if (jsonNode.isObject()) {
-			ObjectNode objectNode = (ObjectNode) jsonNode;
-			Iterator<Map.Entry<String, JsonNode>> iter = objectNode.fields();
-			String pathPrefix = currentPath.isEmpty() ? "" : currentPath + "/";
 
-			while (iter.hasNext()) {
-				Map.Entry<String, JsonNode> entry = iter.next();
+	private static void addKeys(String currentPath, JsonElement jsonNode, Map<String, String> map, List<Integer> suffix) {
+
+		if (jsonNode.isJsonObject()) {
+			JsonObject jsonObject = (JsonObject) jsonNode;
+			Set<Map.Entry<String, JsonElement>> iter = jsonObject.entrySet();
+			String pathPrefix = currentPath.isEmpty() ? "" : currentPath + "/";
+			for(Map.Entry<String, JsonElement> entry: iter){
 				addKeys(pathPrefix + entry.getKey(), entry.getValue(), map, suffix);
 			}
-		} else if (jsonNode.isArray()) {
-			ArrayNode arrayNode = (ArrayNode) jsonNode;
+		} else if (jsonNode.isJsonArray()) {
+			JsonArray arrayNode = (JsonArray) jsonNode;
 			for (int i = 0; i < arrayNode.size(); i++) {
 				suffix.add(i + 1);
 				addKeys(currentPath+"-"+i, arrayNode.get(i), map, suffix);
@@ -118,17 +119,18 @@ public class FrameReaderJSONJackson
 				}
 			}
 
-		} else if (jsonNode.isValueNode()) {
+		} else if (jsonNode.isJsonPrimitive()) {
 			if (currentPath.contains("/") && !currentPath.contains("-")) {
 				for (int i = 0; i < suffix.size(); i++) {
 					currentPath += "/" + suffix.get(i);
 				}
 				suffix = new ArrayList<>();
 			}
-			ValueNode valueNode = (ValueNode) jsonNode;
-			map.put("/"+currentPath, valueNode.asText());
+			JsonPrimitive valueNode = (JsonPrimitive) jsonNode;
+			map.put(currentPath, valueNode.getAsString());
 		}
 	}
+
 
 	private  String[] createOutputNamesFromSchemaMap(Map<String, Integer> schemaMap) {
 		String[] names = new String[schemaMap.size()];

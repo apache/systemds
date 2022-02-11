@@ -1,14 +1,15 @@
-package org.apache.sysds.runtime.iogen.GIO;
+package org.apache.sysds.runtime.iogen.EXP;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FrameReader;
+import org.apache.sysds.runtime.iogen.EXP.Util;
 import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 
-public class GIORead {
+public class GIO {
 
 	public static void main(String[] args) throws Exception {
 		String sampleRawFileName;
@@ -70,5 +71,13 @@ public class GIORead {
 		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
 		FrameReader fr = gr.getReader();
 		FrameBlock frameBlock = fr.readFrameFromHDFS(dataFileName, sampleSchema, nrows, sampleSchema.length);
+//
+//		for(int i=0; i< 10;i++){
+//			System.out.print("Row "+i+"\t");
+//			for(int j=0; j<sampleSchema.length; j++){
+//				System.out.print(j+"::"+ frameBlock.get(i,j).toString()+"\t");
+//			}
+//			System.out.println();
+//		}
 	}
 }

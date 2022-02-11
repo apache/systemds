@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -45,6 +47,11 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
+	public MAP_TYPE getType(){
+		return MapToFactory.MAP_TYPE.INT;
+	}
+
+	@Override
 	public int getIndex(int n) {
 		return _data[n];
 	}
@@ -59,7 +66,7 @@ public class MapToInt extends AMapToData {
 		return getInMemorySize(_data.length);
 	}
 
-	public static long getInMemorySize(int dataLength) {
+	protected static long getInMemorySize(int dataLength) {
 		long size = 16 + 8; // object header + object reference
 		size += MemoryEstimates.intArrayCost(dataLength);
 		return size;
@@ -96,7 +103,7 @@ public class MapToInt extends AMapToData {
 			out.writeInt(_data[i]);
 	}
 
-	public static MapToInt readFields(DataInput in) throws IOException {
+	protected static MapToInt readFields(DataInput in) throws IOException {
 		int unique = in.readInt();
 		final int length = in.readInt();
 		final int[] data = new int[length];
@@ -105,27 +112,67 @@ public class MapToInt extends AMapToData {
 		return new MapToInt(unique, data);
 	}
 
+	// @Override
+	// protected void preAggregateDenseSingleRow(double[] mV, int off, double[] preAV, int cl, int cu) {
+	// off += cl;
+	// for(int rc = cl; rc < cu; rc++, off++)
+	// preAV[_data[rc]] += mV[off];
+	// }
+
+	// @Override
+	// protected void preAggregateDenseMultiRow(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu) {
+	// final int nVal = getUnique();
+	// final DenseBlock db = m.getDenseBlock();
+	// if(db.isContiguous()) {
+	// final double[] mV = m.getDenseBlockValues();
+	// final int nCol = m.getNumColumns();
+	// for(int c = cl; c < cu; c++) {
+	// final int idx = getIndex(c);
+	// final int start = c + nCol * rl;
+	// final int end = c + nCol * ru;
+	// for(int offOut = idx, off = start; off < end; offOut += nVal, off += nCol) {
+	// preAV[offOut] += mV[off];
+	// }
+	// }
+	// }
+	// else
+	// throw new NotImplementedException();
+
+	// }
+
 	@Override
-	public void preAggregateDense(MatrixBlock m, MatrixBlock pre, int rl, int ru, int cl, int cu) {
-		final int nRow = m.getNumColumns();
-		final int nVal = pre.getNumColumns();
-		final double[] preAV = pre.getDenseBlockValues();
-		final double[] mV = m.getDenseBlockValues();
-		final int blockSize = 4000;
-		for(int block = cl; block < cu; block += blockSize) {
-			final int blockEnd = Math.min(block + blockSize, nRow);
-			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
-				final int offLeft = rowLeft * nRow;
-				for(int rc = block; rc < blockEnd; rc++) {
-					final int idx = _data[rc];
-					preAV[offOut + idx] += mV[offLeft + rc];
-				}
-			}
-		}
+	public void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
+		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), _data);
+	}
+
+	@Override
+	public void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
+		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), _data);
 	}
 
 	@Override
 	public int getUpperBoundValue() {
 		return Integer.MAX_VALUE;
 	}
+
+	// @Override
+	// public int[] getCounts(int[] counts) {
+	// 	final int sz = size();
+	// 	for(int i = 0; i < sz; i++)
+	// 		counts[_data[i]]++;
+	// 	return counts;
+	// }
+
+	// @Override
+	// public void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v) {
+	// for(int r = 0; r < size(); r++)
+	// v[getIndex(r)] += td[tm.getIndex(r)];
+	// }
+
+	// @Override
+	// public void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
+	// final int nRows = size();
+	// for(int r = 0; r < nRows; r++)
+	// td.addToEntry(v, tm.getIndex(r), getIndex(r), nCol);
+	// }
 }

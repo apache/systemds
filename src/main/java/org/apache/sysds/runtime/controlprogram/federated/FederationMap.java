@@ -28,6 +28,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.BiFunction;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -583,6 +584,24 @@ public class FederationMap {
 		return this;
 	}
 
+	/**
+	 * Take the federated mapping and sets one dimension of all federated ranges
+	 * to the specified value.
+	 *
+	 * @param value      long value for setting the dimension
+	 * @param dim        indicates if the row (0) or column (1) dimension should be set to value
+	 * @return FederationMap with the modified federated ranges
+	 */
+	public FederationMap modifyFedRanges(long value, int dim) {
+		if(getType() == (dim == 0 ? FType.ROW : FType.COL))
+			throw new DMLRuntimeException("Federated ranges cannot be modified in the direction of its partitioning.");
+		IntStream.range(0, getFederatedRanges().length).forEach(i -> {
+			getFederatedRanges()[i].setBeginDim(dim, 0);
+			getFederatedRanges()[i].setEndDim(dim, value);
+		});
+		return this;
+	}
+
 	public FederationMap transpose() {
 		List<Pair<FederatedRange, FederatedData>> tmp = new ArrayList<>(_fedMap);
 		_fedMap.clear();
@@ -591,17 +610,16 @@ public class FederationMap {
 		}
 		// derive output type
 		switch(_type) {
-			case FULL:
-				_type = FType.FULL;
-				break;
 			case ROW:
 				_type = FType.COL;
 				break;
 			case COL:
 				_type = FType.ROW;
 				break;
+			case FULL:
 			case PART:
-				_type = FType.PART;
+				// FULL and PART are not changed
+				break;
 			default:
 				_type = FType.OTHER;
 		}

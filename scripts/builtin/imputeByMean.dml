@@ -19,43 +19,42 @@
 #
 #-------------------------------------------------------------
 
-# Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
-
 # impute the data by mean value and if the feature is categorical then by mode value
-
+# Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double    ---        Data Matrix (Recoded Matrix for categorical features)
-# mask           Double    ---        A 0/1 row vector for identifying numeric (0) and categorical features (1)
-# ---------------------------------------------------------------------------------------------
- 
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME                  TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double   ---        imputed dataset
-
-
-
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE              DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X          Matrix[Double]    ---         Data Matrix (Recoded Matrix for categorical features)
+# mask       Matrix[Double]    ---         A 0/1 row vector for identifying numeric (0) and categorical features (1)
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE                           MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]                 imputed dataset
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_imputeByMean = function(Matrix[Double] X, Matrix[Double] mask)
-return(Matrix[Double] X)
+return(Matrix[Double] X, Matrix[Double] imputedVec)
 {
-  # print("mean in \n"+toString(X))
-  nX = removeEmpty(target=X, margin="cols", select=(mask==0))
-  cX = removeEmpty(target=X, margin="cols", select=mask)
-  Mask_n = is.na(nX);  
+  nX = X*(mask==0)
   nX = replace(target=nX, pattern=NaN, replacement=0);
   #  mean imputation
-  X_n = nX+(Mask_n*colMeans(nX))
-  # mode imputation
-  X_c = imputeByMode(cX)
-  p = table(seq(1, ncol(nX)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
-    select=t(mask==0)), ncol(nX), ncol(X))
-  q = table(seq(1, ncol(cX)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
-    select=t(mask)), ncol(cX), ncol(X))
-  X = (X_n %*% p) + (X_c %*% q)
+  colMean = colMeans(nX)
+
+  if(sum(mask) > 0)
+  {
+    # mode imputation
+    cX = X*mask
+    [X_c, colMode] = imputeByMode(cX)
+    imputedVec = colMean + colMode
+  }
+  else 
+  {
+    imputedVec = colMean
+  }
+  X = imputeByMeanApply(X, imputedVec)
 }

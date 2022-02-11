@@ -30,13 +30,16 @@ public class DblArrayCountHashMap {
 	protected static final Log LOG = LogFactory.getLog(DoubleCountHashMap.class.getName());
 	protected static final int RESIZE_FACTOR = 2;
 	protected static final float LOAD_FACTOR = 0.80f;
-	public static int hashMissCount = 0;
+	// public static int hashMissCount = 0;
 
 	protected int _size = -1;
 	private Bucket[] _data = null;
 
-	public DblArrayCountHashMap(int init_capacity) {
-		_data = new Bucket[Util.getPow2(init_capacity)];
+	public DblArrayCountHashMap(int init_capacity, int cols) {
+		if(cols > 10)
+			_data = new Bucket[Util.getPow2(init_capacity)];
+		else 
+			_data = new Bucket[Util.getPow2(init_capacity / 2)];
 		_size = 0;
 	}
 
@@ -73,16 +76,15 @@ public class DblArrayCountHashMap {
 		final int ix = indexFor(hash, _data.length);
 
 		Bucket l = _data[ix];
-		while(l != null && !(l.v.key.equals(key))) {
-			hashMissCount++;
-			l = l.n;
-		}
-
-		if(l == null)
-			return addNewBucket(ix, key);
-		else {
-			l.v.count++;
-			return l.v.id;
+		while(true){
+			if(l == null)
+				return addNewBucket(ix, key);
+			else if(l.v.key.equals(key)){
+				l.v.count++;
+				return l.v.id;
+			}
+			else
+				l = l.n;
 		}
 	}
 
@@ -123,6 +125,31 @@ public class DblArrayCountHashMap {
 		}
 
 		return ret;
+	}
+
+	public int[] getUnorderedCountsAndReplaceWithUIDs() {
+		final int[] counts = new int[_size];
+		int i = 0;
+		for(Bucket e : _data)
+			while(e != null) {
+				counts[i] = e.v.count;
+				e.v.count = i++;
+				e = e.n;
+			}
+
+		return counts;
+	}
+
+	public int[] getUnorderedCountsAndReplaceWithUIDsWithExtraCell() {
+		final int[] counts = new int[_size + 1];
+		int i = 0;
+		for(Bucket e : _data)
+			while(e != null) {
+				counts[i] = e.v.count;
+				e.v.count = i++;
+				e = e.n;
+			}
+		return counts;
 	}
 
 	private void resize() {

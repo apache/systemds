@@ -25,13 +25,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.SpoofCompiler.CompilerType;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;
 import org.apache.sysds.runtime.codegen.SpoofOperator.SideInputSparseCell;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.LocalFileUtils;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.CodegenStatistics;
 import org.codehaus.janino.SimpleCompiler;
 
 import javax.tools.Diagnostic;
@@ -88,8 +88,8 @@ public class CodegenUtils
 		_cache.put(name, ret);
 
 		if( DMLScript.STATISTICS ) {
-			Statistics.incrementCodegenClassCompile();
-			Statistics.incrementCodegenClassCompileTime(System.nanoTime()-t0);
+			CodegenStatistics.incrementClassCompile();
+			CodegenStatistics.incrementClassCompileTime(System.nanoTime()-t0);
 		}
 
 		return ret;

@@ -34,8 +34,7 @@ public class TestConstants {
 		RAND_ROUND, // Values rounded to nearest whole numbers.
 		OLE_COMPRESSIBLE, // Ideal inputs for OLE Compression.
 		RLE_COMPRESSIBLE, // Ideal inputs for RLE Compression.
-		ONE_HOT,
-		UNBALANCED_SPARSE, // An input where some columns are super dense and some very sparse
+		ONE_HOT, UNBALANCED_SPARSE, // An input where some columns are super dense and some very sparse
 	}
 
 	public enum MatrixTypology {
@@ -55,7 +54,8 @@ public class TestConstants {
 	}
 
 	public enum OverLapping {
-		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS, APPEND_EMPTY, APPEND_CONST, PLUS_LARGE, C_BIND_SELF;
+		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS, APPEND_EMPTY, APPEND_CONST, PLUS_LARGE,
+		C_BIND_SELF, PLUS_ROW_VECTOR;
 
 		public static boolean effectOnOutput(OverLapping opcode) {
 			switch(opcode) {

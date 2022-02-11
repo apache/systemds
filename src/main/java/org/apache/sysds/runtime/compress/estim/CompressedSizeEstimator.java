@@ -31,8 +31,6 @@ import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.bitmap.ABitmap;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -140,22 +138,23 @@ public abstract class CompressedSizeEstimator {
 	}
 
 	/**
-	 * Method used for compressing into one type of colGroup
-	 * 
-	 * @return CompressedSizeInfo on a compressed colGroup compressing the entire matrix into a single colGroup type.
-	 */
-	public CompressedSizeInfoColGroup estimateCompressedColGroupSize() {
-		int[] colIndexes = makeColIndexes();
-		return estimateCompressedColGroupSize(colIndexes);
-	}
-
-	/**
 	 * Method for extracting Compressed Size Info of specified columns, together in a single ColGroup
 	 * 
 	 * @param colIndexes The columns to group together inside a ColGroup
 	 * @return The CompressedSizeInformation associated with the selected ColGroups.
 	 */
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
+		return estimateCompressedColGroupSize(colIndexes, 8, worstCaseUpperBound(colIndexes));
+	}
+
+	/**
+	 * Method for extracting Compressed Size Info of specified columns as delta encodings (delta from previous rows
+	 * values), together in a single ColGroup
+	 * 
+	 * @param colIndexes The columns to group together inside a ColGroup
+	 * @return The CompressedSizeInformation associated with the selected ColGroups as delta encoding.
+	 */
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSizeDeltaEncoded(int[] colIndexes) {
 		return estimateCompressedColGroupSize(colIndexes, 8, worstCaseUpperBound(colIndexes));
 	}
 
@@ -171,9 +170,28 @@ public abstract class CompressedSizeEstimator {
 	 *                           in the sense that if the sample is small then this unique can be manually edited like in
 	 *                           CoCodeCostMatrixMult.
 	 * 
-	 * @return The CompressedSizeInfoColGroup fro the given column indexes.
+	 * @return The CompressedSizeInfoColGroup for the given column indexes.
 	 */
 	public abstract CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int estimate,
+		int nrUniqueUpperBound);
+
+	/**
+	 * A method to extract the Compressed Size Info for a given list of columns, This method further limits the estimated
+	 * number of unique values, since in some cases the estimated number of uniques is estimated higher than the number
+	 * estimated in sub groups of the given colIndexes.
+	 * 
+	 * The Difference for this method is that it extract the values as delta values from the matrix block input.
+	 * 
+	 * @param colIndexes         The columns to extract compression information from
+	 * @param estimate           An estimate of number of unique delta elements in these columns
+	 * @param nrUniqueUpperBound The upper bound of unique elements allowed in the estimate, can be calculated from the
+	 *                           number of unique elements estimated in sub columns multiplied together. This is flexible
+	 *                           in the sense that if the sample is small then this unique can be manually edited like in
+	 *                           CoCodeCostMatrixMult.
+	 * 
+	 * @return The CompressedSizeInfoColGroup for the given column indexes.
+	 */
+	public abstract CompressedSizeInfoColGroup estimateCompressedColGroupSizeDeltaEncoded(int[] colIndexes, int estimate,
 		int nrUniqueUpperBound);
 
 	/**
@@ -223,27 +241,10 @@ public abstract class CompressedSizeEstimator {
 
 	protected abstract int worstCaseUpperBound(int[] columns);
 
+	public abstract int getSampleSize();
+
 	protected abstract CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joinedcols,
 		CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2, int joinedMaxDistinct);
-
-	/**
-	 * Method used to extract the CompressedSizeEstimationFactors from an constructed UncompressedBitmap. Note this
-	 * method works both for the sample based estimator and the exact estimator, since the bitmap, can be extracted from
-	 * a sample or from the entire dataset.
-	 * 
-	 * @param ubm        The UncompressedBitmap, either extracted from a sample or from the entire dataset
-	 * @param colIndexes The columns that is compressed together.
-	 * @return The size factors estimated from the Bit Map.
-	 */
-	public EstimationFactors estimateCompressedColGroupSize(ABitmap ubm, int[] colIndexes) {
-		return estimateCompressedColGroupSize(ubm, colIndexes, getNumRows(), _cs);
-	}
-
-	public static EstimationFactors estimateCompressedColGroupSize(ABitmap ubm, int[] colIndexes, int nrRows,
-		CompressionSettings cs) {
-		return EstimationFactors.computeSizeEstimationFactors(ubm, nrRows,
-			cs.validCompressions.contains(CompressionType.RLE), colIndexes);
-	}
 
 	protected CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen) {
 		CompressedSizeInfoColGroup[] ret = new CompressedSizeInfoColGroup[clen];
@@ -288,9 +289,5 @@ public abstract class CompressedSizeEstimator {
 		public CompressedSizeInfoColGroup call() {
 			return _estimator.estimateCompressedColGroupSize(_cols);
 		}
-	}
-
-	private int[] makeColIndexes() {
-		return Util.genColsIndices(getNumColumns());
 	}
 }

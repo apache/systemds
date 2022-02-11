@@ -42,44 +42,41 @@ public class RandJobRecompileTest extends AutomatedTestBase
 	
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Z" }) );
 	}
 	
-	
 	@Test
-	public void testRandRecompileNoEstSizeEval() 
-	{
+	public void testRandRecompileNoEstSizeEval() {
 		runRandJobRecompileTest(false);
 	}
 	
 	@Test
-	public void testRandRecompilEstSizeEval() 
-	{
+	public void testRandRecompileEstSizeEval() {
 		runRandJobRecompileTest(true);
 	}
 	
 	private void runRandJobRecompileTest( boolean estSizeEval )
 	{	
 		boolean oldFlagSizeEval = OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION;
+		boolean oldFlagSplit = OptimizerUtils.ALLOW_SPLIT_HOP_DAGS;
 		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", input("X"), Integer.toString(rows), output("Z") };
+			programArgs = new String[]{"-explain","-args", input("X"), Integer.toString(rows), output("Z") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = estSizeEval;
+			OptimizerUtils.ALLOW_SPLIT_HOP_DAGS = false; //test size eval in single program block
 			
 			double[][] V = TestUtils.round( getRandomMatrix(rows, cols, min, max, 1.0d, 7) );
 			writeInputMatrix("X", V, true);
@@ -94,14 +91,14 @@ public class RandJobRecompileTest extends AutomatedTestBase
 			
 			//check expected number of compiled and executed Spark jobs
 			int expectedNumCompiled = (estSizeEval?1:3); //rbl, rand, write
-			int expectedNumExecuted = (estSizeEval?0:1); //write
+			int expectedNumExecuted = (estSizeEval?0:1);
 			
 			checkNumCompiledSparkInst(expectedNumCompiled);
 			checkNumExecutedSparkInst(expectedNumExecuted);
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = oldFlagSizeEval;
+			OptimizerUtils.ALLOW_SPLIT_HOP_DAGS = oldFlagSplit;
 		}
 	}
 }

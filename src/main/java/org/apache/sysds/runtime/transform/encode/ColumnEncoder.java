@@ -29,8 +29,8 @@ import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -41,11 +41,13 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.SparseRowVector;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 /**
  * Base class for all transform encoders providing both a row and block interface for decoding frames to matrices.
@@ -54,10 +56,10 @@ import org.apache.sysds.utils.Statistics;
 public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder> {
 	protected static final Log LOG = LogFactory.getLog(ColumnEncoder.class.getName());
 	protected static final int APPLY_ROW_BLOCKS_PER_COLUMN = 1;
-	public static int BUILD_ROW_BLOCKS_PER_COLUMN = 1;
+	public static int BUILD_ROW_BLOCKS_PER_COLUMN = -1;
 	private static final long serialVersionUID = 2299156350718979064L;
 	protected int _colID;
-	protected Set<Integer> _sparseRowsWZeros = null;
+	protected ArrayList<Integer> _sparseRowsWZeros = null;
 
 	protected enum TransformType{
 		BIN, RECODE, DUMMYCODE, FEATURE_HASH, PASS_THROUGH, N_A
@@ -93,19 +95,19 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 			long t = System.nanoTime()-t0;
 			switch (this.getTransformType()){
 				case RECODE:
-					Statistics.incTransformRecodeApplyTime(t);
+					TransformStatistics.incRecodeApplyTime(t);
 					break;
 				case BIN:
-					Statistics.incTransformBinningApplyTime(t);
+					TransformStatistics.incBinningApplyTime(t);
 					break;
 				case DUMMYCODE:
-					Statistics.incTransformDummyCodeApplyTime(t);
+					TransformStatistics.incDummyCodeApplyTime(t);
 					break;
 				case FEATURE_HASH:
-					Statistics.incTransformFeatureHashingApplyTime(t);
+					TransformStatistics.incFeatureHashingApplyTime(t);
 					break;
 				case PASS_THROUGH:
-					Statistics.incTransformPassThroughApplyTime(t);
+					TransformStatistics.incPassThroughApplyTime(t);
 					break;
 				default:
 					break;
@@ -116,19 +118,60 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 
 	protected abstract double getCode(CacheBlock in, int row);
 
+	protected abstract double[] getCodeCol(CacheBlock in, int startInd, int blkSize);
 
-	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+
+	/*protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
 			SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(r);
 			row.values()[index] = getCode(in, r);
 			row.indexes()[index] = outputCol;
 		}
+	}*/
+
+	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+		mcsr = false; //force CSR for transformencode
+		int index = _colID - 1;
+		// Apply loop tiling to exploit CPU caches
+		double[] codes = getCodeCol(in, rowStart, blk);
+		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
+		int B = 32; //tile size
+		for(int i = rowStart; i < rowEnd; i+=B) {
+			int lim = Math.min(i+B, rowEnd);
+			for (int ii=i; ii<lim; ii++) {
+				if (mcsr) {
+					SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(ii);
+					row.values()[index] = codes[ii-rowStart];
+					row.indexes()[index] = outputCol;
+				}
+				else { //csr
+					// Manually fill the column-indexes and values array
+					SparseBlockCSR csrblock = (SparseBlockCSR)out.getSparseBlock();
+					int rptr[] = csrblock.rowPointers();
+					csrblock.indexes()[rptr[ii]+index] = outputCol;
+					csrblock.values()[rptr[ii]+index] = codes[ii-rowStart];
+				}
+			}
+		}
 	}
 
-	protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	/*protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			out.quickSetValue(i, outputCol, getCode(in, i));
+		}
+	}*/
+	
+	protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+		// Apply loop tiling to exploit CPU caches
+		double[] codes = getCodeCol(in, rowStart, blk);
+		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
+		int B = 32; //tile size
+		for(int i = rowStart; i < rowEnd; i+=B) {
+			int lim = Math.min(i+B, rowEnd);
+			for (int ii=i; ii<lim; ii++)
+				out.quickSetValue(ii, outputCol, codes[ii-rowStart]);
 		}
 	}
 
@@ -312,13 +355,17 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 	public Set<Integer> getSparseRowsWZeros(){
-		return _sparseRowsWZeros;
+		if (_sparseRowsWZeros != null) {
+			return new HashSet<Integer>(_sparseRowsWZeros);
+		}
+		else
+			return null;
 	}
 
-	protected void addSparseRowsWZeros(Set<Integer> sparseRowsWZeros){
+	protected void addSparseRowsWZeros(ArrayList<Integer> sparseRowsWZeros){
 		synchronized (this){
 			if(_sparseRowsWZeros == null)
-				_sparseRowsWZeros = new HashSet<>();
+				_sparseRowsWZeros = new ArrayList<>();
 			_sparseRowsWZeros.addAll(sparseRowsWZeros);
 		}
 	}
@@ -328,7 +375,10 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 	protected int getNumBuildRowPartitions(){
-		return ConfigurationManager.getParallelBuildBlocks();
+		if (BUILD_ROW_BLOCKS_PER_COLUMN == -1)
+			return ConfigurationManager.getParallelBuildBlocks();
+		else
+			return BUILD_ROW_BLOCKS_PER_COLUMN;
 	}
 
 	public enum EncoderType {

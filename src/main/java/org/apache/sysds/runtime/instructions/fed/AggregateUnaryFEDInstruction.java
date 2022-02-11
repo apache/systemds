@@ -132,7 +132,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 				+ ", is a scalar and the output is set to be federated. Scalars cannot be federated. ");
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, true);
-		map.execute(getTID(), fr1);
+		map.execute(getTID(), true, fr1);
 
 		MatrixObject out = ec.getMatrixObject(output);
 		deriveNewOutputFedMapping(in, out, fr1);
@@ -201,10 +201,9 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, true);
 		FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
-		FederatedRequest fr3 = map.cleanup(getTID(), fr1.getID());
 
 		//execute federated commands and cleanups
-		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2, fr3);
+		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2);
 		if( output.isScalar() )
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aggUOptr, tmp, map));
 		else
@@ -250,18 +249,20 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			FederatedRequest meanFr1 =  FederationUtils.callInstruction(meanInstr, output, id,
 				new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, isSpark ? ExecType.SPARK : ExecType.CP, isSpark);
 			FederatedRequest meanFr2 = new FederatedRequest(RequestType.GET_VAR, meanFr1.getID());
-			FederatedRequest meanFr3 = map.cleanup(getTID(), meanFr1.getID());
-			meanTmp = map.execute(getTID(), isSpark ? new FederatedRequest[] {tmpRequest, meanFr1, meanFr2, meanFr3} : new FederatedRequest[] {meanFr1, meanFr2, meanFr3});
+			meanTmp = map.execute(getTID(), isSpark ?
+				new FederatedRequest[] {tmpRequest, meanFr1, meanFr2} :
+				new FederatedRequest[] {meanFr1, meanFr2});
 		}
 
 		//create federated commands for aggregation
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, id,
 			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, isSpark ? ExecType.SPARK : ExecType.CP, isSpark);
 		FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
-		FederatedRequest fr3 = map.cleanup(getTID(), fr1.getID());
 		
 		//execute federated commands and cleanups
-		Future<FederatedResponse>[] tmp = map.execute(getTID(), isSpark ? new FederatedRequest[] {tmpRequest,  fr1, fr2, fr3} : new FederatedRequest[] { fr1, fr2, fr3});
+		Future<FederatedResponse>[] tmp = map.execute(getTID(), isSpark ?
+			new FederatedRequest[] {tmpRequest, fr1, fr2} :
+			new FederatedRequest[] { fr1, fr2});
 		if( output.isScalar() )
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp, meanTmp, map));
 		else
@@ -281,7 +282,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, id,
 			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, ExecType.SPARK, true);
 
-		map.execute(getTID(), fr1, fr2);
+		map.execute(getTID(), true, fr1, fr2);
 		// derive new fed mapping for output
 		MatrixObject out = ec.getMatrixObject(output);
 		out.setFedMapping(in.getFedMapping().copyWithNewID(fr2.getID()));
@@ -298,7 +299,6 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			id = fr1.getID();
 		}
 		else {
-
 			if((map.getType() == FederationMap.FType.COL && aop.isColAggregate()) || (map.getType() == FederationMap.FType.ROW && aop.isRowAggregate()))
 				fr1 = new FederatedRequest(RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in.getDataType());
 			else
@@ -307,11 +307,10 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 
 		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, id,
 			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, ExecType.SPARK, true);
-		FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
-		FederatedRequest fr4 = map.cleanup(getTID(), fr2.getID());
+		FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
 
 		//execute federated commands and cleanups
-		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2, fr3, fr4);
+		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2, fr3);
 		if( output.isScalar() )
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp, map));
 		else

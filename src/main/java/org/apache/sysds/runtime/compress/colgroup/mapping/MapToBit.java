@@ -24,7 +24,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -36,7 +39,7 @@ public class MapToBit extends AMapToData {
 	private final int _size;
 
 	public MapToBit(int unique, int size) {
-		super(unique);
+		super(Math.min(unique, 2));
 		_data = new BitSet(size);
 		_size = size;
 	}
@@ -45,6 +48,11 @@ public class MapToBit extends AMapToData {
 		super(unique);
 		_data = d;
 		_size = size;
+	}
+
+	@Override
+	public MAP_TYPE getType() {
+		return MapToFactory.MAP_TYPE.BIT;
 	}
 
 	@Override
@@ -107,7 +115,7 @@ public class MapToBit extends AMapToData {
 			out.writeLong(internals[i]);
 	}
 
-	public static MapToBit readFields(DataInput in) throws IOException {
+	protected static MapToBit readFields(DataInput in) throws IOException {
 		int unique = in.readInt();
 		int size = in.readInt();
 		long[] internalLong = new long[in.readInt()];
@@ -118,24 +126,117 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public void preAggregateDense(MatrixBlock m, MatrixBlock pre, int rl, int ru, int cl, int cu) {
-		final int nRow = m.getNumColumns();
-		final int nVal = pre.getNumColumns();
-		final double[] preAV = pre.getDenseBlockValues();
-		final double[] mV = m.getDenseBlockValues();
-		final int blockSize = 4000;
-		for(int block = cl; block < cu; block += blockSize) {
-			final int blockEnd = Math.min(block + blockSize, nRow);
-			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
-				final int offLeft = rowLeft * nRow;
-				for(int rc = block; rc < blockEnd; rc++)
-					preAV[_data.get(rc) ? offOut + 1 : offOut] += mV[offLeft + rc];
-			}
-		}
+	public void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
+		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), _data);
+	}
+
+	@Override
+	public void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
+		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), _data);
 	}
 
 	@Override
 	public int getUpperBoundValue() {
 		return 1;
+	}
+
+	@Override
+	public int[] getCounts(int[] counts) {
+		final int sz = size();
+
+		if(counts.length == 1)
+			counts[0] = sz;
+		else {
+			counts[1] = _data.cardinality();
+			counts[0] = sz - counts[1];
+		}
+
+		return counts;
+	}
+
+	@Override
+	public void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v) {
+		if(tm instanceof MapToBit)
+			preAggregateDDCSingleColBitBit((MapToBit) tm, td, v);
+		else // fallback
+			super.preAggregateDDC_DDCSingleCol(tm, td, v);
+	}
+
+	private void preAggregateDDCSingleColBitBit(MapToBit tmb, double[] td, double[] v) {
+
+		JoinBitSets j = new JoinBitSets(tmb._data, _data, _size);
+
+		// multiply and scale with actual values
+		v[1] += td[1] * j.tt;
+		v[0] += td[1] * j.ft;
+		v[1] += td[0] * j.tf;
+		v[0] += td[0] * j.ff;
+	}
+
+	@Override
+	public void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
+		if(tm instanceof MapToBit)
+			preAggregateDDCMultiColBitBit((MapToBit) tm, td, v, nCol);
+		else // fallback
+			super.preAggregateDDC_DDCMultiCol(tm, td, v, nCol);
+	}
+
+	private void preAggregateDDCMultiColBitBit(MapToBit tmb, ADictionary td, double[] v, int nCol) {
+
+		JoinBitSets j = new JoinBitSets(tmb._data, _data, _size);
+
+		final double[] tv = td.getValues();
+
+		// multiply and scale with actual values
+		for(int i = 0; i < nCol; i++) {
+			final int off = nCol + i;
+			v[i] += tv[i] * j.ff;
+			v[off] += tv[i] * j.tf;
+			v[off] += tv[off] * j.tt;
+			v[i] += tv[off] * j.ft;
+		}
+	}
+
+	private static class JoinBitSets {
+		int tt = 0;
+		int ft = 0;
+		int tf = 0;
+		int ff = 0;
+
+		protected JoinBitSets(BitSet t_data, BitSet o_data, int size) {
+
+			// This naively rely on JDK implementation using long arrays to encode bit Arrays.
+			final long[] t_longs = t_data.toLongArray();
+			final long[] _longs = o_data.toLongArray();
+
+			final int common = Math.min(t_longs.length, _longs.length);
+
+			for(int i = 0; i < common; i++) {
+				long t = t_longs[i];
+				long v = _longs[i];
+				tt += Long.bitCount(t & v);
+				ft += Long.bitCount(t & ~v);
+				tf += Long.bitCount(~t & v);
+				ff += Long.bitCount(~t & ~v);
+			}
+
+			if(t_longs.length > common) {
+				for(int i = common; i < t_longs.length; i++) {
+					int v = Long.bitCount(t_longs[i]);
+					ft += v;
+					ff += 64 - v;
+				}
+			}
+			else if(_longs.length > common) {
+				for(int i = common; i < _longs.length; i++) {
+					int v = Long.bitCount(_longs[i]);
+					tf += v;
+					ff += 64 - v;
+				}
+			}
+
+			final int longest = Math.max(t_longs.length, _longs.length);
+			ff += size - (longest * 64); // remainder
+		}
 	}
 }

@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -35,7 +37,7 @@ public class MapToChar extends AMapToData {
 	private final char[] _data;
 
 	public MapToChar(int unique, int size) {
-		super(unique);
+		super(Math.min(unique, Character.MAX_VALUE + 1));
 		_data = new char[size];
 	}
 
@@ -43,6 +45,12 @@ public class MapToChar extends AMapToData {
 		super(unique);
 		_data = data;
 	}
+
+	@Override
+	public MAP_TYPE getType(){
+		return MapToFactory.MAP_TYPE.CHAR;
+	}
+
 
 	@Override
 	public int getIndex(int n) {
@@ -98,7 +106,7 @@ public class MapToChar extends AMapToData {
 			out.writeChar(_data[i]);
 	}
 
-	public static MapToChar readFields(DataInput in) throws IOException {
+	protected static MapToChar readFields(DataInput in) throws IOException {
 		int unique = in.readInt();
 		final int length = in.readInt();
 		final char[] data = new char[length];
@@ -107,27 +115,65 @@ public class MapToChar extends AMapToData {
 		return new MapToChar(unique, data);
 	}
 
-	public char[] getChars() {
+	protected char[] getChars() {
 		return _data;
 	}
 
-	@Override
-	public void preAggregateDense(MatrixBlock m, MatrixBlock pre, int rl, int ru, int cl, int cu) {
-		final int nRow = m.getNumColumns();
-		final int nVal = pre.getNumColumns();
-		final double[] preAV = pre.getDenseBlockValues();
-		final double[] mV = m.getDenseBlockValues();
-		final int blockSize = 4000;
-		for(int block = cl; block < cu; block += blockSize) {
-			final int blockEnd = Math.min(block + blockSize, nRow);
-			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
-				final int offLeft = rowLeft * nRow;
-				for(int rc = block; rc < blockEnd; rc++) {
-					final int idx = _data[rc];
-					preAV[offOut + idx] += mV[offLeft + rc];
-				}
-			}
+	private void preAggregateDenseToRowBy8(double[] mV, double[] preAV, int cl, int cu, int off) {
+		final int h = (cu - cl) % 8;
+		off += cl;
+		for(int rc = cl; rc < cl + h; rc++, off++)
+			preAV[_data[rc]] += mV[off];
+		for(int rc = cl + h; rc < cu; rc += 8, off += 8) {
+			int id1 = _data[rc], id2 = _data[rc + 1], id3 = _data[rc + 2], id4 = _data[rc + 3], id5 = _data[rc + 4],
+				id6 = _data[rc + 5], id7 = _data[rc + 6], id8 = _data[rc + 7];
+			preAV[id1] += mV[off];
+			preAV[id2] += mV[off + 1];
+			preAV[id3] += mV[off + 2];
+			preAV[id4] += mV[off + 3];
+			preAV[id5] += mV[off + 4];
+			preAV[id6] += mV[off + 5];
+			preAV[id7] += mV[off + 6];
+			preAV[id8] += mV[off + 7];
 		}
+	}
+
+	@Override
+	protected void preAggregateDenseSingleRow(double[] mV, int off, double[] preAV, int cl, int cu) {
+		if(cu - cl > 1000)
+			preAggregateDenseToRowBy8(mV, preAV, cl, cu, off);
+		else
+			super.preAggregateDenseSingleRow(mV, off, preAV, cl, cu);
+	}
+
+	// @Override
+	// protected void preAggregateDenseMultiRow(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu) {
+	// final int nVal = getUnique();
+	// final DenseBlock db = m.getDenseBlock();
+	// if(db.isContiguous()) {
+	// final double[] mV = m.getDenseBlockValues();
+	// final int nCol = m.getNumColumns();
+	// for(int c = cl; c < cu; c++) {
+	// final int idx = getIndex(c);
+	// final int start = c + nCol * rl;
+	// final int end = c + nCol * ru;
+	// for(int offOut = idx, off = start; off < end; offOut += nVal, off += nCol) {
+	// preAV[offOut] += mV[off];
+	// }
+	// }
+	// }
+	// else
+	// throw new NotImplementedException();
+	// }
+
+	@Override
+	public void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
+		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), _data);
+	}
+
+	@Override
+	public void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
+		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), _data);
 	}
 
 	@Override
@@ -135,4 +181,42 @@ public class MapToChar extends AMapToData {
 		return Character.MAX_VALUE;
 	}
 
+	// @Override
+	// public int[] getCounts(int[] counts) {
+	// 	final int sz = size();
+	// 	for(int i = 0; i < sz; i++)
+	// 		counts[_data[i]]++;
+	// 	return counts;
+	// }
+
+	// @Override
+	// public void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v) {
+	// for(int r = 0; r < size(); r++)
+	// v[getIndex(r)] += td[tm.getIndex(r)];
+	// }
+
+	// @Override
+	// public void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
+	// final int nRows = size();
+	// for(int r = 0; r < nRows; r++)
+	// td.addToEntry(v, tm.getIndex(r), getIndex(r), nCol);
+	// }
+
+	// @Override
+	// public void preAggregateSDCZ_SDCZMultiCol(AMapToData tm, ADictionary td, AOffset tof, AOffset of, Dictionary ret,
+	// int nCol) {
+	// tm.preAggregateSDCZ_SDCZMultiCol_char(td, tof, of, ret, nCol, _data);
+	// }
+
+	// @Override
+	// public void preAggregateSDCZ_SDCZMultiCol_char(ADictionary td, AOffset tof, AOffset of, Dictionary ret, int nCol,
+	// char[] m) {
+	// preAggregateSDCZ_SDCZMultiCol_char_char(td, tof, of, ret, nCol, m, _data);
+	// }
+
+	// private static void preAggregateSDCZ_SDCZMultiCol_char_char(ADictionary td, AOffset tof, AOffset of, Dictionary
+	// ret,
+	// int nCol, char[] m, char[] tm) {
+	// tof.preAggregateSDCZ_SDCZMultiCol_char_char(td, of, ret, nCol, m, tm);
+	// }
 }

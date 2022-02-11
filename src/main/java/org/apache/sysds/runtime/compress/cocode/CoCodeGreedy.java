@@ -21,18 +21,19 @@ package org.apache.sysds.runtime.compress.cocode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CoCodeGreedy extends AColumnCoCoder {
 
@@ -48,31 +49,38 @@ public class CoCodeGreedy extends AColumnCoCoder {
 
 	protected static List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> inputColumns,
 		CompressedSizeEstimator sEst, ICostEstimate cEst, CompressionSettings cs, int k) {
-		Memorizer mem = new Memorizer(cs, sEst);
+		Memorizer mem = new Memorizer(sEst);
 		for(CompressedSizeInfoColGroup g : inputColumns)
 			mem.put(g);
 
-		return coCodeBruteForce(inputColumns, cEst, mem);
+		return coCodeBruteForce(inputColumns, cEst, mem, k);
 	}
 
 	private static List<CompressedSizeInfoColGroup> coCodeBruteForce(List<CompressedSizeInfoColGroup> inputColumns,
-		ICostEstimate cEst, Memorizer mem) {
+		ICostEstimate cEst, Memorizer mem, int k) {
 
-		List<ColIndexes> workset = new ArrayList<>(inputColumns.size());
-
+		final List<ColIndexes> workSet = new ArrayList<>(inputColumns.size());
 		final boolean workloadCost = cEst instanceof ComputationCostEstimator;
 
+		// assume that we can at max reduce 90 % of cost if joined
+		// assume that we can max reduce 65% of compute cost if joined
+		final double costFilterThreshold = (workloadCost ? 0.65 : 0.9);
+
 		for(int i = 0; i < inputColumns.size(); i++)
-			workset.add(new ColIndexes(inputColumns.get(i).getColumns()));
-		// process merging iterations until no more change
-		while(workset.size() > 1) {
+			workSet.add(new ColIndexes(inputColumns.get(i).getColumns()));
+
+		if(k > 1)
+			parallelFirstJoin(workSet, mem, cEst, costFilterThreshold, k);
+
+		// Process merging iterations until no more change
+		while(workSet.size() > 1) {
 			double changeInCost = 0;
 			CompressedSizeInfoColGroup tmp = null;
 			ColIndexes selected1 = null, selected2 = null;
-			for(int i = 0; i < workset.size(); i++) {
-				for(int j = i + 1; j < workset.size(); j++) {
-					final ColIndexes c1 = workset.get(i);
-					final ColIndexes c2 = workset.get(j);
+			for(int i = 0; i < workSet.size(); i++) {
+				for(int j = i + 1; j < workSet.size(); j++) {
+					final ColIndexes c1 = workSet.get(i);
+					final ColIndexes c2 = workSet.get(j);
 					final double costC1 = cEst.getCostOfColumnGroup(mem.get(c1));
 					final double costC2 = cEst.getCostOfColumnGroup(mem.get(c2));
 
@@ -83,22 +91,20 @@ public class CoCodeGreedy extends AColumnCoCoder {
 					// it still does not improve compression.
 					// In the case of workload we relax the requirement for the filter.
 					// if(-Math.min(costC1, costC2) > changeInCost)
-					if(-Math.min(costC1, costC2) * (workloadCost ? 0.7 : 1) > changeInCost)
+					if(-Math.min(costC1, costC2) * costFilterThreshold > changeInCost)
 						continue;
 
 					// Join the two column groups.
 					// and Memorize the new join.
 					final CompressedSizeInfoColGroup c1c2Inf = mem.getOrCreate(c1, c2);
 					final double costC1C2 = cEst.getCostOfColumnGroup(c1c2Inf);
-
-					final double newSizeChangeIfSelected = costC1C2 - costC1 - costC2;
+					final double newCostIfJoined = costC1C2 - costC1 - costC2;
 
 					// Select the best join of either the currently selected
 					// or keep the old one.
-					if((tmp == null && newSizeChangeIfSelected < changeInCost) || tmp != null &&
-						(newSizeChangeIfSelected < changeInCost || newSizeChangeIfSelected == changeInCost &&
-							c1c2Inf.getColumns().length < tmp.getColumns().length)) {
-						changeInCost = newSizeChangeIfSelected;
+					if((tmp == null && newCostIfJoined < changeInCost) || tmp != null && (newCostIfJoined < changeInCost ||
+						newCostIfJoined == changeInCost && c1c2Inf.getColumns().length < tmp.getColumns().length)) {
+						changeInCost = newCostIfJoined;
 						tmp = c1c2Inf;
 						selected1 = c1;
 						selected2 = c2;
@@ -107,119 +113,65 @@ public class CoCodeGreedy extends AColumnCoCoder {
 			}
 
 			if(tmp != null) {
-				workset.remove(selected1);
-				workset.remove(selected2);
+				workSet.remove(selected1);
+				workSet.remove(selected2);
 				mem.remove(selected1, selected2);
-				workset.add(new ColIndexes(tmp.getColumns()));
+				workSet.add(new ColIndexes(tmp.getColumns()));
 			}
 			else
 				break;
 		}
+		
 		if(LOG.isDebugEnabled())
 			LOG.debug("Memorizer stats:" + mem.stats());
 		mem.resetStats();
 
-		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(workset.size());
-
-		for(ColIndexes w : workset)
+		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(workSet.size());
+		for(ColIndexes w : workSet)
 			ret.add(mem.get(w));
 
 		return ret;
 	}
 
-	protected static class Memorizer {
-		private final CompressionSettings _cs;
-		private final CompressedSizeEstimator _sEst;
-		private final Map<ColIndexes, CompressedSizeInfoColGroup> mem;
-		private int st1 = 0, st2 = 0, st3 = 0, st4 = 0;
+	protected static void parallelFirstJoin(List<ColIndexes> workSet, Memorizer mem, ICostEstimate cEst,
+		double costFilterThreshold, int k) {
+		try {
+			final ExecutorService pool = CommonThreadPool.get(k);
+			final List<JoinTask> tasks = new ArrayList<>();
+			final int size = workSet.size();
+			for(int i = 0; i < size; i++)
+				for(int j = i + 1; j < size; j++)
+					tasks.add(new JoinTask(workSet.get(i), workSet.get(j), mem));
 
-		public Memorizer(CompressionSettings cs, CompressedSizeEstimator sEst) {
-			_cs = cs;
-			_sEst = sEst;
-			mem = new HashMap<>();
+			for(Future<Object> t : pool.invokeAll(tasks))
+				t.get();
+			pool.shutdown();
 		}
-
-		public void put(CompressedSizeInfoColGroup g) {
-			mem.put(new ColIndexes(g.getColumns()), g);
-		}
-
-		public CompressedSizeInfoColGroup get(ColIndexes c) {
-			return mem.get(c);
-		}
-
-		public void remove(ColIndexes c1, ColIndexes c2) {
-			mem.remove(c1);
-			mem.remove(c2);
-		}
-
-		public CompressedSizeInfoColGroup getOrCreate(ColIndexes c1, ColIndexes c2) {
-			final int[] c = Util.join(c1._indexes, c2._indexes);
-			final ColIndexes cI = new ColIndexes(c);
-			CompressedSizeInfoColGroup g = mem.get(cI);
-			st2++;
-			if(g == null) {
-				final CompressedSizeInfoColGroup left = mem.get(c1);
-				final CompressedSizeInfoColGroup right = mem.get(c2);
-				final boolean leftConst = left.getBestCompressionType(_cs) == CompressionType.CONST &&
-					left.getNumOffs() == 0;
-				final boolean rightConst = right.getBestCompressionType(_cs) == CompressionType.CONST &&
-					right.getNumOffs() == 0;
-				if(leftConst)
-					g = CompressedSizeInfoColGroup.addConstGroup(c, right, _cs.validCompressions);
-				else if(rightConst)
-					g = CompressedSizeInfoColGroup.addConstGroup(c, left, _cs.validCompressions);
-				else {
-					st3++;
-					g = _sEst.estimateJoinCompressedSize(c, left, right);
-				}
-
-				if(leftConst || rightConst)
-					st4++;
-
-				mem.put(cI, g);
-			}
-			return g;
-		}
-
-		public void incst1() {
-			st1++;
-		}
-
-		public String stats() {
-			return st1 + " " + st2 + " " + st3 + " " + st4;
-		}
-
-		public void resetStats() {
-			st1 = 0;
-			st2 = 0;
-			st3 = 0;
-			st4 = 0;
-		}
-
-		@Override
-		public String toString() {
-			return mem.toString();
+		catch(Exception e) {
+			throw new DMLCompressionException("Failed parallelize first level all join all", e);
 		}
 	}
 
-	private static class ColIndexes {
-		final int[] _indexes;
-		final int _hash;
+	protected static class JoinTask implements Callable<Object> {
+		private final ColIndexes _c1, _c2;
+		private final Memorizer _m;
 
-		public ColIndexes(int[] indexes) {
-			_indexes = indexes;
-			_hash = Arrays.hashCode(_indexes);
+		protected JoinTask(ColIndexes c1, ColIndexes c2, Memorizer m) {
+			_c1 = c1;
+			_c2 = c2;
+			_m = m;
 		}
 
 		@Override
-		public int hashCode() {
-			return _hash;
-		}
-
-		@Override
-		public boolean equals(Object that) {
-			ColIndexes thatGrp = (ColIndexes) that;
-			return Arrays.equals(_indexes, thatGrp._indexes);
+		public Object call() {
+			try {
+				_m.getOrCreate(_c1, _c2);
+				return null;
+			}
+			catch(Exception e) {
+				throw new DMLCompressionException(
+					"Failed to join columns : " + Arrays.toString(_c1._indexes) + " + " + Arrays.toString(_c2._indexes), e);
+			}
 		}
 	}
 }

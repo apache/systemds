@@ -18,33 +18,10 @@
 -->
 
 <root>
-   <!-- local fs tmp working directory-->
-   <sysds.localtmpdir>/tmp/systemds</sysds.localtmpdir>
-
-   <!-- hdfs tmp working directory-->
-   <sysds.scratch>scratch_space</sysds.scratch>
-
-   <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3 | 4, default: 2 -->
-   <sysds.optlevel>2</sysds.optlevel>
-
-   <!-- default block dim for binary block files -->
-   <sysds.defaultblocksize>1000</sysds.defaultblocksize>
-
-   <!-- enables multi-threaded matrix operations in singlenode control program -->
-   <sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
-
-   <!-- enables multi-threaded read/write in singlenode control program -->
-   <sysds.cp.parallel.io>true</sysds.cp.parallel.io>
-
-   <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
-   <sysds.native.blas>none</sysds.native.blas>
-
-   <!-- custom directory where BLAS libraries are available, experimental feature (options: absolute directory path or none). If set to none, we use standard LD_LIBRARY_PATH. -->
-   <sysds.native.blas.directory>none</sysds.native.blas.directory>
-
    <!-- The number of theads for the spark instance artificially selected-->
-   <sysds.local.spark.number.threads>16</sysds.local.spark.number.threads>
-
+   <sysds.local.spark.number.threads>2</sysds.local.spark.number.threads>
    <!-- The timeout of the federated tests to initialize the federated matrixes -->
    <sysds.federated.initialization.timeout>2</sysds.federated.initialization.timeout>
+   <!-- The timeout of each instruction sent to federated workers -->
+   <sysds.federated.timeout>128</sysds.federated.timeout>
 </root>

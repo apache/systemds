@@ -24,10 +24,10 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -37,13 +37,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public abstract class APreAgg extends AColGroupValue {
 
 	private static final long serialVersionUID = 3250955207277128281L;
-
-	private static ThreadLocal<double[]> tmpLeftMultDoubleArray = new ThreadLocal<double[]>() {
-		@Override
-		protected double[] initialValue() {
-			return null;
-		}
-	};
 
 	/**
 	 * Constructor for serialization
@@ -87,6 +80,7 @@ public abstract class APreAgg extends AColGroupValue {
 		else if(lhs instanceof APreAgg)
 			leftMultByColGroupValue((APreAgg) lhs, result);
 		else if(lhs instanceof ColGroupUncompressed)
+			// throw new NotImplementedException();
 			leftMultByUncompressedColGroup((ColGroupUncompressed) lhs, result);
 		else
 			throw new DMLCompressionException(
@@ -103,15 +97,21 @@ public abstract class APreAgg extends AColGroupValue {
 	 */
 	@Override
 	public final void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
+		// throw new NotImplementedException();
 		if(matrix.isEmpty())
 			return;
+		final int nCol = _colIndexes.length;
 		final int numVals = getNumValues();
 		// Pre aggregate the matrix into same size as dictionary
-		MatrixBlock preAgg = allocatePreAggregate(matrix, numVals, rl, ru);
+		final MatrixBlock preAgg = new MatrixBlock(ru - rl, numVals, false);
+		preAgg.allocateDenseBlock();
 		preAggregate(matrix, preAgg, rl, ru);
 		preAgg.recomputeNonZeros();
-		MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);
-		addMatrixToResult(tmpRes, result, rl, ru);
+		final MatrixBlock tmpRes = new MatrixBlock(preAgg.getNumRows(), nCol, false);
+		forceMatrixBlockDictionary();
+		final MatrixBlock dictM = _dict.getMBDict(nCol).getMatrixBlock();
+		LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);
+		CLALibLeftMultBy.addMatrixToResult(tmpRes, result, _colIndexes, rl, ru);
 	}
 
 	/**
@@ -123,8 +123,6 @@ public abstract class APreAgg extends AColGroupValue {
 	public final Dictionary preAggregateThatIndexStructure(APreAgg that) {
 		int outputLength = that._colIndexes.length * this.getNumValues();
 		Dictionary ret = new Dictionary(new double[outputLength]);
-		String cThis = this.getClass().getSimpleName();
-		String cThat = that.getClass().getSimpleName();
 
 		if(that instanceof ColGroupDDC)
 			preAggregateThatDDCStructure((ColGroupDDC) that, ret);
@@ -132,9 +130,12 @@ public abstract class APreAgg extends AColGroupValue {
 			preAggregateThatSDCSingleZerosStructure((ColGroupSDCSingleZeros) that, ret);
 		else if(that instanceof ColGroupSDCZeros)
 			preAggregateThatSDCZerosStructure((ColGroupSDCZeros) that, ret);
-		else
+		else {
+			final String cThis = this.getClass().getSimpleName();
+			final String cThat = that.getClass().getSimpleName();
 			throw new NotImplementedException(
 				"Not supported pre aggregate using index structure of :" + cThat + " in " + cThis);
+		}
 		return ret;
 	}
 
@@ -150,12 +151,8 @@ public abstract class APreAgg extends AColGroupValue {
 
 	protected abstract boolean sameIndexStructure(AColGroupCompressed that);
 
-	private final ADictionary preAggLeft(APreAgg lhs) {
-		return lhs.preAggregateThatIndexStructure(this);
-	}
-
-	private final ADictionary preAggRight(APreAgg lhs) {
-		return this.preAggregateThatIndexStructure(lhs);
+	public int getPreAggregateSize() {
+		return getNumValues();
 	}
 
 	private void tsmmAColGroupValue(APreAgg lg, MatrixBlock result) {
@@ -174,10 +171,12 @@ public abstract class APreAgg extends AColGroupValue {
 			boolean left = !shouldPreAggregateLeft(lg);
 			if(left) {
 				l = lg._dict.getValues();
-				r = preAggLeft(lg).getValues();
+				// leftAgg
+				r = lg.preAggregateThatIndexStructure(this).getValues();
 			}
 			else {
-				l = preAggRight(lg).getValues();
+				// rightAgg
+				l = this.preAggregateThatIndexStructure(lg).getValues();
 				r = _dict.getValues();
 			}
 			MMDenseToUpperTriangle(l, r, leftIdx, rightIdx, result);
@@ -198,10 +197,10 @@ public abstract class APreAgg extends AColGroupValue {
 				MMDictsWithScaling(lDict, rDict, leftIdx, rightIdx, result, c);
 		}
 		else {
-			if(shouldPreAggregateLeft(lhs))
-				MMDicts(lDict, preAggLeft(lhs), leftIdx, rightIdx, result);
-			else
-				MMDicts(preAggRight(lhs), rDict, leftIdx, rightIdx, result);
+			if(shouldPreAggregateLeft(lhs)) // left preAgg
+				MMDicts(lDict, lhs.preAggregateThatIndexStructure(this), leftIdx, rightIdx, result);
+			else // right preAgg
+				MMDicts(this.preAggregateThatIndexStructure(lhs), rDict, leftIdx, rightIdx, result);
 		}
 	}
 
@@ -209,12 +208,15 @@ public abstract class APreAgg extends AColGroupValue {
 		if(lhs.getData().isEmpty())
 			return;
 		LOG.warn("Transpose of uncompressed to fit to template need t(a) %*% b support");
-		MatrixBlock tmp = LibMatrixReorg.transpose(lhs.getData(), InfrastructureAnalyzer.getLocalParallelism());
+		final MatrixBlock tmp = LibMatrixReorg.transpose(lhs.getData(), InfrastructureAnalyzer.getLocalParallelism());
 		final int numVals = getNumValues();
-		MatrixBlock preAgg = allocatePreAggregate(tmp, numVals, 0, tmp.getNumRows());
+		final MatrixBlock preAgg = new MatrixBlock(tmp.getNumRows(), numVals, false);
+		preAgg.allocateDenseBlock();
 		preAggregate(tmp, preAgg, 0, tmp.getNumRows());
 		preAgg.recomputeNonZeros();
-		MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);
+		final MatrixBlock tmpRes = new MatrixBlock(preAgg.getNumRows(), _colIndexes.length, false);
+		final MatrixBlock dictM = _dict.getMBDict(getNumCols()).getMatrixBlock();
+		LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);
 		addMatrixToResult(tmpRes, result, lhs._colIndexes);
 	}
 
@@ -267,24 +269,6 @@ public abstract class APreAgg extends AColGroupValue {
 		}
 	}
 
-	private final MatrixBlock leftMultByPreAggregateMatrix(MatrixBlock preAgg) {
-
-		// Allocate temporary matrix to multiply into.
-		final int tmpCol = _colIndexes.length;
-		final int tmpRow = preAgg.getNumRows();
-		double[] tmpLeftMultRes = tmpLeftMultDoubleArray.get();
-
-		MatrixBlock tmpRes = null;
-		if(tmpLeftMultRes != null && tmpLeftMultRes.length >= tmpCol * tmpRow) {
-			tmpRes = new MatrixBlock(tmpRow, tmpCol, new DenseBlockFP64(new int[] {tmpRow, tmpCol}, tmpLeftMultRes));
-			tmpRes.reset();
-		}
-		else
-			tmpRes = new MatrixBlock(tmpRow, tmpCol, false);
-
-		return leftMultByPreAggregateMatrix(preAgg, tmpRes);
-	}
-
 	private boolean shouldPreAggregateLeft(APreAgg lhs) {
 		final int nvL = lhs.getNumValues();
 		final int nvR = this.getNumValues();
@@ -293,13 +277,6 @@ public abstract class APreAgg extends AColGroupValue {
 		final double costRightDense = nvR * rCol;
 		final double costLeftDense = nvL * lCol;
 		return costRightDense < costLeftDense;
-	}
-
-	private static MatrixBlock allocatePreAggregate(MatrixBlock m, int numVals, int rl, int ru) {
-		final int lhsRows = ru - rl;
-		final double[] vals = allocDVector(lhsRows * numVals, true);
-		final DenseBlock retB = new DenseBlockFP64(new int[] {lhsRows, numVals}, vals);
-		return new MatrixBlock(lhsRows, numVals, retB);
 	}
 
 	private static void MMDictsWithScaling(final ADictionary left, final ADictionary right, final int[] leftRows,
@@ -318,16 +295,12 @@ public abstract class APreAgg extends AColGroupValue {
 			if(mb.isEmpty())
 				return;
 			else if(mb.isInSparseFormat())
-				throw new NotImplementedException();
-			else {
-				final double[] values = mb.getDenseBlockValues();
-				MMDictsDenseDenseWithScaling(values, values, rows, cols, counts, ret);
-			}
+				TSMMDictsSparseWithScaling(mb.getSparseBlock(), rows, cols, counts, ret);
+			else
+				TSMMDictsDenseWithScaling(mb.getDenseBlockValues(), rows, cols, counts, ret);
 		}
-		else {
-			final double[] values = dict.getValues();
-			MMDictsDenseDenseWithScaling(values, values, rows, cols, counts, ret);
-		}
+		else
+			TSMMDictsDenseWithScaling(dict.getValues(), rows, cols, counts, ret);
 	}
 
 	/**
@@ -416,9 +389,9 @@ public abstract class APreAgg extends AColGroupValue {
 		}
 	}
 
-	private static void MMDictsDenseDenseWithScaling(double[] left, double[] right, int[] rowsLeft, int[] colsRight,
-		int[] scaling, MatrixBlock result) {
-		final int commonDim = Math.min(left.length / rowsLeft.length, right.length / colsRight.length);
+	private static void TSMMDictsDenseWithScaling(double[] dv, int[] rowsLeft, int[] colsRight, int[] scaling,
+		MatrixBlock result) {
+		final int commonDim = Math.min(dv.length / rowsLeft.length, dv.length / colsRight.length);
 		final int resCols = result.getNumColumns();
 		final double[] resV = result.getDenseBlockValues();
 		for(int k = 0; k < commonDim; k++) {
@@ -427,10 +400,34 @@ public abstract class APreAgg extends AColGroupValue {
 			final int scale = scaling[k];
 			for(int i = 0; i < rowsLeft.length; i++) {
 				final int offOut = rowsLeft[i] * resCols;
-				final double vl = left[offL + i] * scale;
+				final double vl = dv[offL + i] * scale;
 				if(vl != 0)
 					for(int j = 0; j < colsRight.length; j++)
-						resV[offOut + colsRight[j]] += vl * right[offR + j];
+						resV[offOut + colsRight[j]] += vl * dv[offR + j];
+			}
+		}
+	}
+
+	private static void TSMMDictsSparseWithScaling(SparseBlock sb, int[] rowsLeft, int[] colsRight, int[] scaling,
+		MatrixBlock result) {
+
+		final int commonDim = sb.numRows();
+		final int resCols = result.getNumColumns();
+		final double[] resV = result.getDenseBlockValues();
+
+		for(int k = 0; k < commonDim; k++) {
+			if(sb.isEmpty(k))
+				continue;
+			final int apos = sb.pos(k);
+			final int alen = sb.size(k) + apos;
+			final int[] aix = sb.indexes(k);
+			final double[] avals = sb.values(k);
+			final int scale = scaling[k];
+			for(int i = apos; i < alen; i++) {
+				final double v = avals[i] * scale;
+				final int offOut = rowsLeft[aix[i]] * resCols;
+				for(int j = 0; j < alen; j++)
+					resV[offOut + colsRight[aix[j]]] += v * avals[j];
 			}
 		}
 	}

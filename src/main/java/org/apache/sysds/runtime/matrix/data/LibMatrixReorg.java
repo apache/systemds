@@ -719,52 +719,77 @@ public class LibMatrixReorg {
 	}
 
 	/**
-	 * CP rexpand operation (single input, single output)
+	 * CP rexpand operation (single input, single output), the classic example of this operation is one hot encoding of a
+	 * column to multiple columns.
 	 * 
-	 * @param in input matrix
-	 * @param ret output matrix
-	 * @param max ?
-	 * @param rows ?
-	 * @param cast ?
-	 * @param ignore ?
-	 * @param k degree of parallelism
-	 * @return output matrix
+	 * @param in     Input matrix
+	 * @param ret    Output matrix
+	 * @param max    Number of rows/cols of the output
+	 * @param rows   If the expansion is in rows direction
+	 * @param cast   If the values contained should be cast to double (rounded up and down)
+	 * @param ignore Ignore if the input contain values below zero that technically is incorrect input.
+	 * @param k      Degree of parallelism
+	 * @return Output matrix rexpanded
 	 */
 	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore, int k) {
-		//prepare parameters
-		int lmax = (int)UtilFunctions.toLong(max);
-		
+		return rexpand(in, ret, UtilFunctions.toInt(max), rows, cast, ignore, k);
+	}
+
+	/**
+	 * CP rexpand operation (single input, single output), the classic example of this operation is one hot encoding of a
+	 * column to multiple columns.
+	 * 
+	 * @param in     Input matrix
+	 * @param ret    Output matrix
+	 * @param max    Number of rows/cols of the output
+	 * @param rows   If the expansion is in rows direction
+	 * @param cast   If the values contained should be cast to double (rounded up and down)
+	 * @param ignore Ignore if the input contain values below zero that technically is incorrect input.
+	 * @param k      Degree of parallelism
+	 * @return Output matrix rexpanded
+	 */
+	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, int max, boolean rows, boolean cast, boolean ignore, int k){
 		//sanity check for input nnz (incl implicit handling of empty blocks)
-		if( !ignore && in.getNonZeros()<in.getNumRows() )
-			throw new DMLRuntimeException("Invalid input w/ zeros for rexpand ignore=false "
-					+ "(rlen="+in.getNumRows()+", nnz="+in.getNonZeros()+").");
-		
+		checkRexpand(in, ignore);
+
 		//check for empty inputs (for ignore=true)
 		if( in.isEmptyBlock(false) ) {
 			if( rows )
-				ret.reset(lmax, in.rlen, true);
+				ret.reset(max, in.rlen, true);
 			else //cols
-				ret.reset(in.rlen, lmax, true);
+				ret.reset(in.rlen, max, true);
 			return ret;
 		}
-		
+
 		//execute rexpand operations
 		if( rows )
-			return rexpandRows(in, ret, lmax, cast, ignore);
+			return rexpandRows(in, ret, max, cast, ignore);
 		else //cols
-			return rexpandColumns(in, ret, lmax, cast, ignore, k);
+			return rexpandColumns(in, ret, max, cast, ignore, k);
+	}
+
+	/**
+	 * Quick check if the input is valid for rexpand, this check does not guarantee that the input is valid for rexpand
+	 * 
+	 * @param in     Input matrix block
+	 * @param ignore If zero valued cells should be ignored
+	 */
+	public static void checkRexpand(MatrixBlock in, boolean ignore){
+		if( !ignore && in.getNonZeros() < in.getNumRows() )
+			throw new DMLRuntimeException("Invalid input w/ zeros for rexpand ignore=false "
+					+ "(rlen="+in.getNumRows()+", nnz="+in.getNonZeros()+").");
 	}
 
 	/**
 	 * MR/Spark rexpand operation (single input, multiple outputs incl empty blocks)
 	 * 
-	 * @param data indexed matrix value
-	 * @param max ?
-	 * @param rows ?
-	 * @param cast ?
-	 * @param ignore ?
-	 * @param blen block length
-	 * @param outList list of indexed matrix values
+	 * @param data    Input indexed matrix block
+	 * @param max     Total nrows/cols of the output
+	 * @param rows    If the expansion is in rows direction
+	 * @param cast    If the values contained should be cast to double (rounded up and down)
+	 * @param ignore  Ignore if the input contain values below zero that technically is incorrect input.
+	 * @param blen    The block size to slice the output up into
+	 * @param outList The output indexedMatrixValues (a list to add all the output blocks to / modify)
 	 */
 	public static void rexpand(IndexedMatrixValue data, double max, boolean rows, boolean cast, boolean ignore, long blen, ArrayList<IndexedMatrixValue> outList) {
 		//prepare parameters

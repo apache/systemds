@@ -18,35 +18,39 @@
 # under the License.
 #
 #-------------------------------------------------------------
-#
-# Computes the minimum distances (shortest-path) between a single 
-# source vertex and every other vertex in the graph.
+
+# Computes the minimum distances (shortest-path) between a single source vertex and every other vertex in the graph.
 # 
 # Grzegorz Malewicz, Matthew H. Austern, Aart J. C. Bilk, 
 # James C. Dehnert, Ikkan Horn, Naty Leiser and Grzegorz Czajkowski:
 # Pregel: A System for Large-Scale Graph Processing
 #
-#------------------------------------------------------------------------------
-# NAME       TYPE      MEANING
-# G          MATRIX    adjacency matrix of the labeled graph: Such graph can be directed 
-#                      (G is symmetric) or undirected (G is not symmetric).
-#                      The values of G can be 0/1 (just specifying whether the nodes
-#                      are connected or not) or integer values (representing the weight
-#                      of the edges or the distances between nodes, 0 if not connected).
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME        TYPE              DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# G           Matrix[Double]    ---      adjacency matrix of the labeled graph: Such graph can be directed
+#                                         (G is symmetric) or undirected (G is not symmetric).
+#                                         The values of G can be 0/1 (just specifying whether the nodes
+#                                         are connected or not) or integer values (representing the weight
+#                                         of the edges or the distances between nodes, 0 if not connected).
+# maxi        Integer           0        Integer max number of iterations accepted (0 for FALSE, i.e.
+#                                         max number of iterations not defined)
+# sourceNode  Integer                     node index to calculate the shortest paths to all other nodes.
+# verbose     Boolean           FALSE    flag for verbose debug output
 #
-# maxi       Integer   Integer max number of iterations accepted (0 for FALSE, i.e. 
-#                      max number of iterations not defined)
+# ----------------------------------------------------------------------------------------------------------------------
 #
-# sourceNode Integer   node index to calculate the shortest paths to all other nodes.
-#
-# verbose    Boolean   flag for verbose debug output
-#------------------------------------------------------------------------------
-# C          Matrix    Output matrix (double) of minimum distances (shortest-path) between 
-#                      vertices: The value of the ith row and the jth column of the output
-#                      matrix is the minimum distance shortest-path from vertex i to vertex j.
-#                      When the value of the minimum distance is infinity, the two nodes are 
-#                      not connected.
-#------------------------------------------------------------------------------
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# C          Matrix[Double]               Output matrix (double) of minimum distances (shortest-path) between
+#                                         vertices: The value of the ith row and the jth column of the output
+#                                         matrix is the minimum distance shortest-path from vertex i to vertex j.
+#                                         When the value of the minimum distance is infinity, the two nodes are
+#                                         not connected.
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_shortestPath = function(Matrix[Double] G, Integer maxi = 0, Integer sourceNode, Boolean verbose = FALSE) 
   return (Matrix[Double] C) 

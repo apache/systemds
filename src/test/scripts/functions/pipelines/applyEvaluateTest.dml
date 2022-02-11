@@ -60,7 +60,7 @@ trainData = F[1:split,]
 testData = F[split+1:nrow(F),]
 
 
-result = applyAndEvaluate(trainData, testData, metaInfo, lg, pip[1,], hp[1,], "evalML", matrix("1 1e-3 1e-9 100", rows=1, cols=4), TRUE, FALSE)
+result = applyAndEvaluate(trainData, testData, metaInfo, lg, pip[1,], hp[1,], "evalML", evalHp, TRUE, FALSE)
 
 header = frame(["dirty acc", "train acc", "test acc"], rows=1, cols=3)
 result = as.frame(result)
@@ -75,13 +75,13 @@ write(result, $6)
 # UDF for evaluation  
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
 evalML = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
-  Matrix[Double] evalFunHp, Boolean trainML = FALSE)
+  Matrix[Double] evalFunHp)
   
 return(Matrix[Double] accuracy)
 {
 
   beta = multiLogReg(X=X, Y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]), 
-    maxi=as.scalar(evalFunHp[1,4]), maxii=50, verbose=FALSE);
+    maxi=1000, maxii=100, verbose=FALSE);
   [prob, yhat, accuracy] = multiLogRegPredict(Xtest, beta, Ytest, FALSE)
   a = getAccuracy(Ytest, yhat, TRUE)
   print("accuracy: "+ accuracy+", accuracy weighted: "+a)

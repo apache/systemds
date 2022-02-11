@@ -25,11 +25,10 @@ import java.util.Random;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
-import org.apache.sysds.runtime.compress.bitmap.BitmapEncoder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
-import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -56,7 +55,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	 * @param sampleSize The size to sample from the data.
 	 * @param k          The parallelization degree allowed.
 	 */
-	protected CompressedSizeEstimatorSample(MatrixBlock data, CompressionSettings cs, int sampleSize, int k) {
+	public CompressedSizeEstimatorSample(MatrixBlock data, CompressionSettings cs, int sampleSize, int k) {
 		super(data, cs);
 		_k = k;
 		_sampleSize = sampleSize;
@@ -76,6 +75,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		return _sample;
 	}
 
+	@Override
 	public final int getSampleSize() {
 		return _sampleSize;
 	}
@@ -83,18 +83,28 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	@Override
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int estimate,
 		int nrUniqueUpperBound) {
-
-		// extract statistics from sample
-		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _sample, _transposed, estimate, false);
-		final EstimationFactors sampleFacts = EstimationFactors.computeSizeEstimationFactors(ubm, _sampleSize, false,
-			colIndexes);
-		final AMapToData map = MapToFactory.create(_sampleSize, ubm);
-
-		// result scaled
+		// Extract primitive information from sample
+		final IEncode map = IEncode.createFromMatrixBlock(_sample, _transposed, colIndexes);
+		// Get the facts for the sample
+		final EstimationFactors sampleFacts = map.computeSizeEstimation(colIndexes, _sampleSize, _data.getSparsity(),
+			_data.getSparsity());
+		// Scale the facts up to full size
 		final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, colIndexes, nrUniqueUpperBound);
+		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+	}
 
-		// LOG.error("Sample vs Scaled:\n" + sampleFacts + "\n" + em + "\n");
-
+	@Override
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSizeDeltaEncoded(int[] colIndexes, int estimate,
+		int nrUniqueUpperBound) {
+		// Don't use sample when doing estimation of delta encoding, instead we read from the start of the matrix until
+		// sample size. This guarantees that the delta values are actually represented in the full compression
+		final IEncode map = IEncode.createFromMatrixBlockDelta(_data, _transposed, colIndexes, _sampleSize);
+		// Get the Facts for the sample
+		final EstimationFactors sampleFacts = map.computeSizeEstimation(colIndexes, _sampleSize, _data.getSparsity(),
+			_data.getSparsity());
+		// TODO find out if we need to scale differently if we use delta (I suspect not)
+		// Scale sample
+		final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, colIndexes, nrUniqueUpperBound);
 		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
 	}
 
@@ -110,20 +120,28 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		CompressedSizeInfoColGroup g2, int joinedMaxDistinct) {
 		if((long) g1.getNumVals() * g2.getNumVals() > (long) Integer.MAX_VALUE)
 			return null;
+		try {
 
-		final AMapToData map = MapToFactory.join(g1.getMap(), g2.getMap());
-		final EstimationFactors sampleFacts = EstimationFactors.computeSizeEstimation(joined, map,
-			_cs.validCompressions.contains(CompressionType.RLE), map.size(), false);
+			final IEncode map = g1.getMap().join(g2.getMap());
+			final EstimationFactors sampleFacts = map.computeSizeEstimation(joined, _sampleSize, _data.getSparsity(),
+				_data.getSparsity());
+			try {
 
+				final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, joined, joinedMaxDistinct);
+				return new CompressedSizeInfoColGroup(joined, em, _cs.validCompressions, map);
+			}
+			catch(Exception e) {
+				throw new DMLCompressionException("failed to scale Estimation factors with :\n" + map + "\n" + sampleFacts,
+					e);
+			}
+		}
+		catch(Exception e) {
+			throw new DMLCompressionException("failed to join compression estimation groups", e);
+		}
 		// result facts
-		final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, joined, joinedMaxDistinct);
-
-		// LOG.error("Sample vs Scaled Join:\n" + sampleFacts + "\n" + em + "\n");
-
-		return new CompressedSizeInfoColGroup(joined, em, _cs.validCompressions, map);
 	}
 
-	private EstimationFactors estimateCompressionFactors(EstimationFactors sampleFacts, AMapToData map, int[] colIndexes,
+	private EstimationFactors estimateCompressionFactors(EstimationFactors sampleFacts, IEncode map, int[] colIndexes,
 		int nrUniqueUpperBound) {
 		final int numRows = getNumRows();
 		if(map == null || sampleFacts == null) {
@@ -142,8 +160,8 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
 			final int numOffs = calculateOffs(sampleFacts, _sampleSize, numRows, scalingFactor, numZerosInSample);
 
-			final int totalCardinality = getEstimatedDistinctCount(sampleFacts.frequencies, nrUniqueUpperBound, numOffs,
-				sampleFacts.numOffs);
+			final int totalCardinality = SampleEstimatorFactory.distinctCount(sampleFacts.frequencies, numOffs,
+				sampleFacts.numOffs, _cs.estimationType, _solveCache);
 
 			final int totalNumRuns = getNumRuns(map, sampleFacts.numVals, _sampleSize, numRows);
 
@@ -163,10 +181,8 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		final int numCols = getNumColumns();
 		if(numCols == 1)
 			return (int) _data.getNonZeros();
-		else {
-			final double C = Math.max(1 - (double) sampleFacts.numSingle / sampleSize, (double) sampleSize / numRows);
-			return (int) Math.ceil(numRows - scalingFactor * C * numZerosInSample);
-		}
+		else
+			return numRows - (int) Math.floor(numZerosInSample * scalingFactor);
 	}
 
 	private double calculateSparsity(int[] colIndexes, double scalingFactor, double sampleValue) {
@@ -190,7 +206,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
 			// add one to make sure that Uncompressed columns are considered as containing at least one value.
 			if(nnzCount == 0)
-				nnzCount += 1;
+				nnzCount += colIndexes.length;
 			return nnzCount / ((double) getNumRows() * colIndexes.length);
 		}
 		else
@@ -198,13 +214,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 			return sampleValue;
 	}
 
-	private int getEstimatedDistinctCount(int[] freq, int upperBound, int numOffs, int numOffsInSample) {
-		final int est = SampleEstimatorFactory.distinctCount(freq, numOffs, numOffsInSample, _cs.estimationType,
-			_solveCache);
-		return Math.min(est, upperBound);
-	}
-
-	private int getNumRuns(AMapToData map, int numVals, int sampleSize, int totalNumRows) {
+	private int getNumRuns(IEncode map, int numVals, int sampleSize, int totalNumRows) {
 		// estimate number of segments and number of runs incl correction for
 		// empty segments and empty runs (via expected mean of offset value)
 		// int numUnseenSeg = (int) (unseenVals * Math.ceil((double) _numRows / BitmapEncoder.BITMAP_BLOCK_SZ / 2));
@@ -372,7 +382,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		return (int) Math.min(Math.round(numRuns), Integer.MAX_VALUE);
 	}
 
-	private static int getNumRuns(AMapToData map, int sampleSize, int totalNumRows) {
+	private static int getNumRuns(IEncode map, int sampleSize, int totalNumRows) {
 		throw new NotImplementedException("Not Supported ever since the ubm was replaced by the map");
 	}
 
@@ -426,10 +436,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		else
 			sampledMatrixBlock = defaultSlowSamplingPath(sampleRows);
 
-		if(sampledMatrixBlock.isEmpty())
-			return null;
-		else
-			return sampledMatrixBlock;
+		return sampledMatrixBlock;
 	}
 
 	private MatrixBlock sparseNotTransposedSamplePath(int[] sampleRows) {

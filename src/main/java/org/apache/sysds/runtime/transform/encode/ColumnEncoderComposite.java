@@ -27,8 +27,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -161,13 +161,19 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			}
 			tasks.addAll(t);
 		}
+
 		List<List<? extends Callable<?>>> dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
 		DependencyThreadPool.createDependencyList(tasks, depMap, dep);
+		// If DC is required, add an UpdateDC task to update the domainsize as the last task
+		// Only for RC build, UpdateDC must depends on the Build task, other can be independent.
 		if(hasEncoder(ColumnEncoderDummycode.class)) {
 			tasks.add(DependencyThreadPool.createDependencyTask(new ColumnCompositeUpdateDCTask(this)));
-			dep.add(tasks.subList(tasks.size() - 2, tasks.size() - 1));
+			if (_columnEncoders.get(0) instanceof ColumnEncoderRecode) {
+				dep.add(tasks.subList(tasks.size() - 2, tasks.size() - 1));
+				return DependencyThreadPool.createDependencyTasks(tasks, dep);
+			}
 		}
-		return DependencyThreadPool.createDependencyTasks(tasks, dep);
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
 	}
 
 	@Override
@@ -204,6 +210,11 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	@Override
 	protected double getCode(CacheBlock in, int row) {
+		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
+	}
+
+	@Override
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
 		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
 	}
 

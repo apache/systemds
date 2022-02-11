@@ -95,6 +95,12 @@ public class CompressedSizeEstimatorUltraSparse extends CompressedSizeEstimator 
 	}
 
 	@Override
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSizeDeltaEncoded(int[] colIndexes, int estimate,
+		int nrUniqueUpperBound) {
+		throw new NotImplementedException("Delta sampling is not clear how to do in ultra sparse");
+	}
+
+	@Override
 	protected CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int joinedMaxDistinct) {
 		throw new NotImplementedException();
@@ -102,6 +108,11 @@ public class CompressedSizeEstimatorUltraSparse extends CompressedSizeEstimator 
 
 	@Override
 	protected int worstCaseUpperBound(int[] columns) {
+		return getNumRows();
+	}
+
+	@Override
+	public final int getSampleSize() {
 		return getNumRows();
 	}
 }

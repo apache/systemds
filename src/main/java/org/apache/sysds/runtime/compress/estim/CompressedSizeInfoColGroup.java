@@ -28,11 +28,10 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.bitmap.ABitmap;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
-import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 
 /**
  * Information collected about a specific ColGroup's compression size.
@@ -51,7 +50,7 @@ public class CompressedSizeInfoColGroup {
 	/**
 	 * Map containing a mapping to unique values, but not necessarily the actual values contained in this column group
 	 */
-	private AMapToData _map;
+	private IEncode _map;
 
 	/**
 	 * Join columns without analyzing the content. This only specify the compression ratio if encoded in DDC since this
@@ -81,51 +80,12 @@ public class CompressedSizeInfoColGroup {
 		_sizes = null;
 		_bestCompressionType = CompressionType.SDC;
 		_minSize = ColGroupSizes.estimateInMemorySizeSDC(columns.length, facts.numVals, facts.numRows, facts.largestOff,
-			true, false, sparsity, false);
-		_map = null;
-	}
-
-	protected CompressedSizeInfoColGroup(int[] columns, int numRows) {
-		_facts = new EstimationFactors(columns.length, 1, numRows);
-		_cardinalityRatio = (double) 1 / numRows;
-		_sizes = null;
-		_cols = columns;
-		_bestCompressionType = null;
-		_minSize = ColGroupSizes.estimateInMemorySizeCONST(columns.length, numRows, 1.0, false);
-		_map = null;
-	}
-
-	public CompressedSizeInfoColGroup(int[] columns, EstimationFactors facts, Set<CompressionType> validCompressionTypes,
-		ABitmap ubm, int sampleSize) {
-		_facts = facts;
-		_cols = columns;
-		_cardinalityRatio = (double) facts.numVals / facts.numRows;
-		_sizes = calculateCompressionSizes(_cols.length, facts, validCompressionTypes);
-		Map.Entry<CompressionType, Long> bestEntry = null;
-		for(Map.Entry<CompressionType, Long> ent : _sizes.entrySet()) {
-			if(bestEntry == null || ent.getValue() < bestEntry.getValue())
-				bestEntry = ent;
-		}
-
-		_bestCompressionType = bestEntry.getKey();
-		_minSize = bestEntry.getValue();
-		_map = MapToFactory.create(sampleSize, ubm);
-		if(LOG.isTraceEnabled())
-			LOG.trace(this);
-	}
-
-	public CompressedSizeInfoColGroup(int[] columns, EstimationFactors facts, CompressionType bestType) {
-		_facts = facts;
-		_cols = columns;
-		_cardinalityRatio = 1.0;
-		_sizes = null;
-		_bestCompressionType = bestType;
-		_minSize = 0;
+			sparsity, facts.zeroIsMostFrequent, false);
 		_map = null;
 	}
 
 	protected CompressedSizeInfoColGroup(int[] columns, EstimationFactors facts,
-		Set<CompressionType> validCompressionTypes, AMapToData map) {
+		Set<CompressionType> validCompressionTypes, IEncode map) {
 		_cols = columns;
 		_facts = facts;
 		_cardinalityRatio = (double) facts.numVals / facts.numRows;
@@ -143,27 +103,11 @@ public class CompressedSizeInfoColGroup {
 			LOG.trace(this);
 	}
 
-	/**
-	 * This method adds a column group without having to analyze. This is because the columns added are constant groups.
-	 * 
-	 * NOTE THIS IS ONLY VALID IF THE COLUMN ADDED IS EMPTY OR CONSTANT!
-	 * 
-	 * @param columns               The columns of the colgroups together
-	 * @param oneSide               One of the sides, this may contain something, but the other side (not part of the
-	 *                              argument) should not.
-	 * @param validCompressionTypes The List of valid compression techniques to use
-	 * @return A Combined estimate of the column group.
-	 */
-	public static CompressedSizeInfoColGroup addConstGroup(int[] columns, CompressedSizeInfoColGroup oneSide,
-		Set<CompressionType> validCompressionTypes) {
-		EstimationFactors fact = new EstimationFactors(columns.length, oneSide._facts);
-		CompressedSizeInfoColGroup ret = new CompressedSizeInfoColGroup(columns, fact, validCompressionTypes,
-			oneSide._map);
-		return ret;
-	}
-
 	public long getCompressionSize(CompressionType ct) {
-		return _sizes.get(ct);
+		if(_sizes != null)
+			return _sizes.get(ct);
+		else
+			throw new DMLCompressionException("There was no encodings analyzed");
 	}
 
 	public CompressionType getBestCompressionType(CompressionSettings cs) {
@@ -220,7 +164,7 @@ public class CompressedSizeInfoColGroup {
 		return _facts.tupleSparsity;
 	}
 
-	public AMapToData getMap() {
+	public IEncode getMap() {
 		return _map;
 	}
 
@@ -233,9 +177,8 @@ public class CompressedSizeInfoColGroup {
 		Map<CompressionType, Long> res = new HashMap<>();
 		for(CompressionType ct : validCompressionTypes) {
 			long compSize = getCompressionSize(numCols, ct, fact);
-			if(compSize > 0) {
+			if(compSize > 0)
 				res.put(ct, compSize);
-			}
 		}
 		return res;
 	}
@@ -245,31 +188,32 @@ public class CompressedSizeInfoColGroup {
 	}
 
 	private static long getCompressionSize(int numCols, CompressionType ct, EstimationFactors fact) {
-
+		int nv;
 		switch(ct) {
+			case DeltaDDC: // TODO add proper extraction
 			case DDC:
+				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
 				// + 1 if the column contains zero
-				return ColGroupSizes.estimateInMemorySizeDDC(numCols, fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0),
-					fact.numRows, fact.tupleSparsity, fact.lossy);
+				return ColGroupSizes.estimateInMemorySizeDDC(numCols, nv, fact.numRows, fact.tupleSparsity, fact.lossy);
 			case RLE:
-				return ColGroupSizes.estimateInMemorySizeRLE(numCols, fact.numVals, fact.numRuns, fact.numRows,
-					fact.tupleSparsity, fact.lossy);
+				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
+				return ColGroupSizes.estimateInMemorySizeRLE(numCols, nv, fact.numRuns, fact.numRows, fact.tupleSparsity,
+					fact.lossy);
 			case OLE:
-				return ColGroupSizes.estimateInMemorySizeOLE(numCols, fact.numVals, fact.numOffs + fact.numVals,
-					fact.numRows, fact.tupleSparsity, fact.lossy);
+				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
+				return ColGroupSizes.estimateInMemorySizeOLE(numCols, nv, fact.numOffs + fact.numVals, fact.numRows,
+					fact.tupleSparsity, fact.lossy);
 			case UNCOMPRESSED:
-				return ColGroupSizes.estimateInMemorySizeUncompressed(fact.numRows, numCols, fact.overAllSparsity);
+				return ColGroupSizes.estimateInMemorySizeUncompressed(fact.numRows, numCols,
+					Math.min(Math.max(fact.overAllSparsity, 0.1) + numCols / 10, 1));
 			case SDC:
-				if(fact.numOffs <= 1)
-					return ColGroupSizes.estimateInMemorySizeSDCSingle(numCols, fact.numVals, fact.numRows, fact.largestOff,
-						fact.zeroIsMostFrequent, fact.containNoZeroValues, fact.tupleSparsity, fact.lossy);
 				return ColGroupSizes.estimateInMemorySizeSDC(numCols, fact.numVals, fact.numRows, fact.largestOff,
-					fact.zeroIsMostFrequent, fact.containNoZeroValues, fact.tupleSparsity, fact.lossy);
+					fact.tupleSparsity, fact.zeroIsMostFrequent, fact.lossy);
 			case CONST:
 				if(fact.numOffs == 0)
 					return ColGroupSizes.estimateInMemorySizeEMPTY(numCols);
 				else if(fact.numOffs == fact.numRows && fact.numVals == 1)
-					return ColGroupSizes.estimateInMemorySizeCONST(numCols, fact.numVals, fact.tupleSparsity, fact.lossy);
+					return ColGroupSizes.estimateInMemorySizeCONST(numCols, fact.tupleSparsity, fact.lossy);
 				else
 					return -1;
 			default:
@@ -284,7 +228,8 @@ public class CompressedSizeInfoColGroup {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("\ncols: " + Arrays.toString(_cols));
+		sb.append(this.getClass().getSimpleName());
+		sb.append("cols: " + Arrays.toString(_cols));
 		sb.append(" Best Type: " + _bestCompressionType);
 		sb.append(" Cardinality: ");
 		sb.append(_cardinalityRatio);
@@ -293,6 +238,7 @@ public class CompressedSizeInfoColGroup {
 		sb.append(" Sizes: ");
 		sb.append(_sizes);
 		sb.append(" facts: " + _facts);
+		sb.append("\n" + _map);
 		return sb.toString();
 	}
 

@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.component.compress;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -45,14 +44,11 @@ import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
-import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
-import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDistinctTypes;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
@@ -114,6 +110,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			Random r = new Random();
 			final int min = r.nextInt(rows);
 			final int max = Math.min(r.nextInt(rows - min) + min, min + 1000);
+
 			for(int i = min; i < max; i++)
 				for(int j = 0; j < cols; j++) {
 					final double ulaVal = mb.quickGetValue(i, j);
@@ -132,43 +129,21 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 	}
 
-	@Test
-	@Ignore
-	public void testCountDistinct() {
-		try {
-			// Counting distinct is potentially wrong in cases with overlapping, resulting in a few to many or few
-			// elements.
-			if(!(cmb instanceof CompressedMatrixBlock) || (overlappingType == OverLapping.MATRIX_MULT_NEGATIVE))
-				return; // Input was not compressed then just pass test
-
-			CountDistinctOperator op = new CountDistinctOperator(CountDistinctTypes.COUNT);
-			int ret1 = LibMatrixCountDistinct.estimateDistinctValues(mb, op);
-			int ret2 = LibMatrixCountDistinct.estimateDistinctValues(cmb, op);
-
-			String base = bufferedToString + "\n";
-			if(_cs != null && _cs.lossy) {
-				// The number of distinct values should be same or lower in lossy mode.
-				// assertTrue(base + "lossy distinct count " +ret2+ "is less than full " + ret1, ret1 >= ret2);
-
-				// above assumption is false, since the distinct count when using multiple different scales becomes
-				// larger due to differences in scale.
-				assertTrue(base + "lossy distinct count " + ret2 + "is greater than 0", 0 < ret2);
-			}
-			else {
-				assertEquals(base, ret1, ret2);
-			}
-
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
-		}
-	}
-
 	@Override
 	public void testUnaryOperators(AggType aggType, boolean inCP) {
 		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, 1);
 		testUnaryOperators(aggType, auop, inCP);
+	}
+
+	@Test
+	public void testNonZeros() {
+		if(!(cmb instanceof CompressedMatrixBlock))
+			return; // Input was not compressed then just pass test
+		if(!(cmb.getNonZeros() >= mb.getNonZeros())) {
+			fail(bufferedToString + "\nIncorrect number of non Zeros should guarantee greater than or equals but are "
+				+ cmb.getNonZeros() + " and should be: " + mb.getNonZeros());
+		}
+
 	}
 
 	@Test

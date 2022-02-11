@@ -22,15 +22,17 @@ package org.apache.sysds.runtime.compress.colgroup.mapping;
 import java.io.DataInput;
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class MapToFactory {
-	// private static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
+	protected static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
 
 	public enum MAP_TYPE {
-		BIT, BYTE, CHAR, INT;
+		BIT, UBYTE, BYTE, CHAR, INT;
 	}
 
 	public static AMapToData create(int size, ABitmap ubm) {
@@ -41,6 +43,7 @@ public class MapToFactory {
 
 	public static AMapToData create(int size, boolean zeros, IntArrayList[] values) {
 		AMapToData _data = MapToFactory.create(size, values.length + (zeros ? 1 : 0));
+
 		if(zeros)
 			_data.fill(values.length);
 
@@ -53,12 +56,28 @@ public class MapToFactory {
 		return _data;
 	}
 
+	public static AMapToData create(int size, int[] values, int nUnique) {
+		AMapToData _data = MapToFactory.create(size, nUnique);
+		for(int i = 0; i < size; i++)
+			_data.set(i, values[i]);
+		return _data;
+	}
+
+	/**
+	 * Create and allocate a map with the given size and support for upto the num tuples argument of values
+	 * 
+	 * @param size      The number of cells to allocate
+	 * @param numTuples The maximum value to be able to represent inside the map.
+	 * @return A new map
+	 */
 	public static AMapToData create(int size, int numTuples) {
-		if(numTuples <= 1)
+		if(numTuples <= 2 && size > 32)
 			return new MapToBit(numTuples, size);
-		else if(numTuples < 256)
+		else if(numTuples <= 127)
+			return new MapToUByte(numTuples, size);
+		else if(numTuples <= 256)
 			return new MapToByte(numTuples, size);
-		else if(numTuples <= (int) Character.MAX_VALUE)
+		else if(numTuples <= ((int) Character.MAX_VALUE) + 1)
 			return new MapToChar(numTuples, size);
 		else
 			return new MapToInt(numTuples, size);
@@ -79,15 +98,22 @@ public class MapToFactory {
 		AMapToData ret;
 		if(d instanceof MapToBit)
 			return d;
-		else if(numTuples <= 1)
+		else if(numTuples <= 2 && size > 32)
 			ret = new MapToBit(numTuples, size);
+		else if(d instanceof MapToUByte)
+			return d;
+		else if(numTuples <= 127){
+			if(d instanceof MapToByte)
+				return ((MapToByte)d).toUByte();
+			ret = new MapToUByte(numTuples, size);
+		}
 		else if(d instanceof MapToByte)
 			return d;
-		else if(numTuples < 256)
+		else if(numTuples <= 256)
 			ret = new MapToByte(numTuples, size);
 		else if(d instanceof MapToChar)
 			return d;
-		else if(numTuples <= (int) Character.MAX_VALUE)
+		else if(numTuples <= (int) Character.MAX_VALUE + 1)
 			ret = new MapToChar(numTuples, size);
 		else // then the input was int and reshapes to int
 			return d;
@@ -112,6 +138,9 @@ public class MapToFactory {
 			case BIT:
 				ret = new MapToBit(numTuples, size);
 				break;
+			case UBYTE:
+				ret = new MapToUByte(numTuples, size);
+				break;
 			case BYTE:
 				ret = new MapToByte(numTuples, size);
 				break;
@@ -123,17 +152,18 @@ public class MapToFactory {
 				ret = new MapToInt(numTuples, size);
 				break;
 		}
-
 		ret.copy(d);
 		return ret;
 	}
 
 	public static long estimateInMemorySize(int size, int numTuples) {
-		if(numTuples <= 1)
+		if(numTuples <= 2 && size > 32)
 			return MapToBit.getInMemorySize(size);
-		else if(numTuples < 256)
+		else if(numTuples <= 127)
 			return MapToByte.getInMemorySize(size);
-		else if(numTuples <= (int) Character.MAX_VALUE)
+		else if(numTuples <= 256)
+			return MapToByte.getInMemorySize(size);
+		else if(numTuples <= ((int) Character.MAX_VALUE) + 1)
 			return MapToChar.getInMemorySize(size);
 		else
 			return MapToInt.getInMemorySize(size);
@@ -144,6 +174,8 @@ public class MapToFactory {
 		switch(t) {
 			case BIT:
 				return MapToBit.readFields(in);
+			case UBYTE:
+				return MapToUByte.readFields(in);
 			case BYTE:
 				return MapToByte.readFields(in);
 			case CHAR:
@@ -151,6 +183,22 @@ public class MapToFactory {
 			case INT:
 			default:
 				return MapToInt.readFields(in);
+		}
+	}
+
+	public static int getUpperBoundValue(MAP_TYPE t) {
+		switch(t) {
+			case BIT:
+				return 1;
+			case UBYTE:
+				return 127;
+			case BYTE:
+				return 255;
+			case CHAR:
+				return Character.MAX_VALUE;
+			case INT:
+			default:
+				return Integer.MAX_VALUE;
 		}
 	}
 
@@ -194,19 +242,5 @@ public class MapToFactory {
 
 		tmp.setUnique(newUID - 1);
 		return tmp;
-	}
-
-	public static int getUpperBoundValue(MAP_TYPE t) {
-		switch(t) {
-			case BIT:
-				return 1;
-			case BYTE:
-				return 255;
-			case CHAR:
-				return Character.MAX_VALUE;
-			case INT:
-			default:
-				return Integer.MAX_VALUE;
-		}
 	}
 }

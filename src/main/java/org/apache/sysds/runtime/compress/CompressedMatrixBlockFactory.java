@@ -29,10 +29,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.cocode.CoCoderFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroupValue;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
-import org.apache.sysds.runtime.compress.colgroup.AColGroupValue;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
@@ -205,7 +206,7 @@ public class CompressedMatrixBlockFactory {
 	 */
 	public static CompressedMatrixBlock createConstant(int numRows, int numCols, double value) {
 		CompressedMatrixBlock block = new CompressedMatrixBlock(numRows, numCols);
-		AColGroup cg = ColGroupFactory.genColGroupConst(numCols, value);
+		AColGroup cg = ColGroupConst.create(numCols, value);
 		block.allocateColGroup(cg);
 		block.recomputeNonZeros();
 		if(block.getNumRows() == 0 || block.getNumColumns() == 0) {
@@ -223,7 +224,7 @@ public class CompressedMatrixBlockFactory {
 		else if(mb.isEmpty()) {
 			LOG.info("Empty input to compress, returning a compressed Matrix block with empty column group");
 			CompressedMatrixBlock ret = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
-			ColGroupEmpty cg = ColGroupEmpty.generate(mb.getNumColumns());
+			ColGroupEmpty cg = ColGroupEmpty.create(mb.getNumColumns());
 			ret.allocateColGroup(cg);
 			ret.setNonZeros(0);
 			return new ImmutablePair<>(ret, null);
@@ -250,10 +251,6 @@ public class CompressedMatrixBlockFactory {
 		if(res == null)
 			return abortCompression();
 
-		if(compSettings.isInSparkInstruction) {
-			// clear soft reference to uncompressed block in case of spark.
-			res.clearSoftReferenceToDecompressed();
-		}
 		return new ImmutablePair<>(res, _stats);
 	}
 
@@ -444,7 +441,7 @@ public class CompressedMatrixBlockFactory {
 		DMLCompressionStatistics.addCompressionTime(getLastTimePhase(), phase);
 		if(LOG.isDebugEnabled()) {
 			if(compSettings.isInSparkInstruction) {
-				if(phase == 5)
+				if(phase == 4)
 					LOG.debug(_stats);
 			}
 			else {

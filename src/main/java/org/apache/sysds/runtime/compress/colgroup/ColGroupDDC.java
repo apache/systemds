@@ -67,32 +67,47 @@ public class ColGroupDDC extends APreAgg {
 	protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		SparseBlock sb) {
 		throw new NotImplementedException();
-		// for(int i = rl; i < ru; i++, offT++) {
-		// final int rowIndex = _data.getIndex(i);
-		// if(sb.isEmpty(rowIndex))
-		// continue;
-		// final double[] c = db.values(offT);
-		// final int off = db.pos(offT);
-		// final int apos = sb.pos(rowIndex);
-		// final int alen = sb.size(rowIndex) + apos;
-		// final double[] avals = sb.values(rowIndex);
-		// final int[] aix = sb.indexes(rowIndex);
-		// for(int j = apos; j < alen; j++)
-		// c[off + _colIndexes[aix[j]]] += avals[j];
-		// }
 	}
 
 	@Override
 	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
-		final int nCol = _colIndexes.length;
-		for(int i = rl,offT = rl + offR; i < ru; i++, offT++) {
-			final double[] c = db.values(offT);
-			final int off = db.pos(offT) + offC;
-			final int rowIndex = _data.getIndex(i) * nCol;
-			for(int j = 0; j < nCol; j++)
-				c[off + _colIndexes[j]] += values[rowIndex + j];
+		if(db.isContiguous() && _colIndexes.length == 1) {
+
+			if(db.getDim(1) == 1)
+				decompressToDenseBlockDenseDictSingleColOutContiguous(db, rl, ru, offR, offC, values);
+			else
+				decompressToDenseBlockDenseDictSingleColContiguous(db, rl, ru, offR, offC, values);
+
 		}
+		else {
+			// generic
+			final int nCol = _colIndexes.length;
+			for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
+				final double[] c = db.values(offT);
+				final int off = db.pos(offT) + offC;
+				final int rowIndex = _data.getIndex(i) * nCol;
+				for(int j = 0; j < nCol; j++)
+					c[off + _colIndexes[j]] += values[rowIndex + j];
+			}
+		}
+	}
+
+	private void decompressToDenseBlockDenseDictSingleColContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values) {
+		final double[] c = db.values(0);
+		final int nCols = db.getDim(1);
+		final int colOff = _colIndexes[0] + offC;
+		for(int i = rl, offT = (rl + offR) * nCols + colOff; i < ru; i++, offT += nCols)
+			c[offT] += values[_data.getIndex(i)];
+
+	}
+
+	private void decompressToDenseBlockDenseDictSingleColOutContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values) {
+		final double[] c = db.values(0);
+		for(int i = rl, offT = rl + offR + _colIndexes[0] + offC; i < ru; i++, offT++)
+			c[offT] += values[_data.getIndex(i)];
 	}
 
 	@Override
@@ -118,27 +133,20 @@ public class ColGroupDDC extends APreAgg {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
-		double[] vals = _dict.sumAllRowsToDouble(square, _colIndexes.length);
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
 		for(int rix = rl; rix < ru; rix++)
-			c[rix] += vals[_data.getIndex(rix)];
+			c[rix] += preAgg[_data.getIndex(rix)];
 	}
 
 	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-		final int nCol = getNumCols();
-		double[] preAggregatedRows = _dict.aggregateTuples(builtin, nCol);
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
 		for(int i = rl; i < ru; i++)
-			c[i] = builtin.execute(c[i], preAggregatedRows[_data.getIndex(i)]);
+			c[i] = builtin.execute(c[i], preAgg[_data.getIndex(i)]);
 	}
 
 	@Override
 	public int[] getCounts(int[] counts) {
-		for(int i = 0; i < _numRows; i++) {
-			int index = _data.getIndex(i);
-			counts[index]++;
-		}
-		return counts;
+		return _data.getCounts(counts);
 	}
 
 	@Override
@@ -151,7 +159,7 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu) {
-		_data.preAggregateDense(m, preAgg, rl, ru, cl, cu);
+		_data.preAggregateDense(m, preAgg.getDenseBlockValues(), rl, ru, cl, cu);
 	}
 
 	private void preAggregateSparse(SparseBlock sb, MatrixBlock preAgg, int rl, int ru) {
@@ -172,30 +180,25 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		final int nCol = that._colIndexes.length;
-		for(int r = 0; r < _numRows; r++)
-			that._dict.addToEntry(ret, that._data.getIndex(r), this._data.getIndex(r), nCol);
+		_data.preAggregateDDC_DDC(that._data, that._dict, ret, that._colIndexes.length);
 	}
 
 	@Override
 	public void preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		final AIterator itThat = that._indexes.getIterator();
-		final int nCol = that._colIndexes.length;
-
-		while(itThat.hasNext()) {
-			final int to = _data.getIndex(itThat.value());
-			final int fr = that._data.getIndex(itThat.getDataIndexAndIncrement());
-			that._dict.addToEntry(ret, fr, to, nCol);
-		}
+		_data.preAggregateDDC_SDCZ(that._data, that._dict, that._indexes, ret, that._colIndexes.length);
 	}
 
 	@Override
 	public void preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		final AIterator itThat = that._indexes.getIterator();
 		final int nCol = that._colIndexes.length;
-		while(itThat.hasNext()) {
+		final int finalOff = that._indexes.getOffsetToLast();
+		final double[] v = ret.getValues();
+		while(true) {
 			final int to = _data.getIndex(itThat.value());
-			that._dict.addToEntry(ret, 0, to, nCol);
+			that._dict.addToEntry(v, 0, to, nCol);
+			if(itThat.value() == finalOff)
+				break;
 			itThat.next();
 		}
 	}
@@ -219,7 +222,7 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
-		return new ColGroupDDC(_colIndexes, _numRows, applyScalarOp(op), _data, getCachedCounts());
+		return new ColGroupDDC(_colIndexes, _numRows, _dict.applyScalarOp(op), _data, getCachedCounts());
 	}
 
 	@Override

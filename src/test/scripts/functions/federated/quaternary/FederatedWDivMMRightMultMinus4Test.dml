@@ -39,9 +39,13 @@ MX = t(MX); # col partitioned federated MX
 while(FALSE) { }
 
 Z3 = (X * (V %*% t(U) - MX)) %*% U;
+
 while(FALSE) { }
-
-Z = Z1 + Z2 + sum(Z3);
-
+# verify output is federated (creating fed_uak+ heavy hitter)
+sZ1 = sum(Z1);
+sZ2 = sum(Z2);
+sZ3 = sum(Z3);
+while(FALSE) { }
+Z = as.matrix(sZ1 - sZ2 + sZ3);
 
 write(Z, $out_Z);

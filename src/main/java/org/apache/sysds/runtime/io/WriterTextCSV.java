@@ -236,7 +236,6 @@ public class WriterTextCSV extends MatrixWriter
 		}
 	}
 
-	@SuppressWarnings({ "unchecked" })
 	public final void addHeaderToCSV(String srcFileName, String destFileName, long rlen, long clen) 
 		throws IOException 
 	{

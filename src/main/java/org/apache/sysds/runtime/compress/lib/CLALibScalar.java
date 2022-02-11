@@ -34,7 +34,6 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.functionobjects.Divide;
@@ -104,7 +103,7 @@ public class CLALibScalar {
 	}
 
 	private static ColGroupConst constOverlap(CompressedMatrixBlock m1, ScalarOperator sop) {
-		return (ColGroupConst) ColGroupFactory.genColGroupConst(m1.getNumColumns(), sop.executeScalar(0));
+		return (ColGroupConst) ColGroupConst.create(m1.getNumColumns(), sop.executeScalar(0));
 	}
 
 	private static List<AColGroup> copyGroups(CompressedMatrixBlock m1, ScalarOperator sop, ColGroupConst c,

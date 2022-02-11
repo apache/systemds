@@ -26,11 +26,14 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
@@ -104,6 +107,17 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 			throw new DMLRuntimeException("Federated read needs twice the amount of addresses as ranges "
 				+ "(begin and end): addresses=" + addresses.getLength() + " ranges=" + ranges.getLength());
 
+		//check for duplicate addresses (would lead to overwrite with common variable names)
+		// TODO relax requirement by using different execution contexts per federated data?
+		Set<String> addCheck = new HashSet<>();
+		for( Data dat : addresses.getData() )
+			if( dat instanceof StringObject ) {
+				String address = ((StringObject)dat).getStringValue();
+				if(addCheck.contains(address))
+					LOG.warn("Federated data contains address duplicates: " + addresses);
+				addCheck.add(address);
+			}
+		
 		Types.DataType fedDataType;
 		if(type.equalsIgnoreCase(FED_MATRIX_IDENTIFIER))
 			fedDataType = Types.DataType.MATRIX;
@@ -122,8 +136,9 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 				int port = Integer.parseInt(parsedValues[1]);
 				String filePath = parsedValues[2];
 
-				// register the federated worker for federated statistics creation
-				FederatedStatistics.registerFedWorker(host, port);
+				if(DMLScript.FED_STATISTICS)
+					// register the federated worker for federated statistics creation
+					FederatedStatistics.registerFedWorker(host, port);
 
 				// get beginning and end of data ranges
 				List<Data> rangesData = ranges.getData();

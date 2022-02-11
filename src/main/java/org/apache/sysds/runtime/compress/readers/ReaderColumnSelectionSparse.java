@@ -38,40 +38,47 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 		a = data.getSparseBlock();
 	}
 
-	protected DblArray getNextRow() {
+	protected final DblArray getNextRow() {
 		if(_rl == _ru - 1) {
 			return null;
 		}
 
 		_rl++;
 
+		if(a.isEmpty(_rl))
+			return emptyReturn;
+
+		final int apos = a.pos(_rl);
+		final int alen = a.size(_rl) + apos;
+		final int[] aix = a.indexes(_rl);
+
+		if(aix[alen - 1] < _colIndexes[0] || aix[apos] > _colIndexes[_colIndexes.length - 1])
+			return emptyReturn;
+
+		return nextRow(apos, alen, aix, a.values(_rl));
+	}
+
+	private final DblArray nextRow(final int apos, final int alen, final int[] aix, final double[] avals) {
 		boolean zeroResult = true;
 
-		if(!a.isEmpty(_rl)) {
-			final int apos = a.pos(_rl);
-			final int alen = a.size(_rl) + apos;
-			final int[] aix = a.indexes(_rl);
-			final double[] avals = a.values(_rl);
-			int skip = 0;
-			int j = apos;
-			while(j < alen && aix[j] < _colIndexes[0])
+		int skip = 0;
+		int j = apos;
+		while(aix[j] < _colIndexes[0])
+			j++;
+		while(skip < _colIndexes.length && j < alen) {
+			if(_colIndexes[skip] == aix[j]) {
+				reusableArr[skip] = avals[j];
+				zeroResult = false;
+				skip++;
 				j++;
-			while(skip < _colIndexes.length && j < alen) {
-				if(_colIndexes[skip] == aix[j]) {
-					reusableArr[skip] = avals[j];
-					zeroResult = false;
-					skip++;
-					j++;
-				}
-				else if(_colIndexes[skip] > aix[j])
-					j++;
-				else
-					reusableArr[skip++] = 0;
 			}
-			if(!zeroResult)
-				while(skip < _colIndexes.length)
-					reusableArr[skip++] = 0;
+			else if(_colIndexes[skip] > aix[j])
+				j++;
+			else
+				reusableArr[skip++] = 0;
 		}
+		while(skip < _colIndexes.length)
+			reusableArr[skip++] = 0;
 
 		return zeroResult ? emptyReturn : reusableReturn;
 	}

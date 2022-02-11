@@ -355,6 +355,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _metaData.getDataCharacteristics();
 	}
 
+	public long getDim(int dim) {
+		return getDataCharacteristics().getDim(dim);
+	}
+
 	public long getNumRows() {
 		return getDataCharacteristics().getRows();
 	}
@@ -547,7 +551,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 					if( DMLScript.STATISTICS )
 						CacheStatistics.incrementLinHits();
 				}
-				else if( isFederatedExcept(FType.BROADCAST) ) {
+				else if( isFederatedExcept(FType.BROADCAST)
+					|| (isFederated(FType.BROADCAST) && !HDFSTool.existsFileOnHDFS(_hdfsFileName)
+						&& getRDDHandle() == null) ) {
 					_data = readBlobFromFederated(_fedMapping);
 
 					//mark for initial local write despite read operation

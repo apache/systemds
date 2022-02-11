@@ -111,7 +111,8 @@ public class ProgramRewriter
 				_sbRuleSet.add(      new RewriteCompressedReblock()              ); // Compression Rewrite
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
  				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks
- 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )
+ 			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS && 
+ 				ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )
  				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     ); //dependency: merge blocks
  			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_sbRuleSet.add(  new RewriteForLoopVectorization()               ); //dependency: reblock (reblockop)

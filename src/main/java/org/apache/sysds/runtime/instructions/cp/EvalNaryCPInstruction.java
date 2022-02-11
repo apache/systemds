@@ -67,7 +67,14 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		//1. get the namespace and func
+		// There are two main types of eval function calls, which share most of the
+		// code for lazy function loading and execution:
+		// a) a single-return eval fcall returns a matrix which is bound to the output
+		//    (if the function returns multiple objects, the first one is used as output)
+		// b) a multi-return eval fcall gets all returns of the function call and
+		//    creates a named list used the names of the function signature
+		
+		//1. get the namespace and function names
 		String funcName = ec.getScalarInput(inputs[0]).getStringValue();
 		String nsName = null; //default namespace
 		if( funcName.contains(Program.KEY_DELIM) ) {
@@ -76,14 +83,13 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			nsName = parts[0];
 		}
 		
-		// bound the inputs to avoiding being deleted after the function call
+		// bind the inputs to avoiding being deleted after the function call
 		CPOperand[] boundInputs = Arrays.copyOfRange(inputs, 1, inputs.length);
-		List<String> boundOutputNames = new ArrayList<>();
-		boundOutputNames.add(output.getName());
-
+		
 		//2. copy the created output matrix
-		MatrixObject outputMO = new MatrixObject(ec.getMatrixObject(output.getName()));
-
+		MatrixObject outputMO = !output.isMatrix() ? null :
+			new MatrixObject(ec.getMatrixObject(output.getName()));
+		
 		//3. lazy loading of dml-bodied builtin functions (incl. rename 
 		// of function name to dml-bodied builtin scheme (data-type-specific)
 		DataType dt1 = boundInputs[0].getDataType().isList() ? 
@@ -138,34 +144,51 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 				boundInputs2[i] = new CPOperand(varName, in);
 			}
 			boundInputs = boundInputs2;
-			lineageInputs = DMLScript.LINEAGE 
-					? lo.getLineageItems().toArray(new LineageItem[lo.getLength()]) : null;
+			lineageInputs = !DMLScript.LINEAGE ? null : 
+				lo.getLineageItems().toArray(new LineageItem[lo.getLength()]);
 		}
+		
+		// bind the outputs
+		List<String> boundOutputNames = new ArrayList<>();
+		if( output.getDataType().isMatrix() )
+			boundOutputNames.add(output.getName());
+		else //list
+			boundOutputNames.addAll(fpb.getOutputParamNames());
 		
 		//5. call the function (to unoptimized function)
 		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(nsName, funcName,
 			false, boundInputs, lineageInputs, fpb.getInputParamNames(), boundOutputNames, "eval func");
 		fcpi.processInstruction(ec);
 		
-		//6. convert the result to matrix
-		Data newOutput = ec.getVariable(output);
-		if (!(newOutput instanceof MatrixObject)) {
-			MatrixBlock mb = null;
-			if (newOutput instanceof ScalarObject) {
-				//convert scalar to matrix
-				mb = new MatrixBlock(((ScalarObject) newOutput).getDoubleValue());
-			} else if (newOutput instanceof FrameObject) {
-				//convert frame to matrix
-				mb = DataConverter.convertToMatrixBlock(((FrameObject) newOutput).acquireRead());
-				ec.cleanupCacheableData((FrameObject) newOutput);
+		//6a. convert the result to matrix
+		if( output.getDataType().isMatrix() ) {
+			Data newOutput = ec.getVariable(output);
+			if (!(newOutput instanceof MatrixObject)) {
+				MatrixBlock mb = null;
+				if (newOutput instanceof ScalarObject) {
+					//convert scalar to matrix
+					mb = new MatrixBlock(((ScalarObject) newOutput).getDoubleValue());
+				} else if (newOutput instanceof FrameObject) {
+					//convert frame to matrix
+					mb = DataConverter.convertToMatrixBlock(((FrameObject) newOutput).acquireRead());
+					ec.cleanupCacheableData((FrameObject) newOutput);
+				}
+				else {
+					throw new DMLRuntimeException("Invalid eval return type: "+newOutput.getDataType().name()
+						+ " (valid: matrix/frame/scalar; where frames or scalars are converted to output matrices)");
+				}
+				outputMO.acquireModify(mb);
+				outputMO.release();
+				ec.setVariable(output.getName(), outputMO);
 			}
-			else {
-				throw new DMLRuntimeException("Invalid eval return type: "+newOutput.getDataType().name()
-					+ " (valid: matrix/frame/scalar; where frames or scalars are converted to output matrices)");
-			}
-			outputMO.acquireModify(mb);
-			outputMO.release();
-			ec.setVariable(output.getName(), outputMO);
+		}
+		//6a. wrap outputs in named list (evalList)
+		else {
+			Data[] ldata = boundOutputNames.stream()
+				.map(n -> ec.getVariable(n)).toArray(Data[]::new);
+			String[] lnames = boundOutputNames.toArray(new String[0]);
+			ListObject listOutput = new ListObject(ldata, lnames);
+			ec.setVariable(output.getName(), listOutput);
 		}
 		
 		//7. cleanup of variable expanded from list

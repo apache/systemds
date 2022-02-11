@@ -19,7 +19,31 @@
 #
 #-------------------------------------------------------------
 
-m_lmDS = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double reg = 1e-7, Boolean verbose = TRUE) return (Matrix[Double] B) {
+# The lmDC function solves linear regression using the direct solve method
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE              DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X             Matrix[Double]    ---      Matrix of feature vectors.
+# y             Matrix[Double]    ---      1-column matrix of response values.
+# icpt          Integer           0        Intercept presence, shifting and rescaling the columns of X
+# reg           Double            1e-7     Regularization constant (lambda) for L2-regularization. set to nonzero
+#                                          for highly dependant/sparse/numerous features
+# tol           Double            1e-7     Tolerance (epsilon); conjugate gradient procedure terminates early if L2
+#                                          norm of the beta-residual is less than tolerance * its initial norm
+# maxi          Integer           0        Maximum number of conjugate gradient iterations. 0 = no maximum
+# verbose       Boolean           TRUE     If TRUE print messages are activated
+# ----------------------------------------------------------------------------------------------------------------------
+# OUTPUT
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# B             Matrix[Double]   The model fit
+# ----------------------------------------------------------------------------------------------------------------------
+
+m_lmDS = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double reg = 1e-7,
+ Boolean verbose = TRUE) return (Matrix[Double] B) {
   intercept_status = icpt;
   regularization = reg;
 

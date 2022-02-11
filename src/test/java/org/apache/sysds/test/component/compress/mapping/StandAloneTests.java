@@ -23,13 +23,21 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToChar;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.junit.Test;
 
 public class StandAloneTests {
+
+	protected static final Log LOG = LogFactory.getLog(StandAloneTests.class.getName());
+
 	@Test
 	public void testJoin_01() {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
@@ -147,5 +155,30 @@ public class StandAloneTests {
 
 	private static IntArrayList gen(int[] in) {
 		return new IntArrayList(in);
+	}
+
+	@Test
+	public void sameMemoryUsageBit01() {
+		assertEquals(MapToBit.getInMemorySize(10), MapToBit.getInMemorySize(40));
+	}
+
+	@Test
+	public void sameMemoryUsageBit02() {
+		assertEquals(MapToBit.getInMemorySize(1), MapToBit.getInMemorySize(63));
+	}
+
+	@Test
+	public void sameMemoryUsageBit03() {
+		assertEquals(MapToBit.getInMemorySize(1), MapToBit.getInMemorySize(64));
+	}
+
+	@Test
+	public void sameMemoryUsageChar() {
+		assertEquals(MapToChar.getInMemorySize(9), MapToChar.getInMemorySize(10));
+	}
+
+	@Test
+	public void sameMemoryUsageByte() {
+		assertEquals(MapToByte.getInMemorySize(9), MapToByte.getInMemorySize(12));
 	}
 }

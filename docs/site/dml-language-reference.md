@@ -2053,7 +2053,7 @@ The following example uses <code>transformapply()</code> with the input matrix a
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
-map() | It will execute the given lambda expression on a frame.| Input: (X &lt;frame&gt;, y &lt;String&gt;) <br/>Output: &lt;frame&gt;. <br/> X is a frame and <br/>y is a String containing the lambda expression to be executed on frame X. | [map](#map) 
+map() | It will execute the given lambda expression on a frame (cell, row or column wise). | Input: (X &lt;frame&gt;, y &lt;String&gt;, \[margin &lt;int&gt;\]) <br/>Output: &lt;frame&gt;. <br/> X is a frame and <br/>y is a String containing the lambda expression to be executed on frame X. <br/> margin - how to apply the lambda expression (0 indicates each cell, 1 - rows, 2 - columns). Output matrix dimensions are always equal to the input. | [map](#map) 
 tokenize() | Transforms a frame to tokenized frame using specification. Tokenization is valid only for string columns. | Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> Outputs: &lt;matrix&gt;, &lt;frame&gt; | [tokenize](#tokenize)
 
 #### map

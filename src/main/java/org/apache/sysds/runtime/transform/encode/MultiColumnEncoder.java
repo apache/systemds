@@ -30,23 +30,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -55,7 +55,7 @@ import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.runtime.util.DependencyWrapperTask;
 import org.apache.sysds.runtime.util.IndexRange;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 public class MultiColumnEncoder implements Encoder {
 
@@ -132,46 +132,90 @@ public class MultiColumnEncoder implements Encoder {
 		return out;
 	}
 
+	/* TASK DETAILS:
+	 * InitOutputMatrixTask:        Allocate output matrix
+	 * AllocMetaTask:               Allocate metadata frame
+	 * BuildTask:                   Build an encoder
+	 * ColumnCompositeUpdateDCTask: Update domain size of a DC encoder based on #distincts, #bins, K
+	 * ColumnMetaDataTask:          Fill up metadata of an encoder
+	 * ApplyTasksWrapperTask:       Wrapper task for an Apply task
+	 * UpdateOutputColTask:         Set starting offsets of the DC columns
+	 */
 	private List<DependencyTask<?>> getEncodeTasks(CacheBlock in, MatrixBlock out, DependencyThreadPool pool) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<DependencyTask<?>> applyTAgg = null;
 		Map<Integer[], Integer[]> depMap = new HashMap<>();
 		boolean hasDC = getColumnEncoders(ColumnEncoderDummycode.class).size() > 0;
 		boolean applyOffsetDep = false;
+		boolean independentUpdateDC = false;
+		_meta = new FrameBlock(in.getNumColumns(), ValueType.STRING);
+		// Create the output and metadata allocation tasks
 		tasks.add(DependencyThreadPool.createDependencyTask(new InitOutputMatrixTask(this, in, out)));
-		for(ColumnEncoderComposite e : _columnEncoders) {
-			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in);
+		tasks.add(DependencyThreadPool.createDependencyTask(new AllocMetaTask(this, _meta)));
 
+		for(ColumnEncoderComposite e : _columnEncoders) {
+			// Create the build tasks
+			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in);
 			tasks.addAll(buildTasks);
 			if(buildTasks.size() > 0) {
-				// Apply Task dependency to build completion task
-				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},
-					new Integer[] {tasks.size() - 1, tasks.size()});
+				// Check if any Build independent UpdateDC task (Bin+DC, FH+DC)
+				if (e.hasEncoder(ColumnEncoderDummycode.class) 
+					&& buildTasks.size() > 1  //filter out FH
+					&& !buildTasks.get(buildTasks.size()-2).hasDependency(buildTasks.get(buildTasks.size()-1)))
+						independentUpdateDC = true;
+				
+				// Independent UpdateDC task
+				if (independentUpdateDC) {
+					// Apply Task depends on task prior to UpdateDC (Build/MergePartialBuild)
+					depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},     //ApplyTask
+						new Integer[] {tasks.size() - 2, tasks.size() - 1});       //BuildTask
+					// getMetaDataTask depends on task prior to UpdateDC 
+					depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2}, //MetaDataTask
+						new Integer[] {tasks.size() - 2, tasks.size() - 1});       //BuildTask
+				}
+				else { 
+					// Apply Task depends on the last task (Build/MergePartial/UpdateDC)
+					depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},     //ApplyTask
+						new Integer[] {tasks.size() - 1, tasks.size()});           //Build/UpdateDC
+					// getMetaDataTask depends on build completion
+					depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2}, //MetaDataTask
+						new Integer[] {tasks.size() - 1, tasks.size()});           //Build/UpdateDC
+				}
+				// AllocMetaTask never depends on the UpdateDC task
+				if (e.hasEncoder(ColumnEncoderDummycode.class) && buildTasks.size() > 1)
+					depMap.put(new Integer[] {1, 2},                               //AllocMetaTask (2nd task)
+						new Integer[] {tasks.size() - 2, tasks.size()-1});         //BuildTask
+				else
+					depMap.put(new Integer[] {1, 2},                               //AllocMetaTask (2nd task)
+						new Integer[] {tasks.size() - 1, tasks.size()});           //BuildTask
 			}
 
-			// Apply Task dependency to InitOutputMatrixTask
-			depMap.put(new Integer[] {tasks.size(), tasks.size() + 1}, new Integer[] {0, 1});
+			// getMetaDataTask depends on AllocMeta task
+			depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2},     //MetaDataTask
+				new Integer[] {1, 2});                                         //AllocMetaTask (2nd task)
+
+			// Apply Task depends on InitOutputMatrixTask (output allocation)
+			depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},         //ApplyTask
+					new Integer[] {0, 1});                                     //Allocation task (1st task)
 			ApplyTasksWrapperTask applyTaskWrapper = new ApplyTasksWrapperTask(e, in, out, pool);
 
 			if(e.hasEncoder(ColumnEncoderDummycode.class)) {
-				// InitMatrix dependency to build of recode if a DC is present
-				// Since they are the only ones that change the domain size which would influence the Matrix creation
-				depMap.put(new Integer[] {0, 1}, // InitMatrix Task first in list
-					new Integer[] {tasks.size() - 1, tasks.size()});
-				// output col update task dependent on Build completion only for Recode and binning since they can
-				// change dummycode domain size
-				// colUpdateTask can start when all domain sizes, because it can now calculate the offsets for
-				// each column
-				depMap.put(new Integer[] {-2, -1}, new Integer[] {tasks.size() - 1, tasks.size()});
+				// Allocation depends on build if DC is in the list.
+				// Note, DC is the only encoder that changes dimensionality
+				depMap.put(new Integer[] {0, 1},                               //Allocation task (1st task)
+					new Integer[] {tasks.size() - 1, tasks.size()});           //BuildTask
+				// UpdateOutputColTask, that sets the starting offsets of the DC columns,
+				// depends on the Build completion tasks
+				depMap.put(new Integer[] {-2, -1},                             //UpdateOutputColTask (last task) 
+						new Integer[] {tasks.size() - 1, tasks.size()});       //BuildTask
 				buildTasks.forEach(t -> t.setPriority(5));
 				applyOffsetDep = true;
 			}
 
 			if(hasDC && applyOffsetDep) {
-				// Apply Task dependency to output col update task (is last in list)
-				// All ApplyTasks need to wait for this task, so they all have the correct offsets.
-				// But only for the columns that come after the first DC coder since they don't have an offset
-				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1}, new Integer[] {-2, -1});
+				// Apply tasks depend on UpdateOutputColTask
+				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},     //ApplyTask 
+						new Integer[] {-2, -1});                               //UpdateOutputColTask (last task)
 
 				applyTAgg = applyTAgg == null ? new ArrayList<>() : applyTAgg;
 				applyTAgg.add(applyTaskWrapper);
@@ -179,9 +223,13 @@ public class MultiColumnEncoder implements Encoder {
 			else {
 				applyTaskWrapper.setOffset(0);
 			}
+			// Create the ApplyTask (wrapper)
 			tasks.add(applyTaskWrapper);
+			// Create the getMetadata task
+			tasks.add(DependencyThreadPool.createDependencyTask(new ColumnMetaDataTask<ColumnEncoder>(e, _meta)));
 		}
 		if(hasDC)
+			// Create the last task, UpdateOutputColTask
 			tasks.add(DependencyThreadPool.createDependencyTask(new UpdateOutputColTask(this, applyTAgg)));
 
 		List<List<? extends Callable<?>>> deps = new ArrayList<>(Collections.nCopies(tasks.size(), null));
@@ -263,7 +311,10 @@ public class MultiColumnEncoder implements Encoder {
 				+ "has a encoder or slice the input accordingly");
 		// TODO smart checks
 		// Block allocation for MT access
-		outputMatrixPreProcessing(out, in);
+		boolean hasDC = false;
+		for(ColumnEncoderComposite columnEncoder : _columnEncoders)
+			hasDC = columnEncoder.hasEncoder(ColumnEncoderDummycode.class);
+		outputMatrixPreProcessing(out, in, hasDC);
 		if(k > 1) {
 			applyMT(in, out, outputCol, k);
 		}
@@ -318,45 +369,101 @@ public class MultiColumnEncoder implements Encoder {
 		pool.shutdown();
 	}
 
-	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock input) {
+	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock input, boolean hasDC) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		output.allocateBlock();
 		if(output.isInSparseFormat()) {
-			SparseBlock block = output.getSparseBlock();
-			if(!(block instanceof SparseBlockMCSR))
-				throw new RuntimeException(
-					"Transform apply currently only supported for MCSR sparse and dense output Matrices");
-			for(int r = 0; r < output.getNumRows(); r++) {
-				// allocate all sparse rows so MT sync can be done.
-				// should be rare that rows have only 0
-				block.allocate(r, input.getNumColumns());
-				// Setting the size here makes it possible to run all sparse apply tasks without any sync
-				// could become problematic if the input is very sparse since we allocate the same size as the input
-				// should be fine in theory ;)
-				((SparseRowVector)block.get(r)).setSize(input.getNumColumns());
+			if (MatrixBlock.DEFAULT_SPARSEBLOCK != SparseBlock.Type.CSR
+					&& MatrixBlock.DEFAULT_SPARSEBLOCK != SparseBlock.Type.MCSR)
+				throw new RuntimeException("Transformapply is only supported for MCSR and CSR output matrix");
+			//boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+			boolean mcsr = false; //force CSR for transformencode
+			if (mcsr) {
+				output.allocateBlock();
+				SparseBlock block = output.getSparseBlock();
+				if (hasDC && OptimizerUtils.getTransformNumThreads()>1) {
+					// DC forces a single threaded allocation after the build phase and
+					// before the apply starts. Below code parallelizes sparse allocation.
+					IntStream.range(0, output.getNumRows())
+					.parallel().forEach(r -> {
+						block.allocate(r, input.getNumColumns());
+						((SparseRowVector)block.get(r)).setSize(input.getNumColumns());
+					});
+				}
+				else {
+					for(int r = 0; r < output.getNumRows(); r++) {
+						// allocate all sparse rows so MT sync can be done.
+						// should be rare that rows have only 0
+						block.allocate(r, input.getNumColumns());
+						// Setting the size here makes it possible to run all sparse apply tasks without any sync
+						// could become problematic if the input is very sparse since we allocate the same size as the input
+						// should be fine in theory ;)
+						((SparseRowVector)block.get(r)).setSize(input.getNumColumns());
+					}
+				}
+			}
+			else { //csr
+				int size = output.getNumRows() * input.getNumColumns();
+				SparseBlock csrblock = new SparseBlockCSR(output.getNumRows(), size, size);
+				// Manually fill the row pointers based on nnzs/row (= #cols in the input)
+				// Not using the set() methods to 1) avoid binary search and shifting, 
+				// 2) reduce thread contentions on the arrays
+				int[] rptr = ((SparseBlockCSR)csrblock).rowPointers();
+				for (int i=0; i<rptr.length-1; i++) { //TODO: parallelize
+					rptr[i+1] = rptr[i] + input.getNumColumns();
+				}
+				output.setSparseBlock(csrblock);
 			}
 		}
-		if(DMLScript.STATISTICS)
-			Statistics.incTransformOutMatrixPreProcessingTime(System.nanoTime()-t0);
+		else //dense
+			output.allocateBlock();
+
+		if(DMLScript.STATISTICS) {
+			LOG.debug("Elapsed time for allocation: "+ ((double) System.nanoTime() - t0) / 1000000 + " ms");
+			TransformStatistics.incOutMatrixPreProcessingTime(System.nanoTime()-t0);
+		}
 	}
 
 	private void outputMatrixPostProcessing(MatrixBlock output){
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		Set<Integer> indexSet = _columnEncoders.stream()
-				.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
-					if(l == null)
-						return null;
-					return l.stream();
-				}).collect(Collectors.toSet());
-		if(!indexSet.stream().allMatch(Objects::isNull)){
-			for(Integer row : indexSet){
-				// TODO: Maybe MT in special cases when the number of rows is large
-				output.getSparseBlock().get(row).compact();
+		int k = OptimizerUtils.getTransformNumThreads();
+		ForkJoinPool myPool = new ForkJoinPool(k);
+		if (k == 1) {
+			Set<Integer> indexSet = _columnEncoders.stream()
+					.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
+						if(l == null)
+							return null;
+						return l.stream();
+					}).collect(Collectors.toSet());
+
+			if(!indexSet.stream().allMatch(Objects::isNull)) {
+				for(Integer row : indexSet)
+					output.getSparseBlock().get(row).compact();
 			}
 		}
+		else {
+			try {
+				Set<Integer> indexSet = _columnEncoders.stream().parallel()
+					.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
+						if(l == null)
+							return null;
+						return l.stream();
+					}).collect(Collectors.toSet());
+				if(!indexSet.stream().parallel().allMatch(Objects::isNull)) {
+					myPool.submit(() -> {
+						indexSet.stream().parallel().forEach(row -> {
+							output.getSparseBlock().get(row).compact();
+						});
+					}).get();
+				}
+			}
+			catch(Exception ex) {
+				throw new DMLRuntimeException(ex);
+			}
+		}
+		myPool.shutdown();
 		output.recomputeNonZeros();
 		if(DMLScript.STATISTICS)
-			Statistics.incTransformOutMatrixPostProcessingTime(System.nanoTime()-t0);
+			TransformStatistics.incOutMatrixPostProcessingTime(System.nanoTime()-t0);
 	}
 
 	@Override
@@ -397,7 +504,7 @@ public class MultiColumnEncoder implements Encoder {
 				columnEncoder.getMetaData(meta);
 		}
 
-		//_columnEncoders.stream().parallel().forEach(columnEncoder -> 
+		//_columnEncoders.stream().parallel().forEach(columnEncoder ->
 		//		columnEncoder.getMetaData(meta));
 		if(_legacyOmit != null)
 			_legacyOmit.getMetaData(meta);
@@ -803,10 +910,11 @@ public class MultiColumnEncoder implements Encoder {
 		@Override
 		public Object call() throws Exception {
 			int numCols = _input.getNumColumns() + _encoder.getNumExtraCols();
+			boolean hasDC = _encoder.getColumnEncoders(ColumnEncoderDummycode.class).size() > 0;
 			long estNNz = (long) _input.getNumColumns() * (long) _input.getNumRows();
 			boolean sparse = MatrixBlock.evalSparseFormatInMemory(_input.getNumRows(), numCols, estNNz);
 			_output.reset(_input.getNumRows(), numCols, sparse, estNNz);
-			outputMatrixPreProcessing(_output, _input);
+			outputMatrixPreProcessing(_output, _input, hasDC);
 			return null;
 		}
 
@@ -896,6 +1004,27 @@ public class MultiColumnEncoder implements Encoder {
 			return null;
 		}
 	}
+
+	private static class AllocMetaTask implements Callable<Object> {
+		private final MultiColumnEncoder _encoder;
+		private final FrameBlock _meta;
+		
+		private AllocMetaTask (MultiColumnEncoder encoder, FrameBlock meta) {
+			_encoder = encoder;
+			_meta = meta;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			_encoder.allocateMetaData(_meta);
+			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName();
+		}
+	}
 	
 	private static class ColumnMetaDataTask<T extends ColumnEncoder> implements Callable<Object> {
 		private final T _colEncoder;
@@ -910,6 +1039,11 @@ public class MultiColumnEncoder implements Encoder {
 		public Object call() throws Exception {
 			_colEncoder.getMetaData(_out);
 			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _colEncoder._colID + ">";
 		}
 	}
 

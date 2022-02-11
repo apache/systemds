@@ -1,0 +1,96 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Fix invalid lenghts
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE              DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X       Frame[Unknown]     ---
+# mask     Matrix[Double]    ---
+# ql       Double            0.05
+# qu       Double            0.99
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME  TYPE              MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# out   Frame[Unknown]    ---
+# M     Matrix[Double]    ---
+# ----------------------------------------------------------------------------------------------------------------------
+
+s_fixInvalidLengthsApply = function(Frame[Unknown] X, Matrix[Double] mask, Matrix[Double] qLow, Matrix[Double] qUp)
+return (Frame[Unknown] X)
+{
+
+  length = map(X, "x -> x.length()")
+  length = as.matrix(length)
+  length = replace(target = (length * mask), pattern = NaN, replacement = 0)
+  M = ( length < qLow  | length > qUp)
+  # # # check if mask vector has 1 in more than one column
+  # # # this indicates that two values are being swapped and can be fixed
+  rowCountSwap = rowSums(M)  >= 2 
+  rowCountDangling = rowSums(M) > 0 & rowSums(M) < 2
+
+  if(sum(rowCountSwap) > 0)
+  {
+    countTotalSwaps = sum(rowCountSwap)
+    # # get the row index for swapping
+    rowIds = rowCountSwap * seq(1, nrow(rowCountSwap))
+    rowIds = removeEmpty(target=rowIds, margin="rows")
+    colIds = M * t(seq(1, ncol(M)))
+    for(i in 1:countTotalSwaps)
+    {
+      rowIdx = as.scalar(rowIds[i, 1])
+      colIdx = removeEmpty(target = colIds[rowIdx], margin="cols")
+      id1 = as.scalar(colIdx[1, 1])
+      id2 = as.scalar(colIdx[1, 2])
+      tmp = X[rowIdx, id1]
+      X[rowIdx, id1] = X[rowIdx, id2]
+      X[rowIdx, id2] = tmp
+      # # remove the mask for fixed entries
+      M[rowIdx, id1] = 0
+      M[rowIdx, id2] = 0
+    }
+  }
+  if(sum(rowCountDangling) > 0) # no swaps just  invalid lengths
+  {
+    countTotalInvalids = sum(rowCountDangling)
+    # # get the row index for swapping
+    rowIds = rowCountDangling * seq(1, nrow(rowCountDangling))
+    rowIds = removeEmpty(target=rowIds, margin="rows")
+    colIds = M * t(seq(1, ncol(M)))
+    for(i in 1:countTotalInvalids)
+    {
+      rowIdx = as.scalar(rowIds[i, 1])
+      colIdx = removeEmpty(target = colIds[rowIdx], margin="cols")
+      id1 = as.scalar(colIdx[1, 1])
+      X[rowIdx, id1] = ""
+      # # remove the mask for fixed entries
+      M[rowIdx, id1] = 0
+    }
+  }
+  
+  M = replace(target = M, pattern = 1, replacement = NaN)
+}
+

@@ -43,6 +43,7 @@ import org.apache.sysds.hops.codegen.SpoofCompiler.CompilerType;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofCompiler.PlanSelector;
 import org.apache.sysds.lops.Compression;
+import org.apache.sysds.lops.compile.linearization.ILinearize.DagLinearization;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -82,6 +83,7 @@ public class DMLConfig
 	public static final String COMPRESSED_TRANSPOSE = "sysds.compressed.transpose";
 	public static final String NATIVE_BLAS          = "sysds.native.blas";
 	public static final String NATIVE_BLAS_DIR      = "sysds.native.blas.directory";
+	public static final String DAG_LINEARIZATION    = "sysds.compile.linearization";
 	public static final String CODEGEN              = "sysds.codegen.enabled"; //boolean
 	public static final String CODEGEN_API          = "sysds.codegen.api"; // see SpoofCompiler.API
 	public static final String CODEGEN_COMPILER     = "sysds.codegen.compiler"; //see SpoofCompiler.CompilerType
@@ -108,6 +110,7 @@ public class DMLConfig
 
 	public static final String USE_SSL_FEDERATED_COMMUNICATION = "sysds.federated.ssl"; // boolean
 	public static final String DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT = "sysds.federated.initialization.timeout"; // int seconds
+	public static final String FEDERATED_TIMEOUT = "sysds.federated.timeout"; // single request timeout default -1 to indicate infinite.
 	public static final int DEFAULT_FEDERATED_PORT = 4040; // borrowed default Spark Port
 	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 2;
 	
@@ -144,6 +147,7 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_COCODE,      "AUTO");
 		_defaultVals.put(COMPRESSED_COST_MODEL,  "AUTO");
 		_defaultVals.put(COMPRESSED_TRANSPOSE,   "auto");
+		_defaultVals.put(DAG_LINEARIZATION,      DagLinearization.DEPTH_FIRST.name());
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_API,            GeneratorAPI.JAVA.name() );
 		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );
@@ -168,6 +172,7 @@ public class DMLConfig
 		_defaultVals.put(FLOATING_POINT_PRECISION, "double" );
 		_defaultVals.put(USE_SSL_FEDERATED_COMMUNICATION, "false");
 		_defaultVals.put(DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, "10");
+		_defaultVals.put(FEDERATED_TIMEOUT, "-1");
 	}
 	
 	public DMLConfig() {
@@ -412,12 +417,12 @@ public class DMLConfig
 			LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL, DEFAULT_BLOCK_SIZE,
 			CP_PARALLEL_OPS, CP_PARALLEL_IO, PARALLEL_ENCODE, NATIVE_BLAS, NATIVE_BLAS_DIR,
 			COMPRESSED_LINALG, COMPRESSED_LOSSY, COMPRESSED_VALID_COMPRESSIONS, COMPRESSED_OVERLAPPING,
-			COMPRESSED_SAMPLING_RATIO, COMPRESSED_COCODE, COMPRESSED_TRANSPOSE,
+			COMPRESSED_SAMPLING_RATIO, COMPRESSED_COCODE, COMPRESSED_TRANSPOSE, DAG_LINEARIZATION,
 			CODEGEN, CODEGEN_API, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 			STATS_MAX_WRAP_LEN, LINEAGECACHESPILL, COMPILERASSISTED_RW, PRINT_GPU_MEMORY_INFO,
 			AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, 
 			LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE, GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR,
-			USE_SSL_FEDERATED_COMMUNICATION, DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT
+			USE_SSL_FEDERATED_COMMUNICATION, DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, FEDERATED_TIMEOUT
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

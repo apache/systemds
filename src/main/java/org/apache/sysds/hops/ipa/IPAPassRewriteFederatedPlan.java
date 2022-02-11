@@ -19,7 +19,8 @@
 
 package org.apache.sysds.hops.ipa;
 
-import org.apache.sysds.api.DMLException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -30,6 +31,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.cost.HopRel;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
@@ -45,10 +47,9 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * This rewrite generates a federated execution plan by estimating and setting costs and the FederatedOutput values of
@@ -56,8 +57,17 @@ import java.util.Map;
  * The rewrite is only applied if federated compilation is activated in OptimizerUtils.
  */
 public class IPAPassRewriteFederatedPlan extends IPAPass {
+	private static final Log LOG = LogFactory.getLog(IPAPassRewriteFederatedPlan.class.getName());
 
-	private final static Map<Long, List<HopRel>> hopRelMemo = new HashMap<>();
+	private final static MemoTable hopRelMemo = new MemoTable();
+	/**
+	 * IDs of hops for which the final fedout value has been set.
+	 */
+	private final static Set<Long> hopRelUpdatedFinal = new HashSet<>();
+	/**
+	 * Terminal hops in DML program given to this rewriter.
+	 */
+	private final static List<Hop> terminalHops = new ArrayList<>();
 
 	/**
 	 * Indicates if an IPA pass is applicable for the current configuration.
@@ -66,7 +76,8 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param fgraph function call graph
 	 * @return true if federated compilation is activated.
 	 */
-	@Override public boolean isApplicable(FunctionCallGraph fgraph) {
+	@Override
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return OptimizerUtils.FEDERATED_COMPILATION;
 	}
 
@@ -79,22 +90,23 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param fcallSizes function call size infos
 	 * @return false since the function call graph never has to be rebuilt
 	 */
-	@Override public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph,
+	@Override
+	public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph,
 		FunctionCallSizeInfo fcallSizes) {
 		rewriteStatementBlocks(prog, prog.getStatementBlocks());
+		setFinalFedouts();
 		return false;
 	}
 
 	/**
-	 * Estimates cost and selects a federated execution plan
-	 * by setting the federated output value of each hop in the statement blocks.
+	 * Estimates cost and enumerates federated execution plans in hopRelMemo.
 	 * The method calls the contained statement blocks recursively.
 	 *
 	 * @param prog dml program
 	 * @param sbs  list of statement blocks
 	 * @return list of statement blocks with the federated output value updated for each hop
 	 */
-	public ArrayList<StatementBlock> rewriteStatementBlocks(DMLProgram prog, List<StatementBlock> sbs) {
+	private ArrayList<StatementBlock> rewriteStatementBlocks(DMLProgram prog, List<StatementBlock> sbs) {
 		ArrayList<StatementBlock> rewrittenStmBlocks = new ArrayList<>();
 		for(StatementBlock stmBlock : sbs)
 			rewrittenStmBlocks.addAll(rewriteStatementBlock(prog, stmBlock));
@@ -102,8 +114,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	}
 
 	/**
-	 * Estimates cost and selects a federated execution plan
-	 * by setting the federated output value of each hop in the statement blocks.
+	 * Estimates cost and enumerates federated execution plans in hopRelMemo.
 	 * The method calls the contained statement blocks recursively.
 	 *
 	 * @param prog dml program
@@ -182,6 +193,14 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	}
 
 	/**
+	 * Set final fedouts of all hops starting from terminal hops.
+	 */
+	private void setFinalFedouts(){
+		for ( Hop root : terminalHops)
+			setFinalFedout(root);
+	}
+
+	/**
 	 * Sets FederatedOutput field of all hops in DAG starting from given root.
 	 * The FederatedOutput chosen for root is the minimum cost HopRel found in memo table for the given root.
 	 * The FederatedOutput values chosen for the inputs to the root are chosen based on the input dependencies.
@@ -189,9 +208,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param root hop for which FederatedOutput needs to be set
 	 */
 	private void setFinalFedout(Hop root) {
-		HopRel optimalRootHopRel = hopRelMemo.get(root.getHopID()).stream()
-			.min(Comparator.comparingDouble(HopRel::getCost))
-			.orElseThrow(() -> new DMLException("Hop root " + root + " has no feasible federated output alternatives"));
+		HopRel optimalRootHopRel = hopRelMemo.getMinCostAlternative(root);
 		setFinalFedout(root, optimalRootHopRel);
 	}
 
@@ -202,8 +219,21 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param rootHopRel from which FederatedOutput value and cost is retrieved
 	 */
 	private void setFinalFedout(Hop root, HopRel rootHopRel) {
-		updateFederatedOutput(root, rootHopRel);
-		visitInputDependency(rootHopRel);
+		if ( hopRelUpdatedFinal.contains(root.getHopID()) ){
+			if((rootHopRel.hasLocalOutput() ^ root.hasLocalOutput()) && hopRelMemo.hasFederatedOutputAlternative(root)){
+				// Update with FOUT alternative without visiting inputs
+				updateFederatedOutput(root, hopRelMemo.getFederatedOutputAlternative(root));
+				root.activatePrefetch();
+			}
+			else {
+				// Update without visiting inputs
+				updateFederatedOutput(root, rootHopRel);
+			}
+		}
+		else {
+			updateFederatedOutput(root, rootHopRel);
+			visitInputDependency(rootHopRel);
+		}
 	}
 
 	/**
@@ -226,6 +256,21 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	private void updateFederatedOutput(Hop root, HopRel updateHopRel) {
 		root.setFederatedOutput(updateHopRel.getFederatedOutput());
 		root.setFederatedCost(updateHopRel.getCostObject());
+		forceFixedFedOut(root);
+		hopRelUpdatedFinal.add(root.getHopID());
+	}
+
+	/**
+	 * Set federated output to fixed value if FEDERATED_SPECS is activated for root hop.
+	 * @param root hop set to fixed fedout value as loaded from FEDERATED_SPECS
+	 */
+	private void forceFixedFedOut(Hop root){
+		if ( OptimizerUtils.FEDERATED_SPECS.containsKey(root.getBeginLine()) ){
+			FEDInstruction.FederatedOutput fedOutSpec = OptimizerUtils.FEDERATED_SPECS.get(root.getBeginLine());
+			root.setFederatedOutput(fedOutSpec);
+			if ( fedOutSpec.isForcedFederated() )
+				root.deactivatePrefetch();
+		}
 	}
 
 	/**
@@ -246,8 +291,11 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param root starting point for going through the Hop DAG to update the federatedOutput fields
 	 */
 	private void selectFederatedExecutionPlan(Hop root) {
-		visitFedPlanHop(root);
-		setFinalFedout(root);
+		if ( root != null ){
+			visitFedPlanHop(root);
+			if ( HopRewriteUtils.isTerminalHop(root) )
+				terminalHops.add(root);
+		}
 	}
 
 	/**
@@ -257,10 +305,11 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 */
 	private void visitFedPlanHop(Hop currentHop) {
 		// If the currentHop is in the hopRelMemo table, it means that it has been visited
-		if(hopRelMemo.containsKey(currentHop.getHopID()))
+		if(hopRelMemo.containsHop(currentHop))
 			return;
 		// If the currentHop has input, then the input should be visited depth-first
 		if(currentHop.getInput() != null && currentHop.getInput().size() > 0) {
+			debugLog(currentHop);
 			for(Hop input : currentHop.getInput())
 				visitFedPlanHop(input);
 		}
@@ -273,7 +322,25 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		}
 		if(hopRels.isEmpty())
 			hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE, hopRelMemo));
-		hopRelMemo.put(currentHop.getHopID(), hopRels);
+		hopRelMemo.put(currentHop, hopRels);
+	}
+
+	/**
+	 * Write HOP visit to debug log if debug is activated.
+	 * @param currentHop hop written to log
+	 */
+	private void debugLog(Hop currentHop){
+		if ( LOG.isDebugEnabled() ){
+			LOG.debug("Visiting HOP: " + currentHop + " Input size: " + currentHop.getInput().size());
+			int index = 0;
+			for ( Hop hop : currentHop.getInput()){
+				if ( hop == null )
+					LOG.debug("Input at index is null: " + index);
+				else
+					LOG.debug("HOP input: " + hop + " at index " + index + " of " + currentHop);
+				index++;
+			}
+		}
 	}
 
 	/**
@@ -319,8 +386,8 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		if(associatedHop instanceof AggUnaryOp && associatedHop.isScalar())
 			return false;
 		// It can only be FOUT if at least one of the inputs are FOUT, except if it is a federated DataOp
-		if(associatedHop.getInput().stream().noneMatch(input -> hopRelMemo.get(input.getHopID()).stream()
-			.anyMatch(HopRel::hasFederatedOutput)) && !associatedHop.isFederatedDataOp())
+		if(associatedHop.getInput().stream().noneMatch(hopRelMemo::hasFederatedOutputAlternative)
+			&& !associatedHop.isFederatedDataOp())
 			return false;
 		return true;
 	}

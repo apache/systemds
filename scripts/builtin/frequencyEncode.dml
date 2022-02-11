@@ -1,0 +1,48 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#######################################################################
+# function frequency conversion
+# Inputs: The input dataset X, and  mask of the columns
+# Output: categorical columns are replaced with their frequencies
+#######################################################################
+
+
+
+m_frequencyEncode = function(Matrix[Double] X, Matrix[Double] mask)
+return (Matrix[Double] X, Matrix[Double] freqCount) {
+  
+  tempX = replace(target=X, pattern=NaN, replacement=1)
+  freqCount = matrix(0, rows=ncol(tempX), cols = max(tempX))
+  if(sum(mask) > 0)
+  {
+    parfor(i in 1:ncol(mask))
+    {
+      if(as.scalar(mask[1, i]) == 1)
+      {
+        Y = tempX[, i]
+        valueCount = table(Y, 1)
+        freqCount[i, 1:nrow(valueCount)] = t(valueCount)
+      }
+    }
+  }
+  X = frequencyEncodeApply(X, freqCount)
+}

@@ -43,9 +43,19 @@ LIB_DIR = os.path.join(this_path, PYTHON_DIR, 'lib')
 if os.path.exists(LIB_DIR):
     shutil.rmtree(LIB_DIR, True)
 SYSTEMDS_BIN = 'systemds-*-bin.zip'
+found_bin = False
 for file in os.listdir(os.path.join(SYSTEMDS_ROOT, 'target')):
     # Take jar files from bin release file
     if fnmatch.fnmatch(file, SYSTEMDS_BIN):
+        if found_bin:
+            print("invalid install found multiple bin files, please package systemds with clean flag")
+            exit(-1)
+        found_bin = True
+
+for file in os.listdir(os.path.join(SYSTEMDS_ROOT, 'target')):
+    # Take jar files from bin release file
+    if fnmatch.fnmatch(file, SYSTEMDS_BIN):
+        print("Using java files from : " + file )
         systemds_bin_zip = os.path.join(SYSTEMDS_ROOT, 'target', file)
         extract_dir = os.path.join(TMP_DIR)
 
@@ -56,6 +66,7 @@ for file in os.listdir(os.path.join(SYSTEMDS_ROOT, 'target')):
                     zip.extract(f, TMP_DIR)
         unzipped_dir_name = file.rsplit('.', 1)[0]
         shutil.copytree(os.path.join(TMP_DIR, unzipped_dir_name, 'lib'), LIB_DIR)
+        break
 
 # Take hadoop binaries.
 HADOOP_DIR_SRC = os.path.join(SYSTEMDS_ROOT, 'target', 'lib', 'hadoop')

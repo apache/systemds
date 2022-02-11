@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,9 +19,15 @@
 # under the License.
 #
 #-------------------------------------------------------------
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
 
 COMMAND=$1
 TEMPFOLDER=$2
+MAXMEM=$3
 
 BASE=${TEMPFOLDER}/binomial
 MAXITR=20
@@ -32,11 +38,18 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
+DATA=()
+if [ $MAXMEM -ge 80 ]; then DATA+=("10k_1k_dense" "10k_1k_sparse"); fi
+if [ $MAXMEM -ge 800 ]; then DATA+=("100k_1k_dense" "100k_1k_sparse"); fi
+if [ $MAXMEM -ge 8000 ]; then DATA+=("1M_1k_dense" "1M_1k_sparse"); fi
+if [ $MAXMEM -ge 80000 ]; then DATA+=("10M_1k_dense" "10M_1k_sparse"); fi
+if [ $MAXMEM -ge 800000 ]; then DATA+=("100M_1k_dense" "100M_1k_sparse"); fi
+
 echo "RUN BINOMIAL EXPERIMENTS: "$(date) >> results/times.txt;
 
 # run all classifiers with binomial labels on all datasets
 # see genBinomialData
-for d in "10k_1k_dense" "10k_1k_sparse" "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" #"_KDD" "100M_1k_dense" "100M_1k_sparse" 
+for d in ${DATA[@]} #"_KDD"
 do
    for f in "runMultiLogReg" "runL2SVM" "runMSVM"
    do

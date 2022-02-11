@@ -25,6 +25,7 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
 
 public class HassAndStokes {
+	// protected static final Log LOG = LogFactory.getLog(HassAndStokes.class.getName());
 
 	public static final double HAAS_AND_STOKES_ALPHA1 = 0.9; // 0.9 recommended in paper
 	public static final double HAAS_AND_STOKES_ALPHA2 = 30; // 30 recommended in paper
@@ -39,18 +40,15 @@ public class HassAndStokes {
 	 * 
 	 * The hybrid estimator given by Eq. 33 in Section 6
 	 * 
-	 * @param numVals	 The number of unique values in the sample
-	 * @param freqCounts The inverse histogram of frequencies. counts extracted 
+	 * @param numVals    The number of unique values in the sample
+	 * @param freqCounts The inverse histogram of frequencies. counts extracted
 	 * @param nRows      The number of rows originally in the input
 	 * @param sampleSize The number of rows used in the sample
 	 * @param solveCache A Hashmap containing information for getDuj2aEstimate
 	 * @return An estimation of distinct elements in the population.
 	 */
-	protected static int distinctCount(int numVals, int[] freqCounts, int nRows, int sampleSize, HashMap<Integer, Double> solveCache) {
-
-		// all values in the sample are zeros.
-		if(numVals == 0)
-			return 1;
+	protected static int distinctCount(int numVals, int[] freqCounts, int nRows, int sampleSize,
+		HashMap<Integer, Double> solveCache) {
 
 		double q = ((double) sampleSize) / nRows;
 		double f1 = freqCounts[0];
@@ -71,54 +69,25 @@ public class HassAndStokes {
 			d = getSh3Estimate(q, freqCounts, numVals);
 
 		// round and ensure min value 1
-		final int est = Math.max(1, (int) Math.round(d));
-		// Number of unique is trivially bounded by the sampled number of uniques and the number of rows.
-		return Math.min(Math.max(est, numVals), nRows);
+		return  (int) Math.round(d);
+		
 	}
 
-	/**
-	 * Computes the "un-smoothed first-order jackknife estimator" (Eq 11).
-	 * 
-	 * @param q  ??
-	 * @param f1 ??
-	 * @param n  ??
-	 * @param dn ??
-	 * @return ??
-	 */
 	private static double getDuj1Estimate(double q, double f1, int n, int dn) {
+		// Computes the "un-smoothed first-order jackknife estimator" (Eq 11).
 		return dn / (1 - ((1 - q) * f1) / n);
 	}
 
-	/**
-	 * Computes the "un-smoothed second-order jackknife estimator" (Eq 18b).
-	 *
-	 * @param q         ??
-	 * @param f1        ??
-	 * @param n         ??
-	 * @param dn        ??
-	 * @param gammaDuj1 ??
-	 * @return ??
-	 */
 	private static double getDuj2Estimate(double q, double f1, int n, int dn, double gammaDuj1) {
+		// Computes the "un-smoothed second-order jackknife estimator" (Eq 18b).
 		return (dn - (1 - q) * f1 * Math.log(1 - q) * gammaDuj1 / q) / (1 - ((1 - q) * f1) / n);
 	}
 
-	/**
-	 * Computes the "un-smoothed second-order jackknife estimator" with additional stabilization procedure, which
-	 * removes the classes whose frequency exceed c, computes Duj2 over the reduced sample, and finally adds the removed
-	 * frequencies.
-	 * 
-	 * @param q          ??
-	 * @param f          ??
-	 * @param n          ??
-	 * @param dn         ??
-	 * @param gammaDuj1  ??
-	 * @param N          ??
-	 * @param solveCache ??
-	 * @return ??
-	 */
 	private static double getDuj2aEstimate(double q, int f[], int n, int dn, double gammaDuj1, int N,
 		HashMap<Integer, Double> solveCache) {
+		// Computes the "un-smoothed second-order jackknife estimator" with additional stabilization procedure, which
+		// removes the classes whose frequency exceed c, computes Duj2 over the reduced sample, and finally adds the
+		// removed frequencies.
 		int c = HAAS_AND_STOKES_UJ2A_CUT2 ? f.length / 2 + 1 : HAAS_AND_STOKES_UJ2A_C + 1;
 
 		// compute adjusted sample size after removing classes that
@@ -152,16 +121,8 @@ public class HassAndStokes {
 		return duj2 + cardB;
 	}
 
-	/**
-	 * Computes the "squared coefficient of variation" based on a given initial estimate D (Eq 16).
-	 * 
-	 * @param D ??
-	 * @param f ??
-	 * @param n ??
-	 * @param N ??
-	 * @return ??
-	 */
 	private static double getGammaSquared(double D, int[] f, int n, int N) {
+		// Computes the "squared coefficient of variation" based on a given initial estimate D (Eq 16).
 		double gamma = 0;
 		for(int i = 1; i <= f.length; i++)
 			if(f[i - 1] != 0)
@@ -171,18 +132,12 @@ public class HassAndStokes {
 		return Math.max(0, gamma);
 	}
 
-	/**
-	 * Computed the "shlosser third-order estimator". (Eq 30b)
-	 * 
-	 * Note that this estimator can show anomalies with NaN as the results due to terms such as Math.pow(1+q, i) which
-	 * exceed Double.MAX_VALUE even for moderately large i, e.g., q=0.05 at around 14K.
-	 * 
-	 * @param q  ??
-	 * @param f  ??
-	 * @param dn ??
-	 * @return ??
-	 */
 	private static double getSh3Estimate(double q, int[] f, double dn) {
+		// Computed the "shlosser third-order estimator". (Eq 30b)
+
+		// Note that this estimator can show anomalies with NaN as the results due to terms such as Math.pow(1+q, i) which
+		// exceed Double.MAX_VALUE even for moderately large i, e.g., q=0.05 at around 14K.
+
 		double fraq11 = 0, fraq12 = 0, fraq21 = 0, fraq22 = 0;
 		for(int i = 1; i <= f.length; i++)
 			if(f[i - 1] != 0) {
@@ -196,26 +151,26 @@ public class HassAndStokes {
 		return dn + f[0] * fraq11 / fraq12 * Math.pow(fraq21 / fraq22, 2);
 	}
 
-	/**
-	 * Solves the method-of-moments estimate numerically. We use a cache on the same observed instances in the sample as
-	 * q is constant and min/max are chosen conservatively.
-	 * 
-	 * @param nj         ??
-	 * @param q          ??
-	 * @param min        ??
-	 * @param max        ??
-	 * @param solveCache ??
-	 * @return ??
-	 */
 	private static double getMethodOfMomentsEstimate(int nj, double q, double min, double max,
 		HashMap<Integer, Double> solveCache) {
-		if(solveCache.containsKey(nj))
-			return solveCache.get(nj);
+		// Solves the method-of-moments estimate numerically. We use a cache on the same observed instances in the sample
+		// as q is constant and min/max are chosen conservatively.
+
+		// NOTE the cache does not work currently since the number of rows considered each call can change now
+		// This happens because the sampled estimator now considers nonzeros or offsets calculated and therefore know upper
+		// bounds of the number of offsets that are lower than the maximum number of rows.
+		
+		// if(solveCache.containsKey(nj))
+		// 	synchronized(solveCache) {
+		// 		return solveCache.get(nj);
+		// 	}
 
 		double est = UnivariateSolverUtils.solve(new MethodOfMomentsFunction(nj, q), min, max, 1e-9);
 
-		if(solveCache.size() < MAX_SOLVE_CACHE_SIZE)
-			solveCache.put(nj, est);
+		// if(solveCache.size() < MAX_SOLVE_CACHE_SIZE)
+		// 	synchronized(solveCache) {
+		// 		solveCache.put(nj, est);
+		// 	}
 
 		return est;
 	}

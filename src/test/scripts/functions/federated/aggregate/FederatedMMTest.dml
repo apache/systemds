@@ -32,7 +32,16 @@ if ($rP) {
     Y = t(X) * 7; # row partitioned federated Y
 }
 
+Z1 = Y %*% seq(1, ncol(Y));
+
 while(FALSE) { }
 
-s = X %*% Y;
+Z2 = X %*% Y;
+
+while(FALSE) { }
+
+sZ1 = sum(Z1);
+
+s = sZ1 + Z2;
+
 write(s, $out_S);

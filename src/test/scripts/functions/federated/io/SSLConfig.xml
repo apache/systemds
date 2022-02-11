@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
 -->
+
 <root>
+    <sysds.local.spark.number.threads>2</sysds.local.spark.number.threads>
     <sysds.federated.ssl>true</sysds.federated.ssl>
+    <sysds.federated.timeout>128</sysds.federated.timeout>
 </root>

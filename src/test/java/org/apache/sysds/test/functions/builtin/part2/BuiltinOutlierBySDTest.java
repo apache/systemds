@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.builtin.part2;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
@@ -89,6 +90,7 @@ public class BuiltinOutlierBySDTest extends AutomatedTestBase {
 
 	private void runOutlierTest(boolean sparse, double  k,  int repair, int max_iterations, ExecType instType)
 	{
+		setOutputBuffering(true);
 		Types.ExecMode platformOld = setExecMode(instType);
 
 		try
@@ -111,8 +113,9 @@ public class BuiltinOutlierBySDTest extends AutomatedTestBase {
 
 			writeInputMatrixWithMTD("A", A, true);
 
-			runTest(true, false, null, -1);
-
+//			runTest(true, false, null, -1);
+			String out = runTest(null).toString();
+			Assert.assertTrue(out.contains("TRUE"));
 		}
 		finally {
 			rtplatform = platformOld;

@@ -18,13 +18,46 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
+# This function cleans top-K item (where K is given as input)for a given list of users.
+# metaData[3, ncol(X)] : metaData[1] stores mask, metaData[2] stores schema, metaData[3] stores FD mask
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE               DEFAULT    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# dataTrain       Frame[Unknown]     ---
+# dataTest        Frame[Unknown]     NULL
+# metaData        Frame[Unknown]     NULL
+# primitives      Frame[Unknown]     ---
+# parameters      Frame[Unknown]     ---
+# cmr             Matrix[Double]     Matrix
+# evaluationFunc  String             ---
+# evalFunHp       Matrix[Double]     ---
+# topK            Integer            5
+# resource_val    Integer            20
+# sample          Double             0.1
+# cv              Boolean            TRUE
+# cvk             Integer            2
+# isLastLabel     Boolean            TRUE
+# correctTypos    Boolean            FALSE
+# output          String             ---
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE              MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# perf            Boolean
+# ----------------------------------------------------------------------------------------------------------------------
+
 # metaData[3, ncol(X)] : metaData[1] stores mask, metaData[2] stores schema, metaData[3] stores FD mask
 source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
 
 s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"), Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives,
   Frame[Unknown] parameters, Matrix[Double] cmr = matrix("4 0.7 1", rows=1, cols=3), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, 
-  Integer resource_val = 20, Double sample = 0.1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, String output)
+  Integer resource_val = 20, Integer num_inst = 5, Integer max_iter = 10, Double sample = 0.1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, String output)
   return(Boolean perf)
   # return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores, Frame[Unknown] bestLogical,
   # Frame[Unknown] features, Double dirtyScore, Matrix[Double] evalFunHp)
@@ -38,7 +71,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   # prepare meta data
   # # keeping the meta list format if we decide to add more stuff in metadata
   [schema, mask, fdMask, maskY] = prepareMeta(dataTrain, metaData)
-  metaList = list(mask=mask, schema=schema, fd=fdMask)
+  metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=as.frame("null"))
   t2 = time(); print("-- Cleaning - Prepare Metadata: "+(t2-t1)/1e9+"s");
     
   # separate the label
@@ -77,49 +110,45 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   [eXtrain, eYtrain] = utils::doSample(eXtrain, eYtrain, sample, TRUE)
   t5 = time(); print("---- finalized in: "+(t5-t4)/1e9+"s");
 
-  # # # create logical pipeline seeds
+  # # # create logical pipeline seeds 
   logicalSeedCI =  frame([
-                   "4", "ED", "MVI", "OTLR", "EC", "0", "0", "0", "0",
-                   "4", "ED", "MVI", "CI", "DUMMY","0","0", "0", "0", 
-                   "4", "OTLR", "EC", "CI", "DUMMY", "0", "0","0", "0",
-                   "6", "MVI", "OTLR", "ED", "EC", "CI", "DUMMY", "0", "0",
-                   "4", "ED",  "MVI",  "CI", "DUMMY", "0", "0", "0", "0",
-                   "4", "MVI", "SCALE", "CI", "DUMMY", "0", "0", "0", "0", 
-                   "4", "ED", "EC", "CI", "DUMMY", "0", "0", "0", "0",
-                   "4", "MVI", "OTLR", "CI", "DUMMY", "0", "0", "0", "0",
-                   "5", "MVI", "OTLR", "EC", "CI", "DUMMY", "0", "0", "0",
-                   "7", "ED", "MVI", "OTLR", "EC", "SCALE", "CI", "DUMMY", "0"
-                   ], rows=10, cols=9)  
+                   "4", "ED", "MVI", "OTLR", "EC",
+                   "2", "MVI", "DUMMY", "0","0",
+                   "2", "OTLR", "DUMMY","0","0", 
+                   "2", "CI", "DUMMY","0","0",
+                   "2", "SCALE", "DUMMY","0","0",
+                   "2", "ED", "DUMMY","0","0",
+                   "2", "EC", "DUMMY", "0","0"
+                   ], rows=7, cols=5)  
                    
-  logicalSeedNoCI = frame([
-                   "4", "ED", "MVI", "OTLR", "EC", "0", "0",
-                   "3", "ED", "MVI", "DUMMY", "0","0","0", 
-                   "3", "OTLR", "EC", "DUMMY", "0","0","0",
-                   "5", "MVI", "OTLR", "ED", "EC", "DUMMY", "0", 
-                   "3", "ED",  "MVI", "DUMMY", "0", "0", "0",
-                   "3", "MVI", "SCALE", "DUMMY", "0", "0", "0", 
-                   "3", "ED", "EC", "DUMMY", "0", "0", "0",
-                   "3", "MVI", "OTLR", "DUMMY", "0", "0", "0", 
-                   "4", "MVI", "OTLR", "EC", "DUMMY", "0", "0", 
-                   "6", "ED", "MVI", "OTLR", "EC", "SCALE", "DUMMY"
-                   ], rows=10, cols=7) 
+  logicalSeedNoCI =  frame([
+                   "4", "ED", "MVI", "OTLR", "EC",
+                   "2", "MVI", "DUMMY", "0","0",
+                   "2", "OTLR", "DUMMY","0","0", 
+                   "2", "SCALE", "DUMMY","0","0",
+                   "2", "ED", "DUMMY","0","0",
+                   "2", "EC", "DUMMY", "0","0"
+                   ], rows=6, cols=5)  
                    
-  tab = table(eYtrain, 1)
-  dist = nrow(tab)
-  if(nrow(eYtrain) > 0 & dist < 10)
+  if(min(eYtrain) >= 1) {
+    tab = table(eYtrain, 1)
+    dist = nrow(tab)
+  }
+  if(nrow(eYtrain) > 0 & min(eYtrain) >= 1 & dist <= 15)
     logical = logicalSeedCI
-  else 
+  else {
     logical = logicalSeedNoCI
+  }
   idx = as.integer(as.scalar(logical[1, 1])) + 1
   category = logical[1, 2:idx]
   
   print("-- Cleaning - Enum Logical Pipelines: ");
-  [bestLogical, score] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest, cmr=cmr, 
-    cat=category, population=logical[2:nrow(logical)], max_iter=ceil(resource_val/topK), metaList = metaList,
+  [bestLogical, score] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest,
+    cat=category, population=logical[2:nrow(logical),], max_iter=max_iter, metaList = metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, primitives=primitives, param=parameters,
-    num_inst=3 , num_exec=2, cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)
+    num_inst=num_inst, cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)
   t6 = time(); print("---- finalized in: "+(t6-t5)/1e9+"s");
-
+  # bestLogical = frame(["MVI", "OTLR", "DUMMY"], rows=1, cols=3)
   topKPipelines = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); features = as.frame("NULL")
   
   # # [topKPipelines, topKHyperParams, topKScores, features] = 
@@ -174,13 +203,11 @@ runStringPipeline = function(Frame[Unknown] Xtrain, Frame[Unknown] Xtest, Frame[
 return(Frame[Unknown] Xtrain, Frame[Unknown] Xtest)
 {
   if(cv)
-    Xtrain = utils::stringProcessing(data=Xtrain, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
+    Xtrain = utils::stringProcessing(train=Xtrain, test=Xtrain, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
   else
   {
     # # # binding train and test to use same dictionary for both
-    XAll = utils::stringProcessing(data=rbind(Xtrain, Xtest), mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
-    Xtrain = XAll[1:nrow(Xtrain),]
-    Xtest = XAll[nrow(Xtrain)+1:nrow(XAll),]
+    [Xtrain, Xtest] = utils::stringProcessing(train=Xtrain, test=Xtest, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
   }
 }
 
@@ -196,10 +223,10 @@ return(Double dirtyScore, Matrix[Double] evalFunHp)
  
   prefix = as.scalar(ctx["prefix"]);
   mask = as.matrix(metaList['mask']) 
-  mask = ifelse(sum(mask == dmask) < ncol(mask), dmask, mask)
+  mask = ifelse(sum(mask == dmask) < ncol(mask), matrix(1, rows=1, cols=ncol(mask)), mask)
   [eXtrain, eXtest] = recodeData(X, Xtest, mask, cv, "recode")
-  eXtrain = replace(target=eXtrain, pattern=NaN, replacement = 0)
-  eXtest = replace(target=eXtest, pattern=NaN, replacement = 0)
+  eXtrain = replace(target=eXtrain, pattern=NaN, replacement = 1)
+  eXtest = replace(target=eXtest, pattern=NaN, replacement = 1)
   dirtyScore = 100
   print(prefix+" sample from train data and dummy code");
   [eXtrain, Ytrain] =  utils::doSample(eXtrain, Y, sample, TRUE)
@@ -209,14 +236,15 @@ return(Double dirtyScore, Matrix[Double] evalFunHp)
   print(prefix+" hyper-parameter tuning");
   if(cv) {
     score = crossV(X=eXtrain, y=Ytrain, cvk=cvk, evalFunHp=evalFunHp,
-      pipList=pipList, metaList=metaList, evalFunc=evaluationFunc, trainML = 1)
+      pipList=pipList, metaList=metaList, evalFunc=evaluationFunc)
   }
   else {
-    score = eval(evaluationFunc, list(X=eXtrain, Y=Ytrain, Xtest=eXtest, Ytest=Ytest, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = 1))
+    score = eval(evaluationFunc, list(X=eXtrain, Y=Ytrain, Xtest=eXtest, Ytest=Ytest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
   }
 
   dirtyScore = as.scalar(score[1, 1])
   evalFunHp = score[1, 2:ncol(score)]
+  print("Dirty Accuracy: "+dirtyScore)
 }
 
 recodeData = function(Frame[Unknown] Xtrain, Frame[Unknown] Xtest, Matrix[Double] mask, Boolean cv, String code)

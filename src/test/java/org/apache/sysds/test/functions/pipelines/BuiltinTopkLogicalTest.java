@@ -50,7 +50,7 @@ public class BuiltinTopkLogicalTest extends AutomatedTestBase {
 
 	@Test
 	public void testLogical1() {
-		runTestLogical(4, 5, 2, ExecMode.SINGLE_NODE);
+		runTestLogical(4, 2, 2, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
@@ -64,6 +64,9 @@ public class BuiltinTopkLogicalTest extends AutomatedTestBase {
 	}
 
 	private void runTestLogical(int max_iter,  int num_inst, int num_exec,  Types.ExecMode et) {
+
+//		setOutputBuffering(true);
+
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {

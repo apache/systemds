@@ -19,28 +19,28 @@
 #
 #-------------------------------------------------------------
 
-
 # Builtin function for handing class imbalance using Synthetic Minority Over-sampling Technique (SMOTE)
 # by Nitesh V. Chawla et. al. In Journal of Artificial Intelligence Research 16 (2002). 321–357
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double   ---       Matrix of minority class samples 
-# mask             Double   ---       0/1 mask vector where 0 represent numeric value and 1 represent categorical value
-# s               Integer   25       Amount of SMOTE (percentage of oversampling), integral multiple of 100
-# k               Integer   1        Number of nearest neighbour
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME        TYPE             DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X           Matrix[Double]   ---         Matrix of minority class samples
+# mask        Matrix[Double]   ---         0/1 mask vector where 0 represent numeric value and 1 represent categorical value
+# s           Integer          25          Amount of SMOTE (percentage of oversampling), integral multiple of 100
+# k           Integer          1           Number of nearest neighbour
+# verbose     Boolean          FALSE       if the algorithm should be verbose
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME        TYPE                         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y           Matrix[Double]               Matrix of (N/100)-1 * nrow(X) synthetic minority class samples
+# ----------------------------------------------------------------------------------------------------------------------
 
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# Y               Double   ---       Matrix of (N/100)-1 * nrow(X) synthetic minority class samples 
-
-m_smote = function(Matrix[Double] X, Matrix[Double] mask, Integer s = 200, Integer k = 1, Boolean verbose = FALSE) 
+m_smote = function(Matrix[Double] X, Matrix[Double] mask, Integer s = 200, Integer k = 1, Boolean verbose = FALSE)
 return (Matrix[Double] Y) {
 
   if(s < 100 | (s%%100) != 0)
@@ -53,7 +53,7 @@ return (Matrix[Double] Y) {
     k = 1
   }
   if(ncol(mask) != ncol(X))
-    stop("column mismatch: no. of columns in mask vector should be equal to no. of columns in data matrix")
+    stop("smote: column mismatch, no. of columns in mask vector should be equal to no. of columns in data matrix")
   
   # matrix to keep the index of KNN for each minority sample
   knn_index = matrix(0,k,nrow(X))

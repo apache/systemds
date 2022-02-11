@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 if($3) {
-	A = rbind(read($4), read($5), read($6), read($7));
+  A = rbind(read($4), read($5), read($6), read($7));
 }
 else { A = read($4); }
 s = quantile (A, $1);

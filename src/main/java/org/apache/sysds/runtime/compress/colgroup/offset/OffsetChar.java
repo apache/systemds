@@ -389,15 +389,15 @@ public class OffsetChar extends AOffset {
 		}
 
 		@Override
-		public void next() {
+		public int next() {
 			char v = offsets[index];
 			while(v == 0) {
 				offset += maxV;
 				index++;
 				v = offsets[index];
 			}
-			offset += v & 0xFF;
 			index++;
+			return offset += v & 0xFF;
 		}
 	}
 }

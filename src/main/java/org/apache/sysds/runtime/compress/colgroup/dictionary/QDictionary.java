@@ -388,6 +388,12 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
+	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1, int t2,
+		int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
+		throw new NotImplementedException("Not implemented yet");
+	}
+
+	@Override
 	public boolean isLossy() {
 		return false;
 	}

@@ -577,10 +577,26 @@ public class Dictionary extends ADictionary {
 	@Override
 	public void addToEntry(double[] v, int fr, int to, int nCol) {
 		final int sf = fr * nCol; // start from
-		final int ef = sf + nCol; // end from
 		final int st = to * nCol; // start to
-		for(int i = sf, j = st; i < ef; i++, j++)
+		addToOffsets(v, sf, st, nCol);
+	}
+
+	private void addToOffsets(double[] v, int sf, int st, int nCol) {
+		for(int i = sf, j = st; i < sf + nCol; i++, j++)
 			v[j] += _values[i];
+	}
+
+	@Override
+	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
+		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
+		addToOffsets(v, f1 * nCol, t1 * nCol, nCol);
+		addToOffsets(v, f2 * nCol, t2 * nCol, nCol);
+		addToOffsets(v, f3 * nCol, t3 * nCol, nCol);
+		addToOffsets(v, f4 * nCol, t4 * nCol, nCol);
+		addToOffsets(v, f5 * nCol, t5 * nCol, nCol);
+		addToOffsets(v, f6 * nCol, t6 * nCol, nCol);
+		addToOffsets(v, f7 * nCol, t7 * nCol, nCol);
+		addToOffsets(v, f8 * nCol, t8 * nCol, nCol);
 	}
 
 	@Override

@@ -59,16 +59,20 @@ public class CoCodeGreedy extends AColumnCoCoder {
 	private static List<CompressedSizeInfoColGroup> coCodeBruteForce(List<CompressedSizeInfoColGroup> inputColumns,
 		ICostEstimate cEst, Memorizer mem, int k) {
 
-		List<ColIndexes> workSet = new ArrayList<>(inputColumns.size());
-
+		final List<ColIndexes> workSet = new ArrayList<>(inputColumns.size());
 		final boolean workloadCost = cEst instanceof ComputationCostEstimator;
+
+		// assume that we can at max reduce 90 % of cost if joined
+		// assume that we can max reduce 65% of compute cost if joined
+		final double costFilterThreshold = (workloadCost ? 0.65 : 0.9);
 
 		for(int i = 0; i < inputColumns.size(); i++)
 			workSet.add(new ColIndexes(inputColumns.get(i).getColumns()));
 
-		parallelFirstJoin(workSet, mem, cEst, k);
+		if(k > 1)
+			parallelFirstJoin(workSet, mem, cEst, costFilterThreshold, k);
 
-		// process merging iterations until no more change
+		// Process merging iterations until no more change
 		while(workSet.size() > 1) {
 			double changeInCost = 0;
 			CompressedSizeInfoColGroup tmp = null;
@@ -87,22 +91,20 @@ public class CoCodeGreedy extends AColumnCoCoder {
 					// it still does not improve compression.
 					// In the case of workload we relax the requirement for the filter.
 					// if(-Math.min(costC1, costC2) > changeInCost)
-					if(-Math.min(costC1, costC2) * (workloadCost ? 0.7 : 1) > changeInCost)
+					if(-Math.min(costC1, costC2) * costFilterThreshold > changeInCost)
 						continue;
 
 					// Join the two column groups.
 					// and Memorize the new join.
 					final CompressedSizeInfoColGroup c1c2Inf = mem.getOrCreate(c1, c2);
 					final double costC1C2 = cEst.getCostOfColumnGroup(c1c2Inf);
-
-					final double newSizeChangeIfSelected = costC1C2 - costC1 - costC2;
+					final double newCostIfJoined = costC1C2 - costC1 - costC2;
 
 					// Select the best join of either the currently selected
 					// or keep the old one.
-					if((tmp == null && newSizeChangeIfSelected < changeInCost) ||
-						tmp != null && (newSizeChangeIfSelected < changeInCost || newSizeChangeIfSelected == changeInCost &&
-							c1c2Inf.getColumns().length < tmp.getColumns().length)) {
-						changeInCost = newSizeChangeIfSelected;
+					if((tmp == null && newCostIfJoined < changeInCost) || tmp != null && (newCostIfJoined < changeInCost ||
+						newCostIfJoined == changeInCost && c1c2Inf.getColumns().length < tmp.getColumns().length)) {
+						changeInCost = newCostIfJoined;
 						tmp = c1c2Inf;
 						selected1 = c1;
 						selected2 = c2;
@@ -119,35 +121,27 @@ public class CoCodeGreedy extends AColumnCoCoder {
 			else
 				break;
 		}
+		
 		if(LOG.isDebugEnabled())
 			LOG.debug("Memorizer stats:" + mem.stats());
 		mem.resetStats();
 
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(workSet.size());
-
 		for(ColIndexes w : workSet)
 			ret.add(mem.get(w));
 
 		return ret;
 	}
 
-	protected static void parallelFirstJoin(List<ColIndexes> workSet, Memorizer mem, ICostEstimate cEst, int k) {
+	protected static void parallelFirstJoin(List<ColIndexes> workSet, Memorizer mem, ICostEstimate cEst,
+		double costFilterThreshold, int k) {
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
-			List<JoinTask> tasks = new ArrayList<>();
-			for(int i = 0; i < workSet.size(); i++)
-				for(int j = i + 1; j < workSet.size(); j++) {
-					final ColIndexes c1 = workSet.get(i);
-					final ColIndexes c2 = workSet.get(j);
-
-					final int csi1 = mem.get(c1).getNumVals();
-					final int csi2 = mem.get(c2).getNumVals();
-
-					if(csi1 * csi2 > 10000)
-						continue;
-
+			final ExecutorService pool = CommonThreadPool.get(k);
+			final List<JoinTask> tasks = new ArrayList<>();
+			final int size = workSet.size();
+			for(int i = 0; i < size; i++)
+				for(int j = i + 1; j < size; j++)
 					tasks.add(new JoinTask(workSet.get(i), workSet.get(j), mem));
-				}
 
 			for(Future<Object> t : pool.invokeAll(tasks))
 				t.get();

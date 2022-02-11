@@ -457,15 +457,6 @@ public abstract class ADictionary implements Serializable {
 	 */
 	public abstract long getNumberNonZerosWithReference(int[] counts, double[] reference, int nRows);
 
-	// /**
-	//  * Single column version of copy add to entry.
-	//  * 
-	//  * @param v    the target dictionary (dense double array)
-	//  * @param fr Take from this index
-	//  * @param to put into index in d.
-	//  */
-	// public abstract void addToEntry(double[] v, int fr, int to);
-
 	/**
 	 * Copies and adds the dictionary entry from this dictionary to the d dictionary
 	 * 
@@ -475,6 +466,9 @@ public abstract class ADictionary implements Serializable {
 	 * @param nCol the number of columns
 	 */
 	public abstract void addToEntry(double[] v, int fr, int to, int nCol);
+
+	public abstract void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
+		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol);
 
 	/**
 	 * Allocate a new dictionary where the tuple given is subtracted from all tuples in the previous dictionary.

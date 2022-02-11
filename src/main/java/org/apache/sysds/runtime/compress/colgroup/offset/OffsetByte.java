@@ -778,9 +778,9 @@ public class OffsetByte extends AOffset {
 		}
 
 		@Override
-		public void next() {
-			offset += offsets[index++];
-		};
+		public int next() {
+			return offset += offsets[index++];
+		}
 	}
 
 	private class OffsetByteIterator extends AOffsetIterator {
@@ -793,15 +793,15 @@ public class OffsetByte extends AOffset {
 		}
 
 		@Override
-		public void next() {
+		public int next() {
 			byte v = offsets[index];
 			while(v == 0) {
 				offset += maxV;
 				index++;
 				v = offsets[index];
 			}
-			offset += v & 0xFF;
 			index++;
+			return offset += v & 0xFF;
 		}
 	}
 
@@ -815,8 +815,8 @@ public class OffsetByte extends AOffset {
 		}
 
 		@Override
-		public void next() {
-			offset += offsets[index++] & 0xFF;
+		public int next() {
+			return offset += offsets[index++] & 0xFF;
 		}
 	}
 }

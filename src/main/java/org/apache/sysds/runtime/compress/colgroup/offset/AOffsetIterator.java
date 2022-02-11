@@ -39,7 +39,7 @@ public abstract class AOffsetIterator {
 	}
 
 	/** Increment the pointer */
-	public abstract void next();
+	public abstract int next();
 
 	/**
 	 * Get the current index value, note this correspond to a row index in the original matrix.

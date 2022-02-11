@@ -172,6 +172,8 @@ public class MappingTests {
 			// intensionally not containing breaks.
 			case BIT:
 				compare(MapToFactory.resize(m, 5), m);
+			case UBYTE:
+				compare(MapToFactory.resize(m, 200), m);
 			case BYTE:
 				compare(MapToFactory.resize(m, 526), m);
 			case CHAR:
@@ -191,7 +193,8 @@ public class MappingTests {
 	protected static void compare(AMapToData a, AMapToData b) {
 		final int size = Math.max(a.size(), b.size());
 		for(int i = 0; i < size; i++)
-			assertEquals("Not equal values", a.getIndex(i), b.getIndex(i));
+			if(a.getIndex(i) != b.getIndex(i))
+				fail("Not equal values:\n" + a + "\n" + b);
 	}
 
 	@Test

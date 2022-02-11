@@ -24,11 +24,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
-import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -48,6 +45,12 @@ public class MapToChar extends AMapToData {
 		super(unique);
 		_data = data;
 	}
+
+	@Override
+	public MAP_TYPE getType(){
+		return MapToFactory.MAP_TYPE.CHAR;
+	}
+
 
 	@Override
 	public int getIndex(int n) {
@@ -136,35 +139,32 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
-	protected void preAggregateDenseToRow(double[] mV, int off, double[] preAV, int cl, int cu) {
+	protected void preAggregateDenseSingleRow(double[] mV, int off, double[] preAV, int cl, int cu) {
 		if(cu - cl > 1000)
 			preAggregateDenseToRowBy8(mV, preAV, cl, cu, off);
-		else {
-			off += cl;
-			for(int rc = cl; rc < cu; rc++, off++)
-				preAV[_data[rc]] += mV[off];
-		}
+		else
+			super.preAggregateDenseSingleRow(mV, off, preAV, cl, cu);
 	}
 
-	@Override
-	protected void preAggregateDenseRows(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu) {
-		final int nVal = getUnique();
-		final DenseBlock db = m.getDenseBlock();
-		if(db.isContiguous()) {
-			final double[] mV = m.getDenseBlockValues();
-			final int nCol = m.getNumColumns();
-			for(int c = cl; c < cu; c++) {
-				final int idx = getIndex(c);
-				final int start = c + nCol * rl;
-				final int end = c + nCol * ru;
-				for(int offOut = idx, off = start; off < end; offOut += nVal, off += nCol) {
-					preAV[offOut] += mV[off];
-				}
-			}
-		}
-		else
-			throw new NotImplementedException();
-	}
+	// @Override
+	// protected void preAggregateDenseMultiRow(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu) {
+	// final int nVal = getUnique();
+	// final DenseBlock db = m.getDenseBlock();
+	// if(db.isContiguous()) {
+	// final double[] mV = m.getDenseBlockValues();
+	// final int nCol = m.getNumColumns();
+	// for(int c = cl; c < cu; c++) {
+	// final int idx = getIndex(c);
+	// final int start = c + nCol * rl;
+	// final int end = c + nCol * ru;
+	// for(int offOut = idx, off = start; off < end; offOut += nVal, off += nCol) {
+	// preAV[offOut] += mV[off];
+	// }
+	// }
+	// }
+	// else
+	// throw new NotImplementedException();
+	// }
 
 	@Override
 	public void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
@@ -181,26 +181,26 @@ public class MapToChar extends AMapToData {
 		return Character.MAX_VALUE;
 	}
 
-	@Override
-	public int[] getCounts(int[] counts) {
-		final int sz = size();
-		for(int i = 0; i < sz; i++)
-			counts[_data[i]]++;
-		return counts;
-	}
+	// @Override
+	// public int[] getCounts(int[] counts) {
+	// 	final int sz = size();
+	// 	for(int i = 0; i < sz; i++)
+	// 		counts[_data[i]]++;
+	// 	return counts;
+	// }
 
-	@Override
-	public void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v) {
-		for(int r = 0; r < size(); r++)
-			v[getIndex(r)] += td[tm.getIndex(r)];
-	}
+	// @Override
+	// public void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v) {
+	// for(int r = 0; r < size(); r++)
+	// v[getIndex(r)] += td[tm.getIndex(r)];
+	// }
 
-	@Override
-	public void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
-		final int nRows = size();
-		for(int r = 0; r < nRows; r++)
-			td.addToEntry(v, tm.getIndex(r), getIndex(r), nCol);
-	}
+	// @Override
+	// public void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
+	// final int nRows = size();
+	// for(int r = 0; r < nRows; r++)
+	// td.addToEntry(v, tm.getIndex(r), getIndex(r), nCol);
+	// }
 
 	// @Override
 	// public void preAggregateSDCZ_SDCZMultiCol(AMapToData tm, ADictionary td, AOffset tof, AOffset of, Dictionary ret,

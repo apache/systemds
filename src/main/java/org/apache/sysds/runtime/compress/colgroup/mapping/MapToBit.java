@@ -24,11 +24,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
-import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -50,6 +48,11 @@ public class MapToBit extends AMapToData {
 		super(unique);
 		_data = d;
 		_size = size;
+	}
+
+	@Override
+	public MAP_TYPE getType() {
+		return MapToFactory.MAP_TYPE.BIT;
 	}
 
 	@Override
@@ -123,33 +126,6 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	protected void preAggregateDenseToRow(double[] mV, int off, double[] preAV, int cl, int cu) {
-		off += cl;
-		for(int rc = cl; rc < cu; rc++, off++)
-			preAV[_data.get(rc) ? 1 : 0] += mV[off];
-	}
-
-	@Override
-	protected void preAggregateDenseRows(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu) {
-		final int nVal = getUnique();
-		final DenseBlock db = m.getDenseBlock();
-		if(db.isContiguous()) {
-			final double[] mV = m.getDenseBlockValues();
-			final int nCol = m.getNumColumns();
-			for(int c = cl; c < cu; c++) {
-				final int idx = getIndex(c);
-				final int start = c + nCol * rl;
-				final int end = c + nCol * ru;
-				for(int offOut = idx, off = start; off < end; offOut += nVal, off += nCol) {
-					preAV[offOut] += mV[off];
-				}
-			}
-		}
-		else
-			throw new NotImplementedException();
-	}
-
-	@Override
 	public void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
 		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), _data);
 	}
@@ -182,9 +158,8 @@ public class MapToBit extends AMapToData {
 	public void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v) {
 		if(tm instanceof MapToBit)
 			preAggregateDDCSingleColBitBit((MapToBit) tm, td, v);
-		else
-			for(int r = 0; r < size(); r++)
-				v[getIndex(r)] += td[tm.getIndex(r)];
+		else // fallback
+			super.preAggregateDDC_DDCSingleCol(tm, td, v);
 	}
 
 	private void preAggregateDDCSingleColBitBit(MapToBit tmb, double[] td, double[] v) {
@@ -202,11 +177,8 @@ public class MapToBit extends AMapToData {
 	public void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
 		if(tm instanceof MapToBit)
 			preAggregateDDCMultiColBitBit((MapToBit) tm, td, v, nCol);
-		else {
-			final int nRows = size();
-			for(int r = 0; r < nRows; r++)
-				td.addToEntry(v, tm.getIndex(r), getIndex(r), nCol);
-		}
+		else // fallback
+			super.preAggregateDDC_DDCMultiCol(tm, td, v, nCol);
 	}
 
 	private void preAggregateDDCMultiColBitBit(MapToBit tmb, ADictionary td, double[] v, int nCol) {

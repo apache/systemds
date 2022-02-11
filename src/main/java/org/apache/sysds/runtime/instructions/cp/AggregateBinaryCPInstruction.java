@@ -120,8 +120,11 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		}
 
 		ret = matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
+
+		if(!transposeLeft)
+			ec.releaseMatrixInput(input1.getName());
+		if(!transposeRight)
+			ec.releaseMatrixInput(input2.getName());
 		ec.setMatrixOutput(output.getName(), ret);
 	}
 

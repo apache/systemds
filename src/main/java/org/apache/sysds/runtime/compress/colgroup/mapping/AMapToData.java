@@ -23,10 +23,12 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -155,6 +157,8 @@ public abstract class AMapToData implements Serializable {
 	 */
 	public abstract void replace(int v, int r);
 
+	public abstract MAP_TYPE getType();
+
 	/**
 	 * Pre aggregate a dense matrix m into pre, subject to only including a row segment and column segment.
 	 * 
@@ -168,9 +172,9 @@ public abstract class AMapToData implements Serializable {
 	public final void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu) {
 		final DenseBlock db = m.getDenseBlock();
 		if(rl == ru - 1)
-			preAggregateDenseToRow(db.values(rl), db.pos(rl), preAV, cl, cu);
+			preAggregateDenseSingleRow(db.values(rl), db.pos(rl), preAV, cl, cu);
 		else
-			preAggregateDenseRows(m, preAV, rl, ru, cl, cu);
+			preAggregateDenseMultiRow(m, preAV, rl, ru, cl, cu);
 	}
 
 	/**
@@ -182,7 +186,11 @@ public abstract class AMapToData implements Serializable {
 	 * @param cl    The column index to start at
 	 * @param cu    The column index to stop at (not inclusive)
 	 */
-	protected abstract void preAggregateDenseToRow(double[] mV, int off, double[] preAV, int cl, int cu);
+	protected void preAggregateDenseSingleRow(double[] mV, int off, double[] preAV, int cl, int cu) {
+		off += cl;
+		for(int rc = cl; rc < cu; rc++, off++)
+			preAV[getIndex(rc)] += mV[off];
+	}
 
 	/**
 	 * PreAggregate from Dense Matrix, and handle multiple rows,
@@ -194,7 +202,24 @@ public abstract class AMapToData implements Serializable {
 	 * @param cl    The column to start at
 	 * @param cu    The column to end at (not inclusive)
 	 */
-	protected abstract void preAggregateDenseRows(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu);
+	protected void preAggregateDenseMultiRow(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu) {
+		final int nVal = getUnique();
+		final DenseBlock db = m.getDenseBlock();
+		if(db.isContiguous()) {
+			final double[] mV = m.getDenseBlockValues();
+			final int nCol = m.getNumColumns();
+			for(int c = cl; c < cu; c++) {
+				final int idx = getIndex(c);
+				final int start = c + nCol * rl;
+				final int end = c + nCol * ru;
+				for(int offOut = idx, off = start; off < end; offOut += nVal, off += nCol) {
+					preAV[offOut] += mV[off];
+				}
+			}
+		}
+		else
+			throw new NotImplementedException();
+	}
 
 	/**
 	 * PreAggregate a Dense Matrix at index offsets.
@@ -228,7 +253,12 @@ public abstract class AMapToData implements Serializable {
 	 * @param counts The object to return.
 	 * @return the Counts
 	 */
-	public abstract int[] getCounts(int[] counts);
+	public int[] getCounts(int[] counts) {
+		final int sz = size();
+		for(int i = 0; i < sz; i++)
+			counts[getIndex(i)]++;
+		return counts;
+	}
 
 	/**
 	 * PreAggregate into dictionary with two sides of DDC.
@@ -252,7 +282,11 @@ public abstract class AMapToData implements Serializable {
 	 * @param td  Dictionary to take values from (other side dictionary)
 	 * @param ret The output dictionary to aggregate into
 	 */
-	protected abstract void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v);
+	protected void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v) {
+		final int sz = size();
+		for(int r = 0; r < sz; r++)
+			v[getIndex(r)] += td[tm.getIndex(r)];
+	}
 
 	/**
 	 * PreAggregate into dictionary with two sides of DDC guaranteed to multiple column tuples.
@@ -262,7 +296,11 @@ public abstract class AMapToData implements Serializable {
 	 * @param ret  The output dictionary to aggregate into
 	 * @param nCol The number of columns
 	 */
-	protected abstract void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol);
+	protected void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
+		final int sz = size();
+		for(int r = 0; r < sz; r++)
+			td.addToEntry(v, tm.getIndex(r), getIndex(r), nCol);
+	}
 
 	/**
 	 * PreAggregate into SDCZero dictionary from DDC dictionary.
@@ -294,17 +332,59 @@ public abstract class AMapToData implements Serializable {
 	}
 
 	public void preAggregateDDC_SDCZMultiCol(AMapToData tm, ADictionary td, AOffset tof, double[] v, int nCol) {
-		final AOffsetIterator itThat = tof.getOffsetIterator();
+		final AOffsetIterator it = tof.getOffsetIterator();
 		final int size = tm.size() - 1;
-		for(int i = 0; i < size; i++) {
-			final int to = getIndex(itThat.value());
+		int i = (size > 8) ? preAggregateDDC_SDCZMultiCol_vect(tm, td, tof, v, nCol, it, size) : 0;
+
+		for(; i < size; i++) {
+			final int to = getIndex(it.value());
 			final int fr = tm.getIndex(i);
 			td.addToEntry(v, fr, to, nCol);
-			itThat.next();
+			it.next();
 		}
-		final int to = getIndex(itThat.value());
+
+		final int to = getIndex(it.value());
 		final int fr = tm.getIndex(size);
 		td.addToEntry(v, fr, to, nCol);
+	}
+
+	private int preAggregateDDC_SDCZMultiCol_vect(AMapToData tm, ADictionary td, AOffset tof, double[] v, int nCol,
+		AOffsetIterator it, int size) {
+		final int h = size % 8;
+		int i = 0;
+		while(i < size - h) {
+			int t1 = it.value();
+			int t2 = it.next();
+			int t3 = it.next();
+			int t4 = it.next();
+			int t5 = it.next();
+			int t6 = it.next();
+			int t7 = it.next();
+			int t8 = it.next();
+
+			t1 = getIndex(t1);
+			t2 = getIndex(t2);
+			t3 = getIndex(t3);
+			t4 = getIndex(t4);
+			t5 = getIndex(t5);
+			t6 = getIndex(t6);
+			t7 = getIndex(t7);
+			t8 = getIndex(t8);
+
+			int f1 = tm.getIndex(i);
+			int f2 = tm.getIndex(i + 1);
+			int f3 = tm.getIndex(i + 2);
+			int f4 = tm.getIndex(i + 3);
+			int f5 = tm.getIndex(i + 4);
+			int f6 = tm.getIndex(i + 5);
+			int f7 = tm.getIndex(i + 6);
+			int f8 = tm.getIndex(i + 7);
+
+			i += 8;
+			it.next();
+			td.addToEntryVectorized(v, f1, f2, f3, f4, f5, f6, f7, f8, t1, t2, t3, t4, t5, t6, t7, t8, nCol);
+		}
+		return i;
 	}
 
 	/**
@@ -328,14 +408,10 @@ public abstract class AMapToData implements Serializable {
 		final int size = size() - 1;
 
 		for(int i = 0; i < size; i++) {
-			final int to = getIndex(i);
-			final int fr = tm.getIndex(itThis.value());
-			v[to] += td[fr];
+			v[getIndex(i)] += td[tm.getIndex(itThis.value())];
 			itThis.next();
 		}
-		final int to = getIndex(size);
-		final int fr = tm.getIndex(itThis.value());
-		v[to] += td[fr];
+		v[getIndex(size)] += td[tm.getIndex(itThis.value())];
 	}
 
 	protected void preAggregateSDCZ_DDCMultiCol(AMapToData tm, ADictionary td, AOffset of, double[] v, int nCol) {
@@ -343,14 +419,10 @@ public abstract class AMapToData implements Serializable {
 		final int size = size() - 1;
 
 		for(int i = 0; i < size; i++) {
-			final int to = getIndex(i);
-			final int fr = tm.getIndex(itThis.value());
-			td.addToEntry(v, fr, to, nCol);
+			td.addToEntry(v, tm.getIndex(itThis.value()), getIndex(i), nCol);
 			itThis.next();
 		}
-		final int to = getIndex(size);
-		final int fr = tm.getIndex(itThis.value());
-		td.addToEntry(v, fr, to, nCol);
+		td.addToEntry(v, tm.getIndex(itThis.value()), getIndex(size), nCol);
 	}
 
 	public final void preAggregateSDCZ_SDCZ(AMapToData tm, ADictionary td, AOffset tof, AOffset of, Dictionary ret,
@@ -371,27 +443,23 @@ public abstract class AMapToData implements Serializable {
 	protected void preAggregateSDCZ_SDCZSingleCol(AMapToData tm, double[] td, double[] dv, AOffsetIterator itThat,
 		AOffsetIterator itThis, int tSize, int size) {
 
-		int i = 0, j = 0;
-
+		int i = 0, j = 0, tv = itThat.value(), v = itThis.value();
+		
 		// main preAggregate process
 		while(i < tSize && j < size) {
-			final int tv = itThat.value();
-			final int v = itThis.value();
 			if(tv == v) {
-				final int fr = tm.getIndex(i);
-				final int to = getIndex(j);
-				dv[to] += td[fr];
-				itThat.next();
-				itThis.next();
+				dv[getIndex(j)] += td[tm.getIndex(i)];
+				tv = itThat.next();
+				v = itThis.next();
 				i++;
 				j++;
 			}
 			else if(tv < v) {
-				itThat.next();
+				tv = itThat.next();
 				i++;
 			}
 			else {
-				itThis.next();
+				v = itThis.next();
 				j++;
 			}
 		}

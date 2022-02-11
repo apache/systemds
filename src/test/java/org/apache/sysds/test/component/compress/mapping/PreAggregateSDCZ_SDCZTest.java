@@ -32,11 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
-import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
-import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -112,16 +108,10 @@ public class PreAggregateSDCZ_SDCZTest {
 		int offR2, int seed) {
 		final Random r = new Random(seed);
 
-		AOffset of = createOffset(offR1, nRows, r);
-		AOffset tof = createOffset(offR2, nRows, r);
-
-		AMapToData tm = MapToFactory.create(tof.getSize(), nUnique2);
-		for(int i = 0; i < tof.getSize(); i++)
-			tm.set(i, r.nextInt(nUnique2));
-
-		AMapToData m = MapToFactory.create(of.getSize(), nUnique1);
-		for(int i = 0; i < of.getSize(); i++)
-			m.set(i, r.nextInt(nUnique1));
+		final AOffset of = MappingTestUtil.createRandomOffset(offR1, nRows, r);
+		final AOffset tof = MappingTestUtil.createRandomOffset(offR2, nRows, r);
+		final AMapToData m = MappingTestUtil.createRandomMap(of.getSize(), nUnique1, r);
+		final AMapToData tm = MappingTestUtil.createRandomMap(tof.getSize(), nUnique2, r);
 
 		double[] dv = new double[nUnique2 * nCol];
 		ADictionary td = new Dictionary(dv);
@@ -143,107 +133,17 @@ public class PreAggregateSDCZ_SDCZTest {
 		}
 	}
 
-	private static AOffset createOffset(int offRange, int nRows, Random r) {
-		IntArrayList offs = new IntArrayList();
-		int off = r.nextInt(offRange);
-		if(off < nRows)
-			offs.appendValue(off);
-		while(off < nRows) {
-			off += r.nextInt(offRange) + 1;
-			if(off < nRows)
-				offs.appendValue(off);
-		}
-		return OffsetFactory.createOffset(offs);
-	}
-
 	private static void createAllPermutations(ArrayList<Object[]> tests, AMapToData m, AMapToData tm, AOffset tof,
 		AOffset of, int nUnique1, int nUnique2, ADictionary td, double[] exp, int nCol) {
-		// assert the number of mapTypes, to ensure that if someone adds new ones we add them here.
-		assertTrue(MAP_TYPE.values().length == 4);
-
-		// a little nasty code but it works with testing all combinations possible to construct from the input type.
-		if(nUnique1 <= 2) {// bit org
-			AMapToData m_byte = MapToFactory.resizeForce(m, MAP_TYPE.BYTE);
-			AMapToData m_char = MapToFactory.resizeForce(m, MAP_TYPE.CHAR);
-			AMapToData m_int = MapToFactory.resizeForce(m, MAP_TYPE.INT);
-			if(nUnique2 <= 2) { // bit org
-				AMapToData tm_byte = MapToFactory.resizeForce(tm, MAP_TYPE.BYTE);
-				AMapToData tm_char = MapToFactory.resizeForce(tm, MAP_TYPE.CHAR);
-				AMapToData tm_int = MapToFactory.resizeForce(tm, MAP_TYPE.INT);
-				createFromList(tests, m, td, tof, of, nCol, exp, tm_byte, tm_char, tm_int);
-				createFromList(tests, m_byte, td, tof, of, nCol, exp, tm, tm_byte, tm_char, tm_int);
-				createFromList(tests, m_char, td, tof, of, nCol, exp, tm, tm_byte, tm_char, tm_int);
-				createFromList(tests, m_int, td, tof, of, nCol, exp, tm, tm_byte, tm_char, tm_int);
-			}
-			else if(nUnique2 < 256) { // byte org
-				AMapToData tm_char = MapToFactory.resizeForce(tm, MAP_TYPE.CHAR);
-				AMapToData tm_int = MapToFactory.resizeForce(tm, MAP_TYPE.INT);
-				createFromList(tests, m, td, tof, of, nCol, exp, tm_char, tm_int);
-				createFromList(tests, m_byte, td, tof, of, nCol, exp, tm, tm_char, tm_int);
-				createFromList(tests, m_char, td, tof, of, nCol, exp, tm, tm_char, tm_int);
-				createFromList(tests, m_int, td, tof, of, nCol, exp, tm, tm_char, tm_int);
-			}
-			else { // char org
-				AMapToData tm_int = MapToFactory.resizeForce(tm, MAP_TYPE.INT);
-				createFromList(tests, m, td, tof, of, nCol, exp, tm_int);
-				createFromList(tests, m_byte, td, tof, of, nCol, exp, tm, tm_int);
-				createFromList(tests, m_char, td, tof, of, nCol, exp, tm, tm_int);
-				createFromList(tests, m_int, td, tof, of, nCol, exp, tm, tm_int);
-			}
-		}
-		else if(nUnique1 < 256) { // byte org
-			AMapToData m_char = MapToFactory.resizeForce(m, MAP_TYPE.CHAR);
-			AMapToData m_int = MapToFactory.resizeForce(m, MAP_TYPE.INT);
-			if(nUnique2 < 2) { // bit org
-				AMapToData tm_byte = MapToFactory.resizeForce(tm, MAP_TYPE.BYTE);
-				AMapToData tm_char = MapToFactory.resizeForce(tm, MAP_TYPE.CHAR);
-				AMapToData tm_int = MapToFactory.resizeForce(tm, MAP_TYPE.INT);
-				createFromList(tests, m, td, tof, of, nCol, exp, tm_byte, tm_char, tm_int);
-				createFromList(tests, m_char, td, tof, of, nCol, exp, tm, tm_byte, tm_char, tm_int);
-				createFromList(tests, m_int, td, tof, of, nCol, exp, tm, tm_byte, tm_char, tm_int);
-			}
-			else if(nUnique2 < 256) { // byte org
-				AMapToData tm_char = MapToFactory.resizeForce(tm, MAP_TYPE.CHAR);
-				AMapToData tm_int = MapToFactory.resizeForce(tm, MAP_TYPE.INT);
-				createFromList(tests, m, td, tof, of, nCol, exp, tm_char, tm_int);
-				createFromList(tests, m_char, td, tof, of, nCol, exp, tm, tm_char, tm_int);
-				createFromList(tests, m_int, td, tof, of, nCol, exp, tm, tm_char, tm_int);
-			}
-			else { // char org
-				AMapToData tm_int = MapToFactory.resizeForce(tm, MAP_TYPE.INT);
-				createFromList(tests, m, td, tof, of, nCol, exp, tm_int);
-				createFromList(tests, m_char, td, tof, of, nCol, exp, tm, tm_int);
-				createFromList(tests, m_int, td, tof, of, nCol, exp, tm, tm_int);
-			}
-		}
-		else { // char org
-			AMapToData m_int = MapToFactory.resizeForce(m, MAP_TYPE.INT);
-			if(nUnique2 < 2) { // bit org
-				AMapToData tm_byte = MapToFactory.resizeForce(tm, MAP_TYPE.BYTE);
-				AMapToData tm_char = MapToFactory.resizeForce(tm, MAP_TYPE.CHAR);
-				AMapToData tm_int = MapToFactory.resizeForce(tm, MAP_TYPE.INT);
-				createFromList(tests, m, td, tof, of, nCol, exp, tm_byte, tm_char, tm_int);
-				createFromList(tests, m_int, td, tof, of, nCol, exp, tm, tm_byte, tm_char, tm_int);
-			}
-			else if(nUnique2 < 256) { // byte org
-				AMapToData tm_char = MapToFactory.resizeForce(tm, MAP_TYPE.CHAR);
-				AMapToData tm_int = MapToFactory.resizeForce(tm, MAP_TYPE.INT);
-
-				createFromList(tests, m, td, tof, of, nCol, exp, tm_char, tm_int);
-				createFromList(tests, m_int, td, tof, of, nCol, exp, tm, tm_char, tm_int);
-			}
-			else { // char org
-				AMapToData tm_int = MapToFactory.resizeForce(tm, MAP_TYPE.INT);
-				createFromList(tests, m, td, tof, of, nCol, exp, tm_int);
-				createFromList(tests, m_int, td, tof, of, nCol, exp, tm, tm_int);
-			}
-		}
+		AMapToData[] ml = MappingTestUtil.getAllHigherVersions(m);
+		AMapToData[] tml = MappingTestUtil.getAllHigherVersions(tm);
+		createFromList(tests, td, tof, of, nCol, exp, ml, tml);
 	}
 
-	private static void createFromList(ArrayList<Object[]> tests, AMapToData m, ADictionary td, AOffset tof, AOffset of,
-		int nCol, double[] exp, AMapToData... tm) {
-		for(AMapToData tme : tm) {
-			tests.add(new Object[] {m, tme, td, tof, of, nCol, exp});
-		}
+	private static void createFromList(ArrayList<Object[]> tests, ADictionary td, AOffset tof, AOffset of, int nCol,
+		double[] exp, AMapToData[] ml, AMapToData[] tml) {
+		for(AMapToData m : ml)
+			for(AMapToData tm : tml)
+				tests.add(new Object[] {m, tm, td, tof, of, nCol, exp});
 	}
 }

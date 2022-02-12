@@ -1,0 +1,63 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Date processing functionalities supported via map() function. 
+#
+# 1. convert date to number
+# 2. find dominating pattern in the date column and convert all dates in the date column accordingly
+# 3. addition and substraction on date column
+#
+# USAGE INFORMATION:
+# ---------------------------------------------------------------------------------------------------------------------------
+# Functionalities
+# ---------------------------------------------------------------------------------------------------------------------------
+# Date column gets converted to number (timestamp)        
+# Date column gets converted to dominant date format in the date column
+# Hours, mins, secs, and days added to date use formats ("d", "H", "ms", "s", "m" = minutes, "M" = months, "w", and "y")
+# Hours, mins, secs, and days subtracted from date
+
+#
+X = read($F, data_type="frame", format="csv", header=FALSE)
+valToAdd=$valToAdd
+test=$test
+Y = X
+if(test == "DOMINANT") # convert to dominant date format in the date column
+  Y[, 3] = map(X[, 3], "x -> UtilFunctions.getDominantDateFormat(x)", margin=2)
+else if(test == "DOMINANT_DAY") # convert to dominant format and add days
+{
+  D = map(X[, 3], "x -> UtilFunctions.getDominantDateFormat(x)", margin=2)
+  Y[, 3] = map(D, "x -> UtilFunctions.addTimeToDate(x, "+valToAdd+", \"d\")")
+
+}
+else if(test == "TIMESTAMP") # convert date to timestamp
+{
+  Y[, 3] = map(X[, 3], "x -> UtilFunctions.getTimestamp(x)", margin=2)
+}
+else if(test == "ADD_HOURS") # add hours to date
+{
+  Y[, 3] = map(X[, 3], "x -> UtilFunctions.addTimeToDate(x, "+valToAdd+", \"H\")")
+}
+else if(test == "SUB_MON") # add hours to date
+{
+  Y[, 2] = map(X[, 2], "x -> UtilFunctions.addTimeToDate(x, "+valToAdd+", \"M\")")
+}
+else 
+  print("test no supported")
+write(Y, $Y, format = "csv")

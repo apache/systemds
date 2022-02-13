@@ -55,7 +55,7 @@ import org.apache.sysds.utils.stats.TransformStatistics;
  */
 public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder> {
 	protected static final Log LOG = LogFactory.getLog(ColumnEncoder.class.getName());
-	protected static final int APPLY_ROW_BLOCKS_PER_COLUMN = 1;
+	public static int APPLY_ROW_BLOCKS_PER_COLUMN = -1;
 	public static int BUILD_ROW_BLOCKS_PER_COLUMN = -1;
 	private static final long serialVersionUID = 2299156350718979064L;
 	protected int _colID;
@@ -290,11 +290,11 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	 * complete if all previous tasks are done. This is so that we can use the last task as a dependency for the whole
 	 * build, reducing unnecessary dependencies.
 	 */
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock in, int nBuildPartition) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
 		int nRows = in.getNumRows();
-		int[] blockSizes = getBlockSizes(nRows, getNumBuildRowPartitions());
+		int[] blockSizes = getBlockSizes(nRows, nBuildPartition);
 		if(blockSizes.length == 1) {
 			tasks.add(getBuildTask(in));
 		}
@@ -325,10 +325,10 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 
-	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol){
+	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int nApplyPartitions, int outputCol) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
-		int[] blockSizes = getBlockSizes(in.getNumRows(), getNumApplyRowPartitions());
+		int[] blockSizes = getBlockSizes(in.getNumRows(), nApplyPartitions);
 		for(int startRow = 0, i = 0; i < blockSizes.length; startRow+=blockSizes[i], i++){
 			if(out.isInSparseFormat())
 				tasks.add(getSparseTask(in, out, outputCol, startRow, blockSizes[i]));

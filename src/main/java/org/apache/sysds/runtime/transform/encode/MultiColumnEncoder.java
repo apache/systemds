@@ -74,6 +74,7 @@ public class MultiColumnEncoder implements Encoder {
 	private EncoderOmit _legacyOmit = null;
 	private int _colOffset = 0; // offset for federated Workers who are using subrange encoders
 	private FrameBlock _meta = null;
+	private int[] _nPartitions = null;
 
 	public MultiColumnEncoder(List<ColumnEncoderComposite> columnEncoders) {
 		_columnEncoders = columnEncoders;
@@ -89,6 +90,7 @@ public class MultiColumnEncoder implements Encoder {
 
 	public MatrixBlock encode(CacheBlock in, int k) {
 		MatrixBlock out;
+		_nPartitions = getNumRowPartitions(in, k);
 		try {
 			if(k > 1 && !MULTI_THREADED_STAGES && !hasLegacyEncoder()) {
 				out = new MatrixBlock();
@@ -155,7 +157,7 @@ public class MultiColumnEncoder implements Encoder {
 
 		for(ColumnEncoderComposite e : _columnEncoders) {
 			// Create the build tasks
-			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in);
+			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in, _nPartitions[0]);
 			tasks.addAll(buildTasks);
 			if(buildTasks.size() > 0) {
 				// Check if any Build independent UpdateDC task (Bin+DC, FH+DC)
@@ -197,7 +199,7 @@ public class MultiColumnEncoder implements Encoder {
 			// Apply Task depends on InitOutputMatrixTask (output allocation)
 			depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},         //ApplyTask
 					new Integer[] {0, 1});                                     //Allocation task (1st task)
-			ApplyTasksWrapperTask applyTaskWrapper = new ApplyTasksWrapperTask(e, in, out, pool);
+			ApplyTasksWrapperTask applyTaskWrapper = new ApplyTasksWrapperTask(e, in, out, _nPartitions[1], pool);
 
 			if(e.hasEncoder(ColumnEncoderDummycode.class)) {
 				// Allocation depends on build if DC is in the list.
@@ -244,6 +246,8 @@ public class MultiColumnEncoder implements Encoder {
 	public void build(CacheBlock in, int k) {
 		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
 			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
+		if(_nPartitions == null) //happens if this method is directly called from the tests
+			_nPartitions = getNumRowPartitions(in, k);
 		if(k > 1) {
 			buildMT(in, k);
 		}
@@ -260,7 +264,7 @@ public class MultiColumnEncoder implements Encoder {
 	private List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
-			tasks.addAll(columnEncoder.getBuildTasks(in));
+			tasks.addAll(columnEncoder.getBuildTasks(in, _nPartitions[0]));
 		}
 		return tasks;
 	}
@@ -337,11 +341,11 @@ public class MultiColumnEncoder implements Encoder {
 		return out;
 	}
 
-	private List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol) {
+	private List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int nPartition, int outputCol) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		int offset = outputCol;
 		for(ColumnEncoderComposite e : _columnEncoders) {
-			tasks.addAll(e.getApplyTasks(in, out, e._colID - 1 + offset));
+			tasks.addAll(e.getApplyTasks(in, out, nPartition, e._colID - 1 + offset));
 			if(e.hasEncoder(ColumnEncoderDummycode.class))
 				offset += e.getEncoder(ColumnEncoderDummycode.class)._domainSize - 1;
 		}
@@ -354,12 +358,12 @@ public class MultiColumnEncoder implements Encoder {
 			if(APPLY_ENCODER_SEPARATE_STAGES){
 				int offset = outputCol;
 				for (ColumnEncoderComposite e : _columnEncoders) {
-					pool.submitAllAndWait(e.getApplyTasks(in, out, e._colID - 1 + offset));
+					pool.submitAllAndWait(e.getApplyTasks(in, out, _nPartitions[1], e._colID - 1 + offset));
 					if (e.hasEncoder(ColumnEncoderDummycode.class))
 						offset += e.getEncoder(ColumnEncoderDummycode.class)._domainSize - 1;
 				}
 			}else{
-				pool.submitAllAndWait(getApplyTasks(in, out, outputCol));
+				pool.submitAllAndWait(getApplyTasks(in, out, _nPartitions[1], outputCol));
 			}
 		}
 		catch(ExecutionException | InterruptedException e) {
@@ -368,6 +372,57 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		pool.shutdown();
 	}
+
+	private int[] getNumRowPartitions(CacheBlock in, int k) {
+		int[] numBlocks = new int[2];
+		if (k == 1) { //single-threaded
+			numBlocks[0] = 1;
+			numBlocks[1] = 1;
+			return numBlocks;
+		}
+		// Read from global flags. These are set by the unit tests
+		if (ColumnEncoder.BUILD_ROW_BLOCKS_PER_COLUMN > 0)
+			numBlocks[0] = ColumnEncoder.BUILD_ROW_BLOCKS_PER_COLUMN;
+		if (ColumnEncoder.APPLY_ROW_BLOCKS_PER_COLUMN > 0)
+			numBlocks[1] = ColumnEncoder.APPLY_ROW_BLOCKS_PER_COLUMN;
+
+		// Read from the config file if set. These overwrite the derived values.
+		if (numBlocks[0] == 0 && ConfigurationManager.getParallelBuildBlocks() > 0)
+			numBlocks[0] = ConfigurationManager.getParallelBuildBlocks();
+		if (numBlocks[1] == 0 && ConfigurationManager.getParallelApplyBlocks() > 0)
+			numBlocks[1] = ConfigurationManager.getParallelApplyBlocks();
+
+		// Else, derive the optimum number of partitions
+		int nRow = in.getNumRows();
+		int nThread = OptimizerUtils.getTransformNumThreads(); //VCores
+		int minNumRows = 16000; //min rows per partition
+		// Count #Builds and #Applies (= #Col)
+		int nBuild = 0;
+		for (ColumnEncoderComposite e : _columnEncoders)
+			if (e.hasBuild())
+				nBuild++;
+		int nApply = in.getNumColumns();
+		// #BuildBlocks = (2 * #PhysicalCores)/#build
+		if (numBlocks[0] == 0 && nBuild < nThread)
+			numBlocks[0] = Math.round(((float)nThread)/nBuild);
+		// #ApplyBlocks = (4 * #PhysicalCores)/#apply
+		if (numBlocks[1] == 0 && nApply < nThread*2)
+			numBlocks[1] = Math.round(((float)nThread*2)/nBuild);
+
+		// Reduce #blocks if #rows per partition is too small
+		while (numBlocks[0] > 1 && nRow/numBlocks[0] < minNumRows)
+			numBlocks[0]--;
+		while (numBlocks[1] > 1 && nRow/numBlocks[1] < minNumRows)
+			numBlocks[1]--;
+
+		// Set to 1 if not set by the above logics
+		for (int i=0; i<2; i++)
+			if (numBlocks[i] == 0)
+				numBlocks[i] = 1; //default 1
+
+		return numBlocks;
+	}
+
 
 	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock input, boolean hasDC) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -426,7 +481,6 @@ public class MultiColumnEncoder implements Encoder {
 	private void outputMatrixPostProcessing(MatrixBlock output){
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		int k = OptimizerUtils.getTransformNumThreads();
-		ForkJoinPool myPool = new ForkJoinPool(k);
 		if (k == 1) {
 			Set<Integer> indexSet = _columnEncoders.stream()
 					.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
@@ -441,14 +495,25 @@ public class MultiColumnEncoder implements Encoder {
 			}
 		}
 		else {
+			ExecutorService myPool = CommonThreadPool.get(k);
 			try {
-				Set<Integer> indexSet = _columnEncoders.stream().parallel()
+				// Collect the row indices that need compaction
+				Set<Integer> indexSet = myPool.submit(() ->
+					_columnEncoders.stream().parallel()
 					.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
 						if(l == null)
 							return null;
 						return l.stream();
-					}).collect(Collectors.toSet());
-				if(!indexSet.stream().parallel().allMatch(Objects::isNull)) {
+					}).collect(Collectors.toSet())
+				).get();
+
+				// Check if the set is empty
+				boolean emptySet = myPool.submit(() ->
+					indexSet.stream().parallel().allMatch(Objects::isNull)
+				).get();
+
+				// Concurrently compact the rows
+				if (emptySet) {
 					myPool.submit(() -> {
 						indexSet.stream().parallel().forEach(row -> {
 							output.getSparseBlock().get(row).compact();
@@ -459,8 +524,8 @@ public class MultiColumnEncoder implements Encoder {
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);
 			}
+			myPool.shutdown();
 		}
-		myPool.shutdown();
 		output.recomputeNonZeros();
 		if(DMLScript.STATISTICS)
 			TransformStatistics.incOutMatrixPostProcessingTime(System.nanoTime()-t0);
@@ -929,20 +994,22 @@ public class MultiColumnEncoder implements Encoder {
 		private final ColumnEncoder _encoder;
 		private final MatrixBlock _out;
 		private final CacheBlock _in;
+		private final int _nApplyPartition;
 		private int _offset = -1; // offset dude to dummycoding in
 									// previous columns needs to be updated by external task!
 
 		private ApplyTasksWrapperTask(ColumnEncoder encoder, CacheBlock in, 
-				MatrixBlock out, DependencyThreadPool pool) {
+				MatrixBlock out, int nPart, DependencyThreadPool pool) {
 			super(pool);
 			_encoder = encoder;
 			_out = out;
 			_in = in;
+			_nApplyPartition = nPart;
 		}
 
 		@Override
 		public List<DependencyTask<?>> getWrappedTasks() {
-			return _encoder.getApplyTasks(_in, _out, _encoder._colID - 1 + _offset);
+			return _encoder.getApplyTasks(_in, _out, _nApplyPartition, _encoder._colID - 1 + _offset);
 		}
 
 		@Override

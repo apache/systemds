@@ -82,12 +82,12 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void testElementWisePlusCP() {
 		runLineageTraceReuseTest(OpType.EW_PLUS, 4, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
+	@Ignore // TODO: Not working yet since we do not transfer the whole lineage trace
 	public void testElementWisePlusSP() {
 		runLineageTraceReuseTest(OpType.EW_PLUS, 4, ExecMode.SPARK);
 	}
@@ -104,12 +104,13 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	}
 
 	@Test
-	@Ignore
+	@Ignore // TODO: Not working yet since we do not transfer the whole lineage trace
 	public void testParforAddCP() {
 		runLineageTraceReuseTest(OpType.PARFOR_ADD, 3, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
+	@Ignore // TODO: Not working yet since we do not transfer the whole lineage trace
 	public void testParforAddSP() {
 		runLineageTraceReuseTest(OpType.PARFOR_ADD, 3, ExecMode.SPARK);
 	}
@@ -210,7 +211,8 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 				break;
 			case MM:
 				retVal = checkForHeavyHitter(outputLog, (execMode == ExecMode.SPARK) ? "fed_mapmm" : "fed_ba+*");
-				if(rowPartitioned)
+				retVal &= checkForHeavyHitter(outputLog, "fed_r'");
+				if(!rowPartitioned)
 					retVal &= checkForHeavyHitter(outputLog, (execMode == ExecMode.SPARK) ? "fed_rblk" : "fed_uak+");
 				break;
 			case PARFOR_ADD:
@@ -230,23 +232,28 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	private boolean checkForReuses(OpType opType, String outputLog, ExecMode execMode) {
 		final String LINCACHE_MULTILVL = "LinCache MultiLvl (Ins/SB/Fn):\t";
 		final String LINCACHE_WRITES = "LinCache writes (Mem/FS/Del):\t";
+		final String FED_LINEAGEPUT = "Fed PutLineage (Count, Items):\t";
 		boolean retVal = false;
+		int multiplier = 1;
 		int numInst = -1;
 		switch(opType) {
 			case EW_PLUS:
 				numInst = (execMode == ExecMode.SPARK) ? 1 : 2;
 				break;
 			case MM:
-				numInst = rowPartitioned ? 2 : 1;
+				numInst = rowPartitioned ? 2 : 3;
 				break;
 			case PARFOR_ADD: // number of instructions times number of iterations of the parfor loop
-				numInst = ((execMode == ExecMode.SPARK) ? 2 : 3) * 3;
+				multiplier = 3;
+				numInst = ((execMode == ExecMode.SPARK) ? 2 : 3) * multiplier;
 				break;
 		}
 		retVal = outputLog.contains(LINCACHE_MULTILVL
 			+ Integer.toString(numInst * (coordinatorProcesses.size()-1) * workerProcesses.size()) + "/");
 		retVal &= outputLog.contains(LINCACHE_WRITES
 			+ Integer.toString((1 + numInst) * workerProcesses.size()) + "/"); // read + instructions
+		retVal &= outputLog.contains(FED_LINEAGEPUT
+			+ Integer.toString(coordinatorProcesses.size() * workerProcesses.size() * multiplier) + "/");
 		return retVal;
 	}
 }

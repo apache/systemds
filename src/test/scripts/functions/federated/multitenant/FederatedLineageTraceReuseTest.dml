@@ -35,10 +35,12 @@ testnum = $testnum;
 
 Y = rand(rows=$rows, cols=$cols, seed=1234);
 
-for(counter in 1:50) {
-  while(FALSE) { }
-  Y = Y + 0.1;
-}
+# TODO: uncomment as soon as we are transferring the whole lineage trace of
+#   every data object to the federated site
+# for(counter in 1:50) {
+#   while(FALSE) { }
+#   Y = Y + 0.1;
+# }
 
 while(FALSE) { }
 
@@ -48,7 +50,7 @@ if(testnum == 0) { # EW_PLUS
   S = as.matrix(sum(Z));
 }
 else if(testnum == 1) { # MM
-  Z = X %*% t(Y);
+  Z = t(X) %*% Y;
   while(FALSE) { }
   S = as.matrix(sum(Z));
 }

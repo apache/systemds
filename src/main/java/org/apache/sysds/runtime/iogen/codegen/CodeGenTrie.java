@@ -24,7 +24,6 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.iogen.CustomProperties;
 import org.apache.sysds.runtime.iogen.KeyTrie;
 
-import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
@@ -48,14 +47,10 @@ public class CodeGenTrie {
 		for(int c = 0; c < properties.getColKeyPattern().length; c++) {
 			KeyTrie keyTrie = properties.getColKeyPattern()[c];
 			Types.ValueType vt = properties.getSchema() == null ? Types.ValueType.FP64 : properties.getSchema()[c];
-			//Gson gson = new Gson();
 			if(keyTrie != null) {
-				//System.out.println(c+":  "+gson.toJson(keyTrie.getPrefixKeyPatterns()));
 				for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
 					this.insert(rootCol, c, vt, keys);
 			}
-//			else
-//				System.out.println(">>>>>>>>>>>>>>>>>>>>> "+c);
 		}
 
 		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX) {

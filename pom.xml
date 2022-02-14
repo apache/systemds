@@ -61,7 +61,7 @@
 		<jacoco.skip>true</jacoco.skip>
 		<jacoco.include>**</jacoco.include>
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
-		<argLine>-Xms3000m -Xmx3000m -Xmn300m</argLine>
+		<argLine>-Xms3000m -Xmx9000m -Xmn300m</argLine>
 		<enableStats>false</enableStats>
 	</properties>
 
@@ -1046,7 +1046,19 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.12.3</version>
+			<version>2.13.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.13.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.13.1</version>
 		</dependency>
 
 		<dependency>

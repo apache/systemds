@@ -87,7 +87,11 @@ public class FrameReaderJSONJackson
 				for (Map.Entry<String, Integer> entry : schemaMap.entrySet()) {
 					String strCellValue = map.get(entry.getKey());
 					if(strCellValue!=null){
-						dest.set(row, entry.getValue(), UtilFunctions.stringToObject(schema[entry.getValue()], strCellValue));
+						try {
+							dest.set(row, entry.getValue(), UtilFunctions.stringToObject(schema[entry.getValue()], strCellValue));
+						}
+						catch(Exception e){}
+
 					}
 				}
 				row++;

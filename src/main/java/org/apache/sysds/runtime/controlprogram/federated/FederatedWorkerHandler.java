@@ -388,8 +388,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		ec.setVariable(varName, data);
 
 		if(DMLScript.LINEAGE) {
-			if(request.getParam(0) instanceof CacheBlock && request.getLineageTrace() != null)
+			if(request.getParam(0) instanceof CacheBlock && request.getLineageTrace() != null) {
 				ec.getLineage().set(varName, Lineage.deserializeSingleTrace(request.getLineageTrace()));
+				if(DMLScript.STATISTICS)
+					FederatedStatistics.aggFedPutLineage(request.getLineageTrace());
+			}
 			else if(request.getParam(0) instanceof ScalarObject)
 				ec.getLineage().set(varName, new LineageItem(CPOperand.getLineageLiteral((ScalarObject)request.getParam(0), true)));
 			else if(request.getNumParams()==1) // don't trace if the data contains only metadata

@@ -79,6 +79,8 @@ public class FederatedStatistics {
 	private static final LongAdder fedLookupTableEntryCount = new LongAdder();
 	private static final LongAdder fedReuseReadHitCount = new LongAdder();
 	private static final LongAdder fedReuseReadBytesCount = new LongAdder();
+	private static final LongAdder fedPutLineageCount = new LongAdder();
+	private static final LongAdder fedPutLineageItems = new LongAdder();
 
 	public static synchronized void incFederated(RequestType rqt, List<Object> data){
 		switch (rqt) {
@@ -143,6 +145,8 @@ public class FederatedStatistics {
 		fedLookupTableEntryCount.reset();
 		fedReuseReadHitCount.reset();
 		fedReuseReadBytesCount.reset();
+		fedPutLineageCount.reset();
+		fedPutLineageItems.reset();
 	}
 
 	public static String displayFedIOExecStatistics() {
@@ -234,6 +238,7 @@ public class FederatedStatistics {
 		StringBuilder sb = new StringBuilder();
 		sb.append(displayFedLookupTableStats(mtsc.fLTGetCount, mtsc.fLTEntryCount, mtsc.fLTGetTime));
 		sb.append(displayFedReuseReadStats(mtsc.reuseReadHits, mtsc.reuseReadBytes));
+		sb.append(displayFedPutLineageStats(mtsc.putLineageCount, mtsc.putLineageItems));
 		return sb.toString();
 	}
 
@@ -363,6 +368,14 @@ public class FederatedStatistics {
 		return fedReuseReadBytesCount.longValue();
 	}
 
+	public static long getFedPutLineageCount() {
+		return fedPutLineageCount.longValue();
+	}
+
+	public static long getFedPutLineageItems() {
+		return fedPutLineageItems.longValue();
+	}
+
 	public static void incFedLookupTableGetCount() {
 		fedLookupTableGetCount.increment();
 	}
@@ -385,6 +398,11 @@ public class FederatedStatistics {
 
 	public static void incFedReuseReadBytesCount(CacheBlock cb) {
 		fedReuseReadBytesCount.add(cb.getInMemorySize());
+	}
+
+	public static void aggFedPutLineage(String serializedLineage) {
+		fedPutLineageCount.increment();
+		fedPutLineageItems.add(serializedLineage.lines().count());
 	}
 
 	public static String displayFedLookupTableStats() {
@@ -417,6 +435,20 @@ public class FederatedStatistics {
 		return "";
 	}
 
+	public static String displayFedPutLineageStats() {
+		return displayFedPutLineageStats(fedPutLineageCount.longValue(),
+			fedPutLineageItems.longValue());
+	}
+
+	public static String displayFedPutLineageStats(long plCount, long plItems) {
+		if(plCount > 0) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Fed PutLineage (Count, Items):\t" +
+				plCount + "/" + plItems + ".\n");
+			return sb.toString();
+		}
+		return "";
+	}
 
 	private static class FedStatsCollectFunction extends FederatedUDF {
 		private static final long serialVersionUID = 1L;
@@ -576,6 +608,8 @@ public class FederatedStatistics {
 				fLTEntryCount = getFedLookupTableEntryCount();
 				reuseReadHits = getFedReuseReadHitCount();
 				reuseReadBytes = getFedReuseReadBytesCount();
+				putLineageCount = getFedPutLineageCount();
+				putLineageItems = getFedPutLineageItems();
 			}
 
 			private void aggregate(MultiTenantStatsCollection that) {
@@ -584,6 +618,8 @@ public class FederatedStatistics {
 				fLTEntryCount += that.fLTEntryCount;
 				reuseReadHits += that.reuseReadHits;
 				reuseReadBytes += that.reuseReadBytes;
+				putLineageCount += that.putLineageCount;
+				putLineageItems += that.putLineageItems;
 			}
 
 			private long fLTGetCount = 0;
@@ -591,6 +627,8 @@ public class FederatedStatistics {
 			private long fLTEntryCount = 0;
 			private long reuseReadHits = 0;
 			private long reuseReadBytes = 0;
+			private long putLineageCount = 0;
+			private long putLineageItems = 0;
 		}
 
 		private CacheStatsCollection cacheStats = new CacheStatsCollection();

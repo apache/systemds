@@ -282,16 +282,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			ec.getLineage().set(String.valueOf(id), linItem);
 
 		if(dataType == Types.DataType.FRAME) {
-			try {
-				FrameObject frameObject = (FrameObject) cd;
-				frameObject.acquireRead();
-				frameObject.refreshMetaData(); // get block schema
-				frameObject.release();
-				return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
-			} catch(NullPointerException npe) {
-				throw new FederatedWorkerHandlerException("Data should never be null at this point. "
-					+ "Either set by lineage or read from fs", npe);
-			}
+			FrameObject frameObject = (FrameObject) cd;
+			frameObject.acquireRead();
+			frameObject.refreshMetaData(); // get block schema
+			frameObject.release();
+			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
 		}
 		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
 	}

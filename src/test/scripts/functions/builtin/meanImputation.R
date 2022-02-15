@@ -32,8 +32,8 @@ mode = Mode(Salaries$yrs.since.phd, na.rm = TRUE)
 Salaries$yrs.since.phd[is.na(Salaries$yrs.since.phd)]<-mode
 
 t = Salaries$yrs.service
-t[is.na(t)]<-0
-mean = mean(t)
+
+mean = mean(t, na.rm = TRUE)
 
 Salaries$yrs.service[is.na(Salaries$yrs.service)]<-mean
 output = cbind(Salaries$yrs.since.phd, Salaries$yrs.service)

@@ -82,7 +82,7 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
   # specifications for one-hot encoding of categorical features
   jspecDC = "{ids:true, dummycode:["+index+"]}";
   [dX, dM] = transformencode(target=as.frame(X1), spec=jspecDC);
-  
+  dist = colDist(X1, cMask) # number of distinct items in categorical features
   for(k in 1:iter) # start iterative imputation
   {
     betaList = list()
@@ -90,7 +90,6 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
     Mask_Filled = Mask1 # use this to store predictions for missing values
     weightMatrix = Mask1 # uses this to keep track of probabilities less than threshold
     inverseMask = Mask1 == 0
-    dist = colDist(X1, cMask) # number of distinct items in categorical features
     meta = rbind(meta, dist)
     i=1; j=1; in_c=1;
 
@@ -182,11 +181,19 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
 }
 
 
-colDist = function(Matrix[Double] X, Matrix[Double] mask)
-return (Matrix[Double] dist) {
-  catCols = X * mask
-  colDist = colMaxs(catCols)
-  dist = (mask == 0) + colDist
+colDist= function(Matrix[Double] X, Matrix[Double] mask)
+return (Matrix[Double] dist){
+ 
+  dist = matrix(1, 1, ncol(X))
+  X = replace(target=X, pattern=0, replacement=max(X)+1)
+  parfor(i in 1:ncol(X))
+  {
+    if(as.scalar(mask[,i]) == 1)
+    {
+      distT = table(X[, i], 1)
+      dist[1, i] = sum(distT != 0)
+    }
+  }
 }
 
 getInitialImputation = function(Matrix[Double] X, Matrix[Double] mask)

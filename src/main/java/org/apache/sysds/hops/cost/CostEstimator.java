@@ -116,7 +116,7 @@ public abstract class CostEstimator
 				for( ProgramBlock pb2 : tmp.getChildBlocks() )
 					ret += rGetTimeEstimate(pb2, stats, memoFunc, recursive);
 			
-			ret *= getNumIterations(stats, tmp);
+			ret *= getNumIterations(tmp);
 		}
 		else if ( pb instanceof FunctionProgramBlock ) {
 			FunctionProgramBlock tmp = (FunctionProgramBlock) pb;
@@ -413,7 +413,7 @@ public abstract class CostEstimator
 		vs[2] = _unknownStats;
 	}
 		
-	private static long getNumIterations(HashMap<String,VarStats> stats, ForProgramBlock pb) {
+	private static long getNumIterations(ForProgramBlock pb) {
 		return OptimizerUtils.getNumIterations(pb, DEFAULT_NUMITER);
 	}
 

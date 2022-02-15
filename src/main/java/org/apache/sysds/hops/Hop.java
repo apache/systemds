@@ -93,6 +93,7 @@ public abstract class Hop implements ParseInfo {
 	 */
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
 	protected FederatedCost _federatedCost = new FederatedCost();
+	protected double repetitions = 1;
 
 	/**
 	 * Field defining if prefetch should be activated for operation.
@@ -996,6 +997,15 @@ public abstract class Hop implements ParseInfo {
 		_federatedCost = cost;
 	}
 
+	/**
+	 * Reset federated cost of this hop and all children of this hop.
+	 */
+	public void resetFederatedCost(){
+		_federatedCost = new FederatedCost();
+		for ( Hop input : getInput() )
+			input.resetFederatedCost();
+	}
+
 	public void setUpdateType(UpdateType update){
 		_updateType = update;
 	}
@@ -1537,6 +1547,18 @@ public abstract class Hop implements ParseInfo {
 		
 		valMemo.put(root.getHopID(), ret);
 		return ret;
+	}
+
+	public void updateRepetitionEstimates(double repetitions){
+		if ( !federatedCostInitialized() ){
+			this.repetitions = repetitions;
+			for ( Hop input : getInput() )
+				input.updateRepetitionEstimates(repetitions);
+		}
+	}
+
+	public double getRepetitions(){
+		return repetitions;
 	}
 
 	/**

@@ -69,6 +69,10 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 */
 	private final static List<Hop> terminalHops = new ArrayList<>();
 
+	public List<Hop> getTerminalHops(){
+		return terminalHops;
+	}
+
 	/**
 	 * Indicates if an IPA pass is applicable for the current configuration.
 	 * The configuration depends on OptimizerUtils.FEDERATED_COMPILATION.
@@ -93,6 +97,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	@Override
 	public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph,
 		FunctionCallSizeInfo fcallSizes) {
+		prog.updateRepetitionEstimates();
 		rewriteStatementBlocks(prog, prog.getStatementBlocks());
 		setFinalFedouts();
 		return false;
@@ -178,7 +183,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	}
 
 	private ArrayList<StatementBlock> rewriteDefaultStatementBlock(DMLProgram prog, StatementBlock sb) {
-		if(sb.getHops() != null && !sb.getHops().isEmpty()) {
+		if(sb.hasHops()) {
 			for(Hop sbHop : sb.getHops()) {
 				if(sbHop instanceof FunctionOp) {
 					String funcName = ((FunctionOp) sbHop).getFunctionName();

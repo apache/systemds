@@ -40,7 +40,7 @@ return (Matrix[Double] X, Matrix[Double] freqCount) {
       {
         Y = tempX[, i]
         valueCount = table(Y, 1)
-        freqCount[i, 1:nrow(valueCount)] = t(valueCount)
+        freqCount[i, 1:nrow(valueCount)] = t(valueCount)/nrow(Y)
       }
     }
   }

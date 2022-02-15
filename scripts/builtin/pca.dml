@@ -36,13 +36,13 @@
 # NAME        TYPE                  MEANING
 # ----------------------------------------------------------------------------------------------------------------------
 # Xout        Matrix[Double]        Output feature matrix with K columns
-# Mout        Matrix[Double]        Output dominant eigen vectors (can be used for projections)
+# Clusters        Matrix[Double]        Output dominant eigen vectors (can be used for projections)
 # Centering   Matrix[Double]        The column means of the input, subtracted to construct the PCA
 # ScaleFactor Matrix[Double]        The Scaling of the values, to make each dimension same size.
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE)
-  return (Matrix[Double] Xout, Matrix[Double] Mout, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
+  return (Matrix[Double] Xout, Matrix[Double] Clusters, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
 {
   if(K > ncol(X)) {
     print("PCA: invalid parameter value, the value of k should not be greater than the no. of columns in X ")
@@ -74,7 +74,7 @@ m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean sca
 
   # Construct new data set by treating computed dominant eigenvectors as the basis vectors
   Xout = X %*% evec_dominant;
-  Mout = evec_dominant;
+  Clusters = evec_dominant;
   # # replace infinity with zero
   Xout = replace(target=Xout, pattern=1/0, replacement=0);
 }

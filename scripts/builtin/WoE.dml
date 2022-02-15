@@ -30,7 +30,7 @@ m_WoE = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask)
 return (Matrix[Double] X, Matrix[Double] Y, Matrix[Double] entropyMatrix) {
   
   tempX = replace(target=X, pattern=NaN, replacement=1)
-  entropyMatrix = matrix(0, rows=ncol(tempX), cols = max(tempX))
+  entropyMatrix = matrix(0, rows=ncol(tempX), cols = max((tempX*mask)))
   if(sum(mask) > 0)
   {
     for(i in 1:ncol(mask))

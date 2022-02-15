@@ -44,9 +44,10 @@ return (Matrix[Double] Y, Matrix[Double] qLower, Matrix[Double] qUpper) {
   qLower = matrix(0, rows=1, cols=ncol(X))
   qUpper = matrix(0, rows=1, cols=ncol(X))
   Y = matrix(0, nrow(X), ncol(X))
+  Xtemp = replace(target=X, pattern=NaN, replacement=0)
   parfor(i in 1:ncol(X), check=0) {
-    q1 = quantile(X[,i], ql)
-    q2 = quantile(X[,i], qu)
+    q1 = quantile(Xtemp[,i], ql)
+    q2 = quantile(Xtemp[,i], qu)
     qLower[1, i] = q1
     qUpper[1, i] = q2
   }

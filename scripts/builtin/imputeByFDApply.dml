@@ -42,6 +42,7 @@ m_imputeByFDApply = function(Matrix[Double] X, Matrix[Double] Y_imp)
   return(Matrix[Double] imputed_Y)
 {
   X = replace(target = X, pattern=NaN, replacement=1)
+  X = replace(target = X, pattern=0, replacement=1)
   imputed_Y = table(seq(1,nrow(X)), X, 1, nrow(X), nrow(Y_imp)) %*% Y_imp;
   imputed_Y = replace(target=imputed_Y, pattern=0, replacement=NaN)
 }

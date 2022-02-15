@@ -40,10 +40,17 @@
 m_imputeByMean = function(Matrix[Double] X, Matrix[Double] mask)
 return(Matrix[Double] X, Matrix[Double] imputedVec)
 {
-  nX = X*(mask==0)
-  nX = replace(target=nX, pattern=NaN, replacement=0);
+
   #  mean imputation
-  colMean = colMeans(nX)
+  colMean = matrix(0, rows=1, cols=ncol(X))
+  parfor(i in 1:ncol(X))
+  {
+    if(as.scalar(mask[1, i]) == 0)
+    {
+      nX = removeEmpty(target=X[, i], margin="rows", select = (is.na(X[, i]) == 0))
+      colMean[1, i] = mean(nX)
+    }
+  }
 
   if(sum(mask) > 0)
   {

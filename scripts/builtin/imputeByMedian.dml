@@ -45,16 +45,16 @@ return(Matrix[Double] X,  Matrix[Double] imputedVec)
 # return(List[Unknown] out)
 {
 
-  nX = X * (mask==0)
-  nX = replace(target=nX, pattern=NaN, replacement=0);
-  cols = ncol(nX)
+  cols = ncol(X)
   #  median imputation
   colMedian = matrix(0, 1, cols)
-  for(i in 1:cols, check=0) {
-    if(sum(nX[,i]) == 0)
-      colMedian[1, i] = 0
-    else
-      colMedian[1, i] = median(nX[,i])
+  parfor(i in 1:ncol(X))
+  {
+    if(as.scalar(mask[1, i]) == 0)
+    {
+      nX = removeEmpty(target=X[, i], margin="rows", select = (is.na(X[, i]) == 0))
+      colMedian[1, i] = median(nX)
+    }
   }
   if(sum(mask) > 0)
   {

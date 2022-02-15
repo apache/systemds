@@ -32,8 +32,8 @@ mode = Mode(Salaries$yrs.since.phd, na.rm = TRUE)
 Salaries$yrs.since.phd[is.na(Salaries$yrs.since.phd)]<-mode
 
 t = Salaries$yrs.service
-t[is.na(t)]<-0
-median = median(t)
+
+median = median(t, na.rm = TRUE)
 
 Salaries$yrs.service[is.na(Salaries$yrs.service)]<-median
 output = cbind(Salaries$yrs.since.phd, Salaries$yrs.service)

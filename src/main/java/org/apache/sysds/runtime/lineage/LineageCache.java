@@ -663,13 +663,15 @@ public class LineageCache
 		}
 	}
 
-	public static void putFedReadObject(Data data, LineageItem li, ExecutionContext ec, long computetime) {
+	public static void putFedReadObject(Data data, LineageItem li, ExecutionContext ec) {
 		if(ReuseCacheType.isNone())
 			return;
 
 		LineageCacheEntry entry = _cache.get(li);
 		if(entry != null && data instanceof MatrixObject) {
+			long t0 = System.nanoTime();
 			MatrixBlock mb = ((MatrixObject)data).acquireRead();
+			long t1 = System.nanoTime();
 			synchronized(_cache) {
 				long size = mb != null ? mb.getInMemorySize() : 0;
 
@@ -683,7 +685,7 @@ public class LineageCache
 					LineageCacheEviction.makeSpace(_cache, size);
 				LineageCacheEviction.updateSize(size, true);
 
-				entry.setValue(mb, computetime);
+				entry.setValue(mb, t1 - t0);
 			}
 		}
 		else {

@@ -39,10 +39,12 @@ public class FederatedReadCache {
 	 * to indicate that the data is not cached yet.
 	 *
 	 * @param fname the filename of the read data
+	 * @param putPlaceholder whether to put a placeholder if there is no mapping for the filename
 	 * @return the CacheableData object if it is cached, otherwise null
 	 */
-	public CacheableData<?> get(String fname) {
-		ReadCacheEntry tmp = _rmap.putIfAbsent(fname, new ReadCacheEntry());
+	public CacheableData<?> get(String fname, boolean putPlaceholder) {
+		ReadCacheEntry tmp = putPlaceholder ?
+			_rmap.putIfAbsent(fname, new ReadCacheEntry()) : _rmap.get(fname);
 		return (tmp != null) ? tmp.get() : null;
 	}
 

@@ -24,12 +24,17 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 /**
  * Column group partitioning by number of distinct items estimated. This allows us to join columns based on the worst
@@ -41,6 +46,8 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
  */
 public class CoCodePriorityQue extends AColumnCoCoder {
 
+	private static final int COL_COMBINE_THREASHOLD = 1024;
+
 	protected CoCodePriorityQue(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator,
 		CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
@@ -48,27 +55,72 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 
 	@Override
 	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
-		colInfos.setInfo(join(colInfos.getInfo(), _sest, _cest, 1));
+		colInfos.setInfo(join(colInfos.getInfo(), _sest, _cest, 1, k));
 		return colInfos;
 	}
 
-	protected static List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> currentGroups,
-		CompressedSizeEstimator sEst, ICostEstimate cEst, int minNumGroups) {
-		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(x -> cEst.getCostOfColumnGroup(x));
-		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.size(), comp);
-		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
+	protected static List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> groups,
+		CompressedSizeEstimator sEst, ICostEstimate cEst, int minNumGroups, int k) {
 
-		for(CompressedSizeInfoColGroup g : currentGroups)
+		if(groups.size() > COL_COMBINE_THREASHOLD && k > 1)
+			return joinMultiThreaded(groups, sEst, cEst, minNumGroups, k);
+		else
+			return joinSingleThreaded(groups, sEst, cEst, minNumGroups);
+	}
+
+	private static List<CompressedSizeInfoColGroup> joinMultiThreaded(List<CompressedSizeInfoColGroup> groups,
+		CompressedSizeEstimator sEst, ICostEstimate cEst, int minNumGroups, int k) {
+		try {
+			final ExecutorService pool = CommonThreadPool.get(k);
+			final List<PQTask> tasks = new ArrayList<>();
+			final int blkSize = Math.max(groups.size() / k, 500);
+			for(int i = 0; i < groups.size(); i += blkSize)
+				tasks.add(new PQTask(groups, i, Math.min(i + blkSize, groups.size()), sEst, cEst, minNumGroups));
+
+			List<CompressedSizeInfoColGroup> ret = null;
+			for(Future<List<CompressedSizeInfoColGroup>> t : pool.invokeAll(tasks)) {
+
+				List<CompressedSizeInfoColGroup> p = t.get();
+				if(ret == null)
+					ret = p;
+				else
+					ret.addAll(p);
+			}
+			return ret;
+		}
+		catch(Exception e) {
+			throw new DMLCompressionException("Failed parallel priority que cocoding", e);
+		}
+	}
+
+	private static List<CompressedSizeInfoColGroup> joinSingleThreaded(List<CompressedSizeInfoColGroup> groups,
+		CompressedSizeEstimator sEst, ICostEstimate cEst, int minNumGroups) {
+		return joinBlock(groups, 0, groups.size(), sEst, cEst, minNumGroups);
+	}
+
+	private static List<CompressedSizeInfoColGroup> joinBlock(List<CompressedSizeInfoColGroup> groups, int start,
+		int end, CompressedSizeEstimator sEst, ICostEstimate cEst, int minNumGroups) {
+		Queue<CompressedSizeInfoColGroup> que = getQue(end - start, cEst);
+
+		for(int i = start; i < end; i++) {
+			CompressedSizeInfoColGroup g = groups.get(i);
 			if(g != null)
 				que.add(g);
+		}
 
+		return joinBlock(que, sEst, cEst, minNumGroups);
+	}
+
+	private static List<CompressedSizeInfoColGroup> joinBlock(Queue<CompressedSizeInfoColGroup> que,
+		CompressedSizeEstimator sEst, ICostEstimate cEst, int minNumGroups) {
+
+		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
 		CompressedSizeInfoColGroup l = null;
-
 		l = que.poll();
 		int groupNr = ret.size() + que.size();
 		while(que.peek() != null && groupNr >= minNumGroups) {
 			CompressedSizeInfoColGroup r = que.peek();
-			CompressedSizeInfoColGroup g = sEst.estimateJoinCompressedSize(l, r);
+			CompressedSizeInfoColGroup g = sEst.combine(l, r);
 			if(g != null) {
 				double costOfJoin = cEst.getCostOfColumnGroup(g);
 				double costIndividual = cEst.getCostOfColumnGroup(l) + cEst.getCostOfColumnGroup(r);
@@ -76,9 +128,10 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 				if(costOfJoin < costIndividual) {
 					que.poll();
 					int numColumns = g.getColumns().length;
-					if(minNumGroups != 0 && numColumns > 8)
-						ret.add(g); // Add this column group to ret, since it already is very CoCoded.
-					else if(numColumns > 128)
+					// if(minNumGroups != 0 && numColumns > 8)
+						// ret.add(g); // Add this column group to ret, since it already is very CoCoded.
+					// else 
+					if(numColumns > 128)
 						ret.add(g);
 					else
 						que.add(g);
@@ -100,5 +153,41 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 			ret.add(g);
 
 		return ret;
+	}
+
+	private static Queue<CompressedSizeInfoColGroup> getQue(int size, ICostEstimate cEst) {
+		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(x -> cEst.getCostOfColumnGroup(x));
+		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(size, comp);
+		return que;
+	}
+
+	protected static class PQTask implements Callable<List<CompressedSizeInfoColGroup>> {
+
+		private final List<CompressedSizeInfoColGroup> _groups;
+		private final int _start;
+		private final int _end;
+		private final CompressedSizeEstimator _sEst;
+		private final ICostEstimate _cEst;
+		private final int _minNumGroups;
+
+		protected PQTask(List<CompressedSizeInfoColGroup> groups, int start, int end, CompressedSizeEstimator sEst,
+			ICostEstimate cEst, int minNumGroups) {
+			_groups = groups;
+			_start = start;
+			_end = end;
+			_sEst = sEst;
+			_cEst = cEst;
+			_minNumGroups = minNumGroups;
+		}
+
+		@Override
+		public List<CompressedSizeInfoColGroup> call() {
+			try {
+				return joinBlock(_groups, _start, _end, _sEst, _cEst, _minNumGroups);
+			}
+			catch(Exception e) {
+				throw new DMLCompressionException("Falied PQTask ", e);
+			}
+		}
 	}
 }

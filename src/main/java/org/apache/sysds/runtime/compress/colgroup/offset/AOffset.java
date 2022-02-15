@@ -28,7 +28,6 @@ import java.util.Map;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -289,6 +288,7 @@ public abstract class AOffset implements Serializable {
 		int nVal, BitSet data, AIterator it) {
 		final double[] vals = db.values(rl);
 		final int nCol = db.getCumODims(0);
+
 		while(it.offset < cu) {
 			final int dataOffset = data.get(it.getDataIndex()) ? 1 : 0;
 			final int start = it.offset + nCol * rl;
@@ -457,69 +457,69 @@ public abstract class AOffset implements Serializable {
 			preAV[data.get(it.getDataIndex()) ? 1 : 0] += avals[j];
 	}
 
-	public void preAggregateSDCZ_SDCZMultiCol_char_char(ADictionary td, AOffset of, double[] dv, int nCol, char[] m,
-		char[] tm) {
+	// public void preAggregateSDCZ_SDCZMultiCol_char_char(ADictionary td, AOffset of, double[] dv, int nCol, char[] m,
+	// 	char[] tm) {
 
-		final AOffsetIterator itThat = getOffsetIterator();
-		final AOffsetIterator itThis = of.getOffsetIterator();
-		final int tSize = tm.length - 1, size = m.length - 1;
-		int i = 0, j = 0;
+	// 	final AOffsetIterator itThat = getOffsetIterator();
+	// 	final AOffsetIterator itThis = of.getOffsetIterator();
+	// 	final int tSize = tm.length - 1, size = m.length - 1;
+	// 	int i = 0, j = 0;
 
-		while(i < tSize && j < size) {
-			final int tv = itThat.offset;
-			final int v = itThis.offset;
-			if(tv == v) {
-				final int fr = tm[i];
-				final int to = m[j];
-				td.addToEntry(dv, fr, to, nCol);
-				itThat.next();
-				itThis.next();
-				i++;
-				j++;
-			}
-			else if(tv < v) {
-				itThat.next();
-				i++;
-			}
-			else {
-				itThis.next();
-				j++;
-			}
-		}
+	// 	while(i < tSize && j < size) {
+	// 		final int tv = itThat.offset;
+	// 		final int v = itThis.offset;
+	// 		if(tv == v) {
+	// 			final int fr = tm[i];
+	// 			final int to = m[j];
+	// 			td.addToEntry(dv, fr, to, nCol);
+	// 			itThat.next();
+	// 			itThis.next();
+	// 			i++;
+	// 			j++;
+	// 		}
+	// 		else if(tv < v) {
+	// 			itThat.next();
+	// 			i++;
+	// 		}
+	// 		else {
+	// 			itThis.next();
+	// 			j++;
+	// 		}
+	// 	}
 
-		int tv = itThat.offset;
-		int v = itThis.offset;
-		if(tv == v) {
-			final int fr = tm[i];
-			final int to = m[j];
-			td.addToEntry(dv, fr, to, nCol);
-			return;
-		}
+	// 	int tv = itThat.offset;
+	// 	int v = itThis.offset;
+	// 	if(tv == v) {
+	// 		final int fr = tm[i];
+	// 		final int to = m[j];
+	// 		td.addToEntry(dv, fr, to, nCol);
+	// 		return;
+	// 	}
 
-		while(i < tSize && tv < v) { // this is at final
-			itThat.next();
-			i++;
-			tv = itThat.offset;
-			if(tv == v) {
-				final int fr = tm[i];
-				final int to = m[j];
-				td.addToEntry(dv, fr, to, nCol);
-				return;
-			}
-		}
+	// 	while(i < tSize && tv < v) { // this is at final
+	// 		itThat.next();
+	// 		i++;
+	// 		tv = itThat.offset;
+	// 		if(tv == v) {
+	// 			final int fr = tm[i];
+	// 			final int to = m[j];
+	// 			td.addToEntry(dv, fr, to, nCol);
+	// 			return;
+	// 		}
+	// 	}
 
-		while(j < size && v < tv) { // that is at final
-			itThis.next();
-			j++;
-			v = itThis.offset;
-			if(tv == v) {
-				final int fr = tm[i];
-				final int to = m[j];
-				td.addToEntry(dv, fr, to, nCol);
-				return;
-			}
-		}
-	}
+	// 	while(j < size && v < tv) { // that is at final
+	// 		itThis.next();
+	// 		j++;
+	// 		v = itThis.offset;
+	// 		if(tv == v) {
+	// 			final int fr = tm[i];
+	// 			final int to = m[j];
+	// 			td.addToEntry(dv, fr, to, nCol);
+	// 			return;
+	// 		}
+	// 	}
+	// }
 
 	@Override
 	public String toString() {

@@ -297,7 +297,7 @@ public class CLALibLeftMultBy {
 		double[] rowSums;
 		if(!filteredGroups.isEmpty()) {
 			rowSums = shouldFilter ? new double[lr] : null;
-			if(k == 1)
+			if(k == 1 || filteredGroups.size() == 1)
 				LMMPrimitive(filteredGroups, that, ret, 0, lr, rowSums);
 			else
 				LMMParallel(filteredGroups, that, ret, rowSums, overlapping, k);

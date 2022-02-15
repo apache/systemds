@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.compress.estim.encoding;
 
 import java.util.Arrays;
 
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -70,12 +69,8 @@ public class SparseEncoding implements IEncode {
 		if(e.map == map && e.off == off)
 			return this; // unlikely to happen but cheap to compute therefore this skip is included.
 
-		final long maxUnique = (long) e.getUnique() * getUnique();
-		if(maxUnique > (long) Integer.MAX_VALUE)
-			throw new DMLCompressionException(
-				"Joining impossible using linearized join, since each side has a large number of unique values");
-
-		final int[] d = new int[(int) maxUnique - 1];
+		final int maxUnique = e.getUnique() * getUnique();
+		final int[] d = new int[maxUnique - 1];
 
 		// We need at least this size of offsets, but i don't know if i need more.
 		final IntArrayList retOff = new IntArrayList(Math.max(e.size(), this.size()));
@@ -198,13 +193,10 @@ public class SparseEncoding implements IEncode {
 	}
 
 	private static int addVal(int nv, int offset, int[] d, int newUID, IntArrayList tmpVals, IntArrayList offsets) {
-		final int mapV = d[nv];
-		if(mapV == 0) {
-			tmpVals.appendValue(newUID - 1);
-			d[nv] = newUID++;
-		}
-		else
-			tmpVals.appendValue(mapV - 1);
+		int mapV = d[nv];
+		if(mapV == 0)
+			mapV = d[nv] = newUID++;
+		tmpVals.appendValue(mapV - 1);
 		offsets.appendValue(offset);
 		return newUID;
 	}
@@ -220,16 +212,11 @@ public class SparseEncoding implements IEncode {
 	}
 
 	@Override
-	public int[] getCounts() {
-		return counts;
-	}
-
-	@Override
-	public EstimationFactors computeSizeEstimation(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
+	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
 		final int largestOffs = nRows - map.size(); // known largest off is zero tuples
 		tupleSparsity = Math.min((double) map.size() / (double) nRows, tupleSparsity);
-		return new EstimationFactors(cols.length, counts.length, map.size(), largestOffs, counts, 0, 0, nRows, false,
-			true, matrixSparsity, tupleSparsity);
+		return new EstimationFactors(cols.length, counts.length, map.size(), largestOffs, counts, 0, nRows, false, true,
+			matrixSparsity, tupleSparsity);
 	}
 
 	@Override

@@ -47,11 +47,6 @@ public class EmptyEncoding implements IEncode {
 	}
 
 	@Override
-	public int[] getCounts() {
-		return counts;
-	}
-
-	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
@@ -59,7 +54,7 @@ public class EmptyEncoding implements IEncode {
 	}
 
 	@Override
-	public EstimationFactors computeSizeEstimation(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
-		return new EstimationFactors(cols.length, 0, 0, nRows, counts, 0, 0, nRows, false, true, 0, 0);
+	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
+		return new EstimationFactors(cols.length, 0, 0, nRows, counts, 0, nRows, false, true, 0, 0);
 	}
 }

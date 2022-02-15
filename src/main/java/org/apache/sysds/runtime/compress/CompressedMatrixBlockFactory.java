@@ -255,9 +255,9 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	private void classifyPhase() {
-		CompressedSizeEstimator sizeEstimator = CompressedSizeEstimatorFactory.getSizeEstimator(mb, compSettings, k);
-		if(compSettings.transposed)
-			mb = sizeEstimator.getData();
+		CompressedSizeEstimator sizeEstimator = CompressedSizeEstimatorFactory.createEstimator(mb, compSettings, k);
+		// if(compSettings.transposed)
+		// mb = sizeEstimator.getData();
 		compressionGroups = sizeEstimator.computeCompressedSizeInfos(k);
 
 		_stats.estimatedSizeCols = compressionGroups.memoryEstimate();

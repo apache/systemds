@@ -360,8 +360,8 @@ public interface IEncode {
 
 	public int size();
 
-	public int[] getCounts();
+	// public int[] getCounts();
 
-	public EstimationFactors computeSizeEstimation(int[] cols, int nRows, double tupleSparsity, double matrixSparsity);
+	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity);
 
 }

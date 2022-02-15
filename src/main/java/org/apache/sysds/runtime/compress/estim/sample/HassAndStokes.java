@@ -28,7 +28,7 @@ public class HassAndStokes {
 	// protected static final Log LOG = LogFactory.getLog(HassAndStokes.class.getName());
 
 	public static final double HAAS_AND_STOKES_ALPHA1 = 0.9; // 0.9 recommended in paper
-	public static final double HAAS_AND_STOKES_ALPHA2 = 30; // 30 recommended in paper
+	public static final double HAAS_AND_STOKES_ALPHA2 = 30; // 30 recommended in paper;
 	public static final int HAAS_AND_STOKES_UJ2A_C = 50; // 50 recommend in paper
 	public static final boolean HAAS_AND_STOKES_UJ2A_CUT2 = true; // cut frequency in half
 	public static final boolean HAAS_AND_STOKES_UJ2A_SOLVE = true; // true recommended
@@ -69,8 +69,8 @@ public class HassAndStokes {
 			d = getSh3Estimate(q, freqCounts, numVals);
 
 		// round and ensure min value 1
-		return  (int) Math.round(d);
-		
+		return (int) Math.round(d);
+
 	}
 
 	private static double getDuj1Estimate(double q, double f1, int n, int dn) {
@@ -105,10 +105,17 @@ public class HassAndStokes {
 
 		// compute reduced population size via numeric solve
 		int updatedN = N;
-		for(int i = c; i <= f.length; i++)
-			if(f[i - 1] != 0)
-				updatedN -= f[i - 1] *
-					(!HAAS_AND_STOKES_UJ2A_SOLVE ? i / q : getMethodOfMomentsEstimate(i, q, 1, N, solveCache));
+		if(solveCache == null) {
+			for(int i = c; i <= f.length; i++)
+				if(f[i - 1] != 0)
+					updatedN -= f[i - 1] * (!HAAS_AND_STOKES_UJ2A_SOLVE ? i / q : getMethodOfMomentsEstimate(i, q, 1, N));
+		}
+		else {
+			for(int i = c; i <= f.length; i++)
+				if(f[i - 1] != 0)
+					updatedN -= f[i - 1] *
+						(!HAAS_AND_STOKES_UJ2A_SOLVE ? i / q : getMethodOfMomentsEstimateWithCache(i, q, 1, N, solveCache));
+		}
 
 		// remove classes that exceed a fixed frequency c
 		for(int i = c; i <= f.length; i++)
@@ -151,28 +158,28 @@ public class HassAndStokes {
 		return dn + f[0] * fraq11 / fraq12 * Math.pow(fraq21 / fraq22, 2);
 	}
 
-	private static double getMethodOfMomentsEstimate(int nj, double q, double min, double max,
+	private static double getMethodOfMomentsEstimateWithCache(int nj, double q, double min, double max,
 		HashMap<Integer, Double> solveCache) {
-		// Solves the method-of-moments estimate numerically. We use a cache on the same observed instances in the sample
-		// as q is constant and min/max are chosen conservatively.
 
-		// NOTE the cache does not work currently since the number of rows considered each call can change now
-		// This happens because the sampled estimator now considers nonzeros or offsets calculated and therefore know upper
-		// bounds of the number of offsets that are lower than the maximum number of rows.
-		
-		// if(solveCache.containsKey(nj))
-		// 	synchronized(solveCache) {
-		// 		return solveCache.get(nj);
-		// 	}
+		if(solveCache.containsKey(nj))
+			synchronized(solveCache) {
+				return solveCache.get(nj);
+			}
 
-		double est = UnivariateSolverUtils.solve(new MethodOfMomentsFunction(nj, q), min, max, 1e-9);
+		double est = getMethodOfMomentsEstimate(nj, q, min, max);
 
-		// if(solveCache.size() < MAX_SOLVE_CACHE_SIZE)
-		// 	synchronized(solveCache) {
-		// 		solveCache.put(nj, est);
-		// 	}
+		if(solveCache.size() < MAX_SOLVE_CACHE_SIZE)
+			synchronized(solveCache) {
+				solveCache.put(nj, est);
+			}
 
 		return est;
+	}
+
+	private static double getMethodOfMomentsEstimate(int nj, double q, double min, double max) {
+		// Solves the method-of-moments estimate numerically. We use a cache on the same observed instances in the sample
+		// as q is constant and min/max are chosen conservatively.
+		return UnivariateSolverUtils.solve(new MethodOfMomentsFunction(nj, q), min, max, 1e-9);
 	}
 
 	private static class MethodOfMomentsFunction implements UnivariateFunction {

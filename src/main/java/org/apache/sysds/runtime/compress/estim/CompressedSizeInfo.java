@@ -52,8 +52,9 @@ public class CompressedSizeInfo {
 		return compressionInfo;
 	}
 
-	public void setInfo(List<CompressedSizeInfoColGroup> info) {
+	public CompressedSizeInfo setInfo(List<CompressedSizeInfoColGroup> info) {
 		compressionInfo = info;
+		return this;
 	}
 
 	/**

@@ -196,9 +196,10 @@ public class CompressedSizeInfoColGroup {
 				// + 1 if the column contains zero
 				return ColGroupSizes.estimateInMemorySizeDDC(numCols, nv, fact.numRows, fact.tupleSparsity, fact.lossy);
 			case RLE:
-				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
-				return ColGroupSizes.estimateInMemorySizeRLE(numCols, nv, fact.numRuns, fact.numRows, fact.tupleSparsity,
-					fact.lossy);
+				throw new NotImplementedException();
+				// nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
+				// return ColGroupSizes.estimateInMemorySizeRLE(numCols, nv, fact.numRuns, fact.numRows, fact.tupleSparsity,
+				// 	fact.lossy);
 			case OLE:
 				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
 				return ColGroupSizes.estimateInMemorySizeOLE(numCols, nv, fact.numOffs + fact.numVals, fact.numRows,

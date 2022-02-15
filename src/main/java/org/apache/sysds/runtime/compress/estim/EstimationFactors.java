@@ -40,7 +40,7 @@ public class EstimationFactors {
 	/** The frequencies of the Non zero tuples in the columns */
 	protected final int[] frequencies;
 	/** The Number of runs, of consecutive equal numbers, used primarily in RLE */
-	protected final int numRuns;
+	// protected final int numRuns;
 	/** The Number of Values in the collection not Zero , Also refered to as singletons */
 	protected final int numSingle;
 	protected final int numRows;
@@ -66,7 +66,7 @@ public class EstimationFactors {
 		this.frequencies = null;
 		this.numOffs = -1;
 		this.largestOff = -1;
-		this.numRuns = -1;
+		// this.numRuns = -1;
 		this.numSingle = -1;
 		this.lossy = false;
 		this.zeroIsMostFrequent = false;
@@ -87,7 +87,7 @@ public class EstimationFactors {
 		this.frequencies = null;
 		this.numOffs = (int) (numRows * sparsity);
 		this.largestOff = largestOff;
-		this.numRuns = -1;
+		// this.numRuns = -1;
 		this.numSingle = -1;
 		this.lossy = false;
 		this.zeroIsMostFrequent = true;
@@ -96,9 +96,8 @@ public class EstimationFactors {
 		this.tupleSparsity = 1;
 	}
 
-	public EstimationFactors(int nCols, int numVals, int numOffs, int largestOff, int[] frequencies, int numRuns,
-		int numSingle, int numRows, boolean lossy, boolean zeroIsMostFrequent, double overAllSparsity,
-		double tupleSparsity) {
+	public EstimationFactors(int nCols, int numVals, int numOffs, int largestOff, int[] frequencies, int numSingle,
+		int numRows, boolean lossy, boolean zeroIsMostFrequent, double overAllSparsity, double tupleSparsity) {
 		// Safety in numbers, if the estimation factor is saying that there is no values in 5 columns,
 		// then add one to make sure that the cocode does not run amok. If the data is actually empty, the columns
 		// are joined later.
@@ -109,7 +108,7 @@ public class EstimationFactors {
 		this.numOffs = numOffs;
 		this.largestOff = largestOff;
 		this.frequencies = frequencies;
-		this.numRuns = numRuns;
+		// this.numRuns = numRuns;
 		this.numSingle = numSingle;
 		this.numRows = numRows;
 		this.lossy = lossy;
@@ -129,7 +128,7 @@ public class EstimationFactors {
 	}
 
 	protected static EstimationFactors emptyFactors(int nCols, int nRows) {
-		return new EstimationFactors(nCols, 0, 0, 0, null, 0, 0, nRows, false, true, 0, 0);
+		return new EstimationFactors(nCols, 0, 0, 0, null, 0, nRows, false, true, 0, 0);
 	}
 
 	@Override
@@ -139,7 +138,7 @@ public class EstimationFactors {
 		sb.append(" num Offsets:" + numOffs);
 		sb.append(" LargestOffset:" + largestOff);
 		sb.append(" num Singles:" + numSingle);
-		sb.append(" num Runs:" + numRuns);
+		// sb.append(" num Runs:" + numRuns);
 		sb.append(" num Unique Vals:" + numVals);
 		sb.append(" overallSparsity:" + overAllSparsity);
 		sb.append(" tupleSparsity:" + tupleSparsity);

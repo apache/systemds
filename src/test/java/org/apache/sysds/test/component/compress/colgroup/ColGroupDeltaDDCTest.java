@@ -76,7 +76,7 @@ public class ColGroupDeltaDDCTest {
 			cs.transposed = isTransposed;
 
 			final CompressedSizeInfoColGroup cgi = new CompressedSizeEstimatorExact(mbt, cs)
-				.estimateCompressedColGroupSize(colIndexes);
+				.getColGroupInfo(colIndexes);
 			CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
 			AColGroup cg = ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
 

@@ -166,8 +166,8 @@ public abstract class CompressedTestBase extends TestBase {
 						colIndexes[x] = y;
 					}
 
-					CompressedSizeInfoColGroup cgi = CompressedSizeEstimatorFactory.getSizeEstimator(mb, cs, _k)
-						.estimateCompressedColGroupSize(colIndexes);
+					CompressedSizeInfoColGroup cgi = CompressedSizeEstimatorFactory.createEstimator(mb, cs, _k)
+						.getColGroupInfo(colIndexes);
 					CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
 					for(AColGroup cg : ColGroupFactory.compressColGroups(mb, csi, cs, 1))
 						colGroups.add(cg);
@@ -431,7 +431,7 @@ public abstract class CompressedTestBase extends TestBase {
 			MatrixBlock ret2 = cmb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, _k);
 
 			// compare result with input
-			compareResultMatrices(ucRet, ret2, 4);
+			compareResultMatricesPercentDistance(ucRet, ret2, 0.99, 0.99);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -1088,6 +1088,18 @@ public abstract class CompressedTestBase extends TestBase {
 		else
 			TestUtils.compareMatricesBitAvgDistance(expected, result, (long) (27000 * toleranceMultiplier),
 				(long) (1024 * toleranceMultiplier), bufferedToString);
+	}
+
+	protected void compareResultMatricesPercentDistance(MatrixBlock expected, MatrixBlock result, double avg,
+		double max) {
+		TestUtils.assertEqualColsAndRows(expected, result);
+		if(expected instanceof CompressedMatrixBlock)
+			expected = ((CompressedMatrixBlock) expected).decompress();
+		if(result instanceof CompressedMatrixBlock)
+			result = ((CompressedMatrixBlock) result).decompress();
+
+		TestUtils.compareMatricesPercentageDistance(expected, result, avg, max, bufferedToString);
+
 	}
 
 	protected static CompressionSettingsBuilder csb() {

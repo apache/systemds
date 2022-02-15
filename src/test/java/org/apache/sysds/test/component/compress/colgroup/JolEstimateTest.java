@@ -81,8 +81,7 @@ public abstract class JolEstimateTest {
 				.setValidCompressions(EnumSet.of(getCT())).create();
 			cs.transposed = true;
 
-			final CompressedSizeInfoColGroup cgi = new CompressedSizeEstimatorExact(mbt, cs)
-				.estimateCompressedColGroupSize(colIndexes);
+			final CompressedSizeInfoColGroup cgi = new CompressedSizeEstimatorExact(mbt, cs).getColGroupInfo(colIndexes);
 
 			final CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
 			final List<AColGroup> groups = ColGroupFactory.compressColGroups(mbt, csi, cs, 1);
@@ -157,11 +156,11 @@ public abstract class JolEstimateTest {
 				.setValidCompressions(EnumSet.of(getCT())).create();
 			cs.transposed = true;
 
-			final CompressedSizeEstimator est = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs,
-				Math.max(10, (int) (mbt.getNumColumns() * ratio)), 1);
+			final int sampleSize = Math.max(10, (int) (mbt.getNumColumns() * ratio));
+			final CompressedSizeEstimator est = CompressedSizeEstimatorFactory.createEstimator(mbt, cs, sampleSize, 1);
 
-			final int sampleSize = est.getSampleSize();
-			final CompressedSizeInfoColGroup cInfo = est.estimateCompressedColGroupSize(colIndexes);
+			// final int sampleSize = est.getSampleSize();
+			final CompressedSizeInfoColGroup cInfo = est.getColGroupInfo(colIndexes);
 			// LOG.error(cg);
 			final int estimateNUniques = cInfo.getNumVals();
 			final long estimateCSI = cInfo.getCompressionSize(cg.getCompType());

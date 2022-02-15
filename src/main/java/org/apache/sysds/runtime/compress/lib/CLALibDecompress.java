@@ -161,7 +161,8 @@ public class CLALibDecompress {
 			}
 			else {
 				decompressDenseSingleThread(ret, filteredGroups, nRows, blklen, constV, eps, nonZeros, overlapping);
-				ret.setNonZeros(nonZeros == -1 || overlapping ? ret.recomputeNonZeros() : nonZeros);
+				ret.recomputeNonZeros();
+				// ret.setNonZeros(nonZeros == -1 || overlapping ? ret.recomputeNonZeros() : nonZeros);
 			}
 		}
 		else if(ret.isInSparseFormat()) {

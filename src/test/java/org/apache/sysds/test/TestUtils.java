@@ -872,11 +872,12 @@ public class TestUtils
 
 		for(int i = 0; i < rows && countErrors < 20; i++) {
 			for(int j = 0; j < cols && countErrors < 20; j++) {
-				double v1 = expectedMatrix.quickGetValue(i, j);
-				double v2 = actualMatrix.quickGetValue(i, j);
+				final double v1 = expectedMatrix.quickGetValue(i, j);
+				final double v2 = actualMatrix.quickGetValue(i, j);
 				if(v1 == 0 && v2 == 0)
-				continue;
+					continue;
 				else if(v1 == 0 || v2 == 0) {
+					// take care of small epsilon from zero
 					if(Math.abs(v1 - v2) > 1E-16) {
 						message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i + " " + j
 						+ " Not using Bit distance since one value is 0");
@@ -884,7 +885,7 @@ public class TestUtils
 					}
 				}
 				else {
-					final long distance = compareScalarBits(expectedMatrix.quickGetValue(i, j), actualMatrix.quickGetValue(i, j));
+					final long distance = compareScalarBits(v1, v2);
 					sumDistance += distance;
 					if(distance > maxUnitsOfLeastPrecision) {
 						message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i + " " + j + " Distance in bits: "

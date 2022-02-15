@@ -66,7 +66,52 @@ public class DictionaryFactory {
 			return Dictionary.getInMemorySize(nrValues * nrColumns);
 	}
 
-	public static ADictionary create(DblArrayCountHashMap map, int nCols, boolean addZeroTuple, boolean deltaEncoded) {
+	public static ADictionary create(DblArrayCountHashMap map, int nCols, boolean addZeroTuple) {
+		try {
+
+			final ArrayList<DArrCounts> vals = map.extractValues();
+			final int nVals = vals.size();
+			int nnz = 0;
+			for(int i = 0; i < nVals; i++) {
+				final DArrCounts dac = vals.get(i);
+				double[] dv = dac.key.getData();
+
+				for(double v : dv)
+					nnz += v != 0 ? 1 : 0;
+			}
+			final int nTuplesOut = nVals + (addZeroTuple ? 1 : 0);
+			boolean sparse = MatrixBlock.evalSparseFormatInMemory(nTuplesOut, nCols, nnz);
+			if(sparse) {
+				final MatrixBlock retB = new MatrixBlock(nTuplesOut, nCols, true);
+				retB.allocateSparseRowsBlock();
+				final SparseBlock sb = retB.getSparseBlock();
+				for(int i = 0; i < nVals; i++) {
+					final DArrCounts dac = vals.get(i);
+					double[] dv = dac.key.getData();
+					for(int k = 0; k < dv.length; k++)
+						sb.append(i, k, dv[k]);
+				}
+				retB.recomputeNonZeros();
+				return new MatrixBlockDictionary(retB, nCols);
+			}
+			else {
+
+				final double[] resValues = new double[(nTuplesOut) * nCols];
+				for(int i = 0; i < nVals; i++) {
+					final DArrCounts dac = vals.get(i);
+					System.arraycopy(dac.key.getData(), 0, resValues, dac.id * nCols, nCols);
+				}
+				return new Dictionary(resValues);
+			}
+		}
+		catch(Exception e) {
+			LOG.error("Failed to create dictionary: ", e);
+			return null;
+		}
+
+	}
+
+	public static ADictionary createDelta(DblArrayCountHashMap map, int nCols, boolean addZeroTuple) {
 		final ArrayList<DArrCounts> vals = map.extractValues();
 		final int nVals = vals.size();
 		final double[] resValues = new double[(nVals + (addZeroTuple ? 1 : 0)) * nCols];
@@ -74,7 +119,7 @@ public class DictionaryFactory {
 			final DArrCounts dac = vals.get(i);
 			System.arraycopy(dac.key.getData(), 0, resValues, dac.id * nCols, nCols);
 		}
-		return deltaEncoded ? new DeltaDictionary(resValues, nCols) : new Dictionary(resValues);
+		return new DeltaDictionary(resValues, nCols);
 	}
 
 	public static ADictionary create(ABitmap ubm) {

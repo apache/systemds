@@ -50,7 +50,7 @@ public class Memorizer {
 	}
 
 	public CompressedSizeInfoColGroup getOrCreate(ColIndexes c1, ColIndexes c2) {
-		final int[] c = Util.join(c1._indexes, c2._indexes);
+		final int[] c = Util.combine(c1._indexes, c2._indexes);
 		final ColIndexes cI = new ColIndexes(c);
 		CompressedSizeInfoColGroup g = mem.get(cI);
 		st2++;
@@ -60,7 +60,7 @@ public class Memorizer {
 			if(left != null && right != null) {
 
 				st3++;
-				g = _sEst.estimateJoinCompressedSize(c, left, right);
+				g = _sEst.combine(c, left, right);
 
 				synchronized(this) {
 					mem.put(cI, g);

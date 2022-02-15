@@ -132,25 +132,26 @@ public class OffsetByte extends AOffset {
 		out.writeByte(OffsetFactory.OFF_TYPE.BYTE.ordinal());
 		out.writeInt(offsetToFirst);
 		out.writeInt(offsets.length);
+		out.writeInt(offsetToLast);
 		for(byte o : offsets)
 			out.writeByte(o);
 	}
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 4 + 4 + offsets.length;
+		return 1 + 4 + 4 + 4 + offsets.length;
 	}
 
 	@Override
 	public int getSize() {
 		if(noZero)
 			return offsets.length + 1;
-		else{
+		else {
 			int size = 1;
 			for(byte b : offsets)
 				if(b != 0)
 					size++;
-	
+
 			return size;
 		}
 	}
@@ -184,13 +185,13 @@ public class OffsetByte extends AOffset {
 	public static OffsetByte readFields(DataInput in) throws IOException {
 		final int offsetToFirst = in.readInt();
 		final int offsetsLength = in.readInt();
+		final int offsetToLast = in.readInt();
 
 		final byte[] offsets = new byte[offsetsLength];
-		int offsetToLast = offsetToFirst;
-		for(int i = 0; i < offsetsLength; i++) {
+
+		for(int i = 0; i < offsetsLength; i++)
 			offsets[i] = in.readByte();
-			offsetToLast += offsets[i] & 0xFF;
-		}
+
 		return new OffsetByte(offsets, offsetToFirst, offsetToLast);
 	}
 
@@ -665,14 +666,7 @@ public class OffsetByte extends AOffset {
 
 		@Override
 		public int skipTo(int idx) {
-			if(noOverHalf) {
-				while(offset < idx && index < offsets.length) {
-					offset += offsets[index];
-					index++;
-				}
-				dataIndex = index;
-			}
-			else if(idx < offsetToLast)
+			if(idx < offsetToLast)
 				while(offset < idx)
 					next();
 			else

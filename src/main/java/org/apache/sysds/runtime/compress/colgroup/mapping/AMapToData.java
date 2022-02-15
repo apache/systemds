@@ -101,6 +101,16 @@ public abstract class AMapToData implements Serializable {
 	public abstract void set(int n, int v);
 
 	/**
+	 * Set the index to the value and get the contained value after.
+	 * 
+	 * @param n index to set.
+	 * @param v the value to set it to.
+	 * @return v as encoded, note this value can be different that the one put in if the map is not able to represent the
+	 *         value
+	 */
+	public abstract int setAndGet(int n, int v);
+
+	/**
 	 * Fill the map with a given value.
 	 * 
 	 * NOTE! The value should be representable inside the map. This requirement is not checked.

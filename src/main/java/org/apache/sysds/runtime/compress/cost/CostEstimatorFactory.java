@@ -46,15 +46,20 @@ public final class CostEstimatorFactory {
 			case W_TREE:
 			case AUTO:
 			default:
-				if(costVector != null)
+				if(costVector != null) {
+					LOG.info("Using workload cost vector making the compression based on compute cost");
 					return costVector.create(nRows, nCols, sparsity, cs.isInSparkInstruction);
-				else
-					return genDefaultCostCase(nRows, nCols, sparsity, cs.isInSparkInstruction);
+				}
+				else {
+					return new MemoryCostEstimator(nRows, nCols, sparsity);
+					// LOG.warn("Generating cost vector");
+
+					// return genDefaultCostCase(nRows, nCols, sparsity, cs.isInSparkInstruction);
+				}
 		}
 	}
 
-	public static ICostEstimate genDefaultCostCase(int nRows, int nCols, double sparsity,
-		boolean isInSparkInstruction) {
+	public static ICostEstimate genDefaultCostCase(int nRows, int nCols, double sparsity, boolean isInSparkInstruction) {
 		if(isInSparkInstruction)
 			return new HybridCostEstimator(nRows, nCols, sparsity, 1, 1, 0, 1, 1, 1, 10, true);
 		else

@@ -96,14 +96,14 @@ public class JoinCompressionInfoTest {
 
 			cs_estimate.transposed = true;
 
-			final CompressedSizeEstimator es = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs_estimate, 1);
-			CompressedSizeInfoColGroup g1 = es.estimateCompressedColGroupSize(new int[] {0});
-			CompressedSizeInfoColGroup g2 = es.estimateCompressedColGroupSize(new int[] {1});
-			g1 = es.estimateJoinCompressedSize(g1, g2);
-			g2 = es.estimateCompressedColGroupSize(new int[] {2});
+			final CompressedSizeEstimator es = CompressedSizeEstimatorFactory.createEstimator(mbt, cs_estimate, 1);
+			CompressedSizeInfoColGroup g1 = es.getColGroupInfo(new int[] {0});
+			CompressedSizeInfoColGroup g2 = es.getColGroupInfo(new int[] {1});
+			g1 = es.combine(g1, g2);
+			g2 = es.getColGroupInfo(new int[] {2});
 
-			CompressedSizeInfoColGroup joined_result = es.estimateJoinCompressedSize(g1, g2);
-			CompressedSizeInfoColGroup estimate_full = es.estimateCompressedColGroupSize(new int[] {0, 1, 2});
+			CompressedSizeInfoColGroup joined_result = es.combine(g1, g2);
+			CompressedSizeInfoColGroup estimate_full = es.getColGroupInfo(new int[] {0, 1, 2});
 
 			Assert.assertEquals(joined_result.getNumVals(), estimate_full.getNumVals());
 		}

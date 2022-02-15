@@ -322,6 +322,7 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 
 	@Override
 	protected void computeColSumsSq(double[] c, int nRows) {
+		_dict = _dict.getMBDict(_colIndexes.length);
 		// square sum the dictionary
 		_dict.colSumSqWithReference(c, getCounts(), _colIndexes, _reference);
 		// Square sum of the reference values only for the rows that is not represented in the Offsets.

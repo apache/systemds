@@ -106,6 +106,7 @@ public class OffsetChar extends AOffset {
 		out.writeByte(OffsetFactory.OFF_TYPE.CHAR.ordinal());
 		out.writeInt(offsetToFirst);
 		out.writeInt(offsets.length);
+		out.writeInt(offsetToLast);
 		for(char o : offsets)
 			out.writeChar(o);
 	}
@@ -123,7 +124,7 @@ public class OffsetChar extends AOffset {
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 4 + 4 + offsets.length * 2;
+		return 1 + 4 + 4 + 4 + offsets.length * 2;
 	}
 
 	@Override
@@ -158,12 +159,12 @@ public class OffsetChar extends AOffset {
 	public static OffsetChar readFields(DataInput in) throws IOException {
 		final int offsetToFirst = in.readInt();
 		final int offsetsLength = in.readInt();
+		final int offsetToLast = in.readInt();
 		final char[] offsets = new char[offsetsLength];
-		int offsetToLast = offsetToFirst;
-		for(int i = 0; i < offsetsLength; i++) {
+
+		for(int i = 0; i < offsetsLength; i++)
 			offsets[i] = in.readChar();
-			offsetToLast += offsets[i];
-		}
+
 		return new OffsetChar(offsets, offsetToFirst, offsetToLast);
 	}
 

@@ -64,6 +64,9 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	private boolean _splitDag = false;
 	private boolean _nondeterministic = false;
 
+	protected long repetitions = 1;
+	protected final long DEFAULT_LOOP_REPETITIONS = 10;
+
 	public StatementBlock() {
 		_ID = getNextSBID();
 		_name = "SB"+_ID;
@@ -1236,6 +1239,19 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		VariableSet liveInReturn = new VariableSet();
 		liveInReturn.addVariables(_liveIn);
 		return liveInReturn;
+	}
+
+	public boolean hasHops(){
+		return getHops() != null && !getHops().isEmpty();
+	}
+
+	public void updateRepetitionEstimates(long repetitions){
+		if ( hasHops() ){
+			for ( Hop root : getHops() ){
+				// Set repetitionNum for hops recursively
+			}
+		}
+		this.repetitions = repetitions;
 	}
 
 	///////////////////////////////////////////////////////////////

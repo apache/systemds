@@ -1539,6 +1539,12 @@ public abstract class Hop implements ParseInfo {
 		return ret;
 	}
 
+	public void updateRepetitionEstimates(long repetitions){
+		//Set repetition for this hop
+		//Go through children if not visited and set repetitions
+		//If visited before, add to hop repetitions
+	}
+
 	/**
 	 * Clones the attributes of that and copies it over to this.
 	 * 

@@ -201,6 +201,12 @@ public class DMLProgram
 			throw new RuntimeException(ex);
 		}
 	}
+
+	public void updateRepetitionEstimates(){
+		for ( StatementBlock stmBlock : getStatementBlocks() ){
+			stmBlock.updateRepetitionEstimates(1);
+		}
+	}
 	
 	@Override
 	public String toString(){

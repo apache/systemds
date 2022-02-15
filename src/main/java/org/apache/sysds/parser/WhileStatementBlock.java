@@ -22,6 +22,7 @@ package org.apache.sysds.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.Hop;
@@ -316,6 +317,18 @@ public class WhileStatementBlock extends StatementBlock
 		liveInReturn.addVariables(_liveIn);
 		
 		return liveInReturn;
+	}
+
+	public void updateRepetitionEstimates(long repetitions){
+		this.repetitions = repetitions * DEFAULT_LOOP_REPETITIONS;
+		//TODO: Set repetition estimate for predicate hops
+		getPredicateHops();
+		for(Statement statement : getStatements()) {
+			List<StatementBlock> children = ((ForStatement) statement).getBody();
+			for ( StatementBlock stmBlock : children ){
+				stmBlock.updateRepetitionEstimates(this.repetitions);
+			}
+		}
 	}
 	
 	/////////

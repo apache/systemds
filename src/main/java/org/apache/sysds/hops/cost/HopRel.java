@@ -55,7 +55,7 @@ public class HopRel {
 		hopRef = associatedHop;
 		this.fedOut = fedOut;
 		setInputDependency(hopRelMemo);
-		cost = new FederatedCostEstimator().costEstimate(this, hopRelMemo);
+		cost = FederatedCostEstimator.costEstimate(this, hopRelMemo);
 	}
 
 	/**

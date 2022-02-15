@@ -30,6 +30,8 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
+import org.apache.sysds.hops.cost.CostEstimator;
+import org.apache.sysds.hops.cost.FederatedCostEstimator;
 import org.apache.sysds.hops.cost.HopRel;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.parser.DMLProgram;
@@ -93,6 +95,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	@Override
 	public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph,
 		FunctionCallSizeInfo fcallSizes) {
+		prog.updateRepetitionEstimates();
 		rewriteStatementBlocks(prog, prog.getStatementBlocks());
 		setFinalFedouts();
 		return false;
@@ -159,6 +162,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	}
 
 	private ArrayList<StatementBlock> rewriteForStatementBlock(DMLProgram prog, ForStatementBlock forSB) {
+		addIterationNum(forSB);
 		selectFederatedExecutionPlan(forSB.getFromHops());
 		selectFederatedExecutionPlan(forSB.getToHops());
 		selectFederatedExecutionPlan(forSB.getIncrementHops());
@@ -167,6 +171,22 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 			forStatement.setBody(rewriteStatementBlocks(prog, forStatement.getBody()));
 		}
 		return new ArrayList<>(Collections.singletonList(forSB));
+	}
+
+	private void addIterationNum(ForStatementBlock forSB){
+		// TODO: Maybe this getNumIterations call cannot be done on hop dags with federated input with privacy constraints
+		long iterationNum = OptimizerUtils.getNumIterations(forSB, FederatedCostEstimator.DEFAULT_ITERATION_NUMBER);
+		// TODO: Go through the body of hop and set this iteration num in the individual hops and use that iteration num later on
+		// Add an iteration num to statementblocks. If exist already, add to the existing number
+		//TODO: Figure out how to deal with inner loops vs. repeated calls
+		// (inner loops: multiply by existing number of repetitions, repeated calls: add to existing number of repetitions)
+
+		// Assumption: Each statement block will only occur once.
+		// Set the number of iterations for statement block and call the child statement blocks with the same number of iterations.
+		// When a loop statement block is found, the number of iterations is multiplied.
+
+		// This sort of propagation needs to be separate from the rewriter since the number needs to be propagated in the function call.
+		// A statement block does not know the number of iterations of its parent. Or does it???
 	}
 
 	private ArrayList<StatementBlock> rewriteFunctionStatementBlock(DMLProgram prog, FunctionStatementBlock funcSB) {
@@ -178,7 +198,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	}
 
 	private ArrayList<StatementBlock> rewriteDefaultStatementBlock(DMLProgram prog, StatementBlock sb) {
-		if(sb.getHops() != null && !sb.getHops().isEmpty()) {
+		if(sb.hasHops()) {
 			for(Hop sbHop : sb.getHops()) {
 				if(sbHop instanceof FunctionOp) {
 					String funcName = ((FunctionOp) sbHop).getFunctionName();

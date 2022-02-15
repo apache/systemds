@@ -39,12 +39,12 @@ import java.util.ArrayList;
  * Cost estimator for federated executions with methods and constants for going through DML programs to estimate costs.
  */
 public class FederatedCostEstimator {
-	public int DEFAULT_MEMORY_ESTIMATE = 8;
-	public int DEFAULT_ITERATION_NUMBER = 15;
-	public double WORKER_NETWORK_BANDWIDTH_BYTES_PS = 1024*1024*1024; //Default network bandwidth in bytes per second
-	public double WORKER_COMPUTE_BANDWIDTH_FLOPS = 2.5*1024*1024*1024; //Default compute bandwidth in FLOPS
-	public double WORKER_DEGREE_OF_PARALLELISM = 8; //Default number of parallel processes for workers
-	public double WORKER_READ_BANDWIDTH_BYTES_PS = 3.5*1024*1024*1024; //Default read bandwidth in bytes per second
+	public static int DEFAULT_MEMORY_ESTIMATE = 8;
+	public static int DEFAULT_ITERATION_NUMBER = 15;
+	public static double WORKER_NETWORK_BANDWIDTH_BYTES_PS = 1024*1024*1024; //Default network bandwidth in bytes per second
+	public static double WORKER_COMPUTE_BANDWIDTH_FLOPS = 2.5*1024*1024*1024; //Default compute bandwidth in FLOPS
+	public static double WORKER_DEGREE_OF_PARALLELISM = 8; //Default number of parallel processes for workers
+	public static double WORKER_READ_BANDWIDTH_BYTES_PS = 3.5*1024*1024*1024; //Default read bandwidth in bytes per second
 
 	public boolean printCosts = false; //Temporary for debugging purposes
 
@@ -199,7 +199,7 @@ public class FederatedCostEstimator {
 	 * @param hopRelMemo memo table of HopRels for calculating input costs
 	 * @return cost estimation of Hop DAG starting from given root HopRel
 	 */
-	public FederatedCost costEstimate(HopRel root, MemoTable hopRelMemo){
+	public static FederatedCost costEstimate(HopRel root, MemoTable hopRelMemo){
 		// Check if root is in memo table.
 		if ( hopRelMemo.containsHopRel(root) ){
 			return root.getCostObject();
@@ -247,7 +247,7 @@ public class FederatedCostEstimator {
 	 * @param root hopRel for which cost is estimated
 	 * @return input transfer cost estimate
 	 */
-	private double inputTransferCostEstimate(boolean hasFederatedInput, HopRel root){
+	private static double inputTransferCostEstimate(boolean hasFederatedInput, HopRel root){
 		if ( hasFederatedInput )
 			return root.inputDependency.stream()
 				.filter(input -> (root.hopRef.isFederatedDataOp()) ? input.hasFederatedOutput() : input.hasLocalOutput() )

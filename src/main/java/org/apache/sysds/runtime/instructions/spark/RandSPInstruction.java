@@ -993,7 +993,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			}
 			else {
 				String[] data = _data.split(DataExpression.DELIM_NA_STRING_SEP);
-				int rowLength = data.length/(int)_rlen;
+				int rowLength = ((int)_rlen > 0)?data.length/(int)_rlen:0;
 				if(data.length != _schema.length && data.length > 1 && rowLength != _schema.length)
 					throw new DMLRuntimeException("data values should be equal "
 						+ "to number of columns, or a single values for all columns");

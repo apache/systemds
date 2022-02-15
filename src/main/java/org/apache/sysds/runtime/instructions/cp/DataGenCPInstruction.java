@@ -355,7 +355,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				String[] data = frame_data.split(DataExpression.DELIM_NA_STRING_SEP);
-				int rowLength = data.length/lrows;
+				int rowLength = (lrows > 0)?data.length/lrows:0;
 				if(data.length != schemaLength && data.length > 1 && rowLength != schemaLength)
 					throw new DMLRuntimeException(
 						"data values should be equal to number of columns," + " or a single values for all columns");

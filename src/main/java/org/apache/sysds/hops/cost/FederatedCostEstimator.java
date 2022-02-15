@@ -19,6 +19,8 @@
 
 package org.apache.sysds.hops.cost;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.ipa.MemoTable;
 import org.apache.sysds.parser.DMLProgram;
@@ -39,14 +41,13 @@ import java.util.ArrayList;
  * Cost estimator for federated executions with methods and constants for going through DML programs to estimate costs.
  */
 public class FederatedCostEstimator {
-	public int DEFAULT_MEMORY_ESTIMATE = 8;
-	public int DEFAULT_ITERATION_NUMBER = 15;
-	public double WORKER_NETWORK_BANDWIDTH_BYTES_PS = 1024*1024*1024; //Default network bandwidth in bytes per second
-	public double WORKER_COMPUTE_BANDWIDTH_FLOPS = 2.5*1024*1024*1024; //Default compute bandwidth in FLOPS
-	public double WORKER_DEGREE_OF_PARALLELISM = 8; //Default number of parallel processes for workers
-	public double WORKER_READ_BANDWIDTH_BYTES_PS = 3.5*1024*1024*1024; //Default read bandwidth in bytes per second
+	private static final Log LOG = LogFactory.getLog(FederatedCostEstimator.class.getName());
 
-	public boolean printCosts = false; //Temporary for debugging purposes
+	public static int DEFAULT_MEMORY_ESTIMATE = 8;
+	public static double WORKER_NETWORK_BANDWIDTH_BYTES_PS = 1024*1024*1024; //Default network bandwidth in bytes per second
+	public static double WORKER_COMPUTE_BANDWIDTH_FLOPS = 2.5*1024*1024*1024; //Default compute bandwidth in FLOPS
+	public static double WORKER_DEGREE_OF_PARALLELISM = 8; //Default number of parallel processes for workers
+	public static double WORKER_READ_BANDWIDTH_BYTES_PS = 3.5*1024*1024*1024; //Default read bandwidth in bytes per second
 
 	/**
 	 * Estimate cost of given DML program in bytes.
@@ -54,6 +55,7 @@ public class FederatedCostEstimator {
 	 * @return federated cost object with cost estimate in bytes
 	 */
 	public FederatedCost costEstimate(DMLProgram dmlProgram){
+		dmlProgram.updateRepetitionEstimates();
 		FederatedCost programTotalCost = new FederatedCost();
 		for ( StatementBlock stmBlock : dmlProgram.getStatementBlocks() )
 			programTotalCost.addInputTotalCost(costEstimate(stmBlock).getTotal());
@@ -74,12 +76,9 @@ public class FederatedCostEstimator {
 				for ( StatementBlock bodyBlock : whileStatement.getBody() )
 					whileSBCost.addInputTotalCost(costEstimate(bodyBlock));
 			}
-			whileSBCost.addRepetitionCost(DEFAULT_ITERATION_NUMBER);
 			return whileSBCost;
 		}
 		else if ( sb instanceof IfStatementBlock){
-			//Get cost of if-block + else-block and divide by two
-			// since only one of the code blocks will be executed in the end
 			IfStatementBlock ifSB = (IfStatementBlock) sb;
 			FederatedCost ifSBCost = new FederatedCost();
 			for ( Statement statement : ifSB.getStatements() ){
@@ -89,7 +88,6 @@ public class FederatedCostEstimator {
 				for ( StatementBlock elseBodySB : ifStatement.getElseBody() )
 					ifSBCost.addInputTotalCost(costEstimate(elseBodySB));
 			}
-			ifSBCost.setInputTotalCost(ifSBCost.getInputTotalCost()/2);
 			ifSBCost.addInputTotalCost(costEstimate(ifSB.getPredicateHops()));
 			return ifSBCost;
 		}
@@ -106,7 +104,6 @@ public class FederatedCostEstimator {
 				for ( StatementBlock forStatementBlockBody : forStatement.getBody() )
 					forSBCost.addInputTotalCost(costEstimate(forStatementBlockBody));
 			}
-			forSBCost.addRepetitionCost(forSB.getEstimateReps());
 			return forSBCost;
 		}
 		else if ( sb instanceof FunctionStatementBlock){
@@ -182,12 +179,13 @@ public class FederatedCostEstimator {
 				root.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_NETWORK_BANDWIDTH_BYTES_PS : 0;
 			double readCost = root.getInputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_READ_BANDWIDTH_BYTES_PS;
 
+			double rootRepetitions = root.getRepetitions();
 			FederatedCost rootFedCost =
-				new FederatedCost(readCost, inputTransferCost, outputTransferCost, computingCost, inputCosts);
+				new FederatedCost(readCost, inputTransferCost, outputTransferCost, computingCost, inputCosts, rootRepetitions);
 			root.setFederatedCost(rootFedCost);
 
-			if ( printCosts )
-				printCosts(root);
+			if ( LOG.isDebugEnabled() )
+				LOG.debug(getCostInfo(root));
 
 			return rootFedCost;
 		}
@@ -199,7 +197,7 @@ public class FederatedCostEstimator {
 	 * @param hopRelMemo memo table of HopRels for calculating input costs
 	 * @return cost estimation of Hop DAG starting from given root HopRel
 	 */
-	public FederatedCost costEstimate(HopRel root, MemoTable hopRelMemo){
+	public static FederatedCost costEstimate(HopRel root, MemoTable hopRelMemo){
 		// Check if root is in memo table.
 		if ( hopRelMemo.containsHopRel(root) ){
 			return root.getCostObject();
@@ -234,7 +232,8 @@ public class FederatedCostEstimator {
 				root.hopRef.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_NETWORK_BANDWIDTH_BYTES_PS : 0;
 			double readCost = root.hopRef.getInputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_READ_BANDWIDTH_BYTES_PS;
 
-			return new FederatedCost(readCost, inputTransferCost, outputTransferCost, computingCost, inputCosts);
+			double rootRepetitions = root.hopRef.getRepetitions();
+			return new FederatedCost(readCost, inputTransferCost, outputTransferCost, computingCost, inputCosts, rootRepetitions);
 		}
 	}
 
@@ -247,7 +246,7 @@ public class FederatedCostEstimator {
 	 * @param root hopRel for which cost is estimated
 	 * @return input transfer cost estimate
 	 */
-	private double inputTransferCostEstimate(boolean hasFederatedInput, HopRel root){
+	private static double inputTransferCostEstimate(boolean hasFederatedInput, HopRel root){
 		if ( hasFederatedInput )
 			return root.inputDependency.stream()
 				.filter(input -> (root.hopRef.isFederatedDataOp()) ? input.hasFederatedOutput() : input.hasLocalOutput() )
@@ -275,18 +274,21 @@ public class FederatedCostEstimator {
 	}
 
 	/**
-	 * Prints costs and information about root for debugging purposes
-	 * @param root hop for which information is printed
+	 * Return costs and information about root for debugging purposes.
+	 * @param root hop for which information is returned
+	 * @return information about root cost
 	 */
-	private static void printCosts(Hop root){
-		System.out.println("===============================");
-		System.out.println(root);
-		System.out.println("Is federated: " + root.isFederated());
-		System.out.println("Has federated output: " + root.hasFederatedOutput());
-		System.out.println(root.getText());
-		System.out.println("Pure computeCost: " + ComputeCost.getHOPComputeCost(root));
-		System.out.println("Dim1: " + root.getDim1() + " Dim2: " + root.getDim2());
-		System.out.println(root.getFederatedCost().toString());
-		System.out.println("===============================");
+	private static String getCostInfo(Hop root){
+		String sep = System.getProperty("line.separator");
+		StringBuilder costInfo = new StringBuilder();
+		costInfo
+			.append(root).append(sep)
+			.append("Is federated: ").append(root.isFederated())
+			.append(" Has federated output: ").append(root.hasFederatedOutput())
+			.append(root.getText()).append(sep)
+			.append("Pure computeCost: " + ComputeCost.getHOPComputeCost(root))
+			.append(" Dim1: " + root.getDim1() + " Dim2: " + root.getDim2()).append(sep)
+			.append(root.getFederatedCost().toString()).append(sep);
+		return costInfo.toString();
 	}
 }

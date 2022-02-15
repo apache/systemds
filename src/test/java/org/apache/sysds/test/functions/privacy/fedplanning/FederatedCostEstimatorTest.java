@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.privacy.fedplanning;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -32,15 +33,21 @@ import org.apache.sysds.hops.NaryOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.cost.FederatedCost;
 import org.apache.sysds.hops.cost.FederatedCostEstimator;
+import org.apache.sysds.hops.ipa.FunctionCallGraph;
+import org.apache.sysds.hops.ipa.IPAPassRewriteFederatedPlan;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
 import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.parser.ParserFactory;
 import org.apache.sysds.parser.ParserWrapper;
+import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
@@ -51,6 +58,7 @@ import java.util.Set;
 
 import static org.apache.sysds.common.Types.OpOp2.MULT;
 
+@NotThreadSafe
 public class FederatedCostEstimatorTest extends AutomatedTestBase {
 
 	private static final String TEST_DIR = "functions/privacy/fedplanning/";
@@ -58,13 +66,36 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedCostEstimatorTest.class.getSimpleName() + "/";
 	FederatedCostEstimator fedCostEstimator = new FederatedCostEstimator();
 
+	private static double COMPUTE_FLOPS;
+	private static double READ_PS;
+	private static double NETWORK_PS;
+
 	@Override
 	public void setUp() {}
 
+	@BeforeClass
+	public static void storeConstants(){
+		COMPUTE_FLOPS = FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS;
+		READ_PS = FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS;
+		NETWORK_PS = FederatedCostEstimator.WORKER_NETWORK_BANDWIDTH_BYTES_PS;
+	}
+
+	@Before
+	public void setConstants(){
+		FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
+		FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
+		FederatedCostEstimator.WORKER_NETWORK_BANDWIDTH_BYTES_PS = 5;
+	}
+
+	@After
+	public void resetConstants(){
+		FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = COMPUTE_FLOPS;
+		FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = READ_PS;
+		FederatedCostEstimator.WORKER_NETWORK_BANDWIDTH_BYTES_PS = NETWORK_PS;
+	}
+
 	@Test
 	public void simpleBinary() {
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
 
 		/*
 		 * HOP			Occurences		ComputeCost		ReadCost	ComputeCostFinal	ReadCostFinal
@@ -75,70 +106,87 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 		 * TOSTRING		1				1				800			0.0625				80
 		 * UnaryOp		1				1				8			0.0625				0.8
 		 */
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 
 		double expectedCost = computeCost + readCost;
 		runTest("BinaryCostEstimatorTest.dml", false, expectedCost);
 	}
 
 	@Test
+	public void simpleBinaryHopRelTest() {
+		runHopRelTest("BinaryCostEstimatorTest.dml", false);
+	}
+
+	@Test
 	public void ifElseTest(){
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 		double expectedCost = ((computeCost + readCost + 0.8 + 0.0625 + 0.0625) / 2) + 0.0625 + 0.8 + 0.0625;
 		runTest("IfElseCostEstimatorTest.dml", false, expectedCost);
 	}
 
 	@Test
+	public void ifElseHopRelTest(){
+		runHopRelTest("IfElseCostEstimatorTest.dml", false);
+	}
+
+	@Test
 	public void whileTest(){
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
-		double expectedCost = (computeCost + readCost + 0.0625) * fedCostEstimator.DEFAULT_ITERATION_NUMBER + 0.0625 + 0.8;
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double expectedCost = (computeCost + readCost + 0.0625 + 0.0625 + 0.8) * StatementBlock.DEFAULT_LOOP_REPETITIONS;
 		runTest("WhileCostEstimatorTest.dml", false, expectedCost);
 	}
 
 	@Test
+	public void whileHopRelTest(){
+		runHopRelTest("WhileCostEstimatorTest.dml", false);
+	}
+
+	@Test
 	public void forLoopTest(){
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 		double predicateCost = 0.0625 + 0.8 + 0.0625 + 0.0625 + 0.8 + 0.0625 + 0.0625 + 0.8 + 0.0625;
 		double expectedCost = (computeCost + readCost + predicateCost) * 5;
 		runTest("ForLoopCostEstimatorTest.dml", false, expectedCost);
 	}
 
 	@Test
+	public void forLoopHopRelTest(){
+		runHopRelTest("ForLoopCostEstimatorTest.dml", false);
+	}
+
+	@Test
 	public void parForLoopTest(){
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 		double predicateCost = 0.0625 + 0.8 + 0.0625 + 0.0625 + 0.8 + 0.0625 + 0.0625 + 0.8 + 0.0625;
 		double expectedCost = (computeCost + readCost + predicateCost) * 5;
 		runTest("ParForLoopCostEstimatorTest.dml", false, expectedCost);
 	}
 
 	@Test
+	public void parForLoopHopRelTest(){
+		runHopRelTest("ParForLoopCostEstimatorTest.dml", false);
+	}
+
+	@Test
 	public void functionTest(){
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 		double expectedCost = (computeCost + readCost);
 		runTest("FunctionCostEstimatorTest.dml", false, expectedCost);
 	}
 
 	@Test
+	public void functionHopRelTest(){
+		runHopRelTest("FunctionCostEstimatorTest.dml", false);
+	}
+
+	@Test
 	public void federatedMultiply() {
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		fedCostEstimator.WORKER_NETWORK_BANDWIDTH_BYTES_PS = 5;
 
 		double literalOpCost = 10*0.0625;
 		double naryOpCostSpecial = (0.125+2.2);
@@ -224,27 +272,72 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 		hops.stream().map(Hop::getClass).distinct().forEach(System.out::println);
 	}
 
+	private DMLProgram testSetup(String scriptFilename) throws IOException{
+		setTestConfig(scriptFilename);
+		String dmlScriptString = readScript(scriptFilename);
+
+		//parsing, dependency analysis and constructing hops (step 3 and 4 in DMLScript.java)
+		ParserWrapper parser = ParserFactory.createParser();
+		DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, new HashMap<>());
+		DMLTranslator dmlt = new DMLTranslator(prog);
+		dmlt.liveVariableAnalysis(prog);
+		dmlt.validateParseTree(prog);
+		dmlt.constructHops(prog);
+		if ( scriptFilename.equals("FederatedMultiplyCostEstimatorTest.dml")){
+			modifyFedouts(prog);
+			dmlt.rewriteHopsDAG(prog);
+			hops = new HashSet<>();
+			prog.getStatementBlocks().forEach(stmBlock -> stmBlock.getHops().forEach(this::addHop));
+		}
+		return prog;
+	}
+
+	private void compareResults(DMLProgram prog) {
+		IPAPassRewriteFederatedPlan rewriter = new IPAPassRewriteFederatedPlan();
+		rewriter.rewriteProgram(prog, new FunctionCallGraph(prog), null);
+
+		double actualCost = 0;
+		for ( Hop root : rewriter.getTerminalHops() ){
+			actualCost += root.getFederatedCost().getTotal();
+		}
+
+
+		rewriter.getTerminalHops().forEach(Hop::resetFederatedCost);
+		fedCostEstimator = new FederatedCostEstimator();
+		double expectedCost = 0;
+		for ( Hop root : rewriter.getTerminalHops() )
+			expectedCost += fedCostEstimator.costEstimate(root).getTotal();
+		Assert.assertEquals(expectedCost, actualCost, 0.0001);
+	}
+
+	private void runHopRelTest( String scriptFilename, boolean expectedException ) {
+		boolean raisedException = false;
+		try
+		{
+			DMLProgram prog = testSetup(scriptFilename);
+			compareResults(prog);
+		}
+		catch(LanguageException ex) {
+			raisedException = true;
+			if(raisedException!=expectedException)
+				ex.printStackTrace();
+		}
+		catch(Exception ex2) {
+			ex2.printStackTrace();
+			throw new RuntimeException(ex2);
+		}
+
+		Assert.assertEquals("Expected exception does not match raised exception",
+			expectedException, raisedException);
+	}
+
 	private void runTest( String scriptFilename, boolean expectedException, double expectedCost ) {
 		boolean raisedException = false;
 		try
 		{
-			setTestConfig(scriptFilename);
-			String dmlScriptString = readScript(scriptFilename);
+			DMLProgram prog = testSetup(scriptFilename);
 
-			//parsing, dependency analysis and constructing hops (step 3 and 4 in DMLScript.java)
-			ParserWrapper parser = ParserFactory.createParser();
-			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, new HashMap<>());
-			DMLTranslator dmlt = new DMLTranslator(prog);
-			dmlt.liveVariableAnalysis(prog);
-			dmlt.validateParseTree(prog);
-			dmlt.constructHops(prog);
-			if ( scriptFilename.equals("FederatedMultiplyCostEstimatorTest.dml")){
-				modifyFedouts(prog);
-				dmlt.rewriteHopsDAG(prog);
-				hops = new HashSet<>();
-				prog.getStatementBlocks().forEach(stmBlock -> stmBlock.getHops().forEach(this::addHop));
-			}
-
+			fedCostEstimator = new FederatedCostEstimator();
 			FederatedCost actualCost = fedCostEstimator.costEstimate(prog);
 			Assert.assertEquals(expectedCost, actualCost.getTotal(), 0.0001);
 		}

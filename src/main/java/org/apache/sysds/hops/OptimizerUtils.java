@@ -1289,17 +1289,18 @@ public class OptimizerUtils
 		if( fpb.getStatementBlock()==null )
 			return defaultValue;
 		ForStatementBlock fsb = (ForStatementBlock) fpb.getStatementBlock();
-		try {
-			HashMap<Long,Long> memo = new HashMap<>();
-			long from = rEvalSimpleLongExpression(fsb.getFromHops().getInput().get(0), memo);
-			long to = rEvalSimpleLongExpression(fsb.getToHops().getInput().get(0), memo);
-			long increment = (fsb.getIncrementHops()==null) ? (from < to) ? 1 : -1 : 
-				rEvalSimpleLongExpression(fsb.getIncrementHops().getInput().get(0), memo);
-			if( from != Long.MAX_VALUE && to != Long.MAX_VALUE && increment != Long.MAX_VALUE )
-				return (int)Math.ceil(((double)(to-from+1))/increment);
-		}
-		catch(Exception ex){}
-		return defaultValue;
+		return getNumIterations(fsb, defaultValue);
+	}
+
+	public static long getNumIterations(ForStatementBlock fsb, long defaultValue){
+		HashMap<Long,Long> memo = new HashMap<>();
+		long from = rEvalSimpleLongExpression(fsb.getFromHops().getInput().get(0), memo);
+		long to = rEvalSimpleLongExpression(fsb.getToHops().getInput().get(0), memo);
+		long increment = (fsb.getIncrementHops()==null) ? (from < to) ? 1 : -1 :
+			rEvalSimpleLongExpression(fsb.getIncrementHops().getInput().get(0), memo);
+		if( from != Long.MAX_VALUE && to != Long.MAX_VALUE && increment != Long.MAX_VALUE )
+			return (int)Math.ceil(((double)(to-from+1))/increment);
+		else return defaultValue;
 	}
 	
 	public static long getNumIterations(ForProgramBlock fpb, LocalVariableMap vars, long defaultValue) {

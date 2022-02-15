@@ -447,6 +447,20 @@ public class ForStatementBlock extends StatementBlock
 			}
 		}
 		
-		return 10;
+		return (int) DEFAULT_LOOP_REPETITIONS;
+	}
+
+	@Override
+	public void updateRepetitionEstimates(double repetitions){
+		this.repetitions = repetitions * getEstimateReps();
+		_fromHops.updateRepetitionEstimates(this.repetitions);
+		_toHops.updateRepetitionEstimates(this.repetitions);
+		_incrementHops.updateRepetitionEstimates(this.repetitions);
+		for(Statement statement : getStatements()) {
+			List<StatementBlock> children = ((ForStatement) statement).getBody();
+			for ( StatementBlock stmBlock : children ){
+				stmBlock.updateRepetitionEstimates(this.repetitions);
+			}
+		}
 	}
 }

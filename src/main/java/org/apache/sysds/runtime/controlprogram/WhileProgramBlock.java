@@ -20,8 +20,12 @@
 package org.apache.sysds.runtime.controlprogram;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.parser.ForStatement;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ValueType;

@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.rewrite.StatementBlockRewriteRule;
@@ -63,6 +64,9 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	private boolean _requiresRecompile = false;
 	private boolean _splitDag = false;
 	private boolean _nondeterministic = false;
+
+	protected double repetitions = 1;
+	public final static double DEFAULT_LOOP_REPETITIONS = 10;
 
 	public StatementBlock() {
 		_ID = getNextSBID();
@@ -1236,6 +1240,35 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		VariableSet liveInReturn = new VariableSet();
 		liveInReturn.addVariables(_liveIn);
 		return liveInReturn;
+	}
+
+	public boolean hasHops(){
+		return getHops() != null && !getHops().isEmpty();
+	}
+
+	/**
+	 * Updates the repetition estimate for this statement block
+	 * and all contained hops. FunctionStatementBlocks are loaded
+	 * from the function dictionary and repetitions are estimated
+	 * for the contained statement blocks.
+	 *
+	 * This method is overridden in the subclasses of StatementBlock.
+	 * @param repetitions estimated for this statement block
+	 */
+	public void updateRepetitionEstimates(double repetitions){
+		this.repetitions = repetitions;
+		if ( hasHops() ){
+			for ( Hop root : getHops() ){
+				// Set repetitionNum for hops recursively
+				if(root instanceof FunctionOp) {
+					String funcName = ((FunctionOp) root).getFunctionName();
+					FunctionStatementBlock sbFuncBlock = getDMLProg().getBuiltinFunctionDictionary().getFunction(funcName);
+					sbFuncBlock.updateRepetitionEstimates(repetitions);
+				}
+				else
+					root.updateRepetitionEstimates(repetitions);
+			}
+		}
 	}
 
 	///////////////////////////////////////////////////////////////

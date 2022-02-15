@@ -139,7 +139,7 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 			for(int j = 0; j < bins.size(); j++) {
 				double newBinWeight = binWeights[j] - c.getCardinalityRatio();
 				if(newBinWeight >= 0 && bins.get(j).getColumns().length < MAX_COL_PER_GROUP - 1) {
-					bins.set(j, joinWithoutAnalysis(Util.join(bins.get(j).getColumns(), c.getColumns()), bins.get(j), c));
+					bins.set(j, joinWithoutAnalysis(Util.combine(bins.get(j).getColumns(), c.getColumns()), bins.get(j), c));
 					binWeights[j] = newBinWeight;
 					assigned = true;
 					break;

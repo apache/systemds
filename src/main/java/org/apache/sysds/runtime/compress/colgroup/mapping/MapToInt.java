@@ -83,6 +83,12 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
+	public int setAndGet(int n, int v){
+		return _data[n] = (char) v;
+	}
+
+
+	@Override
 	public int size() {
 		return _data.length;
 	}

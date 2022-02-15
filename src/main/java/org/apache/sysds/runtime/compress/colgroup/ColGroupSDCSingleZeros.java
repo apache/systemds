@@ -79,7 +79,6 @@ public class ColGroupSDCSingleZeros extends APreAgg {
 	@Override
 	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
-
 		final AIterator it = _indexes.getIterator(rl);
 		if(it == null)
 			return;
@@ -88,16 +87,19 @@ public class ColGroupSDCSingleZeros extends APreAgg {
 		else if(ru > _indexes.getOffsetToLast()) {
 			final int maxOff = _indexes.getOffsetToLast();
 			final int nCol = _colIndexes.length;
-			while(true) {
-				final int row = offR + it.value();
-				final double[] c = db.values(row);
-				final int off = db.pos(row);
+			int row = offR + it.value();
+			double[] c = db.values(row);
+			int off = db.pos(row);
+			for(int j = 0; j < nCol; j++)
+				c[off + _colIndexes[j] + offC] += values[j];
+			while(it.value() < maxOff) {
+				it.next();
+				row = offR + it.value();
+				c = db.values(row);
+				off = db.pos(row);
 				for(int j = 0; j < nCol; j++)
 					c[off + _colIndexes[j] + offC] += values[j];
-				if(it.value() < maxOff)
-					it.next();
-				else
-					break;
+
 			}
 		}
 		else {
@@ -182,13 +184,14 @@ public class ColGroupSDCSingleZeros extends APreAgg {
 		else if(ru > _indexes.getOffsetToLast()) {
 			final int nCol = _colIndexes.length;
 			final int lastOff = _indexes.getOffsetToLast();
-			while(true) {
-				final int row = offR + it.value();
+			int row = offR + it.value();
+			for(int j = 0; j < nCol; j++)
+				ret.append(row, _colIndexes[j] + offC, values[j]);
+			while(it.value() < lastOff) {
+				it.next();
+				row = offR + it.value();
 				for(int j = 0; j < nCol; j++)
 					ret.append(row, _colIndexes[j] + offC, values[j]);
-				if(it.value() == lastOff)
-					return;
-				it.next();
 			}
 		}
 		else {

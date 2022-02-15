@@ -91,6 +91,12 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
+	public int setAndGet(int n, int v){
+		_data.set(n, v == 1);
+		return 1;
+	}
+
+	@Override
 	public int size() {
 		return _size;
 	}
@@ -195,6 +201,10 @@ public class MapToBit extends AMapToData {
 			v[off] += tv[off] * j.tt;
 			v[i] += tv[off] * j.ft;
 		}
+	}
+
+	public boolean isEmpty(){
+		return _data.isEmpty();
 	}
 
 	private static class JoinBitSets {

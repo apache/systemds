@@ -26,9 +26,11 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
@@ -69,10 +71,14 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 	private ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 		AMapToData data, int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
+
 		_indexes = offsets;
 		_data = data;
 		_zeros = false;
 		_defaultTuple = defaultTuple;
+
+		if(data instanceof MapToBit && ((MapToBit) data).isEmpty())
+			throw new DMLCompressionException("Error in SDC construction should have been SDCSingle");
 	}
 
 	protected static AColGroup create(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple,

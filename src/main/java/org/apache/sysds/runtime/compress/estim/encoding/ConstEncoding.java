@@ -46,11 +46,6 @@ public class ConstEncoding implements IEncode {
 	}
 
 	@Override
-	public int[] getCounts() {
-		return counts;
-	}
-
-	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
@@ -58,8 +53,8 @@ public class ConstEncoding implements IEncode {
 	}
 
 	@Override
-	public EstimationFactors computeSizeEstimation(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
-		return new EstimationFactors(cols.length, 1, nRows, nRows, counts, 0, 0, nRows, false, false, matrixSparsity,
+	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
+		return new EstimationFactors(cols.length, 1, nRows, nRows, counts, 0, nRows, false, false, matrixSparsity,
 			tupleSparsity);
 	}
 }

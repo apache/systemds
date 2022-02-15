@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.Est
  */
 public class CompressionSettingsBuilder {
 	private double samplingRatio;
+	private double samplePower = 0.65;
 	private boolean allowSharedDictionary = false;
 	private String transposeInput;
 	private int seed = -1;
@@ -322,7 +323,7 @@ public class CompressionSettingsBuilder {
 	 * @return The CompressionSettings
 	 */
 	public CompressionSettings create() {
-		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, seed, lossy,
+		return new CompressionSettings(samplingRatio,samplePower, allowSharedDictionary, transposeInput, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
 			minimumSampleSize, maxSampleSize, estimationType, costType, minimumCompressionRatio, isInSparkInstruction,
 			sdcSortType);

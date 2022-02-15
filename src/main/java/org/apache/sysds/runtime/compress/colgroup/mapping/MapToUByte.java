@@ -39,13 +39,18 @@ public class MapToUByte extends MapToByte {
 	}
 
 	@Override
-	public MAP_TYPE getType(){
+	public MAP_TYPE getType() {
 		return MapToFactory.MAP_TYPE.UBYTE;
 	}
 
 	@Override
 	public int getIndex(int n) {
 		return _data[n];
+	}
+
+	@Override
+	public int setAndGet(int n, int v) {
+		return _data[n] = (byte) v;
 	}
 
 	@Override
@@ -83,14 +88,14 @@ public class MapToUByte extends MapToByte {
 
 	// @Override
 	// public void copy(AMapToData d) {
-	// 	if(d instanceof MapToChar) {
-	// 		char[] dd = ((MapToChar) d).getChars();
-	// 		for(int i = 0; i < size(); i++)
-	// 			_data[i] = (byte) (dd[i] % 128);
-	// 	}
-	// 	else
-	// 		for(int i = 0; i < size(); i++)
-	// 			set(i, d.getIndex(i) % 128);
+	// if(d instanceof MapToChar) {
+	// char[] dd = ((MapToChar) d).getChars();
+	// for(int i = 0; i < size(); i++)
+	// _data[i] = (byte) (dd[i] % 128);
+	// }
+	// else
+	// for(int i = 0; i < size(); i++)
+	// set(i, d.getIndex(i) % 128);
 	// }
 
 	@Override

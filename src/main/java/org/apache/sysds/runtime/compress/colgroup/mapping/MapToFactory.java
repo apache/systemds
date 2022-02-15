@@ -24,7 +24,6 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
@@ -200,47 +199,5 @@ public class MapToFactory {
 			default:
 				return Integer.MAX_VALUE;
 		}
-	}
-
-	public static AMapToData join(AMapToData left, AMapToData right) {
-		if(left == null)
-			return right;
-		else if(right == null)
-			return left;
-		final int nVL = left.getUnique();
-		final int nVR = right.getUnique();
-		final int size = left.size();
-		final long maxUnique = (long) nVL * nVR;
-		if(maxUnique > (long) Integer.MAX_VALUE)
-			throw new DMLCompressionException(
-				"Joining impossible using linearized join, since each side has a large number of unique values");
-		if(size != right.size())
-			throw new DMLCompressionException("Invalid input maps to join, must contain same number of rows");
-
-		return computeJoin(left, right, size, nVL, (int) maxUnique);
-	}
-
-	private static AMapToData computeJoin(AMapToData left, AMapToData right, int size, int nVL, int maxUnique) {
-		AMapToData tmp = create(size, maxUnique);
-		return computeJoinUsingLinearizedMap(tmp, left, right, size, nVL, maxUnique);
-	}
-
-	private static AMapToData computeJoinUsingLinearizedMap(AMapToData tmp, AMapToData left, AMapToData right, int size,
-		int nVL, int maxUnique) {
-		int[] map = new int[maxUnique];
-		int newUID = 1;
-		for(int i = 0; i < size; i++) {
-			final int nv = left.getIndex(i) + right.getIndex(i) * nVL;
-			final int mapV = map[nv];
-			if(mapV == 0) {
-				tmp.set(i, newUID - 1);
-				map[nv] = newUID++;
-			}
-			else
-				tmp.set(i, mapV - 1);
-		}
-
-		tmp.setUnique(newUID - 1);
-		return tmp;
 	}
 }

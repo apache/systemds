@@ -87,6 +87,12 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
+	public int setAndGet(int n, int v){
+		_data[n] = (byte) v;
+		return _data[n] & 0xFF;
+	}
+
+	@Override
 	public int size() {
 		return _data.length;
 	}

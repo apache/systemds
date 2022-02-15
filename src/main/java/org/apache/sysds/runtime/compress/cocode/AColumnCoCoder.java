@@ -53,20 +53,21 @@ public abstract class AColumnCoCoder {
 
 	protected CompressedSizeInfoColGroup join(int[] joined, CompressedSizeInfoColGroup lhs,
 		CompressedSizeInfoColGroup rhs, boolean analyze) {
-		return analyze ? _sest.estimateJoinCompressedSize(joined, lhs, rhs) : joinWithoutAnalysis(joined, lhs, rhs);
+		return analyze ? _sest.combine(joined, lhs, rhs) : joinWithoutAnalysis(joined, lhs, rhs);
 	}
 
 	protected CompressedSizeInfoColGroup joinWithoutAnalysis(int[] joined, CompressedSizeInfoColGroup lhs,
 		CompressedSizeInfoColGroup rhs) {
+			final int nRows = lhs.getNumRows();
 		final int lhsV = lhs.getNumVals();
 		final int rhsV = rhs.getNumVals();
-		final int joinedMaxDistinct = (int) Math.min((long) lhsV * (long) rhsV, (long) _sest.getNumRows());
-		return new CompressedSizeInfoColGroup(joined, joinedMaxDistinct, _sest.getNumRows());
+		final int joinedMaxDistinct = (int) Math.min((long) lhsV * (long) rhsV, (long) nRows);
+		return new CompressedSizeInfoColGroup(joined, joinedMaxDistinct, nRows);
 	}
 
 	protected CompressedSizeInfoColGroup analyze(CompressedSizeInfoColGroup g) {
 		if(g.getBestCompressionType() == null)
-			return _sest.estimateCompressedColGroupSize(g.getColumns());
+			return _sest.getColGroupInfo(g.getColumns());
 		else
 			return g;
 	}

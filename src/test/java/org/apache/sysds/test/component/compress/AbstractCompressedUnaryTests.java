@@ -47,18 +47,18 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 	}
 
 	enum AggType {
-		ROWSUMS, COLSUMS, SUM, ROWSUMSSQ, COLSUMSSQ, SUMSQ, ROWMAXS, COLMAXS, MAX, ROWMINS, COLMINS, MIN, MEAN, COLMEAN,
-		ROWMEAN
+		ROW_SUMS, COL_SUMS, SUM, ROW_SUMS_SQ, COL_SUMS_SQ, SUM_SQ, ROW_MAXS, COL_MAXS, MAX, ROW_MINS, COL_MINS, MIN, MEAN,
+		COL_MEAN, ROW_MEAN
 	}
 
 	@Test
-	public void testUnaryOperator_ROWSUMS_CP() {
-		testUnaryOperators(AggType.ROWSUMS, true);
+	public void testUnaryOperator_ROW_SUMS_CP() {
+		testUnaryOperators(AggType.ROW_SUMS, true);
 	}
 
 	@Test
-	public void testUnaryOperator_COLSUMS_CP() {
-		testUnaryOperators(AggType.COLSUMS, true);
+	public void testUnaryOperator_COL_SMS_CP() {
+		testUnaryOperators(AggType.COL_SUMS, true);
 	}
 
 	@Test
@@ -67,28 +67,28 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 	}
 
 	@Test
-	public void testUnaryOperator_ROWSUMSSQ_CP() {
-		testUnaryOperators(AggType.ROWSUMSSQ, true);
+	public void testUnaryOperator_ROW_SUMS_SQ_CP() {
+		testUnaryOperators(AggType.ROW_SUMS_SQ, true);
 	}
 
 	@Test
-	public void testUnaryOperator_COLSUMSSQ_CP() {
-		testUnaryOperators(AggType.COLSUMSSQ, true);
+	public void testUnaryOperator_COL_SUMS_SQ_CP() {
+		testUnaryOperators(AggType.COL_SUMS_SQ, true);
 	}
 
 	@Test
-	public void testUnaryOperator_SUMSQ_CP() {
-		testUnaryOperators(AggType.SUMSQ, true);
+	public void testUnaryOperator_SUM_SQ_CP() {
+		testUnaryOperators(AggType.SUM_SQ, true);
 	}
 
 	@Test
-	public void testUnaryOperator_ROWMAXS_CP() {
-		testUnaryOperators(AggType.ROWMAXS, true);
+	public void testUnaryOperator_ROW_MAXS_CP() {
+		testUnaryOperators(AggType.ROW_MAXS, true);
 	}
 
 	@Test
-	public void testUnaryOperator_COLMAXS_CP() {
-		testUnaryOperators(AggType.COLMAXS, true);
+	public void testUnaryOperator_COL_MAXS_CP() {
+		testUnaryOperators(AggType.COL_MAXS, true);
 	}
 
 	@Test
@@ -97,13 +97,13 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 	}
 
 	@Test
-	public void testUnaryOperator_ROWMINS_CP() {
-		testUnaryOperators(AggType.ROWMINS, true);
+	public void testUnaryOperator_ROW_MINS_CP() {
+		testUnaryOperators(AggType.ROW_MINS, true);
 	}
 
 	@Test
-	public void testUnaryOperator_COLMINS_CP() {
-		testUnaryOperators(AggType.COLMINS, true);
+	public void testUnaryOperator_COL_MINS_CP() {
+		testUnaryOperators(AggType.COL_MINS, true);
 	}
 
 	@Test
@@ -117,23 +117,23 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 	}
 
 	@Test
-	public void testUnaryOperator_COLMEAN_CP() {
-		testUnaryOperators(AggType.COLMEAN, true);
+	public void testUnaryOperator_COL_MEAN_CP() {
+		testUnaryOperators(AggType.COL_MEAN, true);
 	}
 
 	@Test
-	public void testUnaryOperator_ROWMEAN_CP() {
-		testUnaryOperators(AggType.ROWMEAN, true);
+	public void testUnaryOperator_ROW_MEAN_CP() {
+		testUnaryOperators(AggType.ROW_MEAN, true);
 	}
 
 	@Test
-	public void testUnaryOperator_ROWSUMS_SP() {
-		testUnaryOperators(AggType.ROWSUMS, false);
+	public void testUnaryOperator_ROW_SUMS_SP() {
+		testUnaryOperators(AggType.ROW_SUMS, false);
 	}
 
 	@Test
-	public void testUnaryOperator_COLSUMS_SP() {
-		testUnaryOperators(AggType.COLSUMS, false);
+	public void testUnaryOperator_COL_SUMS_SP() {
+		testUnaryOperators(AggType.COL_SUMS, false);
 	}
 
 	@Test
@@ -142,28 +142,28 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 	}
 
 	@Test
-	public void testUnaryOperator_ROWSUMSSQ_SP() {
-		testUnaryOperators(AggType.ROWSUMSSQ, false);
+	public void testUnaryOperator_ROW_SUMS_SQ_SP() {
+		testUnaryOperators(AggType.ROW_SUMS_SQ, false);
 	}
 
 	@Test
-	public void testUnaryOperator_COLSUMSSQ_SP() {
-		testUnaryOperators(AggType.COLSUMSSQ, false);
+	public void testUnaryOperator_COL_SUMS_SQ_SP() {
+		testUnaryOperators(AggType.COL_SUMS_SQ, false);
 	}
 
 	@Test
-	public void testUnaryOperator_SUMSQ_SP() {
-		testUnaryOperators(AggType.SUMSQ, false);
+	public void testUnaryOperator_SUM_SQ_SP() {
+		testUnaryOperators(AggType.SUM_SQ, false);
 	}
 
 	@Test
-	public void testUnaryOperator_ROWMAXS_SP() {
-		testUnaryOperators(AggType.ROWMAXS, false);
+	public void testUnaryOperator_ROW_MAXS_SP() {
+		testUnaryOperators(AggType.ROW_MAXS, false);
 	}
 
 	@Test
-	public void testUnaryOperator_COLMAXS_SP() {
-		testUnaryOperators(AggType.COLMAXS, false);
+	public void testUnaryOperator_COL_MAXS_SP() {
+		testUnaryOperators(AggType.COL_MAXS, false);
 	}
 
 	@Test
@@ -172,13 +172,13 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 	}
 
 	@Test
-	public void testUnaryOperator_ROWMINS_SP() {
-		testUnaryOperators(AggType.ROWMINS, false);
+	public void testUnaryOperator_ROW_MINS_SP() {
+		testUnaryOperators(AggType.ROW_MINS, false);
 	}
 
 	@Test
-	public void testUnaryOperator_COLMINS_SP() {
-		testUnaryOperators(AggType.COLMINS, false);
+	public void testUnaryOperator_COL_MINS_SP() {
+		testUnaryOperators(AggType.COL_MINS, false);
 	}
 
 	@Test
@@ -192,46 +192,46 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 	}
 
 	@Test
-	public void testUnaryOperator_COLMEAN_SP() {
-		testUnaryOperators(AggType.COLMEAN, false);
+	public void testUnaryOperator_COL_MEAN_SP() {
+		testUnaryOperators(AggType.COL_MEAN, false);
 	}
 
 	@Test
-	public void testUnaryOperator_ROWMEAN_SP() {
-		testUnaryOperators(AggType.ROWMEAN, false);
+	public void testUnaryOperator_ROW_MEAN_SP() {
+		testUnaryOperators(AggType.ROW_MEAN, false);
 	}
 
 	protected AggregateUnaryOperator getUnaryOperator(AggType aggType, int threads) {
 		switch(aggType) {
 			case SUM:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uak+", threads);
-			case ROWSUMS:
+			case ROW_SUMS:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uark+", threads);
-			case COLSUMS:
+			case COL_SUMS:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uack+", threads);
-			case SUMSQ:
+			case SUM_SQ:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+", threads);
-			case ROWSUMSSQ:
+			case ROW_SUMS_SQ:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", threads);
-			case COLSUMSSQ:
+			case COL_SUMS_SQ:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uacsqk+", threads);
 			case MAX:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uamax", threads);
-			case ROWMAXS:
+			case ROW_MAXS:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uarmax", threads);
-			case COLMAXS:
+			case COL_MAXS:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uacmax", threads);
 			case MIN:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uamin", threads);
-			case ROWMINS:
+			case ROW_MINS:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", threads);
-			case COLMINS:
+			case COL_MINS:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uacmin", threads);
 			case MEAN:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uamean", threads);
-			case ROWMEAN:
+			case ROW_MEAN:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uarmean", threads);
-			case COLMEAN:
+			case COL_MEAN:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uacmean", threads);
 			default:
 				throw new NotImplementedException("Not Supported Aggregate Unary operator in test");
@@ -267,17 +267,17 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 
 			String css = this.toString();
 			if(_cs != null && _cs.lossy) {
-				if(aggType == AggType.COLSUMS)
+				if(aggType == AggType.COL_SUMS)
 					TestUtils.compareMatrices(ret1, ret2, lossyTolerance * 10 * rows, css);
-				else if(aggType == AggType.ROWSUMS)
+				else if(aggType == AggType.ROW_SUMS)
 					TestUtils.compareMatrices(ret1, ret2, lossyTolerance * 16 * cols, css);
-				else if(aggType == AggType.ROWSUMSSQ)
+				else if(aggType == AggType.ROW_SUMS_SQ)
 					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.5, 0.9, css, true);
 				else if(aggType == AggType.SUM)
 					TestUtils.compareMatrices(ret1, ret2, lossyTolerance * 10 * cols * rows, css);
 				else if(aggType == AggType.MEAN)
 					TestUtils.compareMatrices(ret1, ret2, lossyTolerance * cols * rows, css);
-				else if(aggType == AggType.ROWMEAN)
+				else if(aggType == AggType.ROW_MEAN)
 					TestUtils.compareMatrices(ret1, ret2, lossyTolerance, css);
 				else
 					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.8, 0.9, css, true);
@@ -285,7 +285,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			else {
 				if(overlappingType == OverLapping.SQUASH)
 					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.0, 0.90, css);
-				else if(aggType == AggType.ROWMEAN)
+				else if(aggType == AggType.ROW_MEAN)
 					TestUtils.compareMatrices(ret1, ret2, 0.0001, css);
 				else if(OverLapping.effectOnOutput(overlappingType))
 					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.95, 0.98, css);

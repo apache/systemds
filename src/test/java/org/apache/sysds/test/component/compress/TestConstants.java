@@ -79,7 +79,7 @@ public class TestConstants {
 			case SPARSE:
 				return 0.1;
 			case ULTRA_SPARSE:
-				return 0.01;
+				return 0.0001;
 			case EMPTY:
 				return 0.0;
 			case FULL:

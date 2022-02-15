@@ -169,7 +169,7 @@ public abstract class EncodeSampleTest {
 		try {
 			int[] cols = new int[t ? m.getNumRows() : m.getNumColumns()];
 			int rows = t ? m.getNumColumns() : m.getNumRows();
-			e.computeSizeEstimation(cols, rows, 1.0, 1.0);
+			e.extractFacts(cols, rows, 1.0, 1.0);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

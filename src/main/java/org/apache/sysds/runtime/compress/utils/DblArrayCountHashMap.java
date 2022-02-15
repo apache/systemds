@@ -38,7 +38,7 @@ public class DblArrayCountHashMap {
 	public DblArrayCountHashMap(int init_capacity, int cols) {
 		if(cols > 10)
 			_data = new Bucket[Util.getPow2(init_capacity)];
-		else 
+		else
 			_data = new Bucket[Util.getPow2(init_capacity / 2)];
 		_size = 0;
 	}
@@ -76,10 +76,10 @@ public class DblArrayCountHashMap {
 		final int ix = indexFor(hash, _data.length);
 
 		Bucket l = _data[ix];
-		while(true){
+		while(true) {
 			if(l == null)
 				return addNewBucket(ix, key);
-			else if(l.v.key.equals(key)){
+			else if(l.v.key.equals(key)) {
 				l.v.count++;
 				return l.v.id;
 			}
@@ -196,7 +196,7 @@ public class DblArrayCountHashMap {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(this.getClass().getSimpleName() + this.hashCode());
+		sb.append(this.getClass().getSimpleName());
 		for(int i = 0; i < _data.length; i++)
 			if(_data[i] != null)
 				sb.append(", " + _data[i]);

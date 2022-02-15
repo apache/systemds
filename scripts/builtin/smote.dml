@@ -123,7 +123,7 @@ return (Matrix[Double] knn_)
 {
   if(nrow(X) < k)
     stop("can not pick "+k+" nearest neighbours from "+nrow(X)+" total instances")
-
+  X = replace(target=X, pattern = NaN, replacement=0)
   diff = X - instance
   diff_nominal  = diff * mask
   if(sum(diff_nominal) != 0) {

@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.functionobjects.OffsetColumnIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -63,8 +64,8 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		// get inputs
-		MatrixObject mo1 = ec.getMatrixObject(input1.getName());
-		MatrixObject mo2 = ec.getMatrixObject(input2.getName());
+		MatrixLineagePair mo1 = ec.getMatrixLineagePair(input1);
+		MatrixLineagePair mo2 = ec.getMatrixLineagePair(input2);
 		DataCharacteristics dc1 = mo1.getDataCharacteristics();
 		DataCharacteristics dc2 = mo2.getDataCharacteristics();
 
@@ -123,8 +124,8 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 
 			boolean isFed1 = mo1.isFederated(_cbind ? FType.COL : FType.ROW);
 			boolean isFed2 = mo2.isFederated(_cbind ? FType.COL : FType.ROW);
-			FederationMap fed1 = isFed1 ? mo1.getFedMapping() : FederationUtils.federateLocalData(mo1);
-			FederationMap fed2 = isFed2 ? mo2.getFedMapping() : FederationUtils.federateLocalData(mo2);
+			FederationMap fed1 = isFed1 ? mo1.getFedMapping() : FederationUtils.federateLocalData(mo1.getMO());
+			FederationMap fed2 = isFed2 ? mo2.getFedMapping() : FederationUtils.federateLocalData(mo2.getMO());
 
 			out.setFedMapping(fed1.identCopy(getTID(), id)
 				.bind(roff, coff, fed2.identCopy(getTID(), id)));
@@ -134,8 +135,8 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 			|| ((mo1.isFederated(FType.COL) || mo2.isFederated(FType.COL)) && !_cbind) ) {
 			boolean isFed1 = mo1.isFederated(_cbind ? FType.ROW : FType.COL);
 			boolean isSpark = instString.contains("SPARK");
-			MatrixObject moFed = isFed1 ? mo1 : mo2;
-			MatrixObject moLoc = isFed1 ? mo2 : mo1;
+			MatrixLineagePair moFed = isFed1 ? mo1 : mo2;
+			MatrixLineagePair moLoc = isFed1 ? mo2 : mo1;
 			
 			//construct commands: broadcast lhs, fed append, clean broadcast
 			FederatedRequest[] fr1 = moFed.getFedMapping().broadcastSliced(moLoc, false);

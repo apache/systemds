@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -241,6 +242,13 @@ public class ExecutionContext {
 			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix: "+dat.getClass().getName());
 		
 		return (MatrixObject) dat;
+	}
+
+	public MatrixLineagePair getMatrixLineagePair(CPOperand cpo) {
+		MatrixObject mo = getMatrixObject(cpo);
+		if(mo == null)
+			return null;
+		return MatrixLineagePair.of(mo, DMLScript.LINEAGE ? getLineageItem(cpo) : null);
 	}
 
 	public TensorObject getTensorObject(String varname) {
@@ -840,7 +848,15 @@ public class ExecutionContext {
 			throw new DMLRuntimeException("Lineage Trace unavailable.");
 		LineageDebugger.maintainSpecialValueBits(_lineage, inst, this);
 	}
-	
+
+	public String getSingleLineageTrace(CPOperand cpo) {
+		if(!DMLScript.LINEAGE)
+			return null;
+		if( _lineage == null )
+			throw new DMLRuntimeException("Lineage Trace unavailable.");
+		return _lineage.serializeSingleTrace(cpo);
+	}
+
 	public LineageItem getLineageItem(CPOperand input) {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");

@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
@@ -57,8 +58,8 @@ public class QuaternaryWUMMFEDInstruction extends QuaternaryFEDInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject X = ec.getMatrixObject(input1);
-		MatrixObject U = ec.getMatrixObject(input2);
-		MatrixObject V = ec.getMatrixObject(input3);
+		MatrixLineagePair U = ec.getMatrixLineagePair(input2);
+		MatrixLineagePair V = ec.getMatrixLineagePair(input3);
 
 		if(X.isFederated()) {
 			FederationMap fedMap = X.getFedMapping();
@@ -112,7 +113,7 @@ public class QuaternaryWUMMFEDInstruction extends QuaternaryFEDInstruction {
 			// derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(output);
 			out.setFedMapping(fedMap.copyWithNewID(frComp.getID()));
-			setOutputDataCharacteristics(X, U, V, ec);
+			setOutputDataCharacteristics(X, U.getMO(), V.getMO(), ec);
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported federated inputs (X, U, V) = (" 

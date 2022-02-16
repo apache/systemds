@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
@@ -75,14 +76,14 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 	{
 		final WDivMMType wdivmm_type = _qop.wtype3;
 		MatrixObject X = ec.getMatrixObject(input1);
-		MatrixObject U = ec.getMatrixObject(input2);
-		MatrixObject V = ec.getMatrixObject(input3);
+		MatrixLineagePair U = ec.getMatrixLineagePair(input2);
+		MatrixLineagePair V = ec.getMatrixLineagePair(input3);
 		ScalarObject eps = null;
-		MatrixObject MX = null;
+		MatrixLineagePair MX = null;
 
 		if(_qop.hasFourInputs()) {
 			if(wdivmm_type == WDivMMType.MULT_MINUS_4_LEFT || wdivmm_type == WDivMMType.MULT_MINUS_4_RIGHT) {
-				MX = ec.getMatrixObject(_input4);
+				MX = ec.getMatrixLineagePair(_input4);
 			}
 			else {
 				eps = (_input4.getDataType() == DataType.SCALAR) ?
@@ -183,7 +184,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 				ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 			}
 			else if(wdivmm_type.isLeft() || wdivmm_type.isRight() || wdivmm_type.isBasic()) {
-				setFederatedOutput(X, U, V, ec, frComp.getID());
+				setFederatedOutput(X, U.getMO(), V.getMO(), ec, frComp.getID());
 			}
 			else {
 				throw new DMLRuntimeException("Federated WDivMM only supported for BASIC, LEFT or RIGHT variants.");

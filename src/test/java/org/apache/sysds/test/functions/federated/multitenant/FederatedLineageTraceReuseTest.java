@@ -87,7 +87,7 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	}
 
 	@Test
-	@Ignore // TODO: Not working yet since we do not transfer the whole lineage trace
+	@Ignore
 	public void testElementWisePlusSP() {
 		runLineageTraceReuseTest(OpType.EW_PLUS, 4, ExecMode.SPARK);
 	}
@@ -104,13 +104,12 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	}
 
 	@Test
-	@Ignore // TODO: Not working yet since we do not transfer the whole lineage trace
 	public void testParforAddCP() {
 		runLineageTraceReuseTest(OpType.PARFOR_ADD, 3, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	@Ignore // TODO: Not working yet since we do not transfer the whole lineage trace
+	@Ignore
 	public void testParforAddSP() {
 		runLineageTraceReuseTest(OpType.PARFOR_ADD, 3, ExecMode.SPARK);
 	}

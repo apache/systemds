@@ -35,12 +35,10 @@ testnum = $testnum;
 
 Y = rand(rows=$rows, cols=$cols, seed=1234);
 
-# TODO: uncomment as soon as we are transferring the whole lineage trace of
-#   every data object to the federated site
-# for(counter in 1:50) {
-#   while(FALSE) { }
-#   Y = Y + 0.1;
-# }
+for(counter in 1:50) {
+  while(FALSE) { }
+  Y = Y + 0.1;
+}
 
 while(FALSE) { }
 

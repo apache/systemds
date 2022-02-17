@@ -135,12 +135,12 @@ public class Hirschberg {
 		for(int bi = id; bi <= l; bi++) {
 			if(xans[bi] == yans[bi]) {
 				sb.append((char) xans[bi]);
-				System.out.print((char) xans[bi]);
+				//System.out.print((char) xans[bi]);
 			}
-			//else
-			//System.out.print("*");
+//			else
+//			System.out.print("*");
 		}
-		System.out.println();
+		//System.out.println();
 		if(sb.length() > 0) {
 			//            StringBuilder stringBuilder = new StringBuilder();
 			//            for (String s: pattern){
@@ -263,32 +263,17 @@ public class Hirschberg {
 		for(int bi = id; bi <= l; bi++) {
 			if(xans[bi] == yans[bi]) {
 				sb.append((char) xans[bi]);
-				System.out.print((char) xans[bi]);
+				//System.out.print((char) xans[bi]);
 			}
-			//else
-			//System.out.print("*");
+//			else
+//			System.out.print("*");
 		}
-		System.out.println();
+		//System.out.println();
 		if(sb.length() > 0) {
-			//            StringBuilder stringBuilder = new StringBuilder();
-			//            for (String s: pattern){
-			//                stringBuilder.append(s).append("_");
-			//            }
-			//            if (stringBuilder.length()>0)
-			//                stringBuilder.deleteCharAt(stringBuilder.length()-1);
 			return new Pair<>(pattern, sb.toString());
 		}
 		else
 			return null;
-	}
-
-	public static void main(String[] args) {
-		int misMatchPenalty = 3;
-		int gapPenalty = 2;
-		Hirschberg hirschberg = new Hirschberg();
-		String s1 = "123";
-		String s2 = "12369666";
-		System.out.println(hirschberg.getLCS(s1, s2, misMatchPenalty, gapPenalty).getValue());
 	}
 
 	public ArrayList<String> getLCS(ArrayList<String> list, int pxy, int pgap) {
@@ -299,7 +284,7 @@ public class Hirschberg {
 		String str1 = list.get(0);
 		String str2 = list.get(1);
 
-		Pair<ArrayList<String>, String> pattern = getLCS(str1, str2, pxy, pgap);
+		Pair<ArrayList<String>, String> pattern = getLCS(str1, str2);
 		if(pattern != null) {
 			String intersect = pattern.getValue();
 			ArrayList<String> intersectPattern = pattern.getKey();
@@ -318,52 +303,5 @@ public class Hirschberg {
 		return null;
 	}
 }
-//	public ArrayList<String> getLCS(ArrayList<String> list, int pxy, int pgap) {
-//		if(list.size() < 2)
-//			return null;
-//
-//		if(pattern != null) {
-//			String intersect = pattern.getValue();
-//			ArrayList<String> intersectPattern = pattern.getKey();
-//			for(int i = 2; i < list.size(); i++) {
-//				if(i == 199)
-//					System.out.print(i + " >>  " + list.get(i) + "\n");
-//				pattern = getLCS(intersect, list.get(i));
-//				if(pattern != null) {
-//					intersect = pattern.getValue();
-//					intersectPattern = pattern.getKey();
-//				}
-//				else
-//					intersect = null;
-//			}
-//			if(intersect != null)
-//				return intersectPattern;
-//
-//		}
-//
-//		Hirschberg2 hirschberg2 = new Hirschberg2();
-//		String str1 = list.get(0);
-//		String str2 = list.get(1);
-//		Pair<ArrayList<String>, String pattern = hirschberg2.algC(str1.length(), str2.length(), str1, str2);
-//		if(pattern != null) {
-//			String intersect = pattern.getValue();
-//			ArrayList<String> intersectPattern = pattern.getKey();
-//			for(int i = 2; i < list.size(); i++) {
-//				if(i == 199)
-//					System.out.print(i + " >>  " + list.get(i) + "\n");
-//				pattern = getLCS(intersect, list.get(i));
-//				if(pattern != null) {
-//					intersect = pattern.getValue();
-//					intersectPattern = pattern.getKey();
-//				}
-//				else
-//					intersect = null;
-//			}
-//			if(intersect != null)
-//				return intersectPattern;
-//
-//		}
-//
-//	}
 
 

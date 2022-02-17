@@ -30,6 +30,10 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 		// 1. set java code template
 		javaTemplate = "import org.apache.commons.lang.mutable.MutableInt;\n" +
 					"import org.apache.sysds.runtime.io.IOUtilFunctions;\n" +
+					"import java.util.HashMap;\n" +
+					"import java.util.HashSet;\n" +
+					"import java.util.regex.Matcher;\n" +
+					"import java.util.regex.Pattern; \n"+
 					"import org.apache.sysds.runtime.iogen.CustomProperties;\n" +
 					"import org.apache.sysds.runtime.matrix.data.MatrixBlock;\n" +
 					"import org.apache.sysds.runtime.iogen.template.MatrixGenerateReader; \n" +
@@ -37,8 +41,6 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 					"import java.io.IOException;\n" +
 					"import java.io.InputStream;\n" +
 					"import java.io.InputStreamReader;\n" +
-					"import java.util.HashSet; \n" +
-
 					"public class "+className+" extends MatrixGenerateReader {\n"+
 
 					"	public "+className+"(CustomProperties _props) {\n"+
@@ -55,26 +57,32 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 	@Override
 	public String generateCodeJava() {
 		StringBuilder src = new StringBuilder();
+		CodeGenTrie trie= new CodeGenTrie(properties, "dest.appendValue");
+		trie.setMatrix(true);
 		src.append("String str; \n");
 		src.append("int row = rowPos.intValue(); \n");
 		src.append("long lnnz = 0; \n");
 		src.append("int index, endPos, strLen; \n");
 		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
 		src.append("BufferedReader br = new BufferedReader(new InputStreamReader(is)); \n");
+		if(trie.isRegexBase()) {
+			properties.setColKeyPatternMap(trie.getColKeyPatternMap());
+			src.append(
+				"HashMap<String, Integer> colKeyPatternMap = _props.getColKeyPatternMap(); \n");
+		}
 		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX)
 			src.append("HashSet<String> endWithValueStringRow = _props.endWithValueStringsRow(); \n");
-//		src.append("try { \n");
-//		src.append("while((str = br.readLine()) != null){ \n");
-//		src.append("strLen = str.length(); \n");
+		src.append("try { \n");
+		src.append("while((str = br.readLine()) != null){ \n");
+		src.append("strLen = str.length(); \n");
 
-		CodeGenTrie trie= new CodeGenTrie(properties, "dest.appendValue");
 		src.append(trie.getJavaCode());
 
-//		src.append("} \n");
-//		src.append("} \n");
-//		src.append("finally { \n");
-//		src.append("IOUtilFunctions.closeSilently(br); \n");
-//		src.append("}");
+		src.append("} \n");
+		src.append("} \n");
+		src.append("finally { \n");
+		src.append("IOUtilFunctions.closeSilently(br); \n");
+		src.append("}");
 		src.append("rowPos.setValue(row); \n");
 		src.append("return lnnz; \n");
 

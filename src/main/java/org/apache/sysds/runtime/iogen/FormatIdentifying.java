@@ -378,10 +378,20 @@ public class FormatIdentifying {
 						reverseSplitPattern.add(ps);
 				if (reverseSplitPattern.size() == 0)
 					reverseSplitPattern.add("");
-				check = checkKeyPatternIsUnique(prefixStrings.getKey()[c], reverseSplitPattern);
-				if (check) {
-					keyPatterns = new ArrayList<>();
-					keyPatterns.add(reverseSplitPattern);
+
+				int maxPatternLength = reverseSplitPattern.size();
+				check = false;
+				for(int sp= 0; sp< maxPatternLength;sp++){
+					ArrayList<String> shortPattern = new ArrayList<>();
+					for(int spi= maxPatternLength - sp-1; spi< maxPatternLength; spi++){
+						shortPattern.add(reverseSplitPattern.get(spi));
+					}
+					check = checkKeyPatternIsUnique(prefixStrings.getKey()[c], shortPattern);
+					if (check) {
+						keyPatterns = new ArrayList<>();
+						keyPatterns.add(shortPattern);
+						break;
+					}
 				}
 			}
 			else {

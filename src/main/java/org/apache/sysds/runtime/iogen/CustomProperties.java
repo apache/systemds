@@ -23,6 +23,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class CustomProperties extends FileFormatProperties implements Serializable {
@@ -41,6 +42,7 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private IndexProperties rowIndex;
 	private KeyTrie rowKeyPattern;
 	private String rowIndexBegin;
+	private HashMap<String, Integer> colKeyPatternMap;
 
 	public CustomProperties(KeyTrie[] colKeyPattern, IndexProperties rowIndex) {
 		this.colKeyPattern = colKeyPattern;
@@ -109,5 +111,13 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public void setRowIndexBegin(String rowIndexBegin) {
 		this.rowIndexBegin = rowIndexBegin;
+	}
+
+	public HashMap<String, Integer> getColKeyPatternMap() {
+		return colKeyPatternMap;
+	}
+
+	public void setColKeyPatternMap(HashMap<String, Integer> colKeyPatternMap) {
+		this.colKeyPatternMap = colKeyPatternMap;
 	}
 }

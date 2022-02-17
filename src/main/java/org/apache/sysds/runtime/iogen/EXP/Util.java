@@ -1,6 +1,8 @@
 package org.apache.sysds.runtime.iogen.EXP;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -63,16 +65,17 @@ public class Util {
 		return schemaMap;
 	}
 
-	public String[][] loadFrameData(String fileName, int ncols, String delimiter)
+	public String[][] loadFrameData(String fileName,String delimiter)
 		throws IOException {
 		ArrayList<String[]> sampleRawLines = new ArrayList<>();
-
+		int ncols = 0;
 		try(BufferedReader br = new BufferedReader(new FileReader(fileName,StandardCharsets.UTF_8))) {
 			String line;
 			while((line = br.readLine()) != null) {
 				String[] data = line.split(delimiter);
+				ncols=data.length;
 				String[] colsData = new String[ncols];
-				for(int i = 0; i < data.length; i++) {
+				for(int i = 0; i < ncols; i++) {
 					String[] value = data[i].split("::");
 					if(value.length ==2) {
 						int col = Integer.parseInt(value[0]);
@@ -89,5 +92,15 @@ public class Util {
 			result[i] = sampleRawLines.get(i);
 
 		return result;
+	}
+
+	public MatrixBlock loadMatrixData(String fileName,  String delimiter) throws IOException {
+		String[][] dataString = loadFrameData(fileName,delimiter);
+		double[][] data = new double[dataString.length][dataString[0].length];
+		for(int i=0;i<dataString.length;i++)
+			for(int j=0;j<dataString[0].length;j++)
+				data[i][j] = Double.parseDouble(dataString[i][j]);
+		MatrixBlock mb = DataConverter.convertToMatrixBlock(data);
+		return mb;
 	}
 }

@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixReader;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -41,8 +42,11 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class MatrixGenerateReader extends MatrixReader {
 
@@ -162,17 +166,13 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return endPos;
 	}
 
-	//src.append("String str; \n");
-	//		src.append("int row = rowPos.intValue(); \n");
-	//		src.append("long lnnz = 0; \n");
-	//		src.append("int index, endPos, strLen; \n");
-	//		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
-	//		src.append("BufferedReader br = new BufferedReader(new InputStreamReader(is)); \n");
-	//		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX)
-	//			src.append("HashSet<String> endWithValueStringRow = _props.endWithValueStringsRow(); \n");
-	//		src.append("try { \n");
-	//		src.append("while((str = br.readLine()) != null){ \n");
-	//		src.append("strLen = str.length(); \n");
+
+	protected int getColIndex(HashMap<String, Integer> colKeyPatternMap, String key){
+		if(colKeyPatternMap.containsKey(key))
+			return colKeyPatternMap.get(key);
+		else
+			return -1;
+	}
 
 	protected String getStringChunkOfBufferReader(BufferedReader br, String remainedStr,int chunkSize){
 		StringBuilder sb = new StringBuilder();

@@ -93,6 +93,7 @@ public abstract class GenerateReader {
 			// constructor with arguments as CustomProperties
 			Class[] cArg = new Class[1];
 			cArg[0] = CustomProperties.class;
+			String jc = src.generateCodeJava();
 			matrixReader = (MatrixReader) CodegenUtils.compileClass(className, src.generateCodeJava()).getDeclaredConstructor(cArg).newInstance(properties);
 			return matrixReader;
 		}

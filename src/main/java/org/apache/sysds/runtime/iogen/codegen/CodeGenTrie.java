@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.iogen.codegen;
 
+import com.google.gson.Gson;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.iogen.CustomProperties;
@@ -52,11 +53,15 @@ public class CodeGenTrie {
 			if(keyTrie != null) {
 				for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns()) {
 					conditions.add(keys.get(0));
+					//Gson gson = new Gson();
+					//System.out.println(c+" >> "+ gson.toJson(keys));
+
 					break;
 				}
 			}
 		}
-		if(conditions.size() < 2) {
+
+		if(conditions.size() < 150) {
 			buildPrefixTree();
 			this.isRegexBase = false;
 		}

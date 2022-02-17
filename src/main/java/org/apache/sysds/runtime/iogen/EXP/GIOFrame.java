@@ -32,40 +32,8 @@ public class GIOFrame {
 		Types.ValueType[] sampleSchema = util.getSchema(schemaFileName);
 		int ncols = sampleSchema.length;
 
-		String[][] sampleFrameStrings = util.loadFrameData(sampleFrameFileName, sampleRawDelimiter);
-
-		ArrayList<Types.ValueType> newSampleSchema = new ArrayList<>();
-		ArrayList<ArrayList<String>> newSampleFrame = new ArrayList<>();
-
-		for(int c = 0; c < sampleFrameStrings[0].length; c++) {
-			HashSet<String> valueSet = new HashSet<>();
-			for(int r = 0; r < sampleFrameStrings.length; r++)
-				valueSet.add(sampleFrameStrings[r][c]);
-			if(valueSet.size() > 1) {
-				ArrayList<String> tempList = new ArrayList<>();
-				for(int r = 0; r < sampleFrameStrings.length; r++) {
-					tempList.add(sampleFrameStrings[r][c]);
-				}
-				newSampleFrame.add(tempList);
-				newSampleSchema.add(sampleSchema[c]);
-			}
-		}
-
-		sampleFrameStrings = new String[newSampleFrame.get(0).size()][newSampleFrame.size()];
-
-		for(int row = 0; row < sampleFrameStrings.length; row++) {
-			for(int col = 0; col < sampleFrameStrings[0].length; col++) {
-				sampleFrameStrings[row][col] = newSampleFrame.get(col).get(row);
-			}
-		}
-
-		sampleSchema = new Types.ValueType[newSampleSchema.size()];
-		for(int i = 0; i < newSampleSchema.size(); i++)
-			sampleSchema[i] = newSampleSchema.get(i);
-
-
+		String[][] sampleFrameStrings = util.loadFrameData(sampleFrameFileName, sampleRawDelimiter, ncols);
 		FrameBlock sampleFrame = new FrameBlock(sampleSchema, sampleFrameStrings);
-
 		String sampleRaw = util.readEntireTextFile(sampleRawFileName);
 		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
 		FrameReader fr = gr.getReader();

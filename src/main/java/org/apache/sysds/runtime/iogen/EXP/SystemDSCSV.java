@@ -8,7 +8,6 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.wink.json4j.JSONException;
 
 import java.io.IOException;
-import java.util.Map;
 
 public class SystemDSCSV {
 

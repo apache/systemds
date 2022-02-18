@@ -53,9 +53,6 @@ public class CodeGenTrie {
 			if(keyTrie != null) {
 				for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns()) {
 					conditions.add(keys.get(0));
-					//Gson gson = new Gson();
-					//System.out.println(c+" >> "+ gson.toJson(keys));
-
 					break;
 				}
 			}
@@ -116,14 +113,10 @@ public class CodeGenTrie {
 		for(int c = 0; c < properties.getColKeyPattern().length; c++) {
 			KeyTrie keyTrie = properties.getColKeyPattern()[c];
 			Types.ValueType vt = properties.getSchema() == null ? Types.ValueType.FP64 : properties.getSchema()[c];
-			//Gson gson = new Gson();
 			if(keyTrie != null) {
-				//System.out.println(gson.toJson(keyTrie.getReversePrefixKeyPatterns()));
 				for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns())
 					this.insert(rootCol, c, vt, keys);
 			}
-			//else
-			//	System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> "+c);
 		}
 
 		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX) {
@@ -171,7 +164,7 @@ public class CodeGenTrie {
 				src.append("row++; \n");
 				break;
 			case PREFIX:
-				getJavaCode(rootRow, src, "0");
+				getJavaCodeIndexOf(rootRow, src, "0");
 				getJavaCode(rootCol, src, "0");
 				break;
 			case KEY:

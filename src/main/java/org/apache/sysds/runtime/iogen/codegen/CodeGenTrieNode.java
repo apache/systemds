@@ -76,10 +76,12 @@ public class CodeGenTrieNode {
 		String subStr;
 		src.append("endPos = getEndPos(str, strLen, "+ currPos+", endWithValueStringRow); \n");
 		subStr = "str.substring("+currPos+",endPos)";
+		src.append("try{ \n");
 		if(rowIndexBeginPos.length() > 0)
-			src.append("row = ").append("Integer.parseInt("+subStr+") "+rowIndexBeginPos+"; \n");
+			src.append("row = ").append("Integer.parseInt(" + subStr + ") " + rowIndexBeginPos + "; \n");
 		else
 			src.append("row = ").append("Integer.parseInt("+subStr+"); \n");
+		src.append("} catch(Exception e){} \n");
 		return src.toString();
 	}
 

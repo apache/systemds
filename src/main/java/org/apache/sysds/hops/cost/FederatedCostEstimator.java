@@ -44,7 +44,6 @@ public class FederatedCostEstimator {
 	private static final Log LOG = LogFactory.getLog(FederatedCostEstimator.class.getName());
 
 	public static int DEFAULT_MEMORY_ESTIMATE = 8;
-	public static int DEFAULT_ITERATION_NUMBER = 15;
 	public static double WORKER_NETWORK_BANDWIDTH_BYTES_PS = 1024*1024*1024; //Default network bandwidth in bytes per second
 	public static double WORKER_COMPUTE_BANDWIDTH_FLOPS = 2.5*1024*1024*1024; //Default compute bandwidth in FLOPS
 	public static double WORKER_DEGREE_OF_PARALLELISM = 8; //Default number of parallel processes for workers

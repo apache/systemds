@@ -503,6 +503,7 @@ public class IfStatementBlock extends StatementBlock
 		return liveInReturn;
 	}
 
+	@Override
 	public void updateRepetitionEstimates(double repetitions){
 		this.repetitions = repetitions;
 		getPredicateHops().updateRepetitionEstimates(this.repetitions);

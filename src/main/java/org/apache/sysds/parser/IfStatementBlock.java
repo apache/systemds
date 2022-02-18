@@ -503,25 +503,17 @@ public class IfStatementBlock extends StatementBlock
 		return liveInReturn;
 	}
 
-	public void updateRepetitionEstimates(long repetitions){
+	public void updateRepetitionEstimates(double repetitions){
 		this.repetitions = repetitions;
-		//TODO: Set rep for predicate hops and if else bodies should get half the number of repetitions
-			//TODO: Don't check visited, instead add to repetition number
-			//PROBLEM: What if this method is called more than one time?
-			//Lets assume that it will only be called once, so that multiple
-			//references to the same child hop will not change the number of reps.
-		Hop predicate = getPredicateHops();
-		if ( !predicate.isVisited() )
-			predicate.updateRepetitionEstimates(this.repetitions);
+		getPredicateHops().updateRepetitionEstimates(this.repetitions);
 		for ( Statement statement : getStatements() ){
 			IfStatement ifStatement = (IfStatement) statement;
-			long blockLevelReps = (long) Math.ceil(repetitions / 2);
+			double blockLevelReps = repetitions / 2;
 			for ( StatementBlock ifBodySB : ifStatement.getIfBody() )
 				ifBodySB.updateRepetitionEstimates(blockLevelReps);
 			for ( StatementBlock elseBodySB : ifStatement.getElseBody() )
 				elseBodySB.updateRepetitionEstimates(blockLevelReps);
 		}
-
 	}
 	
 	/////////

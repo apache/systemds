@@ -37,6 +37,7 @@ import org.apache.sysds.parser.DMLTranslator;
 import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.parser.ParserFactory;
 import org.apache.sysds.parser.ParserWrapper;
+import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -98,7 +99,7 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
 		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
 		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
-		double expectedCost = (computeCost + readCost + 0.0625) * fedCostEstimator.DEFAULT_ITERATION_NUMBER + 0.0625 + 0.8;
+		double expectedCost = (computeCost + readCost + 0.0625 + 0.0625 + 0.8) * StatementBlock.DEFAULT_LOOP_REPETITIONS;
 		runTest("WhileCostEstimatorTest.dml", false, expectedCost);
 	}
 

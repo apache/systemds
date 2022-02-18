@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.rewrite.StatementBlockRewriteRule;
@@ -64,8 +65,8 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	private boolean _splitDag = false;
 	private boolean _nondeterministic = false;
 
-	protected long repetitions = 1;
-	protected final long DEFAULT_LOOP_REPETITIONS = 10;
+	protected double repetitions = 1;
+	public final static double DEFAULT_LOOP_REPETITIONS = 10;
 
 	public StatementBlock() {
 		_ID = getNextSBID();
@@ -1245,13 +1246,20 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return getHops() != null && !getHops().isEmpty();
 	}
 
-	public void updateRepetitionEstimates(long repetitions){
+	public void updateRepetitionEstimates(double repetitions){
+		this.repetitions = repetitions;
 		if ( hasHops() ){
 			for ( Hop root : getHops() ){
 				// Set repetitionNum for hops recursively
+				if(root instanceof FunctionOp) {
+					String funcName = ((FunctionOp) root).getFunctionName();
+					FunctionStatementBlock sbFuncBlock = getDMLProg().getBuiltinFunctionDictionary().getFunction(funcName);
+					sbFuncBlock.updateRepetitionEstimates(repetitions);
+				}
+				else
+					root.updateRepetitionEstimates(repetitions);
 			}
 		}
-		this.repetitions = repetitions;
 	}
 
 	///////////////////////////////////////////////////////////////

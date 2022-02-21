@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.estim.encoding;
 
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -56,16 +57,18 @@ public class SparseEncoding implements IEncode {
 	}
 
 	@Override
-	public IEncode join(IEncode e) {
-		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
+	public IEncode combine(IEncode e) {
+		if((long) (getUnique()) * e.getUnique() > Integer.MAX_VALUE)
+			throw new DMLCompressionException("Invalid input to combine.");
+		else if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
 			return this;
 		else if(e instanceof SparseEncoding)
-			return joinSparse((SparseEncoding) e);
+			return combineSparse((SparseEncoding) e);
 		else
-			return ((DenseEncoding) e).joinSparse(this);
+			return e.combine(this);
 	}
 
-	protected IEncode joinSparse(SparseEncoding e) {
+	protected IEncode combineSparse(SparseEncoding e) {
 		if(e.map == map && e.off == off)
 			return this; // unlikely to happen but cheap to compute therefore this skip is included.
 
@@ -84,9 +87,9 @@ public class SparseEncoding implements IEncode {
 		final int nVl = getUnique();
 		final int nVr = e.getUnique();
 
-		final int unique = joinSparse(map, e.map, itl, itr, retOff, tmpVals, fl, fr, nVl, nVr, d);
+		final int unique = combineSparse(map, e.map, itl, itr, retOff, tmpVals, fl, fr, nVl, nVr, d);
 
-		if(retOff.size() < nRows * 0.3) {
+		if(retOff.size() < nRows * 0.2) {
 			final AOffset o = OffsetFactory.createOffset(retOff);
 			final AMapToData retMap = MapToFactory.create(tmpVals.size(), tmpVals.extractValues(), unique);
 			return new SparseEncoding(retMap, o, nRows - retOff.size(), retMap.getCounts(new int[unique - 1]), nRows);
@@ -97,13 +100,11 @@ public class SparseEncoding implements IEncode {
 			for(int i = 0; i < retOff.size(); i++)
 				retMap.set(retOff.get(i), tmpVals.get(i));
 
-			// add values.
-			IEncode ret = DenseEncoding.joinDenseCount(retMap);
-			return ret;
+			return new DenseEncoding(retMap);
 		}
 	}
 
-	private static int joinSparse(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr, IntArrayList retOff,
+	private static int combineSparse(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr, IntArrayList retOff,
 		IntArrayList tmpVals, int fl, int fr, int nVl, int nVr, int[] d) {
 
 		final int defR = (nVr - 1) * nVl;

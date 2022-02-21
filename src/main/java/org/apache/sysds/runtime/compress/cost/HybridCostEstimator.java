@@ -19,53 +19,45 @@
 
 package org.apache.sysds.runtime.compress.cost;
 
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class HybridCostEstimator implements ICostEstimate {
+public class HybridCostEstimator extends ACostEstimate {
 
 	private static final long serialVersionUID = -542307595058927576L;
 
 	final ComputationCostEstimator costEstimator;
 	final MemoryCostEstimator memoryCostEstimator;
 
-	protected HybridCostEstimator(int nRows, int nCols, double sparsity, InstructionTypeCounter counts) {
-		costEstimator = new ComputationCostEstimator(nRows, nCols, sparsity, counts);
-		memoryCostEstimator = new MemoryCostEstimator(nRows, nCols, sparsity);
+	protected HybridCostEstimator(InstructionTypeCounter counts) {
+		costEstimator = new ComputationCostEstimator(counts);
+		memoryCostEstimator = new MemoryCostEstimator();
 	}
 
-	protected HybridCostEstimator(int nRows, int nCols, double sparsity, int scans, int decompressions,
-		int overlappingDecompressions, int leftMultiplictions, int compressedMultiplication, int rightMultiplications,
-		int dictioanaryOps, boolean isDensifying) {
-		costEstimator = new ComputationCostEstimator(nRows, nCols, sparsity, scans, decompressions,
-			overlappingDecompressions, leftMultiplictions, compressedMultiplication, rightMultiplications,
-			dictioanaryOps, isDensifying);
-		memoryCostEstimator = new MemoryCostEstimator(nRows, nCols, sparsity);
-	}
-
-	@Override
-	public double getUncompressedCost(CompressedSizeInfoColGroup g) {
-		double cost = costEstimator.getUncompressedCost(g);
-		// not multiplying with uncompressed, since that would be multiplying with 1
-		return cost;
+	protected HybridCostEstimator(int scans, int decompressions, int overlappingDecompressions, int leftMultiplications,
+		int compressedMultiplication, int rightMultiplications, int dictionaryOps, boolean isDensifying) {
+		costEstimator = new ComputationCostEstimator(scans, decompressions, overlappingDecompressions,
+			leftMultiplications, compressedMultiplication, rightMultiplications, dictionaryOps, isDensifying);
+		memoryCostEstimator = new MemoryCostEstimator();
 	}
 
 	@Override
-	public double getCostOfColumnGroup(CompressedSizeInfoColGroup g) {
-		double cost = costEstimator.getCostOfColumnGroup(g);
-		// multiplying with compression ratio since this scale cost with size.
-		cost *= calculateCompressionRatio(g);
-		return cost;
-	}
-
-	private double calculateCompressionRatio(CompressedSizeInfoColGroup g) {
-		double denseSize = memoryCostEstimator.getUncompressedCost(g);
-		double compressedSize = memoryCostEstimator.getCostOfColumnGroup(g);
-		// If the compression increase size then the fraction is above 1, aka the cost should be significantly smaller.
-		return compressedSize / denseSize;
+	protected double getCostSafe(CompressedSizeInfoColGroup g) {
+		final double cost = costEstimator.getCostSafe(g);
+		final double denseSize = g.getNumRows() * g.getColumns().length * 8;
+		final double compressedSize = memoryCostEstimator.getCostSafe(g);
+		return cost * (compressedSize / denseSize);
 	}
 
 	@Override
-	public boolean shouldAnalyze(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
-		return true;
+	public double getCost(MatrixBlock mb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public double getCost(AColGroup cg, int nRows) {
+		throw new NotImplementedException();
 	}
 }

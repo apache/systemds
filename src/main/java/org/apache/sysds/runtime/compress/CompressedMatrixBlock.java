@@ -50,13 +50,13 @@ import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
 import org.apache.sysds.runtime.compress.lib.CLALibCMOps;
 import org.apache.sysds.runtime.compress.lib.CLALibCompAgg;
 import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
-import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
 import org.apache.sysds.runtime.compress.lib.CLALibSquash;
+import org.apache.sysds.runtime.compress.lib.CLALibTSMM;
 import org.apache.sysds.runtime.compress.lib.CLALibUnary;
 import org.apache.sysds.runtime.compress.lib.CLALibUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -498,7 +498,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			else
 				out.reset(clen, clen, false);
 			out.allocateDenseBlock();
-			CLALibLeftMultBy.leftMultByTransposeSelf(this, out, k);
+			CLALibTSMM.leftMultByTransposeSelf(this, out, k);
 			return out;
 		}
 		else {
@@ -508,10 +508,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
-		if(isOverlapping()){
-			
-			return getUncompressed("replaceOperations " + pattern + " -> " + replacement).replaceOperations(result,
-				pattern, replacement);
+		if(isOverlapping()) {
+			final String message = "replaceOperations " + pattern + " -> " + replacement;
+			return getUncompressed(message).replaceOperations(result, pattern, replacement);
 		}
 		else {
 			CompressedMatrixBlock ret = new CompressedMatrixBlock(getNumRows(), getNumColumns());
@@ -976,7 +975,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	private static CompressedMatrixBlock checkType(MatrixValue thatValue) {
 		if(thatValue == null || !(thatValue instanceof CompressedMatrixBlock))
-			throw new DMLRuntimeException("Invalid call to copy, requre a compressed MatrixBlock to copy to");
+			throw new DMLRuntimeException("Invalid call to copy, require a compressed MatrixBlock to copy to");
 
 		return (CompressedMatrixBlock) thatValue;
 	}
@@ -995,7 +994,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			throw new NotImplementedException();
 		else
 			throw new DMLCompressionException(
-				"Invalid copy shallow, since the matrixBlock given is not of type CompressedMatrixBLock");
+				"Invalid copy shallow, since the matrixBlock given is not of type CompressedMatrixBlock");
 	}
 
 	@Override

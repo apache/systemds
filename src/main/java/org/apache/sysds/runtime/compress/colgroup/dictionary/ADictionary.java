@@ -23,13 +23,17 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 /**
  * This dictionary class aims to encapsulate the storage and operations over unique tuple values of a column group.
@@ -140,6 +144,14 @@ public abstract class ADictionary implements Serializable {
 	public abstract ADictionary applyScalarOp(ScalarOperator op);
 
 	/**
+	 * Allocate a new dictionary and apply the unary operator on each cell.
+	 * 
+	 * @param op the operator.
+	 * @return The new dictionary to return.
+	 */
+	public abstract ADictionary applyUnaryOp(UnaryOperator op);
+
+	/**
 	 * Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.
 	 * 
 	 * outValues[j] = op(this.values[j] + reference[i]) - newReference[i]
@@ -150,6 +162,18 @@ public abstract class ADictionary implements Serializable {
 	 * @return A New Dictionary.
 	 */
 	public abstract ADictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference);
+
+	/**
+	 * Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.
+	 * 
+	 * outValues[j] = op(this.values[j] + reference[i]) - newReference[i]
+	 * 
+	 * @param op           The unary operator to apply to each cell.
+	 * @param reference    The reference value to add before the operator.
+	 * @param newReference The reference value to subtract after the operator.
+	 * @return A New Dictionary.
+	 */
+	public abstract ADictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference);
 
 	/**
 	 * Applies the scalar operation on the dictionary. Note that this operation modifies the underlying data, and
@@ -303,42 +327,42 @@ public abstract class ADictionary implements Serializable {
 	 */
 	public abstract double[] sumAllRowsToDoubleSqWithReference(double[] reference);
 
-	/**
-	 * Sum the values at a specific row.
-	 * 
-	 * @param k         The row index to sum
-	 * @param nrColumns The number of columns
-	 * @return The sum of the row.
-	 */
-	public abstract double sumRow(int k, int nrColumns);
+	// /**
+	// * Sum the values at a specific row.
+	// *
+	// * @param k The row index to sum
+	// * @param nrColumns The number of columns
+	// * @return The sum of the row.
+	// */
+	// public abstract double sumRow(int k, int nrColumns);
 
-	/**
-	 * Sum the values at a specific row.
-	 * 
-	 * @param k         The row index to sum
-	 * @param nrColumns The number of columns
-	 * @return The sum of the row.
-	 */
-	public abstract double sumRowSq(int k, int nrColumns);
+	// /**
+	// * Sum the values at a specific row.
+	// *
+	// * @param k The row index to sum
+	// * @param nrColumns The number of columns
+	// * @return The sum of the row.
+	// */
+	// public abstract double sumRowSq(int k, int nrColumns);
 
-	/**
-	 * Sum the values at a specific row, with a reference array to scale the values.
-	 * 
-	 * @param k         The row index to sum
-	 * @param nrColumns The number of columns
-	 * @param reference The reference vector to add to each cell processed.
-	 * @return The sum of the row.
-	 */
-	public abstract double sumRowSqWithReference(int k, int nrColumns, double[] reference);
+	// /**
+	// * Sum the values at a specific row, with a reference array to scale the values.
+	// *
+	// * @param k The row index to sum
+	// * @param nrColumns The number of columns
+	// * @param reference The reference vector to add to each cell processed.
+	// * @return The sum of the row.
+	// */
+	// public abstract double sumRowSqWithReference(int k, int nrColumns, double[] reference);
 
-	/**
-	 * Get the column sum of this dictionary only.
-	 * 
-	 * @param counts the counts of the values contained
-	 * @param nCol   The number of columns contained in each tuple.
-	 * @return the colSums of this column group.
-	 */
-	public abstract double[] colSum(int[] counts, int nCol);
+	// /**
+	// * Get the column sum of this dictionary only.
+	// *
+	// * @param counts the counts of the values contained
+	// * @param nCol The number of columns contained in each tuple.
+	// * @return the colSums of this column group.
+	// */
+	// public abstract double[] colSum(int[] counts, int nCol);
 
 	/**
 	 * Get the column sum of the values contained in the dictionary
@@ -467,8 +491,19 @@ public abstract class ADictionary implements Serializable {
 	 */
 	public abstract void addToEntry(double[] v, int fr, int to, int nCol);
 
-	public abstract void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
-		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol);
+	/**
+	 * copies and adds the dictonary entry from this dictionary yo the d dictionary rep times.
+	 * 
+	 * @param v    the target dictionary (dense double array)
+	 * @param fr   the from index
+	 * @param to   the to index
+	 * @param nCol the number of columns
+	 * @param rep  the number of repetitions to apply (simply multiply do not loop)
+	 */
+	public abstract void addToEntry(double[] v, int fr, int to, int nCol, int rep);
+
+	public abstract void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8,
+		int t1, int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol);
 
 	/**
 	 * Allocate a new dictionary where the tuple given is subtracted from all tuples in the previous dictionary.
@@ -481,6 +516,8 @@ public abstract class ADictionary implements Serializable {
 	/**
 	 * Get this dictionary as a MatrixBlock dictionary. This allows us to use optimized kernels coded elsewhere in the
 	 * system, such as matrix multiplication.
+	 * 
+	 * Return null if the matrix is empty.
 	 * 
 	 * @param nCol The number of columns contained in this column group.
 	 * @return A Dictionary containing a MatrixBlock.
@@ -533,16 +570,34 @@ public abstract class ADictionary implements Serializable {
 	 */
 	public abstract ADictionary replaceWithReference(double pattern, double replace, double[] reference);
 
-	// public abstract ADictionary replaceZeroAndExtend(double replace, int nCol);
-
 	/**
 	 * Calculate the product of the dictionary weighted by counts.
 	 * 
+	 * @param ret    The result dense double array (containing one value)
 	 * @param counts The count of individual tuples
 	 * @param nCol   Number of columns in the dictionary.
-	 * @return The product of the dictionary
 	 */
-	public abstract double product(int[] counts, int nCol);
+	public abstract void product(double[] ret, int[] counts, int nCol);
+
+	/**
+	 * Calculate the product of the dictionary weighted by counts with a default value added .
+	 * 
+	 * @param ret      The result dense double array (containing one value)
+	 * @param counts   The count of individual tuples
+	 * @param def      The default tuple
+	 * @param defCount The count of the default tuple
+	 */
+	public abstract void productWithDefault(double[] ret, int[] counts, double[] def, int defCount);
+
+	/**
+	 * Calculate the product of the dictionary weighted by counts and offset by reference
+	 * 
+	 * @param ret       The result dense double array (containing one value)
+	 * @param counts    The counts of each entry in the dictionary
+	 * @param reference The reference value.
+	 * @param refCount  The number of occurences of the ref value.
+	 */
+	public abstract void productWithReference(double[] ret, int[] counts, double[] reference, int refCount);
 
 	/**
 	 * Calculate the column product of the dictionary weighted by counts.
@@ -551,7 +606,9 @@ public abstract class ADictionary implements Serializable {
 	 * @param counts     The weighted count of individual tuples
 	 * @param colIndexes The column indexes.
 	 */
-	public abstract void colProduct(double[] res, int[] counts, int[] colIndexes);
+	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
+		throw new NotImplementedException();
+	}
 
 	/**
 	 * Central moment function to calculate the central moment of this column group. MUST be on a single column
@@ -627,4 +684,48 @@ public abstract class ADictionary implements Serializable {
 	 * @return A new dictionary
 	 */
 	public abstract ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, double reference);
+
+	/**
+	 * Get the sparsity of the dictionary.
+	 * 
+	 * @return a sparsity between 0 and 1
+	 */
+	public abstract double getSparsity();
+
+	/**
+	 * Multiply the v value with the dictionary entry at dictIdx and add it to the ret matrix at the columns specified in
+	 * the int array.
+	 * 
+	 * @param v       Value to multiply
+	 * @param ret     Output dense double array location
+	 * @param off     Offset into the ret array that the "row" output starts at
+	 * @param dictIdx The dictionary entry to multiply.
+	 * @param cols    The columns to multiply into of the output.
+	 */
+	public abstract void multiplyScalar(double v, double[] ret, int off, int dictIdx, int[] cols);
+
+	protected abstract void TSMMWithScaling(int[] counts, int[] rows, int[] cols, MatrixBlock ret);
+
+	protected abstract void MMDict(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result);
+
+	protected abstract void MMDictDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result);
+
+	protected abstract void MMDictSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result);
+
+	protected abstract void TSMMToUpperTriangle(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result);
+
+	protected abstract void TSMMToUpperTriangleDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result);
+
+	protected abstract void TSMMToUpperTriangleSparse(SparseBlock left, int[] rowsLeft, int[] colsRight,
+		MatrixBlock result);
+
+	protected abstract void TSMMToUpperTriangleScaling(ADictionary right, int[] rowsLeft, int[] colsRight, int[] scale,
+		MatrixBlock result);
+
+	protected abstract void TSMMToUpperTriangleDenseScaling(double[] left, int[] rowsLeft, int[] colsRight, int[] scale,
+		MatrixBlock result);
+
+	protected abstract void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight,
+		int[] scale, MatrixBlock result);
+
 }

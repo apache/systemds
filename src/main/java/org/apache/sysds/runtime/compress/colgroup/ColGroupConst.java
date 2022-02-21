@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -39,6 +40,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class ColGroupConst extends AColGroupCompressed {
 
@@ -170,6 +172,25 @@ public class ColGroupConst extends AColGroupCompressed {
 
 	@Override
 	public void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
+		if(db.isContiguous() && _colIndexes.length == db.getDim(1) && offC == 0)
+			decompressToDenseBlockAllColumnsContiguous(db, rl, ru, offR, offC);
+		else
+			decompressToDenseBlockGeneric(db, rl, ru, offR, offC);
+	}
+
+	private void decompressToDenseBlockAllColumnsContiguous(DenseBlock db, int rl, int ru, int offR, int offC) {
+
+		final double[] c = db.values(0);
+		final int nCol = _colIndexes.length;
+		final double[] values = _dict.getValues();
+		for(int r = rl; r < ru; r++) {
+			final int offStart = (offR + r) * nCol;
+			for(int vOff = 0, off = offStart; vOff < nCol; vOff++, off++)
+				c[off] += values[vOff];
+		}
+	}
+
+	private void decompressToDenseBlockGeneric(DenseBlock db, int rl, int ru, int offR, int offC) {
 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
 			final double[] c = db.values(offT);
 			final int off = db.pos(offT) + offC;
@@ -194,6 +215,11 @@ public class ColGroupConst extends AColGroupCompressed {
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
 		return create(_colIndexes, _dict.applyScalarOp(op));
+	}
+
+	@Override
+	public AColGroup unaryOperation(UnaryOperator op) {
+		return create(_colIndexes, _dict.applyUnaryOp(op));
 	}
 
 	@Override
@@ -264,7 +290,7 @@ public class ColGroupConst extends AColGroupCompressed {
 		return 1;
 	}
 
-	private MatrixBlock forceValuesToMatrixBlock() {
+	private synchronized MatrixBlock forceValuesToMatrixBlock() {
 		_dict = _dict.getMBDict(_colIndexes.length);
 		MatrixBlock ret = ((MatrixBlockDictionary) _dict).getMatrixBlock();
 		return ret;
@@ -277,14 +303,14 @@ public class ColGroupConst extends AColGroupCompressed {
 		final int rr = right.getNumRows();
 		final int cr = right.getNumColumns();
 		if(_colIndexes.length == rr) {
-			MatrixBlock left = forceValuesToMatrixBlock();
-			if(left.isEmpty())
+			final MatrixBlock left = forceValuesToMatrixBlock();
+			if(left == null)
 				return null;
-			MatrixBlock ret = new MatrixBlock(1, cr, false);
+			final MatrixBlock ret = new MatrixBlock(1, cr, false);
 			LibMatrixMult.matrixMult(left, right, ret);
 			if(ret.isEmpty())
 				return null;
-			ADictionary d = new MatrixBlockDictionary(ret, cr);
+			final ADictionary d = new MatrixBlockDictionary(ret, cr);
 			return create(cr, d);
 		}
 		else {
@@ -298,8 +324,8 @@ public class ColGroupConst extends AColGroupCompressed {
 	}
 
 	@Override
-	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
-		throw new DMLCompressionException("Should not be called");
+	public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
+		throw new DMLCompressionException("This method should never be called");
 	}
 
 	@Override
@@ -371,24 +397,8 @@ public class ColGroupConst extends AColGroupCompressed {
 	}
 
 	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(super.toString());
-		sb.append(String.format("\n%15s", "Values: " + _dict.getClass().getSimpleName()));
-		sb.append(_dict.getString(_colIndexes.length));
-		return sb.toString();
-	}
-
-	@Override
 	protected void computeProduct(double[] c, int nRows) {
-		final double[] vals = _dict.getValues();
-		for(int i = 0; i < _colIndexes.length; i++) {
-			double v = vals[i];
-			if(v != 0)
-				c[0] *= Math.pow(v, nRows);
-			else
-				c[0] = 0;
-		}
+		_dict.product(c, new int[] {nRows}, _colIndexes.length);
 	}
 
 	@Override
@@ -443,5 +453,20 @@ public class ColGroupConst extends AColGroupCompressed {
 			return ColGroupEmpty.create(max);
 		else
 			return create(max, d);
+	}
+
+	@Override
+	public double getCost(ComputationCostEstimator e, int nRows) {
+		final int nCols = getNumCols();
+		return e.getCost(nRows, 1, nCols, 1, 1.0);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(String.format("\n%15s", "Values: " + _dict.getClass().getSimpleName()));
+		sb.append(_dict.getString(_colIndexes.length));
+		return sb.toString();
 	}
 }

@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.compress.cocode;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.cost.ICostEstimate;
+import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
  */
 public class CoCodeHybrid extends AColumnCoCoder {
 
-	protected CoCodeHybrid(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator, CompressionSettings cs) {
+	protected CoCodeHybrid(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
 	}
 
@@ -41,7 +41,8 @@ public class CoCodeHybrid extends AColumnCoCoder {
 			return colInfos; // nothing to join when there only is one column
 		else if(startSize <= 5) {// Greedy all compare all if small number of columns
 			LOG.debug("Hybrid chose to do greedy cocode because of few columns");
-			return colInfos.setInfo(CoCodeGreedy.join(colInfos.getInfo(), _sest, _cest, _cs, k));
+			CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
+			return colInfos.setInfo(gd.combine(colInfos.getInfo(), _sest, _cest, _cs, k));
 		}
 		else if(startSize > 1000)
 			return colInfos.setInfo(CoCodePriorityQue.join(colInfos.getInfo(), _sest, _cest, 1, k));
@@ -55,7 +56,8 @@ public class CoCodeHybrid extends AColumnCoCoder {
 			final int pqSize = colInfos.getInfo().size();
 			if(pqSize <= PriorityQueGoal * 2) {
 				time = new Timing(true);
-				colInfos.setInfo(CoCodeGreedy.join(colInfos.getInfo(), _sest, _cest, _cs, k));
+				CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
+				colInfos.setInfo(gd.combine(colInfos.getInfo(), _sest, _cest, _cs, k));
 				LOG.debug("Greedy time:     " + time.stop());
 			}
 			return colInfos;

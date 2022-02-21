@@ -28,11 +28,11 @@ public class EmptyEncoding implements IEncode {
 	private static final int[] counts = new int[] {};
 
 	// empty constructor
-	protected EmptyEncoding() {
+	public EmptyEncoding() {
 	}
 
 	@Override
-	public IEncode join(IEncode e) {
+	public IEncode combine(IEncode e) {
 		return e;
 	}
 

@@ -93,9 +93,15 @@ public class PreAggregateDDC_SDCZTest {
 
 	@Test
 	public void preAggregateDDC_SDCZ() {
-		Dictionary ret = new Dictionary(new double[expected.length]);
-		m.preAggregateDDC_SDCZ(tm, td, tof, ret, nCol);
-		compare(ret.getValues(), expected, 0.000001);
+		try{
+			Dictionary ret = new Dictionary(new double[expected.length]);
+			m.preAggregateDDC_SDCZ(tm, td, tof, ret, nCol);
+			compare(ret.getValues(), expected, 0.000001);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(this.toString());
+		}
 	}
 
 	private final void compare(double[] res, double[] exp, double eps) {

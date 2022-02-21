@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -45,6 +46,8 @@ public abstract class CompressedSizeEstimator {
 	final protected MatrixBlock _data;
 	/** The compression settings to use, for estimating the size, and compress the ColGroups. */
 	final protected CompressionSettings _cs;
+	/** NNZ count in each column of the input */
+	protected int[] nnzCols;
 
 	/**
 	 * Main Constructor for Compression Estimator.
@@ -180,7 +183,7 @@ public abstract class CompressedSizeEstimator {
 		// Get max number of tuples based on the above.
 		final long max = Math.min((long) g1V * g2V, worstCase);
 
-		if(max > (long) Integer.MAX_VALUE)
+		if(max > 1000000) // set the max combination to a million distinct
 			return null; // This combination is clearly not a good idea return null to indicate that.
 		else if(g1.getMap() == null || g2.getMap() == null)
 			// the previous information did not contain maps, therefore fall back to extract from sample
@@ -219,7 +222,18 @@ public abstract class CompressedSizeEstimator {
 			for(int col = 0; col < clen; col++)
 				tasks.add(new SizeEstimationTask(col));
 
-			return pool.invokeAll(tasks).stream().map(x -> getT(x)).collect(Collectors.toList());
+			if(!_cs.transposed && _data.isInSparseFormat() && getNumColumns() < 1000) {
+				LOG.debug("Extracting number of nonzeros in each column");
+				nnzCols = null;
+				List<Future<int[]>> nnzFutures = LibMatrixReorg.countNNZColumnsFuture(_data, k, pool);
+				List<Future<CompressedSizeInfoColGroup>> analysisFutures = pool.invokeAll(tasks);
+				for(Future<int[]> t : nnzFutures)
+					nnzCols = LibMatrixReorg.mergeNnzCounts(nnzCols, t.get());
+				return analysisFutures.stream().map(x -> getT(x)).collect(Collectors.toList());
+			}
+			else
+				return pool.invokeAll(tasks).stream().map(x -> getT(x)).collect(Collectors.toList());
+
 		}
 		catch(Exception e) {
 			LOG.error("Fallback to single threaded column info extraction", e);

@@ -135,9 +135,9 @@ public class CompressibleInputGenerator {
 				pointer += before;
 				for(int i = before; i < nr - after; i++) {
 					if(transpose)
-						output.setValue(colNr, pointer, values.get(valuePointer));
+						output.quickSetValue(colNr, pointer, values.get(valuePointer));
 					else
-						output.setValue(pointer, colNr, values.get(valuePointer));
+						output.quickSetValue(pointer, colNr, values.get(valuePointer));
 
 					pointer++;
 				}
@@ -146,9 +146,9 @@ public class CompressibleInputGenerator {
 				if(valuePointer == values.size() && after == 0) {
 					while(pointer < rows) {
 						if(transpose)
-							output.setValue(colNr, pointer, values.get(valuePointer));
+							output.quickSetValue(colNr, pointer, values.get(valuePointer));
 						else
-							output.setValue(pointer, colNr, values.get(nrUnique - 1));
+							output.quickSetValue(pointer, colNr, values.get(nrUnique - 1));
 						pointer++;
 					}
 				}
@@ -182,9 +182,9 @@ public class CompressibleInputGenerator {
 			if(transpose && output.isInSparseFormat())
 				output.appendValue(0, x, d);
 			else if(transpose)
-				output.setValue(0, x, d);
+				output.quickSetValue(0, x, d);
 			else
-				output.setValue(x, 0, d);
+				output.quickSetValue(x, 0, d);
 		}
 
 		int diff = max - min;
@@ -201,12 +201,12 @@ public class CompressibleInputGenerator {
 					else if(transpose) {
 						int v = (int) (output.getValue(0, x) * (double) y);
 						double d = Math.abs(v % ((int) (diff))) + min;
-						output.setValue(y, x, d);
+						output.quickSetValue(y, x, d);
 					}
 					else {
 						int v = (int) (output.getValue(x, 0) * (double) y);
 						double d = Math.abs(v % ((int) (diff))) + min;
-						output.setValue(x, y, d);
+						output.quickSetValue(x, y, d);
 					}
 				}
 			}
@@ -215,20 +215,18 @@ public class CompressibleInputGenerator {
 		if(transpose && output.isInSparseFormat()) {
 			SparseBlock sb = output.getSparseBlock();
 			double[] r0 = sb.values(0);
-			for(int i = 0; i < r0.length; i++) {
-				if(r.nextDouble() > sparsity) {
+			for(int i = 0; i < r0.length; i++) 
+				if(r.nextDouble() > sparsity) 
 					r0[i] = 0;
-				}
-			}
 			sb.get(0).compact();
 		}
 		else {
 			for(int x = 0; x < rows; x++) {
 				if(r.nextDouble() > sparsity) {
 					if(transpose)
-						output.setValue(0, x, 0);
+						output.quickSetValue(0, x, 0);
 					else
-						output.setValue(x, 0, 0);
+						output.quickSetValue(x, 0, 0);
 				}
 			}
 		}

@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -30,6 +32,9 @@ import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -41,28 +46,44 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class MatrixBlockDictionary extends ADictionary {
 
 	private static final long serialVersionUID = 2535887782150955098L;
 
-	private MatrixBlock _data;
+	final private MatrixBlock _data;
 
-	public MatrixBlockDictionary(double[] values, int nCol) {
-		_data = Util.matrixBlockFromDenseArray(values, nCol);
-		if(_data.isEmpty())
-			throw new DMLCompressionException("Invalid construction of empty dictionary");
+	/**
+	 * Unsafe private constructor that does not check the data validity. USE WITH CAUTION.
+	 * 
+	 * @param data The matrix block data.
+	 */
+	private MatrixBlockDictionary(MatrixBlock data) {
+		_data = data;
 	}
 
 	public MatrixBlockDictionary(MatrixBlock data, int nCol) {
 
-		_data = data;
-		if(_data.isEmpty())
+		if(data.isEmpty())
 			throw new DMLCompressionException("Invalid construction of empty dictionary");
-
-		if(_data.getNumColumns() != nCol)
+		else if(data.getNumColumns() != nCol)
 			throw new DMLCompressionException(
-				"Invalid construction expected nCol: " + nCol + " but matrix block contains: " + _data.getNumColumns());
+				"Invalid construction expected nCol: " + nCol + " but matrix block contains: " + data.getNumColumns());
+		else if(data.isInSparseFormat() && data.getSparseBlock() instanceof SparseBlockMCSR) {
+			SparseBlock csr = SparseBlockFactory.copySparseBlock(SparseBlock.Type.CSR, data.getSparseBlock(), false);
+			data.setSparseBlock(csr);
+		}
+
+		_data = data;
+	}
+
+	public static MatrixBlockDictionary createDictionary(double[] values, int nCol) {
+		MatrixBlock nd = Util.matrixBlockFromDenseArray(values, nCol);
+		nd.examSparsity(true);
+		if(nd.isEmpty())
+			return null;
+		return new MatrixBlockDictionary(nd);
 	}
 
 	public MatrixBlock getMatrixBlock() {
@@ -325,6 +346,15 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
+	public ADictionary applyUnaryOp(UnaryOperator op) {
+		MatrixBlock res = _data.unaryOperations(op, new MatrixBlock());
+		if(res.isEmpty())
+			return null;
+		else
+			return new MatrixBlockDictionary(res, _data.getNumColumns());
+	}
+
+	@Override
 	public ADictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
 		final int nCol = _data.getNumColumns();
 		final int nRow = _data.getNumRows();
@@ -373,6 +403,54 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
+	public ADictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
+		final int nCol = _data.getNumColumns();
+		final int nRow = _data.getNumRows();
+		final MatrixBlock ret = new MatrixBlock(nRow, nCol, false);
+		ret.allocateDenseBlock();
+		final double[] retV = ret.getDenseBlockValues();
+		int off = 0;
+		if(_data.isInSparseFormat()) {
+			final SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < nRow; i++) {
+				if(sb.isEmpty(i))
+					for(int j = 0; j < nCol; j++)
+						retV[off++] = op.fn.execute(reference[j]) - newReference[j];
+				else {
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final int[] aix = sb.indexes(i);
+					final double[] avals = sb.values(i);
+					int j = 0;
+					for(int k = apos; j < nCol && k < alen; j++) {
+						final double v = aix[k] == j ? avals[k++] + reference[j] : reference[j];
+						retV[off++] = op.fn.execute(v) - newReference[j];
+					}
+					for(; j < nCol; j++)
+						retV[off++] = op.fn.execute(reference[j]) - newReference[j];
+				}
+			}
+		}
+		else {
+			final double[] values = _data.getDenseBlockValues();
+			for(int i = 0; i < nRow; i++) {
+				for(int j = 0; j < nCol; j++) {
+					retV[off] = op.fn.execute(values[off] + reference[j]) - newReference[j];
+					off++;
+				}
+			}
+		}
+
+		ret.recomputeNonZeros();
+		ret.examSparsity();
+		if(ret.isEmpty())
+			return null;
+		else
+			return new MatrixBlockDictionary(ret, nCol);
+
+	}
+
+	@Override
 	public ADictionary inplaceScalarOp(ScalarOperator op) {
 		throw new NotImplementedException();
 	}
@@ -380,7 +458,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	@Override
 	public ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes) {
 		throw new NotImplementedException("Binary row op left is not supported for Uncompressed Matrix, "
-			+ "Implement support for VMr in MatrixBLock Binary Cell operations");
+			+ "Implement support for VMr in MatrixBlock Binary Cell operations");
 	}
 
 	@Override
@@ -504,9 +582,13 @@ public class MatrixBlockDictionary extends ADictionary {
 	@Override
 	public double[] sumAllRowsToDoubleSq(int nrColumns) {
 		final double[] ret = new double[_data.getNumRows()];
+		sumAllRowsToDoubleSq(ret);
+		return ret;
+	}
 
+	private void sumAllRowsToDoubleSq(double[] ret) {
 		if(_data.isEmpty())
-			return ret;
+			return;
 		else if(_data.isInSparseFormat()) {
 			SparseBlock sb = _data.getSparseBlock();
 			for(int i = 0; i < _data.getNumRows(); i++) {
@@ -530,12 +612,18 @@ public class MatrixBlockDictionary extends ADictionary {
 				}
 			}
 		}
-		return ret;
 	}
 
 	@Override
 	public double[] sumAllRowsToDoubleSqWithDefault(double[] defaultTuple) {
-		throw new NotImplementedException();
+		final double[] ret = new double[_data.getNumRows() + 1];
+		sumAllRowsToDoubleSq(ret);
+		int defIdx = ret.length - 1;
+		for(int j = 0; j < _data.getNumColumns(); j++) {
+			final double v = defaultTuple[j];
+			ret[defIdx] += v * v;
+		}
+		return ret;
 	}
 
 	@Override
@@ -581,56 +669,6 @@ public class MatrixBlockDictionary extends ADictionary {
 			}
 		}
 
-		return ret;
-	}
-
-	@Override
-	public double sumRow(int k, int nrColumns) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double sumRowSq(int k, int nrColumns) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double sumRowSqWithReference(int k, int nrColumns, double[] reference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double[] colSum(int[] counts, int nCol) {
-		if(_data.isEmpty())
-			return null;
-		double[] ret = new double[nCol];
-		if(_data.isInSparseFormat()) {
-			SparseBlock sb = _data.getSparseBlock();
-			for(int i = 0; i < counts.length; i++) {
-				if(!sb.isEmpty(i)) {
-					// double tmpSum = 0;
-					final int count = counts[i];
-					final int apos = sb.pos(i);
-					final int alen = sb.size(i) + apos;
-					final int[] aix = sb.indexes(i);
-					final double[] avals = sb.values(i);
-					for(int j = apos; j < alen; j++) {
-						ret[aix[j]] += count * avals[j];
-					}
-				}
-			}
-		}
-		else {
-			double[] values = _data.getDenseBlockValues();
-			int off = 0;
-			for(int k = 0; k < counts.length; k++) {
-				final int countK = counts[k];
-				for(int j = 0; j < _data.getNumColumns(); j++) {
-					final double v = values[off++];
-					ret[j] += v * countK;
-				}
-			}
-		}
 		return ret;
 	}
 
@@ -996,14 +1034,8 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public void addToEntry(final double[] v, final int fr, final int to, final int nCol) {
-		if(_data.isEmpty())
-			return;
-		else if(_data.isInSparseFormat()) {
-			final SparseBlock sb = _data.getSparseBlock();
-			if(sb == null)
-				return;
-			addToEntrySparse(sb, v, fr, to * nCol, nCol);
-		}
+		if(_data.isInSparseFormat())
+			addToEntrySparse(_data.getSparseBlock(), v, fr, to * nCol, nCol);
 		else
 			addToEntryDense(_data.getDenseBlockValues(), v, fr * nCol, to * nCol, nCol);
 	}
@@ -1027,22 +1059,68 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
+	public void addToEntry(final double[] v, final int fr, final int to, final int nCol, int rep) {
+		if(_data.isInSparseFormat())
+			addToEntrySparse(_data.getSparseBlock(), v, fr, to * nCol, nCol, rep);
+		else
+			addToEntryDense(_data.getDenseBlockValues(), v, fr * nCol, to * nCol, nCol, rep);
+	}
+
+	private static final void addToEntrySparse(final SparseBlock sb, final double[] v, final int fr, final int st,
+		final int nCol, final int rep) {
+		if(sb.isEmpty(fr))
+			return;
+		final int apos = sb.pos(fr);
+		final int alen = sb.size(fr) + apos;
+		final int[] aix = sb.indexes(fr);
+		final double[] avals = sb.values(fr);
+		for(int j = apos; j < alen; j++)
+			v[st + aix[j]] += avals[j] * rep;
+	}
+
+	private static final void addToEntrySparseCSR(final SparseBlockCSR sb, final double[] v, final int fr, final int st,
+		final int nCol, final int[] aix, final double[] avals) {
+
+		final int apos = sb.pos(fr);
+		final int alen = sb.size(fr) + apos;
+		for(int j = apos; j < alen; j++)
+			v[st + aix[j]] += avals[j];
+	}
+
+	private static final void addToEntryDense(final double[] thisV, final double[] v, final int sf, final int st,
+		final int nCol, final int rep) {
+		for(int i = sf, j = st; i < sf + nCol; i++, j++)
+			v[j] += thisV[i] * rep;
+	}
+
+	@Override
 	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
 		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
-		if(_data.isEmpty())
-			return;
-		else if(_data.isInSparseFormat()) {
+		if(_data.isInSparseFormat()) {
 			final SparseBlock sb = _data.getSparseBlock();
-			if(sb == null)
-				return;
-			addToEntrySparse(sb, v, f1, t1 * nCol, nCol);
-			addToEntrySparse(sb, v, f2, t2 * nCol, nCol);
-			addToEntrySparse(sb, v, f3, t3 * nCol, nCol);
-			addToEntrySparse(sb, v, f4, t4 * nCol, nCol);
-			addToEntrySparse(sb, v, f5, t5 * nCol, nCol);
-			addToEntrySparse(sb, v, f6, t6 * nCol, nCol);
-			addToEntrySparse(sb, v, f7, t7 * nCol, nCol);
-			addToEntrySparse(sb, v, f8, t8 * nCol, nCol);
+			if(sb instanceof SparseBlockCSR) {
+				final SparseBlockCSR csr = (SparseBlockCSR) sb;
+				final int[] aix = csr.indexes();
+				final double[] avals = csr.values();
+				addToEntrySparseCSR(csr, v, f1, t1 * nCol, nCol, aix, avals);
+				addToEntrySparseCSR(csr, v, f2, t2 * nCol, nCol, aix, avals);
+				addToEntrySparseCSR(csr, v, f3, t3 * nCol, nCol, aix, avals);
+				addToEntrySparseCSR(csr, v, f4, t4 * nCol, nCol, aix, avals);
+				addToEntrySparseCSR(csr, v, f5, t5 * nCol, nCol, aix, avals);
+				addToEntrySparseCSR(csr, v, f6, t6 * nCol, nCol, aix, avals);
+				addToEntrySparseCSR(csr, v, f7, t7 * nCol, nCol, aix, avals);
+				addToEntrySparseCSR(csr, v, f8, t8 * nCol, nCol, aix, avals);
+			}
+			else {
+				addToEntrySparse(sb, v, f1, t1 * nCol, nCol);
+				addToEntrySparse(sb, v, f2, t2 * nCol, nCol);
+				addToEntrySparse(sb, v, f3, t3 * nCol, nCol);
+				addToEntrySparse(sb, v, f4, t4 * nCol, nCol);
+				addToEntrySparse(sb, v, f5, t5 * nCol, nCol);
+				addToEntrySparse(sb, v, f6, t6 * nCol, nCol);
+				addToEntrySparse(sb, v, f7, t7 * nCol, nCol);
+				addToEntrySparse(sb, v, f8, t8 * nCol, nCol);
+			}
 		}
 		else {
 			final double[] thisV = _data.getDenseBlockValues();
@@ -1254,13 +1332,88 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public double product(int[] counts, int nCol) {
-		throw new NotImplementedException();
+	public void product(double[] ret, int[] counts, int nCol) {
+		if(_data.isEmpty())
+			ret[0] = 0; // should not happen but just for safety.
+		else if(_data.isInSparseFormat())
+			ret[0] = 0; // if we are sparse there is a zero
+		else if(_data.getNonZeros() < _data.getNumColumns() * _data.getNumRows())
+			ret[0] = 0; // if the number of zeros are not equal number of cells.
+		else {
+			final MathContext cont = MathContext.DECIMAL128;
+			final int nRow = _data.getNumRows();
+			final double[] values = _data.getDenseBlockValues();
+			BigDecimal tmp = BigDecimal.ONE;
+			int off = 0;
+			for(int i = 0; i < nRow; i++) {
+				for(int j = 0; j < nCol; j++) {
+					final double v = values[off++];
+					tmp = tmp.multiply(new BigDecimal(v).pow(counts[i], cont), cont);
+				}
+			}
+			if(Math.abs(tmp.doubleValue()) == 0)
+				ret[0] = 0;
+			else if(!Double.isInfinite(ret[0]))
+				ret[0] = new BigDecimal(ret[0]).multiply(tmp, MathContext.DECIMAL128).doubleValue();
+		}
 	}
 
 	@Override
-	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
-		throw new NotImplementedException();
+	public void productWithDefault(double[] ret, int[] counts, double[] def, int defCount) {
+		if(_data.isEmpty())
+			ret[0] = 0; // should not happen but just for safety.
+		else if(_data.isInSparseFormat())
+			ret[0] = 0; // if we are sparse there is a zero
+		else if(_data.getNonZeros() < _data.getNumColumns() * _data.getNumRows())
+			ret[0] = 0; // if the number of zeros are not equal number of cells.
+		else {
+			final MathContext cont = MathContext.DECIMAL128;
+			final int nRow = _data.getNumRows();
+			final int nCol = def.length;
+			final double[] values = _data.getDenseBlockValues();
+			BigDecimal tmp = BigDecimal.ONE;
+			int off = 0;
+			for(int i = 0; i < nRow; i++) {
+				for(int j = 0; j < nCol; j++) {
+					final double v = values[off++];
+					tmp = tmp.multiply(new BigDecimal(v).pow(counts[i], cont), cont);
+				}
+			}
+			for(int x = 0; x < def.length; x++)
+				tmp = tmp.multiply(new BigDecimal(def[x]).pow(defCount, cont), cont);
+			if(Math.abs(tmp.doubleValue()) == 0)
+				ret[0] = 0;
+			else if(!Double.isInfinite(ret[0]))
+				ret[0] = new BigDecimal(ret[0]).multiply(tmp, MathContext.DECIMAL128).doubleValue();
+		}
+	}
+
+	@Override
+	public void productWithReference(double[] ret, int[] counts, double[] reference, int refCount) {
+		final MathContext cont = MathContext.DECIMAL128;
+		final int nCol = _data.getNumColumns();
+		final int nRow = _data.getNumRows();
+		// force dense ... if this ever is a bottleneck i will be surprised
+		_data.sparseToDense();
+		final double[] values = _data.getDenseBlockValues();
+		BigDecimal tmp = BigDecimal.ONE;
+		int off = 0;
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				final double v = values[off++] + reference[j];
+				if(v == 0) {
+					ret[0] = 0;
+					return;
+				}
+				tmp = tmp.multiply(new BigDecimal(v).pow(counts[i], cont), cont);
+			}
+		}
+		for(int x = 0; x < reference.length; x++)
+			tmp = tmp.multiply(new BigDecimal(reference[x]).pow(refCount, cont), cont);
+		if(Math.abs(tmp.doubleValue()) == 0)
+			ret[0] = 0;
+		else if(!Double.isInfinite(ret[0]))
+			ret[0] = new BigDecimal(ret[0]).multiply(tmp, MathContext.DECIMAL128).doubleValue();
 	}
 
 	@Override
@@ -1299,4 +1452,125 @@ public class MatrixBlockDictionary extends ADictionary {
 	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, double reference) {
 		return applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference)).rexpandCols(max, ignore, cast, 1);
 	}
+
+	@Override
+	public double getSparsity() {
+		return _data.getSparsity();
+	}
+
+	@Override
+	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, int[] cols) {
+		if(_data.isInSparseFormat())
+			multiplyScalarSparse(v, ret, off, dictIdx, cols);
+		else
+			multiplyScalarDense(v, ret, off, dictIdx, cols);
+	}
+
+	private void multiplyScalarSparse(double v, double[] ret, int off, int dictIdx, int[] cols) {
+		final SparseBlock sb = _data.getSparseBlock();
+		if(sb.isEmpty(dictIdx))
+			return;
+		final int apos = sb.pos(dictIdx);
+		final int alen = sb.size(dictIdx) + apos;
+		final int[] aix = sb.indexes(dictIdx);
+		final double[] aval = sb.values(dictIdx);
+		for(int i = apos; i < alen; i++)
+			ret[off + cols[aix[i]]] += v * aval[i];
+	}
+
+	private void multiplyScalarDense(double v, double[] ret, int off, int dictIdx, int[] cols) {
+		final double[] dV = _data.getDenseBlockValues();
+		final int offD = dictIdx * cols.length;
+		for(int i = 0; i < cols.length; i++)
+			ret[off + cols[i]] += v * dV[offD + i];
+	}
+
+	@Override
+	protected void TSMMWithScaling(int[] counts, int[] rows, int[] cols, MatrixBlock ret) {
+		if(_data.isInSparseFormat())
+			DictLibMatrixMult.TSMMDictsSparseWithScaling(_data.getSparseBlock(), rows, cols, counts, ret);
+		else
+			DictLibMatrixMult.TSMMDictsDenseWithScaling(_data.getDenseBlockValues(), rows, cols, counts, ret);
+	}
+
+	@Override
+	protected void MMDict(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		if(_data.isInSparseFormat())
+			right.MMDictSparse(_data.getSparseBlock(), rowsLeft, colsRight, result);
+		else
+			right.MMDictDense(_data.getDenseBlockValues(), rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void MMDictDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		if(_data.isInSparseFormat())
+			DictLibMatrixMult.MMDictsDenseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result);
+		else
+			DictLibMatrixMult.MMDictsDenseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void MMDictSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+
+		if(_data.isInSparseFormat())
+			DictLibMatrixMult.MMDictsSparseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result);
+		else
+			DictLibMatrixMult.MMDictsSparseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangle(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		if(_data.isInSparseFormat())
+			right.TSMMToUpperTriangleSparse(_data.getSparseBlock(), rowsLeft, colsRight, result);
+		else
+			right.TSMMToUpperTriangleDense(_data.getDenseBlockValues(), rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		if(_data.isInSparseFormat())
+			DictLibMatrixMult.MMToUpperTriangleDenseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result);
+		else
+			DictLibMatrixMult.MMToUpperTriangleDenseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		if(_data.isInSparseFormat())
+			DictLibMatrixMult.MMToUpperTriangleSparseSparse(left, _data.getSparseBlock(), rowsLeft, colsRight, result);
+		else
+			DictLibMatrixMult.MMToUpperTriangleSparseDense(left, _data.getDenseBlockValues(), rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleScaling(ADictionary right, int[] rowsLeft, int[] colsRight, int[] scale,
+		MatrixBlock result) {
+		if(_data.isInSparseFormat())
+			right.TSMMToUpperTriangleSparseScaling(_data.getSparseBlock(), rowsLeft, colsRight, scale, result);
+		else
+			right.TSMMToUpperTriangleDenseScaling(_data.getDenseBlockValues(), rowsLeft, colsRight, scale, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleDenseScaling(double[] left, int[] rowsLeft, int[] colsRight, int[] scale,
+		MatrixBlock result) {
+		if(_data.isInSparseFormat())
+			DictLibMatrixMult.TSMMToUpperTriangleDenseSparseScaling(left, _data.getSparseBlock(), rowsLeft, colsRight,
+				scale, result);
+		else
+			DictLibMatrixMult.TSMMToUpperTriangleDenseDenseScaling(left, _data.getDenseBlockValues(), rowsLeft, colsRight,
+				scale, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight, int[] scale,
+		MatrixBlock result) {
+		if(_data.isInSparseFormat())
+			DictLibMatrixMult.TSMMToUpperTriangleSparseSparseScaling(left, _data.getSparseBlock(), rowsLeft, colsRight,
+				scale, result);
+		else
+			DictLibMatrixMult.TSMMToUpperTriangleSparseDenseScaling(left, _data.getDenseBlockValues(), rowsLeft, colsRight,
+				scale, result);
+	}
+
 }

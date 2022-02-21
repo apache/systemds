@@ -22,6 +22,7 @@ package org.apache.sysds.test.component.compress;
 import static org.junit.Assert.fail;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -48,7 +49,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 
 	enum AggType {
 		ROW_SUMS, COL_SUMS, SUM, ROW_SUMS_SQ, COL_SUMS_SQ, SUM_SQ, ROW_MAXS, COL_MAXS, MAX, ROW_MINS, COL_MINS, MIN, MEAN,
-		COL_MEAN, ROW_MEAN
+		COL_MEAN, ROW_MEAN, PRODUCT
 	}
 
 	@Test
@@ -201,6 +202,16 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 		testUnaryOperators(AggType.ROW_MEAN, false);
 	}
 
+	@Test
+	public void testUnaryOperator_PROD_CP() {
+		testUnaryOperators(AggType.PRODUCT, true);
+	}
+
+	@Test
+	public void testUnaryOperator_PROD_SP() {
+		testUnaryOperators(AggType.PRODUCT, false);
+	}
+
 	protected AggregateUnaryOperator getUnaryOperator(AggType aggType, int threads) {
 		switch(aggType) {
 			case SUM:
@@ -233,12 +244,16 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uarmean", threads);
 			case COL_MEAN:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uacmean", threads);
+			case PRODUCT:
+				return InstructionUtils.parseBasicAggregateUnaryOperator("ua*", threads);
 			default:
 				throw new NotImplementedException("Not Supported Aggregate Unary operator in test");
 		}
 	}
 
 	public abstract void testUnaryOperators(AggType aggType, boolean inCP);
+
+	private static AtomicBoolean printedWarningForProduct = new AtomicBoolean(false);
 
 	public void testUnaryOperators(AggType aggType, AggregateUnaryOperator auop, boolean inCP) {
 		try {
@@ -250,11 +265,13 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, inCP);
 
+			// LOG.error(cmb);
+			// LOG.error(ret1 + " " + ret2);
+
 			final int ruc = ret1.getNumRows();
 			final int cuc = ret1.getNumColumns();
 			final int rc = ret2.getNumRows();
 			final int cc = ret2.getNumColumns();
-
 			if(ruc != rc)
 				fail("dim 1 is not equal in compressed res  should be : " + ruc + "  but is: " + rc);
 			if(cuc != cc)
@@ -283,14 +300,33 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.8, 0.9, css, true);
 			}
 			else {
-				if(overlappingType == OverLapping.SQUASH)
+				if(aggType == AggType.PRODUCT) {
+					if(Double.isInfinite(ret2.quickGetValue(0, 0))){
+						if(!printedWarningForProduct.get()) {
+							printedWarningForProduct.set(true);
+							LOG.warn("Product not equal because of double rounding upwards");
+						}
+						return;	
+					}
+					if(Math.abs(ret2.quickGetValue(0, 0)) <= 1E-16) {
+						if(!printedWarningForProduct.get()) {
+							printedWarningForProduct.set(true);
+							LOG.warn("Product not equal because of  double rounding downwards");
+						}
+
+						return; // Product is wierd around zero.
+					}
+					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.95, 0.98, css);
+				}
+				else if(overlappingType == OverLapping.SQUASH)
 					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.0, 0.90, css);
 				else if(aggType == AggType.ROW_MEAN)
 					TestUtils.compareMatrices(ret1, ret2, 0.0001, css);
 				else if(OverLapping.effectOnOutput(overlappingType))
 					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.95, 0.98, css);
 				else
-					TestUtils.compareMatricesBitAvgDistance(ret1, ret2, 2048, 128, css);
+					TestUtils.compareMatricesBitAvgDistance(ret1, ret2, 2048, 512, css);
+
 			}
 
 		}

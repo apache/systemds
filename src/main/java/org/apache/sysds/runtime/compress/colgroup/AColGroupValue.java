@@ -59,10 +59,10 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	protected boolean _zeros = false;
 
 	/** Distinct value tuples associated with individual bitmaps. */
-	protected transient ADictionary _dict;
+	protected ADictionary _dict;
 
 	/** The count of each distinct value contained in the dictionary */
-	private transient SoftReference<int[]> counts;
+	private SoftReference<int[]> counts = null;
 
 	protected AColGroupValue(int numRows) {
 		super();
@@ -82,9 +82,8 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		super(colIndices);
 		_numRows = numRows;
 		_dict = dict;
-		if(cachedCounts == null)
-			counts = null;
-		else
+		if(cachedCounts != null)
+
 			counts = new SoftReference<>(cachedCounts);
 	}
 
@@ -93,9 +92,8 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		if(_dict instanceof MatrixBlockDictionary) {
 			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
 			final MatrixBlock mb = md.getMatrixBlock();
-			if(mb.isEmpty()) // Early abort if the dictionary is empty.
-				return;
-			else if(mb.isInSparseFormat())
+			// The dictionary is never empty.
+			if(mb.isInSparseFormat())
 				decompressToDenseBlockSparseDictionary(db, rl, ru, offR, offC, mb.getSparseBlock());
 			else
 				decompressToDenseBlockDenseDictionary(db, rl, ru, offR, offC, mb.getDenseBlockValues());
@@ -338,7 +336,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 
 	@Override
 	protected void computeProduct(double[] c, int nRows) {
-		c[0] *= _dict.product(getCounts(), _colIndexes.length);
+		_dict.product(c, getCounts(), _colIndexes.length);
 	}
 
 	@Override
@@ -499,7 +497,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows){
+	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.length);
 		if(d == null)
 			return ColGroupEmpty.create(max);

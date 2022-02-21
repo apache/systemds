@@ -354,7 +354,7 @@ public interface IEncode {
 		return new SparseEncoding(d, o, zeros, counts, nRows);
 	}
 
-	public IEncode join(IEncode e);
+	public IEncode combine(IEncode e);
 
 	public int getUnique();
 

@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -29,16 +30,22 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
+import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -50,7 +57,6 @@ import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -60,12 +66,13 @@ import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.utils.DMLCompressionStatistics;
 
 public class CLALibCompAgg {
 	private static final Log LOG = LogFactory.getLog(CLALibCompAgg.class.getName());
 	private static final long MIN_PAR_AGG_THRESHOLD = 8 * 1024;
 
-	private static ThreadLocal<MatrixBlock> memPool = new ThreadLocal<MatrixBlock>();
+	// private static ThreadLocal<MatrixBlock> memPool = new ThreadLocal<MatrixBlock>();
 
 	public static MatrixBlock aggregateUnary(CompressedMatrixBlock inputMatrix, MatrixBlock result,
 		AggregateUnaryOperator op, int blen, MatrixIndexes indexesIn, boolean inCP) {
@@ -84,13 +91,18 @@ public class CLALibCompAgg {
 			LOG.trace("Require decompression in unaryAggregate");
 			// Decide if we should use the cached decompressed Version, or we should decompress the full matrix, or we
 			// should decompress blocks.
-			final double denseSize = MatrixBlock.estimateSizeDenseInMemory(r, c);
-			final double localMaxMemory = InfrastructureAnalyzer.getLocalMaxMemory();
+			// final double denseSize = MatrixBlock.estimateSizeDenseInMemory(r, c);
+			// final double localMaxMemory = InfrastructureAnalyzer.getLocalMaxMemory();
 
-			if(inputMatrix.getCachedDecompressed() != null || (colGroups.size() > 5 && denseSize <= localMaxMemory / 2)) {
-				MatrixBlock uc = inputMatrix.getUncompressed("UnaryAggregate, because of overlapping state");
-				return uc.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
+			if(inputMatrix.getCachedDecompressed() != null) {
+				return inputMatrix.getCachedDecompressed().aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
 			}
+			// else if(colGroups.size() > 5 && denseSize <= localMaxMemory / 2) {
+			// MatrixBlock uc = inputMatrix.getUncompressed(
+			// op.indexFn.getClass().getSimpleName() + " " + op.aggOp.increOp.fn.getClass().getSimpleName()
+			// + "in overlapping state and calculated better performance uncompressed");
+			// return uc.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
+			// }
 		}
 
 		// prepare output dimensions
@@ -208,7 +220,6 @@ public class CLALibCompAgg {
 
 	private static void agg(CompressedMatrixBlock m, MatrixBlock o, AggregateUnaryOperator op, int blen,
 		MatrixIndexes indexesIn, boolean inCP) {
-
 		int k = op.getNumThreads();
 		// replace mean operation with plus.
 		AggregateUnaryOperator opm = (op.aggOp.increOp.fn instanceof Mean) ? new AggregateUnaryOperator(
@@ -218,14 +229,17 @@ public class CLALibCompAgg {
 			aggregateInParallel(m, o, opm, k);
 		else {
 			final int nRows = m.getNumRows();
+			final int nCol = m.getNumColumns();
+			final double[] ret = o.getDenseBlockValues();
+			final List<AColGroup> groups = m.getColGroups();
 			if(op.indexFn instanceof ReduceCol)
-				agg(opm, m.getColGroups(), o.getDenseBlockValues(), nRows, 0, nRows, m.getNumColumns(),
-					getPreAgg(opm, m.getColGroups()));
+				agg(opm, groups, ret, nRows, 0, nRows, nCol, getPreAgg(opm, groups));
 			else
-				agg(opm, m.getColGroups(), o.getDenseBlockValues(), nRows, 0, nRows, m.getNumColumns(), null);
+				agg(opm, groups, ret, nRows, 0, nRows, nCol, null);
 		}
 
-		postProcessAggregate(m, o, op);
+		if(op.aggOp.increOp.fn instanceof Mean)
+			divideByNumberOfCellsForMean(m, o, op.indexFn);
 
 	}
 
@@ -259,21 +273,7 @@ public class CLALibCompAgg {
 			List<Future<MatrixBlock>> futures = pool.invokeAll(tasks);
 			pool.shutdown();
 
-			// aggregate partial results
-			if(op.indexFn instanceof ReduceAll)
-				if(op.aggOp.increOp.fn instanceof Builtin)
-					aggregateResults(ret, futures, op);
-				else
-					sumResults(ret, futures);
-			else if(op.indexFn instanceof ReduceRow && m1.isOverlapping()) {
-				if(op.aggOp.increOp.fn instanceof Builtin)
-					aggregateResultVectors(ret, futures, op);
-				else
-					sumResultVectors(ret, futures);
-			}
-			else
-				for(Future<MatrixBlock> f : futures)
-					f.get();
+			reduceFutures(futures, ret, op, m1.isOverlapping());
 		}
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("Aggregate In parallel failed.", e);
@@ -296,7 +296,22 @@ public class CLALibCompAgg {
 		double val = ret.quickGetValue(0, 0);
 		for(Future<MatrixBlock> rtask : futures) {
 			double tmp = rtask.get().quickGetValue(0, 0);
-			val = val + tmp;
+			val += tmp;
+		}
+		ret.quickSetValue(0, 0, val);
+
+	}
+
+	private static void productResults(MatrixBlock ret, List<Future<MatrixBlock>> futures)
+		throws InterruptedException, ExecutionException {
+		double val = ret.quickGetValue(0, 0);
+		for(Future<MatrixBlock> rtask : futures) {
+			double tmp = rtask.get().quickGetValue(0, 0);
+			if(tmp == 0) {
+				ret.quickSetValue(0, 0, 0);
+				return;
+			}
+			val *= tmp;
 		}
 		ret.quickSetValue(0, 0, val);
 
@@ -304,12 +319,27 @@ public class CLALibCompAgg {
 
 	private static void sumResultVectors(MatrixBlock ret, List<Future<MatrixBlock>> futures)
 		throws InterruptedException, ExecutionException {
+		double[] retVals = ret.getDenseBlockValues();
+		for(Future<MatrixBlock> rtask : futures) {
+			double[] taskResult = rtask.get().getDenseBlockValues();
+			for(int i = 0; i < retVals.length; i++)
+				retVals[i] += taskResult[i];
+		}
+		ret.setNonZeros(ret.getNumColumns());
+	}
+
+	private static void productResultVectors(MatrixBlock ret, List<Future<MatrixBlock>> futures)
+		throws InterruptedException, ExecutionException {
 
 		double[] retVals = ret.getDenseBlockValues();
 		for(Future<MatrixBlock> rtask : futures) {
 			double[] taskResult = rtask.get().getDenseBlockValues();
 			for(int i = 0; i < retVals.length; i++) {
-				retVals[i] += taskResult[i];
+				double tmp = taskResult[i];
+				if(Double.isInfinite(tmp) && retVals[i] == 0)
+					continue;
+				else
+					retVals[i] *= taskResult[i];
 			}
 		}
 		ret.setNonZeros(ret.getNumColumns());
@@ -353,45 +383,50 @@ public class CLALibCompAgg {
 	}
 
 	private static void divideByNumberOfCellsForMeanCols(CompressedMatrixBlock m1, MatrixBlock ret) {
-		double[] values = ret.getDenseBlockValues();
-		for(int i = 0; i < m1.getNumColumns(); i++)
-			values[i] = values[i] / m1.getNumRows();
+		double div = (double) m1.getNumRows();
 
+		if(ret.isInSparseFormat()) {
+			SparseBlock sb = ret.getSparseBlock();
+			if(sb.isEmpty(0))
+				return;
+			double[] vals = sb.values(0);
+			for(int i = 0; i < vals.length; i++)
+				vals[i] /= div;
+		}
+		else {
+			double[] vals = ret.getDenseBlockValues();
+			for(int i = 0; i < vals.length; i++)
+				vals[i] /= div;
+		}
 	}
 
 	private static void divideByNumberOfCellsForMeanAll(CompressedMatrixBlock m1, MatrixBlock ret) {
 		ret.quickSetValue(0, 0, ret.quickGetValue(0, 0) / ((long) m1.getNumColumns() * (long) m1.getNumRows()));
 	}
 
-	private static void postProcessAggregate(CompressedMatrixBlock m1, MatrixBlock ret, AggregateUnaryOperator op) {
-		if(op.aggOp.increOp.fn instanceof Mean)
-			divideByNumberOfCellsForMean(m1, ret, op.indexFn);
-
-	}
-
 	private static void aggOverlapping(CompressedMatrixBlock m1, MatrixBlock ret, AggregateUnaryOperator op,
 		MatrixIndexes indexesIn, boolean inCP) {
 		try {
 			List<Future<MatrixBlock>> rtasks = generateUnaryAggregateOverlappingFutures(m1, ret, op);
-			reduceOverlappingFutures(rtasks, ret, op);
+			reduceFutures(rtasks, ret, op, true);
 		}
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLCompressionException("Error in Compressed Unary Aggregate", e);
 		}
 	}
 
-	private static void reduceOverlappingFutures(List<Future<MatrixBlock>> rtasks, MatrixBlock ret,
-		AggregateUnaryOperator op) throws InterruptedException, ExecutionException {
+	private static void reduceFutures(List<Future<MatrixBlock>> futures, MatrixBlock ret, AggregateUnaryOperator op,
+		boolean overlapping) throws InterruptedException, ExecutionException {
 		if(isReduceAll(ret, op.indexFn))
-			reduceAllOverlappingFutures(rtasks, ret, op);
-		else if(op.indexFn instanceof ReduceRow) {
-			final BinaryOperator bop = (op.aggOp.increOp.fn instanceof KahanFunction) ? new BinaryOperator(
-				Plus.getPlusFnObject()) : op.aggOp.increOp;
-			for(Future<MatrixBlock> rtask : rtasks)
+			reduceAllFutures(futures, ret, op);
+		else if(op.indexFn instanceof ReduceRow && overlapping) {
+			final boolean isPlus = op.aggOp.increOp.fn instanceof KahanFunction || op.aggOp.increOp.fn instanceof Mean;
+			final BinaryOperator bop = isPlus ? new BinaryOperator(Plus.getPlusFnObject()) : op.aggOp.increOp;
+			for(Future<MatrixBlock> rtask : futures)
 				LibMatrixBincell.bincellOpInPlace(ret, rtask.get(), bop);
 		}
-		else
-			for(Future<MatrixBlock> rtask : rtasks)
+		else // reduce cols just get the tasks done.
+			for(Future<MatrixBlock> rtask : futures)
 				rtask.get();
 	}
 
@@ -399,36 +434,26 @@ public class CLALibCompAgg {
 		return idxFn instanceof ReduceAll || (ret.getNumColumns() == 1 && ret.getNumRows() == 1);
 	}
 
-	private static void reduceAllOverlappingFutures(List<Future<MatrixBlock>> rtasks, MatrixBlock ret,
-		AggregateUnaryOperator op) throws InterruptedException, ExecutionException {
+	private static void reduceAllFutures(List<Future<MatrixBlock>> futures, MatrixBlock ret, AggregateUnaryOperator op)
+		throws InterruptedException, ExecutionException {
 
-		if(op.aggOp.increOp.fn instanceof KahanFunction) {
-			KahanObject kbuff = new KahanObject(ret.quickGetValue(0, 0), 0);
-			KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
-			for(Future<MatrixBlock> rtask : rtasks) {
-				double tmp = rtask.get().quickGetValue(0, 0);
-				kplus.execute2(kbuff, tmp);
-			}
-			ret.quickSetValue(0, 0, kbuff._sum);
-		}
-		else {
-			double val = ret.quickGetValue(0, 0);
-			for(Future<MatrixBlock> rtask : rtasks) {
-				double tmp = rtask.get().quickGetValue(0, 0);
-				val = op.aggOp.increOp.fn.execute(val, tmp);
-			}
-			ret.quickSetValue(0, 0, val);
-		}
+		if(op.aggOp.increOp.fn instanceof Builtin)
+			aggregateResults(ret, futures, op);
+		else if(op.aggOp.increOp.fn instanceof Multiply)
+			productResults(ret, futures);
+		else
+			sumResults(ret, futures);
+
 	}
 
 	private static List<Future<MatrixBlock>> generateUnaryAggregateOverlappingFutures(CompressedMatrixBlock m1,
 		MatrixBlock ret, AggregateUnaryOperator op) throws InterruptedException {
-
-		final ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
+		final int k = op.getNumThreads();
+		final ExecutorService pool = CommonThreadPool.get(k);
 		final ArrayList<UAOverlappingTask> tasks = new ArrayList<>();
 		final int nCol = m1.getNumColumns();
 		final int nRow = m1.getNumRows();
-		final int blklen = CompressionSettings.BITMAP_BLOCK_SZ / nCol * 5;
+		final int blklen = Math.max(512, nRow / k);
 		final List<AColGroup> groups = m1.getColGroups();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
 		if(shouldFilter) {
@@ -480,7 +505,6 @@ public class CLALibCompAgg {
 
 	private static void aggRow(AggregateUnaryOperator op, List<AColGroup> groups, double[] ret, int nRows, int rl,
 		int ru, int numColumns, double[][] preAgg) {
-
 		for(int i = 0; i < groups.size(); i++) {
 			AColGroup grp = groups.get(i);
 			if(grp instanceof AColGroupCompressed)
@@ -524,7 +548,7 @@ public class CLALibCompAgg {
 		final int c = ret.getNumColumns();
 		MatrixBlock tmp = new MatrixBlock(1, c, false);
 		tmp.allocateDenseBlock();
-		if(op.aggOp.increOp.fn instanceof Builtin)
+		if(op.aggOp.increOp.fn instanceof Builtin || op.aggOp.increOp.fn instanceof Multiply)
 			System.arraycopy(ret.getDenseBlockValues(), 0, tmp.getDenseBlockValues(), 0, c);
 		return tmp;
 	}
@@ -537,6 +561,7 @@ public class CLALibCompAgg {
 		private final MatrixBlock _ret;
 		private final int _numColumns;
 		private final AggregateUnaryOperator _op;
+		private final boolean _overlapping;
 		private final double[][] _preAgg;
 
 		protected UnaryAggregateTask(List<AColGroup> groups, MatrixBlock ret, int nRows, int rl, int ru,
@@ -548,17 +573,21 @@ public class CLALibCompAgg {
 			_ru = ru;
 			_numColumns = numColumns;
 			_preAgg = preAgg;
-			if(_op.indexFn instanceof ReduceAll || (_op.indexFn instanceof ReduceRow && overlapping))
-				_ret = genTmpReduceAllOrRow(ret, op);
-			else // colSums / rowSums not overlapping
-				_ret = ret;
-
+			_ret = ret;
+			_overlapping = overlapping;
 		}
 
 		@Override
 		public MatrixBlock call() {
-			agg(_op, _groups, _ret.getDenseBlockValues(), _nRows, _rl, _ru, _numColumns, _preAgg);
-			return _ret;
+			MatrixBlock ret = _ret;
+			final boolean overlappingRows = (_op.indexFn instanceof ReduceRow && _overlapping);
+			if(_op.indexFn instanceof ReduceAll || overlappingRows)
+				ret = genTmpReduceAllOrRow(ret, _op);
+
+			agg(_op, _groups, ret.getDenseBlockValues(), _nRows, _rl, _ru, _numColumns, _preAgg);
+			if(overlappingRows)
+				ret.recomputeNonZeros();
+			return ret;
 		}
 	}
 
@@ -566,6 +595,7 @@ public class CLALibCompAgg {
 		private final List<AColGroup> _groups;
 		private final int _rl;
 		private final int _ru;
+		private final int _blklen;
 		private final MatrixBlock _ret;
 		private final AggregateUnaryOperator _op;
 		private final int _nCol;
@@ -576,55 +606,100 @@ public class CLALibCompAgg {
 			_op = op;
 			_rl = rl;
 			_ru = ru;
+			_blklen = 32768 / ret.getNumColumns();
 			_ret = ret;
 			_nCol = nCol;
 		}
 
 		private MatrixBlock getTmp() {
-			MatrixBlock tmp = memPool.get();
-			if(tmp == null) {
-				memPool.set(new MatrixBlock(_ru - _rl, _nCol, false, -1).allocateBlock());
-				tmp = memPool.get();
-			}
-			else
-				tmp.reset(_ru - _rl, _nCol, false, -1);
-
+			MatrixBlock tmp = new MatrixBlock(Math.min(_ru - _rl, _blklen), _nCol, false);
+			tmp.allocateDenseBlock();
 			return tmp;
 		}
 
-		private MatrixBlock decompressToTemp() {
-			MatrixBlock tmp = getTmp();
+		private MatrixBlock decompressToTemp(MatrixBlock tmp, int rl, int ru, AIterator[] its) {
+			Timing time = new Timing(true);
 
-			for(AColGroup g : _groups)
-				g.decompressToDenseBlock(tmp.getDenseBlock(), _rl, _ru, -_rl, 0);
+			DenseBlock db = tmp.getDenseBlock();
+			for(int i = 0; i < _groups.size(); i++) {
+				AColGroup g = _groups.get(i);
+				if(g instanceof ASDCZero)
+					((ASDCZero) g).decompressToDenseBlockDenseDictionary(db, rl, ru, -rl, 0, its[i]);
+				else
+					g.decompressToDenseBlock(db, rl, ru, -rl, 0);
 
-			tmp.setNonZeros(_rl + _ru);
+			}
+
+			tmp.setNonZeros(rl + ru);
+
+			if(DMLScript.STATISTICS) {
+				final double t = time.stop();
+				DMLCompressionStatistics.addDecompressToBlockTime(t, 1);
+				if(LOG.isTraceEnabled())
+					LOG.trace("decompressed block w/ k=" + 1 + " in " + t + "ms.");
+			}
+
 			return tmp;
 		}
 
 		@Override
 		public MatrixBlock call() {
-			MatrixBlock tmp = decompressToTemp();
-			MatrixBlock outputBlock = tmp.prepareAggregateUnaryOutput(_op, null,
-				Math.max(tmp.getNumColumns(), tmp.getNumRows()));
-			LibMatrixAgg.aggregateUnaryMatrix(tmp, outputBlock, _op);
-			outputBlock.dropLastRowsOrColumns(_op.aggOp.correction);
-
-			if(_op.indexFn instanceof ReduceCol) {
-				if(outputBlock.isEmpty())
-					return null;
-				else if(outputBlock.isInSparseFormat())
-					throw new DMLCompressionException("Output block should never be sparse");
-				else {
-					double[] retValues = _ret.getDenseBlockValues();
-					int currentIndex = _rl * _ret.getNumColumns();
-					double[] outputBlockValues = outputBlock.getDenseBlockValues();
-					System.arraycopy(outputBlockValues, 0, retValues, currentIndex, outputBlockValues.length);
-					return null;
-				}
+			MatrixBlock tmp = getTmp();
+			final ValueFunction fn = _op.aggOp.increOp.fn;
+			boolean isBinaryOp = false;
+			if(fn instanceof Builtin) {
+				final BuiltinCode b = ((Builtin) fn).getBuiltinCode();
+				isBinaryOp = b == BuiltinCode.MIN || b == BuiltinCode.MAX;
 			}
-			else
+
+			final AIterator[] its = new AIterator[_groups.size()];
+			// materialize initial iterators.
+			for(int i = 0; i < _groups.size(); i++)
+				if(_groups.get(i) instanceof ASDCZero)
+					its[i] = ((ASDCZero) _groups.get(i)).getIterator(_rl);
+			if(_op.indexFn instanceof ReduceCol) {
+				for(int r = _rl; r < _ru; r += _blklen) {
+					final int rbu = Math.min(r + _blklen, _ru);
+					tmp.reset(rbu - r, tmp.getNumColumns(), false);
+					decompressToTemp(tmp, r, rbu, its);
+					MatrixBlock outputBlock = tmp.prepareAggregateUnaryOutput(_op, null, 1000);
+					LibMatrixAgg.aggregateUnaryMatrix(tmp, outputBlock, _op);
+					outputBlock.dropLastRowsOrColumns(_op.aggOp.correction);
+					if(outputBlock.isEmpty()) {
+						if(isBinaryOp) {
+							final double[] retValues = _ret.getDenseBlockValues();
+							final int s = r * _ret.getNumColumns();
+							final int e = rbu * _ret.getNumColumns();
+							Arrays.fill(retValues, s, e, 0);
+						}
+					}
+					else if(outputBlock.isInSparseFormat())
+						throw new DMLCompressionException("Output block should never be sparse");
+					else {
+						final double[] retValues = _ret.getDenseBlockValues();
+						final double[] outputBlockValues = outputBlock.getDenseBlockValues();
+						final int currentIndex = r * _ret.getNumColumns();
+						final int length = Math.min(outputBlockValues.length, retValues.length - currentIndex);
+						System.arraycopy(outputBlockValues, 0, retValues, currentIndex, length);
+					}
+				}
+				return null;
+
+			}
+			else if(_op.indexFn instanceof ReduceAll) {
+				decompressToTemp(tmp, _rl, _ru, its);
+				MatrixBlock outputBlock = tmp.prepareAggregateUnaryOutput(_op, null, 1000);
+				LibMatrixAgg.aggregateUnaryMatrix(tmp, outputBlock, _op);
+				outputBlock.dropLastRowsOrColumns(_op.aggOp.correction);
 				return outputBlock;
+			}
+			else { // reduce to rows.
+				decompressToTemp(tmp, _rl, _ru, its);
+				MatrixBlock outputBlock = tmp.prepareAggregateUnaryOutput(_op, null, 1000);
+				LibMatrixAgg.aggregateUnaryMatrix(tmp, outputBlock, _op);
+				outputBlock.dropLastRowsOrColumns(_op.aggOp.correction);
+				return outputBlock;
+			}
 		}
 	}
 }

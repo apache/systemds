@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.compress.cocode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.cost.ICostEstimate;
+import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -32,10 +32,10 @@ public abstract class AColumnCoCoder {
 	protected static final Log LOG = LogFactory.getLog(AColumnCoCoder.class.getName());
 
 	final protected CompressedSizeEstimator _sest;
-	final protected ICostEstimate _cest;
+	final protected ACostEstimate _cest;
 	final protected CompressionSettings _cs;
 
-	protected AColumnCoCoder(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator,
+	protected AColumnCoCoder(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator,
 		CompressionSettings cs) {
 		_sest = sizeEstimator;
 		_cest = costEstimator;
@@ -50,11 +50,6 @@ public abstract class AColumnCoCoder {
 	 * @return CoCoded column groups.
 	 */
 	protected abstract CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k);
-
-	protected CompressedSizeInfoColGroup join(int[] joined, CompressedSizeInfoColGroup lhs,
-		CompressedSizeInfoColGroup rhs, boolean analyze) {
-		return analyze ? _sest.combine(joined, lhs, rhs) : joinWithoutAnalysis(joined, lhs, rhs);
-	}
 
 	protected CompressedSizeInfoColGroup joinWithoutAnalysis(int[] joined, CompressedSizeInfoColGroup lhs,
 		CompressedSizeInfoColGroup rhs) {

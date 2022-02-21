@@ -47,7 +47,6 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
-import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -99,20 +98,12 @@ public abstract class CompressedTestBase extends TestBase {
 
 	protected static CompressionSettingsBuilder[] usedCompressionSettings = new CompressionSettingsBuilder[] {
 		// CLA TESTS!
-		// csb().setValidCompressions(EnumSet.of(CompressionType.DDC)),
-		// csb().setValidCompressions(EnumSet.of(CompressionType.OLE)),
-		// csb().setValidCompressions(EnumSet.of(CompressionType.RLE)),
-		// csb().setValidCompressions(EnumSet.of(CompressionType.SDC)),
-		// csb().setValidCompressions(EnumSet.of(CompressionType.SDC, CompressionType.DDC)),
-
-		// csb().setTransposeInput("true")
-		// .setColumnPartitioner(PartitionerType.BIN_PACKING),
-		// csb().setTransposeInput("true")
-		// .setColumnPartitioner(PartitionerType.STATIC),
-
-		// csb().setTransposeInput("true").setCostType(CostType.HYBRID_W_TREE),
-		// csb().setTransposeInput("false"), // no transpose but default
-		csb().setTransposeInput("auto").setCostType(CostType.W_TREE)};
+		// only DDC
+		csb().setValidCompressions(EnumSet.of(CompressionType.DDC)),
+		// only SDC
+		csb().setValidCompressions(EnumSet.of(CompressionType.SDC)),
+		// default settings
+		csb()};
 
 	protected static MatrixTypology[] usedMatrixTypology = new MatrixTypology[] { // Selected Matrix Types
 		MatrixTypology.SMALL, MatrixTypology.LARGE};
@@ -128,10 +119,8 @@ public abstract class CompressedTestBase extends TestBase {
 	protected double lossyTolerance;
 	protected String bufferedToString;
 
-	protected MatrixBlock vectorCols;
-	protected MatrixBlock vectorRows;
-	protected MatrixBlock matrixRowsCols;
-	protected MatrixBlock ucRet;
+	protected MatrixBlock vectorRows = null;
+	protected MatrixBlock ucRet = null;
 
 	public CompressedTestBase(SparsityType sparType, ValueType valType, ValueRange valueRange,
 		CompressionSettingsBuilder compSettings, MatrixTypology MatrixTypology, OverLapping ov, int parallelism,
@@ -185,7 +174,6 @@ public abstract class CompressedTestBase extends TestBase {
 					 * In case only Uncompressed and Const colgroups are available. filter the big tests from uncompressed
 					 * colgroup tests since the functionality should be verified even with smaller matrices
 					 */
-
 					if(rows < 10000) {
 						int[] colIndexes = new int[mb.getNumColumns()];
 						for(int i = 0; i < colIndexes.length; i++)
@@ -283,17 +271,6 @@ public abstract class CompressedTestBase extends TestBase {
 			}
 
 			bufferedToString = this.toString();
-			if(cmb instanceof CompressedMatrixBlock) {
-
-				vectorCols = TestUtils.generateTestMatrixBlock(1, cols, -1.0, 1.5, 1.0, 3);
-				vectorRows = CompressibleInputGenerator.getInput(rows, 1, CompressionType.OLE, 5, 5, -5, 1.0, 3);
-				matrixRowsCols = TestUtils.generateTestMatrixBlock(rows, cols, -1.0, 1.5, 1.0, 3);
-			}
-			else {
-				vectorCols = null;
-				vectorRows = null;
-				matrixRowsCols = null;
-			}
 			TestUtils.assertEqualColsAndRows(mb, cmb, bufferedToString);
 
 		}
@@ -377,6 +354,10 @@ public abstract class CompressedTestBase extends TestBase {
 		// forced two uncompressed empty colGroups.
 		tests.add(new Object[] {SparsityType.EMPTY, rd, ValueRange.CONST, null, mt, ov, forceUncompressed});
 
+		// add tests of larger compressions
+		tests.add(new Object[] {SparsityType.SPARSE, ValueType.RAND_ROUND, ValueRange.SMALL, null, MatrixTypology.XL_ROWS,
+			ov, null});
+
 		return tests;
 
 	}
@@ -421,7 +402,9 @@ public abstract class CompressedTestBase extends TestBase {
 				return; // Input was not compressed then just pass test
 
 			MatrixBlock vector1 = TestUtils.generateTestMatrixBlock(cols, 1, 0.9, 1.5, 1.0, 3);
-
+			if(ctype == ChainType.XtwXv && vectorRows == null) {
+				vectorRows = CompressibleInputGenerator.getInput(rows, 1, CompressionType.OLE, 5, 5, -5, 1.0, 3);
+			}
 			MatrixBlock vector2 = (ctype == ChainType.XtwXv) ? vectorRows : null;
 
 			// matrix-vector uncompressed
@@ -453,7 +436,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 	@Test
 	public void testLeftMatrixMatrixMultConst() {
-		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(3, rows, 1.0, 1.0, 1.0, 3);
+		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(2, rows, 1.0, 1.0, 1.0, 3);
 		testLeftMatrixMatrix(matrix);
 	}
 
@@ -713,7 +696,7 @@ public abstract class CompressedTestBase extends TestBase {
 			ucRet = mb.aggregateBinaryOperations(mbMt, mb, ucRet, abop);
 
 			// compare result with input
-			compareResultMatrices(ucRet, ret2, 1);
+			compareResultMatrices(ucRet, ret2, 2);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -756,7 +739,7 @@ public abstract class CompressedTestBase extends TestBase {
 			// matrix-vector uncompressed
 			ucRet = mb.transposeSelfMatrixMultOperations(ucRet, mType, _k);
 			// compare result with input
-			compareResultMatrices(ucRet, ret2, 1);
+			compareResultMatrices(ucRet, ret2, 4);
 		}
 		else {
 			// matrix-vector compressed
@@ -764,7 +747,7 @@ public abstract class CompressedTestBase extends TestBase {
 			// matrix-vector uncompressed
 			ucRet = mb.transposeSelfMatrixMultOperations(ucRet, mType);
 			// compare result with input
-			compareResultMatrices(ucRet, ret2, 1);
+			compareResultMatrices(ucRet, ret2, 4);
 		}
 	}
 
@@ -831,34 +814,38 @@ public abstract class CompressedTestBase extends TestBase {
 	@Test
 	public void testBinaryMVAdditionROW() {
 		ValueFunction vf = Plus.getPlusFnObject();
-		testBinaryMV(vf, vectorCols);
+		testBinaryMV(vf, TestUtils.generateTestMatrixBlock(1, cols, -1.0, 1.5, 1.0, 3));
 	}
 
 	@Test
 	public void testBinaryMVAdditionCOL() {
 		ValueFunction vf = Plus.getPlusFnObject();
+		if(vectorRows == null)
+			vectorRows = CompressibleInputGenerator.getInput(rows, 1, CompressionType.OLE, 5, 5, -5, 1.0, 3);
 		testBinaryMV(vf, vectorRows);
 	}
 
 	@Test
 	public void testBinaryMVMultiplyROW() {
 		ValueFunction vf = Multiply.getMultiplyFnObject();
-		testBinaryMV(vf, vectorCols);
+		testBinaryMV(vf, TestUtils.generateTestMatrixBlock(1, cols, -1.0, 1.5, 1.0, 3));
 	}
 
 	@Test
 	public void testBinaryMVDivideROW() {
 		ValueFunction vf = Divide.getDivideFnObject();
-		testBinaryMV(vf, vectorCols);
+		testBinaryMV(vf, TestUtils.generateTestMatrixBlock(1, cols, -1.0, 1.5, 1.0, 3));
 	}
 
 	@Test
 	public void testBinaryVMPlusRow() {
-		testBinaryVMPlus(vectorCols);
+		testBinaryVMPlus(TestUtils.generateTestMatrixBlock(1, cols, -1.0, 1.5, 1.0, 3));
 	}
 
 	@Test
 	public void testBinaryVMPlusCols() {
+		if(vectorRows == null)
+			vectorRows = CompressibleInputGenerator.getInput(rows, 1, CompressionType.OLE, 5, 5, -5, 1.0, 3);
 		testBinaryVMPlus(vectorRows);
 	}
 
@@ -1002,6 +989,8 @@ public abstract class CompressedTestBase extends TestBase {
 	public void append() {
 		if(!(cmb instanceof CompressedMatrixBlock))
 			return;
+		if(vectorRows == null)
+			vectorRows = CompressibleInputGenerator.getInput(rows, 1, CompressionType.OLE, 5, 5, -5, 1.0, 3);
 		MatrixBlock ap = vectorRows;
 		MatrixBlock ret1 = mb.append(ap, new MatrixBlock());
 		MatrixBlock ret2 = cmb.append(ap, new MatrixBlock());

@@ -24,9 +24,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
-import org.apache.sysds.runtime.compress.cost.ICostEstimate;
+import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -51,7 +51,7 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 	 */
 	public static double BIN_CAPACITY = 0.000032;
 
-	protected CoCodeBinPacking(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator,
+	protected CoCodeBinPacking(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator,
 		CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
 		mem = new Memorizer(sizeEstimator);
@@ -60,27 +60,29 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 	@Override
 	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
 		// establish memo table for extracted column groups
+		
+		throw new NotImplementedException("Not Implemented generic cost function in binPacking");
+		// List<CompressedSizeInfoColGroup> constantGroups = new ArrayList<>();
+		// List<CompressedSizeInfoColGroup> newGroups = new ArrayList<>();
 
-		List<CompressedSizeInfoColGroup> constantGroups = new ArrayList<>();
-		List<CompressedSizeInfoColGroup> newGroups = new ArrayList<>();
-
-		for(CompressedSizeInfoColGroup g : colInfos.getInfo()) {
-			if(g.getBestCompressionType(_cs) == CompressionType.CONST)
-				constantGroups.add(g);
-			else {
-				mem.put(g);
-				newGroups.add(g);
-			}
-		}
+		// for(CompressedSizeInfoColGroup g : colInfos.getInfo()) {
+		// 	if(g.getBestCompressionType(_cs) == CompressionType.CONST)
+		// 		constantGroups.add(g);
+		// 	else {
+		// 		mem.put(g);
+		// 		newGroups.add(g);
+		// 	}
+		// }
 
 		// make bins
-		colInfos.setInfo(partitionColumns(newGroups));
+		// colInfos.setInfo(partitionColumns(newGroups));
 		// Cocode compare all in bins
-		getCoCodingGroupsBruteForce(colInfos, k);
+		// getCoCodingGroupsBruteForce(colInfos, k);
 
-		colInfos.getInfo().addAll(constantGroups);
+		// colInfos.getInfo().addAll(constantGroups);
 
-		return colInfos;
+
+		// return colInfos;
 	}
 
 	/**

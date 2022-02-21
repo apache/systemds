@@ -27,8 +27,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
-public class MapToFactory {
-	protected static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
+public interface MapToFactory {
+	static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
 
 	public enum MAP_TYPE {
 		BIT, UBYTE, BYTE, CHAR, INT;
@@ -82,6 +82,22 @@ public class MapToFactory {
 			return new MapToInt(numTuples, size);
 	}
 
+	public static AMapToData create(int size, MAP_TYPE t) {
+		switch(t) {
+			case BIT:
+				return new MapToBit(size);
+			case UBYTE:
+				return new MapToUByte(size);
+			case BYTE:
+				return new MapToByte(size);
+			case CHAR:
+				return new MapToChar(size);
+			case INT:
+			default:
+				return new MapToInt(size);
+		}
+	}
+
 	/**
 	 * Reshape the map, to a smaller instance if applicable.
 	 * 
@@ -95,27 +111,37 @@ public class MapToFactory {
 	public static AMapToData resize(AMapToData d, int numTuples) {
 		final int size = d.size();
 		AMapToData ret;
-		if(d instanceof MapToBit)
+		if(d instanceof MapToBit) {
+			d.setUnique(numTuples);
 			return d;
+		}
 		else if(numTuples <= 2 && size > 32)
 			ret = new MapToBit(numTuples, size);
-		else if(d instanceof MapToUByte)
+		else if(d instanceof MapToUByte) {
+			d.setUnique(numTuples);
 			return d;
-		else if(numTuples <= 127){
+		}
+		else if(numTuples <= 127) {
 			if(d instanceof MapToByte)
-				return ((MapToByte)d).toUByte();
+				return ((MapToByte) d).toUByte();
 			ret = new MapToUByte(numTuples, size);
 		}
-		else if(d instanceof MapToByte)
+		else if(d instanceof MapToByte) {
+			d.setUnique(numTuples);
 			return d;
+		}
 		else if(numTuples <= 256)
 			ret = new MapToByte(numTuples, size);
-		else if(d instanceof MapToChar)
+		else if(d instanceof MapToChar) {
+			d.setUnique(numTuples);
 			return d;
+		}
 		else if(numTuples <= (int) Character.MAX_VALUE + 1)
 			ret = new MapToChar(numTuples, size);
-		else // then the input was int and reshapes to int
+		else {// then the input was int and reshapes to int
+			d.setUnique(numTuples);
 			return d;
+		}
 
 		ret.copy(d);
 		return ret;

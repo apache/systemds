@@ -24,14 +24,17 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
 /**
@@ -175,6 +178,21 @@ public class QDictionary extends ADictionary {
 		throw new NotImplementedException();
 	}
 
+	@Override
+	public ADictionary applyUnaryOp(UnaryOperator op) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
+		throw new NotImplementedException();
+	}
+
 	private int size() {
 		return _values.length;
 	}
@@ -255,8 +273,7 @@ public class QDictionary extends ADictionary {
 		throw new NotImplementedException();
 	}
 
-	@Override
-	public double sumRow(int k, int nrColumns) {
+	private double sumRow(int k, int nrColumns) {
 		if(_values == null)
 			return 0;
 		int valOff = k * nrColumns;
@@ -266,11 +283,9 @@ public class QDictionary extends ADictionary {
 			res += _values[valOff + i];
 		}
 		return res * _scale;
-
 	}
 
-	@Override
-	public double sumRowSq(int k, int nrColumns) {
+	private double sumRowSq(int k, int nrColumns) {
 		if(_values == null)
 			return 0;
 		int valOff = k * nrColumns;
@@ -278,16 +293,6 @@ public class QDictionary extends ADictionary {
 		for(int i = 0; i < nrColumns; i++)
 			res += (int) (_values[valOff + i] * _values[valOff + i]) * _scale * _scale;
 		return res;
-	}
-
-	@Override
-	public double sumRowSqWithReference(int k, int nrColumns, double[] reference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double[] colSum(int[] counts, int nCol) {
-		throw new NotImplementedException("Not Implemented");
 	}
 
 	@Override
@@ -388,8 +393,13 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1, int t2,
-		int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
+	public void addToEntry(double[] v, int fr, int to, int nCol, int rep) {
+		throw new NotImplementedException("Not implemented yet");
+	}
+
+	@Override
+	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
+		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
 		throw new NotImplementedException("Not implemented yet");
 	}
 
@@ -440,12 +450,17 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public double product(int[] counts, int nCol) {
+	public void product(double[] ret, int[] counts, int nCol) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
+	public void productWithDefault(double[] ret, int[] counts, double[] def, int defCount) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void productWithReference(double[] ret, int[] counts, double[] reference, int refCount) {
 		throw new NotImplementedException();
 	}
 
@@ -456,11 +471,6 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public ADictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
 		throw new NotImplementedException();
 	}
 
@@ -501,6 +511,69 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, double reference) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public double getSparsity() {
+		return 1;
+	}
+
+	@Override
+	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, int[] cols) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void TSMMWithScaling(int[] counts, int[] rows, int[] cols, MatrixBlock ret) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void MMDict(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void MMDictDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void MMDictSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void TSMMToUpperTriangle(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleScaling(ADictionary right, int[] rowsLeft, int[] colsRight, int[] scale,
+		MatrixBlock result) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleDenseScaling(double[] left, int[] rowsLeft, int[] colsRight, int[] scale,
+		MatrixBlock result) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight, int[] scale,
+		MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 }

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.privacy.fedplanning;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -43,7 +44,10 @@ import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
@@ -54,6 +58,7 @@ import java.util.Set;
 
 import static org.apache.sysds.common.Types.OpOp2.MULT;
 
+@NotThreadSafe
 public class FederatedCostEstimatorTest extends AutomatedTestBase {
 
 	private static final String TEST_DIR = "functions/privacy/fedplanning/";
@@ -61,13 +66,36 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedCostEstimatorTest.class.getSimpleName() + "/";
 	FederatedCostEstimator fedCostEstimator = new FederatedCostEstimator();
 
+	private static double COMPUTE_FLOPS;
+	private static double READ_PS;
+	private static double NETWORK_PS;
+
 	@Override
 	public void setUp() {}
 
+	@BeforeClass
+	public static void storeConstants(){
+		COMPUTE_FLOPS = FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS;
+		READ_PS = FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS;
+		NETWORK_PS = FederatedCostEstimator.WORKER_NETWORK_BANDWIDTH_BYTES_PS;
+	}
+
+	@Before
+	public void setConstants(){
+		FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
+		FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
+		FederatedCostEstimator.WORKER_NETWORK_BANDWIDTH_BYTES_PS = 5;
+	}
+
+	@After
+	public void resetConstants(){
+		FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = COMPUTE_FLOPS;
+		FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = READ_PS;
+		FederatedCostEstimator.WORKER_NETWORK_BANDWIDTH_BYTES_PS = NETWORK_PS;
+	}
+
 	@Test
 	public void simpleBinary() {
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
 
 		/*
 		 * HOP			Occurences		ComputeCost		ReadCost	ComputeCostFinal	ReadCostFinal
@@ -78,8 +106,8 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 		 * TOSTRING		1				1				800			0.0625				80
 		 * UnaryOp		1				1				8			0.0625				0.8
 		 */
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 
 		double expectedCost = computeCost + readCost;
 		runTest("BinaryCostEstimatorTest.dml", false, expectedCost);
@@ -92,10 +120,8 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 
 	@Test
 	public void ifElseTest(){
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 		double expectedCost = ((computeCost + readCost + 0.8 + 0.0625 + 0.0625) / 2) + 0.0625 + 0.8 + 0.0625;
 		runTest("IfElseCostEstimatorTest.dml", false, expectedCost);
 	}
@@ -107,10 +133,8 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 
 	@Test
 	public void whileTest(){
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 		double expectedCost = (computeCost + readCost + 0.0625 + 0.0625 + 0.8) * StatementBlock.DEFAULT_LOOP_REPETITIONS;
 		runTest("WhileCostEstimatorTest.dml", false, expectedCost);
 	}
@@ -122,10 +146,8 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 
 	@Test
 	public void forLoopTest(){
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 		double predicateCost = 0.0625 + 0.8 + 0.0625 + 0.0625 + 0.8 + 0.0625 + 0.0625 + 0.8 + 0.0625;
 		double expectedCost = (computeCost + readCost + predicateCost) * 5;
 		runTest("ForLoopCostEstimatorTest.dml", false, expectedCost);
@@ -138,10 +160,8 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 
 	@Test
 	public void parForLoopTest(){
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 		double predicateCost = 0.0625 + 0.8 + 0.0625 + 0.0625 + 0.8 + 0.0625 + 0.0625 + 0.8 + 0.0625;
 		double expectedCost = (computeCost + readCost + predicateCost) * 5;
 		runTest("ParForLoopCostEstimatorTest.dml", false, expectedCost);
@@ -154,10 +174,8 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 
 	@Test
 	public void functionTest(){
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		double computeCost = (16+2*100+100+1+1) / (fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS *fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
+		double computeCost = (16+2*100+100+1+1) / (FederatedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS * FederatedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
+		double readCost = (2*64+1600+800+8) / (FederatedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 		double expectedCost = (computeCost + readCost);
 		runTest("FunctionCostEstimatorTest.dml", false, expectedCost);
 	}
@@ -169,9 +187,6 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 
 	@Test
 	public void federatedMultiply() {
-		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
-		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
-		fedCostEstimator.WORKER_NETWORK_BANDWIDTH_BYTES_PS = 5;
 
 		double literalOpCost = 10*0.0625;
 		double naryOpCostSpecial = (0.125+2.2);
@@ -277,7 +292,7 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 		return prog;
 	}
 
-	private void compareResults(DMLProgram prog){
+	private void compareResults(DMLProgram prog) {
 		IPAPassRewriteFederatedPlan rewriter = new IPAPassRewriteFederatedPlan();
 		rewriter.rewriteProgram(prog, new FunctionCallGraph(prog), null);
 
@@ -286,9 +301,13 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 			actualCost += root.getFederatedCost().getTotal();
 		}
 
+
 		rewriter.getTerminalHops().forEach(Hop::resetFederatedCost);
-		FederatedCost expectedCost = fedCostEstimator.costEstimate(prog);
-		Assert.assertEquals(expectedCost.getTotal(), actualCost, 0.0001);
+		fedCostEstimator = new FederatedCostEstimator();
+		double expectedCost = 0;
+		for ( Hop root : rewriter.getTerminalHops() )
+			expectedCost += fedCostEstimator.costEstimate(root).getTotal();
+		Assert.assertEquals(expectedCost, actualCost, 0.0001);
 	}
 
 	private void runHopRelTest( String scriptFilename, boolean expectedException ) {
@@ -318,6 +337,7 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 		{
 			DMLProgram prog = testSetup(scriptFilename);
 
+			fedCostEstimator = new FederatedCostEstimator();
 			FederatedCost actualCost = fedCostEstimator.costEstimate(prog);
 			Assert.assertEquals(expectedCost, actualCost.getTotal(), 0.0001);
 		}

@@ -79,8 +79,6 @@ public class FederatedCostEstimator {
 			return whileSBCost;
 		}
 		else if ( sb instanceof IfStatementBlock){
-			//Get cost of if-block + else-block and divide by two
-			// since only one of the code blocks will be executed in the end
 			IfStatementBlock ifSB = (IfStatementBlock) sb;
 			FederatedCost ifSBCost = new FederatedCost();
 			for ( Statement statement : ifSB.getStatements() ){
@@ -280,7 +278,7 @@ public class FederatedCostEstimator {
 	 * @param root hop for which information is returned
 	 * @return information about root cost
 	 */
-	private String getCostInfo(Hop root){
+	private static String getCostInfo(Hop root){
 		String sep = System.getProperty("line.separator");
 		StringBuilder costInfo = new StringBuilder();
 		costInfo

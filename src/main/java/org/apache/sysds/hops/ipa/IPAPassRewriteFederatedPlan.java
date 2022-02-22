@@ -69,6 +69,10 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 */
 	private final static List<Hop> terminalHops = new ArrayList<>();
 
+	public List<Hop> getTerminalHops(){
+		return terminalHops;
+	}
+
 	/**
 	 * Indicates if an IPA pass is applicable for the current configuration.
 	 * The configuration depends on OptimizerUtils.FEDERATED_COMPILATION.

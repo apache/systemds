@@ -32,6 +32,8 @@ import org.apache.sysds.hops.NaryOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.cost.FederatedCost;
 import org.apache.sysds.hops.cost.FederatedCostEstimator;
+import org.apache.sysds.hops.ipa.FunctionCallGraph;
+import org.apache.sysds.hops.ipa.IPAPassRewriteFederatedPlan;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
 import org.apache.sysds.parser.LanguageException;
@@ -84,6 +86,11 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void simpleBinaryHopRelTest() {
+		runHopRelTest("BinaryCostEstimatorTest.dml", false);
+	}
+
+	@Test
 	public void ifElseTest(){
 		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
 		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
@@ -94,6 +101,11 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void ifElseHopRelTest(){
+		runHopRelTest("IfElseCostEstimatorTest.dml", false);
+	}
+
+	@Test
 	public void whileTest(){
 		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
 		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
@@ -101,6 +113,11 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 		double expectedCost = (computeCost + readCost + 0.0625 + 0.0625 + 0.8) * StatementBlock.DEFAULT_LOOP_REPETITIONS;
 		runTest("WhileCostEstimatorTest.dml", false, expectedCost);
+	}
+
+	@Test
+	public void whileHopRelTest(){
+		runHopRelTest("WhileCostEstimatorTest.dml", false);
 	}
 
 	@Test
@@ -115,6 +132,11 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void forLoopHopRelTest(){
+		runHopRelTest("ForLoopCostEstimatorTest.dml", false);
+	}
+
+	@Test
 	public void parForLoopTest(){
 		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
 		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
@@ -126,6 +148,11 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void parForLoopHopRelTest(){
+		runHopRelTest("ParForLoopCostEstimatorTest.dml", false);
+	}
+
+	@Test
 	public void functionTest(){
 		fedCostEstimator.WORKER_COMPUTE_BANDWIDTH_FLOPS = 2;
 		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
@@ -133,6 +160,11 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 		double readCost = (2*64+1600+800+8) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
 		double expectedCost = (computeCost + readCost);
 		runTest("FunctionCostEstimatorTest.dml", false, expectedCost);
+	}
+
+	@Test
+	public void functionHopRelTest(){
+		runHopRelTest("FunctionCostEstimatorTest.dml", false);
 	}
 
 	@Test
@@ -225,26 +257,66 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 		hops.stream().map(Hop::getClass).distinct().forEach(System.out::println);
 	}
 
+	private DMLProgram testSetup(String scriptFilename) throws IOException{
+		setTestConfig(scriptFilename);
+		String dmlScriptString = readScript(scriptFilename);
+
+		//parsing, dependency analysis and constructing hops (step 3 and 4 in DMLScript.java)
+		ParserWrapper parser = ParserFactory.createParser();
+		DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, new HashMap<>());
+		DMLTranslator dmlt = new DMLTranslator(prog);
+		dmlt.liveVariableAnalysis(prog);
+		dmlt.validateParseTree(prog);
+		dmlt.constructHops(prog);
+		if ( scriptFilename.equals("FederatedMultiplyCostEstimatorTest.dml")){
+			modifyFedouts(prog);
+			dmlt.rewriteHopsDAG(prog);
+			hops = new HashSet<>();
+			prog.getStatementBlocks().forEach(stmBlock -> stmBlock.getHops().forEach(this::addHop));
+		}
+		return prog;
+	}
+
+	private void compareResults(DMLProgram prog){
+		IPAPassRewriteFederatedPlan rewriter = new IPAPassRewriteFederatedPlan();
+		rewriter.rewriteProgram(prog, new FunctionCallGraph(prog), null);
+
+		double actualCost = 0;
+		for ( Hop root : rewriter.getTerminalHops() ){
+			actualCost += root.getFederatedCost().getTotal();
+		}
+
+		rewriter.getTerminalHops().forEach(Hop::resetFederatedCost);
+		FederatedCost expectedCost = fedCostEstimator.costEstimate(prog);
+		Assert.assertEquals(expectedCost.getTotal(), actualCost, 0.0001);
+	}
+
+	private void runHopRelTest( String scriptFilename, boolean expectedException ) {
+		boolean raisedException = false;
+		try
+		{
+			DMLProgram prog = testSetup(scriptFilename);
+			compareResults(prog);
+		}
+		catch(LanguageException ex) {
+			raisedException = true;
+			if(raisedException!=expectedException)
+				ex.printStackTrace();
+		}
+		catch(Exception ex2) {
+			ex2.printStackTrace();
+			throw new RuntimeException(ex2);
+		}
+
+		Assert.assertEquals("Expected exception does not match raised exception",
+			expectedException, raisedException);
+	}
+
 	private void runTest( String scriptFilename, boolean expectedException, double expectedCost ) {
 		boolean raisedException = false;
 		try
 		{
-			setTestConfig(scriptFilename);
-			String dmlScriptString = readScript(scriptFilename);
-
-			//parsing, dependency analysis and constructing hops (step 3 and 4 in DMLScript.java)
-			ParserWrapper parser = ParserFactory.createParser();
-			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, new HashMap<>());
-			DMLTranslator dmlt = new DMLTranslator(prog);
-			dmlt.liveVariableAnalysis(prog);
-			dmlt.validateParseTree(prog);
-			dmlt.constructHops(prog);
-			if ( scriptFilename.equals("FederatedMultiplyCostEstimatorTest.dml")){
-				modifyFedouts(prog);
-				dmlt.rewriteHopsDAG(prog);
-				hops = new HashSet<>();
-				prog.getStatementBlocks().forEach(stmBlock -> stmBlock.getHops().forEach(this::addHop));
-			}
+			DMLProgram prog = testSetup(scriptFilename);
 
 			FederatedCost actualCost = fedCostEstimator.costEstimate(prog);
 			Assert.assertEquals(expectedCost, actualCost.getTotal(), 0.0001);

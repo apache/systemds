@@ -997,6 +997,15 @@ public abstract class Hop implements ParseInfo {
 		_federatedCost = cost;
 	}
 
+	/**
+	 * Reset federated cost of this hop and all children of this hop.
+	 */
+	public void resetFederatedCost(){
+		_federatedCost = new FederatedCost();
+		for ( Hop input : getInput() )
+			input.resetFederatedCost();
+	}
+
 	public void setUpdateType(UpdateType update){
 		_updateType = update;
 	}

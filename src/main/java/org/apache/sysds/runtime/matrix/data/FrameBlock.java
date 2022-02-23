@@ -2524,13 +2524,15 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	public <T> FrameBlock replaceOperations(String pattern, String replacement) {
 		FrameBlock ret = new FrameBlock(this);
 
-		ValueType patternType = UtilFunctions.isBoolean(pattern) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(pattern) ?
+		boolean NaNp = "NaN".equals(pattern);
+		boolean NaNr = "NaN".equals(replacement);
+		ValueType patternType = UtilFunctions.isBoolean(pattern) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(pattern) | NaNp ?
 			(UtilFunctions.isIntegerNumber(pattern) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
-		ValueType replacementType = UtilFunctions.isBoolean(replacement) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(replacement) ?
+		ValueType replacementType = UtilFunctions.isBoolean(replacement) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(replacement) | NaNr ?
 			(UtilFunctions.isIntegerNumber(replacement) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
 
 		if(patternType != replacementType || !ValueType.isSameTypeString(patternType, replacementType))
-			throw new DMLRuntimeException("Pattern and replacement types should be same.");
+			throw new DMLRuntimeException("Pattern and replacement types should be same: "+patternType+" "+replacementType);
 
 		for(int i = 0; i < ret.getNumColumns(); i++){
 			Array colData = ret._coldata[i];

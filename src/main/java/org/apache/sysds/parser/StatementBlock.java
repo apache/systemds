@@ -1246,6 +1246,15 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return getHops() != null && !getHops().isEmpty();
 	}
 
+	/**
+	 * Updates the repetition estimate for this statement block
+	 * and all contained hops. FunctionStatementBlocks are loaded
+	 * from the function dictionary and repetitions are estimated
+	 * for the contained statement blocks.
+	 *
+	 * This method is overridden in the subclasses of StatementBlock.
+	 * @param repetitions estimated for this statement block
+	 */
 	public void updateRepetitionEstimates(double repetitions){
 		this.repetitions = repetitions;
 		if ( hasHops() ){

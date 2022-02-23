@@ -243,12 +243,16 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				ec.setFrameOutput(output.getName(), ret);
 				ec.releaseFrameInput(params.get("target"));
 			} else{
-				MatrixBlock target = ec.getMatrixInput(params.get("target"));
+				MatrixObject targetObj = ec.getMatrixObject(params.get("target"));
+				MatrixBlock target = targetObj.acquireRead();
 				double pattern = Double.parseDouble(params.get("pattern"));
 				double replacement = Double.parseDouble(params.get("replacement"));
 				MatrixBlock ret = target.replaceOperations(new MatrixBlock(), pattern, replacement);
-				ec.setMatrixOutput(output.getName(), ret);
-				ec.releaseMatrixInput(params.get("target"));
+				if( ret == target ) //shallow copy (avoid bufferpool pollution)
+					ec.setVariable(output.getName(), targetObj);
+				else
+					ec.setMatrixOutput(output.getName(), ret);
+				targetObj.release();
 			}
 			
 		}

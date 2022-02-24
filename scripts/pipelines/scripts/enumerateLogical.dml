@@ -52,10 +52,10 @@
 source("scripts/builtin/bandit.dml") as bandit;
 
 enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest, Matrix[Double] ytest,
-  Frame[Unknown] seed, Integer max_iter=10, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
+  Frame[Unknown] initial_population, Integer seed = -1, Integer max_iter=10, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
   Frame[Unknown] primitives, Frame[Unknown] param, Double dirtyScore = 79, Boolean cv=FALSE, Boolean cvk=3,
   Boolean verbose, List[Unknown] ctx=list(prefix="----"))
-return (Frame[Unknown] output, boolean converged)
+return (Frame[Unknown] output, boolean converged, Double refChanges)
 {
 
   finalOutput = list()
@@ -65,43 +65,43 @@ return (Frame[Unknown] output, boolean converged)
   iter = 1
   populationLength = 0
   converged = FALSE
-  # get the physical instances from logical ones
-  # unrolled by physical pipelines
-  pipelines = frame(0, rows=nrow(primitives)^ncol(primitives), cols=ncol(seed))
   start = 1; 
   end = 0;
-  allOps = param[, 2]
-  dist = as.scalar(metaList['distY'])
-  if(nrow(y) > 0 & min(y) >= 1 & dist <= 15)
-    allOps = map(allOps, "x -> (!x.equals(\"dummycoding\") & !x.equals(\"frequencyEncode\")
-    & !x.equals(\"dbscan\") & !x.equals(\"WoE\") & !x.equals(\"pca\") & !x.equals(\"ppca\"))?x:\"0\"")
-  else 
-    allOps = map(allOps, "x -> (!x.equals(\"dummycoding\") & !x.equals(\"mice\") & !x.equals(\"frequencyEncode\") & !x.equals(\"tomeklink\")
-      & !x.equals(\"dbscan\") & !x.equals(\"WoE\") & !x.equals(\"pca\") & !x.equals(\"ppca\") &
-      !x.equals(\"abstain\") & !x.equals(\"underSampling\") & !x.equals(\"flipLabels\") & !x.equals(\"SMOTE\"))?x:\"0\"")
-  # & !x.equals(\"mice\") & !x.equals(\"dbscan\")
-  allOps = removeEmpty(target=allOps, margin="rows")
-  for(i in 1:nrow(seed)) { 
-    pconf = bandit::get_physical_configurations(seed[i], 0, primitives)
+  [allOps, ref] = getOps(param[, 2], as.scalar(metaList['distY']), nrow(y), min(y))
+
+  # unrolled by physical pipelines
+  pipelines = frame(0, rows=nrow(primitives)^ncol(primitives), cols=max(ncol(initial_population), ncol(ref)))
+  for(i in 1:nrow(initial_population)) { 
+    pconf = bandit::get_physical_configurations(initial_population[i], 0, primitives)
     end = end + nrow(pconf)
     pipelines[start:end, 1:ncol(pconf)] = pconf
     start = end + 1
   }
+
   pipelines = removeEmpty(target = pipelines, margin="rows") 
+  if(sum(mask) > 0)
+  {
+    dummyEncode = frame("dummycoding", rows=nrow(pipelines), cols=1)
+    pipelines[, 2] = dummyEncode
+  }
+  pipelines = rbind(ref, pipelines)
   population = pipelines
   populationSize = nrow(pipelines)
-
+  randomOps = sample(3, (populationSize * max_iter), TRUE, seed)
+  transitions = sample(nrow(allOps), (populationSize * max_iter), TRUE, seed)
+  refChangesInternal = 0
   while(!converged & iter <= max_iter)
   {
     populationLength = max(populationLength, ncol(population))
     id = seq(1, nrow(population))
     print(prefix+" EnumLP iteration "+iter+"/"+as.integer(max_iter)+":" );
     # # # execute the physical pipelines
-    [outPip, outHp, feaFrameOuter] = bandit::run_with_hyperparam(cbind(as.frame(id), population), 
-      num_exec, X, y, Xtest, ytest, metaList, evaluationFunc, evalFunHp, param, as.frame(""), cv, cvk, TRUE)
+    [outPip, outHp, p, refChanges] = bandit::run_with_hyperparam(cbind(as.frame(id), population), 
+      num_exec, X, y, Xtest, ytest, metaList, evaluationFunc, evalFunHp, param, cv, cvk, 0, FALSE, TRUE)
     # # sort the configurations score-wise
-    actPip = cbind(as.frame(outPip[, 1]), population)
-    sort_mask = cbind(as.matrix(0), matrix(1, rows=1, cols=ncol(population)))
+    actPip = cbind(as.frame(outPip[, 1]), as.frame(refChanges))
+    actPip = cbind(actPip, population)
+    sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(population)))
     sortedPipelines = frameSort(actPip, sort_mask, TRUE)
     converged = as.double(as.scalar(sortedPipelines[1, 1])) > dirtyScore
     if(converged)
@@ -111,21 +111,22 @@ return (Frame[Unknown] output, boolean converged)
       sortedPipelines = sortedPipelines[1:diR]
     finalOutput = append(finalOutput, sortedPipelines)
     # # # if converged then stop otherwise generate new population
-    sortedPipelines = sortedPipelines[, 2:ncol(sortedPipelines)]
-    children = frame(0, rows=populationSize, cols=ncol(sortedPipelines) + 1)
+    children = frame(0, rows=populationSize, cols=ncol(sortedPipelines))
+    sortedPipelines = sortedPipelines[, 3:ncol(sortedPipelines)]
     # # randomly pick the pipelines for transitions
     pipRand = sample(nrow(sortedPipelines), populationSize, TRUE)
     if(!converged) {
-      parfor(i in 1:nrow(children), check=0) {
+      for(i in 1:nrow(children), check=0) {
+        idxR = (nrow(children) * (iter - 1)) + i
         idx = as.scalar(pipRand[i])
         top = removeEmpty(target=sortedPipelines[idx], margin="cols")
         tail = top[, ncol(top)]
         if(sum(mask) > 0)
           top = top[, 1:ncol(top) - 1]
           
-        random = ifelse(ncol(top) <=2, 1, as.scalar(sample(3, 1)))
+        random = ifelse(ncol(top) <=2, 1, as.scalar(randomOps[idxR]))
         if(random == 1)
-          c1 = addition(top, allOps) 
+          c1 = addition(top, allOps[as.scalar(transitions[idxR])]) 
         else if(random == 2)
           c1 = mutation(top) 
         else if(random == 3)
@@ -143,8 +144,7 @@ return (Frame[Unknown] output, boolean converged)
     print(prefix+" EnumLP did not converge after "+(iter - 1)+" / "+max_iter+" iterations")  
   }
   # # # prepare the final frame output
-  output = frame(0, rows=round((populationSize/2)) * length(finalOutput) , cols=populationLength + 1) 
-  print("rows in output: "+nrow(output))
+  output = frame(0, rows=round((populationSize/2)) * length(finalOutput) , cols=populationLength + 2) 
   start = 1; 
   end = 0;
   for(i in 1:length(finalOutput))
@@ -154,30 +154,18 @@ return (Frame[Unknown] output, boolean converged)
     output[start:end, 1:ncol(pipFrame)] = pipFrame
     start = end + 1
   }
-  sort_mask = cbind(as.matrix(0), matrix(1, rows=1, cols=ncol(output) - 1))
+  sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(output) - 2))
   output = removeEmpty(target=output, margin="rows")
-  output = frameSort(output, sort_mask, TRUE)
-  print("final Pipelines")
-  print(toString(output, rows=150))
-  output = output[, 2:ncol(output)]
+  output = frameSort(output, sort_mask, FALSE)
+  refChanges = as.double(as.scalar(output[nrow(output), 2]))
+  output = output[, 3:ncol(output)]
 }
-
 
 addition = function(Frame[Unknown] top, Frame[Unknown] allOps)
 return (Frame [Unknown] child)
 {
-  c = as.scalar(sample(nrow(allOps), 1))
-  # place_to_add = as.scalar(sample(ncol(top), 1))
-  # if(place_to_add == 1)
-  child = cbind(allOps[c, 1], top)
-  # else
-  # {
-    # start = top[, 1:place_to_add-1]
-    # end = top[, place_to_add:ncol(top)]
-    # child = cbind(cbind(start, allOps[c, 1]), end)
-  # }
+  child = cbind(allOps, top)
 }
-
 
 mutation = function(Frame[Unknown] child)
 return (Frame [Unknown] mChild)
@@ -198,14 +186,32 @@ removal = function(Frame[Unknown] child)
 return (Frame[Unknown] child)
 {
   random = as.scalar(rand(rows=1, cols=1))
-  print("before removal")
-  print(toString(child))
   if(ncol(child) >= 2)
   {
     idx = as.scalar(sample(ncol(child), 1))
     child[1, idx] = as.frame(0)
     child = removeEmpty(target=child, margin="cols")
   }
-  print("after removal")
-  print(toString(child))
+}
+
+getOps = function( Frame[string] allOps, Integer dist, Integer n, Integer minValue)
+ return (Frame[String] allOps, Frame[String] ref) {
+ 
+  # # # TODO fix the following hard-coded condition by taking a file input
+  # # allOps are the operation which are randomly added to a population, for now I am reusing param file
+  # # so map condition with remove the operations which should not be added twice in a pipeline i.e., dummycoding
+  # # for regression class imbalance operators are also removed
+  if(n > 0 & minValue >= 1 & dist <= 15) {
+    allOps = map(allOps, "x -> (!x.equals(\"dummycoding\") & !x.equals(\"frequencyEncode\")
+    & !x.equals(\"dbscan\") & !x.equals(\"WoE\") & !x.equals(\"pca\") & !x.equals(\"ppca\"))?x:\"0\"")
+    ref = frame(["imputeByMean", "winsorize", "scale", "dummycoding"], rows=1, cols=4)
+  }
+  else {
+    allOps = map(allOps, "x -> (!x.equals(\"dummycoding\") & !x.equals(\"frequencyEncode\") & !x.equals(\"tomeklink\")
+      & !x.equals(\"dbscan\") & !x.equals(\"WoE\") & !x.equals(\"pca\") & !x.equals(\"ppca\") &
+      !x.equals(\"abstain\") & !x.equals(\"underSampling\") & !x.equals(\"flipLabels\") & !x.equals(\"SMOTE\"))?x:\"0\"")
+    # & !x.equals(\"mice\") & !x.equals(\"dbscan\")
+    ref = frame(["imputeByMean", "winsorize", "scale"], rows=1, cols=3)
+  }
+  allOps = removeEmpty(target=allOps, margin="rows")
 }

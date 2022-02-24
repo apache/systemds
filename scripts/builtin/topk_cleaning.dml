@@ -58,7 +58,7 @@ source("scripts/builtin/bandit.dml") as bandit;
 
 s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"), Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives,
   Frame[Unknown] parameters, String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, Integer resource_val = 20, Integer max_iter = 10, Double sample = 1.0,
-  Double expectedIncrease=1.0, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, String output)
+  Double expectedIncrease=1.0, Integer seed = -1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, Boolean enablePruning = FALSE, String output)
   return(Boolean perf)
   # return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores, Frame[Unknown] bestLogical,
   # Frame[Unknown] features, Double dirtyScore, Matrix[Double] evalFunHp)
@@ -95,16 +95,33 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   print("-- Cleaning - Get Dirty Score: ");
   [dirtyScore, evalFunHp] = getDirtyScore(X=Xtrain, Y=eYtrain, Xtest=Xtest, Ytest=eYtest, evaluationFunc=evaluationFunc, 
     metaList=metaList, sample=sample, cv=cv, cvk=cvk, evalFunHp=evalFunHp, ctx=ctx)
-  t4 = time(); print("---- finalized in: "+(t4-t3)/1e9+"s");
-
+  t4 = time(); print("---- finalized in: "+(t4-t3)/1e9+"s");  
+  
  # # do the string processing
   print("-- Cleaning - Data Preparation (strings, transform, sample): ");
   [Xtrain, Xtest] = runStringPipeline(Xtrain, Xtest, schema, mask, cv, correctTypos, ctx)
-  
   # # if mask has 1s then there are categorical features
   print("---- feature transformations to numeric matrix");
   [eXtrain, eXtest] = recodeData(Xtrain, Xtest, mask, cv, "recode")
-  
+  # # # do the early dropping
+  # # 1. if 70% of the column is empty
+  # # # 2. if the column has only single value
+  # # # have all unique values
+  Xtmp = replace(target = eXtrain, pattern = NaN, replacement = 0)
+  nullMask = is.na(eXtrain)
+  singleValuesCol = ((colMins(Xtmp) == 0) & (colMaxs(Xtmp) == 1)) | (colMaxs(Xtmp) == colMins(Xtmp))
+  allmostEmpty = colSums(nullMask) 
+  allmostEmptyRatio = allmostEmpty >= (nrow(Xtmp) * 0.7)
+  allSum = singleValuesCol | allmostEmptyRatio
+  if(sum(allSum) > 0) {
+    eXtrain = removeEmpty(target=eXtrain, margin="cols", select = (allSum == 0))
+    if(!cv)
+      eXtest = removeEmpty(target=eXtest, margin="cols", select = (allSum == 0))
+    mask = removeEmpty(target=mask, margin="cols", select = (allSum == 0))
+    fdMask = removeEmpty(target=fdMask, margin="cols", select = (allSum == 0))
+    schema = removeEmpty(target=schema, margin="cols", select = (allSum == 0))
+    metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=as.frame("null"), distY=0)
+  }
   # apply sampling on training data for pipeline enumeration
   # TODO why recoding/sampling twice (within getDirtyScore)
   print("---- class-stratified sampling of feature matrix w/ f="+sample);
@@ -137,25 +154,19 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   }
   metaList['distY'] = dist
 
-  if(sum(mask) > 0)
-  {
-    dummyEncode = frame("DUMMY", rows=nrow(logical), cols=1)
-    logical = cbind(logical, dummyEncode)
-  }
-  
   print("-- Cleaning - Enum Logical Pipelines: ");
-  [bestLogical, score] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest,
-  seed=logical, max_iter=max_iter, metaList = metaList,
+  [bestLogical, con, refChanges] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest,
+  initial_population=logical, seed = seed,  max_iter=max_iter, metaList = metaList,
   evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, primitives=primitives, param=parameters,
   dirtyScore = (dirtyScore + expectedIncrease), cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)
   t6 = time(); print("---- finalized in: "+(t6-t5)/1e9+"s");
-  # bestLogical = frame(["MVI", "OTLR", "DUMMY"], rows=1, cols=3)
+
   topKPipelines = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); features = as.frame("NULL")
   
   # # [topKPipelines, topKHyperParams, topKScores, features] = 
   perf = bandit(X_train=eXtrain, Y_train=eYtrain, X_test=eXtest, Y_test=eYtest,  metaList=metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, lp=bestLogical, primitives=primitives, param=parameters, baseLineScore=dirtyScore,
-    k=topK, R=resource_val, cv=cv, cvk=cvk, output=output, verbose=TRUE);  
+    k=topK, R=resource_val, cv=cv, cvk=cvk, ref=refChanges, enablePruning = enablePruning, output=output, verbose=TRUE);  
   t7 = time(); print("-- Cleaning - Enum Physical Pipelines: "+(t7-t6)/1e9+"s");
 }
 
@@ -164,7 +175,6 @@ return(Frame[String] schema, Matrix[Double] mask, Matrix[Double] fdMask, Integer
 {
   if(as.scalar(metaData[1, 1]) == "NULL")
   {
-    print("creating meta data")
     r1 = detectSchema(data)
     r2 = matrix(0, rows=1, cols=ncol(data))
     for(i in 1 : ncol(r1))
@@ -204,7 +214,7 @@ runStringPipeline = function(Frame[Unknown] Xtrain, Frame[Unknown] Xtest, Frame[
 return(Frame[Unknown] Xtrain, Frame[Unknown] Xtest)
 {
   if(cv)
-    Xtrain = utils::stringProcessing(train=Xtrain, test=Xtrain, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
+    Xtrain = utils::stringProcessing(train=Xtrain, test=matrix(0,0,0), mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
   else
   {
     # # # binding train and test to use same dictionary for both
@@ -231,10 +241,9 @@ return(Double dirtyScore, Matrix[Double] evalFunHp)
   eXtest = replace(target=eXtest, pattern=NaN, replacement = 1)
   print(prefix+" sample from train data and dummy code");
   [eXtrain, Ytrain] =  utils::doSample(eXtrain, Y, sample, TRUE)
-  sliceX = eXtrain
   [eXtrain, eXtest] = recodeData(as.frame(eXtrain), as.frame(eXtest), mask, cv, "dummycode")
   pipList = list(lp = as.frame("NULL"), ph = as.frame("NULL"), hp = as.matrix(0), flags = 0)
-  print(prefix+" hyper-parameter tuning");
+  print(prefix+" hyper-parameter tuning and dirtyscore computation");
   if(cv) {
     [dirtyScore, evalFunHp] = bandit::crossV(X=eXtrain, y=Ytrain, cvk=cvk, evalFunHp=evalFunHp,
       pipList=pipList, metaList=metaList, evalFunc=evaluationFunc)
@@ -246,7 +255,6 @@ return(Double dirtyScore, Matrix[Double] evalFunHp)
     evalFunHp = res[1, 2:ncol(res)]
     print("Dirty Accuracy holdout: "+dirtyScore)
   }
-  
 }
 
 recodeData = function(Frame[Unknown] Xtrain, Frame[Unknown] Xtest, Matrix[Double] mask, Boolean cv, String code)

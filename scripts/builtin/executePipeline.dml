@@ -57,17 +57,17 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
   Matrix[Double] Xtest,  Matrix[Double] Ytest, List[Unknown] metaList, Matrix[Double] hyperParameters, Matrix[Double] hpForPruning = as.matrix(0),
   Matrix[Double] changesByOp = as.matrix(0), Integer flagsCount, Boolean test = FALSE, Boolean verbose)
   return (Matrix[Double] Xtrain, Matrix[Double] Ytrain, Matrix[Double] Xtest, Matrix[Double] Ytest,
-    Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
+    Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp, Double changesAll)
 {
 
   mask=as.matrix(metaList['mask'])
   FD = as.matrix(metaList['fd'])
   applyFunc = as.frame(metaList['applyFunc'])
-
+  changesAll = 0.0
+  d = ncol(Xtrain)
   testRow = nrow(Xtest)
-  Xout = Xtrain
+  Xorig = Xtest
   t1 = time()
-  print("PIPELINE EXECUTION START ... "+toString(pipeline))
   if(verbose) {
     print("checks   rows in X = "+nrow(Xtrain)+" rows in Y = "+nrow(Ytrain)+" cols in X = "+ncol(Xtrain)+" col in Y = "+ncol(Ytrain))
     print("pipeline in execution "+toString(pipeline))
@@ -84,14 +84,7 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
       L = evalList(op, hp)
       [L, O] = remove(L, 1);
       Xtrain = as.matrix(O)
-      if(nrow(as.matrix(hp[1])) == nrow(Xtrain) & ncol(as.matrix(hp[1])) == ncol(Xtrain)) {
-        changes = sum(abs(replace(target=Xtrain, pattern=NaN, replacement=0) - replace(target=as.matrix(hp[1]), pattern=NaN, replacement=0))  > 0.001)
-        print("# of changes values: "+toString(changes))
-      }
-      Xout = Xtrain
       if(applyOp != "NA") {
-        print("op: "+op)
-        # print("dataFlag: "+dataFlag)
         [Xtest, executeFlag] = applyDataFlag(Xtest, mask, dataFlag)
         L = append(L, list(X=Xtest));
         Xtest = eval(applyOp, L);
@@ -109,11 +102,13 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
     else {
       print("not applying "+op+" executeFlag = 0")
     }
+    if(ncol(Xtest) == d) {
+      changesSingle = sum(abs(replace(target=Xtest, pattern=NaN, replacement=0) - replace(target=XtestClone, pattern=NaN, replacement=0))  > 0.001 )
+      changesAll  = sum(abs(replace(target=Xtest, pattern=NaN, replacement=0) - replace(target=Xorig, pattern=NaN, replacement=0))  > 0.001 )
     
-
-    if(as.scalar(pipeline[1, i]) == "outlierBySd" | as.scalar(pipeline[1, i]) == "outlierByIQR" | as.scalar(pipeline[1, i]) == "imputeByFd") {
-      changes = sum(abs(replace(target=Xout, pattern=NaN, replacement=0) - replace(target=as.matrix(hp[1]), pattern=NaN, replacement=0))  > 0.001 )
-      [hpForPruning, changesByOp] = storeDataForPrunning(pipeline, hyperParameters, hpForPruning,  changesByOp, changes, i)
+      if(as.scalar(pipeline[1, i]) == "outlierBySd" | as.scalar(pipeline[1, i]) == "outlierByIQR" | as.scalar(pipeline[1, i]) == "imputeByFd") {
+        [hpForPruning, changesByOp] = storeDataForPrunning(pipeline, hyperParameters, hpForPruning,  changesByOp, changesSingle, i)
+      }
     }
   }
 
@@ -121,8 +116,6 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
   if(nrow(Xtest) != testRow)
     stop("executePipeline: test rows altered")
   t2 = floor((time() - t1) / 1e+6)
-
-  print("PIPELINE EXECUTION ENDED: "+t2+" ms")
 }
 
 # This function will convert the matrix row-vector into list
@@ -228,7 +221,6 @@ return (Matrix[Double] X)
     # put nan back
     nanMask = replace(target = nanMask, pattern = 1, replacement = NaN)
     X = X + nanMask
-    # print("X less than equal to  zero "+sum(cat <= 0))
   }
 }
 
@@ -245,7 +237,6 @@ return (Matrix[Double] X)
     Xcat = removeEmpty(target=originalX, margin="cols", select=mask)
     nanMask = is.na(Xcat)
     Xcat = replace(target = Xcat, pattern = NaN, replacement = -1111)
-    # print("unchanged data \n"+toString(originalX, rows=10))
     
     # reconstruct the original matrix
     p = table(seq(1, ncol(nX)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
@@ -276,7 +267,6 @@ return (Matrix[Double] X)
   
   }
   else X = nX
-    # print("recreated data \n"+toString(X, rows = 20))
 
 }
 
@@ -390,9 +380,8 @@ return (Matrix[Double] X, Matrix[Double] Y)
     minClass = min(classes)
     maxClass = max(classes)
     diff = (maxClass - minClass)/sum(classes)
-    if(diff > 0.3)
+    if(diff > 0.2)
     {
-      #print("initiating oversampling")
       XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
       synthesized = matrix(0,0,0) # initialize variable
       start_class = 1
@@ -403,7 +392,6 @@ return (Matrix[Double] X, Matrix[Double] Y)
       outSet = matrix(0, 0, ncol(XY))
       remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
       remainingRatio-(remainingRatio%%100))
-      #print("remaining ratio: "+remainingRatio)
       for(i in 1: nrow(k), check=0) {
         end_class = end_class + as.scalar(classes[i])
         class_t = XY[start_class:end_class, ]
@@ -419,9 +407,8 @@ return (Matrix[Double] X, Matrix[Double] Y)
       Y = XY[, 1]
       X = XY[, 2:ncol(XY)]
     }
-    else { 
-      print("smote not applicable")
-
+    else {
+      str = "smote not applicable"
     }
   }
 }
@@ -477,7 +464,6 @@ return (Matrix[Double] X, Matrix[Double] Y)
     {
       Xcor = removeEmpty(target = X, margin = "rows", select = (inc==0))
       Ycor = removeEmpty(target = Y, margin = "rows", select = (inc==0))
-      # print("inc vector "+toString(inc))
       Xinc = removeEmpty(target = X, margin = "rows", select = inc)
       Yinc = removeEmpty(target = Y, margin = "rows", select = inc)
       yhat = removeEmpty(target = yhat, margin = "rows", select = inc)
@@ -497,8 +483,6 @@ return (Matrix[Double] X, Matrix[Double] Y)
     }
   }
   classes = table(Y, 1)
-  print("class distribution after flipLabels")
-  print(toString(classes))
 }
 
 # # # # wrapper for normalize

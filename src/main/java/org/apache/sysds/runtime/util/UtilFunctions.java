@@ -493,6 +493,8 @@ public class UtilFunctions {
 	}
 
 	public static double objectToDoubleSafe(ValueType vt, Object in) {
+		if(vt == ValueType.STRING && in == null)
+			return 0.0;
 		if(vt == ValueType.STRING && !NumberUtils.isCreatable((String) in)) {
 			return 1.0;
 		} else return objectToDouble(vt, in);
@@ -909,11 +911,13 @@ public class UtilFunctions {
 
 		if (maxMatches <= 0 || dateCol < 0){
 			//ERROR - no date column found
-			throw new DMLRuntimeException("No date column found.");
+			System.out.println("No date column in the dataset");
 		}
 		return dateCol;
 	}
-
+	public static String isDateColumn (String values) {
+		return DATE_FORMATS.keySet().parallelStream().anyMatch(e -> values.toLowerCase().matches(e))?"1":"0";
+	}
 	public static String[] getDominantDateFormat (String[] values) {
 		String[] output = new String[values.length];
 		Map<String, String> date_formats = DATE_FORMATS;

@@ -95,7 +95,7 @@ return(Matrix[Double] output, Matrix[Double] error)
   }
   else {
     beta = multiLogReg(X=X, Y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]), 
-      maxi=as.scalar(evalFunHp[1,4]), maxii=0, verbose=FALSE);
+      maxi=1000, maxii=0, verbose=FALSE);
     [prob, yhat, accuracy] = multiLogRegPredict(Xtest, beta, Ytest, FALSE)
     error = yhat != Ytest
     a = getAccuracy(Ytest, yhat, TRUE)

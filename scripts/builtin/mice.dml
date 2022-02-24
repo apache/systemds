@@ -49,7 +49,6 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
   Double threshold = 0.8, Boolean verbose = FALSE)
   return(Matrix[Double] output, Matrix[Double] meta, Double threshold, Frame[String] dM, List[Unknown] betaList)
 {
-
   if(ncol(X) < 2)
     stop("MICE can not be applied on single vectors.
          expected number of columns > 1 found: "+ncol(X))
@@ -76,7 +75,6 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
   X1 = X + (Mask1 * imputationVec)
   d = ncol(X1)
   n = nrow(X1)
-  
   # compute index of categorical features
   index = vectorToCsv(cMask)
   # specifications for one-hot encoding of categorical features
@@ -147,10 +145,10 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
           prob = matrix(1, nrow(test_Y), 1)
         }
         else {
-          beta = multiLogReg(X=train_X, Y=train_Y, icpt = 2, tol = 0.0001, reg = 0.00001, 
+          beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.0001, reg = 0.00001, 
             maxi = 100, maxii=50, verbose=FALSE)
           # predicting missing values 
-          [prob,pred,acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
+          [prob, pred, acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
           prob = rowMaxs(prob)
         }
         validThreshold = prob > threshold

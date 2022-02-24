@@ -59,7 +59,7 @@ metaInfo = metaInfo[, 2:ncol(metaInfo)]
 # [topKPipelines, topKHyperParams, topKScores, bestLogical, features, dirtyScore, evalHp] = 
 result = topk_cleaning(dataTrain=trainData, dataTest=testData, metaData=metaInfo, primitives=primitives, parameters=param,
   evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),topK=topK, resource_val=resources,
-  expectedIncrease=expectedIncrease, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output) 
+  expectedIncrease=expectedIncrease, seed = 42, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output) 
 
 write(result, $O)
 

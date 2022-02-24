@@ -157,7 +157,6 @@ return(Frame[Unknown] train, Frame[Unknown] test, Matrix[Double] M)
   # step 1 do the case transformations
   print(prefix+" convert strings to lower case");
   train = map(train, "x -> x.toLowerCase()")
-  
   # step 2 fix invalid lengths
   # q0 = 0.05
   # q1 = 0.95
@@ -201,7 +200,21 @@ return(Frame[Unknown] train, Frame[Unknown] test, Matrix[Double] M)
           test[, i] = correctTyposApply(test[, i], ft, dt, dm, fr);
       }
   }
-  
+  # # step 7 convert date to decimal
+  isDate = map(train[1:10], "x -> UtilFunctions.isDateColumn(x)")
+  isDate = replace(target = as.matrix(isDate), pattern = NaN, replacement = 0)
+  isDate = (colMaxs(isDate)) & as.matrix(schema == frame("STRING", rows=1, cols=ncol(schema)))
+  if(sum(isDate) > 0) {
+    print(prefix+" changing date to timestamp")
+    dateColIdx = removeEmpty(target = isDate * t(seq(1, ncol(isDate))), margin="cols")
+    for(i in 1:ncol(dateColIdx))
+    {
+      idx = as.scalar(dateColIdx[i])
+      train[, idx] = map(train[, idx], "x -> UtilFunctions.getTimestamp(x)", margin=2)
+      if(length(test) > 0)
+        test[, idx] = map(test[, idx], "x -> UtilFunctions.getTimestamp(x)", margin=2)
+    }
+  }
   # TODO add deduplication
   print(prefix+" deduplication via entity resolution");
   

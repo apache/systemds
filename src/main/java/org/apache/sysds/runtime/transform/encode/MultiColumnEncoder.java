@@ -246,7 +246,7 @@ public class MultiColumnEncoder implements Encoder {
 	public void build(CacheBlock in, int k) {
 		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
 			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
-		if(_nPartitions == null) //happens if this method is directly called from the tests
+		if(_nPartitions == null) //happens if this method is directly called
 			_nPartitions = getNumRowPartitions(in, k);
 		if(k > 1) {
 			buildMT(in, k);
@@ -294,6 +294,9 @@ public class MultiColumnEncoder implements Encoder {
 	}
 
 	public MatrixBlock apply(CacheBlock in, int k) {
+		// domain sizes are not updated if called from transformapply
+		for(ColumnEncoderComposite columnEncoder : _columnEncoders)
+			columnEncoder.updateAllDCEncoders();
 		int numCols = in.getNumColumns() + getNumExtraCols();
 		long estNNz = (long) in.getNumColumns() * (long) in.getNumRows();
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(in.getNumRows(), numCols, estNNz);
@@ -320,6 +323,8 @@ public class MultiColumnEncoder implements Encoder {
 			hasDC = columnEncoder.hasEncoder(ColumnEncoderDummycode.class);
 		outputMatrixPreProcessing(out, in, hasDC);
 		if(k > 1) {
+			if(_nPartitions == null) //happens if this method is directly called
+				_nPartitions = getNumRowPartitions(in, k);
 			applyMT(in, out, outputCol, k);
 		}
 		else {
@@ -403,11 +408,11 @@ public class MultiColumnEncoder implements Encoder {
 				nBuild++;
 		int nApply = in.getNumColumns();
 		// #BuildBlocks = (2 * #PhysicalCores)/#build
-		if (numBlocks[0] == 0 && nBuild < nThread)
+		if (numBlocks[0] == 0 && nBuild > 0 && nBuild < nThread)
 			numBlocks[0] = Math.round(((float)nThread)/nBuild);
 		// #ApplyBlocks = (4 * #PhysicalCores)/#apply
-		if (numBlocks[1] == 0 && nApply < nThread*2)
-			numBlocks[1] = Math.round(((float)nThread*2)/nBuild);
+		if (numBlocks[1] == 0 && nApply > 0 && nApply < nThread*2)
+			numBlocks[1] = Math.round(((float)nThread*2)/nApply);
 
 		// Reduce #blocks if #rows per partition is too small
 		while (numBlocks[0] > 1 && nRow/numBlocks[0] < minNumRows)
@@ -469,8 +474,11 @@ public class MultiColumnEncoder implements Encoder {
 				output.setSparseBlock(csrblock);
 			}
 		}
-		else //dense
+		else {
+			// Allocate dense block and set nnz to total #entries
 			output.allocateBlock();
+			//output.setAllNonZeros();
+		}
 
 		if(DMLScript.STATISTICS) {
 			LOG.debug("Elapsed time for allocation: "+ ((double) System.nanoTime() - t0) / 1000000 + " ms");

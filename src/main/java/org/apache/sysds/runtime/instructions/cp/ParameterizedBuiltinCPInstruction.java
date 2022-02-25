@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysds.parser.Statement;
@@ -303,7 +304,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			// compute transformapply
 			MultiColumnEncoder encoder = EncoderFactory
 				.createEncoder(params.get("spec"), colNames, data.getNumColumns(), meta);
-			MatrixBlock mbout = encoder.apply(data);
+			MatrixBlock mbout = encoder.apply(data, OptimizerUtils.getTransformNumThreads());
 
 			// release locks
 			ec.setMatrixOutput(output.getName(), mbout);

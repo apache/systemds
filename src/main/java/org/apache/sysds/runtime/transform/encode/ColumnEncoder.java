@@ -172,6 +172,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 			int lim = Math.min(i+B, rowEnd);
 			for (int ii=i; ii<lim; ii++)
 				out.quickSetValue(ii, outputCol, codes[ii-rowStart]);
+				//out.denseSuperQuickSetValue(ii, outputCol, codes[ii-rowStart]);
 		}
 	}
 

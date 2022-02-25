@@ -503,7 +503,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public final long setNonZeros(long nnz) {
 		return (nonZeros = nnz);
 	}
-	
+
+	public final long setAllNonZeros() {
+		return (nonZeros = getLength());
+	}
+
 	public final double getSparsity() {
 		return OptimizerUtils.getSparsity(rlen, clen, nonZeros);
 	}
@@ -659,6 +663,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			if( v==0 )
 				nonZeros--;
 		}
+	}
+
+	public void denseSuperQuickSetValue(int r, int c, double v)
+	{
+		//early abort
+		if( denseBlock==null && v==0 )
+			return;
+
+		denseBlock.set(r, c, v);
+		if( v==0 )
+			nonZeros--;
 	}
 
 	public double quickGetValueThreadSafe(int r, int c) {
@@ -5464,12 +5479,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			double v2 = that.quickGetValue(i, 0);
 			maxCol = ctable.execute(i+1, v2, w, maxCol, resultBlock);
 		}
-		
+
 		//update meta data (initially unknown number of columns)
 		//note: nnz maintained in ctable (via quickset)
 		if(updateClen) {
 			resultBlock.clen = maxCol;
 		}
+
 		return resultBlock;
 	}
 
@@ -5613,6 +5629,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	////////
 	// Data Generation Methods
+
 	// (rand, sequence)
 	
 	/**

@@ -878,6 +878,7 @@ public class UtilFunctions {
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
 	}
 
+	@SuppressWarnings("unused")
 	private static int findDateCol (FrameBlock block) {
 		int cols = block.getNumColumns();
 		int[] match_counter = new int[cols];
@@ -946,7 +947,8 @@ public class UtilFunctions {
 				if (!currentFormat.equals(dominantFormat)){
 					curr.applyPattern(dominantFormat);
 				}
-				String newDate = curr.format(date); //convert date to dominant date format
+				//FIME: unused newDate
+				//String newDate = curr.format(date); //convert date to dominant date format
 				output[i] =  curr.format(date); //convert back to datestring
 			} catch (ParseException e) {
 				throw new DMLRuntimeException(e);

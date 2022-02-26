@@ -334,6 +334,24 @@ public class SparseBlockCSR extends SparseBlock
 	public void compact(int r) {
 		//do nothing everything preallocated
 	}
+	
+	public void compact() {
+		int pos = 0;
+		for(int i=0; i<numRows(); i++) {
+			int apos = pos(i);
+			int alen = size(i);
+			_ptr[i] = pos;
+			for(int j=apos; j<apos+alen; j++) {
+				if( _values[j] != 0 ){
+					_values[pos] = _values[j];
+					_indexes[pos] = _indexes[j];
+					pos++;
+				}
+			}
+		}
+		_ptr[numRows()] = pos;
+		_size = pos; //adjust logical size
+	}
 
 	@Override
 	public int numRows() {

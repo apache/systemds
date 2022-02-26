@@ -5465,10 +5465,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param updateClen when this matrix already has the desired number of columns updateClen can be set to false
 	 * @return resultBlock
 	 */
-	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock resultBlock, boolean updateClen) {
+	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock ret, boolean updateClen) {
 		MatrixBlock that = checkType(thatMatrix);
 		CTable ctable = CTable.getCTableFnObject();
 		double w = thatScalar;
+		
+		//prepare allocation of CSR sparse block
+		int[] rptr = new int[rlen+1];
+		int[] indexes = new int[rlen];
+		double[] values = new double[rlen];
 		
 		//sparse-unsafe ctable execution
 		//(because input values of 0 are invalid and have to result in errors)
@@ -5477,16 +5482,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		int maxCol = 0;
 		for( int i=0; i<rlen; i++ ) {
 			double v2 = that.quickGetValue(i, 0);
-			maxCol = ctable.execute(i+1, v2, w, maxCol, resultBlock);
+			maxCol = ctable.execute(i+1, v2, w, maxCol, indexes, values);
+			rptr[i] = i;
 		}
+		rptr[rlen] = rlen;
 
+		//construct sparse CSR block from filled arrays
+		ret.sparseBlock = new SparseBlockCSR(rptr, indexes, values, rlen);
+		((SparseBlockCSR)ret.sparseBlock).compact();
+		ret.setNonZeros(ret.sparseBlock.size());
+		
 		//update meta data (initially unknown number of columns)
 		//note: nnz maintained in ctable (via quickset)
 		if(updateClen) {
-			resultBlock.clen = maxCol;
+			ret.clen = maxCol;
 		}
 
-		return resultBlock;
+		return ret;
 	}
 
 	/**

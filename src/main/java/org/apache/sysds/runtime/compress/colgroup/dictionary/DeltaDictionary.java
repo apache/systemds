@@ -31,7 +31,8 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * encoded values are implemented.
  */
 public class DeltaDictionary extends Dictionary {
-
+	private static final long serialVersionUID = -5700139221491143705L;
+	
 	private final int _numCols;
 
 	public DeltaDictionary(double[] values, int numCols) {

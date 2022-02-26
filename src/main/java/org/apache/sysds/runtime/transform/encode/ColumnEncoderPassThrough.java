@@ -22,9 +22,7 @@ package org.apache.sysds.runtime.transform.encode;
 import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;

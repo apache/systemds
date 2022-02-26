@@ -32,6 +32,8 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  */
 public class ColGroupDeltaDDC extends ColGroupDDC {
 
+	private static final long serialVersionUID = -1045556313148564147L;
+
 	/**
 	 * Constructor for serialization
 	 *

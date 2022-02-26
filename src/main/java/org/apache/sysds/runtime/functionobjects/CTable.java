@@ -115,7 +115,7 @@ public class CTable extends ValueFunction
 				ctableResult.quickGetValue((int)row-1, (int)col-1) + w);
 	}
 
-	public int execute(int row, double v2, double w, int maxCol, MatrixBlock ctableResult) 
+	public int execute(int row, double v2, double w, int maxCol, int[] retIx, double[] retVals) 
 	{
 		// If any of the values are NaN (i.e., missing) then 
 		// we skip this tuple, proceed to the next tuple
@@ -130,7 +130,8 @@ public class CTable extends ValueFunction
 		} 
 		
 		//set weight as value (expand is guaranteed to address different cells)
-		ctableResult.quickSetValue(row-1, col-1, w);
+		retIx[row - 1] = col - 1;
+		retVals[row - 1] = w;
 		
 		//maintain max seen col 
 		return Math.max(maxCol, col);

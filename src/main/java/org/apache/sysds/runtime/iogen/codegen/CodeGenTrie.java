@@ -53,6 +53,8 @@ public class CodeGenTrie {
 			if(keyTrie != null) {
 				for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns()) {
 					conditions.add(keys.get(0));
+					//Gson gson=new Gson();
+					//System.out.println(gson.toJson(keys));
 					break;
 				}
 			}
@@ -222,14 +224,16 @@ public class CodeGenTrie {
 				src.append("if ( cellStr0.length() > 0 ){\n");
 				if(isMatrix) {
 					src.append("Double cellValue0; \n");
-					src.append("try{cellValue0 = Double.parseDouble(cellStr0); } catch(Exception e){cellValue0= 0d;}\n");
+					src.append(
+						"try{cellValue0 = Double.parseDouble(cellStr0); } catch(Exception e){cellValue0= 0d;}\n");
 					src.append("if(cellValue0!= 0) { \n");
 					src.append(destination).append("(row, colIndex0 , cellValue0); \n");
 					src.append("lnnz++;\n");
 					src.append("} \n");
 				}
 				else {
-					src.append(destination).append("(row, colIndex0 , UtilFunctions.stringToObject(properties.getSchema()[colIndex0], cellStr)0); \n");
+					src.append(destination).append(
+						"(row, colIndex0 , UtilFunctions.stringToObject(properties.getSchema()[colIndex0], cellStr)0); \n");
 				}
 				src.append("}\n");
 			}
@@ -256,7 +260,8 @@ public class CodeGenTrie {
 					src.append("} \n");
 				}
 				else {
-					src.append(destination).append("(row, colIndex , UtilFunctions.stringToObject(properties.getSchema()[colIndex], cellStr)); \n");
+					src.append(destination).append(
+						"(row, colIndex , UtilFunctions.stringToObject(properties.getSchema()[colIndex], cellStr)); \n");
 				}
 				src.append("}\n");
 				src.append("}\n");

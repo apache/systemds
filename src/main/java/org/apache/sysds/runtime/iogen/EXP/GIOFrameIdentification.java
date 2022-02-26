@@ -14,9 +14,7 @@ public class GIOFrameIdentification {
 
 		sampleRawFileName = System.getProperty("sampleRawFileName");
 		sampleFrameFileName = System.getProperty("sampleFrameFileName");
-		sampleRawDelimiter = System.getProperty("delimiter");
-		if(sampleRawDelimiter.equals("\\t"))
-			sampleRawDelimiter = "\t";
+		sampleRawDelimiter = "\t";
 
 		schemaFileName = System.getProperty("schemaFileName");
 		Util util = new Util();

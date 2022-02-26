@@ -12,9 +12,7 @@ public class GIOMatrixIdentification {
 
 		sampleRawFileName = System.getProperty("sampleRawFileName");
 		sampleMatrixFileName = System.getProperty("sampleMatrixFileName");
-		sampleRawDelimiter = System.getProperty("delimiter");
-		if(sampleRawDelimiter.equals("\\t"))
-			sampleRawDelimiter = "\t";
+		sampleRawDelimiter = "\t";
 
 		Util util = new Util();
 		MatrixBlock sampleMB = util.loadMatrixData(sampleMatrixFileName, sampleRawDelimiter);

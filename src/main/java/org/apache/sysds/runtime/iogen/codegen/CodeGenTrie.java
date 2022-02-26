@@ -53,14 +53,14 @@ public class CodeGenTrie {
 			if(keyTrie != null) {
 				for(ArrayList<String> keys : keyTrie.getReversePrefixKeyPatterns()) {
 					conditions.add(keys.get(0));
-					//Gson gson=new Gson();
-					//System.out.println(gson.toJson(keys));
+//					Gson gson=new Gson();
+//					System.out.println(c+" >> "+gson.toJson(keys));
 					break;
 				}
 			}
 		}
 
-		if(conditions.size() < 150) {
+		if(conditions.size() < 100) {
 			buildPrefixTree();
 			this.isRegexBase = false;
 		}

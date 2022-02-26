@@ -2061,25 +2061,46 @@ public class LibMatrixReorg {
 			}
 			else if( cols%clen==0 //SPECIAL CSR N:1 MATRIX->MATRIX
 				&& SHALLOW_COPY_REORG && SPARSE_OUTPUTS_IN_CSR
-				&& a instanceof SparseBlockCSR ) { //int nnz
-				int[] aix = ((SparseBlockCSR)a).indexes();
+				&& in.nonZeros < Integer.MAX_VALUE ) { //int nnz
 				int n = cols/clen, pos = 0;
 				int[] rptr = new int[rows+1];
 				int[] indexes = new int[(int)a.size()];
+				double[] values = null;
 				rptr[0] = 0;
-				for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) {
-					for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) {
-						if(a.isEmpty(i)) continue;
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						for( int j=apos; j<apos+alen; j++ )
-							indexes[pos++] = cix+aix[j];
+				
+				if(a instanceof SparseBlockCSR) {
+					int[] aix = ((SparseBlockCSR)a).indexes();
+					for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) {
+						for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) {
+							if(a.isEmpty(i)) continue;
+							int apos = a.pos(i);
+							int alen = a.size(i);
+							for( int j=apos; j<apos+alen; j++ )
+								indexes[pos++] = cix+aix[j];
+						}
+						rptr[ci+1] = pos;
 					}
-					rptr[ci+1] = pos;
+					//shallow copy of CSR values
+					values = ((SparseBlockCSR)a).values();
 				}
-				//create CSR block with shallow copy of values
-				out.sparseBlock = new SparseBlockCSR(rptr, indexes,
-					((SparseBlockCSR)a).values(), pos);
+				else {
+					values = new double[indexes.length];
+					for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) { //output rows
+						for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) { // N input rows
+							if(a.isEmpty(i)) continue;
+							int apos = a.pos(i);
+							int alen = a.size(i);
+							int[] aix = a.indexes(i);
+							System.arraycopy(a.values(i), apos, values, pos, alen);
+							for( int j=apos; j<apos+alen; j++ )
+								indexes[pos++] = cix+aix[j];
+						}
+						rptr[ci+1] = pos;
+					}
+				}
+				
+				//create CSR block from constructed or shallow-copy arrays
+				out.sparseBlock = new SparseBlockCSR(rptr, indexes, values, pos);
 			}
 			else if( cols%clen==0 ) { //SPECIAL N:1 MATRIX->MATRIX
 				int n = cols/clen;

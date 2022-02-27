@@ -19,36 +19,21 @@
 
 package org.apache.sysds.test.functions.iogen.Identify;
 
-import com.google.gson.Gson;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.Lop;
-import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderJSONJackson;
 import org.apache.sysds.runtime.io.FrameReaderJSONL;
-import org.apache.sysds.runtime.io.MatrixReader;
-import org.apache.sysds.runtime.io.ReaderTextLIBSVM;
-import org.apache.sysds.runtime.iogen.FormatIdentifying;
 import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.iogen.EXP.Util;
-import org.apache.sysds.runtime.iogen.Hirschberg;
-import org.apache.sysds.runtime.iogen.MappingTrie;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.functions.iogen.GenerateReaderMatrixTest;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MatrixGRRowColIdentifyTest extends GenerateReaderMatrixTest {
 
@@ -185,22 +170,101 @@ public class MatrixGRRowColIdentifyTest extends GenerateReaderMatrixTest {
 		runGenerateReaderTest();
 	}
 
-	@Test public void test101() throws IOException {
+	@Test public void test12() {
+		//		sampleRaw = "#index 1\n" +
+		//			"#t 2,3\n" +
+		//			"#s 1980\n"+
+		//			"#index 10\n\n" +
+		//			"#t 21,30\n" +
+		//			"#s 2000\n\n"+
+		//			"#index 100\n" +
+		//			"#t 200,300\n" +
+		//			"#s 2222";
+		//
+		//		sampleMatrix = new double[][] {{1,2,3}, {10,21,30}, {100,200,300},{1000,2000,3000}};
+		//		runGenerateReaderTest();
 
-		FileFormatPropertiesLIBSVM propertiesLIBSVM = new FileFormatPropertiesLIBSVM(" ", ":");
-		ReaderTextLIBSVM readerTextLIBSVM = new ReaderTextLIBSVM(propertiesLIBSVM);
-		MatrixBlock mb = readerTextLIBSVM.readMatrixFromHDFS("/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/susy-libsvm/susy-libsvm.data",-1,18,-1,-1);
+		StringBuilder sb = new StringBuilder(
+			" ,)R2I( hcraeseR mmocofnI rof etutitsnI ,tnemtrapeD gniniM ataD\"[:\"snoitailiffa\",\"tuhN hniM neyugN \":\"eman\",802:\"xedni\"{");
+		System.out.println(sb.reverse());
 	}
+
+	//	@Test
+	//	public void test13() throws Exception {
+	//		String sampleRawFileName = "/home/saeed/Documents/Dataset/GIODataset/aminer/csv/Q2/sample_aminer_author1000_5.raw";
+	//		String sampleFrameFileName = "/home/saeed/Documents/Dataset/GIODataset/aminer/csv/Q2/sample_aminer_author1000_5.frame";
+	//		Integer sampleNRows = 1000;
+	//		String delimiter = "\\t";
+	//		String schemaFileName = "/home/saeed/Documents/Dataset/GIODataset/aminer/csv/Q2/aminer_author_5.schema";
+	//		String dataFileName = "/home/saeed/Documents/Dataset/GIODataset/aminer/csv/aminer_author.data";
+	//
+	//		Float percent = 7f;//Float.parseFloat(args[6]);
+	//		String datasetName = "aminer_paper";//args[7];
+	//		String LOG_HOME ="/home/saeed/Documents/ExpLog";//args[8];
+	//
+	//		if(delimiter.equals("\\t"))
+	//			delimiter = "\t";
+	//
+	//		Util util = new Util();
+	//		Types.ValueType[] sampleSchema = util.getSchema(schemaFileName);
+	//		int ncols = sampleSchema.length;
+	//
+	//		ArrayList<Types.ValueType> newSampleSchema = new ArrayList<>();
+	//		ArrayList<ArrayList<String>> newSampleFrame = new ArrayList<>();
+	//
+	//		String[][] sampleFrameStrings =  util.loadFrameData(sampleFrameFileName, sampleNRows, ncols, delimiter);
+	//
+	//		for(int c = 0; c < sampleFrameStrings[0].length; c++) {
+	//			HashSet<String> valueSet = new HashSet<>();
+	//			for(int r=0; r<sampleFrameStrings.length;r++)
+	//				valueSet.add(sampleFrameStrings[r][c]);
+	//			if(valueSet.size()>0){
+	//				ArrayList<String> tempList = new ArrayList<>();
+	//				for(int r=0; r<sampleFrameStrings.length;r++) {
+	//					tempList.add(sampleFrameStrings[r][c]);
+	//				}
+	//				newSampleFrame.add(tempList);
+	//				newSampleSchema.add(sampleSchema[c]);
+	//			}
+	//		}
+	//
+	//		sampleFrameStrings = new String[newSampleFrame.get(0).size()][newSampleFrame.size()];
+	//
+	//		for(int row=0; row<sampleFrameStrings.length; row++){
+	//			for(int col=0; col<sampleFrameStrings[0].length; col++){
+	//				sampleFrameStrings[row][col] = newSampleFrame.get(col).get(row);
+	//			}
+	//		}
+	//
+	//		sampleSchema = new Types.ValueType[newSampleSchema.size()];
+	//		for(int i=0; i< newSampleSchema.size();i++)
+	//			sampleSchema[i] = newSampleSchema.get(i);
+	//
+	//		FrameBlock sampleFrame = new FrameBlock(sampleSchema, sampleFrameStrings);
+	//
+	//		double tmpTime = System.nanoTime();
+	//		String sampleRaw = util.readEntireTextFile(sampleRawFileName);
+	//		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
+	//		FrameReader fr = gr.getReader();
+	//		double generateTime = (System.nanoTime() - tmpTime) / 1000000000.0;
+	//
+	//		tmpTime = System.nanoTime();
+	//		FrameBlock frameBlock = fr.readFrameFromHDFS(dataFileName, sampleSchema, -1, sampleSchema.length);
+	//		double readTime = (System.nanoTime() - tmpTime) / 1000000000.0;
+	//
+	//		String log= datasetName+","+ frameBlock.getNumRows()+","+ ncols+","+percent+","+ sampleNRows+","+ generateTime+","+readTime;
+	//		util.addLog(LOG_HOME, log);
+	//	}
 
 	@Test public void test13() throws Exception {
 		///home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/twitter-examples/F10
-		for(int f = 1; f <= 2; f++) {
-			System.out.println("+++++++++++++++++++++  Q=" + f);
-			String sampleRawFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/HIGGS-csv/Q" + f + "/sample-HIGGS-csv200.raw";
-			String sampleFrameFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/HIGGS-csv/Q" + f + "/sample-HIGGS-csv200.frame";
+		for(int f=9;f<=9;f++) {
+			System.out.println("+++++++++++++++++++++  Q="+f);
+			String sampleRawFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/yelp-csv/F"+f+"/sample-yelp-csv200.raw";
+			String sampleFrameFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/yelp-csv/F"+f+"/sample-yelp-csv200.frame";
 			String delimiter = "\\t";
-			String schemaFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/HIGGS-csv/Q" + f + "/HIGGS-csv.schema";
-			String dataFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/HIGGS-csv/HIGGS-csv.data";
+			String schemaFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/yelp-csv/F"+f+"/yelp-csv.schema";
+			String dataFileName ="/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/yelp-csv/yelp-csv.data";
 
 			Util util = new Util();
 			Types.ValueType[] sampleSchema = util.getSchema(schemaFileName);
@@ -209,7 +273,7 @@ public class MatrixGRRowColIdentifyTest extends GenerateReaderMatrixTest {
 			ArrayList<Types.ValueType> newSampleSchema = new ArrayList<>();
 			ArrayList<ArrayList<String>> newSampleFrame = new ArrayList<>();
 
-			String[][] sampleFrameStrings = util.loadFrameData(sampleFrameFileName, delimiter,0);
+			String[][] sampleFrameStrings = util.loadFrameData(sampleFrameFileName, ncols, delimiter);
 
 			for(int c = 0; c < sampleFrameStrings[0].length; c++) {
 				HashSet<String> valueSet = new HashSet<>();
@@ -244,214 +308,42 @@ public class MatrixGRRowColIdentifyTest extends GenerateReaderMatrixTest {
 			String sampleRaw = util.readEntireTextFile(sampleRawFileName);
 
 			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
-			FrameReader fr = gr.getReader();
+			FrameReader fr =gr.getReader();
 
 			FrameBlock frameBlock = fr.readFrameFromHDFS(dataFileName, sampleSchema, -1, sampleSchema.length);
-			int a = 100;
 
 		}
 	}
-
-
 
 	@Test public void test14() throws Exception {
-		///home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/twitter-examples/F10
-		for(int f = 1; f <= 784; f++) {
-			System.out.println("+++++++++++++++++++++  Q=" + f);
-			String sampleRawFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/mnist8m-libsvm/F" + f + "/sample-mnist8m-libsvm200.raw";
-			String sampleMatrixFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/mnist8m-libsvm/F" + f + "/sample-mnist8m-libsvm200.matrix";
-			String delimiter = "\\t";
-			String dataFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/mnist8m-libsvm/mnist8m-libsvm.data";
-
-			Util util = new Util();
-
-			MatrixBlock sampleMB = util.loadMatrixData(sampleMatrixFileName, delimiter);
-			String sampleRaw = util.readEntireTextFile(sampleRawFileName);
-
-			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
-			MatrixReader mr = gr.getReader();
-//			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataFileName, -1, sampleMB.getNumColumns(), -1, -1);
-
-//			FormatIdentifying fi = new FormatIdentifying(sampleRaw,sampleMB);
+//		FrameReaderJSONL frameReaderJSONL = new FrameReaderJSONL();
 //
-//			myregex mr = new myregex(fi.getFormatProperties());
-//			mr.readMatrixFromHDFS(dataFileName, -1, sampleMB.getNumColumns(), -1, -1);
-
-			int a = 100;
-
-		}
-	}
-
-	@Test public void test15() throws Exception {
-		String str = "0 1:9.728614687919616699e-01 2:6.538545489311218262e-01 3:1.176224589347839355e+00 4:1.157156467437744141e+00 5:-1.739873170852661133e+00 6:-8.743090629577636719e-01 7:5.677649974822998047e-01 8:-1.750000417232513428e-01 9:8.100607395172119141e-01 10:-2.525521218776702881e-01 11:1.921887040138244629e+00 12:8.896374106407165527e-01 13:4.107718467712402344e-01 14:1.145620822906494141e+00 15:1.932632088661193848e+00 16:9.944640994071960449e-01 17:1.367815494537353516e+00 18:4.071449860930442810e-02";
-		String str1="0 1:0.30151 2:0.30151 3:0.30151 4:0.30151 5:0.30151 6:0.30151 7:0.30151 8:0.30151 9:0.30151 10:0.30151 11:0.30151";
-
-
-//		String str = "     123:";
-//		String s= str.replaceAll("\\d+","\\\\d+");
-//		System.out.println(s);
-
-		//(?<=^|[\w\d]\s)([\w\d]+)(?=\s|$)
-
-		String regex = "(\\d+:)";//"(?<=\\d:)(.*?)(?=\\d:)"; //(.*?)(\d+:)
-
-//		String regex="\\d+:";
-
-		List<String> allMatches = new ArrayList<String>();
-
-		for(int i=0;i<10000000;i++) {
-			Matcher m = Pattern.compile(regex).matcher(str1);
-			while(m.find()) {
-				String s = m.group(1) + "  ";//+ m.group(3);//+"  "+ m.group(5);
-				//System.out.println(s);
-				//allMatches.add(m.group(5));
-			}
-		}
-
-
-
+//		String FILENAME_SINGLE = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/tpch-json/Q3/sample-tpch-json200.raw";
+//		Types.ValueType[] schema = {Types.ValueType.STRING,Types.ValueType.STRING,Types.ValueType.FP64,Types.ValueType.FP64,Types.ValueType.FP64,Types.ValueType.FP64};
 //
-//		Pattern p = Pattern.compile(regex);
+//		Map<String, Integer> schemaMap = new HashMap<>();
+//		schemaMap.put("/returnFlag",0);
+//		schemaMap.put("/lineStatus",1);
+//		schemaMap.put("/quantity",2);
+//		schemaMap.put("/extendedPrice",3);
+//		schemaMap.put("/discount",4);
+//		schemaMap.put("/tax",5);
+//		// Read FrameBlock
+//		FrameBlock readBlock = frameReaderJSONL.readFrameFromHDFS(FILENAME_SINGLE, schema, schemaMap, -1, schema.length);
 //
-//		// Find match between given string
-//		// and regular expression
-//		// using Pattern.matcher()
-//		Matcher m = p.matcher(str);
-//
-//		// Get the subsequence
-//		// using find() method
-//		while(m.find()) {
-//			System.out.println(m.group()+"  "+m.start()+" "+ m.end()+"  ");
-//		}
+//		int a = 100;
 
-		//		int misMatchPenalty = 3;
-		//		int gapPenalty = 2;
-		//		Hirschberg hirschberg = new Hirschberg();
+		String schemaFileName ="/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/twitter-json/F10/twitter-json.schema";
+		String schemaMapFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/twitter-json/F10/twitter-json.schemaMap";
+		String dataFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/twitter-json/twitter-json.data";
+		long nrows = 1000;
 
-		//		ArrayList<String> list = new ArrayList<>();
-		//		for(int i=0;i<100000000;i++){
-		//			list.add(" "+i+":"+i+"--");
-		//		}
-		//
-		//		ArrayList<String> ll = hirschberg.getLCS(list, misMatchPenalty,gapPenalty);
-		//		Gson gson = new Gson();
-		//		System.out.println(gson.toJson(ll));
-		//
-		//
-		//
-		////		List<String> allMatches = new ArrayList<String>();
-		////		Matcher m = Pattern.compile("\\s\\w:").matcher(str);
-		////		while (m.find()) {
-		////
-		////			allMatches.add(m.group());
-		////		}
-		////		for(String s: allMatches)
-		////			System.out.println(s);
-		////
+		Util util = new Util();
+		Types.ValueType[] schema = util.getSchema(schemaFileName);
+		int ncols = schema.length;
+		Map<String, Integer> schemaMap = util.getSchemaMap(schemaMapFileName);
 
-		//---------------------------------------------
-		// Regex to extract the string
-		// between two delimiters
-		//		String regex = "\\[(.*?)\\]";
-		//
-		//		// Compile the Regex.
-		//		Pattern p = Pattern.compile(regex);
-		//
-		//		// Find match between given string
-		//		// and regular expression
-		//		// using Pattern.matcher()
-		//		Matcher m = p.matcher(str);
-		//
-		//		// Get the subsequence
-		//		// using find() method
-		//		while (m.find())
-		//		{
-		//			System.out.println(m.group(1));
-		//		}
-		//		//----------------------------------------------
-		//		Pattern.compile()
-		//		MappingTrie mappingTrie = new MappingTrie();
-		//		for(int i=0;i<1000000;i++){
-		//			mappingTrie.insert(" "+i+":",i);
-		//		}
-		//
-		//		mappingTrie.insert(","+Lop.OPERAND_DELIMITOR+" 123:",0);
-		//		mappingTrie.insert(","+Lop.OPERAND_DELIMITOR+" 124:",0);
-		//		mappingTrie.insert(","+Lop.OPERAND_DELIMITOR+" 125:",0);
-		//		mappingTrie.insert(","+Lop.OPERAND_DELIMITOR+" 256233:",0);
-		//		mappingTrie.insert(","+Lop.OPERAND_DELIMITOR+" 58296:",0);
-		//		mappingTrie.insert(","+Lop.OPERAND_DELIMITOR+" 10000:",0);
-		//		mappingTrie.insert(","+Lop.OPERAND_DELIMITOR+" 9658263:",0);
-		//
-		//		boolean flag=false;
-		//		do {
-		//			flag = mappingTrie.reConstruct();
-		//		}while(flag);
-		//
-		//		ArrayList<ArrayList<String>> myList = mappingTrie.getAllSequentialKeys();
-		//		Gson gson = new Gson();
-		//		System.out.println(gson.toJson(myList.get(0)));
-
-	}
-
-
-	@Test public void test16() throws Exception {
-		///home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/twitter-examples/F10
-		for(int f = 1; f <= 2; f++) {
-			System.out.println("+++++++++++++++++++++  Q=" + f);
-			String sampleRawFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/yelp-csv/Q" + f + "/sample-yelp-csv200.raw";
-			String sampleFrameFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/yelp-csv/Q" + f + "/sample-yelp-csv200.frame";
-			String delimiter = "\\t";
-			String dataFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/yelp-csv/yelp-csv.data";
-			String schemaFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/yelp-csv/Q" + f + "/yelp-csv.schema";
-
-			Util util = new Util();
-			Types.ValueType[] sampleSchema = util.getSchema(schemaFileName);
-			int ncols = sampleSchema.length;
-
-			String[][] sampleFrameStrings = util.loadFrameData(sampleFrameFileName, delimiter,ncols);
-
-			FrameBlock sampleFrame = new FrameBlock(sampleSchema, sampleFrameStrings);
-			String sampleRaw = util.readEntireTextFile(sampleRawFileName);
-
-			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
-			FrameReader fr = gr.getReader();
-
-			//FrameBlock frameBlock = fr.readFrameFromHDFS(dataFileName, sampleSchema, -1, ncols);
-			int a = 100;
-		}
-	}
-
-
-
-	@Test public void test17() throws Exception {
-
-		MatrixBlock m = new MatrixBlock(10,10,true);
-
-		for(int f = 2; f <= 2; f++) {
-			System.out.println("+++++++++++++++++++++  Q=" + f);
-			String sampleRawFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/queen-mm/F" + f + "/sample-queen" +
-					"-mm200.raw";
-			String sampleMatrixFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/queen-mm/F" + f + "/sample-queen-mm200.matrix";
-			String delimiter = "\\t";
-			String dataFileName = "/home/saeed/Documents/Github/papers/2022-vldb-GIO/Experiments/data/queen-mm/queen-mm.data";
-
-			Util util = new Util();
-
-			MatrixBlock sampleMB = util.loadMatrixData(sampleMatrixFileName, delimiter);
-			String sampleRaw = util.readEntireTextFile(sampleRawFileName);
-
-			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
-			MatrixReader mr = gr.getReader();
-			//			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataFileName, -1, sampleMB.getNumColumns(), -1, -1);
-
-			//			FormatIdentifying fi = new FormatIdentifying(sampleRaw,sampleMB);
-			//
-			//			myregex mr = new myregex(fi.getFormatProperties());
-			//			mr.readMatrixFromHDFS(dataFileName, -1, sampleMB.getNumColumns(), -1, -1);
-
-			int a = 100;
-
-		}
+		FrameReaderJSONJackson frameReaderJSONJackson = new FrameReaderJSONJackson();
+		FrameBlock readBlock = frameReaderJSONJackson.readFrameFromHDFS(dataFileName, schema, schemaMap, nrows, ncols);
 	}
 }

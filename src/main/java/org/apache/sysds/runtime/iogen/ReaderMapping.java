@@ -33,10 +33,9 @@ import java.util.HashSet;
 
 public class ReaderMapping {
 
-	private MatrixBlock mapRow;
-	private MatrixBlock mapCol;
-	private MatrixBlock mapLen;
-	private MatrixBlock mapHas;
+	private int[][] mapRow;
+	private int[][] mapCol;
+	private int[][] mapLen;
 	private boolean mapped;
 	private final int nrows;
 	private final int ncols;
@@ -97,11 +96,15 @@ public class ReaderMapping {
 	}
 
 	protected boolean findMapping(boolean isIndexMapping) {
-		mapRow = new MatrixBlock(nrows, ncols, true);
-		mapCol = new MatrixBlock(nrows, ncols, true);
-		mapLen = new MatrixBlock(nrows, ncols, true);
-		mapHas = new MatrixBlock(nrows, ncols, true);
+		mapRow = new int[nrows][ncols];
+		mapCol = new int[nrows][ncols];
+		mapLen = new int[nrows][ncols];
 		NaN = 0;
+
+		// Set "-1" as default value for all defined matrix
+		for(int r = 0; r < nrows; r++)
+			for(int c = 0; c < ncols; c++)
+				mapRow[r][c] = mapCol[r][c] = mapLen[r][c] = -1;
 
 		int itRow = 0;
 		for(int r = 0; r < nrows; r++) {
@@ -115,10 +118,9 @@ public class ReaderMapping {
 						Pair<Integer, Integer> pair = this.isMatrix ? ri.findValue(
 							sampleMatrix.getValue(r, c)) : ri.findValue(sampleFrame.get(r, c), schema[c]);
 						if(pair != null) {
-							mapRow.setValue(r,c, itRow);
-							mapCol.setValue(r,c,pair.getKey());
-							mapLen.setValue(r,c,pair.getValue());
-							mapHas.setValue(r,c,1);
+							mapRow[r][c] = itRow;
+							mapCol[r][c] = pair.getKey();
+							mapLen[r][c] = pair.getValue();
 							break;
 						}
 						else {
@@ -136,7 +138,7 @@ public class ReaderMapping {
 		boolean flagMap = true;
 		for(int r = 0; r < nrows && flagMap; r++)
 			for(int c = 0; c < ncols && flagMap; c++)
-				if(mapHas.getDouble(r,c) == -1 && ((!this.isMatrix && this.sampleFrame.get(r,
+				if(mapRow[r][c] == -1 && ((!this.isMatrix && this.sampleFrame.get(r,
 					c) != null) || (!this.isMatrix && ((!schema[c].isNumeric() && this.sampleFrame.get(r,
 					c) != null) || (schema[c].isNumeric() && this.sampleFrame.getDouble(r, c) != 0))))) {
 					flagMap = false;
@@ -148,20 +150,16 @@ public class ReaderMapping {
 		return NaN;
 	}
 
-	public MatrixBlock getMapRow() {
+	public int[][] getMapRow() {
 		return mapRow;
 	}
 
-	public MatrixBlock getMapCol() {
+	public int[][] getMapCol() {
 		return mapCol;
 	}
 
-	public MatrixBlock getMapLen() {
+	public int[][] getMapLen() {
 		return mapLen;
-	}
-
-	public MatrixBlock getMapHas() {
-		return mapHas;
 	}
 
 	public ArrayList<RawIndex> getSampleRawIndexes() {

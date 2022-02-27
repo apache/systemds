@@ -26,8 +26,8 @@ public class SystemDS {
         String config = null;
         String schemaMapFileName = null;
 
-
         Util util = new Util();
+        schemaFileName = System.getProperty("schemaFileName");
         dataFileName = System.getProperty("dataFileName");
         // read and parse mtd file
         String mtdFileName = dataFileName + ".mtd";
@@ -47,6 +47,10 @@ public class SystemDS {
             if (jsonObject.containsKey("rows")) rows = jsonObject.getLong("rows");
 
             if (jsonObject.containsKey("header")) header = jsonObject.getBoolean("header");
+
+            if (jsonObject.containsKey("schema_path")) schemaFileName = jsonObject.getString("schema_path");
+
+
         } catch (Exception exception) {
         }
 
@@ -68,11 +72,9 @@ public class SystemDS {
             if (matrixReader == null) throw new IOException("The Matrix Reader is NULL: " + dataFileName + ", format: " + format);
             matrixReader.readMatrixFromHDFS(dataFileName, rows, cols, -1, -1);
         } else {
-            schemaFileName = System.getProperty("schemaFileName");
             Types.ValueType[] schema = util.getSchema(schemaFileName);
             cols = schema.length;
             FrameBlock frameBlock = null;
-
 
             switch (format) {
                 case "csv":

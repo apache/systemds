@@ -5461,9 +5461,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	/**
 	 * @param thatMatrix matrix value
 	 * @param thatScalar scalar double
-	 * @param resultBlock result matrix block
+	 * @param ret result matrix block
 	 * @param updateClen when this matrix already has the desired number of columns updateClen can be set to false
-	 * @return resultBlock
+	 * @return result matrix block
 	 */
 	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock ret, boolean updateClen) {
 		MatrixBlock that = checkType(thatMatrix);

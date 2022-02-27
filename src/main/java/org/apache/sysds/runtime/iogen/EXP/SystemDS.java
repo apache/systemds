@@ -64,17 +64,19 @@ public class SystemDS {
                 case "csv":
                     FileFormatPropertiesCSV propertiesCSV = new FileFormatPropertiesCSV(header, sep, false);
                     matrixReader = new ReaderTextCSV(propertiesCSV);
+                    matrixReader.readMatrixFromHDFS(dataFileName, rows, cols, -1, -1);
                     break;
                 case "libsvm":
                     FileFormatPropertiesLIBSVM propertiesLIBSVM = new FileFormatPropertiesLIBSVM(sep, indSep, false);
                     matrixReader = new ReaderTextLIBSVM(propertiesLIBSVM);
+                    matrixReader.readMatrixFromHDFS(dataFileName, rows, cols, -1, -1);
                     break;
                 case "mm":
-                    matrixReader = new ReaderTextCell(Types.FileFormat.MM);
+                    matrixReader = new ReaderTextCell(Types.FileFormat.MM, true);
                     break;
             }
             if (matrixReader == null) throw new IOException("The Matrix Reader is NULL: " + dataFileName + ", format: " + format);
-            matrixReader.readMatrixFromHDFS(dataFileName, rows, cols, -1, -1);
+                matrixReader.readMatrixFromHDFS(dataFileName, rows, cols, -1, -1);
         } else {
             Types.ValueType[] schema = util.getSchema(schemaFileName);
             cols = schema.length;

@@ -34,7 +34,7 @@ public class SystemDS {
         try {
             String mtd = util.readEntireTextFile(mtdFileName);
             mtd = mtd.replace("\n", "").replace("\r", "");
-            mtd = mtd.toLowerCase().trim();
+            mtd = mtd.trim();
             JSONObject jsonObject = new JSONObject(mtd);
             if (jsonObject.containsKey("data_type")) dataType = jsonObject.getString("data_type");
 

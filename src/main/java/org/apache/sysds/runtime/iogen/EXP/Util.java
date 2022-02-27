@@ -94,22 +94,33 @@ public class Util {
 
 	public MatrixBlock loadMatrixData(String fileName,  String delimiter) throws IOException {
 		int ncols = 0;
+		int nrows = 0;
 		try(BufferedReader br = new BufferedReader(new FileReader(fileName,StandardCharsets.UTF_8))) {
 			String line;
 			while((line = br.readLine()) != null) {
 				String[] data = line.split(delimiter);
 				ncols = Math.max(ncols, Integer.parseInt( data[data.length-1].split("::")[0]));
+				nrows++;
 			}
 		}
-		String[][] dataString = loadFrameData(fileName,delimiter, ncols+1);
-		double[][] data = new double[dataString.length][dataString[0].length];
-		for(int i=0;i<dataString.length;i++)
-			for(int j=0;j<dataString[0].length;j++)
-				if(dataString[i][j]!=null)
-					data[i][j] = Double.parseDouble(dataString[i][j]);
-				else
-					data[i][j] =0;
-		MatrixBlock mb = DataConverter.convertToMatrixBlock(data);
-		return mb;
+		MatrixBlock mbd = new MatrixBlock(nrows, ncols+1, true);
+
+		try(BufferedReader br = new BufferedReader(new FileReader(fileName,StandardCharsets.UTF_8))) {
+			String line;
+			int r=0;
+			while((line = br.readLine()) != null) {
+				String[] data = line.split(delimiter);
+				for(int i = 0; i < data.length; i++) {
+					String[] value = data[i].split("::");
+					if(value.length ==2) {
+						int col = Integer.parseInt(value[0]);
+						double v = Double.parseDouble(value[1]);
+						mbd.setValue(r, col, v);
+					}
+				}
+				r++;
+			}
+		}
+		return mbd;
 	}
 }

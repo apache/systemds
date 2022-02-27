@@ -50,6 +50,10 @@ public class SystemDS {
 
             if (jsonObject.containsKey("schema_path")) schemaFileName = jsonObject.getString("schema_path");
 
+            if (jsonObject.containsKey("sep")) sep = jsonObject.getString("sep");
+
+            if (jsonObject.containsKey("indSep")) indSep = jsonObject.getString("indSep");
+
 
         } catch (Exception exception) {
         }

@@ -72,7 +72,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		String opcode = parts[0];
 
 		//handle opcode
-		if(!(opcode.equalsIgnoreCase("ctable"))) {
+		if(!(opcode.equalsIgnoreCase("ctable")) && !(opcode.equalsIgnoreCase("ctableexpand"))) {
 			throw new DMLRuntimeException("Unexpected opcode in CtableFEDInstruction: " + inst);
 		}
 
@@ -380,7 +380,11 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 	}
 
 	private String constructMaxInstString(String in, String out) {
-		String maxInstrString = instString.replace("ctable", "uamax");
+		String maxInstrString;
+		if(instString.contains("ctableexpand"))
+			maxInstrString = instString.replace("ctableexpand", "uamax");
+		else
+			maxInstrString = instString.replace("ctable", "uamax");
 		String[] instParts = maxInstrString.split(Lop.OPERAND_DELIMITOR);
 		String[] maxInstParts = new String[] {instParts[0], instParts[1],
 			InstructionUtils.concatOperandParts(in, DataType.MATRIX.name(), (ValueType.FP64).name()),

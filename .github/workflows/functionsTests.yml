@@ -71,7 +71,7 @@ jobs:
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Cache Maven Dependencies
       uses: actions/cache@v2

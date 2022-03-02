@@ -29,13 +29,14 @@ n = ncol(X);
 # prepare offset vectors and one-hot encoded X
 maxs = colMaxs(X);
 if($matrixInput) {
-  rix = matrix(seq(1,m)%*%matrix(1,1,n), m, n);
   cix = matrix(X + (t(cumsum(t(maxs))) - maxs), m, n);
 }
 else {
-  rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1);
   cix = matrix(X + (t(cumsum(t(maxs))) - maxs), m*n, 1);
 }
+
+rix = seq(1, nrow(cix));
+cix = cix[ , 1] + 1; # slice row partitioned federated vector cix and add 1
 
 W = rix + cix;
 
@@ -46,9 +47,9 @@ if($revIn)
     X2 = table(cix, rix);
 else
   if($weighted)
-      X2 = table(rix, cix, W);
-    else
-      X2 = table(rix, cix);
+    X2 = table(rix, cix, W);
+  else
+    X2 = table(rix, cix);
 
 while(FALSE) { }
 X2 = X2 * (seq(1, nrow(X2)) / nrow(X2));

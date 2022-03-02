@@ -49,6 +49,7 @@ else
   else
     X2 = table(rix, cix);
 
+X2 = X2 * (seq(1, nrow(X2)) / nrow(X2));
 Z = as.matrix(sum(X2));
 
 write(Z, $8);

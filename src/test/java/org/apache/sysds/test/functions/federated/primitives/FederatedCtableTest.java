@@ -29,6 +29,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -39,7 +40,10 @@ public class FederatedCtableTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/federated/";
 	private final static String TEST_NAME1 = "FederatedCtableTest";
 	private final static String TEST_NAME2 = "FederatedCtableFedOutput";
+	private final static String TEST_NAME3 = "FederatedCtableSeqVecFedOut";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedCtableTest.class.getSimpleName() + "/";
+
+	private final static double TOLERANCE = 1e-12;
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -60,6 +64,7 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"F"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"F"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"F"}));
 	}
 
 	@Parameterized.Parameters
@@ -88,9 +93,20 @@ public class FederatedCtableTest extends AutomatedTestBase {
 	@Test
 	public void federatedCtableMatrixInputFedOutputSingleNode() { runCtable(Types.ExecMode.SINGLE_NODE, true, true); }
 
+	@Test
+	@Ignore
+	public void federatedCtableSeqVecFedOutputSingleNode() { runCtable(Types.ExecMode.SINGLE_NODE, true, false, true); }
+
+	@Test
+	public void federatedCtableSeqVecSliceFedOutputSingleNode() { runCtable(Types.ExecMode.SINGLE_NODE, true, true, true); }
+
 
 	public void runCtable(Types.ExecMode execMode, boolean fedOutput, boolean matrixInput) {
-		String TEST_NAME = fedOutput ? TEST_NAME2 : TEST_NAME1;
+		runCtable(execMode, fedOutput, matrixInput, false);
+	}
+
+	public void runCtable(Types.ExecMode execMode, boolean fedOutput, boolean matrixInput, boolean seqVec) {
+		String TEST_NAME = fedOutput ? (seqVec ? TEST_NAME3 : TEST_NAME2) : TEST_NAME1;
 		Types.ExecMode platformOld = setExecMode(execMode);
 
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -174,7 +190,7 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X4", X4, false, mc);
 
 		//execute main test
-		fullDMLScriptName = HOME + TEST_NAME2 + "Reference.dml";
+		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[]{"-stats", "100", "-args",
 			input("X1"), input("X2"), input("X3"), input("X4"), Boolean.toString(reversedInputs).toUpperCase(),
 			Boolean.toString(weighted).toUpperCase(), Boolean.toString(matrixInput).toUpperCase(),
@@ -182,7 +198,7 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
-		fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
@@ -197,12 +213,15 @@ public class FederatedCtableTest extends AutomatedTestBase {
 
 	void checkResults(boolean fedOutput) {
 		// compare via files
-		compareResults(0);
+		compareResults(TOLERANCE);
 
 		// check for federated operations
-		Assert.assertTrue(heavyHittersContainsString("fed_ctable"));
-		if(fedOutput) // verify output is federated
+		Assert.assertTrue(heavyHittersContainsString("fed_ctable")
+			|| heavyHittersContainsString("fed_ctableexpand"));
+		if(fedOutput) { // verify output is federated
 			Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
+			Assert.assertTrue(heavyHittersContainsString("fed_*"));
+		}
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

@@ -273,7 +273,7 @@ public class FEDInstructionUtils {
 			}
 			else if(inst instanceof CtableCPInstruction) {
 				CtableCPInstruction cinst = (CtableCPInstruction) inst;
-				if(inst.getOpcode().equalsIgnoreCase("ctable")
+				if((inst.getOpcode().equalsIgnoreCase("ctable") || inst.getOpcode().equalsIgnoreCase("ctableexpand"))
 					&& ( ec.getCacheableData(cinst.input1).isFederated(FType.ROW)
 					|| (cinst.input2.isMatrix() && ec.getCacheableData(cinst.input2).isFederated(FType.ROW))
 					|| (cinst.input3.isMatrix() && ec.getCacheableData(cinst.input3).isFederated(FType.ROW))))

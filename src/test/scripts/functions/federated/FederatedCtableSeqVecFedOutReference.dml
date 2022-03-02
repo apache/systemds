@@ -19,40 +19,38 @@
 #
 #-------------------------------------------------------------
 
-X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
-        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
-    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+X = rbind(read($1), read($2), read($3), read($4));
 
 m = nrow(X);
 n = ncol(X);
 
 # prepare offset vectors and one-hot encoded X
 maxs = colMaxs(X);
-if($matrixInput) {
-  rix = matrix(seq(1,m)%*%matrix(1,1,n), m, n);
+
+if($7) { # matrix input
   cix = matrix(X + (t(cumsum(t(maxs))) - maxs), m, n);
 }
 else {
-  rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1);
   cix = matrix(X + (t(cumsum(t(maxs))) - maxs), m*n, 1);
 }
 
+rix = seq(1, nrow(cix));
+cix = cix[ , 1] + 1; # slice row partitioned federated vector cix and add 1
+
 W = rix + cix;
 
-if($revIn)
-  if($weighted)
+if($5)
+  if($6)
     X2 = table(cix, rix, W);
   else
     X2 = table(cix, rix);
 else
-  if($weighted)
-      X2 = table(rix, cix, W);
-    else
-      X2 = table(rix, cix);
+  if($6)
+    X2 = table(rix, cix, W);
+  else
+    X2 = table(rix, cix);
 
-while(FALSE) { }
 X2 = X2 * (seq(1, nrow(X2)) / nrow(X2));
-while(FALSE) { }
 Z = as.matrix(sum(X2));
 
-write(Z, $out);
+write(Z, $8);

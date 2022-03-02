@@ -56,7 +56,7 @@ jobs:
     name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
       uses: actions/setup-java@v2

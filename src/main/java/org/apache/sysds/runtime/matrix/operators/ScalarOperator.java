@@ -38,13 +38,12 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
  * Base class for all scalar operators.
  * 
  */
-public abstract class ScalarOperator extends Operator 
+public abstract class ScalarOperator extends MultiThreadedOperator
 {
 	private static final long serialVersionUID = 4547253761093455869L;
 
 	public final ValueFunction fn;
 	protected final double _constant;
-	private int _k; //num threads
 	
 	public ScalarOperator(ValueFunction p, double cst) {
 		this(p, cst, false);
@@ -63,19 +62,11 @@ public abstract class ScalarOperator extends Operator
 				|| (p instanceof Builtin && ((Builtin)p).getBuiltinCode()==BuiltinCode.MIN && cst>=0));
 		fn = p;
 		_constant = cst;
-		_k = numThreads;
+		_numThreads = numThreads;
 	}
 	
 	public double getConstant() {
 		return _constant;
-	}
-	
-	public void setNumThreads(int k) {
-		_k = k;
-	}
-	
-	public int getNumThreads() {
-		return _k;
 	}
 	
 	public abstract ScalarOperator setConstant(double cst);

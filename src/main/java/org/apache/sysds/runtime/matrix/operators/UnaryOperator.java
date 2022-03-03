@@ -24,12 +24,11 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 
-public class UnaryOperator extends Operator 
+public class UnaryOperator extends MultiThreadedOperator
 {
 	private static final long serialVersionUID = 2441990876648978637L;
 
 	public final ValueFunction fn;
-	private final int k; //num threads
 	private final boolean inplace;
 
 	public UnaryOperator(ValueFunction p) {
@@ -45,12 +44,8 @@ public class UnaryOperator extends Operator
 			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.SQRT || ((Builtin)p).bFunc==Builtin.BuiltinCode.SPROP
 			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.LOG_NZ || ((Builtin)p).bFunc==Builtin.BuiltinCode.SIGN) );
 		fn = p;
-		k = numThreads;
+		_numThreads = numThreads;
 		inplace = inPlace;
-	}
-	
-	public int getNumThreads() {
-		return k;
 	}
 	
 	public boolean isInplace() {

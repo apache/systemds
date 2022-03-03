@@ -17,24 +17,26 @@
  * under the License.
  */
 
-
 package org.apache.sysds.runtime.matrix.operators;
 
-import org.apache.sysds.runtime.functionobjects.COV;
+public class MultiThreadedOperator extends Operator {
+	private static final long serialVersionUID = 3528522245925706630L;
 
-public class COVOperator extends MultiThreadedOperator
-{
-	private static final long serialVersionUID = -8404264552880694469L;
+	protected int _numThreads = 1;
 
-	public final COV fn;
-	
-	public COVOperator(COV op) {
-		this(op, 1);
+	public MultiThreadedOperator() {
+		super();
 	}
-	
-	public COVOperator(COV op, int numThreads) {
-		super(true);
-		fn = op;
+
+	public MultiThreadedOperator(boolean sparseSafeFlag) {
+		super(sparseSafeFlag);
+	}
+
+	public int getNumThreads() {
+		return _numThreads;
+	}
+
+	public void setNumThreads(int numThreads) {
 		_numThreads = numThreads;
 	}
 }

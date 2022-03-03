@@ -1000,19 +1000,23 @@ public class InstructionUtils
 			op = CMOperator.getAggOpType(fn, null);
 	
 		switch(op) {
-		case SUM:
-			return new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
+			case SUM:
+				return new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
+				
+			case COUNT:
+			case MEAN:
+			case VARIANCE:
+			case CM2:
+			case CM3:
+			case CM4:
 			
-		case COUNT:
-		case MEAN:
-		case VARIANCE:
-		case CM2:
-		case CM3:
-		case CM4:
-			return new CMOperator(CM.getCMFnObject(op), op);
-		case INVALID:
-		default:
-			throw new DMLRuntimeException("Invalid Aggregate Operation in GroupedAggregateInstruction: " + op);
+			//TODO use appropriate function objects for min/max (see sum)
+			case MIN:
+			case MAX:
+				return new CMOperator(CM.getCMFnObject(op), op);
+			case INVALID:
+			default:
+				throw new DMLRuntimeException("Invalid Aggregate Operation in GroupedAggregateInstruction: " + op);
 		}
 	}
 	

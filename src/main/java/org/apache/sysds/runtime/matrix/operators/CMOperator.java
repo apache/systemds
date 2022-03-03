@@ -35,6 +35,8 @@ public class CMOperator extends Operator
 		CM2,
 		CM3,
 		CM4,
+		MIN,
+		MAX,
 		VARIANCE,
 		INVALID
 	}
@@ -103,6 +105,10 @@ public class CMOperator extends Operator
 				return AggregateOperationTypes.CM4;
 			else
 				return AggregateOperationTypes.INVALID;
+		} else if (fn.equalsIgnoreCase("min")) {
+			return AggregateOperationTypes.MIN;
+		} else if (fn.equalsIgnoreCase("max")) {
+			return AggregateOperationTypes.MAX;
 		}
 		return AggregateOperationTypes.INVALID;
 	}
@@ -114,7 +120,7 @@ public class CMOperator extends Operator
 		switch( aggOpType )
 		{
 			case COUNT:
-			case MEAN: 
+			case MEAN:
 				ret = true; break;
 				
 			//NOTE: the following aggregation operators are not marked for partial aggregation 

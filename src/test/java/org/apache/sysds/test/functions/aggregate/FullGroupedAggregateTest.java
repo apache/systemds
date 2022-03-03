@@ -25,7 +25,6 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ExecType;
@@ -37,9 +36,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-/**
- * 
- */
+
 public class FullGroupedAggregateTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "GroupedAggregate";
@@ -64,6 +61,8 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 		VARIANCE,
 		MOMENT3,
 		MOMENT4,
+		MIN,
+		MAX
 	}
 	
 	
@@ -227,7 +226,55 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 	{
 		runGroupedAggregateOperationTest(OpType.MOMENT4, true, false, false, ExecType.SPARK);
 	}
-	
+
+	@Test
+	public void testGroupedAggMinDenseSP()
+	{
+		runGroupedAggregateOperationTest(OpType.MIN, false, false, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMinSparseSP()
+	{
+		runGroupedAggregateOperationTest(OpType.MIN, true, false, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMinDenseWeightsSP()
+	{
+		runGroupedAggregateOperationTest(OpType.MIN, false, true, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMinSparseWeightsSP()
+	{
+		runGroupedAggregateOperationTest(OpType.MIN, true, true, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMaxDenseSP()
+	{
+		runGroupedAggregateOperationTest(OpType.MAX, false, false, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMaxSparseSP()
+	{
+		runGroupedAggregateOperationTest(OpType.MAX, true, false, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMaxDenseWeightsSP()
+	{
+		runGroupedAggregateOperationTest(OpType.MAX, false, true, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMaxSparseWeightsSP()
+	{
+		runGroupedAggregateOperationTest(OpType.MAX, true, true, false, ExecType.SPARK);
+	}
+
 	// -----------------------------------------------------------------------
 	
 	@Test
@@ -366,13 +413,13 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 	
 	/* TODO weighted central moment in R
 	@Test
-	public void testGroupedAggMoment3DenseWeightsCP() 
+	public void testGroupedAggMoment3DenseWeightsCP()
 	{
 		runGroupedAggregateOperationTest(OpType.MOMENT3, false, true, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testGroupedAggMoment3SparseWeightsCP() 
+	public void testGroupedAggMoment3SparseWeightsCP()
 	{
 		runGroupedAggregateOperationTest(OpType.MOMENT3, true, true, false, ExecType.CP);
 	}
@@ -389,33 +436,72 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 	{
 		runGroupedAggregateOperationTest(OpType.MOMENT4, true, false, false, ExecType.CP);
 	}
-	
+
 	/* TODO weighted central moment in R
 	@Test
-	public void testGroupedAggMoment4DenseWeightsCP() 
+	public void testGroupedAggMoment4DenseWeightsCP()
 	{
 		runGroupedAggregateOperationTest(OpType.MOMENT4, false, true, false, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testGroupedAggMoment4SparseWeightsCP() 
+	public void testGroupedAggMoment4SparseWeightsCP()
 	{
 		runGroupedAggregateOperationTest(OpType.MOMENT4, true, true, false, ExecType.CP);
 	}
 	*/
-	
+
+	@Test
+	public void testGroupedAggMinDenseCP()
+	{
+		runGroupedAggregateOperationTest(OpType.MIN, false, false, false, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMinSparseCP()
+	{
+		runGroupedAggregateOperationTest(OpType.MIN, true, false, false, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMinDenseWeightsCP()
+	{
+		runGroupedAggregateOperationTest(OpType.MIN, false, true, false, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMinSparseWeightsCP()
+	{
+		runGroupedAggregateOperationTest(OpType.MIN, true, true, false, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMaxDenseCP()
+	{
+		runGroupedAggregateOperationTest(OpType.MAX, false, false, false, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMaxSparseCP()
+	{
+		runGroupedAggregateOperationTest(OpType.MAX, true, false, false, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMaxDenseWeightsCP()
+	{
+		runGroupedAggregateOperationTest(OpType.MAX, false, true, false, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMaxSparseWeightsCP()
+	{
+		runGroupedAggregateOperationTest(OpType.MAX, true, true, false, ExecType.CP);
+	}
+
 	private void runGroupedAggregateOperationTest( OpType type, boolean sparse, boolean weights, boolean transpose, ExecType instType) 
 	{
-		//rtplatform for MR
-		ExecMode platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		ExecMode platformOld = setExecMode(instType);
 	
 		try
 		{
@@ -474,17 +560,12 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir(weights?"D":"C");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-		catch(IOException ex)
-		{
+		catch(IOException ex) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
-		finally
-		{
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		finally {
+			resetExecMode(platformOld);
 		}
 	}
-	
-		
 }

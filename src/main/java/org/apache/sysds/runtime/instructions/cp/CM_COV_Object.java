@@ -37,13 +37,15 @@ public class CM_COV_Object extends Data
 	public KahanObject m2;
 	public KahanObject m3;
 	public KahanObject m4;
+	public double min;
+	public double max;
 	
 	public KahanObject mean_v;
 	public KahanObject c2;
 	
 	@Override
 	public String toString() {
-		return "weight: "+w+", mean: "+mean+", m2: "+m2+", m3: "+m3+", m4: "+m4+", mean2: "+mean_v+", c2: "+c2;
+		return "weight: "+w+", mean: "+mean+", m2: "+m2+", m3: "+m3+", m4: "+m4+", min: "+min+", max: "+max+", mean2: "+mean_v+", c2: "+c2;
 	}
 	
 	public CM_COV_Object()
@@ -56,6 +58,8 @@ public class CM_COV_Object extends Data
 		m4=new KahanObject(0,0);
 		mean_v=new KahanObject(0,0);
 		c2=new KahanObject(0,0);
+		min=0;
+		max=0;
 	}
 	
 	public void reset()
@@ -67,6 +71,8 @@ public class CM_COV_Object extends Data
 		m4=new KahanObject(0,0);
 		mean_v=new KahanObject(0,0);
 		c2=new KahanObject(0,0);
+		min=0;
+		max=0;
 	}
 	
 	public int compareTo(CM_COV_Object that)
@@ -83,6 +89,10 @@ public class CM_COV_Object extends Data
 			return KahanObject.compare(m4, that.m4);
 		else if(mean_v!=that.mean_v)
 			return KahanObject.compare(mean_v, that.mean_v);
+		else if(min!=that.min)
+			return Double.compare(min, that.min);
+		else if(max!=that.max)
+			return Double.compare(max, that.max);
 		else
 			return KahanObject.compare(c2, that.c2);
 	}
@@ -96,7 +106,8 @@ public class CM_COV_Object extends Data
 		CM_COV_Object that = (CM_COV_Object)o;
 		return (w==that.w && mean.equals(that.mean) && m2.equals(that.m2))
 				&& m3.equals(that.m3) && m4.equals(that.m4) 
-				&& mean_v.equals(that.mean_v) && c2.equals(that.c2);
+				&& mean_v.equals(that.mean_v) && c2.equals(that.c2)
+				&& min==that.min && max == that.max;
 	}
 	
 	@Override
@@ -113,11 +124,13 @@ public class CM_COV_Object extends Data
 		this.m4.set(that.m4);
 		this.mean_v.set(that.mean_v);
 		this.c2.set(that.c2);
+		this.min=that.min;
+		this.max=that.max;
 	}
 	
 	public boolean isCMAllZeros()
 	{
-		return w==0 && mean.isAllZero() && m2.isAllZero()  && m3.isAllZero()  && m4.isAllZero() ;
+		return w==0 && mean.isAllZero() && m2.isAllZero()  && m3.isAllZero()  && m4.isAllZero() && min==0 && max==0;
 	}
 	
 	public boolean isCOVAllZeros()
@@ -166,6 +179,10 @@ public class CM_COV_Object extends Data
 				return m3._sum/w;
 			case CM4:
 				return m4._sum/w;
+			case MIN:
+				return min;
+			case MAX:
+				return max;
 			case VARIANCE:
 				return w==1.0? 0:m2._sum/(w-1);
 			default:

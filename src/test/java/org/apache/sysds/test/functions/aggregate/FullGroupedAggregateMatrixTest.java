@@ -22,7 +22,6 @@ package org.apache.sysds.test.functions.aggregate;
 import java.io.IOException;
 import java.util.HashMap;
 
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -38,9 +37,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-/**
- * 
- */
 public class FullGroupedAggregateMatrixTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "GroupedAggregateMatrix";
@@ -66,8 +62,9 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 		VARIANCE,
 		MOMENT3,
 		MOMENT4,
+		MIN,
+		MAX
 	}
-	
 	
 	@Override
 	public void setUp() 
@@ -158,6 +155,26 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testGroupedAggMinDenseCP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MIN, false, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMinSparseCP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MIN, true, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMaxDenseCP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MAX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMaxSparseCP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MAX, true, ExecType.CP);
+	}
+
+	@Test
 	public void testGroupedAggSumDenseWideCP() {
 		runGroupedAggregateOperationTest(TEST_NAME1, OpType.SUM, false, ExecType.CP, cols2);
 	}
@@ -238,6 +255,26 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testGroupedAggMinDenseSP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MIN, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMinSparseSP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MIN, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMaxDenseSP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MAX, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMaxSparseSP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MAX, true, ExecType.SPARK);
+	}
+
+	@Test
 	public void testGroupedAggSumDenseWideSP() {
 		runGroupedAggregateOperationTest(TEST_NAME1, OpType.SUM, false, ExecType.SPARK, cols2);
 	}
@@ -254,17 +291,8 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 	@SuppressWarnings("rawtypes")
 	private void runGroupedAggregateOperationTest( String testname, OpType type, boolean sparse, ExecType instType, int numCols) 
 	{
-		//rtplatform for MR
-		ExecMode platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-	
+		ExecMode platformOld = setExecMode(instType);
+		
 		try
 		{
 			//determine script and function name
@@ -313,15 +341,12 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 				checkDMLMetaDataFile("C", new MatrixCharacteristics(numGroups,numCols,1,1));
 			}
 		}
-		catch(IOException ex)
-		{
+		catch(IOException ex) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
-		finally
-		{
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		finally {
+			resetExecMode(platformOld);
 		}
 	}
 }

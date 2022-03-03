@@ -48,5 +48,14 @@ else if( fn==5 )
 {
    D = aggregate(target=A, groups=B, weights=C, fn="centralmoment", order="4");
 }
+else if( fn==6 )
+{
+   D = aggregate(target=A, groups=B, weights=C, fn="min");
+}
+else if( fn==7 )
+{
+   D = aggregate(target=A, groups=B, weights=C, fn="max");
+}
+
 
 write(D, $5, format="text");

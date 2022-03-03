@@ -59,7 +59,9 @@ import org.apache.sysds.runtime.util.ProgramConverter;
  */
 public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 
-	private int _threadID = -1;
+	// default: not in parfor context; otherwise updated via 
+	// updateInstructionThreadID during parfor worker setup and/or recompilation
+	private int _threadID = 0;
 	
 	public EvalNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand... inputs) {
 		super(op, opcode, istr, output, inputs);

@@ -952,6 +952,26 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			InstructionUtils.parseBasicAggregateUnaryOperator("uamin", 1));
 		return out.quickGetValue(0, 0);
 	}
+
+	/**
+	 * Wrapper method for reduceall-colMin of a matrix.
+	 *
+	 * @return A new MatrixBlock containing the column mins of this matrix
+	 */
+	public MatrixBlock colMin() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin", 1);
+		return aggregateUnaryOperations(op, null, 1000, null, true);
+	}
+
+	/**
+	 * Wrapper method for reduceall-colMin of a matrix.
+	 *
+	 * @return A new MatrixBlock containing the column mins of this matrix
+	 */
+	public MatrixBlock colMax() {
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax", 1);
+		return aggregateUnaryOperations(op, null, 1000, null, true);
+	}
 	
 	/**
 	 * Wrapper method for reduceall-max of a matrix.

@@ -75,9 +75,40 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
 			throw new DMLRuntimeException("Unknown opcode while parsing a QuantileSortFEDInstruction: " + str);
 		}
 	}
-
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		if(ec.getMatrixObject(input1).isFederated(FederationMap.FType.COL) || ec.getMatrixObject(input1).isFederated(FederationMap.FType.FULL))
+			processColumnQSort(ec);
+		else
+			processRowQSort(ec);
+	}
+
+	public void processRowQSort(ExecutionContext ec) {
+		MatrixObject in = ec.getMatrixObject(input1);
+		MatrixObject out = ec.getMatrixObject(output);
+
+		// TODO make sure that qsort result is used by qpick only where the main operation happens
+		if(input2 != null) {
+			MatrixObject weights = ec.getMatrixObject(input2);
+			String newInst = InstructionUtils.replaceOperand(instString, 1, "append");
+			newInst = InstructionUtils.concatOperands(newInst, "true");
+			FederatedRequest[] fr1 = in.getFedMapping().broadcastSliced(weights, false);
+			FederatedRequest fr2 = FederationUtils.callInstruction(newInst, output,
+				new CPOperand[]{input1, input2}, new long[]{ in.getFedMapping().getID(), fr1[0].getID()});
+			in.getFedMapping().execute(getTID(), true, fr1, fr2);
+			out.getDataCharacteristics().set(in.getDataCharacteristics());
+			out.getDataCharacteristics().setCols(2);
+			out.setFedMapping(in.getFedMapping().copyWithNewID(fr2.getID(), 2));
+		}
+		else {
+			// make a copy without sorting
+			long id = FederationUtils.getNextFedDataID();
+			out.getDataCharacteristics().set(in.getDataCharacteristics());
+			out.setFedMapping(in.getFedMapping().identCopy(getTID(), id));
+		}
+	}
+
+	public void processColumnQSort(ExecutionContext ec) {
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap fedMapping = in.getFedMapping();
 

@@ -19,31 +19,30 @@
 #
 #-------------------------------------------------------------
 
-# The winsorizeAPply takes the upper and lower quantile values and remove outliers.
+# winsorizeApply takes the upper and lower quantile values per colunm, and
+# remove outliers by replacing them with these upper and lower bound values.
 #
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME      TYPE       DEFAULT       MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X    Matrix[Double]   ---          Input feature matrix
-# ql   Double           ---          lower quantile
-# qu   Double           ---          upper quantile 
+# ------------------------------------------------------------------------------
+# NAME     TYPE             DEFAULT   MEANING
+# ------------------------------------------------------------------------------
+# X        Matrix[Double]   ---       Input feature matrix
+# qLower   Matrix[Double]   ---       row vector of upper bounds per column
+# qUpper   Matrix[Double]   ---       row vector of lower bounds per column 
 #
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME     TYPE                             MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# Y        Matrix[Double]                   Matrix without outlier values
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# NAME     TYPE                       MEANING
+# ------------------------------------------------------------------------------
+# Y        Matrix[Double]             Matrix without outlier values
+# ------------------------------------------------------------------------------
 
 
-m_winsorizeApply = function(Matrix[Double] X,  Matrix[Double] qLower, Matrix[Double] qUpper) return (Matrix[Double] Y)
+m_winsorizeApply = function(Matrix[Double] X,  Matrix[Double] qLower, Matrix[Double] qUpper)
+  return (Matrix[Double] Y)
 {
   # replace values outside [ql,qu] w/ ql and qu respectively
-  t1 = (X < qLower)
-  Y = ifelse(t1, (X * (t1 == 0))  + ( t1 * qLower), X);
-  t2 = Y > qUpper
-  Y = ifelse(t2, (Y * (t2 == 0))+ (t2 * qUpper), Y);
+  Y = min(max(X, qLower), qUpper);
 }

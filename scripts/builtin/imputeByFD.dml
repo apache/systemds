@@ -25,23 +25,24 @@
 # ----------------------------------------------------------------------------------------------------------------------
 # NAME            TYPE             DEFAULT   MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# X               Matrix[Double]   ---       Matrix X
-# source          Integer          ---       source attribute to use for imputation and error correction
-# target          Integer          ---       attribute to be fixed
+# X               Matrix[Double]   ---       Vector X, source attribute of functional dependency
+# Y               Matrix[Double]   ---       Vector Y, target attribute of functional dependency and imputation
 # threshold       Double           ---       threshold value in interval [0, 1] for robust FDs
+# verbose         Boolean          FALSE     flag for printing verbose debug output
 # ----------------------------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ----------------------------------------------------------------------------------------------------------------------
 # NAME            TYPE                       MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# X               Matrix[Double]             Matrix with possible imputations
+# Y               Matrix[Double]             Vector Y, with missing values mapped to a new max value
+# Y_imp           Matrix[Double]             Vector Y, with imputed missing values
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_imputeByFD = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Boolean verbose = FALSE)
   return(Matrix[Double] Y, Matrix[Double] Y_imp)
 {
-  # # validation checks
+  # validation checks
   if( threshold < 0 | threshold > 1 )
     stop("Stopping due to invalid input, threshold required in interval [0, 1] found "+threshold)
 
@@ -77,9 +78,10 @@ imputeAndCorrect = function(Matrix[Double] X, Matrix[Double] Y, Double threshold
   if(sum(missing_mask_Y) > 0 & ncol(ctab) > 1)
     ctab = ctab[,1:ncol(ctab)-1]
 
-  ctab = ctab/(rowSums(ctab)) > threshold 
+  # copmute vector of qualifying max count per row (source value)
+  I = (rowMaxs(ctab)/rowSums(ctab)) > threshold 
   
   # Get the most frequent mapped value of Y 
-  filled = rowIndexMax(ctab) #(ctab == rowMaxs(ctab)) * t(seq(1, ncol(ctab))) # 
+  filled = rowIndexMax(ctab) * I
   imputed_Y = imputeByFDApply(X, filled)
 }

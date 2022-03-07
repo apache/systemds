@@ -62,7 +62,7 @@ return (Matrix[Double] result)
   print(toString(mask, sep=","))
   pip = removeEmpty(target=pip, margin="cols")
   applyFunc = removeEmpty(target=applyFunc, margin="cols")
-  metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=applyFunc)
+  metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=as.frame("NULL"))
   ctx = list(prefix="----"); #TODO include seed
   # separate the label
   [Xtrain, Ytrain] = topk::getLabel(trainData, isLastLabel)
@@ -86,7 +86,9 @@ return (Matrix[Double] result)
   
   # # # if mask has 1s then there are categorical features
   [eXtrain, eXtest] = topk::recodeData(Xtrain, Xtest, mask, FALSE, "recode")
-
+  # # # do the early dropping
+  [eXtrain, eXtest, metaList] = topk::featureDrop(eXtrain, eXtest, metaList, FALSE)
+  metaList["applyFunc"] = applyFunc
   # construct the parameter list for best hyper-parameters if the oversampling technique is part of 
   # pipeline then take it out because oversampling is not applied on test dataset
   # this condition is unnecessary here in this case because the input dataset is balanced and 
@@ -96,6 +98,7 @@ return (Matrix[Double] result)
   hp_width= hp[1, 2:no_of_param]
   hp_matrix = matrix(hp_width, rows=ncol(pip), cols=ncol(hp_width)/ncol(pip))
   pipList = list(ph = pip, hp = hp_matrix, flags = no_of_flag_vars)
+
   # # # now test accuracy
   [eXtrain, eYtrain, eXtest, eYtest, a, b,Tr] = executePipeline(pipeline=pip, Xtrain=eXtrain, Ytrain=eYtrain,
     Xtest=eXtest, Ytest=eYtest, metaList=metaList, hyperParameters=hp_matrix, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)

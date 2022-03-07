@@ -78,7 +78,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
 
   n = ifelse(s_max >= nrow(lp), nrow(lp), n = ceil(nrow(lp)/(s_max + 1));)
     
-  for(s in s_max:0, check=0) { # TODO convert to parfor
+  for(s in s_max:0) { # TODO convert to parfor
     
    # result variables
     bracket_hp = matrix(0, rows=k*(s+1)+k, cols=HYPERPARAM_LENGTH)
@@ -230,15 +230,13 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i, Matrix[Double
   index = 1
   id = as.matrix(ph_pip[, 1])
   ph_pip = ph_pip[, 2:ncol(ph_pip)]
-  evalFunOutput = as.matrix(0)
 
-  for(i in 1:nrow(ph_pip))
+  parfor(i in 1:nrow(ph_pip), check = 0)
   {
     # execute configurations with r resources
     op = removeEmpty(target=ph_pip[i], margin="cols")
     print("PIPELINE EXECUTION START ... "+toString(op))
     [hp, applyFunctions, no_of_res, no_of_flag_vars] = getHyperparam(op, param, r_i, default, enablePruning)
-    pip_toString = pipToString(op)
     hpForPruning = matrix(0, rows=1, cols=ncol(op))
     changesByOp = matrix(0, rows=1, cols=ncol(op))
     metaList["applyFunc"] = applyFunctions
@@ -283,13 +281,10 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i, Matrix[Double
         accT = floor((time() - t1) / 1e+6)  
         matrix_width = as.matrix(nrow(hp_matrix) * ncol(hp_matrix))
         hp_vec = cbind(matrix_width, matrix(hp_matrix, rows=1, cols=nrow(hp_matrix)*ncol(hp_matrix), byrow=TRUE))
+        index = (i - 1) * no_of_res + r
         output_accuracy[index, 1] = accuracy
         output_hp[index, 1:ncol(hp_vec)] = hp_vec
         output_pipelines[index, ] = cbind(as.matrix(index), id[i,1])
-        X = clone_X
-        Y = clone_Y
-        Xtest = clone_Xtest
-        Ytest = clone_Ytest
       }
       else
       {
@@ -299,13 +294,12 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i, Matrix[Double
       changesByPipMatrix[index] = changesByPip
       index = index + 1
     }
-    X = clone_X
-    Y = clone_Y
-    Xtest = clone_Xtest
-    Ytest = clone_Ytest
   }
-  output_hyperparam = removeEmpty(target=cbind(output_accuracy, output_hp), margin="rows")
-  output_operator = removeEmpty(target=cbind(output_accuracy, output_pipelines), margin="rows")
+  sel = rowSums(output_hp) > 0
+  output_hyperparam = removeEmpty(target=cbind(output_accuracy, output_hp), margin="rows", select = sel)
+  output_operator = removeEmpty(target=cbind(output_accuracy, output_pipelines), margin="rows", select = sel)
+  changesByPipMatrix = removeEmpty(target=changesByPipMatrix, margin="rows", select = sel)
+
 }
 
 # extract the hyper-parameters for pipelines
@@ -433,7 +427,7 @@ extractBracketWinners = function(Matrix[Double] pipeline, Matrix[Double] hyperpa
 
   pipeline = pipeline[1:rowIndex,]
   bestHyperparams = hyperparam[1:rowIndex,]
-  bestPipeline = frame(data="|", rows=nrow(pipeline), cols=ncol(conf))
+  bestPipeline = frame(data="0", rows=nrow(pipeline), cols=ncol(conf))
   parfor(i in 1: nrow(pipeline)) {
     index = as.scalar(pipeline[i, 3])
     bestPipeline[i] = conf[index]
@@ -450,15 +444,6 @@ return (Frame[Unknown] maxperconf)
   tab = removeEmpty(target=table(pipelines[, 2], pipelines[, 3], pipelines[, 1]), margin="cols")
   maxperconf = frame(0, rows=size, cols=1)
   maxperconf[1:ncol(tab),] = as.frame(t(colMaxs(tab)))
-}
-
-pipToString = function(Frame[String] F)
-return (String s)
-{
-  s = ""
-  for(i in 1:ncol(F))
-    s = s + as.scalar(F[1,i])+";"
-
 }
 
 crossV = function(Matrix[double] X, Matrix[double] y, Integer cvk, Matrix[Double] evalFunHp, List[Unknown] pipList, List[Unknown] metaList,

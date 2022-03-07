@@ -71,7 +71,7 @@ return (Frame[Unknown] output, boolean converged, Double refChanges)
 
   # unrolled by physical pipelines
   pipelines = frame(0, rows=nrow(primitives)^ncol(primitives), cols=max(ncol(initial_population), ncol(ref)))
-  for(i in 1:nrow(initial_population)) { 
+  parfor(i in 1:nrow(initial_population), check = 0) { 
     pconf = bandit::get_physical_configurations(initial_population[i], 0, primitives)
     end = end + nrow(pconf)
     pipelines[start:end, 1:ncol(pconf)] = pconf
@@ -87,8 +87,9 @@ return (Frame[Unknown] output, boolean converged, Double refChanges)
   pipelines = rbind(ref, pipelines)
   population = pipelines
   populationSize = nrow(pipelines)
-  randomOps = sample(3, (populationSize * max_iter), TRUE, seed)
-  transitions = sample(nrow(allOps), (populationSize * max_iter), TRUE, seed)
+  transitions = sample(3, (populationSize * max_iter), TRUE, seed)
+  opToAdd = sample(nrow(allOps), (populationSize * max_iter), TRUE, seed)
+  opToRemove = sample(max_iter, (populationSize * max_iter), TRUE, seed)
   refChangesInternal = 0
   while(!converged & iter <= max_iter)
   {
@@ -116,7 +117,7 @@ return (Frame[Unknown] output, boolean converged, Double refChanges)
     # # randomly pick the pipelines for transitions
     pipRand = sample(nrow(sortedPipelines), populationSize, TRUE)
     if(!converged) {
-      for(i in 1:nrow(children), check=0) {
+      parfor(i in 1:nrow(children), check=0) {
         idxR = (nrow(children) * (iter - 1)) + i
         idx = as.scalar(pipRand[i])
         top = removeEmpty(target=sortedPipelines[idx], margin="cols")
@@ -124,13 +125,13 @@ return (Frame[Unknown] output, boolean converged, Double refChanges)
         if(sum(mask) > 0)
           top = top[, 1:ncol(top) - 1]
           
-        random = ifelse(ncol(top) <=2, 1, as.scalar(randomOps[idxR]))
+        random = ifelse(ncol(top) <=2, 1, as.scalar(transitions[idxR]))
         if(random == 1)
-          c1 = addition(top, allOps[as.scalar(transitions[idxR])]) 
+          c1 = addition(top, allOps[as.scalar(opToAdd[idxR])]) 
         else if(random == 2)
           c1 = mutation(top) 
         else if(random == 3)
-          c1 = removal(top) 
+          c1 = removal(top, as.scalar(opToRemove[idxR])) 
         
         if(sum(mask) > 0)
           c1 = cbind(c1, tail)
@@ -158,7 +159,8 @@ return (Frame[Unknown] output, boolean converged, Double refChanges)
   output = removeEmpty(target=output, margin="rows")
   output = frameSort(output, sort_mask, FALSE)
   refChanges = as.double(as.scalar(output[nrow(output), 2]))
-  output = output[, 3:ncol(output)]
+  halfing = max(floor(nrow(output)/2), 1)
+  output = output[halfing:nrow(output), 3:ncol(output)]
 }
 
 addition = function(Frame[Unknown] top, Frame[Unknown] allOps)
@@ -182,14 +184,13 @@ return (Frame [Unknown] mChild)
   mChild = child
 }
 
-removal = function(Frame[Unknown] child)
+removal = function(Frame[Unknown] child, Integer pos)
 return (Frame[Unknown] child)
 {
-  random = as.scalar(rand(rows=1, cols=1))
   if(ncol(child) >= 2)
   {
-    idx = as.scalar(sample(ncol(child), 1))
-    child[1, idx] = as.frame(0)
+    pos = min(ncol(child), pos)
+    child[1, pos] = as.frame(0)
     child = removeEmpty(target=child, margin="cols")
   }
 }

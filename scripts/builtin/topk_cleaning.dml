@@ -94,7 +94,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   # # # when the evaluation function is called first we also compute and keep hyperparams of target application
   print("-- Cleaning - Get Dirty Score: ");
   [dirtyScore, evalFunHp] = getDirtyScore(X=Xtrain, Y=eYtrain, Xtest=Xtest, Ytest=eYtest, evaluationFunc=evaluationFunc, 
-    metaList=metaList, sample=sample, cv=cv, cvk=cvk, evalFunHp=evalFunHp, ctx=ctx)
+    metaList=metaList, cv=cv, cvk=cvk, evalFunHp=evalFunHp, ctx=ctx)
   t4 = time(); print("---- finalized in: "+(t4-t3)/1e9+"s");  
   
  # # do the string processing
@@ -104,24 +104,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   print("---- feature transformations to numeric matrix");
   [eXtrain, eXtest] = recodeData(Xtrain, Xtest, mask, cv, "recode")
   # # # do the early dropping
-  # # 1. if 70% of the column is empty
-  # # # 2. if the column has only single value
-  # # # have all unique values
-  Xtmp = replace(target = eXtrain, pattern = NaN, replacement = 0)
-  nullMask = is.na(eXtrain)
-  singleValuesCol = ((colMins(Xtmp) == 0) & (colMaxs(Xtmp) == 1)) | (colMaxs(Xtmp) == colMins(Xtmp))
-  allmostEmpty = colSums(nullMask) 
-  allmostEmptyRatio = allmostEmpty >= (nrow(Xtmp) * 0.7)
-  allSum = singleValuesCol | allmostEmptyRatio
-  if(sum(allSum) > 0) {
-    eXtrain = removeEmpty(target=eXtrain, margin="cols", select = (allSum == 0))
-    if(!cv)
-      eXtest = removeEmpty(target=eXtest, margin="cols", select = (allSum == 0))
-    mask = removeEmpty(target=mask, margin="cols", select = (allSum == 0))
-    fdMask = removeEmpty(target=fdMask, margin="cols", select = (allSum == 0))
-    schema = removeEmpty(target=schema, margin="cols", select = (allSum == 0))
-    metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=as.frame("null"), distY=0)
-  }
+  [eXtrain, eXtest, metaList] = featureDrop(eXtrain, eXtest, metaList, cv)
   # apply sampling on training data for pipeline enumeration
   # TODO why recoding/sampling twice (within getDirtyScore)
   print("---- class-stratified sampling of feature matrix w/ f="+sample);
@@ -214,16 +197,17 @@ runStringPipeline = function(Frame[Unknown] Xtrain, Frame[Unknown] Xtest, Frame[
 return(Frame[Unknown] Xtrain, Frame[Unknown] Xtest)
 {
   if(cv)
-    Xtrain = utils::stringProcessing(train=Xtrain, test=matrix(0,0,0), mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
+    Xtrain = utils::stringProcessing(data=Xtrain, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
   else
   {
     # # # binding train and test to use same dictionary for both
-    [Xtrain, Xtest] = utils::stringProcessing(train=Xtrain, test=Xtest, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
+    [Xtrain, distMatrix, dict, dateCol] = utils::stringProcessing(data=Xtrain, mask=mask, schema=schema, CorrectTypos=correctTypos, ctx=ctx)
+    Xtest = utils::stringProcessingApply(data=Xtest, mask=mask, schema=schema, CorrectTypos=correctTypos, distanceMatrix=distMatrix, dictionary=dict, dateColIdx=dateCol)
   }
 }
 
 getDirtyScore = function(Frame[Unknown] X, Matrix[Double] Y, Frame[Unknown] Xtest, Matrix[Double] Ytest, String evaluationFunc, List[Unknown] metaList,
-  Matrix[Double] evalFunHp, Double sample = 1.0, Boolean cv = FALSE, Integer cvk = 3, List[Unknown] ctx=list() )
+  Matrix[Double] evalFunHp, Boolean cv = FALSE, Integer cvk = 3, List[Unknown] ctx=list() )
 return(Double dirtyScore, Matrix[Double] evalFunHp)
 {
   dirtyScore = 100
@@ -239,18 +223,16 @@ return(Double dirtyScore, Matrix[Double] evalFunHp)
   [eXtrain, eXtest] = recodeData(X, Xtest, mask, cv, "recode")
   eXtrain = replace(target=eXtrain, pattern=NaN, replacement = 1)
   eXtest = replace(target=eXtest, pattern=NaN, replacement = 1)
-  print(prefix+" sample from train data and dummy code");
-  [eXtrain, Ytrain] =  utils::doSample(eXtrain, Y, sample, TRUE)
   [eXtrain, eXtest] = recodeData(as.frame(eXtrain), as.frame(eXtest), mask, cv, "dummycode")
   pipList = list(lp = as.frame("NULL"), ph = as.frame("NULL"), hp = as.matrix(0), flags = 0)
   print(prefix+" hyper-parameter tuning and dirtyscore computation");
   if(cv) {
-    [dirtyScore, evalFunHp] = bandit::crossV(X=eXtrain, y=Ytrain, cvk=cvk, evalFunHp=evalFunHp,
+    [dirtyScore, evalFunHp] = bandit::crossV(X=eXtrain, y=Y, cvk=cvk, evalFunHp=evalFunHp,
       pipList=pipList, metaList=metaList, evalFunc=evaluationFunc)
     print("dirtyScore cv: "+dirtyScore)
   }
   else {
-    res = eval(evaluationFunc, list(X=eXtrain, Y=Ytrain, Xtest=eXtest, Ytest=Ytest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
+    res = eval(evaluationFunc, list(X=eXtrain, Y=Y, Xtest=eXtest, Ytest=Ytest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
     dirtyScore = as.scalar(res[1, 1])
     evalFunHp = res[1, 2:ncol(res)]
     print("Dirty Accuracy holdout: "+dirtyScore)
@@ -273,6 +255,34 @@ return(Matrix[Double] eXtrain, Matrix[Double] eXtest)
   else {
     eXtrain = as.matrix(Xtrain)
     eXtest = as.matrix(Xtest)
+  }
+}
+
+featureDrop = function(Matrix[Double] eXtrain, Matrix[Double] eXtest, List[Unknown] metaList, Boolean cv)
+return(Matrix[Double] eXtrain, Matrix[Double] eXtest, List[Unknown] metaList)
+{
+  mask = as.matrix(metaList['mask'])
+  fdMask = as.matrix(metaList['fd'])
+  schema = as.frame(metaList['schema'])
+  # # 1. if 90% of the column is empty
+  # # # 2. if the column has only single value
+  # # # have all unique values
+  Xtmp = replace(target = eXtrain, pattern = NaN, replacement = 0)
+  nullMask = is.na(eXtrain)
+  singleValuesCol = ((colMins(Xtmp) == 0) & (colMaxs(Xtmp) == 1)) | (colMaxs(Xtmp) == colMins(Xtmp))
+  allmostEmpty = colSums(nullMask) 
+  allmostEmptyRatio = allmostEmpty >= (nrow(Xtmp) * 0.9)
+  allSum = singleValuesCol | allmostEmptyRatio
+  if(sum(allSum) > 0) {
+    eXtrain = removeEmpty(target=eXtrain, margin="cols", select = (allSum == 0))
+    if(!cv)
+      eXtest = removeEmpty(target=eXtest, margin="cols", select = (allSum == 0))
+    mask = removeEmpty(target=mask, margin="cols", select = (allSum == 0))
+    fdMask = removeEmpty(target=fdMask, margin="cols", select = (allSum == 0))
+    schema = removeEmpty(target=schema, margin="cols", select = (allSum == 0))
+    metaList['mask'] = mask
+    metaList['schema'] = schema
+    metaList['fd'] = fdMask
   }
 }
 

@@ -375,10 +375,19 @@ public abstract class Hop implements ParseInfo {
 	public boolean requiresLineageCaching() {
 		return _requiresLineageCaching;
 	}
+
+	public void updateLopFedOut(Lop lop){
+		updateLopFedOut(lop, getExecType(), _federatedOutput);
+	}
+
+	public void updateLopFedOut(Lop lop, ExecType execType, FederatedOutput fedOut){
+		if ( execType == ExecType.FED )
+			lop.setFederatedOutput(fedOut);
+	}
 	
 	public void constructAndSetLopsDataFlowProperties() {
 		//propagate federated output configuration to lops
-		if( isFederated() )
+		if( isFederated() || getLops().getExecType() == ExecType.FED )
 			getLops().setFederatedOutput(_federatedOutput);
 		if ( prefetchActivated() )
 			getLops().activatePrefetch();

@@ -668,11 +668,13 @@ public class AggBinaryOp extends MultiThreadedHop {
 				new Transform(lY, ReOrgOp.TRANS, getDataType(), getValueType(), ExecType.CP, k);
 		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getBlocksize(), Y.getNnz());
 		setLineNumbers(tY);
+		updateLopFedOut(tY);
 		
 		//matrix mult
 		Lop mult = new MatMultCP(tY, X.constructLops(), getDataType(), getValueType(), ExecType.CP, k);
 		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getBlocksize(), getNnz());
 		setLineNumbers(mult);
+		updateLopFedOut(mult);
 		
 		//result transpose (dimensions set outside)
 		Lop out = new Transform(mult, ReOrgOp.TRANS, getDataType(), getValueType(), ExecType.CP, k);

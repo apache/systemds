@@ -188,6 +188,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 				if(sbHop instanceof FunctionOp) {
 					String funcName = ((FunctionOp) sbHop).getFunctionName();
 					FunctionStatementBlock sbFuncBlock = prog.getBuiltinFunctionDictionary().getFunction(funcName);
+					//selectFederatedExecutionPlan(sbHop);
 					rewriteStatementBlock(prog, sbFuncBlock);
 				}
 				else
@@ -262,7 +263,14 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		root.setFederatedOutput(updateHopRel.getFederatedOutput());
 		root.setFederatedCost(updateHopRel.getCostObject());
 		forceFixedFedOut(root);
+		printHop(root,updateHopRel);
 		hopRelUpdatedFinal.add(root.getHopID());
+	}
+
+	private void printHop(Hop root, HopRel updateHopRel){
+		String ins = root.getInput().stream().map(in -> Long.toString(in.getHopID())).reduce("", ((col, in)->col + " " + in));
+		System.out.println("Update " + root.getHopID() + " " + root + " to " + updateHopRel.getFederatedOutput()
+			+ " with inputs " + ins);
 	}
 
 	/**

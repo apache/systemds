@@ -42,8 +42,8 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 	// private static final Log LOG = LogFactory.getLog(AggregateTernaryFEDInstruction.class.getName());
 
 	private AggregateTernaryFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-		String opcode, String istr) {
-		super(FEDType.AggregateTernary, op, in1, in2, in3, out, opcode, istr);
+		String opcode, String istr, FederatedOutput fedOut) {
+		super(FEDType.AggregateTernary, op, in1, in2, in3, out, opcode, istr, fedOut);
 	}
 
 	public static AggregateTernaryFEDInstruction parseInstruction(String str) {
@@ -51,16 +51,19 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 		String opcode = parts[0];
 
 		if(opcode.equalsIgnoreCase("tak+*") || opcode.equalsIgnoreCase("tack+*")) {
-			InstructionUtils.checkNumFields(parts, 5);
+			InstructionUtils.checkNumFields(parts, 5, 6);
 
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
 			int numThreads = Integer.parseInt(parts[5]);
+			FederatedOutput fedOut = FederatedOutput.NONE;
+			if ( parts.length == 7 )
+				fedOut = FederatedOutput.valueOf(parts[6]);
 
 			AggregateTernaryOperator op = InstructionUtils.parseAggregateTernaryOperator(opcode, numThreads);
-			return new AggregateTernaryFEDInstruction(op, in1, in2, in3, out, opcode, str);
+			return new AggregateTernaryFEDInstruction(op, in1, in2, in3, out, opcode, str, fedOut);
 		}
 		else {
 			throw new DMLRuntimeException("AggregateTernaryInstruction.parseInstruction():: Unknown opcode " + opcode);

@@ -20,9 +20,9 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -168,27 +168,28 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 		// Compute and set results
 		if(quantiles != null && quantiles.length > 1) {
-			computeMultipleQuantiles(ec, in, (Map<ImmutablePair<Double, Double>, Integer>) ret, quantiles, (int) vectorLength, varID, _type);
+			computeMultipleQuantiles(ec, in, (int[]) ret, quantiles, (int) vectorLength, varID, (globalMax-globalMin) / numBuckets, globalMin, globalMax, _type);
 		} else
 			getSingleQuantileResult(ret, ec, fedMap, varID, average, false, (int) vectorLength);
 	}
 
-	private <T> void computeMultipleQuantiles(ExecutionContext ec, MatrixObject in, Map<ImmutablePair<Double, Double>, Integer> buckets, double[] quantiles, int vectorLength, long varID, OperationTypes type) {
+	private <T> void computeMultipleQuantiles(ExecutionContext ec, MatrixObject in, int[] bucketsFrequencies, double[] quantiles,
+		int vectorLength, long varID, double bucketRange, double min, double max, OperationTypes type) {
 		MatrixBlock out = new MatrixBlock(quantiles.length, 1, false);
 		ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>>[] bucketsWithIndex = new ImmutableTriple[quantiles.length];
 
 		// Find bins with each quantile for first histogram
 		int sizeBeforeTmp = 0, sizeBefore = 0, countFoundBins = 0;
-		for(Map.Entry<ImmutablePair<Double, Double>, Integer> entry : buckets.entrySet()) {
-			sizeBeforeTmp += entry.getValue();
+		for(int j = 0; j < bucketsFrequencies.length; j++) {
+			sizeBeforeTmp += bucketsFrequencies[j];
 
 			for(int i = 0; i < quantiles.length; i++) {
 				int quantileIndex = (int) Math.round(vectorLength * quantiles[i]);
 				ImmutablePair<Double, Double> bucketWithQ = null;
 
 				if(quantileIndex > sizeBefore && quantileIndex <= sizeBeforeTmp) {
-					bucketWithQ = entry.getKey();
-					bucketsWithIndex[i] = new ImmutableTriple<>(quantileIndex == 1 ? 1 : quantileIndex - sizeBefore, entry.getValue(), bucketWithQ);
+					bucketWithQ = new ImmutablePair<>(min + (j * bucketRange), min + ((j+1) * bucketRange)); //FIXME
+					bucketsWithIndex[i] = new ImmutableTriple(quantileIndex == 1 ? 1 : quantileIndex - sizeBefore, bucketsFrequencies[j], bucketWithQ);
 					countFoundBins++;
 				}
 			}
@@ -283,19 +284,18 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 	public <T> T createHistogram(MatrixObject in, int vectorLength,  double globalMin, double globalMax, int numBuckets, int quantileIndex, boolean average) {
 		FederationMap fedMap = in.getFedMapping();
-
-		Map<ImmutablePair<Double, Double>, Integer> buckets = new LinkedHashMap<>();
-		List<Map<ImmutablePair<Double, Double>, Integer>> hists = new ArrayList<>();
+		List<int[]> hists = new ArrayList<>();
 		List<Set<Double>> distincts = new ArrayList<>();
+
+		double[] bucketsMaxs = new double[numBuckets];
 
 		double bucketRange = (globalMax-globalMin) / numBuckets;
 		boolean isEvenNumRows = vectorLength % 2 == 0;
 
 		// Create buckets according to min and max
-		double tmpMin = globalMin, tmpMax = globalMax;
-		for(int i = 0; i < numBuckets && tmpMin <= tmpMax; i++) {
-			buckets.put(new ImmutablePair<>(tmpMin, tmpMin + bucketRange), 0);
-			tmpMin += bucketRange;
+		double tmpMin = globalMin;
+		for(int i = 0; i < numBuckets && tmpMin <= globalMax; i++) {
+			bucketsMaxs[i] = (tmpMin += bucketRange);
 		}
 
 		// Create histograms
@@ -304,10 +304,10 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			try {
 				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
 					FederatedRequest.RequestType.EXEC_UDF, -1,
-					new QuantilePickFEDInstruction.GetHistogram(data.getVarID(), buckets, globalMax))).get();
+					new QuantilePickFEDInstruction.GetHistogram(data.getVarID(), bucketsMaxs, globalMin))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
-				Map<ImmutablePair<Double, Double>, Integer> rangeHist = (Map<ImmutablePair<Double, Double>, Integer>) response.getData()[0];
+				int[] rangeHist = (int[]) response.getData()[0];
 				hists.add(rangeHist);
 				Set<Double> rangeDistinct = (Set<Double>) response.getData()[1];
 				distincts.add(rangeDistinct);
@@ -319,18 +319,16 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		});
 
 		// Merge results into one histogram
-		for(ImmutablePair<Double, Double> bucket : buckets.keySet()) {
-			int value = 0;
-			for(Map<ImmutablePair<Double, Double>, Integer> hist : hists)
-				value += hist.get(bucket);
-			buckets.put(bucket, value);
-		}
+		int[] bucketsFrequencies = new int[numBuckets];
+		for(int[] hist : hists)
+			for(int i = 0; i < hist.length; i++)
+				bucketsFrequencies[i] += hist[i];
 
 		if(quantileIndex == -1)
-			return (T) buckets;
+			return (T) bucketsFrequencies;
 
 		// Find bucket with quantile
-		ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>> bucketWithIndex = getBucketWithIndex(buckets, quantileIndex, average, isEvenNumRows);
+		ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>> bucketWithIndex = getBucketWithIndex(bucketsFrequencies, bucketsMaxs, quantileIndex, average, isEvenNumRows, bucketRange);
 
 		// Check if can terminate
 		Set<Double> distinctValues = distincts.stream().flatMap(Set::stream).collect(Collectors.toSet());
@@ -356,14 +354,15 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		return createHistogram(in, vectorLength, bucketWithIndex.right.left, bucketWithIndex.right.right, nextNumBuckets, bucketWithIndex.left, average);
 	}
 
-	private ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>> getBucketWithIndex(Map<ImmutablePair<Double, Double>, Integer> buckets, int quantileIndex, boolean average, boolean isEvenNumRows) {
+	private ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>> getBucketWithIndex(int[] bucketFrequencies, double[] bucketMaxs, int quantileIndex, boolean average, boolean isEvenNumRows, double bucketRange) {
 		int sizeBeforeTmp = 0, sizeBefore = 0, bucketWithQSize = 0;
 		ImmutablePair<Double, Double> bucketWithQ = null;
-		for(Map.Entry<ImmutablePair<Double, Double>, Integer> range : buckets.entrySet()) {
-			sizeBeforeTmp += range.getValue();
+
+		for(int i = 0; i < bucketFrequencies.length; i++) {
+			sizeBeforeTmp += bucketFrequencies[i];
 			if(quantileIndex <= sizeBeforeTmp && bucketWithQSize == 0) {
-				bucketWithQ = range.getKey();
-				bucketWithQSize = range.getValue();
+				bucketWithQ = new ImmutablePair<>(bucketMaxs[i]-bucketRange, bucketMaxs[i]);
+				bucketWithQSize = bucketFrequencies[i];
 				sizeBeforeTmp -= bucketWithQSize;
 				sizeBefore = sizeBeforeTmp;
 
@@ -371,9 +370,9 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 					break;
 			} else if(quantileIndex + 1 <= sizeBeforeTmp + bucketWithQSize && isEvenNumRows && average) {
 				// Add right bin that contains second index
-				int bucket2Size = range.getValue();
+				int bucket2Size = bucketFrequencies[i];
 				if (bucket2Size != 0) {
-					bucketWithQ = new ImmutablePair<>(bucketWithQ.left, range.getKey().right);
+					bucketWithQ = new ImmutablePair<>(bucketWithQ.left, bucketMaxs[i]);
 					bucketWithQSize += bucket2Size;
 					break;
 				}
@@ -385,13 +384,13 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 	public static class GetHistogram extends FederatedUDF {
 		private static final long serialVersionUID = 5413355823424777742L;
-		private final Map<ImmutablePair<Double, Double>, Integer> _buckets;
-		private final double _max;
+		private final double[] _bucketMaxs;
+		private final double _min;
 
-		private GetHistogram(long input, Map<ImmutablePair<Double, Double>, Integer> buckets, double max) {
+		private GetHistogram(long input, double[] bucketMaxs, double min) {
 			super(new long[] {input});
-			_buckets = buckets;
-			_max = max;
+			_bucketMaxs = bucketMaxs;
+			_min = min;
 		}
 
 		@Override
@@ -400,22 +399,23 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			double[] values = mb.getDenseBlockValues();
 			boolean isWeighted  = mb.getNumColumns() == 2;
 
-			Map<ImmutablePair<Double, Double>, Integer> hist = _buckets;
 			Set<Double> distinct = new HashSet<>();
 
+			int[] frequencies = new int[_bucketMaxs.length];
+
+			// FIXME rewrite - see binning encode
 			for(int i = 0; i < values.length - (isWeighted ? 1 : 0); i += (isWeighted ? 2 : 1)) {
 				double val = values[i];
 				int weight = isWeighted ? (int) values[i+1] : 1;
-				for (Map.Entry<ImmutablePair<Double, Double>, Integer> range : _buckets.entrySet()) {
-					if((val >= range.getKey().left && val < range.getKey().right) || (val == _max && val == range.getKey().right)) {
-						hist.put(range.getKey(), range.getValue() + weight);
-
-						distinct.add(val);
-					}
-				}
+				int index = Arrays.binarySearch(_bucketMaxs, val);
+				index = index < 0 ? Math.abs(index + 1) : index + 1;
+				index = index >= frequencies.length ? frequencies.length - 1 : index; // Needed because of floats
+				if (val >= _min && val <= _bucketMaxs[_bucketMaxs.length-1])
+					frequencies[index] += weight;
+				distinct.add(val);
 			}
 
-			Object[] ret = new Object[] {hist, distinct.size() < 3 ? distinct : new HashSet<>()};
+			Object[] ret = new Object[] {frequencies, distinct.size() < 3 ? distinct : new HashSet<>()};
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, ret);
 		}
 
@@ -441,10 +441,10 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
 			double[] values = mb.getDenseBlockValues();
 
-			// FIXME rewrite - see binning encode
 			MatrixBlock res = new MatrixBlock(_numQuantiles, 1, false);
 			for(double val : values) {
 				for(Map.Entry<Integer, ImmutablePair<Double, Double>> entry : _ranges.entrySet()) {
+					// Find value within computed bin
 					if(entry.getValue().left <= val && val <= entry.getValue().right) {
 						res.setValue(entry.getKey(), 0,val);
 						break;
@@ -598,8 +598,8 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			double res = 0.0;
 			int i = 0;
 
-			// FIXME better search, e.g. sort in QSort and binary search
 			for(double val : values) {
+				// get value within computed bin
 				// different conditions for IQM and simple QPICK
 				if((!_sumInRange && _range.left <= val && val <= _range.right) ||
 					(_sumInRange && _range.left < val && val <= _range.right))

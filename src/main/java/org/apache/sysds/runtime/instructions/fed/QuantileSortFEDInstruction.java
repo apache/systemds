@@ -132,7 +132,6 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
 			return null;
 		});
 
-
 		MatrixObject sorted = ec.getMatrixObject(output);
 		sorted.getDataCharacteristics().set(in.getDataCharacteristics());
 

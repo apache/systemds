@@ -132,7 +132,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 
 	@Test
 	public void federatedMultiplyPlanningTest9(){
-		String[] expectedHeavyHitters = new String[]{"fed_+*", "fed_1-*", "fed_fedinit", "fed_uak+", "fed_max"};
+		String[] expectedHeavyHitters = new String[]{"fed_+*", "fed_1-*", "fed_fedinit", "fed_tak+*", "fed_max"};
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_9, expectedHeavyHitters);
 	}
 

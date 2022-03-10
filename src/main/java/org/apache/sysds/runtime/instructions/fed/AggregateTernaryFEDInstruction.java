@@ -80,7 +80,8 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 				&& mo2.getFedMapping().isAligned(mo3.getFedMapping(), mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)) {
 			FederatedRequest fr1 = FederationUtils.callInstruction(getInstructionString(), output,
 				new CPOperand[] {input1, input2, input3},
-				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), mo3.getFedMapping().getID()});
+				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), mo3.getFedMapping().getID()},
+				true);
 			FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
 			FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 			Future<FederatedResponse>[] response = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
@@ -99,7 +100,7 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 			FederatedRequest fr1 = mo1.getFedMapping().broadcast(ec.getScalarInput(input3));
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[] {input1, input2, input3},
-				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), fr1.getID()});
+				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), fr1.getID()}, true);
 			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
 			FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
 			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
@@ -124,7 +125,7 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 			FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo2, false);
 			FederatedRequest fr3 = FederationUtils.callInstruction(getInstructionString(), output,
 				new CPOperand[] {input1, input2, input3},
-				new long[] {mo1.getFedMapping().getID(), fr2[0].getID(), fr1[0].getID()});
+				new long[] {mo1.getFedMapping().getID(), fr2[0].getID(), fr1[0].getID()}, true);
 			FederatedRequest fr4 = new FederatedRequest(RequestType.GET_VAR, fr3.getID());
 			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2[0], fr3, fr4);
 

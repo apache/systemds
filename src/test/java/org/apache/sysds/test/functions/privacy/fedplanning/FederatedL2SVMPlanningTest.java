@@ -33,6 +33,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.fail;
 
+@net.jcip.annotations.NotThreadSafe
 public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/privacy/fedplanning/";
@@ -112,7 +113,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-noFedRuntimeConversion", "-stats", "-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			programArgs = new String[] { "-stats", "-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"Y=" + input("Y"), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
 			runTest(true, false, null, -1);

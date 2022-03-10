@@ -22,9 +22,10 @@
 X = rbind(read($X1), read($X2))
 Y = rbind(read($Y1), read($Y2))
 W = rand(rows=nrow(X), cols=ncol(X), min=0, max=1, pdf='uniform', seed=5)
+step_sz = 4
 s = t(X) %*% Y
 Xd = X %*% s
-Z0 = W + s * X
+Z0 = W + step_sz * X
 Z1 = 1 - Y * Z0
 Z2 = (Z1 > 0)
 Z3 = Z1 * Z2

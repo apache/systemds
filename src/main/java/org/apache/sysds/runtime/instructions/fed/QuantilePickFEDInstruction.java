@@ -209,7 +209,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 			if(_type == OperationTypes.IQM) {
 				left = i == 0 ? hist instanceof ImmutablePair ?  ((ImmutablePair<Double, Double>)hist).right : (Double) hist : left;
-				right = i == 1 ? hist instanceof ImmutablePair ? ((ImmutablePair<Double, Double>)hist).left : (Double) hist : right;
+				right = i == 1 ? hist instanceof ImmutablePair ? ((ImmutablePair<Double, Double>)hist).right : (Double) hist : right;
 			} else {
 				if(hist instanceof ImmutablePair)
 					retBuckets.put(i, hist); // set value if returned double instead of bin
@@ -220,7 +220,10 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 		if(type == OperationTypes.IQM) {
 			ImmutablePair<Double, Double> IQMRange = new ImmutablePair<>(left, right);
-			getSingleQuantileResult(IQMRange, ec, in.getFedMapping(), varID, false, true, vectorLength);
+			if(left == right)
+				ec.setScalarOutput(output.getName(), new DoubleObject(left));
+			else
+				getSingleQuantileResult(IQMRange, ec, in.getFedMapping(), varID, false, true, vectorLength);
 		}
 		else {
 			if(!retBuckets.isEmpty()) {
@@ -602,9 +605,12 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 				// get value within computed bin
 				// different conditions for IQM and simple QPICK
 				if((!_sumInRange && _range.left <= val && val <= _range.right) ||
-					(_sumInRange && _range.left < val && val <= _range.right))
+					(_sumInRange && _range.left < val && val <= _range.right)) {
 					res += val;
-				if(i++ > 2 && !_sumInRange)
+					i++;
+				}
+
+				if(!_sumInRange && i > 2)
 					break;
 			}
 

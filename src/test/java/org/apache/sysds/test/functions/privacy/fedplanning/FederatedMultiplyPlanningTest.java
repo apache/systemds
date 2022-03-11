@@ -209,52 +209,56 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	}
 
 	private void federatedTwoMatricesTest(Types.ExecMode execMode, String testName, String[] expectedHeavyHitters) {
-		OptimizerUtils.FEDERATED_COMPILATION = true;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
 		if(rtplatform == Types.ExecMode.SPARK) {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
+		Thread t1 = null, t2 = null;
 
-		getAndLoadTestConfiguration(testName);
-		String HOME = SCRIPT_DIR + TEST_DIR;
+		try{
+			OptimizerUtils.FEDERATED_COMPILATION = true;
 
-		writeInputMatrices(testName);
+			getAndLoadTestConfiguration(testName);
+			String HOME = SCRIPT_DIR + TEST_DIR;
 
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-		Thread t2 = startLocalFedWorkerThread(port2);
+			writeInputMatrices(testName);
 
-		// Run actual dml script with federated matrix
-		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[] {"-stats", "-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
-			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
-		rewriteRealProgramArgs(testName, port1, port2);
-		runTest(true, false, null, -1);
+			int port1 = getRandomAvailablePort();
+			int port2 = getRandomAvailablePort();
+			t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
+			t2 = startLocalFedWorkerThread(port2);
 
-		OptimizerUtils.FEDERATED_COMPILATION = false;
+			// Run actual dml script with federated matrix
+			fullDMLScriptName = HOME + testName + ".dml";
+			programArgs = new String[] {"-stats", "-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
+				"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
+				"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
+			rewriteRealProgramArgs(testName, port1, port2);
+			runTest(true, false, null, -1);
 
-		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + testName + "Reference.dml";
-		programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
-			"Y2=" + input("Y2"), "Z=" + expected("Z")};
-		rewriteReferenceProgramArgs(testName);
-		runTest(true, false, null, -1);
+			OptimizerUtils.FEDERATED_COMPILATION = false;
 
-		// compare via files
-		compareResults(1e-9);
-		if (!heavyHittersContainsAllString(expectedHeavyHitters))
-			fail("The following expected heavy hitters are missing: "
-				+ Arrays.toString(missingHeavyHitters(expectedHeavyHitters)));
+			// Run reference dml script with normal matrix
+			fullDMLScriptName = HOME + testName + "Reference.dml";
+			programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
+				"Y2=" + input("Y2"), "Z=" + expected("Z")};
+			rewriteReferenceProgramArgs(testName);
+			runTest(true, false, null, -1);
 
-		TestUtils.shutdownThreads(t1, t2);
-
-		rtplatform = platformOld;
-		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			// compare via files
+			compareResults(1e-9);
+			if (!heavyHittersContainsAllString(expectedHeavyHitters))
+				fail("The following expected heavy hitters are missing: "
+					+ Arrays.toString(missingHeavyHitters(expectedHeavyHitters)));
+		} finally {
+			OptimizerUtils.FEDERATED_COMPILATION = false;
+			TestUtils.shutdownThreads(t1, t2);
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
 	}
 
 	private void rewriteRealProgramArgs(String testName, int port1, int port2){

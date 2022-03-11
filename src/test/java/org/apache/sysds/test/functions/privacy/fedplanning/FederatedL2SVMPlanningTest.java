@@ -133,6 +133,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 					+ Arrays.toString(missingHeavyHitters(expectedHeavyHitters)));
 		}
 		finally {
+			OptimizerUtils.FEDERATED_COMPILATION = false;
 			TestUtils.shutdownThreads(t1, t2);
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

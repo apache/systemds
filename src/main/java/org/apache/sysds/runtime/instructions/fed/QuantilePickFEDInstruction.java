@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
@@ -68,10 +69,6 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 	private QuantilePickFEDInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out, OperationTypes type,
 		boolean inmem, String opcode, String istr) {
 		this(op, in, in2, out, type, inmem, opcode, istr, FederatedOutput.NONE);
-	}
-
-	public OperationTypes getQPickType() {
-		return _type;
 	}
 
 	public static QuantilePickFEDInstruction parseInstruction ( String str ) {
@@ -168,13 +165,13 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 		// Compute and set results
 		if(quantiles != null && quantiles.length > 1) {
-			computeMultipleQuantiles(ec, in, (int[]) ret, quantiles, (int) vectorLength, varID, (globalMax-globalMin) / numBuckets, globalMin, globalMax, _type);
+			computeMultipleQuantiles(ec, in, (int[]) ret, quantiles, (int) vectorLength, varID, (globalMax-globalMin) / numBuckets, globalMin, _type);
 		} else
 			getSingleQuantileResult(ret, ec, fedMap, varID, average, false, (int) vectorLength);
 	}
 
 	private <T> void computeMultipleQuantiles(ExecutionContext ec, MatrixObject in, int[] bucketsFrequencies, double[] quantiles,
-		int vectorLength, long varID, double bucketRange, double min, double max, OperationTypes type) {
+		int vectorLength, long varID, double bucketRange, double min, OperationTypes type) {
 		MatrixBlock out = new MatrixBlock(quantiles.length, 1, false);
 		ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>>[] bucketsWithIndex = new ImmutableTriple[quantiles.length];
 
@@ -185,11 +182,11 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 			for(int i = 0; i < quantiles.length; i++) {
 				int quantileIndex = (int) Math.round(vectorLength * quantiles[i]);
-				ImmutablePair<Double, Double> bucketWithQ = null;
+				ImmutablePair<Double, Double> bucketWithQ;
 
 				if(quantileIndex > sizeBefore && quantileIndex <= sizeBeforeTmp) {
-					bucketWithQ = new ImmutablePair<>(min + (j * bucketRange), min + ((j+1) * bucketRange)); //FIXME
-					bucketsWithIndex[i] = new ImmutableTriple(quantileIndex == 1 ? 1 : quantileIndex - sizeBefore, bucketsFrequencies[j], bucketWithQ);
+					bucketWithQ = new ImmutablePair<>(min + (j * bucketRange), min + ((j+1) * bucketRange));
+					bucketsWithIndex[i] = new ImmutableTriple<>(quantileIndex == 1 ? 1 : quantileIndex - sizeBefore, bucketsFrequencies[j], bucketWithQ);
 					countFoundBins++;
 				}
 			}
@@ -255,7 +252,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 	}
 
 	private <T> void getSingleQuantileResult(T ret, ExecutionContext ec, FederationMap fedMap, long varID, boolean average, boolean isIQM, int vectorLength) {
-		double result = 0.0;
+		double result;
 		if(ret instanceof ImmutablePair) {
 			// Search for values within bucket range
 			List<Double> values = new ArrayList<>();
@@ -335,13 +332,23 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 		// Check if can terminate
 		Set<Double> distinctValues = distincts.stream().flatMap(Set::stream).collect(Collectors.toSet());
-		if((distinctValues.size() == 1 && !average) || (distinctValues.size() == 2 && average))
-			return (T) distinctValues.stream().reduce(0.0, (a, b) -> a + b);
+
+		if(distinctValues.size() > 0 && !average)
+			return (T) distinctValues.stream().sorted().toArray()[quantileIndex-1];
+
+		if(average && distinctValues.size() > quantileIndex) {
+			Double[] distinctsSorted = distinctValues.stream().flatMap(Stream::of).sorted().toArray(Double[]::new);
+			Double medianSum = Double.sum(distinctsSorted[quantileIndex-1], distinctsSorted[quantileIndex]);
+			return (T) medianSum;
+		}
+
+		if(average && distinctValues.size() == 2)
+			return (T) distinctValues.stream().reduce(0.0, Double::sum);
 
 		ImmutablePair<Double, Double> finalBucketWithQ = bucketWithIndex.right;
 		List<Double> distinctInNewBucket = distinctValues.stream().filter( e -> e >= finalBucketWithQ.left && e <= finalBucketWithQ.right).collect(Collectors.toList());
 		if((distinctInNewBucket.size() == 1 && !average) || (average && distinctInNewBucket.size() == 2))
-			return (T) distinctInNewBucket.stream().reduce(0.0, (a, b) -> a + b);
+			return (T) distinctInNewBucket.stream().reduce(0.0, Double::sum);
 
 		if(distinctValues.size() == 1 || (bucketWithIndex.middle == 1 && !average) || (bucketWithIndex.middle == 2 && isEvenNumRows && average) ||
 			globalMin == globalMax)
@@ -406,16 +413,17 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 			int[] frequencies = new int[_bucketMaxs.length];
 
-			// FIXME rewrite - see binning encode
+			// binning
 			for(int i = 0; i < values.length - (isWeighted ? 1 : 0); i += (isWeighted ? 2 : 1)) {
 				double val = values[i];
 				int weight = isWeighted ? (int) values[i+1] : 1;
 				int index = Arrays.binarySearch(_bucketMaxs, val);
 				index = index < 0 ? Math.abs(index + 1) : index + 1;
 				index = index >= frequencies.length ? frequencies.length - 1 : index; // Needed because of floats
-				if (val >= _min && val <= _bucketMaxs[_bucketMaxs.length-1])
+				if (val >= _min && val <= _bucketMaxs[_bucketMaxs.length-1]) {
 					frequencies[index] += weight;
-				distinct.add(val);
+					distinct.add(val);
+				}
 			}
 
 			Object[] ret = new Object[] {frequencies, distinct.size() < 3 ? distinct : new HashSet<>()};

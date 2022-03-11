@@ -57,7 +57,7 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
 //			{1000, 1, false},
-			{16, 1, true}
+			{128, 1, true}
 		});
 	}
 

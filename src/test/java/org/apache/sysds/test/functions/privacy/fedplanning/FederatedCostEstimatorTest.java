@@ -33,8 +33,8 @@ import org.apache.sysds.hops.NaryOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.cost.FederatedCost;
 import org.apache.sysds.hops.cost.FederatedCostEstimator;
+import org.apache.sysds.hops.fedplanner.FederatedPlannerCostbased;
 import org.apache.sysds.hops.ipa.FunctionCallGraph;
-import org.apache.sysds.hops.ipa.IPAPassRewriteFederatedPlan;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
 import org.apache.sysds.parser.LanguageException;
@@ -293,7 +293,7 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 	}
 
 	private void compareResults(DMLProgram prog) {
-		IPAPassRewriteFederatedPlan rewriter = new IPAPassRewriteFederatedPlan();
+		FederatedPlannerCostbased rewriter = new FederatedPlannerCostbased();
 		rewriter.rewriteProgram(prog, new FunctionCallGraph(prog), null);
 
 		double actualCost = 0;

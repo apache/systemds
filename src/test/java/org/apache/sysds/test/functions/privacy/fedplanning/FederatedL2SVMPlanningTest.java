@@ -71,6 +71,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD(matrixName, matrix, false, mc, privacyConstraint);
 	}
 
+	@SuppressWarnings("unused")
 	private void writeStandardMatrix(String matrixName, long seed, PrivacyConstraint privacyConstraint){
 		writeStandardMatrix(matrixName, seed, rows, privacyConstraint);
 	}

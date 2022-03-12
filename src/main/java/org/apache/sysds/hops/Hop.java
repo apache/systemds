@@ -254,7 +254,7 @@ public abstract class Hop implements ParseInfo {
 	{
 		if(DMLScript.USE_ACCELERATOR && DMLScript.FORCE_ACCELERATOR && isGPUEnabled())
 			_etypeForced = ExecType.GPU; // enabled with -gpu force option
-		else if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE ) {
+		else if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE && _etypeForced != ExecType.FED ) {
 			if(OptimizerUtils.isMemoryBasedOptLevel() && DMLScript.USE_ACCELERATOR && isGPUEnabled()) {
 				// enabled with -exec singlenode -gpu option
 				_etypeForced = findExecTypeByMemEstimate();

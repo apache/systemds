@@ -100,6 +100,6 @@
     <!-- enables compiler assisted partial rewrites (e.g. Append-TSMM) -->
     <sysds.lineage.compilerassisted>true</sysds.lineage.compilerassisted>
     
-    <!-- set the federated plan generator (none, [runtime], compile_allfed, compile_heuristic, compile_costbased) -->
+    <!-- set the federated plan generator (none, [runtime], compile_fed_all, compile_fed_heuristic, compile_cost_based) -->
     <sysds.federated.planner>runtime</sysds.federated.planner>
 </root>

@@ -48,7 +48,7 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
  * that support federated execution on federated inputs to
  * forced federated operations.
  */
-public class FederatedPlannerAllFed extends AFederatedPlanner {
+public class FederatedPlannerFedAll extends AFederatedPlanner {
 	
 	@Override
 	public void rewriteProgram( DMLProgram prog,

@@ -75,7 +75,10 @@ public class CompilerConfig
 		MLCONTEXT, // execution via new MLContext
 		
 		//code generation enabled 
-		CODEGEN_ENABLED;
+		CODEGEN_ENABLED,
+		
+		//federated runtime conversion
+		FEDERATED_RUNTIME;
 	}
 	
 	//default flags (exposed for testing purposes only)

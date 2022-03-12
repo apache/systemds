@@ -56,6 +56,14 @@ import java.util.concurrent.Future;
 public class RewriteFederatedExecution extends HopRewriteRule {
 	private static final Logger LOG = Logger.getLogger(RewriteFederatedExecution.class);
 
+	public enum FederatedPlanner {
+		NONE,
+		RUNTIME,
+		COMPILE_ALLFED,
+		COMPILE_HEURISTIC,
+		COMPILE_COSTBASED,
+	}
+	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if ( roots != null )

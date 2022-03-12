@@ -24,11 +24,11 @@ import java.util.Objects;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -193,7 +193,7 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		Future<FederatedResponse>[] executionResponse = fedMapObj.getFedMapping().execute(
 			getTID(), true, federatedSlices1, federatedSlices2, collectRequests(federatedRequests, getRequest));
 		ec.setMatrixOutput(output.getName(), FederationUtils.bind(executionResponse,
-			fedMapObj.isFederated(FederationMap.FType.COL)));
+			fedMapObj.isFederated(FType.COL)));
 	}
 
 	/**
@@ -274,17 +274,17 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		boolean allAligned = mo1.isFederated() && mo2.isFederated() && mo3.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false) &&
 			mo1.getFedMapping().isAligned(mo3.getFedMapping(), false);
 		boolean twoAligned = false;
-		if(!allAligned && mo1.isFederated() && !mo1.isFederated(FederationMap.FType.BROADCAST) && mo2.isFederated() &&
+		if(!allAligned && mo1.isFederated() && !mo1.isFederated(FType.BROADCAST) && mo2.isFederated() &&
 			mo1.getFedMapping().isAligned(mo2.getFedMapping(), false)) {
 			twoAligned = true;
 			fr = mo1.getFedMapping().broadcastSliced(mo3, false);
 			vars = new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), fr[0].getID()};
-		} else if(!allAligned && mo1.isFederated() && !mo1.isFederated(FederationMap.FType.BROADCAST) &&
+		} else if(!allAligned && mo1.isFederated() && !mo1.isFederated(FType.BROADCAST) &&
 			mo3.isFederated() && mo1.getFedMapping().isAligned(mo3.getFedMapping(), false)) {
 			twoAligned = true;
 			fr = mo1.getFedMapping().broadcastSliced(mo2, false);
 			vars = new long[] {mo1.getFedMapping().getID(), fr[0].getID(), mo3.getFedMapping().getID()};
-		} else if(!mo1.isFederated(FederationMap.FType.BROADCAST) && mo2.isFederated() && mo3.isFederated() && mo2.getFedMapping().isAligned(mo3.getFedMapping(), false) && !allAligned) {
+		} else if(!mo1.isFederated(FType.BROADCAST) && mo2.isFederated() && mo3.isFederated() && mo2.getFedMapping().isAligned(mo3.getFedMapping(), false) && !allAligned) {
 			twoAligned = true;
 			mo1 = mo2;
 			mo2 = mo3;

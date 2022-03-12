@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.SortKeys;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -77,7 +78,7 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
 	}
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		if(ec.getMatrixObject(input1).isFederated(FederationMap.FType.COL) || ec.getMatrixObject(input1).isFederated(FederationMap.FType.FULL))
+		if(ec.getMatrixObject(input1).isFederated(FType.COL) || ec.getMatrixObject(input1).isFederated(FType.FULL))
 			processColumnQSort(ec);
 		else
 			processRowQSort(ec);

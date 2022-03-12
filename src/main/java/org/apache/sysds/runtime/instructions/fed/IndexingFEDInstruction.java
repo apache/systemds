@@ -27,6 +27,7 @@ import java.util.Objects;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.RightIndex;
@@ -169,7 +170,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 			
 			if(input1.isFrame()) {
 				//modify frame schema
-				if(in.isFederated(FederationMap.FType.ROW))
+				if(in.isFederated(FType.ROW))
 					schema = Arrays.asList(((FrameObject) in).getSchema((int) csn, (int) cen));
 				else
 					Collections.addAll(schema, ((FrameObject) in).getSchema((int) csn, (int) cen));
@@ -239,7 +240,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 
 			// find ranges where to apply  leftIndex
 			long to;
-			if(in1.isFederated(FederationMap.FType.ROW) && (to = (prev + ren - rsn)) >= 0 &&
+			if(in1.isFederated(FType.ROW) && (to = (prev + ren - rsn)) >= 0 &&
 				to < in2.getNumRows() && ixrange.rowStart <= re) {
 				sliceIxs[i] = new int[] { prev, (int) to, 0, (int) in2.getNumColumns()-1};
 				prev = (int) (to + 1);
@@ -248,7 +249,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 				ranges[i] = range;
 				from = Math.min(i, from);
 			}
-			else if(in1.isFederated(FederationMap.FType.COL) && (to = (prev + cen - csn)) >= 0 &&
+			else if(in1.isFederated(FType.COL) && (to = (prev + cen - csn)) >= 0 &&
 				to < in2.getNumColumns() && ixrange.colStart <= ce) {
 				sliceIxs[i] = new int[] {0, (int) in2.getNumRows() - 1, prev, (int) to};
 				prev = (int) (to + 1);

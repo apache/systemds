@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.fed;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -102,7 +103,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap map = in.getFedMapping();
 
-		if((instOpcode.equalsIgnoreCase("uarimax") || instOpcode.equalsIgnoreCase("uarimin")) && in.isFederated(FederationMap.FType.COL))
+		if((instOpcode.equalsIgnoreCase("uarimax") || instOpcode.equalsIgnoreCase("uarimin")) && in.isFederated(FType.COL))
 			instString = InstructionUtils.replaceOperand(instString, 5, "2");
 
 		// create federated commands for aggregation
@@ -150,7 +151,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			throw new DMLRuntimeException("Operation " + instOpcode + " is unknown to FOUT processing");
 		boolean isColAgg = instOpcode.equals("uack+");
 		//Get partition type
-		FederationMap.FType inFtype = in.getFedMapping().getType();
+		FType inFtype = in.getFedMapping().getType();
 		//Get fedmap from in
 		FederationMap inputFedMapCopy = in.getFedMapping().copyWithNewID(fr1.getID());
 
@@ -160,7 +161,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		if ( inFtype.isRowPartitioned() && !isColAgg ){
 			for ( FederatedRange range : inputFedMapCopy.getFederatedRanges() )
 				range.setEndDim(1,out.getNumColumns());
-			inputFedMapCopy.setType(FederationMap.FType.ROW);
+			inputFedMapCopy.setType(FType.ROW);
 		}
 		//if partition type is row and aggregation type is col
 		//   then get row and col dimension from out and use those dimensions for both federated workers
@@ -175,7 +176,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 				range.setEndDim(0,out.getNumRows());
 				range.setEndDim(1,out.getNumColumns());
 			}
-			inputFedMapCopy.setType(FederationMap.FType.PART);
+			inputFedMapCopy.setType(FType.PART);
 		}
 		//if partition type is col and aggregation type is col
 		//   then set row dimension to output and col dimension to in col split
@@ -183,7 +184,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		if ( inFtype.isColPartitioned() && isColAgg ){
 			for ( FederatedRange range : inputFedMapCopy.getFederatedRanges() )
 				range.setEndDim(0,out.getNumRows());
-			inputFedMapCopy.setType(FederationMap.FType.COL);
+			inputFedMapCopy.setType(FType.COL);
 		}
 
 		//set out fedmap in the end
@@ -231,7 +232,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 				id = tmpRequest.getID();
 			}
 			else {
-				if((map.getType() == FederationMap.FType.COL && aop.isColAggregate()) || (map.getType() == FederationMap.FType.ROW && aop.isRowAggregate()))
+				if((map.getType() == FType.COL && aop.isColAggregate()) || (map.getType() == FType.ROW && aop.isRowAggregate()))
 					tmpRequest = new FederatedRequest(RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in.getDataType());
 				else {
 					DataCharacteristics dc = ec.getDataCharacteristics(output.getName());
@@ -274,8 +275,8 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		FederatedRequest fr1;
 		long id = FederationUtils.getNextFedDataID();
 
-		if((map.getType() == FederationMap.FType.COL && aop.isColAggregate()) ||
-			(map.getType() == FederationMap.FType.ROW && aop.isRowAggregate()))
+		if((map.getType() == FType.COL && aop.isColAggregate()) ||
+			(map.getType() == FType.ROW && aop.isRowAggregate()))
 			fr1 = new FederatedRequest(RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in.getDataType());
 		else
 			fr1 = new FederatedRequest(RequestType.PUT_VAR, id, dc, in.getDataType());
@@ -299,7 +300,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			id = fr1.getID();
 		}
 		else {
-			if((map.getType() == FederationMap.FType.COL && aop.isColAggregate()) || (map.getType() == FederationMap.FType.ROW && aop.isRowAggregate()))
+			if((map.getType() == FType.COL && aop.isColAggregate()) || (map.getType() == FType.ROW && aop.isRowAggregate()))
 				fr1 = new FederatedRequest(RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in.getDataType());
 			else
 				fr1 = new FederatedRequest(RequestType.PUT_VAR, id, dc, in.getDataType());

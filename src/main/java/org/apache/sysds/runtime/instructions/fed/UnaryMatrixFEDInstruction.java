@@ -25,12 +25,12 @@ import java.util.concurrent.Future;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
@@ -76,7 +76,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
-		if(getOpcode().startsWith("ucum") && mo1.isFederated(FederationMap.FType.ROW))
+		if(getOpcode().startsWith("ucum") && mo1.isFederated(FType.ROW))
 			processCumulativeInstruction(ec, mo1);
 		else {
 			//federated execution on arbitrary row/column partitions

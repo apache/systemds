@@ -32,6 +32,7 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -518,7 +519,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		// TODO sparse optimization
 		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = fedMap.requestFederatedData();
 		try {
-			if(fedMap.getType() == FederationMap.FType.PART)
+			if(fedMap.getType() == FType.PART)
 				return FederationUtils.aggregateResponses(readResponses);
 			else
 				return FederationUtils.bindResponses(readResponses, dims);

@@ -21,7 +21,7 @@ package org.apache.sysds.hops.cost;
 
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.ipa.MemoTable;
+import org.apache.sysds.hops.fedplanner.MemoTable;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 

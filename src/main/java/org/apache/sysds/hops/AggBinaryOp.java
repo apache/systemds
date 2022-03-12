@@ -434,7 +434,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		}
 
 		updateETFed();
-
+		
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		
@@ -640,7 +640,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		}
 		else {
 			if( isLeftTransposeRewriteApplicable(true) ) {
-				matmultCP = constructCPLopsMMWithLeftTransposeRewrite();
+				matmultCP = constructCPLopsMMWithLeftTransposeRewrite(et);
 			}
 			else { 
 				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
@@ -655,7 +655,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		setLops(matmultCP);
 	}
 
-	private Lop constructCPLopsMMWithLeftTransposeRewrite() 
+	private Lop constructCPLopsMMWithLeftTransposeRewrite(ExecType et) 
 	{
 		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
 		Hop Y = getInput().get(1);
@@ -671,7 +671,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		updateLopFedOut(tY);
 		
 		//matrix mult
-		Lop mult = new MatMultCP(tY, X.constructLops(), getDataType(), getValueType(), ExecType.CP, k);
+		Lop mult = new MatMultCP(tY, X.constructLops(), getDataType(), getValueType(), et, k); //CP or FED
 		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getBlocksize(), getNnz());
 		setLineNumbers(mult);
 		updateLopFedOut(mult);

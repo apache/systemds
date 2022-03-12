@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.hops.ipa;
+package org.apache.sysds.hops.fedplanner;
 
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.Hop;

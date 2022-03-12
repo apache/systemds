@@ -22,7 +22,7 @@ package org.apache.sysds.hops.cost;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.ipa.MemoTable;
+import org.apache.sysds.hops.fedplanner.MemoTable;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;

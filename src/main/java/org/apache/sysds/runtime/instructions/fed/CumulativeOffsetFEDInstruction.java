@@ -23,12 +23,12 @@ import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -74,7 +74,7 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
-		if(getOpcode().startsWith("bcumoff") && mo1.isFederated(FederationMap.FType.ROW))
+		if(getOpcode().startsWith("bcumoff") && mo1.isFederated(FType.ROW))
 			processCumulativeInstruction(ec);
 		else {
 			//federated execution on arbitrary row/column partitions

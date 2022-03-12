@@ -43,7 +43,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.SpoofCompiler.CompilerType;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofCompiler.PlanSelector;
-import org.apache.sysds.hops.rewrite.RewriteFederatedExecution.FederatedPlanner;
+import org.apache.sysds.hops.fedplanner.FTypes.FederatedPlanner;
 import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.compile.linearization.ILinearize.DagLinearization;
 import org.apache.sysds.parser.ParseException;

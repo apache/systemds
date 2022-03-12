@@ -25,7 +25,7 @@ import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 
-public class FederatedPlannerHeuristic extends FederatedPlannerAllFed {
+public class FederatedPlannerFedHeuristic extends FederatedPlannerFedAll {
 	
 	@Override
 	protected FType getFederatedOut(Hop hop, Map<Long, FType> fedHops) {

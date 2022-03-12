@@ -21,11 +21,13 @@ package org.apache.sysds.hops.fedplanner;
 
 import java.util.Map;
 
+import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.hops.ipa.FunctionCallGraph;
 import org.apache.sysds.hops.ipa.FunctionCallSizeInfo;
@@ -56,15 +58,20 @@ public abstract class AFederatedPlanner {
 		//handle specific operators
 		if( hop instanceof AggBinaryOp ) {
 			return (ft[0] != null && ft[1] == null)
-				|| (ft[0] == null && ft[1] != null);
+				|| (ft[0] == null && ft[1] != null)
+				|| (ft[0] == FType.COL && ft[1] == FType.ROW);
 		}
 		else if( hop instanceof BinaryOp && !hop.getDataType().isScalar() ) {
 			return (ft[0] != null && ft[1] == null)
 				|| (ft[0] == null && ft[1] != null)
 				|| (ft[0] != null && ft[0] == ft[1]);
 		}
+		else if( hop instanceof TernaryOp && !hop.getDataType().isScalar() ) {
+			return (ft[0] != null || ft[1] != null || ft[2] != null);
+		}
 		else if(ft.length==1 && ft[0] != null) {
-			return HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS);
+			return HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS)
+				|| HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM, AggOp.MIN, AggOp.MAX);
 		}
 		
 		return false;
@@ -85,6 +92,8 @@ public abstract class AFederatedPlanner {
 		}
 		else if( hop instanceof BinaryOp ) 
 			return ft[0] != null ? ft[0] : ft[1];
+		else if( hop instanceof TernaryOp )
+			return ft[0] != null ? ft[0] : ft[1] != null ? ft[1] : ft[2];
 		else if( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) )
 			return ft[0] == FType.ROW ? FType.COL : FType.COL;
 		

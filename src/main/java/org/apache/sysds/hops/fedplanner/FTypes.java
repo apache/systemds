@@ -30,9 +30,9 @@ public class FTypes
 		public AFederatedPlanner getPlanner() {
 			switch( this ) {
 				case COMPILE_FED_ALL:
-					return new FederatedPlannerAllFed();
+					return new FederatedPlannerFedAll();
 				case COMPILE_FED_HEURISTIC:
-					return new FederatedPlannerHeuristic();
+					return new FederatedPlannerFedHeuristic();
 				case COMPILE_COST_BASED:
 					return new FederatedPlannerCostbased();
 				case NONE:

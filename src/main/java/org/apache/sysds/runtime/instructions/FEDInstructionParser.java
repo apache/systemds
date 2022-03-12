@@ -43,7 +43,7 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "fedinit"  , FEDType.Init );
 		String2FEDInstructionType.put( "tsmm"     , FEDType.Tsmm );
 		String2FEDInstructionType.put( "ba+*"     , FEDType.AggregateBinary );
-		String2FEDInstructionType.put( "tak+*" 	  , FEDType.AggregateTernary);
+		String2FEDInstructionType.put( "tak+*"    , FEDType.AggregateTernary);
 
 		String2FEDInstructionType.put( "uak+"    , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uark+"   , FEDType.AggregateUnary );
@@ -56,12 +56,18 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "uacvar"  , FEDType.AggregateUnary);
 
 		// Arithmetic Instruction Opcodes
-		String2FEDInstructionType.put( "+" , FEDType.Binary );
-		String2FEDInstructionType.put( "-" , FEDType.Binary );
-		String2FEDInstructionType.put( "*" , FEDType.Binary );
-		String2FEDInstructionType.put( "/" , FEDType.Binary );
-		String2FEDInstructionType.put( "1-*" , FEDType.Binary); //special * case
-		String2FEDInstructionType.put( "max" , FEDType.Binary );
+		String2FEDInstructionType.put( "+" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "-" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "*" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "/" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "1-*", FEDType.Binary); //special * case
+		String2FEDInstructionType.put( "max", FEDType.Binary );
+		String2FEDInstructionType.put( "==",  FEDType.Binary);
+		String2FEDInstructionType.put( "!=",  FEDType.Binary);
+		String2FEDInstructionType.put( "<",   FEDType.Binary);
+		String2FEDInstructionType.put( ">",   FEDType.Binary);
+		String2FEDInstructionType.put( "<=",  FEDType.Binary);
+		String2FEDInstructionType.put( ">=",  FEDType.Binary);
 
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2FEDInstructionType.put( "r'"     , FEDType.Reorg );

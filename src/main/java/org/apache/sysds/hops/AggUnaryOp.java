@@ -38,7 +38,6 @@ import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
-
 // Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum
 
 public class AggUnaryOp extends MultiThreadedHop
@@ -553,7 +552,8 @@ public class AggUnaryOp extends MultiThreadedHop
 			in2 = in1;
 			in3 = in1;
 			handled = true;
-		} else if (input11 instanceof BinaryOp ) {
+		}
+		else if (HopRewriteUtils.isBinary(input11, OpOp2.MULT, OpOp2.POW) ) {
 			BinaryOp b11 = (BinaryOp)input11;
 			switch( b11.getOp() ) {
 			case MULT: // A*B*C case
@@ -574,7 +574,8 @@ public class AggUnaryOp extends MultiThreadedHop
 				break;
 			default: break;
 			}
-		} else if( input12 instanceof BinaryOp ) {
+		}
+		else if( HopRewriteUtils.isBinary(input12, OpOp2.MULT, OpOp2.POW) ) {
 			BinaryOp b12 = (BinaryOp)input12;
 			switch (b12.getOp()) {
 			case MULT: // A*B*C case
@@ -668,7 +669,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		if( !(that instanceof AggUnaryOp) )
 			return false;
 		
-		AggUnaryOp that2 = (AggUnaryOp)that;		
+		AggUnaryOp that2 = (AggUnaryOp)that;
 		return (   _op == that2._op
 				&& _direction == that2._direction
 				&& _maxNumThreads == that2._maxNumThreads

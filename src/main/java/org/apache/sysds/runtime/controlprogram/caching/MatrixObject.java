@@ -54,6 +54,7 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.IndexRange;
+import org.apache.sysds.utils.Explain;
 
 /**
  * Represents a matrix in control program. This class contains method to read matrices from HDFS and convert them to a
@@ -580,7 +581,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 
 	@Override
 	protected MatrixBlock reconstructByLineage(LineageItem li) throws IOException {
-		return ((MatrixObject) LineageRecomputeUtils.parseNComputeLineageTrace(li.getData(), null))
+		return ((MatrixObject) LineageRecomputeUtils.parseNComputeLineageTrace(Explain.explain(li), null))
 			.acquireReadAndRelease();
 	}
 }

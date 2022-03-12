@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
@@ -100,10 +101,12 @@ public abstract class CPInstruction extends Instruction
 		}
 		
 		//robustness federated instructions (runtime assignment)
-		tmp = FEDInstructionUtils.checkAndReplaceCP(tmp, ec);
-		//NOTE: Retracing of lineage is not needed as the lineage trace
-		//is same for an instruction and its FED version.
-
+		if( ConfigurationManager.isFederatedRuntimePlanner() ) {
+			tmp = FEDInstructionUtils.checkAndReplaceCP(tmp, ec);
+			//NOTE: Retracing of lineage is not needed as the lineage trace
+			//is same for an instruction and its FED version.
+		}
+		
 		tmp = PrivacyPropagator.preprocessInstruction(tmp, ec);
 		
 		//Submit a task for the eviction thread. The stopping criteria are a passed

@@ -23,8 +23,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.lops.Compression.CompressConfig;
 
-
-
 /**
  * Singleton for accessing the parsed and merged system configuration.
  * 
@@ -198,6 +196,10 @@ public class ConfigurationManager
 	public static boolean isCodegenEnabled() {
 		return (getDMLConfig().getBooleanValue(DMLConfig.CODEGEN)
 			|| getCompilerConfigFlag(ConfigType.CODEGEN_ENABLED));
+	}
+	
+	public static boolean isFederatedRuntimePlanner() {
+		return getCompilerConfigFlag(ConfigType.FEDERATED_RUNTIME);
 	}
 
 	public static boolean isCompressionEnabled(){

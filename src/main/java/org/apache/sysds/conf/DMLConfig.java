@@ -43,6 +43,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.SpoofCompiler.CompilerType;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofCompiler.PlanSelector;
+import org.apache.sysds.hops.rewrite.RewriteFederatedExecution.FederatedPlanner;
 import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.compile.linearization.ILinearize.DagLinearization;
 import org.apache.sysds.parser.ParseException;
@@ -112,6 +113,7 @@ public class DMLConfig
 	public static final String USE_SSL_FEDERATED_COMMUNICATION = "sysds.federated.ssl"; // boolean
 	public static final String DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT = "sysds.federated.initialization.timeout"; // int seconds
 	public static final String FEDERATED_TIMEOUT = "sysds.federated.timeout"; // single request timeout default -1 to indicate infinite.
+	public static final String FEDERATED_PLANNER = "sysds.federated.planner";
 	public static final int DEFAULT_FEDERATED_PORT = 4040; // borrowed default Spark Port
 	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 2;
 	
@@ -152,7 +154,7 @@ public class DMLConfig
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_API,            GeneratorAPI.JAVA.name() );
 		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );
-		_defaultVals.put(CODEGEN_OPTIMIZER,      PlanSelector.FUSE_COST_BASED_V2.name() );
+		_defaultVals.put(CODEGEN_OPTIMIZER,      PlanSelector.FUSE_COST_BASED_V2.name());
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
 		_defaultVals.put(NATIVE_BLAS,            "none" );
@@ -173,7 +175,8 @@ public class DMLConfig
 		_defaultVals.put(FLOATING_POINT_PRECISION, "double" );
 		_defaultVals.put(USE_SSL_FEDERATED_COMMUNICATION, "false");
 		_defaultVals.put(DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, "10");
-		_defaultVals.put(FEDERATED_TIMEOUT, "-1");
+		_defaultVals.put(FEDERATED_TIMEOUT,      "-1");
+		_defaultVals.put(FEDERATED_PLANNER,      FederatedPlanner.RUNTIME.name());
 	}
 	
 	public DMLConfig() {

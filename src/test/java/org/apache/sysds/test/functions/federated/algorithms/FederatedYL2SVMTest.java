@@ -130,7 +130,8 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrixz
 		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[] {"-stats", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+		programArgs = new String[] {"-stats", "-nvargs",
+			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
 			"in_Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 			"in_Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "out=" + output("Z")};

@@ -36,6 +36,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -275,7 +276,9 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 
 	// Require Federated Workers to return matrix
 
-	@Test public void federatedL2SVMCPPrivateAggregationX1Exception()  {
+	@Test
+	@Ignore //Invalid with new plan
+	public void federatedL2SVMCPPrivateAggregationX1Exception()  {
 		rows = 1000;
 		cols = 1;
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
@@ -284,7 +287,10 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 			PrivacyLevel.PrivateAggregation);
 	}
 
-	@Test public void federatedL2SVMCPPrivateAggregationX2Exception()  {
+	
+	@Test
+	@Ignore //Invalid with new plan
+	public void federatedL2SVMCPPrivateAggregationX2Exception()  {
 		rows = 1000;
 		cols = 1;
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();

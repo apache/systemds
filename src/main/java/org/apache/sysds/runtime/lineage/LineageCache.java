@@ -398,6 +398,37 @@ public class LineageCache
 		return false;
 	}
 
+	public static byte[] reuseSerialization(LineageItem objLI) {
+		if (ReuseCacheType.isNone() || objLI == null)
+			return null;
+
+		LineageItem li = LineageItemUtils.getSerializedLineageItem(objLI);
+
+		LineageCacheEntry e = null;
+		synchronized(_cache) {
+			if(LineageCache.probe(li)) {
+				e = LineageCache.getIntern(li);
+			}
+			else {
+				putIntern(li, DataType.UNKNOWN, null, null, 0);
+				return null; // direct return after placing the placeholder
+			}
+		}
+
+		if(e != null && e.isSerializedBytes()) {
+			byte[] sBytes = e.getSerializedBytes(); // waiting if the value is not set yet
+			if (sBytes == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+				return null;  // the executing thread removed this entry from cache
+
+			if (DMLScript.STATISTICS) { // increment saved time
+				LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
+			}
+
+			return sBytes;
+		}
+		return null;
+	}
+
 	public static boolean probe(LineageItem key) {
 		//TODO problematic as after probe the matrix might be kicked out of cache
 		boolean p = _cache.containsKey(key);  // in cache or in disk
@@ -686,6 +717,38 @@ public class LineageCache
 				LineageCacheEviction.updateSize(size, true);
 
 				entry.setValue(mb, t1 - t0);
+			}
+		}
+		else {
+			synchronized(_cache) {
+				removePlaceholder(li);
+			}
+		}
+	}
+
+	public static void putSerializedObject(byte[] serialBytes, LineageItem objLI, long computetime) {
+		if(ReuseCacheType.isNone())
+			return;
+
+		LineageItem li = LineageItemUtils.getSerializedLineageItem(objLI);
+
+		LineageCacheEntry entry = getIntern(li);
+
+		if(entry != null && serialBytes != null) {
+			synchronized(_cache) {
+				long size = serialBytes.length;
+
+				// remove the placeholder if the entry is bigger than the cache.
+				if (size > LineageCacheEviction.getCacheLimit()) {
+					removePlaceholder(li);
+				}
+
+				// make space for the data
+				if (!LineageCacheEviction.isBelowThreshold(size))
+					LineageCacheEviction.makeSpace(_cache, size);
+				LineageCacheEviction.updateSize(size, true);
+
+				entry.setValue(serialBytes, computetime);
 			}
 		}
 		else {

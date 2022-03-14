@@ -76,6 +76,7 @@ import java.util.stream.Collectors;
 public class LineageItemUtils {
 	
 	public static final String LPLACEHOLDER = "IN#";
+	private static final String SERIALIZE_ITEM_OPCODE = "serialize";
 	
 	public static LineageItemType getType(String str) {
 		if (str.length() == 1) {
@@ -540,5 +541,9 @@ public class LineageItemUtils {
 		sb.append(Instruction.VALUETYPE_PREFIX);
 		sb.append(true); //isLiteral = true
 		return new LineageItem(sb.toString());
+	}
+
+	public static LineageItem getSerializedLineageItem(LineageItem li) {
+		return new LineageItem(SERIALIZE_ITEM_OPCODE, new LineageItem[]{li});
 	}
 }

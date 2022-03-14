@@ -33,6 +33,7 @@ public class LineageCacheEntry {
 	protected final DataType _dt;
 	protected MatrixBlock _MBval;
 	protected ScalarObject _SOval;
+	protected byte[] _serialBytes; // serialized bytes of a federated response
 	protected long _computeTime;
 	protected long _timestamp = 0;
 	protected LineageCacheStatus _status;
@@ -88,7 +89,22 @@ public class LineageCacheEntry {
 			throw new DMLRuntimeException(ex);
 		}
 	}
-	
+
+	public synchronized byte[] getSerializedBytes() {
+		try {
+			// wait until other thread completes operation
+			// in order to avoid redundant computation
+			while(_status == LineageCacheStatus.EMPTY) {
+				wait();
+			}
+			// comes here if data is placed or the entry is removed by the running thread
+			return _serialBytes;
+		}
+		catch( InterruptedException ex ) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
 	public synchronized LineageCacheStatus getCacheStatus() {
 		return _status;
 	}
@@ -113,7 +129,7 @@ public class LineageCacheEntry {
 	}
 	
 	public boolean isNullVal() {
-		return(_MBval == null && _SOval == null && _gpuObject == null);
+		return(_MBval == null && _SOval == null && _gpuObject == null && _serialBytes == null);
 	}
 	
 	public boolean isMatrixValue() {
@@ -123,7 +139,11 @@ public class LineageCacheEntry {
 	public boolean isScalarValue() {
 		return _dt.isScalar();
 	}
-	
+
+	public boolean isSerializedBytes() {
+		return _dt.isUnknown() && _key.getOpcode() == "serialize";
+	}
+
 	public synchronized void setValue(MatrixBlock val, long computetime) {
 		_MBval = val;
 		_gpuObject = null;  //Matrix block and gpu object cannot coexist
@@ -154,6 +174,14 @@ public class LineageCacheEntry {
 		//resume all threads waiting for val
 		notifyAll();
 	}
+
+	public synchronized void setValue(byte[] serialBytes, long computetime) {
+		_serialBytes = serialBytes;
+		_computeTime = computetime;
+		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
+		// resume all threads waiting for val
+		notifyAll();
+	}
 	
 	public synchronized GPUObject getGPUObject() {
 		return _gpuObject;
@@ -162,6 +190,7 @@ public class LineageCacheEntry {
 	protected synchronized void setNullValues() {
 		_MBval = null;
 		_SOval = null;
+		_serialBytes = null;
 		_status = LineageCacheStatus.EMPTY;
 	}
 	

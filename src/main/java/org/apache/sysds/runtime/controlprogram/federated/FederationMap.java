@@ -33,6 +33,8 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -46,86 +48,6 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class FederationMap {
-	public enum FPartitioning {
-		ROW,   //row partitioned, groups of entire rows
-		COL,   //column partitioned, groups of entire columns
-		MIXED, //arbitrary rectangles
-		NONE,  //entire data in a location
-	}
-
-	public enum FReplication {
-		NONE,    //every data item in a separate location
-		FULL,    //every data item at every location
-		OVERLAP, //every data item partially at every location, w/ addition as aggregation method
-	}
-
-	public enum FType {
-		ROW(FPartitioning.ROW, FReplication.NONE),
-		COL(FPartitioning.COL, FReplication.NONE),
-		FULL(FPartitioning.NONE, FReplication.NONE),
-		BROADCAST(FPartitioning.NONE, FReplication.FULL),
-		PART(FPartitioning.NONE, FReplication.OVERLAP),
-		OTHER(FPartitioning.MIXED, FReplication.NONE);
-
-		private final FPartitioning _partType;
-		@SuppressWarnings("unused") //not yet
-		private final FReplication _repType;
-
-		private FType(FPartitioning ptype, FReplication rtype) {
-			_partType = ptype;
-			_repType = rtype;
-		}
-
-		public boolean isRowPartitioned() {
-			return _partType == FPartitioning.ROW
-				|| _partType == FPartitioning.NONE;
-		}
-
-		public boolean isColPartitioned() {
-			return _partType == FPartitioning.COL
-				|| _partType == FPartitioning.NONE;
-		}
-
-		public FPartitioning getPartType() {
-			return this._partType;
-		}
-
-		public boolean isType(FType t) {
-			switch(t) {
-				case ROW:
-					return isRowPartitioned();
-				case COL:
-					return isColPartitioned();
-				case FULL:
-				case OTHER:
-				default:
-					return t == this;
-			}
-		}
-	}
-
-	// Alignment Check Type
-	public enum AlignType {
-		FULL, // exact matching dimensions of partitions on the same federated worker
-		ROW, // matching rows of partitions on the same federated worker
-		COL, // matching columns of partitions on the same federated worker
-		FULL_T, // matching dimensions with transposed dimensions of partitions on the same federated worker
-		ROW_T, // matching rows with columns of partitions on the same federated worker
-		COL_T; // matching columns with rows of partitions on the same federated worker
-
-		public boolean isTransposed() {
-			return (this == FULL_T || this == ROW_T || this == COL_T);
-		}
-		public boolean isFullType() {
-			return (this == FULL || this == FULL_T);
-		}
-		public boolean isRowType() {
-			return (this == ROW || this == ROW_T);
-		}
-		public boolean isColType() {
-			return (this == COL || this == COL_T);
-		}
-	}
 
 	private long _ID = -1;
 	private final List<Pair<FederatedRange, FederatedData>> _fedMap;
@@ -317,7 +239,7 @@ public class FederationMap {
 	public boolean isAligned(FederationMap that, boolean transposed) {
 		boolean ret = true;
 		//TODO support operations with fully broadcast objects
-		if (_type == FederationMap.FType.BROADCAST)
+		if (_type == FType.BROADCAST)
 			return false;
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederatedRange range = !transposed ? e.getKey() : new FederatedRange(e.getKey()).transpose();

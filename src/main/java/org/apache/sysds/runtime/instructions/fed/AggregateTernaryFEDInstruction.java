@@ -21,14 +21,14 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.concurrent.Future;
 
+import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -42,8 +42,8 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 	// private static final Log LOG = LogFactory.getLog(AggregateTernaryFEDInstruction.class.getName());
 
 	private AggregateTernaryFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-		String opcode, String istr) {
-		super(FEDType.AggregateTernary, op, in1, in2, in3, out, opcode, istr);
+		String opcode, String istr, FederatedOutput fedOut) {
+		super(FEDType.AggregateTernary, op, in1, in2, in3, out, opcode, istr, fedOut);
 	}
 
 	public static AggregateTernaryFEDInstruction parseInstruction(String str) {
@@ -51,16 +51,19 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 		String opcode = parts[0];
 
 		if(opcode.equalsIgnoreCase("tak+*") || opcode.equalsIgnoreCase("tack+*")) {
-			InstructionUtils.checkNumFields(parts, 5);
+			InstructionUtils.checkNumFields(parts, 5, 6);
 
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
 			int numThreads = Integer.parseInt(parts[5]);
+			FederatedOutput fedOut = FederatedOutput.NONE;
+			if ( parts.length == 7 )
+				fedOut = FederatedOutput.valueOf(parts[6]);
 
 			AggregateTernaryOperator op = InstructionUtils.parseAggregateTernaryOperator(opcode, numThreads);
-			return new AggregateTernaryFEDInstruction(op, in1, in2, in3, out, opcode, str);
+			return new AggregateTernaryFEDInstruction(op, in1, in2, in3, out, opcode, str, fedOut);
 		}
 		else {
 			throw new DMLRuntimeException("AggregateTernaryInstruction.parseInstruction():: Unknown opcode " + opcode);
@@ -77,7 +80,8 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 				&& mo2.getFedMapping().isAligned(mo3.getFedMapping(), mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)) {
 			FederatedRequest fr1 = FederationUtils.callInstruction(getInstructionString(), output,
 				new CPOperand[] {input1, input2, input3},
-				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), mo3.getFedMapping().getID()});
+				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), mo3.getFedMapping().getID()},
+				true);
 			FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
 			FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 			Future<FederatedResponse>[] response = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
@@ -92,14 +96,20 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 			}
 		}
 		else if(mo1.isFederated() && mo2.isFederated()
-			&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), false) && mo3 == null) {
-			FederatedRequest fr1 = mo1.getFedMapping().broadcast(ec.getScalarInput(input3));
+			&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), false)) {
+			FederatedRequest[] fr1 = (mo3 == null) ?
+				new FederatedRequest[] {mo1.getFedMapping().broadcast(ec.getScalarInput(input3))} :
+				mo1.getFedMapping().broadcastSliced(mo3, false);
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[] {input1, input2, input3},
-				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), fr1.getID()});
+				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), fr1[0].getID()}, true);
 			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
-			FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
-			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
+			FederatedRequest fr4 = (mo3 == null) ? 
+				mo2.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2.getID()) :
+				mo2.getFedMapping().cleanup(getTID(), fr2.getID()); //no cleanup of broadcasts
+			Future<FederatedResponse>[] tmp = (mo3 == null) ?
+				mo1.getFedMapping().execute(getTID(), fr1[0], fr2, fr3, fr4) :
+				mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
 
 			if(output.getDataType().isScalar()) {
 				double sum = 0;
@@ -110,18 +120,18 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 					catch(Exception e) {
 						throw new DMLRuntimeException("Federated Get data failed with exception on TernaryFedInstruction", e);
 					}
-
 				ec.setScalarOutput(output.getName(), new DoubleObject(sum));
 			}
 			else {
 				throw new DMLRuntimeException("Not Implemented Federated Ternary Variation");
 			}
 		} else if(mo1.isFederatedExcept(FType.BROADCAST) && input3.isMatrix() && mo3 != null) {
+			//FIXME cleanup fr2[0] below for result correctness, requires new primitives
 			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo3, false);
 			FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo2, false);
 			FederatedRequest fr3 = FederationUtils.callInstruction(getInstructionString(), output,
 				new CPOperand[] {input1, input2, input3},
-				new long[] {mo1.getFedMapping().getID(), fr2[0].getID(), fr1[0].getID()});
+				new long[] {mo1.getFedMapping().getID(), fr2[0].getID(), fr1[0].getID()}, true);
 			FederatedRequest fr4 = new FederatedRequest(RequestType.GET_VAR, fr3.getID());
 			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2[0], fr3, fr4);
 
@@ -134,7 +144,6 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 					catch(Exception e) {
 						throw new DMLRuntimeException("Federated Get data failed with exception on TernaryFedInstruction", e);
 					}
-
 				ec.setScalarOutput(output.getName(), new DoubleObject(sum));
 			}
 			else {

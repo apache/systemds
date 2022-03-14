@@ -59,6 +59,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DataExpression;
@@ -685,7 +686,7 @@ public abstract class AutomatedTestBase {
 		}
 		
 		federatedMatrixObject.setFedMapping(new FederationMap(FederationUtils.getNextFedDataID(), fedHashMap));
-		federatedMatrixObject.getFedMapping().setType(FederationMap.FType.ROW);
+		federatedMatrixObject.getFedMapping().setType(FType.ROW);
 
 		writeInputFederatedWithMTD(name, federatedMatrixObject, null);
 	}

@@ -395,7 +395,7 @@ return (Matrix[Double] X, Matrix[Double] Y)
       for(i in 1: nrow(k), check=0) {
         end_class = end_class + as.scalar(classes[i])
         class_t = XY[start_class:end_class, ]
-        if((i != maxKIndex)) {
+        if((i != maxKIndex) & (nrow(class_t) > 1)) {
           synthesized = smote(class_t[, 2:ncol(XY)], mask, remainingRatio, 1, FALSE)
           synthesized = cbind(matrix(as.scalar(class_t[2,1]), nrow(synthesized), 1), synthesized)
           outSet = rbind(outSet, synthesized)

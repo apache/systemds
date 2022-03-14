@@ -51,7 +51,6 @@ applyFunc = read(input+"applyFunc.csv", data_type="frame", format="csv", header=
 hp = read(input+"hp.csv", data_type="matrix", format="csv", header=FALSE);
 evalHp = read(input+"evalHp.csv", data_type="matrix", format="csv", header=FALSE);
 # dirtyScore = read(input+"dirtyScore.csv", data_type="scalar", value_type="double");
-cv = as.logical($4)
 trainTestSplit = as.double($5)
 metaInfo = metaInfo[, 2:ncol(metaInfo)]
 

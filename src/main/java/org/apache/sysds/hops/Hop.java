@@ -254,7 +254,7 @@ public abstract class Hop implements ParseInfo {
 	{
 		if(DMLScript.USE_ACCELERATOR && DMLScript.FORCE_ACCELERATOR && isGPUEnabled())
 			_etypeForced = ExecType.GPU; // enabled with -gpu force option
-		else if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE ) {
+		else if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE && _etypeForced != ExecType.FED ) {
 			if(OptimizerUtils.isMemoryBasedOptLevel() && DMLScript.USE_ACCELERATOR && isGPUEnabled()) {
 				// enabled with -exec singlenode -gpu option
 				_etypeForced = findExecTypeByMemEstimate();
@@ -375,10 +375,19 @@ public abstract class Hop implements ParseInfo {
 	public boolean requiresLineageCaching() {
 		return _requiresLineageCaching;
 	}
+
+	public void updateLopFedOut(Lop lop){
+		updateLopFedOut(lop, getExecType(), _federatedOutput);
+	}
+
+	public void updateLopFedOut(Lop lop, ExecType execType, FederatedOutput fedOut){
+		if ( execType == ExecType.FED )
+			lop.setFederatedOutput(fedOut);
+	}
 	
 	public void constructAndSetLopsDataFlowProperties() {
 		//propagate federated output configuration to lops
-		if( isFederated() )
+		if( isFederated() || getLops().getExecType() == ExecType.FED )
 			getLops().setFederatedOutput(_federatedOutput);
 		if ( prefetchActivated() )
 			getLops().activatePrefetch();

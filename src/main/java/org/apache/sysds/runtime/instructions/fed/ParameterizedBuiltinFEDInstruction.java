@@ -40,6 +40,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
@@ -196,11 +197,11 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		long cols = 0;
 		for(int i = 0; i < ffr.length; i++) {
 			try {
-				if(in.isFederated(FederationMap.FType.COL)) {
+				if(in.isFederated(FType.COL)) {
 					out.getFedMapping().getFederatedRanges()[i + 1].setBeginDim(1, cols);
 					cols += ((ScalarObject) ffr[i].get().getData()[0]).getLongValue();
 				}
-				else if(in.isFederated(FederationMap.FType.ROW))
+				else if(in.isFederated(FType.ROW))
 					cols = ((ScalarObject) ffr[i].get().getData()[0]).getLongValue();
 				out.getFedMapping().getFederatedRanges()[i].setEndDim(1, cols);
 			}
@@ -223,7 +224,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		MatrixObject mo = (MatrixObject) getTarget(ec);
 
 		FederationMap fedMap = mo.getFedMapping();
-		boolean rowFed = mo.isFederated(FederationMap.FType.ROW);
+		boolean rowFed = mo.isFederated(FType.ROW);
 
 		long varID = FederationUtils.getNextFedDataID();
 		FederationMap diagFedMap;
@@ -458,7 +459,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		dcs = finalDcs1;
 		out.getDataCharacteristics().set(mo.getDataCharacteristics());
-		int len = marginRow ? mo.getSchema().length : (int) (mo.isFederated(FederationMap.FType.ROW) ? s
+		int len = marginRow ? mo.getSchema().length : (int) (mo.isFederated(FType.ROW) ? s
 			.getNonZeros() : finalSchema.values().stream().mapToInt(e -> e.length).sum());
 		ValueType[] schema = new ValueType[len];
 		int pos = 0;
@@ -467,7 +468,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 			if(marginRow) {
 				schema = mo.getSchema();
-			} else if(mo.isFederated(FederationMap.FType.ROW)) {
+			} else if(mo.isFederated(FType.ROW)) {
 				schema = finalSchema.get(federatedRange);
 			} else  {
 				ValueType[] tmp = finalSchema.get(federatedRange);

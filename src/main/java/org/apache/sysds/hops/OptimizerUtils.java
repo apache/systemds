@@ -34,6 +34,7 @@ import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.fedplanner.FTypes.FederatedPlanner;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.Lop;
@@ -412,6 +413,12 @@ public class OptimizerUtils
 		//handle parallel matrix mult / rand configuration
 		if (!dmlconf.getBooleanValue(DMLConfig.CP_PARALLEL_OPS)) {
 			cconf.set(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS, false);
+		}
+		
+		//handle federated runtime conversion to avoid string comparisons
+		String planner = dmlconf.getTextValue(DMLConfig.FEDERATED_PLANNER);
+		if( FederatedPlanner.RUNTIME.name().equalsIgnoreCase(planner) ) {
+			cconf.set(ConfigType.FEDERATED_RUNTIME, true);
 		}
 		
 		return cconf;

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions;
 import org.apache.sysds.lops.Append;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.fed.AggregateBinaryFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.AggregateTernaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.AggregateUnaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.AppendFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.BinaryFEDInstruction;
@@ -42,6 +43,7 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "fedinit"  , FEDType.Init );
 		String2FEDInstructionType.put( "tsmm"     , FEDType.Tsmm );
 		String2FEDInstructionType.put( "ba+*"     , FEDType.AggregateBinary );
+		String2FEDInstructionType.put( "tak+*"    , FEDType.AggregateTernary);
 
 		String2FEDInstructionType.put( "uak+"    , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uark+"   , FEDType.AggregateUnary );
@@ -54,11 +56,18 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "uacvar"  , FEDType.AggregateUnary);
 
 		// Arithmetic Instruction Opcodes
-		String2FEDInstructionType.put( "+" , FEDType.Binary );
-		String2FEDInstructionType.put( "-" , FEDType.Binary );
-		String2FEDInstructionType.put( "*" , FEDType.Binary );
-		String2FEDInstructionType.put( "/" , FEDType.Binary );
-		String2FEDInstructionType.put( "1-*" , FEDType.Binary); //special * case
+		String2FEDInstructionType.put( "+" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "-" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "*" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "/" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "1-*", FEDType.Binary); //special * case
+		String2FEDInstructionType.put( "max", FEDType.Binary );
+		String2FEDInstructionType.put( "==",  FEDType.Binary);
+		String2FEDInstructionType.put( "!=",  FEDType.Binary);
+		String2FEDInstructionType.put( "<",   FEDType.Binary);
+		String2FEDInstructionType.put( ">",   FEDType.Binary);
+		String2FEDInstructionType.put( "<=",  FEDType.Binary);
+		String2FEDInstructionType.put( ">=",  FEDType.Binary);
 
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2FEDInstructionType.put( "r'"     , FEDType.Reorg );
@@ -106,6 +115,8 @@ public class FEDInstructionParser extends InstructionParser
 				return ReorgFEDInstruction.parseInstruction(str);
 			case Append:
 				return AppendFEDInstruction.parseInstruction(str);
+			case AggregateTernary:
+				return AggregateTernaryFEDInstruction.parseInstruction(str);
 			default:
 				throw new DMLRuntimeException("Invalid FEDERATED Instruction Type: " + fedtype );
 		}

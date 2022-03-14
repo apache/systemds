@@ -55,7 +55,7 @@ import java.util.concurrent.Future;
 
 public class RewriteFederatedExecution extends HopRewriteRule {
 	private static final Logger LOG = Logger.getLogger(RewriteFederatedExecution.class);
-
+	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if ( roots != null )
@@ -64,7 +64,8 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 		return roots;
 	}
 
-	@Override public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
+	@Override
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if ( root != null )
 			visitHop(root);
 		return root;

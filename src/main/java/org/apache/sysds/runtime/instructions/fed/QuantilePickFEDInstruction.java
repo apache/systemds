@@ -334,7 +334,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		// Check if can terminate
 		Set<Double> distinctValues = distincts.stream().flatMap(Set::stream).collect(Collectors.toSet());
 
-		if(distinctValues.size() > 0 && !average)
+		if(distinctValues.size() > quantileIndex-1 && !average)
 			return (T) distinctValues.stream().sorted().toArray()[quantileIndex-1];
 
 		if(average && distinctValues.size() > quantileIndex) {

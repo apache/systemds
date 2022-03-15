@@ -101,7 +101,7 @@ public abstract class CompressedTestBase extends TestBase {
 		// only DDC
 		// csb().setValidCompressions(EnumSet.of(CompressionType.DDC)),
 		// only SDC
-		csb().setValidCompressions(EnumSet.of(CompressionType.SDC)),
+		// csb().setValidCompressions(EnumSet.of(CompressionType.SDC)),
 		// default settings
 		csb()};
 

@@ -106,9 +106,9 @@ public class ColGroupFactory {
 	 * @param k   The degree of parallelism to be used in the compression of the column groups.
 	 * @return A resulting array of ColGroups, containing the compressed information from the input matrix block.
 	 */
-	public static List<AColGroup> compressColGroups(MatrixBlock in, CompressedSizeInfo csi, CompressionSettings ce,
+	public static List<AColGroup> compressColGroups(MatrixBlock in, CompressedSizeInfo csi, CompressionSettings cs,
 		int k) {
-		return new ColGroupFactory(in, csi, ce, null, k).compress();
+		return new ColGroupFactory(in, csi, cs, null, k).compress();
 	}
 
 	/**
@@ -120,7 +120,7 @@ public class ColGroupFactory {
 	 * @param cs  The compression settings to specify how to compress.
 	 * @param ce  The cost estimator used for the compression
 	 * @param k   The degree of parallelism to be used in the compression of the column groups.
-	 * @return
+	 * @return A resulting array of ColGroups, containing the compressed information from the input matrix block.
 	 */
 	public static List<AColGroup> compressColGroups(MatrixBlock in, CompressedSizeInfo csi, CompressionSettings cs,
 		ACostEstimate ce, int k) {

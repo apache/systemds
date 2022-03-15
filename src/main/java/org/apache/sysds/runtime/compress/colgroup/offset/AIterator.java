@@ -40,6 +40,8 @@ public abstract class AIterator {
 
 	/**
 	 * Increment the pointers such that the both index and dataIndex is incremented to the next entry.
+	 * 
+	 * @return The new offset.
 	 */
 	public abstract int next();
 

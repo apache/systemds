@@ -45,7 +45,6 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
-import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -317,34 +316,6 @@ public class CLALibCompAgg {
 
 	}
 
-	private static void sumResultVectors(MatrixBlock ret, List<Future<MatrixBlock>> futures)
-		throws InterruptedException, ExecutionException {
-		double[] retVals = ret.getDenseBlockValues();
-		for(Future<MatrixBlock> rtask : futures) {
-			double[] taskResult = rtask.get().getDenseBlockValues();
-			for(int i = 0; i < retVals.length; i++)
-				retVals[i] += taskResult[i];
-		}
-		ret.setNonZeros(ret.getNumColumns());
-	}
-
-	private static void productResultVectors(MatrixBlock ret, List<Future<MatrixBlock>> futures)
-		throws InterruptedException, ExecutionException {
-
-		double[] retVals = ret.getDenseBlockValues();
-		for(Future<MatrixBlock> rtask : futures) {
-			double[] taskResult = rtask.get().getDenseBlockValues();
-			for(int i = 0; i < retVals.length; i++) {
-				double tmp = taskResult[i];
-				if(Double.isInfinite(tmp) && retVals[i] == 0)
-					continue;
-				else
-					retVals[i] *= taskResult[i];
-			}
-		}
-		ret.setNonZeros(ret.getNumColumns());
-	}
-
 	private static void aggregateResults(MatrixBlock ret, List<Future<MatrixBlock>> futures, AggregateUnaryOperator op)
 		throws InterruptedException, ExecutionException {
 		double val = ret.quickGetValue(0, 0);
@@ -353,18 +324,6 @@ public class CLALibCompAgg {
 			val = op.aggOp.increOp.fn.execute(val, tmp);
 		}
 		ret.quickSetValue(0, 0, val);
-	}
-
-	private static void aggregateResultVectors(MatrixBlock ret, List<Future<MatrixBlock>> futures,
-		AggregateUnaryOperator op) throws InterruptedException, ExecutionException {
-		double[] retVals = ret.getDenseBlockValues();
-		for(Future<MatrixBlock> rtask : futures) {
-			double[] taskResult = rtask.get().getDenseBlockValues();
-			for(int i = 0; i < retVals.length; i++) {
-				retVals[i] = op.aggOp.increOp.fn.execute(retVals[i], taskResult[i]);
-			}
-		}
-		ret.setNonZeros(ret.getNumColumns());
 	}
 
 	private static void divideByNumberOfCellsForMean(CompressedMatrixBlock m1, MatrixBlock ret, IndexFunction idxFn) {

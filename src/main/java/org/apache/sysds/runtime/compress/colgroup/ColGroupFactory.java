@@ -87,7 +87,6 @@ public class ColGroupFactory {
 		this.csi = csi;
 		this.cs = cs;
 		this.k = k;
-		// this.k = 1;
 		this.ce = ce;
 
 		this.nRow = cs.transposed ? in.getNumColumns() : in.getNumRows();

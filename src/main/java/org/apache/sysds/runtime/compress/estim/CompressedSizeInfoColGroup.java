@@ -52,38 +52,6 @@ public class CompressedSizeInfoColGroup {
 	 */
 	private IEncode _map;
 
-	/**
-	 * Join columns without analyzing the content. This only specify the compression ratio if encoded in DDC since this
-	 * is trivially calculated. The number of tuples contained can be set to the upper theoretical bound of two groups by
-	 * multiplying the number of distinct tuple of each colGroups with each other.
-	 * 
-	 * SHOULD NOT BE USED FOR AN ACCURATE ESTIMATE OF SIZE
-	 * 
-	 * @param columns The columns combined
-	 * @param numVals The number of distinct value tuples contained
-	 * @param numRows The number of rows.
-	 */
-	public CompressedSizeInfoColGroup(int[] columns, int numVals, int numRows) {
-		_facts = new EstimationFactors(columns.length, numVals, numRows);
-		_cardinalityRatio = (double) numVals / numRows;
-		_cols = columns;
-		_sizes = null;
-		_bestCompressionType = CompressionType.DDC;
-		_minSize = ColGroupSizes.estimateInMemorySizeDDC(columns.length, numVals, numRows, 1.0, false);
-		_map = null;
-	}
-
-	public CompressedSizeInfoColGroup(int[] columns, EstimationFactors facts, double sparsity) {
-		_facts = facts;
-		_cardinalityRatio = (double) facts.numVals / facts.numRows;
-		_cols = columns;
-		_sizes = null;
-		_bestCompressionType = CompressionType.SDC;
-		_minSize = ColGroupSizes.estimateInMemorySizeSDC(columns.length, facts.numVals, facts.numRows, facts.largestOff,
-			sparsity, facts.zeroIsMostFrequent, false);
-		_map = null;
-	}
-
 	protected CompressedSizeInfoColGroup(int[] columns, EstimationFactors facts,
 		Set<CompressionType> validCompressionTypes, IEncode map) {
 		_cols = columns;

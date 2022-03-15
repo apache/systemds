@@ -51,9 +51,6 @@ public final class CostEstimatorBuilder implements Serializable {
 	}
 
 	protected ACostEstimate create(boolean isInSpark) {
-		// if(isInSpark)
-		// return new HybridCostEstimator(counter);
-		// else
 		return new ComputationCostEstimator(counter);
 	}
 

@@ -24,6 +24,7 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -38,6 +39,63 @@ public abstract class ACostEstimate implements Serializable {
 	protected static final Log LOG = LogFactory.getLog(ACostEstimate.class.getName());
 
 	protected ACostEstimate() {
+		// constructor for sub classes
+	}
+
+	/**
+	 * Get the cost of a collection of column groups.
+	 * 
+	 * @param cgs   A collection of column groups
+	 * @param nRows The number of rows in the column group
+	 * @return The summed cost of the groups
+	 */
+	public double getCost(Collection<AColGroup> cgs, int nRows) {
+		double c = 0;
+		for(AColGroup g : cgs)
+			c += getCost(g, nRows);
+		return c;
+	}
+
+	/**
+	 * Get cost of a single column group estimate.
+	 * 
+	 * If the input is null the cost is positive infinity indicating that it is impossible to compress the null case.
+	 * 
+	 * If the instruction does not care about the inter column group cost, such as in memory cost or in computation cost
+	 * of right or left matrix multiplication we simply estimate the cost of individual column groups.
+	 * 
+	 * @param g Column group to estimate the cost of
+	 * @return The Cost of this column group
+	 */
+	public final double getCost(CompressedSizeInfoColGroup g) {
+		return g == null ? Double.POSITIVE_INFINITY : getCostSafe(g);
+	}
+
+	/**
+	 * Get cost of an entire compression plan
+	 * 
+	 * @param i The compression plan to get the cost of
+	 * @return The cost
+	 */
+	public double getCost(CompressedSizeInfo i) {
+		double c = 0;
+		for(CompressedSizeInfoColGroup g : i.getInfo())
+			c += getCost(g);
+		return c;
+	}
+
+	/**
+	 * Get cost of a compressed matrix block
+	 * 
+	 * @param cmb The compressed matrix block
+	 * @return The cost
+	 */
+	public double getCost(CompressedMatrixBlock cmb) {
+		int nRows = cmb.getNumRows();
+		double c = 0;
+		for(AColGroup g : cmb.getColGroups())
+			c += getCost(g, nRows);
+		return c;
 	}
 
 	/**
@@ -58,39 +116,12 @@ public abstract class ACostEstimate implements Serializable {
 	public abstract double getCost(AColGroup cg, int nRows);
 
 	/**
-	 * Get the cost of a collection of column groups.
+	 * Get cost of a single column group estimate.
 	 * 
-	 * @param cgs   A collection of column groups
-	 * @param nRows The number of rows in the column group
-	 * @return The summed cost of the groups
+	 * @param g The estimated information about a specific column group.
+	 * @return The estimated cost
 	 */
-	public double getCost(Collection<AColGroup> cgs, int nRows) {
-		double c = 0;
-		for(AColGroup g : cgs)
-			c += getCost(g, nRows);
-		return c;
-	}
-
-	/**
-	 * If the instruction does not care about the inter column group cost, such as in memory cost or in computation cost
-	 * of right or left matrix multiplication we simply estimate the cost of individual column groups.
-	 * 
-	 * @param g Column group to estimate the cost of
-	 * @return The Cost of this column group
-	 */
-	public final double getCost(CompressedSizeInfoColGroup g) {
-		return g == null ? Double.POSITIVE_INFINITY : getCostSafe(g);
-	}
-
 	protected abstract double getCostSafe(CompressedSizeInfoColGroup g);
-
-	public double getCost(CompressedSizeInfo i) {
-		double c = 0;
-		for(CompressedSizeInfoColGroup g : i.getInfo())
-			c += getCost(g);
-
-		return c;
-	}
 
 	@Override
 	public String toString() {

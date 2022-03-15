@@ -312,7 +312,8 @@ public class CLALibLeftMultBy {
 			for(int i = 0; i < npa.size(); i++)
 				LMMNoPreAgg(npa.get(i), that, ret, r, re);
 
-			LMMWithPreAgg(pa, that, ret, r, re, 0, 1, rowSums, k);
+			if(pa.size() > 0)
+				LMMWithPreAgg(pa, that, ret, r, re, 0, 1, rowSums, k);
 		}
 	}
 

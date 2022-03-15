@@ -99,7 +99,7 @@ public abstract class CompressedTestBase extends TestBase {
 	protected static CompressionSettingsBuilder[] usedCompressionSettings = new CompressionSettingsBuilder[] {
 		// CLA TESTS!
 		// only DDC
-		csb().setValidCompressions(EnumSet.of(CompressionType.DDC)),
+		// csb().setValidCompressions(EnumSet.of(CompressionType.DDC)),
 		// only SDC
 		csb().setValidCompressions(EnumSet.of(CompressionType.SDC)),
 		// default settings

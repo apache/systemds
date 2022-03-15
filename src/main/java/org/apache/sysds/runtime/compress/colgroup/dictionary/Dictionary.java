@@ -402,18 +402,6 @@ public class Dictionary extends ADictionary {
 		return res;
 	}
 
-	// @Override
-	// public double[] colSum(int[] counts, int nCol) {
-	// final double[] res = new double[nCol];
-	// int idx = 0;
-	// for(int k = 0; k < counts.length; k++) {
-	// final int cntk = counts[k];
-	// for(int j = 0; j < nCol; j++)
-	// res[j] += _values[idx++] * cntk;
-	// }
-	// return res;
-	// }
-
 	@Override
 	public void colSum(double[] c, int[] counts, int[] colIndexes) {
 		final int nCol = colIndexes.length;

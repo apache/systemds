@@ -46,7 +46,7 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 
 	@Override
 	protected CompressedSizeInfoColGroup combine(int[] combinedColumns, CompressedSizeInfoColGroup g1,
-		CompressedSizeInfoColGroup g2, int joinedMaxDistinct) {
+		CompressedSizeInfoColGroup g2, int maxDistinct) {
 		final IEncode map = g1.getMap().combine(g2.getMap());
 		return getFacts(map, combinedColumns);
 	}

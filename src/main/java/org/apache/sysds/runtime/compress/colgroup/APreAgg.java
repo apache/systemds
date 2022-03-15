@@ -86,15 +86,6 @@ public abstract class APreAgg extends AColGroupValue {
 				"Not supported left multiplication with A ColGroup of type: " + lhs.getClass().getSimpleName());
 	}
 
-	// /**
-	// * Multiply with a matrix on the left.
-	// *
-	// * @param matrix Matrix Block to left multiply with
-	// * @param result Matrix Block result
-	// * @param rl The row to start the matrix multiplication from
-	// * @param ru The row to stop the matrix multiplication at.
-	// */
-	// @Override
 	@Deprecated
 	private final void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
 		if(matrix.isEmpty())
@@ -304,8 +295,8 @@ public abstract class APreAgg extends AColGroupValue {
 			addMatrixToResult(tmpResCopy, ret, _colIndexes, rl, ru);
 		}
 		catch(Exception e) {
-			throw new DMLCompressionException("Failed matrix multiply with preAggregate: \n" + preAggCopy + "\n" + dict + "\n" + tmpRes,
-				e);
+			throw new DMLCompressionException(
+				"Failed matrix multiply with preAggregate: \n" + preAggCopy + "\n" + dict + "\n" + tmpRes, e);
 		}
 
 	}

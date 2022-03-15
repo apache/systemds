@@ -24,8 +24,15 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
+/**
+ * Utility interface for dictionary matrix multiplication
+ */
 public class DictLibMatrixMult {
-	protected static final Log LOG = LogFactory.getLog(DictLibMatrixMult.class.getName());
+	static final Log LOG = LogFactory.getLog(DictLibMatrixMult.class.getName());
+
+	private DictLibMatrixMult() {
+		// private constructor to avoid init.
+	}
 
 	/**
 	 * Add to the upper triangle, but twice if on the diagonal
@@ -46,50 +53,17 @@ public class DictLibMatrixMult {
 	}
 
 	/**
-	 * Get if the location from given input rows and cols is all upper triangle, lower or cross the diagonal.
+	 * Matrix multiply with scaling (left side transposed)
 	 * 
-	 * Returns 1 if upper returns 0 if diagonal returns -1 if lower
-	 * 
-	 * @param leftRows     the rows list
-	 * @param rightColumns the columns list
-	 * @return location as int
+	 * @param left         Left side dictionary
+	 * @param right        Right side dictionary
+	 * @param leftRows     Left side row offsets
+	 * @param rightColumns Right side column offsets
+	 * @param result       The result matrix
+	 * @param counts       The scaling factors
 	 */
-	private static int location(int[] leftRows, int[] rightColumns) {
-		final int firstRow = leftRows[0];
-		final int firstCol = rightColumns[0];
-		final int lastRow = leftRows[leftRows.length - 1];
-		final int lastCol = rightColumns[rightColumns.length - 1];
-		final int locationLower = location(lastRow, firstCol);
-		final int locationHigher = location(firstRow, lastCol);
-
-		if(locationLower > 0)
-			return 1;
-		else if(locationHigher < 0)
-			return -1;
-		else
-			return 0;
-	}
-
-	/**
-	 * Get if a given point is in upper triangle, lower or hits the diagonal.
-	 * 
-	 * Returns 1 if upper returns 0 if diagonal returns -1 if lower
-	 * 
-	 * @param row The row
-	 * @param col The column
-	 * @return location
-	 */
-	private static int location(int row, int col) {
-		if(row == col)
-			return 0;
-		else if(row < col)
-			return 1;
-		else
-			return -1;
-	}
-
-	public static void MMDictsWithScaling(final ADictionary left, final ADictionary right, final int[] leftRows,
-		final int[] rightColumns, final MatrixBlock result, final int[] counts) {
+	public static void MMDictsWithScaling(ADictionary left, ADictionary right, int[] leftRows, int[] rightColumns,
+		MatrixBlock result, int[] counts) {
 		LOG.warn("Inefficient double allocation of dictionary");
 		final boolean modifyRight = right.getInMemorySize() > left.getInMemorySize();
 		final ADictionary rightM = modifyRight ? right.scaleTuples(counts, rightColumns.length) : right;
@@ -106,9 +80,75 @@ public class DictLibMatrixMult {
 	 * @param cols   The cols of the dictionary
 	 * @param ret    The output to add the results to
 	 */
-	public static void TSMMDictionaryWithScaling(final ADictionary dict, final int[] counts, final int[] rows,
-		final int[] cols, MatrixBlock ret) {
+	public static void TSMMDictionaryWithScaling(ADictionary dict, int[] counts, int[] rows, int[] cols,
+		MatrixBlock ret) {
 		dict.TSMMWithScaling(counts, rows, cols, ret);
+	}
+
+	/**
+	 * Matrix Multiply the two dictionaries, note that the left side is considered transposed but not allocated
+	 * transposed making the multiplication a: t(left) %*% right
+	 * 
+	 * @param left      The left side dictionary
+	 * @param right     The right side dictionary
+	 * @param rowsLeft  The row indexes on the left hand side
+	 * @param colsRight The column indexes on the right hand side
+	 * @param result    The result matrix to put the results into.
+	 */
+	public static void MMDicts(ADictionary left, ADictionary right, int[] rowsLeft, int[] colsRight,
+		MatrixBlock result) {
+		left.MMDict(right, rowsLeft, colsRight, result);
+	}
+
+	/**
+	 * Does two matrix multiplications in one go but only add to the upper triangle.
+	 * 
+	 * the two multiplications are:
+	 * 
+	 * t(left) %*% right
+	 * 
+	 * t(right) %*% left
+	 * 
+	 * In practice this operation then only does one of these multiplications but all results that would end up in the
+	 * lower triangle is transposed and added to the upper triangle.
+	 * 
+	 * Furthermore all results that would end up on the diagonal is added twice to adhere with the two multiplications
+	 * 
+	 * @param left      Left dictionary to multiply
+	 * @param right     Right dictionary to multiply
+	 * @param rowsLeft  rows for the left dictionary
+	 * @param colsRight cols for the right dictionary
+	 * @param result    the result
+	 */
+	public static void TSMMToUpperTriangle(ADictionary left, ADictionary right, int[] rowsLeft, int[] colsRight,
+		MatrixBlock result) {
+		left.TSMMToUpperTriangle(right, rowsLeft, colsRight, result);
+	}
+
+	/**
+	 * Does two matrix multiplications in one go but only add to the upper triangle with scaling.
+	 * 
+	 * the two multiplications are:
+	 * 
+	 * t(left) %*% right
+	 * 
+	 * t(right) %*% left
+	 * 
+	 * In practice this operation then only does one of these multiplications but all results that would end up in the
+	 * lower triangle is transposed and added to the upper triangle.
+	 * 
+	 * Furthermore all results that would end up on the diagonal is added twice to adhere with the two multiplications
+	 * 
+	 * @param left      Left dictionary to multiply
+	 * @param right     Right dictionary to multiply
+	 * @param rowsLeft  Rows for the left dictionary
+	 * @param colsRight Cols for the right dictionary
+	 * @param scale     A multiplier to each dictionary entry
+	 * @param result    The result
+	 */
+	public static void TSMMToUpperTriangleScaling(ADictionary left, ADictionary right, int[] rowsLeft, int[] colsRight,
+		int[] scale, MatrixBlock result) {
+		left.TSMMToUpperTriangleScaling(left, rowsLeft, colsRight, scale, result);
 	}
 
 	protected static void TSMMDictsDenseWithScaling(double[] dv, int[] rowsLeft, int[] colsRight, int[] scaling,
@@ -153,21 +193,6 @@ public class DictLibMatrixMult {
 					resV[offOut + colsRight[aix[j]]] += v * avals[j];
 			}
 		}
-	}
-
-	/**
-	 * Matrix Multiply the two dictionaries, note that the left side is considered transposed but not allocated
-	 * transposed making the multiplication a: t(left) %*% right
-	 * 
-	 * @param left      The left side dictionary
-	 * @param right     The right side dictionary
-	 * @param rowsLeft  The row indexes on the left hand side
-	 * @param colsRight The column indexes on the right hand side
-	 * @param result    The result matrix to put the results into.
-	 */
-	public static void MMDicts(ADictionary left, ADictionary right, int[] rowsLeft, int[] colsRight,
-		MatrixBlock result) {
-		left.MMDict(right, rowsLeft, colsRight, result);
 	}
 
 	protected static void MMDictsDenseDense(double[] left, double[] right, int[] rowsLeft, int[] colsRight,
@@ -258,31 +283,6 @@ public class DictLibMatrixMult {
 					resV[offOut + colsRight[rightAix[j]]] += v * rightVals[j];
 			}
 		}
-	}
-
-	/**
-	 * Does two matrix multiplications in one go but only add to the upper triangle.
-	 * 
-	 * the two multiplications are:
-	 * 
-	 * t(left) %*% right
-	 * 
-	 * t(right) %*% left
-	 * 
-	 * In practice this operation then only does one of these multiplications but all results that would end up in the
-	 * lower triangle is transposed and added to the upper triangle.
-	 * 
-	 * Furthermore all results that would end up on the diagonal is added twice to adhere with the two multiplications
-	 * 
-	 * @param left      Left dictionary to multiply
-	 * @param right     Right dictionary to multiply
-	 * @param rowsLeft  rows for the left dictionary
-	 * @param colsRight cols for the right dictionary
-	 * @param result    the result
-	 */
-	public static void TSMMToUpperTriangle(ADictionary left, ADictionary right, int[] rowsLeft, int[] colsRight,
-		MatrixBlock result) {
-		left.TSMMToUpperTriangle(right, rowsLeft, colsRight, result);
 	}
 
 	protected static void MMToUpperTriangleSparseSparse(SparseBlock left, SparseBlock right, int[] rowsLeft,
@@ -440,32 +440,6 @@ public class DictLibMatrixMult {
 		}
 	}
 
-	/**
-	 * Does two matrix multiplications in one go but only add to the upper triangle with scaling.
-	 * 
-	 * the two multiplications are:
-	 * 
-	 * t(left) %*% right
-	 * 
-	 * t(right) %*% left
-	 * 
-	 * In practice this operation then only does one of these multiplications but all results that would end up in the
-	 * lower triangle is transposed and added to the upper triangle.
-	 * 
-	 * Furthermore all results that would end up on the diagonal is added twice to adhere with the two multiplications
-	 * 
-	 * @param left      Left dictionary to multiply
-	 * @param right     Right dictionary to multiply
-	 * @param rowsLeft  Rows for the left dictionary
-	 * @param colsRight Cols for the right dictionary
-	 * @param scale     A multiplier to each dictionary entry
-	 * @param result    The result
-	 */
-	public static void TSMMToUpperTriangleScaling(ADictionary left, ADictionary right, int[] rowsLeft, int[] colsRight,
-		int[] scale, MatrixBlock result) {
-		left.TSMMToUpperTriangleScaling(left, rowsLeft, colsRight, scale, result);
-	}
-
 	protected static void TSMMToUpperTriangleSparseSparseScaling(SparseBlock left, SparseBlock right, int[] rowsLeft,
 		int[] colsRight, int[] scale, MatrixBlock result) {
 		final int commonDim = Math.min(left.numRows(), right.numRows());
@@ -571,5 +545,30 @@ public class DictLibMatrixMult {
 				}
 			}
 		}
+	}
+
+	private static int location(int[] leftRows, int[] rightColumns) {
+		final int firstRow = leftRows[0];
+		final int firstCol = rightColumns[0];
+		final int lastRow = leftRows[leftRows.length - 1];
+		final int lastCol = rightColumns[rightColumns.length - 1];
+		final int locationLower = location(lastRow, firstCol);
+		final int locationHigher = location(firstRow, lastCol);
+
+		if(locationLower > 0)
+			return 1;
+		else if(locationHigher < 0)
+			return -1;
+		else
+			return 0;
+	}
+
+	private static int location(int row, int col) {
+		if(row == col)
+			return 0;
+		else if(row < col)
+			return 1;
+		else
+			return -1;
 	}
 }

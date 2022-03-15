@@ -327,43 +327,6 @@ public abstract class ADictionary implements Serializable {
 	 */
 	public abstract double[] sumAllRowsToDoubleSqWithReference(double[] reference);
 
-	// /**
-	// * Sum the values at a specific row.
-	// *
-	// * @param k The row index to sum
-	// * @param nrColumns The number of columns
-	// * @return The sum of the row.
-	// */
-	// public abstract double sumRow(int k, int nrColumns);
-
-	// /**
-	// * Sum the values at a specific row.
-	// *
-	// * @param k The row index to sum
-	// * @param nrColumns The number of columns
-	// * @return The sum of the row.
-	// */
-	// public abstract double sumRowSq(int k, int nrColumns);
-
-	// /**
-	// * Sum the values at a specific row, with a reference array to scale the values.
-	// *
-	// * @param k The row index to sum
-	// * @param nrColumns The number of columns
-	// * @param reference The reference vector to add to each cell processed.
-	// * @return The sum of the row.
-	// */
-	// public abstract double sumRowSqWithReference(int k, int nrColumns, double[] reference);
-
-	// /**
-	// * Get the column sum of this dictionary only.
-	// *
-	// * @param counts the counts of the values contained
-	// * @param nCol The number of columns contained in each tuple.
-	// * @return the colSums of this column group.
-	// */
-	// public abstract double[] colSum(int[] counts, int nCol);
-
 	/**
 	 * Get the column sum of the values contained in the dictionary
 	 * 
@@ -704,27 +667,112 @@ public abstract class ADictionary implements Serializable {
 	 */
 	public abstract void multiplyScalar(double v, double[] ret, int off, int dictIdx, int[] cols);
 
+	/**
+	 * Transpose self matrix multiplication with a scaling factor on each pair of values.
+	 * 
+	 * @param counts The scaling factor
+	 * @param rows   The row indexes
+	 * @param cols   The col indexes
+	 * @param ret    The output matrix block
+	 */
 	protected abstract void TSMMWithScaling(int[] counts, int[] rows, int[] cols, MatrixBlock ret);
 
+	/**
+	 * Matrix multiplication of dictionaries
+	 * 
+	 * Note the left is this, and it is transposed
+	 * 
+	 * @param right     Right hand side of multiplication
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param result    The output matrix block
+	 */
 	protected abstract void MMDict(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result);
 
+	/**
+	 * Matrix multiplication of dictionaries left side dense and transposed right side is this.
+	 * 
+	 * @param left      Dense left side
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param result    The output matrix block
+	 */
 	protected abstract void MMDictDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result);
 
+	/**
+	 * Matrix multiplication of dictionaries left side sparse and transposed right side is this.
+	 * 
+	 * @param left      Sparse left side
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param result    The output matrix block
+	 */
 	protected abstract void MMDictSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result);
 
+	/**
+	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is left
+	 * 
+	 * @param right     Right side
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param result    The output matrix block
+	 */
 	protected abstract void TSMMToUpperTriangle(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result);
 
+	/**
+	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right
+	 * 
+	 * @param left      Dense left side
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param result    The output matrix block
+	 */
 	protected abstract void TSMMToUpperTriangleDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result);
 
+	/**
+	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right
+	 * 
+	 * @param left      Sparse left side
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param result    The output matrix block
+	 */
 	protected abstract void TSMMToUpperTriangleSparse(SparseBlock left, int[] rowsLeft, int[] colsRight,
 		MatrixBlock result);
 
+	/**
+	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is left
+	 * 
+	 * @param right     Right side
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param scale     Scale factor
+	 * @param result    The output matrix block
+	 */
 	protected abstract void TSMMToUpperTriangleScaling(ADictionary right, int[] rowsLeft, int[] colsRight, int[] scale,
 		MatrixBlock result);
 
+	/**
+	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right
+	 * 
+	 * @param left      Dense left side
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param scale     Scale factor
+	 * @param result    The output matrix block
+	 */
 	protected abstract void TSMMToUpperTriangleDenseScaling(double[] left, int[] rowsLeft, int[] colsRight, int[] scale,
 		MatrixBlock result);
 
+	/**
+	 * Matrix multiplication but allocate output in upper triangle and twice if on diagonal, note this is right
+	 * 
+	 * @param left      Sparse left side
+	 * @param rowsLeft  Offset rows on the left
+	 * @param colsRight Offset cols on the right
+	 * @param scale     Scale factor
+	 * @param result    The output matrix block
+	 */
 	protected abstract void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight,
 		int[] scale, MatrixBlock result);
 

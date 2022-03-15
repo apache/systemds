@@ -42,7 +42,6 @@ public final class CostEstimatorFactory {
 			case MEMORY:
 			default:
 				return new MemoryCostEstimator();
-
 		}
 	}
 }

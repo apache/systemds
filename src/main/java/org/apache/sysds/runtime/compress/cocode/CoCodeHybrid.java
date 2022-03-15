@@ -42,7 +42,7 @@ public class CoCodeHybrid extends AColumnCoCoder {
 		else if(startSize <= 5) {// Greedy all compare all if small number of columns
 			LOG.debug("Hybrid chose to do greedy cocode because of few columns");
 			CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
-			return colInfos.setInfo(gd.combine(colInfos.getInfo(), _sest, _cest, _cs, k));
+			return colInfos.setInfo(gd.combine(colInfos.getInfo(), k));
 		}
 		else if(startSize > 1000)
 			return colInfos.setInfo(CoCodePriorityQue.join(colInfos.getInfo(), _sest, _cest, 1, k));
@@ -57,7 +57,7 @@ public class CoCodeHybrid extends AColumnCoCoder {
 			if(pqSize <= PriorityQueGoal * 2) {
 				time = new Timing(true);
 				CoCodeGreedy gd = new CoCodeGreedy(_sest, _cest, _cs);
-				colInfos.setInfo(gd.combine(colInfos.getInfo(), _sest, _cest, _cs, k));
+				colInfos.setInfo(gd.combine(colInfos.getInfo(), k));
 				LOG.debug("Greedy time:     " + time.stop());
 			}
 			return colInfos;

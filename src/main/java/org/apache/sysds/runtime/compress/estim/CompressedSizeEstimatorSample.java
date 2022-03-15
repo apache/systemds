@@ -177,14 +177,14 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 				nnzCount += sb.get(i).size();
 			return nnzCount;
 		}
-		else if(_sample.isEmpty())
-			throw new NotImplementedException();
 		else if(nnzCols != null) {
 			long nnz = 0;
 			for(int i = 0; i < colIndexes.length; i++)
 				nnz += nnzCols[colIndexes[i]];
 			return nnz;
 		}
+		else if(_sample.isEmpty())
+			return 0;
 		else if(_transposed && _sample.isInSparseFormat()) {
 			// Fallback to the sample if original is not transposed
 			long nnzCount = 0;

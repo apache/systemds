@@ -25,15 +25,14 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 public abstract class AColumnCoCoder {
 
 	protected static final Log LOG = LogFactory.getLog(AColumnCoCoder.class.getName());
 
-	final protected CompressedSizeEstimator _sest;
-	final protected ACostEstimate _cest;
-	final protected CompressionSettings _cs;
+	protected final CompressedSizeEstimator _sest;
+	protected final ACostEstimate _cest;
+	protected final CompressionSettings _cs;
 
 	protected AColumnCoCoder(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator,
 		CompressionSettings cs) {
@@ -51,19 +50,4 @@ public abstract class AColumnCoCoder {
 	 */
 	protected abstract CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k);
 
-	protected CompressedSizeInfoColGroup joinWithoutAnalysis(int[] joined, CompressedSizeInfoColGroup lhs,
-		CompressedSizeInfoColGroup rhs) {
-			final int nRows = lhs.getNumRows();
-		final int lhsV = lhs.getNumVals();
-		final int rhsV = rhs.getNumVals();
-		final int joinedMaxDistinct = (int) Math.min((long) lhsV * (long) rhsV, (long) nRows);
-		return new CompressedSizeInfoColGroup(joined, joinedMaxDistinct, nRows);
-	}
-
-	protected CompressedSizeInfoColGroup analyze(CompressedSizeInfoColGroup g) {
-		if(g.getBestCompressionType() == null)
-			return _sest.getColGroupInfo(g.getColumns());
-		else
-			return g;
-	}
 }

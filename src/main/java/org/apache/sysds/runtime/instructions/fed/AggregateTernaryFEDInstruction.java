@@ -126,14 +126,17 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 				throw new DMLRuntimeException("Not Implemented Federated Ternary Variation");
 			}
 		} else if(mo1.isFederatedExcept(FType.BROADCAST) && input3.isMatrix() && mo3 != null) {
-			//FIXME cleanup fr2[0] below for result correctness, requires new primitives
 			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo3, false);
 			FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo2, false);
 			FederatedRequest fr3 = FederationUtils.callInstruction(getInstructionString(), output,
 				new CPOperand[] {input1, input2, input3},
 				new long[] {mo1.getFedMapping().getID(), fr2[0].getID(), fr1[0].getID()}, true);
 			FederatedRequest fr4 = new FederatedRequest(RequestType.GET_VAR, fr3.getID());
-			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2[0], fr3, fr4);
+
+			FederatedRequest[][] frSlices = new FederatedRequest[][]{fr1,fr2};
+			FederatedRequest[] frProcessAndGet = new FederatedRequest[]{fr3,fr4};
+			Future<FederatedResponse>[] tmp = mo1.getFedMapping()
+				.executeMultipleSlices(getTID(), true, frSlices, frProcessAndGet);
 
 			if(output.getDataType().isScalar()) {
 				double sum = 0;

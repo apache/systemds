@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.privacy.fedplanning;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -29,16 +31,20 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.Arrays;
 
 import static org.junit.Assert.fail;
 
 @net.jcip.annotations.NotThreadSafe
 public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedL2SVMPlanningTest.class.getName());
 
 	private final static String TEST_DIR = "functions/privacy/fedplanning/";
 	private final static String TEST_NAME = "FederatedL2SVMPlanningTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedL2SVMPlanningTest.class.getSimpleName() + "/";
+	private final static String TEST_CONF = "SystemDS-config-fout.xml";
+	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 
 	private final static int blocksize = 1024;
 	public final int rows = 100;
@@ -52,7 +58,8 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 
 	@Test
 	public void runL2SVMTest(){
-		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*"};
+		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
+			"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
 		loadAndRunTest(expectedHeavyHitters);
 	}
 
@@ -60,7 +67,6 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 		writeStandardRowFedMatrix("X1", 65, null);
 		writeStandardRowFedMatrix("X2", 75, null);
 		writeBinaryVector("Y", 44, null);
-
 	}
 
 	private void writeBinaryVector(String matrixName, long seed, PrivacyConstraint privacyConstraint){
@@ -141,5 +147,15 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 		}
 	}
 
+	/**
+	 * Override default configuration with custom test configuration to ensure
+	 * scratch space and local temporary directory locations are also updated.
+	 */
+	@Override
+	protected File getConfigTemplateFile() {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		LOG.info("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		return TEST_CONF_FILE;
+	}
 
 }

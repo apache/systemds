@@ -75,8 +75,9 @@ public class DMLOptions {
 	public int                  fedWorkerPort = -1;
 	public int                  pythonPort    = -1; 
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
-	public boolean				federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
-	public boolean				noFedRuntimeConversion = false;   // If activated, no runtime conversion of CP instructions to FED instructions will be performed.
+	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
+	public boolean              noFedRuntimeConversion = false;   // If activated, no runtime conversion of CP instructions to FED instructions will be performed.
+	public int                  seed          = -1;               // The general seed for the execution, if -1 random (system time).
 
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
@@ -107,6 +108,7 @@ public class DMLOptions {
 			", w=" + fedWorker +
 			", federatedCompilation=" + federatedCompilation +
 			", noFedRuntimeConversion=" + noFedRuntimeConversion +
+			", seed=" + seed + 
 			'}';
 	}
 	
@@ -293,6 +295,9 @@ public class DMLOptions {
 			dmlOptions.noFedRuntimeConversion = true;
 		}
 
+		if(line.hasOption("seed")){
+			dmlOptions.seed = Integer.parseInt(line.getOptionValue("seed"));
+		}
 
 		return dmlOptions;
 	}
@@ -355,6 +360,9 @@ public class DMLOptions {
 		Option noFedRuntimeConversion = OptionBuilder
 			.withDescription("If activated, no runtime conversion of CP instructions to FED instructions will be performed.")
 			.create("noFedRuntimeConversion");
+		Option commandlineSeed = OptionBuilder
+			.withDescription("A general seed for the execution through the commandline")
+			.hasArg().create("seed");
 		
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
@@ -370,6 +378,7 @@ public class DMLOptions {
 		options.addOption(checkPrivacy);
 		options.addOption(federatedCompilation);
 		options.addOption(noFedRuntimeConversion);
+		options.addOption(commandlineSeed);
 
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()

@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 # Principal Component Analysis (PCA) for reconstruction of approximation of the original data.
-# This methods allows to reconstruct an approximation of the original matrix, and is usefull for
+# This methods allows to reconstruct an approximation of the original matrix, and is useful for
 # calculating how much information is lost in the PCA.
 #
 # INPUT PARAMETERS:

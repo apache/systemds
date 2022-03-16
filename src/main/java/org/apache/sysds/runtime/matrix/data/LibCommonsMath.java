@@ -476,24 +476,13 @@ public class LibCommonsMath
 			in = QR[1].aggregateBinaryOperations(QR[1], QR[0], op_mul_agg);
 		}
 
+		// Is converged if all values are below tol and the there only is values on the diagonal.
+
 		double[] check = in.getDenseBlockValues();
-		for(int i = 0; i < m; i++) {
-			for(int j = 0; j < m; j++) {
-				if(i != j) {
-					if(Math.abs(check[i*m+j]) > tol)
-						throw new DMLRuntimeException("QR Eigen Decomposition not converged or contains complex EVs"
-							+ " (position i = " + i + ", j = " + j + ") val: " + Math.abs(check[i*m+j])+ " > tol: " + tol );
-				}
-			}
-		}
-
-		// If complex evals then A is in real Schur-form
-		// 2x2 blocks on diagonal of A correspond to a matrix that has the same complex evals
 		double[] eval = new double[m];
-		for(int i = 0; i < m; i++) {
+		for(int i = 0; i < m; i++)
 			eval[i] = check[i*m+i];
-		}
-
+		
 		double[] evec = Q_prod.getDenseBlockValues();
 		return sortEVs(eval, evec);
 	}

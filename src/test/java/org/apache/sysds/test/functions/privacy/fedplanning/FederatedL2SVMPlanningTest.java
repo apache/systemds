@@ -43,8 +43,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/privacy/fedplanning/";
 	private final static String TEST_NAME = "FederatedL2SVMPlanningTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedL2SVMPlanningTest.class.getSimpleName() + "/";
-	private final static String TEST_CONF = "SystemDS-config-fout.xml";
-	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
+	private static File TEST_CONF_FILE;
 
 	private final static int blocksize = 1024;
 	public final int rows = 100;
@@ -57,10 +56,30 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void runL2SVMTest(){
+	public void runL2SVMFOUTTest(){
 		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
 			"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
+		setTestConf("SystemDS-config-fout.xml");
 		loadAndRunTest(expectedHeavyHitters);
+	}
+
+	@Test
+	public void runL2SVMHeuristicTest(){
+		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*"};
+		setTestConf("SystemDS-config-heuristic.xml");
+		loadAndRunTest(expectedHeavyHitters);
+	}
+
+	@Test
+	public void runL2SVMCostBasedTest(){
+		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
+			"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
+		setTestConf("SystemDS-config-cost-based.xml");
+		loadAndRunTest(expectedHeavyHitters);
+	}
+
+	private void setTestConf(String test_conf){
+		TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, test_conf);
 	}
 
 	private void writeInputMatrices(){

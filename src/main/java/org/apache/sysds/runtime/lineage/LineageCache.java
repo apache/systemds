@@ -420,8 +420,9 @@ public class LineageCache
 			if (sBytes == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 				return null;  // the executing thread removed this entry from cache
 
-			if (DMLScript.STATISTICS) { // increment saved time
+			if (DMLScript.STATISTICS) { // increment statistics
 				LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
+				FederatedStatistics.aggFedSerializationReuse(sBytes.length);
 			}
 
 			return sBytes;

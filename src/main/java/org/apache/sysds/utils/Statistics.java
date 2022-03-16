@@ -654,9 +654,7 @@ public class Statistics
 			sb.append(ParForStatistics.displayStatistics());
 
 			sb.append(FederatedStatistics.displayFedIOExecStatistics());
-			sb.append(FederatedStatistics.displayFedLookupTableStats());
-			sb.append(FederatedStatistics.displayFedReuseReadStats());
-			sb.append(FederatedStatistics.displayFedPutLineageStats());
+			sb.append(FederatedStatistics.displayFedWorkerStats());
 
 			sb.append(TransformStatistics.displayStatistics());
 

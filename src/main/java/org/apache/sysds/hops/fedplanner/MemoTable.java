@@ -22,12 +22,14 @@ package org.apache.sysds.hops.fedplanner;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.cost.HopRel;
+import org.apache.sysds.runtime.DMLRuntimeException;
 
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Memoization of federated execution alternatives.
@@ -87,6 +89,14 @@ public class MemoTable {
 		return hopRelMemo.get(root.getHopID()).stream().filter(HopRel::hasFederatedOutput).findFirst();
 	}
 
+	public HopRel getLOUTOrNONEAlternative(Hop root){
+		return hopRelMemo.get(root.getHopID())
+			.stream()
+			.filter(inHopRel -> !inHopRel.hasFederatedOutput())
+			.min(Comparator.comparingDouble(HopRel::getCost))
+			.orElseThrow(() -> new DMLException("Hop root " + root.getHopID() + " " + root + " has no LOUT alternative"));
+	}
+
 	/**
 	 * Memoize hopRels related to given root.
 	 * @param root for which hopRels are added
@@ -114,6 +124,26 @@ public class MemoTable {
 		return containsHop(root.getHopRef())
 			&& hopRelMemo.get(root.getHopRef().getHopID()).stream()
 			.anyMatch(h -> h.getFederatedOutput() == root.getFederatedOutput());
+	}
+
+	/**
+	 * Get all output FTypes of given root from HopRels stored in memo.
+	 * @param root for which output FTypes are found
+	 * @return list of output FTypes
+	 */
+	public List<FTypes.FType> getFTypes(Hop root){
+		if ( !hopRelMemo.containsKey(root.getHopID()) )
+			throw new DMLRuntimeException("HopRels not found in memo: " + root.getHopID() + " " + root);
+		return hopRelMemo.get(root.getHopID()).stream()
+			.map(HopRel::getFType)
+			.collect(Collectors.toList());
+	}
+
+	public HopRel getHopRel(Hop root, FTypes.FType fType){
+		return hopRelMemo.get(root.getHopID()).stream()
+			.filter(in -> in.getFType() == fType)
+			.findFirst()
+			.orElseThrow(() -> new DMLRuntimeException("FType not found in memo"));
 	}
 
 	@Override

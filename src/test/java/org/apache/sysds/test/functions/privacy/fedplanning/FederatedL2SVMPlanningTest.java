@@ -46,8 +46,8 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	private static File TEST_CONF_FILE;
 
 	private final static int blocksize = 1024;
-	public final int rows = 100;
-	public final int cols = 10;
+	public final int rows = 1000;
+	public final int cols = 100;
 
 	@Override
 	public void setUp() {

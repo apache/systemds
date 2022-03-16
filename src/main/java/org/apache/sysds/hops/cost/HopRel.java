@@ -21,6 +21,8 @@ package org.apache.sysds.hops.cost;
 
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.fedplanner.FTypes;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.hops.fedplanner.MemoTable;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
@@ -41,9 +43,11 @@ import java.util.stream.Collectors;
 public class HopRel {
 	protected final Hop hopRef;
 	protected final FEDInstruction.FederatedOutput fedOut;
+	protected FTypes.FType fType;
 	protected final FederatedCost cost;
 	protected final Set<Long> costPointerSet = new HashSet<>();
-	protected final List<HopRel> inputDependency = new ArrayList<>();
+	protected List<Hop> inputHops;
+	protected List<HopRel> inputDependency = new ArrayList<>();
 
 	/**
 	 * Constructs a HopRel with input dependency and cost estimate based on entries in hopRelMemo.
@@ -52,10 +56,51 @@ public class HopRel {
 	 * @param hopRelMemo memo table storing other HopRels including the inputs of associatedHop
 	 */
 	public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, MemoTable hopRelMemo){
+		this(associatedHop, fedOut, null, hopRelMemo,associatedHop.getInput());
+	}
+
+	/**
+	 * Constructs a HopRel with input dependency and cost estimate based on entries in hopRelMemo.
+	 * @param associatedHop hop associated with this HopRel
+	 * @param fedOut FederatedOutput value assigned to this HopRel
+	 * @param hopRelMemo memo table storing other HopRels including the inputs of associatedHop
+	 * @param inputs hop inputs which input dependencies and cost is based on
+	 */
+	public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, MemoTable hopRelMemo, ArrayList<Hop> inputs){
+		this(associatedHop, fedOut, null, hopRelMemo, inputs);
+	}
+
+	/**
+	 * Constructs a HopRel with input dependency and cost estimate based on entries in hopRelMemo.
+	 * @param associatedHop hop associated with this HopRel
+	 * @param fedOut FederatedOutput value assigned to this HopRel
+	 * @param fType Federated Type of the output of this hopRel
+	 * @param hopRelMemo memo table storing other HopRels including the inputs of associatedHop
+	 * @param inputs hop inputs which input dependencies and cost is based on
+	 */
+	public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, FType fType, MemoTable hopRelMemo, ArrayList<Hop> inputs){
 		hopRef = associatedHop;
 		this.fedOut = fedOut;
+		this.fType = fType;
+		this.inputHops = inputs;
 		setInputDependency(hopRelMemo);
 		cost = FederatedCostEstimator.costEstimate(this, hopRelMemo);
+	}
+
+	public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, FType fType, MemoTable hopRelMemo, List<Hop> inputs, List<FType> inputDependency){
+		hopRef = associatedHop;
+		this.fedOut = fedOut;
+		this.inputHops = inputs;
+		this.fType = fType;
+		setInputFTypeDependency(inputs, inputDependency, hopRelMemo);
+		cost = FederatedCostEstimator.costEstimate(this, hopRelMemo);
+	}
+
+	private void setInputFTypeDependency(List<Hop> inputs, List<FType> inputDependency, MemoTable hopRelMemo){
+		for ( int i = 0; i < inputs.size(); i++ ){
+			this.inputDependency.add(hopRelMemo.getHopRel(inputs.get(i), inputDependency.get(i)));
+		}
+		validateInputDependency();
 	}
 
 	/**
@@ -101,6 +146,14 @@ public class HopRel {
 		return hopRef;
 	}
 
+	public FType getFType(){
+		return fType;
+	}
+
+	public void setFType(FType fType){
+		this.fType = fType;
+	}
+
 	/**
 	 * Returns FOUT HopRel for given hop found in hopRelMemo or returns null if HopRel not found.
 	 * @param hop to look for in hopRelMemo
@@ -116,12 +169,12 @@ public class HopRel {
 	 * @param hopRelMemo memo table storing input HopRels
 	 */
 	private void setInputDependency(MemoTable hopRelMemo){
-		if (hopRef.getInput() != null && hopRef.getInput().size() > 0) {
+		if (inputHops != null && inputHops.size() > 0) {
 			if ( fedOut == FederatedOutput.FOUT && !hopRef.isFederatedDataOp() ) {
 				int lowestFOUTIndex = 0;
-				HopRel lowestFOUTHopRel = getFOUTHopRel(hopRef.getInput().get(0), hopRelMemo);
-				for(int i = 1; i < hopRef.getInput().size(); i++) {
-					Hop input = hopRef.getInput(i);
+				HopRel lowestFOUTHopRel = getFOUTHopRel(inputHops.get(0), hopRelMemo);
+				for(int i = 1; i < inputHops.size(); i++) {
+					Hop input = inputHops.get(i);
 					HopRel foutHopRel = getFOUTHopRel(input, hopRelMemo);
 					if(lowestFOUTHopRel == null) {
 						lowestFOUTHopRel = foutHopRel;
@@ -135,10 +188,10 @@ public class HopRel {
 					}
 				}
 
-				HopRel[] inputHopRels = new HopRel[hopRef.getInput().size()];
-				for(int i = 0; i < hopRef.getInput().size(); i++) {
+				HopRel[] inputHopRels = new HopRel[inputHops.size()];
+				for(int i = 0; i < inputHops.size(); i++) {
 					if(i != lowestFOUTIndex) {
-						Hop input = hopRef.getInput(i);
+						Hop input = inputHops.get(i);
 						inputHopRels[i] = hopRelMemo.getMinCostAlternative(input);
 					}
 					else {
@@ -148,7 +201,7 @@ public class HopRel {
 				inputDependency.addAll(Arrays.asList(inputHopRels));
 			} else {
 				inputDependency.addAll(
-					hopRef.getInput().stream()
+					inputHops.stream()
 						.map(hopRelMemo::getMinCostAlternative)
 						.collect(Collectors.toList()));
 			}

@@ -104,7 +104,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		if( !mo1.isFederated() )
 			throw new DMLRuntimeException("Federated Reorg: "
 				+ "Federated input expected, but invoked w/ "+mo1.isFederated());
-		if ( !( mo1.isFederated(FType.COL) || mo1.isFederated(FType.ROW)) )
+		if ( !( mo1.isFederated(FType.COL) || mo1.isFederated(FType.ROW) || mo1.isFederated(FType.PART) ) )
 			throw new DMLRuntimeException("Federation type " + mo1.getFedMapping().getType()
 				+ " is not supported for Reorg processing");
 
@@ -128,6 +128,8 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				ec.setMatrixOutput(output.getName(),
 					FederationUtils.bind(execResponse, mo1.isFederated(FType.COL)));
 			}
+		} else if ( mo1.isFederated(FType.PART) ){
+			throw new DMLRuntimeException("Operation with opcode " + instOpcode + " is not supported with PART input");
 		}
 		else if(instOpcode.equalsIgnoreCase("rev")) {
 			long id = FederationUtils.getNextFedDataID();

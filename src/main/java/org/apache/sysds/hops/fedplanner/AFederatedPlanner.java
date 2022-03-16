@@ -21,9 +21,11 @@ package org.apache.sysds.hops.fedplanner;
 
 import java.util.Map;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
@@ -54,8 +56,12 @@ public abstract class AFederatedPlanner {
 		FType[] ft = new FType[hop.getInput().size()];
 		for( int i=0; i<hop.getInput().size(); i++ )
 			ft[i] = fedHops.get(hop.getInput(i).getHopID());
-		
+
 		//handle specific operators
+		return allowsFederated(hop, ft);
+	}
+
+	protected boolean allowsFederated(Hop hop, FType[] ft){
 		if( hop instanceof AggBinaryOp ) {
 			return (ft[0] != null && ft[1] == null)
 				|| (ft[0] == null && ft[1] != null)
@@ -69,14 +75,24 @@ public abstract class AFederatedPlanner {
 		else if( hop instanceof TernaryOp && !hop.getDataType().isScalar() ) {
 			return (ft[0] != null || ft[1] != null || ft[2] != null);
 		}
+		else if ( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) ){
+			return ft[0] == FType.COL || ft[0] == FType.ROW;
+		}
 		else if(ft.length==1 && ft[0] != null) {
 			return HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS)
 				|| HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM, AggOp.MIN, AggOp.MAX);
 		}
-		
+
 		return false;
 	}
-	
+
+	/**
+	 * Get federated output type of given hop.
+	 * LOUT is represented with null.
+	 * @param hop current operation
+	 * @param fedHops map of hop ID mapped to FType
+	 * @return federated output FType of hop
+	 */
 	protected FType getFederatedOut(Hop hop, Map<Long, FType> fedHops) {
 		//generically obtain the input FTypes
 		FType[] ft = new FType[hop.getInput().size()];
@@ -84,19 +100,41 @@ public abstract class AFederatedPlanner {
 			ft[i] = fedHops.get(hop.getInput(i).getHopID());
 		
 		//handle specific operators
+		return getFederatedOut(hop, ft);
+	}
+
+	/**
+	 * Get FType output of given hop with ft input types.
+	 * @param hop given operation for which FType output is returned
+	 * @param ft array of input FTypes
+	 * @return output FType of hop
+	 */
+	protected FType getFederatedOut(Hop hop, FType[] ft){
+		if ( hop.isScalar() )
+			return null;
 		if( hop instanceof AggBinaryOp ) {
 			if( ft[0] != null )
 				return ft[0] == FType.ROW ? FType.ROW : null;
-			else if( ft[0] != null )
-				return ft[0] == FType.COL ? FType.COL : null;
 		}
-		else if( hop instanceof BinaryOp ) 
+		else if( hop instanceof BinaryOp )
 			return ft[0] != null ? ft[0] : ft[1];
 		else if( hop instanceof TernaryOp )
 			return ft[0] != null ? ft[0] : ft[1] != null ? ft[1] : ft[2];
-		else if( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) )
-			return ft[0] == FType.ROW ? FType.COL : FType.COL;
-		
+		else if( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) ){
+			if (ft[0] == FType.ROW)
+				return FType.COL;
+			else if (ft[0] == FType.COL)
+				return FType.ROW;
+		}
+		else if ( hop instanceof AggUnaryOp ){
+			boolean isColAgg = ((AggUnaryOp) hop).getDirection().isCol();
+			if ( (ft[0] == FType.ROW && isColAgg) || (ft[0] == FType.COL && !isColAgg) )
+				return null;
+			else if (ft[0] == FType.ROW || ft[0] == FType.COL)
+				return ft[0];
+		}
+		else if ( HopRewriteUtils.isData(hop, Types.OpOpData.FEDERATED) )
+			return deriveFType((DataOp)hop);
 		return null;
 	}
 	

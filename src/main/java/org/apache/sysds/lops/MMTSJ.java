@@ -95,6 +95,10 @@ public class MMTSJ extends Lop
 		if( getExecType()==ExecType.CP || getExecType()==ExecType.FED ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
+			if ( getExecType()==ExecType.FED ){
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( _fedOutput.name() );
+			}
 		}
 		
 		return sb.toString();

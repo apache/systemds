@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -259,8 +258,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			List<Double> values = new ArrayList<>();
 			fedMap.mapParallel(varID, (range, data) -> {
 				try {
-					FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-						-1,
+					FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
 						new QuantilePickFEDInstruction.GetValuesInRange(data.getVarID(), (ImmutablePair<Double, Double>) ret, isIQM))).get();
 					if(!response.isSuccessful())
 						response.throwExceptionFromResponse();
@@ -288,16 +286,8 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		List<int[]> hists = new ArrayList<>();
 		List<Set<Double>> distincts = new ArrayList<>();
 
-		double[] bucketsMaxs = new double[numBuckets];
-
 		double bucketRange = (globalMax-globalMin) / numBuckets;
 		boolean isEvenNumRows = vectorLength % 2 == 0;
-
-		// Create buckets according to min and max
-		double tmpMin = globalMin;
-		for(int i = 0; i < numBuckets && tmpMin <= globalMax; i++) {
-			bucketsMaxs[i] = (tmpMin += bucketRange);
-		}
 
 		// Create histograms
 		long varID = FederationUtils.getNextFedDataID();
@@ -305,7 +295,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			try {
 				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
 					FederatedRequest.RequestType.EXEC_UDF, -1,
-					new QuantilePickFEDInstruction.GetHistogram(data.getVarID(), bucketsMaxs, globalMin))).get();
+					new QuantilePickFEDInstruction.GetHistogram(data.getVarID(), globalMin, globalMax, bucketRange, numBuckets))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 				int[] rangeHist = (int[]) response.getData()[0];
@@ -329,7 +319,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			return (T) bucketsFrequencies;
 
 		// Find bucket with quantile
-		ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>> bucketWithIndex = getBucketWithIndex(bucketsFrequencies, bucketsMaxs, quantileIndex, average, isEvenNumRows, bucketRange);
+		ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>> bucketWithIndex = getBucketWithIndex(bucketsFrequencies, globalMin, quantileIndex, average, isEvenNumRows, bucketRange);
 
 		// Check if can terminate
 		Set<Double> distinctValues = distincts.stream().flatMap(Set::stream).collect(Collectors.toSet());
@@ -365,14 +355,15 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		return createHistogram(in, vectorLength, bucketWithIndex.right.left, bucketWithIndex.right.right, nextNumBuckets, bucketWithIndex.left, average);
 	}
 
-	private ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>> getBucketWithIndex(int[] bucketFrequencies, double[] bucketMaxs, int quantileIndex, boolean average, boolean isEvenNumRows, double bucketRange) {
+	private ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>> getBucketWithIndex(int[] bucketFrequencies, double min, int quantileIndex, boolean average, boolean isEvenNumRows, double bucketRange) {
 		int sizeBeforeTmp = 0, sizeBefore = 0, bucketWithQSize = 0;
 		ImmutablePair<Double, Double> bucketWithQ = null;
 
+		double tmpBinLeft = min;
 		for(int i = 0; i < bucketFrequencies.length; i++) {
 			sizeBeforeTmp += bucketFrequencies[i];
 			if(quantileIndex <= sizeBeforeTmp && bucketWithQSize == 0) {
-				bucketWithQ = new ImmutablePair<>(bucketMaxs[i]-bucketRange, bucketMaxs[i]);
+				bucketWithQ = new ImmutablePair<>(tmpBinLeft, tmpBinLeft + bucketRange);
 				bucketWithQSize = bucketFrequencies[i];
 				sizeBeforeTmp -= bucketWithQSize;
 				sizeBefore = sizeBeforeTmp;
@@ -383,11 +374,12 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 				// Add right bin that contains second index
 				int bucket2Size = bucketFrequencies[i];
 				if (bucket2Size != 0) {
-					bucketWithQ = new ImmutablePair<>(bucketWithQ.left, bucketMaxs[i]);
+					bucketWithQ = new ImmutablePair<>(bucketWithQ.left, tmpBinLeft + bucketRange);
 					bucketWithQSize += bucket2Size;
 					break;
 				}
 			}
+			tmpBinLeft += bucketRange;
 		}
 		quantileIndex = quantileIndex == 1 ? 1 : quantileIndex - sizeBefore;
 		return new ImmutableTriple<>(quantileIndex, bucketWithQSize, bucketWithQ);
@@ -395,13 +387,17 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 	public static class GetHistogram extends FederatedUDF {
 		private static final long serialVersionUID = 5413355823424777742L;
-		private final double[] _bucketMaxs;
+		private final double _max;
 		private final double _min;
+		private final double _range;
+		private final int _numBuckets;
 
-		private GetHistogram(long input, double[] bucketMaxs, double min) {
+		private GetHistogram(long input, double min, double max, double range, int numBuckets) {
 			super(new long[] {input});
-			_bucketMaxs = bucketMaxs;
+			_max = max;
 			_min = min;
+			_range = range;
+			_numBuckets = numBuckets;
 		}
 
 		@Override
@@ -412,16 +408,15 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 			Set<Double> distinct = new HashSet<>();
 
-			int[] frequencies = new int[_bucketMaxs.length];
+			int[] frequencies = new int[_numBuckets];
 
 			// binning
 			for(int i = 0; i < values.length - (isWeighted ? 1 : 0); i += (isWeighted ? 2 : 1)) {
 				double val = values[i];
 				int weight = isWeighted ? (int) values[i+1] : 1;
-				int index = Arrays.binarySearch(_bucketMaxs, val);
-				index = index < 0 ? Math.abs(index + 1) : index + 1;
-				index = index >= frequencies.length ? frequencies.length - 1 : index; // Needed because of floats
-				if (val >= _min && val <= _bucketMaxs[_bucketMaxs.length-1]) {
+				int index = (int) (Math.ceil((val - _min) / _range));
+				index = index == 0 ? 0 : index - 1;
+				if (val >= _min && val <= _max) {
 					frequencies[index] += weight;
 					distinct.add(val);
 				}

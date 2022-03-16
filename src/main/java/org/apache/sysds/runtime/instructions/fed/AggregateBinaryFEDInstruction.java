@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.instructions.fed;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -39,7 +41,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
-	// private static final Log LOG = LogFactory.getLog(AggregateBinaryFEDInstruction.class.getName());
+	private static final Log LOG = LogFactory.getLog(AggregateBinaryFEDInstruction.class.getName());
 	
 	public AggregateBinaryFEDInstruction(Operator op, CPOperand in1,
 		CPOperand in2, CPOperand out, String opcode, String istr) {
@@ -79,16 +81,11 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2},
 				new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);
-
-			if ( _fedOut.isForcedFederated() ){
-				mo1.getFedMapping().execute(getTID(), true, fr1);
-				setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr1.getID(), ec);
-			}
-			else {
-				aggregateLocally(mo1.getFedMapping(), true, ec, fr1);
-			}
+			if ( _fedOut.isForcedFederated() )
+				writeInfoLog(mo1, mo2);
+			aggregateLocally(mo1.getFedMapping(), true, ec, fr1);
 		}
-		else if(mo1.isFederated(FType.ROW) || mo1.isFederated(FType.PART)) { // MV + MM
+		else if(mo1.isFederated(FType.ROW)) { // MV + MM
 			//construct commands: broadcast rhs, fed mv, retrieve results
 			FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
@@ -99,10 +96,9 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 			boolean isPartOut = mo1.isFederated(FType.PART) || // MV and MM
 				(!isVector && mo2.isFederated(FType.PART)); // only MM
 			if(isPartOut && _fedOut.isForcedFederated()) {
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
-				setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
+				writeInfoLog(mo1, mo2);
 			}
-			else if((_fedOut.isForcedFederated() || (!isVector && !_fedOut.isForcedLocal()))
+			if((_fedOut.isForcedFederated() || (!isVector && !_fedOut.isForcedLocal()))
 				&& !isPartOut) { // not creating federated output in the MV case for reasons of performance
 				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 				setOutputFedMapping(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
@@ -119,13 +115,9 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				new CPOperand[]{input1, input2},
 				new long[]{fr1[0].getID(), mo2.getFedMapping().getID()}, true);
 			if ( _fedOut.isForcedFederated() ){
-				// Partial aggregates (set fedmapping to the partial aggs)
-				mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
-				setPartialOutput(mo2.getFedMapping(), mo1, mo2, fr2.getID(), ec);
+				writeInfoLog(mo1, mo2);
 			}
-			else {
-				aggregateLocally(mo2.getFedMapping(), true, ec, fr1, fr2);
-			}
+			aggregateLocally(mo2.getFedMapping(), true, ec, fr1, fr2);
 		}
 		//#3 col-federated matrix vector multiplication
 		else if (mo1.isFederated(FType.COL)) {// VM + MM
@@ -135,19 +127,22 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				new CPOperand[]{input1, input2},
 				new long[]{mo1.getFedMapping().getID(), fr1[0].getID()}, true);
 			if ( _fedOut.isForcedFederated() ){
-				// Partial aggregates (set fedmapping to the partial aggs)
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
-				setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
+				writeInfoLog(mo1, mo2);
 			}
-			else {
-				aggregateLocally(mo1.getFedMapping(), true, ec, fr1, fr2);
-			}
+			aggregateLocally(mo1.getFedMapping(), true, ec, fr1, fr2);
 		}
 		else { //other combinations
 			throw new DMLRuntimeException("Federated AggregateBinary not supported with the "
 				+ "following federated objects: "+mo1.isFederated()+":"+mo1.getFedMapping()
 				+" "+mo2.isFederated()+":"+mo2.getFedMapping());
 		}
+	}
+
+	private void writeInfoLog(MatrixLineagePair mo1, MatrixLineagePair mo2){
+		FType mo1FType = (mo1.getFedMapping()==null) ? null : mo1.getFedMapping().getType();
+		FType mo2FType = (mo2.getFedMapping()==null) ? null : mo2.getFedMapping().getType();
+		LOG.info("Federated output flag would result in PART federated map and has been ignored in " + instString);
+		LOG.info("Input 1 FType is " + mo1FType + " and input 2 FType " + mo2FType);
 	}
 
 	/**

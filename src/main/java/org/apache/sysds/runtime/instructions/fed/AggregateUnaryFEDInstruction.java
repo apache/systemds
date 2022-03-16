@@ -101,7 +101,11 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	private void processDefault(ExecutionContext ec){
 		AggregateUnaryOperator aop = (AggregateUnaryOperator) _optr;
 		MatrixObject in = ec.getMatrixObject(input1);
+		if ( !in.isFederated() )
+			throw new DMLRuntimeException("Input is not federated " + input1);
 		FederationMap map = in.getFedMapping();
+		if ( map == null )
+			throw new DMLRuntimeException("Input federation map is null for input " + input1);
 
 		if((instOpcode.equalsIgnoreCase("uarimax") || instOpcode.equalsIgnoreCase("uarimin")) && in.isFederated(FType.COL))
 			instString = InstructionUtils.replaceOperand(instString, 5, "2");
@@ -170,13 +174,14 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		//   then set row and col dimension from out and use those dimensions for both federated workers
 		//   and set FType to PART
 		if ( (inFtype.isRowPartitioned() && isColAgg) || (inFtype.isColPartitioned() && !isColAgg) ){
-			for ( FederatedRange range : inputFedMapCopy.getFederatedRanges() ){
+			/*for ( FederatedRange range : inputFedMapCopy.getFederatedRanges() ){
 				range.setBeginDim(0,0);
 				range.setBeginDim(1,0);
 				range.setEndDim(0,out.getNumRows());
 				range.setEndDim(1,out.getNumColumns());
 			}
-			inputFedMapCopy.setType(FType.PART);
+			inputFedMapCopy.setType(FType.PART);*/
+			throw new DMLRuntimeException("PART output not supported");
 		}
 		//if partition type is col and aggregation type is col
 		//   then set row dimension to output and col dimension to in col split

@@ -407,10 +407,10 @@ public class LibCommonsMath
 
 		int m = in.rlen;
 
-		MatrixBlock A_n = new MatrixBlock(m, m, 0.0);
+		MatrixBlock A_n = new MatrixBlock();
 		A_n.copy(in);
 
-		MatrixBlock Q_n = new MatrixBlock(m, m, 0.0);
+		MatrixBlock Q_n = new MatrixBlock(m, m, true);
 		for(int i = 0; i < m; i++) {
 			Q_n.setValue(i, i, 1.0);
 		}
@@ -453,7 +453,7 @@ public class LibCommonsMath
 	 * @return array of matrix blocks
 	 */
 	private static MatrixBlock[] computeEigenQR(MatrixBlock in, int threads) {
-		return computeEigenQR(in, 500, 1e-10, threads);
+		return computeEigenQR(in, 100, 1e-10, threads);
 	}
 
 	private static MatrixBlock[] computeEigenQR(MatrixBlock in, int num_iterations, double tol, int threads) {
@@ -473,7 +473,7 @@ public class LibCommonsMath
 		for(int i = 0; i < num_iterations; i++) {
 			MatrixBlock[] QR = computeQR2(in, threads);
 			Q_prod = Q_prod.aggregateBinaryOperations(Q_prod, QR[0], op_mul_agg);
-			in = in.aggregateBinaryOperations(QR[1], QR[0], op_mul_agg);
+			in = QR[1].aggregateBinaryOperations(QR[1], QR[0], op_mul_agg);
 		}
 
 		double[] check = in.getDenseBlockValues();
@@ -482,7 +482,7 @@ public class LibCommonsMath
 				if(i != j) {
 					if(Math.abs(check[i*m+j]) > tol)
 						throw new DMLRuntimeException("QR Eigen Decomposition not converged or contains complex EVs"
-							+ " (position i = " + i + ", j = " + j + ")");
+							+ " (position i = " + i + ", j = " + j + ") val: " + Math.abs(check[i*m+j])+ " > tol: " + tol );
 				}
 			}
 		}
@@ -505,6 +505,7 @@ public class LibCommonsMath
 	 * @param threads number of threads
 	 * @return transformed matrix
 	 */
+	@SuppressWarnings("unused")
 	private static MatrixBlock computeHouseholder(MatrixBlock in, int threads) {
 		int m = in.rlen;
 

@@ -135,6 +135,8 @@ public class TestConstants {
 				return 1000;
 			case SINGLE_COL:
 				return 5000;
+			case XL_ROWS:
+				return 3000;
 			default:
 				throw new RuntimeException("Invalid matrix enum type");
 		}
@@ -143,11 +145,13 @@ public class TestConstants {
 	public static int getNumberOfColumns(MatrixTypology matrixTypology) {
 		switch(matrixTypology) {
 			case SMALL:
-				return 6;
+				return 3;
 			case LARGE:
-				return 9;
+				return 10;
 			case SINGLE_COL:
 				return 1;
+			case XL_ROWS:
+				return 100;
 			default:
 				throw new RuntimeException("Invalid matrix enum type");
 		}

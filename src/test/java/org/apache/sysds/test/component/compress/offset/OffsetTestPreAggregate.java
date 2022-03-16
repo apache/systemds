@@ -145,13 +145,25 @@ public abstract class OffsetTestPreAggregate {
 	}
 
 	@Test
-	public void preAggByteMapFirstRowByteAll1() {
-		preAggMapRowAll1(0);
+	public void preAggByteMapFirstRowAll1() {
+		try {
+			preAggMapRowAll1(0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
-	public void preAggByteMapSecondRowByteAll1() {
-		preAggMapRowAll1(1);
+	public void preAggByteMapSecondRowAll1() {
+		try {
+			preAggMapRowAll1(1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	protected abstract void preAggMapRowAll1(int row);
@@ -164,13 +176,25 @@ public abstract class OffsetTestPreAggregate {
 	}
 
 	@Test
-	public void preAggByteMapFirstRowByteOne1() {
-		preAggMapRowOne1(0);
+	public void preAggByteMapFirstRowOne1() {
+		try {
+			preAggMapRowOne1(0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
-	public void preAggByteMapSecondRowByteOne1() {
-		preAggMapRowOne1(1);
+	public void preAggByteMapSecondRowOne1() {
+		try {
+			preAggMapRowOne1(1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	protected abstract void preAggMapRowOne1(int row);

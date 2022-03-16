@@ -139,7 +139,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	public void testNonZeros() {
 		if(!(cmb instanceof CompressedMatrixBlock))
 			return; // Input was not compressed then just pass test
-		if(!(cmb.getNonZeros() >= mb.getNonZeros())) {
+		if(!(cmb.getNonZeros() >= mb.getNonZeros())) { // guarantee that the nnz is at least the nnz
 			fail(bufferedToString + "\nIncorrect number of non Zeros should guarantee greater than or equals but are "
 				+ cmb.getNonZeros() + " and should be: " + mb.getNonZeros());
 		}
@@ -197,7 +197,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			CompressionStatistics cStat = cmbStats;
 			if(cStat != null) {
 				long colsEstimate = cStat.estimatedSizeCols;
-				long actualSize = cStat.size;
+				long actualSize = cStat.compressedSize;
 				long originalSize = cStat.originalSize;
 				int allowedTolerance = 4096;
 
@@ -237,7 +237,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				return;
 			CompressionStatistics cStat = cmbStats;
 			if(cStat != null) {
-				long actualSize = cStat.size;
+				long actualSize = cStat.compressedSize;
 				long originalSize = cStat.originalSize;
 				long JolEstimatedSize = getJolSize(((CompressedMatrixBlock) cmb), cmbStats);
 
@@ -280,7 +280,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				if(compressRatio > 1000.0) {
 					StringBuilder builder = new StringBuilder();
 					builder.append("Compression Ratio sounds suspiciously good at: " + compressRatio);
-					builder.append("\n\tActual compressed size: " + cStat.size);
+					builder.append("\n\tActual compressed size: " + cStat.compressedSize);
 					builder.append(" original size: " + cStat.originalSize);
 					builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
 					builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
@@ -300,9 +300,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
 				return;
-			boolean ret1 = cmb.containsValue(min);
-			boolean ret2 = mb.containsValue(min);
-			assertTrue(bufferedToString, ret1 == ret2);
+			assertTrue(bufferedToString, cmb.containsValue(min) == mb.containsValue(min));
 		}
 		catch(Exception e) {
 			e.printStackTrace();

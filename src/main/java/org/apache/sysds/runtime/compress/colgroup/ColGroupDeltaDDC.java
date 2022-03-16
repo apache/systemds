@@ -43,10 +43,21 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 		super(numRows);
 	}
 
-	protected ColGroupDeltaDDC(int[] colIndices, int numRows, ADictionary dict, AMapToData data, int[] cachedCounts) {
-		super(colIndices, numRows, dict, data, cachedCounts);
+	private ColGroupDeltaDDC(int[] colIndexes, int numRows, ADictionary dict, AMapToData data, int[] cachedCounts) {
+		super(numRows);
+		LOG.info("Carefully use of DeltaDDC since implementation is not finished.");
+		_colIndexes = colIndexes;
+		_dict = dict;
 		_zeros = false;
 		_data = data;
+	}
+
+	public static AColGroup create(int[] colIndices, int numRows, ADictionary dict, AMapToData data,
+		int[] cachedCounts) {
+		if(dict == null)
+			throw new NotImplementedException("Not implemented constant delta group");
+		else
+			return new ColGroupDeltaDDC(colIndices, numRows, dict, data, cachedCounts);
 	}
 
 	public CompressionType getCompType() {

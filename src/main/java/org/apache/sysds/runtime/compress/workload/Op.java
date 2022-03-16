@@ -28,8 +28,12 @@ public abstract class Op {
 	protected boolean isOverlapping = false;
 	private boolean isDensifying = false;
 
+
+	protected int _dim;
+
 	public Op(Hop op) {
 		_op = op;
+		_dim =(int) op.getDim2();
 	}
 
 	public Hop getHop() {
@@ -68,5 +72,9 @@ public abstract class Op {
 
 	public void setDensifying(){
 		isDensifying = true;
+	}
+	
+	public int dim() {
+		return _dim;
 	}
 }

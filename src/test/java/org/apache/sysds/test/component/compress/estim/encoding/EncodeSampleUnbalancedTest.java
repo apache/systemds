@@ -101,7 +101,7 @@ public class EncodeSampleUnbalancedTest extends EncodeSampleMultiColTest {
 			final IEncode sh = IEncode.createFromMatrixBlock(m2, t, genRowCol(t ? m2.getNumRows() : m2.getNumColumns()));
 
 			// join subparts and use its unique count for tests
-			final IEncode er = fh.join(sh);
+			final IEncode er = fh.combine(sh);
 			int u = er.getUnique();
 
 			return new Object[] {m, t, u, e, fh, sh};

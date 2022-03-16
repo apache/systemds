@@ -54,7 +54,7 @@ public abstract class EncodeSampleMultiColTest extends EncodeSampleTest {
 	public void testPartJoinEqualToFullRead() {
 		try {
 
-			partJoinVerification(fh.join(sh));
+			partJoinVerification(fh.combine(sh));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -66,7 +66,7 @@ public abstract class EncodeSampleMultiColTest extends EncodeSampleTest {
 	public void testPartJoinEqualToFullReadLeft() {
 		try {
 
-			partJoinVerification(sh.join(fh));
+			partJoinVerification(sh.combine(fh));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -80,7 +80,7 @@ public abstract class EncodeSampleMultiColTest extends EncodeSampleTest {
 
 			// again a test that does not make sense since joining with subpart results in equivalent but it is a valid
 			// test
-			partJoinVerification(e.join(fh));
+			partJoinVerification(e.combine(fh));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -93,7 +93,7 @@ public abstract class EncodeSampleMultiColTest extends EncodeSampleTest {
 		try {
 
 			// joining with subpart results in equivalent but it is a valid test
-			partJoinVerification(e.join(sh));
+			partJoinVerification(e.combine(sh));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -106,7 +106,7 @@ public abstract class EncodeSampleMultiColTest extends EncodeSampleTest {
 		try {
 
 			// joining with subpart results in equivalent but it is a valid test
-			partJoinVerification(fh.join(e));
+			partJoinVerification(fh.combine(e));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -118,7 +118,7 @@ public abstract class EncodeSampleMultiColTest extends EncodeSampleTest {
 	public void testJoinWithSecondSubpartLeft() {
 		try {
 			// joining with subpart results in equivalent but it is a valid test
-			partJoinVerification(sh.join(e));
+			partJoinVerification(sh.combine(e));
 		}
 		catch(Exception e) {
 			e.printStackTrace();

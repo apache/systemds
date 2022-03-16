@@ -93,10 +93,24 @@ public class ExtendedMatrixTests extends CompressedTestBase {
 		return tests;
 	}
 
+	private final MatrixBlock vectorCols;
+	private final MatrixBlock matrixRowsCols;
+
 	public ExtendedMatrixTests(SparsityType sparType, ValueType valType, ValueRange valueRange,
 		CompressionSettingsBuilder compSettings, MatrixTypology MatrixTypology, OverLapping ov, int parallelism,
 		Collection<CompressionType> ct) {
 		super(sparType, valType, valueRange, compSettings, MatrixTypology, ov, parallelism, ct);
+
+		if(cmb instanceof CompressedMatrixBlock) {
+
+			vectorCols = TestUtils.generateTestMatrixBlock(1, cols, -1.0, 1.5, 1.0, 3);
+			matrixRowsCols = TestUtils.generateTestMatrixBlock(rows, cols, -1.0, 1.5, 1.0, 3);
+		}
+		else {
+			vectorCols = null;
+			matrixRowsCols = null;
+		}
+
 	}
 
 	@Test

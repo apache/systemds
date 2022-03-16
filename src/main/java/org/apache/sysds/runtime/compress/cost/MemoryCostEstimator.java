@@ -19,36 +19,28 @@
 
 package org.apache.sysds.runtime.compress.cost;
 
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class MemoryCostEstimator implements ICostEstimate {
+public class MemoryCostEstimator extends ACostEstimate {
 	private static final long serialVersionUID = -1264988969161809465L;
 
-	private final int nRows;
-	// private final int nCols;
-	private final double sparsity;
-
-	public MemoryCostEstimator(int nRows, int nCols, double sparsity) {
-		this.nRows = nRows;
-		// this.nCols = nCols;
-		this.sparsity = sparsity;
+	public MemoryCostEstimator() {
 	}
 
 	@Override
-	public double getUncompressedCost(CompressedSizeInfoColGroup g) {
-		return MatrixBlock.estimateSizeInMemory(nRows, g.getColumns().length, sparsity);
-	}
-
-	@Override
-	public double getCostOfColumnGroup(CompressedSizeInfoColGroup g) {
-		if(g == null)
-			return Double.POSITIVE_INFINITY;
+	protected double getCostSafe(CompressedSizeInfoColGroup g) {
 		return g.getMinSize();
 	}
 
 	@Override
-	public boolean shouldAnalyze(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
-		return true;
+	public double getCost(MatrixBlock mb) {
+		return mb.estimateSizeInMemory();
+	}
+
+	@Override
+	public double getCost(AColGroup cg, int nRows) {
+		return cg.estimateInMemorySize();
 	}
 }

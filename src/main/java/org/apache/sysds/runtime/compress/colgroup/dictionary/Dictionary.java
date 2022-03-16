@@ -22,17 +22,21 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
 /**
@@ -59,7 +63,7 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public double getValue(int i) {
-		return (i >= size()) ? 0.0 : _values[i];
+		return _values[i];
 	}
 
 	@Override
@@ -154,6 +158,14 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	public Dictionary applyUnaryOp(UnaryOperator op) {
+		final double[] retV = new double[_values.length];
+		for(int i = 0; i < _values.length; i++)
+			retV[i] = op.fn.execute(_values[i]);
+		return new Dictionary(retV);
+	}
+
+	@Override
 	public Dictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
 		final double[] retV = new double[_values.length];
 		final int nCol = reference.length;
@@ -162,6 +174,21 @@ public class Dictionary extends ADictionary {
 		for(int i = 0; i < nRow; i++) {
 			for(int j = 0; j < nCol; j++) {
 				retV[off] = op.executeScalar(_values[off] + reference[j]) - newReference[j];
+				off++;
+			}
+		}
+		return new Dictionary(retV);
+	}
+
+	@Override
+	public ADictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
+		final double[] retV = new double[_values.length];
+		final int nCol = reference.length;
+		final int nRow = _values.length / nCol;
+		int off = 0;
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				retV[off] = op.fn.execute(_values[off] + reference[j]) - newReference[j];
 				off++;
 			}
 		}
@@ -341,8 +368,7 @@ public class Dictionary extends ADictionary {
 		return ret;
 	}
 
-	@Override
-	public double sumRow(int k, int nrColumns) {
+	private double sumRow(int k, int nrColumns) {
 		final int valOff = k * nrColumns;
 		double res = 0.0;
 		for(int i = 0; i < nrColumns; i++)
@@ -358,8 +384,7 @@ public class Dictionary extends ADictionary {
 		return res;
 	}
 
-	@Override
-	public double sumRowSq(int k, int nrColumns) {
+	private double sumRowSq(int k, int nrColumns) {
 		final int valOff = k * nrColumns;
 		double res = 0.0;
 		for(int i = 0; i < nrColumns; i++)
@@ -367,25 +392,12 @@ public class Dictionary extends ADictionary {
 		return res;
 	}
 
-	@Override
-	public double sumRowSqWithReference(int k, int nrColumns, double[] reference) {
+	private double sumRowSqWithReference(int k, int nrColumns, double[] reference) {
 		final int valOff = k * nrColumns;
 		double res = 0.0;
 		for(int i = 0; i < nrColumns; i++) {
 			final double v = _values[valOff + i] + reference[i];
 			res += v * v;
-		}
-		return res;
-	}
-
-	@Override
-	public double[] colSum(int[] counts, int nCol) {
-		final double[] res = new double[nCol];
-		int idx = 0;
-		for(int k = 0; k < counts.length; k++) {
-			final int cntk = counts[k];
-			for(int j = 0; j < nCol; j++)
-				res[j] += _values[idx++] * cntk;
 		}
 		return res;
 	}
@@ -581,9 +593,21 @@ public class Dictionary extends ADictionary {
 		addToOffsets(v, sf, st, nCol);
 	}
 
-	private void addToOffsets(double[] v, int sf, int st, int nCol) {
+	private final void addToOffsets(final double[] v, final int sf, final int st, final int nCol) {
 		for(int i = sf, j = st; i < sf + nCol; i++, j++)
 			v[j] += _values[i];
+	}
+
+	@Override
+	public void addToEntry(double[] v, int fr, int to, int nCol, int rep) {
+		final int sf = fr * nCol; // start from
+		final int st = to * nCol; // start to
+		addToOffsets(v, sf, st, nCol, rep);
+	}
+
+	private void addToOffsets(double[] v, int sf, int st, int nCol, int rep) {
+		for(int i = sf, j = st; i < sf + nCol; i++, j++)
+			v[j] += _values[i] * rep;
 	}
 
 	@Override
@@ -616,7 +640,7 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public MatrixBlockDictionary getMBDict(int nCol) {
-		return new MatrixBlockDictionary(_values, nCol);
+		return MatrixBlockDictionary.createDictionary(_values, nCol);
 	}
 
 	@Override
@@ -695,24 +719,80 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public double product(int[] counts, int nCol) {
-		double ret = 1;
+	public void product(double[] ret, int[] counts, int nCol) {
+		if(ret[0] == 0)
+			return;
+		final MathContext cont = MathContext.DECIMAL128;
 		final int len = counts.length;
+		BigDecimal tmp = BigDecimal.ONE;
 		for(int i = 0; i < len; i++) {
 			for(int j = i * nCol; j < (i + 1) * nCol; j++) {
 				double v = _values[j];
-				if(v != 0)
-					ret *= Math.pow(v, counts[i]);
-				else
-					ret = 0;
+				if(v == 0) {
+					ret[0] = 0;
+					return;
+				}
+				tmp = tmp.multiply(new BigDecimal(v).pow(counts[i], cont), cont);
 			}
 		}
-		return ret;
+		if(Math.abs(tmp.doubleValue()) == 0)
+			ret[0] = 0;
+
+		else if(!Double.isInfinite(ret[0]))
+			ret[0] = new BigDecimal(ret[0]).multiply(tmp, MathContext.DECIMAL128).doubleValue();
 	}
 
 	@Override
-	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
-		throw new NotImplementedException();
+	public void productWithDefault(double[] ret, int[] counts, double[] def, int defCount) {
+		if(ret[0] == 0)
+			return;
+		final MathContext cont = MathContext.DECIMAL128;
+		final int len = counts.length;
+		final int nCol = def.length;
+		BigDecimal tmp = BigDecimal.ONE;
+		for(int i = 0; i < len; i++) {
+			for(int j = i * nCol; j < (i + 1) * nCol; j++) {
+				double v = _values[j];
+				if(v == 0) {
+					ret[0] = 0;
+					return;
+				}
+				tmp = tmp.multiply(new BigDecimal(v).pow(counts[i], cont), cont);
+			}
+		}
+		for(int x = 0; x < def.length; x++)
+			tmp = tmp.multiply(new BigDecimal(def[x]).pow(defCount, cont), cont);
+		if(Math.abs(tmp.doubleValue()) == 0)
+			ret[0] = 0;
+		else if(!Double.isInfinite(ret[0]))
+			ret[0] = new BigDecimal(ret[0]).multiply(tmp, MathContext.DECIMAL128).doubleValue();
+	}
+
+	@Override
+	public void productWithReference(double[] ret, int[] counts, double[] reference, int refCount) {
+		if(ret[0] == 0)
+			return;
+		final MathContext cont = MathContext.DECIMAL128;
+		final int len = counts.length;
+		final int nCol = reference.length;
+		BigDecimal tmp = BigDecimal.ONE;
+		int off = 0;
+		for(int i = 0; i < len; i++) {
+			for(int j = 0; j < nCol; j++) {
+				final double v = _values[off++] + reference[j];
+				if(v == 0) {
+					ret[0] = 0;
+					return;
+				}
+				tmp = tmp.multiply(new BigDecimal(v).pow(counts[i], cont), cont);
+			}
+		}
+		for(int x = 0; x < reference.length; x++)
+			tmp = tmp.multiply(new BigDecimal(reference[x]).pow(refCount, cont), cont);
+		if(Math.abs(tmp.doubleValue()) == 0)
+			ret[0] = 0;
+		else if(!Double.isInfinite(ret[0]))
+			ret[0] = new BigDecimal(ret[0]).multiply(tmp, MathContext.DECIMAL128).doubleValue();
 	}
 
 	@Override
@@ -741,5 +821,72 @@ public class Dictionary extends ADictionary {
 	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, double reference) {
 		return getMBDict(1).applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference)).rexpandCols(max,
 			ignore, cast, 1);
+	}
+
+	@Override
+	public double getSparsity() {
+		return 1;
+	}
+
+	@Override
+	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, int[] cols) {
+		final int offD = dictIdx * cols.length;
+		for(int i = 0; i < cols.length; i++) {
+			double a = v * _values[offD + i];
+			ret[off + cols[i]] += a;
+		}
+	}
+
+	@Override
+	protected void TSMMWithScaling(int[] counts, int[] rows, int[] cols, MatrixBlock ret) {
+		DictLibMatrixMult.TSMMDictsDenseWithScaling(_values, rows, cols, counts, ret);
+	}
+
+	@Override
+	protected void MMDict(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		right.MMDictDense(_values, rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void MMDictDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		DictLibMatrixMult.MMDictsDenseDense(left, _values, rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void MMDictSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		DictLibMatrixMult.MMDictsSparseDense(left, _values, rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangle(ADictionary right, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		right.TSMMToUpperTriangleDense(_values, rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleDense(double[] left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		DictLibMatrixMult.MMToUpperTriangleDenseDense(left, _values, rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleSparse(SparseBlock left, int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		DictLibMatrixMult.MMToUpperTriangleSparseDense(left, _values, rowsLeft, colsRight, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleScaling(ADictionary right, int[] rowsLeft, int[] colsRight, int[] scale,
+		MatrixBlock result) {
+		right.TSMMToUpperTriangleDenseScaling(_values, rowsLeft, colsRight, scale, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleDenseScaling(double[] left, int[] rowsLeft, int[] colsRight, int[] scale,
+		MatrixBlock result) {
+		DictLibMatrixMult.TSMMToUpperTriangleDenseDenseScaling(left, _values, rowsLeft, colsRight, scale, result);
+	}
+
+	@Override
+	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight, int[] scale,
+		MatrixBlock result) {
+		DictLibMatrixMult.TSMMToUpperTriangleSparseDenseScaling(left, _values, rowsLeft, colsRight, scale, result);
 	}
 }

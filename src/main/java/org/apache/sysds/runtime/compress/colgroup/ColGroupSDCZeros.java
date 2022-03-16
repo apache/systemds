@@ -22,7 +22,9 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -30,6 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -37,6 +40,7 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 /**
  * Column group that sparsely encodes the dictionary values. The idea is that all values is encoded with indexes except
@@ -47,11 +51,8 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * 
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns.
  */
-public class ColGroupSDCZeros extends APreAgg {
+public class ColGroupSDCZeros extends ASDCZero {
 	private static final long serialVersionUID = -3703199743391937991L;
-
-	/** Sparse row indexes for the data */
-	protected AOffset _indexes;
 
 	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
 	protected AMapToData _data;
@@ -65,10 +66,12 @@ public class ColGroupSDCZeros extends APreAgg {
 		super(numRows);
 	}
 
-	private ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
+	private ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
 		int[] cachedCounts) {
-		super(colIndices, numRows, dict, cachedCounts);
-		_indexes = offsets;
+		super(colIndices, numRows, dict, indexes, cachedCounts);
+		if(data.getUnique() != dict.getNumberOfValues(colIndices.length))
+			throw new DMLCompressionException("Invalid construction of SDCZero group: number uniques: " + data.getUnique()
+				+ " vs." + dict.getNumberOfValues(colIndices.length));
 		_data = data;
 		_zeros = true;
 	}
@@ -98,23 +101,38 @@ public class ColGroupSDCZeros extends APreAgg {
 		final AIterator it = _indexes.getIterator(rl);
 		if(it == null)
 			return;
-		if(it.value() >= ru)
+		else if(it.value() >= ru)
 			_indexes.cacheIterator(it, ru);
-		else if(db.isContiguous() && _colIndexes.length == 1) {
-			if(ru > _indexes.getOffsetToLast())
+		else
+			decompressToDenseBlockDenseDictionary(db, rl, ru, offR, offC, values, it);
+	}
+
+	@Override
+	public final void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values, AIterator it) {
+			final int last = _indexes.getOffsetToLast();
+		if(it == null || it.value() >= ru  || rl > last)
+			return;
+		final boolean post = ru > last;
+		final boolean contiguous = db.isContiguous();
+		if(post) {
+			if(contiguous && _colIndexes.length == 1)
 				decompressToDenseBlockDenseDictionaryPostSingleColContiguous(db, rl, ru, offR, offC, values, it);
-			else {
-				if(db.getDim(1) == 1)
-					decompressToDenseBlockDenseDictionaryPreSingleColOutContiguous(db, ru, offR, offC, values, it, _data);
-				else
-					decompressToDenseBlockDenseDictionaryPreSingleColContiguous(db, rl, ru, offR, offC, values, it);
-				_indexes.cacheIterator(it, ru);
-			}
+			else
+				decompressToDenseBlockDenseDictionaryPostGeneric(db, rl, ru, offR, offC, values, it);
 		}
-		else if(ru > _indexes.getOffsetToLast())
-			decompressToDenseBlockDenseDictionaryPostGeneric(db, rl, ru, offR, offC, values, it);
+		else if(contiguous && _colIndexes.length == 1) {
+			if(db.getDim(1) == 1)
+				decompressToDenseBlockDenseDictionaryPreSingleColOutContiguous(db, ru, offR, offC, values, it, _data);
+			else
+				decompressToDenseBlockDenseDictionaryPreSingleColContiguous(db, rl, ru, offR, offC, values, it);
+			_indexes.cacheIterator(it, ru);
+		}
 		else {
-			decompressToDenseBlockDenseDictionaryPreGeneric(db, rl, ru, offR, offC, values, it);
+			if(_colIndexes.length == db.getDim(1))
+				decompressToDenseBlockDenseDictionaryPreAllCols(db, rl, ru, offR, offC, values, it);
+			else
+				decompressToDenseBlockDenseDictionaryPreGeneric(db, rl, ru, offR, offC, values, it);
 			_indexes.cacheIterator(it, ru);
 		}
 	}
@@ -191,6 +209,21 @@ public class ColGroupSDCZeros extends APreAgg {
 			final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
 			for(int j = 0; j < nCol; j++)
 				c[off + _colIndexes[j]] += values[offDict + j];
+
+			it.next();
+		}
+	}
+
+	private void decompressToDenseBlockDenseDictionaryPreAllCols(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values, AIterator it) {
+		final int nCol = _colIndexes.length;
+		while(it.isNotOver(ru)) {
+			final int idx = offR + it.value();
+			final double[] c = db.values(idx);
+			final int off = db.pos(idx) + offC;
+			final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
+			for(int j = 0; j < nCol; j++)
+				c[off + j] += values[offDict + j];
 
 			it.next();
 		}
@@ -397,20 +430,19 @@ public class ColGroupSDCZeros extends APreAgg {
 	}
 
 	@Override
-	public void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
-		if(m.isInSparseFormat())
-			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
-		else
-			preAggregateDense(m, preAgg, rl, ru, 0, _numRows);
+	protected void multiplyScalar(double v, double[] resV, int offRet, AIterator it) {
+		final int dx = _data.getIndex(it.getDataIndex());
+		_dict.multiplyScalar(v, resV, offRet, dx, _colIndexes);
 	}
 
 	@Override
-	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu) {
-		_data.preAggregateDense(m, preAgg.getDenseBlockValues(), rl, ru, cl, cu, _indexes);
+	public void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
+		_data.preAggregateDense(m, preAgg, rl, ru, cl, cu, _indexes);
 	}
 
-	private void preAggregateSparse(SparseBlock sb, MatrixBlock preAgg, int rl, int ru) {
-		_data.preAggregateSparse(sb, preAgg.getDenseBlockValues(), rl, ru, _indexes);
+	@Override
+	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
+		_data.preAggregateSparse(sb, preAgg, rl, ru, _indexes);
 	}
 
 	@Override
@@ -439,6 +471,19 @@ public class ColGroupSDCZeros extends APreAgg {
 			for(int i = 0; i < _colIndexes.length; i++)
 				defaultTuple[i] = val0;
 			return ColGroupSDC.create(_colIndexes, _numRows, newDict, defaultTuple, _indexes, _data, getCachedCounts());
+		}
+	}
+
+	@Override
+	public AColGroup unaryOperation(UnaryOperator op) {
+		final double val0 = op.fn.execute(0);
+		final ADictionary nDict = _dict.applyUnaryOp(op);
+		if(val0 == 0)
+			return create(_colIndexes, _numRows, nDict, _indexes, _data, getCachedCounts());
+		else {
+			final double[] defaultTuple = new double[_colIndexes.length];
+			Arrays.fill(defaultTuple, val0);
+			return ColGroupSDC.create(_colIndexes, _numRows, nDict, defaultTuple, _indexes, _data, getCachedCounts());
 		}
 	}
 
@@ -525,6 +570,7 @@ public class ColGroupSDCZeros extends APreAgg {
 	@Override
 	public void preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		final AIterator itThat = that._indexes.getIterator();
+		// _indexes.getOffsetIterator();
 		final AIterator itThis = _indexes.getIterator();
 		final int nCol = that._colIndexes.length;
 
@@ -538,24 +584,20 @@ public class ColGroupSDCZeros extends APreAgg {
 				that._dict.addToEntry(v, 0, to, nCol);
 				if(itThat.value() >= finalOffThat)
 					break;
-				else
-					itThat.next();
+				itThat.next();
 				if(itThis.value() >= finalOffThis)
 					break;
-				else
-					itThis.next();
+				itThis.next();
 			}
 			else if(itThat.value() < itThis.value()) {
 				if(itThat.value() >= finalOffThat)
 					break;
-				else
-					itThat.next();
+				itThat.next();
 			}
 			else {
 				if(itThis.value() >= finalOffThis)
 					break;
-				else
-					itThis.next();
+				itThis.next();
 			}
 		}
 	}
@@ -571,6 +613,31 @@ public class ColGroupSDCZeros extends APreAgg {
 		}
 		else
 			return copyAndSet(replaced);
+	}
+
+	@Override
+	protected void computeProduct(double[] c, int nRows) {
+		c[0] = 0;
+	}
+
+	@Override
+	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
+		for(int i = 0; i < c.length; i++)
+			c[i] = 0;
+	}
+
+	@Override
+	protected void computeColProduct(double[] c, int nRows) {
+		for(int i = 0; i < c.length; i++)
+			c[i] = 0;
+	}
+
+	@Override
+	public double getCost(ComputationCostEstimator e, int nRows) {
+		final int nVals = getNumValues();
+		final int nCols = getNumCols();
+		final int nRowsScanned = _data.size();
+		return e.getCost(nRows, nRowsScanned, nCols, nVals, _dict.getSparsity());
 	}
 
 	@Override

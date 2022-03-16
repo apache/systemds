@@ -28,6 +28,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
@@ -36,6 +37,7 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
 /**
@@ -273,24 +275,6 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	/**
-	 * Add to the upper triangle, but twice if on the diagonal
-	 * 
-	 * @param nCols number cols in res
-	 * @param row   the row to add to
-	 * @param col   the col to add to
-	 * @param res   the double array to add to
-	 * @param val   the value to add
-	 */
-	protected static void addToUpperTriangle(int nCols, int row, int col, double[] res, double val) {
-		if(row == col) // diagonal add twice
-			res[row * nCols + col] += val + val;
-		else if(row > col) // swap because in lower triangle
-			res[col * nCols + row] += val;
-		else
-			res[row * nCols + col] += val;
-	}
-
-	/**
 	 * Get the value at a global row/column position.
 	 * 
 	 * In general this performs since a binary search of colIndexes is performed for each lookup.
@@ -396,8 +380,11 @@ public abstract class AColGroup implements Serializable {
 	 *               parallelizing
 	 * @param rl     The row to begin the multiplication from on the lhs matrix
 	 * @param ru     The row to end the multiplication at on the lhs matrix
+	 * @param cl     The column to begin the multiplication from on the lhs matrix
+	 * @param cu     The column to end the multiplication at on the lhs matrix
 	 */
-	public abstract void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru);
+	public abstract void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl,
+		int cu);
 
 	/**
 	 * Left side matrix multiplication with a column group that is transposed.
@@ -563,6 +550,17 @@ public abstract class AColGroup implements Serializable {
 	 * @return A new column group containing max number of columns.
 	 */
 	public abstract AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows);
+
+	/**
+	 * Get the computation cost associated with this column group.
+	 * 
+	 * @param e     The computation cost estimator
+	 * @param nRows the number of rows in the column group
+	 * @return The cost of this column group
+	 */
+	public abstract double getCost(ComputationCostEstimator e, int nRows);
+
+	public abstract AColGroup unaryOperation(UnaryOperator op);
 
 	@Override
 	public String toString() {

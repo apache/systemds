@@ -25,7 +25,6 @@ import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
@@ -111,20 +110,12 @@ public class StandAloneTests {
 		DenseEncoding.combine(a, b);
 	}
 
-	@Test(expected = DMLCompressionException.class)
-	public void testInvalidJoinWithToManyUniqueValues() {
-		AMapToData a = MapToFactory.create(10, 10000000);
-		AMapToData b = MapToFactory.create(10, 10000000);
-		DenseEncoding.combine(a, b);
-	}
-
 	@Test
 	public void test_null_argument_01() {
 		AMapToData a = null;
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData c = DenseEncoding.combine(a, b);
 		compare(c, new int[] {1, 0, 0, 0, 0, 1, 1, 1, 1, 1});
-		// compare(c, new int[] {0, 1, 1, 1, 1, 0, 0, 0, 0, 0});
 	}
 
 	@Test

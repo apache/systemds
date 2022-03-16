@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 /** A group of columns compressed with a single run-length encoded bitmap. */
 public class ColGroupRLE extends AColGroupOffset {
@@ -168,6 +169,11 @@ public class ColGroupRLE extends AColGroupOffset {
 		// int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
 		// rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
 		// return new ColGroupRLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
+	}
+
+	@Override
+	public AColGroup unaryOperation(UnaryOperator op) {
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -517,7 +523,7 @@ public class ColGroupRLE extends AColGroupOffset {
 	// }
 
 	@Override
-	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
+	public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
 		throw new NotImplementedException();
 	}
 

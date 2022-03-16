@@ -31,7 +31,7 @@ public class ConstEncoding implements IEncode {
 	}
 
 	@Override
-	public IEncode join(IEncode e) {
+	public IEncode combine(IEncode e) {
 		return e;
 	}
 

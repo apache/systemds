@@ -23,6 +23,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -33,6 +34,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class ColGroupEmpty extends AColGroupCompressed {
 	private static final long serialVersionUID = -2307677253622099958L;
@@ -57,7 +59,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 
 	@Override
 	public CompressionType getCompType() {
-		return CompressionType.CONST;
+		return CompressionType.EMPTY;
 	}
 
 	@Override
@@ -83,6 +85,16 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
 		final double v = op.executeScalar(0);
+		if(v == 0)
+			return this;
+		double[] retV = new double[_colIndexes.length];
+		Arrays.fill(retV, v);
+		return ColGroupConst.create(_colIndexes, new Dictionary(retV));
+	}
+
+	@Override
+	public AColGroup unaryOperation(UnaryOperator op) {
+		final double v = op.fn.execute(0);
 		if(v == 0)
 			return this;
 		double[] retV = new double[_colIndexes.length];
@@ -127,11 +139,6 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	public void leftMultByMatrix(MatrixBlock a, MatrixBlock c, int rl, int ru) {
-		// do nothing
-	}
-
-	@Override
 	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock c) {
 		// do nothing
 	}
@@ -139,6 +146,12 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	@Override
 	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
 		// do nothing
+	}
+
+	@Override
+	public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
+		// do nothing
+		// but should never be called
 	}
 
 	@Override
@@ -238,17 +251,19 @@ public class ColGroupEmpty extends AColGroupCompressed {
 
 	@Override
 	protected void computeProduct(double[] c, int nRows) {
-		// do nothing
+		c[0] = 0;
 	}
 
 	@Override
 	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
-		// do nothing
+		for(int i = 0; i < c.length; i++)
+			c[i] = 0;
 	}
 
 	@Override
 	protected void computeColProduct(double[] c, int nRows) {
-		// do nothing
+		for(int i = 0; i < c.length; i++)
+			c[i] = 0;
 	}
 
 	@Override
@@ -285,5 +300,11 @@ public class ColGroupEmpty extends AColGroupCompressed {
 				"Invalid input to rexpand since it contains zero use ignore flag to encode anyway");
 		else
 			return create(max);
+	}
+
+	@Override
+	public double getCost(ComputationCostEstimator e, int nRows) {
+		final int nCols = getNumCols();
+		return e.getCost(nRows, 1, nCols, 1, 0.00001);
 	}
 }

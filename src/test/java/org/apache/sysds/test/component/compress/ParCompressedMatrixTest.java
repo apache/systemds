@@ -23,6 +23,7 @@ import java.util.Collection;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -52,8 +53,15 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	@Override
 	public void testUnaryOperators(AggType aggType, boolean inCP) {
-		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, _k);
-		testUnaryOperators(aggType, auop, inCP);
+		try {
+
+			AggregateUnaryOperator auop = super.getUnaryOperator(aggType, _k);
+			testUnaryOperators(aggType, auop, inCP);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLCompressionException("Error in test of unary aggregate", e);
+		}
 	}
 
 	@Override

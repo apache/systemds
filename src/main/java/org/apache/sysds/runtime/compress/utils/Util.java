@@ -26,9 +26,9 @@ import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public class Util {
+public interface Util {
 
-	protected static final Log LOG = LogFactory.getLog(Util.class.getName());
+	static final Log LOG = LogFactory.getLog(Util.class.getName());
 
 	public static int[] combine(int[] lhs, int[] rhs) {
 		int[] joined = new int[lhs.length + rhs.length];

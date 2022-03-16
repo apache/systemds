@@ -23,6 +23,8 @@ import org.apache.sysds.hops.Hop;
 
 public class OpSided extends Op {
 
+
+
 	// Compressed Sides:
 	private final boolean _cLeft;
 	private final boolean _cRight;
@@ -30,12 +32,15 @@ public class OpSided extends Op {
 	private final boolean _tLeft;
 	private final boolean _tRight;
 
+	// private final int _dim;
+
 	public OpSided(Hop op, boolean cLeft, boolean cRight, boolean tLeft, boolean tRight) {
 		super(op);
 		_cLeft = cLeft;
 		_cRight = cRight;
 		_tLeft = tLeft;
 		_tRight = tRight;
+		_dim = (int) (cLeft ? op.getDim2() : op.getDim1());
 	}
 
 	public boolean getLeft() {

@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 /**
  * Class to encapsulate information about a column group that is encoded with simple lists of offsets for each set of
@@ -172,6 +173,11 @@ public class ColGroupOLE extends AColGroupOffset {
 		// rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
 
 		// return new ColGroupOLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
+	}
+
+	@Override
+	public AColGroup unaryOperation(UnaryOperator op) {
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -454,7 +460,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	}
 
 	@Override
-	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
+	public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
 		throw new NotImplementedException();
 	}
 

@@ -90,9 +90,15 @@ public class PreAggregateSDCZ_SDCZTest {
 
 	@Test
 	public void preAggregateSDCZ_DDC() {
-		Dictionary ret = new Dictionary(new double[expected.length]);
-		m.preAggregateSDCZ_SDCZ(tm, td, tof, of, ret, nCol);
-		compare(ret.getValues(), expected, 0.000001);
+		try {
+			Dictionary ret = new Dictionary(new double[expected.length]);
+			m.preAggregateSDCZ_SDCZ(tm, td, tof, of, ret, nCol);
+			compare(ret.getValues(), expected, 0.000001);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(this.toString());
+		}
 	}
 
 	private final void compare(double[] res, double[] exp, double eps) {

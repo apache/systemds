@@ -20,16 +20,14 @@
 package org.apache.sysds.runtime.compress.cocode;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
-import org.apache.sysds.runtime.compress.cost.ICostEstimate;
+import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -37,40 +35,46 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CoCodeGreedy extends AColumnCoCoder {
 
-	protected CoCodeGreedy(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator, CompressionSettings cs) {
+	private final Memorizer mem;
+
+	protected CoCodeGreedy(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
+		mem = new Memorizer(sizeEstimator);
+	}
+
+	protected CoCodeGreedy(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs,
+		Memorizer mem) {
+		super(sizeEstimator, costEstimator, cs);
+		this.mem = mem;
 	}
 
 	@Override
 	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
-		colInfos.setInfo(join(colInfos.compressionInfo, _sest, _cest, _cs, k));
+		colInfos.setInfo(combine(colInfos.compressionInfo, k));
 		return colInfos;
 	}
 
-	protected static List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> inputColumns,
-		CompressedSizeEstimator sEst, ICostEstimate cEst, CompressionSettings cs, int k) {
-		Memorizer mem = new Memorizer(sEst);
+	protected List<CompressedSizeInfoColGroup> combine(List<CompressedSizeInfoColGroup> inputColumns, int k) {
 		for(CompressedSizeInfoColGroup g : inputColumns)
 			mem.put(g);
-
-		return coCodeBruteForce(inputColumns, cEst, mem, k);
+		return coCodeBruteForce(inputColumns, k);
 	}
 
-	private static List<CompressedSizeInfoColGroup> coCodeBruteForce(List<CompressedSizeInfoColGroup> inputColumns,
-		ICostEstimate cEst, Memorizer mem, int k) {
+	private List<CompressedSizeInfoColGroup> coCodeBruteForce(List<CompressedSizeInfoColGroup> inputColumns, int k) {
 
 		final List<ColIndexes> workSet = new ArrayList<>(inputColumns.size());
-		final boolean workloadCost = cEst instanceof ComputationCostEstimator;
 
-		// assume that we can at max reduce 90 % of cost if joined
-		// assume that we can max reduce 65% of compute cost if joined
-		final double costFilterThreshold = (workloadCost ? 0.65 : 0.9);
+		// assume that we can at max reduce 90 % of cost if combined
+		final double costFilterThreshold = 0.9;
 
-		for(int i = 0; i < inputColumns.size(); i++)
-			workSet.add(new ColIndexes(inputColumns.get(i).getColumns()));
+		final ExecutorService pool = CommonThreadPool.get(k);
+		for(int i = 0; i < inputColumns.size(); i++) {
+			CompressedSizeInfoColGroup g = inputColumns.get(i);
+			workSet.add(new ColIndexes(g.getColumns()));
+		}
 
-		if(k > 1)
-			parallelFirstJoin(workSet, mem, cEst, costFilterThreshold, k);
+		// if(k > 1)
+		// parallelFirstCombine(workSet, mem, cEst, pool);
 
 		// Process merging iterations until no more change
 		while(workSet.size() > 1) {
@@ -81,8 +85,8 @@ public class CoCodeGreedy extends AColumnCoCoder {
 				for(int j = i + 1; j < workSet.size(); j++) {
 					final ColIndexes c1 = workSet.get(i);
 					final ColIndexes c2 = workSet.get(j);
-					final double costC1 = cEst.getCostOfColumnGroup(mem.get(c1));
-					final double costC2 = cEst.getCostOfColumnGroup(mem.get(c2));
+					final double costC1 = _cest.getCost(mem.get(c1));
+					final double costC2 = _cest.getCost(mem.get(c2));
 
 					mem.incst1();
 
@@ -97,7 +101,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 					// Join the two column groups.
 					// and Memorize the new join.
 					final CompressedSizeInfoColGroup c1c2Inf = mem.getOrCreate(c1, c2);
-					final double costC1C2 = cEst.getCostOfColumnGroup(c1c2Inf);
+					final double costC1C2 = _cest.getCost(c1c2Inf);
 					final double newCostIfJoined = costC1C2 - costC1 - costC2;
 
 					// Select the best join of either the currently selected
@@ -116,16 +120,38 @@ public class CoCodeGreedy extends AColumnCoCoder {
 				workSet.remove(selected1);
 				workSet.remove(selected2);
 				mem.remove(selected1, selected2);
-				workSet.add(new ColIndexes(tmp.getColumns()));
+
+				Collections.sort(workSet, new CompareColumns());
+
+				final ColIndexes a = new ColIndexes(tmp.getColumns());
+				// if(k > 1) {
+				// final List<CombineTask> tasks = new ArrayList<>();
+				// final int size = workSet.size();
+				// try {
+				// // combine the first k columns...
+				// // just to parallelize at least the first couple of options.
+				// // This potentially filters out some of the options quickly.
+				// for(int j = 0; j < Math.min(k, size); j++)
+				// tasks.add(new CombineTask(a, workSet.get(j), mem));
+
+				// for(Future<Object> t : pool.invokeAll(tasks))
+				// t.get();
+				// }
+				// catch(Exception e) {
+				// throw new DMLCompressionException("Failed parallelize first level all join all", e);
+				// }
+				// }
+				workSet.add(a);
 			}
 			else
 				break;
 		}
-		
+
 		if(LOG.isDebugEnabled())
 			LOG.debug("Memorizer stats:" + mem.stats());
 		mem.resetStats();
 
+		pool.shutdown();
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(workSet.size());
 		for(ColIndexes w : workSet)
 			ret.add(mem.get(w));
@@ -133,30 +159,28 @@ public class CoCodeGreedy extends AColumnCoCoder {
 		return ret;
 	}
 
-	protected static void parallelFirstJoin(List<ColIndexes> workSet, Memorizer mem, ICostEstimate cEst,
-		double costFilterThreshold, int k) {
-		try {
-			final ExecutorService pool = CommonThreadPool.get(k);
-			final List<JoinTask> tasks = new ArrayList<>();
-			final int size = workSet.size();
-			for(int i = 0; i < size; i++)
-				for(int j = i + 1; j < size; j++)
-					tasks.add(new JoinTask(workSet.get(i), workSet.get(j), mem));
+	// protected static void parallelFirstCombine(List<ColIndexes> workSet, Memorizer mem, ACostEstimate cEst,
+	// ExecutorService pool) {
+	// try {
+	// final List<CombineTask> tasks = new ArrayList<>();
+	// final int size = workSet.size();
+	// for(int i = 0; i < size; i++)
+	// for(int j = i + 1; j < size; j++)
+	// tasks.add(new CombineTask(workSet.get(i), workSet.get(j), mem));
 
-			for(Future<Object> t : pool.invokeAll(tasks))
-				t.get();
-			pool.shutdown();
-		}
-		catch(Exception e) {
-			throw new DMLCompressionException("Failed parallelize first level all join all", e);
-		}
-	}
+	// for(Future<Object> t : pool.invokeAll(tasks))
+	// t.get();
+	// }
+	// catch(Exception e) {
+	// throw new DMLCompressionException("Failed parallelize first level all join all", e);
+	// }
+	// }
 
-	protected static class JoinTask implements Callable<Object> {
+	protected static class CombineTask implements Callable<Object> {
 		private final ColIndexes _c1, _c2;
 		private final Memorizer _m;
 
-		protected JoinTask(ColIndexes c1, ColIndexes c2, Memorizer m) {
+		protected CombineTask(ColIndexes c1, ColIndexes c2, Memorizer m) {
 			_c1 = c1;
 			_c2 = c2;
 			_m = m;
@@ -164,14 +188,25 @@ public class CoCodeGreedy extends AColumnCoCoder {
 
 		@Override
 		public Object call() {
-			try {
-				_m.getOrCreate(_c1, _c2);
-				return null;
-			}
-			catch(Exception e) {
-				throw new DMLCompressionException(
-					"Failed to join columns : " + Arrays.toString(_c1._indexes) + " + " + Arrays.toString(_c2._indexes), e);
-			}
+			_m.getOrCreate(_c1, _c2);
+			return null;
+
 		}
+	}
+
+	private class CompareColumns implements Comparator<ColIndexes> {
+
+		@Override
+		public int compare(ColIndexes arg0, ColIndexes arg1) {
+			final double c1 = _cest.getCost(mem.get(arg0));
+			final double c2 = _cest.getCost(mem.get(arg1));
+			if(c1 > c2)
+				return -1;
+			else if(c1 == c2)
+				return 0;
+			else
+				return 1;
+		}
+
 	}
 }

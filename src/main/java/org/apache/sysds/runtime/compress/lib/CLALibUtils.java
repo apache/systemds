@@ -27,8 +27,10 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AMorphingMMColGroup;
+import org.apache.sysds.runtime.compress.colgroup.APreAgg;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 
@@ -108,6 +110,41 @@ public final class CLALibUtils {
 		return returnGroupIfFiniteNumbers(groups, filteredGroups, constV);
 	}
 
+	protected static void filterGroupsAndSplitPreAgg(List<AColGroup> groups, double[] constV,
+		List<AColGroup> noPreAggGroups, List<APreAgg> preAggGroups) {
+		for(AColGroup g : groups) {
+			if(g instanceof APreAgg)
+				preAggGroups.add((APreAgg) g);
+			else if(g instanceof AMorphingMMColGroup) {
+				AColGroup ga = ((AMorphingMMColGroup) g).extractCommon(constV);
+				if(ga instanceof APreAgg)
+					preAggGroups.add((APreAgg) ga);
+				else if(!(ga instanceof ColGroupEmpty))
+					throw new DMLCompressionException("I did not think this was a problem");
+			}
+			else if(g instanceof ColGroupEmpty)
+				continue;
+			else if(g instanceof ColGroupConst)
+				((ColGroupConst) g).addToCommon(constV);
+			else
+				noPreAggGroups.add(g);
+		}
+	}
+
+	protected static void splitPreAgg(List<AColGroup> groups, List<AColGroup> noPreAggGroups,
+		List<APreAgg> preAggGroups) {
+		for(AColGroup g : groups) {
+			if(g instanceof APreAgg)
+				preAggGroups.add((APreAgg) g);
+			else if(g instanceof ColGroupEmpty)
+				continue;
+			else if(g instanceof ColGroupConst)
+				throw new NotImplementedException();
+			else
+				noPreAggGroups.add(g);
+		}
+	}
+
 	private static List<AColGroup> returnGroupIfFiniteNumbers(List<AColGroup> groups, List<AColGroup> filteredGroups,
 		double[] constV) {
 		for(double v : constV)
@@ -151,4 +188,9 @@ public final class CLALibUtils {
 		Arrays.sort(resCols);
 		return resCols;
 	}
+
+	protected static double[] getColSum(List<AColGroup> groups, int nCols, int nRows) {
+		return AColGroup.colSum(groups, new double[nCols], nRows);
+	}
+
 }

@@ -37,17 +37,24 @@ public class DenseEncoding implements IEncode {
 		this.counts = counts;
 	}
 
-	@Override
-	public DenseEncoding join(IEncode e) {
-		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
-			return this;
-		else if(e instanceof SparseEncoding)
-			return joinSparse((SparseEncoding) e);
-		else
-			return joinDense((DenseEncoding) e);
+	public DenseEncoding(AMapToData map) {
+		this.map = map;
+		this.counts = map.getCounts(new int[map.getUnique()]);
 	}
 
-	protected DenseEncoding joinSparse(SparseEncoding e) {
+	@Override
+	public DenseEncoding combine(IEncode e) {
+		if((long) (getUnique()) * e.getUnique() > Integer.MAX_VALUE)
+			throw new DMLCompressionException("Invalid input to combine.");
+		else if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
+			return this;
+		else if(e instanceof SparseEncoding)
+			return combineSparse((SparseEncoding) e);
+		else
+			return combineDense((DenseEncoding) e);
+	}
+
+	protected DenseEncoding combineSparse(SparseEncoding e) {
 		final int maxUnique = e.getUnique() * getUnique();
 		final int nRows = size();
 		final int nVl = getUnique();
@@ -86,7 +93,7 @@ public class DenseEncoding implements IEncode {
 
 		// set unique.
 		d.setUnique(newUID - 1);
-		return joinDenseCount(d);
+		return new DenseEncoding(d);
 	}
 
 	private static int addVal(int nv, int r, AMapToData map, int newId, AMapToData d) {
@@ -97,17 +104,11 @@ public class DenseEncoding implements IEncode {
 		return newId;
 	}
 
-	protected DenseEncoding joinDense(DenseEncoding e) {
-		if(map == e.map)
+	protected DenseEncoding combineDense(DenseEncoding other) {
+		if(map == other.map)
 			return this; // unlikely to happen but cheap to compute
-		final AMapToData d = combine(map, e.map);
-		return joinDenseCount(d);
-	}
-
-	protected static DenseEncoding joinDenseCount(AMapToData d) {
-		int[] counts = new int[d.getUnique()];
-		d.getCounts(counts);
-		return new DenseEncoding(d, counts);
+		final AMapToData d = combine(map, other.map);
+		return new DenseEncoding(d);
 	}
 
 	public static AMapToData combine(AMapToData left, AMapToData right) {
@@ -115,34 +116,23 @@ public class DenseEncoding implements IEncode {
 			return right;
 		else if(right == null)
 			return left;
+
 		final int nVL = left.getUnique();
 		final int nVR = right.getUnique();
 		final int size = left.size();
-		final long maxUnique = (long) nVL * nVR;
-		if(maxUnique > (long) Integer.MAX_VALUE)
-			throw new DMLCompressionException("Combining impossible because max unique is above int max");
-		if(size != right.size())
-			throw new DMLCompressionException("Invalid input maps to combine because of different sizes");
+		final int maxUnique = nVL * nVR;
 
-		return createRetAndCombine(left, right, size, nVL, (int) maxUnique);
-	}
-
-	private static AMapToData createRetAndCombine(AMapToData left, AMapToData right, int size, int nVL, int maxUnique) {
-		AMapToData tmp = MapToFactory.create(size, maxUnique);
-		return combineDense(tmp, left, right, size, nVL, maxUnique);
-	}
-
-	private static AMapToData combineDense(AMapToData tmp, AMapToData left, AMapToData right, int size, int nVL,
-		int maxUnique) {
+		final AMapToData ret = MapToFactory.create(size, maxUnique);
 		final AMapToData map = MapToFactory.create(maxUnique, maxUnique + 1);
+
 		int newUID = 1;
 		for(int i = 0; i < size; i++) {
 			final int nv = left.getIndex(i) + right.getIndex(i) * nVL;
-			newUID = addVal(nv, i, map, newUID, tmp);
+			newUID = addVal(nv, i, map, newUID, ret);
 		}
 
-		tmp.setUnique(newUID - 1);
-		return tmp;
+		ret.setUnique(newUID - 1);
+		return ret;
 	}
 
 	@Override

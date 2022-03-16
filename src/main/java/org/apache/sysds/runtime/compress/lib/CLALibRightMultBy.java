@@ -37,9 +37,13 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
@@ -76,11 +80,12 @@ public class CLALibRightMultBy {
 			}
 
 			final CompressedMatrixBlock retC = RMMOverlapping(m1, m2, k);
-			final double cs = retC.getInMemorySize();
-			final double us = MatrixBlock.estimateSizeDenseInMemory(rr, rc);
-			if(cs > us)
-				return retC.getUncompressed("Overlapping rep to big: " + cs + " vs uncompressed " + us);
-			else if(retC.isEmpty())
+			// final double cs = retC.getInMemorySize();
+			// final double us = MatrixBlock.estimateSizeDenseInMemory(rr, rc);
+			// if(cs > us)
+			// return retC.getUncompressed("Overlapping rep to big: " + cs + " vs uncompressed " + us);
+			// else
+			if(retC.isEmpty())
 				return retC;
 			else {
 				if(retC.isOverlapping())
@@ -115,9 +120,11 @@ public class CLALibRightMultBy {
 			containsNull = RMMParallel(filteredGroups, that, retCg, k);
 
 		if(constV != null) {
-			AColGroup cRet = ColGroupConst.create(constV).rightMultByMatrix(that);
-			if(cRet != null)
-				retCg.add(cRet);
+			final MatrixBlock cb = new MatrixBlock(1, constV.length, constV);
+			final MatrixBlock cbRet = new MatrixBlock(1, that.getNumColumns(), false);
+			LibMatrixMult.matrixMult(cb, that, cbRet);
+			if(!cbRet.isEmpty())
+				addConstant(cbRet, retCg);
 		}
 
 		ret.allocateColGroupList(retCg);
@@ -128,6 +135,29 @@ public class CLALibRightMultBy {
 		addEmptyColumn(retCg, cr, rl, containsNull);
 
 		return ret;
+	}
+
+	private static void addConstant(MatrixBlock constantRow, List<AColGroup> out) {
+		final int nCol = constantRow.getNumColumns();
+		int bestCandidate = -1;
+		int bestCandidateValuesSize = Integer.MAX_VALUE;
+		for(int i = 0; i < out.size(); i++) {
+			AColGroup g = out.get(i);
+			if(g instanceof ColGroupDDC && g.getNumCols() == nCol && g.getNumValues() < bestCandidateValuesSize)
+				bestCandidate = i;
+		}
+
+		constantRow.sparseToDense();
+
+		if(bestCandidate != -1) {
+			AColGroup bc = out.get(bestCandidate);
+			out.remove(bestCandidate);
+			AColGroup ng = bc.binaryRowOpRight(new BinaryOperator(Plus.getPlusFnObject(), 1),
+				constantRow.getDenseBlockValues(), true);
+			out.add(ng);
+		}
+		else
+			out.add(ColGroupConst.create(constantRow.getDenseBlockValues()));
 	}
 
 	private static MatrixBlock RMM(CompressedMatrixBlock m1, MatrixBlock that, int k) {

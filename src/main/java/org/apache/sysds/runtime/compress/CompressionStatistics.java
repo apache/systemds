@@ -31,18 +31,31 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
  */
 public class CompressionStatistics {
 
-	// sizes while compressing
-	public long estimatedSizeCoCoded;
-	public long estimatedSizeCols;
-	public long compressedInitialSize;
-
-	// sizes before compression
+	/** Size of the original input */
 	public long originalSize;
+	/** Size if the input is dense */
 	public long denseSize;
+	/** Estimated size of compressing individual columns */
+	public long estimatedSizeCols;
+	/** Estimated size of compressing after co-coding */
+	public long estimatedSizeCoCoded;
+	/** Compression size after compressing but before finalize */
+	public long compressedInitialSize;
+	/** Compressed size */
+	public long compressedSize;
 
-	// compressed size
-	public long size;
+	/** Cost calculated by the cost estimator on input */
+	public double originalCost = Double.NaN;
+	/** Summed cost estimated from individual columns */
+	public double estimatedCostCols = Double.NaN;
+	/** Summed cost after cocoding */
+	public double estimatedCostCoCoded = Double.NaN;
+	/** Compressed cost after compression but before finalize */
+	public double compressedInitialCost = Double.NaN;
+	/** Cost of the compressed representation */
+	public double compressedCost = Double.NaN;
 
+	/** local hashmap to count the column group instances */
 	private Map<String, int[]> colGroupCounts;
 
 	/**
@@ -94,11 +107,11 @@ public class CompressionStatistics {
 	}
 
 	public double getRatio() {
-		return size == 0.0 ? Double.POSITIVE_INFINITY : (double) originalSize / size;
+		return compressedSize == 0.0 ? Double.POSITIVE_INFINITY : (double) originalSize / compressedSize;
 	}
 
 	public double getDenseRatio() {
-		return size == 0.0 ? Double.POSITIVE_INFINITY : (double) denseSize / size;
+		return compressedSize == 0.0 ? Double.POSITIVE_INFINITY : (double) denseSize / compressedSize;
 	}
 
 	@Override
@@ -107,7 +120,7 @@ public class CompressionStatistics {
 		sb.append("\nCompressionStatistics:");
 		sb.append("\nDense Size            : " + denseSize);
 		sb.append("\nOriginal Size         : " + originalSize);
-		sb.append("\nCompressed Size       : " + size);
+		sb.append("\nCompressed Size       : " + compressedSize);
 		sb.append("\nCompressionRatio      : " + getRatio());
 		if(colGroupCounts != null) {
 			sb.append("\nCompressionTypes      : " + getGroupsTypesString());

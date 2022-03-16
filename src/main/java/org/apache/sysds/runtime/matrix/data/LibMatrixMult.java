@@ -198,7 +198,7 @@ public class LibMatrixMult
 		final int ru2 = (pm2) ? m2.rlen : m1.rlen;
 
 		// core matrix mult computation
-		if(ultraSparse)
+		if(ultraSparse && !fixedRet)
 			matrixMultUltraSparse(m1, m2, ret, m1Perm, 0, ru2);
 		else if(!m1.sparse && !m2.sparse)
 			matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru2, 0, m2.clen);

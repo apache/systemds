@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
@@ -120,7 +121,7 @@ public class CLALibBinaryCellOp {
 			if(d_compressed != null) {
 				if(left && atype == BinaryAccessType.COL_VECTOR_MATRIX)
 					throw new NotImplementedException("Binary row op left is not supported for Uncompressed Matrix, "
-						+ "Implement support for VMr in MatrixBLock Binary Cell operations");
+						+ "Implement support for VMr in MatrixBlock Binary Cell operations");
 				if(left)
 					return that.binaryOperations(op, d_compressed);
 				else
@@ -290,7 +291,7 @@ public class CLALibBinaryCellOp {
 			final AColGroup g = oldColGroups.get(i);
 			final int newSize = g.getNumValues();
 			newColGroups.add(g);
-			if(newSize < smallestSize && g.getNumCols() == nCol) {
+			if(newSize < smallestSize && g.getNumCols() == nCol && !(g instanceof ASDCZero)) {
 				smallestIndex = i;
 				smallestSize = newSize;
 			}

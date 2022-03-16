@@ -232,13 +232,7 @@ public class LibMatrixReorg {
 			// null if the number of columns is larger than threshold
 			if(in.sparse && out.sparse && in.clen <= 4096) {
 				
-				ArrayList<CountNnzTask> tasks = new ArrayList<>();
-				int blklen = (int) (Math.ceil((double) in.rlen / k));
-				for(int i = 0; i < k & i * blklen < in.rlen; i++)
-					tasks.add(new CountNnzTask(in, i * blklen, Math.min((i + 1) * blklen, in.rlen)));
-				List<Future<int[]>> rtasks = pool.invokeAll(tasks);
-				for(Future<int[]> rtask : rtasks)
-					cnt = mergeNnzCounts(cnt, rtask.get());
+				cnt = countNNZColumns(in, k, pool);
 
 				if(allowCSR) {
 					int[] outPtr = ((SparseBlockCSR) out.sparseBlock).rowPointers();
@@ -272,6 +266,27 @@ public class LibMatrixReorg {
 		// System.out.println("r' k="+k+" ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
 		
 		return out;
+	}
+
+	public static int[] countNNZColumns(MatrixBlock in, int k, ExecutorService pool) {
+		try {
+			int[] cnt = null;
+			List<Future<int[]>> rtasks = countNNZColumnsFuture(in,k,pool);
+			for(Future<int[]> rtask : rtasks)
+				cnt = mergeNnzCounts(cnt, rtask.get());
+			return cnt;
+		}
+		catch(InterruptedException | ExecutionException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	public static List<Future<int[]>> countNNZColumnsFuture(MatrixBlock in, int k, ExecutorService pool) throws InterruptedException {
+		ArrayList<CountNnzTask> tasks = new ArrayList<>();
+		int blklen = (int) (Math.ceil((double) in.rlen / k));
+		for(int i = 0; i < k & i * blklen < in.rlen; i++)
+			tasks.add(new CountNnzTask(in, i * blklen, Math.min((i + 1) * blklen, in.rlen)));
+		return pool.invokeAll(tasks);
 	}
 
 	public static MatrixBlock transposeInPlace(MatrixBlock in, int k){
@@ -1818,7 +1833,7 @@ public class LibMatrixReorg {
 		return cnt;
 	}
 
-	private static int[] mergeNnzCounts(int[] cnt, int[] cnt2) {
+	public static int[] mergeNnzCounts(int[] cnt, int[] cnt2) {
 		if( cnt == null )
 			return cnt2;
 		for( int i=0; i<cnt.length; i++ )

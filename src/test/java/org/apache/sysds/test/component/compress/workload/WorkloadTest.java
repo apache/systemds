@@ -86,16 +86,16 @@ public class WorkloadTest {
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 1, false, false, "plus.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, false, "sliceCols.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, false, "sliceIndex.dml", args});
-		tests.add(new Object[] {0, 0, 0, 1, 0, 0, 0, 0, false, false, "leftMult.dml", args});
-		tests.add(new Object[] {0, 0, 0, 0, 1, 0, 1, 0, false, false, "rightMult.dml", args});
-		tests.add(new Object[] {0, 0, 0, 1, 0, 0, 0, 0, false, false, "TLeftMult.dml", args});
+		// tests.add(new Object[] {0, 0, 0, 1, 0, 0, 0, 0, false, false, "leftMult.dml", args});
+		// tests.add(new Object[] {0, 0, 0, 0, 1, 0, 1, 0, false, false, "rightMult.dml", args});
+		// tests.add(new Object[] {0, 0, 0, 1, 0, 0, 0, 0, false, false, "TLeftMult.dml", args});
 
-		tests.add(new Object[] {0, 0, 1, 0, 1, 0, 0, 0, false, false, "TRightMult.dml", args});
+		// tests.add(new Object[] {0, 0, 1, 0, 1, 0, 0, 0, false, false, "TRightMult.dml", args});
 
 		// Loops:
-		tests.add(new Object[] {0, 0, 0, 11, 0, 0, 0, 0, true, false, "loop/leftMult.dml", args});
-		tests.add(new Object[] {0, 0, 0, 101, 0, 0, 0, 0, true, false, "loop/leftMultStaticLoop.dml", args});
-		tests.add(new Object[] {0, 0, 0, 10, 0, 0, 0, 0, true, false, "loop/leftMultWhile.dml", args});
+		// tests.add(new Object[] {0, 0, 0, 11, 0, 0, 0, 0, true, false, "loop/leftMult.dml", args});
+		// tests.add(new Object[] {0, 0, 0, 101, 0, 0, 0, 0, true, false, "loop/leftMultStaticLoop.dml", args});
+		// tests.add(new Object[] {0, 0, 0, 10, 0, 0, 0, 0, true, false, "loop/leftMultWhile.dml", args});
 
 		// functions:
 
@@ -118,17 +118,17 @@ public class WorkloadTest {
 		args.put("$3", "0");
 
 		// no recompile
-		tests.add(new Object[] {0, 1, 1, 1, 1, 1, 5, 0, true, false, "functions/lmDS.dml", args});
+		// tests.add(new Object[] {0, 1, 1, 1, 1, 1, 5, 0, true, false, "functions/lmDS.dml", args});
 		// with recompile
-		tests.add(new Object[] {0, 0, 0, 1, 0, 1, 0, 0, true, true, "functions/lmDS.dml", args});
-		tests.add(new Object[] {0, 0, 0, 1, 10, 10, 1, 0, true, true, "functions/lmCG.dml", args});
+		// tests.add(new Object[] {0, 0, 0, 1, 0, 1, 0, 0, true, true, "functions/lmDS.dml", args});
+		// tests.add(new Object[] {0, 0, 0, 1, 10, 10, 1, 0, true, true, "functions/lmCG.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);
 		args.put("$2", "TRUE");
 		args.put("$3", "0");
-		tests.add(new Object[] {0, 1, 1, 1, 1, 1, 0, 0, true, true, "functions/lmDS.dml", args});
-		tests.add(new Object[] {0, 0, 1, 1, 11, 10, 1, 0, true, true, "functions/lmCG.dml", args});
+		// tests.add(new Object[] {0, 1, 1, 1, 1, 1, 0, 0, true, true, "functions/lmDS.dml", args});
+		// tests.add(new Object[] {0, 0, 1, 1, 11, 10, 1, 0, true, true, "functions/lmCG.dml", args});
 
 		// args = new HashMap<>();
 		// args.put("$1", testFile);
@@ -147,18 +147,18 @@ public class WorkloadTest {
 		args = new HashMap<>();
 		args.put("$1", testFile);
 		args.put("$2", "FALSE");
-		tests.add(new Object[] {0, 0, 10, 11, 10, 0, 1, 0, true, true, "functions/l2svm.dml", args});
+		// tests.add(new Object[] {0, 0, 10, 11, 10, 0, 1, 0, true, true, "functions/l2svm.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", yFile);
 		args.put("$2", "FALSE");
-		tests.add(new Object[] {0, 1, 0, 1, 0, 0, 10, 0, true, true, "functions/l2svm_Y.dml", args});
+		// tests.add(new Object[] {0, 1, 0, 1, 0, 0, 10, 0, true, true, "functions/l2svm_Y.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);
 		args.put("$2", "100");
 		args.put("$3", "16");
-		tests.add(new Object[] {0, 0, 100, 0, 100, 0, 100, 0, true, true, "mmrbem+.dml", args});
+		// tests.add(new Object[] {0, 0, 100, 0, 100, 0, 100, 0, true, true, "mmrbem+.dml", args});
 
 		return tests;
 	}
@@ -196,7 +196,7 @@ public class WorkloadTest {
 		Assert.assertEquals(errorString + "decompressions", decompressions, itc.getDecompressions());
 		Assert.assertEquals(errorString + "overlappingDecompressions", overlappingDecompressions,
 			itc.getOverlappingDecompressions());
-		Assert.assertEquals(errorString + "leftMultiplications", leftMultiplications, itc.getLeftMultipications());
+		Assert.assertEquals(errorString + "leftMultiplications", leftMultiplications, itc.getLeftMultiplications());
 		Assert.assertEquals(errorString + "rightMultiplications", rightMultiplications, itc.getRightMultiplications());
 		Assert.assertEquals(errorString + "compressedMultiplications", compressedMultiplications,
 			itc.getCompressedMultiplications());

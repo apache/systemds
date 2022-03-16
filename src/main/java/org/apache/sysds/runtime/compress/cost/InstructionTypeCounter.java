@@ -50,7 +50,7 @@ public final class InstructionTypeCounter implements Serializable {
 		return overlappingDecompressions;
 	}
 
-	public int getLeftMultipications() {
+	public int getLeftMultiplications() {
 		return leftMultiplications;
 	}
 

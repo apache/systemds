@@ -63,7 +63,8 @@ public class CLALibScalar {
 
 		List<AColGroup> colGroups = m1.getColGroups();
 		if(m1.isOverlapping() && !(sop.fn instanceof Multiply || sop.fn instanceof Divide)) {
-			final ColGroupConst c = constOverlap(m1, sop);
+			final double v0 = sop.executeScalar(0);
+			final ColGroupConst c = (v0 != 0) ? constOverlap(m1, v0) : null;
 			boolean isMinus = sop instanceof LeftScalarOperator && sop.fn instanceof Minus;
 			List<AColGroup> newColGroups = isMinus ? copyGroupsAndMultMinus(m1, sop, c, ret) : copyGroups(m1, sop, c, ret);
 			ret.allocateColGroupList(newColGroups);
@@ -102,13 +103,13 @@ public class CLALibScalar {
 		return ret;
 	}
 
-	private static ColGroupConst constOverlap(CompressedMatrixBlock m1, ScalarOperator sop) {
-		return (ColGroupConst) ColGroupConst.create(m1.getNumColumns(), sop.executeScalar(0));
+	private static ColGroupConst constOverlap(CompressedMatrixBlock m1, double v) {
+		return (ColGroupConst) ColGroupConst.create(m1.getNumColumns(), v);
 	}
 
 	private static List<AColGroup> copyGroups(CompressedMatrixBlock m1, ScalarOperator sop, ColGroupConst c,
 		CompressedMatrixBlock ret) {
-		final double[] constV = c.getValues();
+		final double[] constV = c != null ? c.getValues() : null;
 		final List<AColGroup> newColGroups = new ArrayList<>();
 		for(AColGroup grp : m1.getColGroups()) {
 			if(grp instanceof ColGroupEmpty)
@@ -117,13 +118,15 @@ public class CLALibScalar {
 				final ColGroupConst g = (ColGroupConst) grp;
 				final double[] gv = g.getValues();
 				final int[] colIdx = grp.getColIndices();
-				for(int i = 0; i < colIdx.length; i++)
-					constV[colIdx[i]] += gv[i];
+				if(constV != null)
+					for(int i = 0; i < colIdx.length; i++)
+						constV[colIdx[i]] += gv[i];
 			}
 			else
 				newColGroups.add(grp.copy());
 		}
-		newColGroups.add(c);
+		if(c != null)
+			newColGroups.add(c);
 		return newColGroups;
 	}
 
@@ -144,7 +147,8 @@ public class CLALibScalar {
 			else
 				newColGroups.add(grp.scalarOperation(new RightScalarOperator(Multiply.getMultiplyFnObject(), -1)));
 		}
-		newColGroups.add(c);
+		if(c != null)
+			newColGroups.add(c);
 		return newColGroups;
 	}
 

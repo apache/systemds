@@ -197,9 +197,30 @@ public abstract class AMapToData implements Serializable {
 	 * @param cu    The column index to stop at (not inclusive)
 	 */
 	protected void preAggregateDenseSingleRow(double[] mV, int off, double[] preAV, int cl, int cu) {
+		if(cu - cl > 64)
+			preAggregateDenseToRowBy8(mV, preAV, cl, cu, off);
+		else {
+			off += cl;
+			for(int rc = cl; rc < cu; rc++, off++)
+				preAV[getIndex(rc)] += mV[off];
+		}
+	}
+
+	protected void preAggregateDenseToRowBy8(double[] mV, double[] preAV, int cl, int cu, int off) {
+		final int h = (cu - cl) % 8;
 		off += cl;
-		for(int rc = cl; rc < cu; rc++, off++)
+		for(int rc = cl; rc < cl + h; rc++, off++)
 			preAV[getIndex(rc)] += mV[off];
+		for(int rc = cl + h; rc < cu; rc += 8, off += 8) {
+			preAV[getIndex(rc)] += mV[off];
+			preAV[getIndex(rc + 1)] += mV[off + 1];
+			preAV[getIndex(rc + 2)] += mV[off + 2];
+			preAV[getIndex(rc + 3)] += mV[off + 3];
+			preAV[getIndex(rc + 4)] += mV[off + 4];
+			preAV[getIndex(rc + 5)] += mV[off + 5];
+			preAV[getIndex(rc + 6)] += mV[off + 6];
+			preAV[getIndex(rc + 7)] += mV[off + 7];
+		}
 	}
 
 	/**
@@ -218,17 +239,59 @@ public abstract class AMapToData implements Serializable {
 		if(db.isContiguous()) {
 			final double[] mV = m.getDenseBlockValues();
 			final int nCol = m.getNumColumns();
-			for(int c = cl; c < cu; c++) {
-				final int idx = getIndex(c);
-				final int start = c + nCol * rl;
-				final int end = c + nCol * ru;
-				for(int offOut = idx, off = start; off < end; offOut += nVal, off += nCol) {
-					preAV[offOut] += mV[off];
-				}
-			}
+			preAggregateDenseMultiRowContiguous(mV, nCol, nVal, preAV, rl, ru, cl, cu);
 		}
 		else
 			throw new NotImplementedException();
+	}
+
+	protected void preAggregateDenseMultiRowContiguous(double[] mV, int nCol, int nVal, double[] preAV, int rl, int ru,
+		int cl, int cu) {
+		if(cu - cl > 64)
+			preAggregateDenseMultiRowContiguousBy8(mV, nCol, nVal, preAV, rl, ru, cl, cu);
+		else
+			preAggregateDenseMultiRowContiguousBy1(mV, nCol, nVal, preAV, rl, ru, cl, cu);
+	}
+
+	protected void preAggregateDenseMultiRowContiguousBy8(double[] mV, int nCol, int nVal, double[] preAV, int rl,
+		int ru, int cl, int cu) {
+		final int h = (cu - cl) % 8;
+		preAggregateDenseMultiRowContiguousBy1(mV, nCol, nVal, preAV, rl, ru, cl, cl + h);
+		final int offR = nCol * rl;
+		final int offE = nCol * ru;
+		for(int c = cl + h; c < cu; c += 8) {
+			final int id1 = getIndex(c), id2 = getIndex(c + 1), id3 = getIndex(c + 2), id4 = getIndex(c + 3),
+				id5 = getIndex(c + 4), id6 = getIndex(c + 5), id7 = getIndex(c + 6), id8 = getIndex(c + 7);
+
+			final int start = c + offR;
+			final int end = c + offE;
+			int nValOff = 0;
+			for(int off = start; off < end; off += nCol) {
+				preAV[id1 + nValOff] += mV[off];
+				preAV[id2 + nValOff] += mV[off + 1];
+				preAV[id3 + nValOff] += mV[off + 2];
+				preAV[id4 + nValOff] += mV[off + 3];
+				preAV[id5 + nValOff] += mV[off + 4];
+				preAV[id6 + nValOff] += mV[off + 5];
+				preAV[id7 + nValOff] += mV[off + 6];
+				preAV[id8 + nValOff] += mV[off + 7];
+				nValOff += nVal;
+			}
+		}
+	}
+
+	protected void preAggregateDenseMultiRowContiguousBy1(double[] mV, int nCol, int nVal, double[] preAV, int rl,
+		int ru, int cl, int cu) {
+		final int offR = nCol * rl;
+		final int offE = nCol * ru;
+		for(int c = cl; c < cu; c++) {
+			final int idx = getIndex(c);
+			final int start = c + offR;
+			final int end = c + offE;
+			for(int offOut = idx, off = start; off < end; offOut += nVal, off += nCol) {
+				preAV[offOut] += mV[off];
+			}
+		}
 	}
 
 	/**
@@ -308,8 +371,17 @@ public abstract class AMapToData implements Serializable {
 	 */
 	protected void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
 		final int sz = size();
-		for(int r = 0; r < sz; r++)
+		final int h = sz % 8;
+
+		for(int r = 0; r < h; r++)
 			td.addToEntry(v, tm.getIndex(r), getIndex(r), nCol);
+
+		for(int r = h; r < sz; r += 8) {
+			int r2 = r + 1, r3 = r + 2, r4 = r + 3, r5 = r + 4, r6 = r + 5, r7 = r + 6, r8 = r + 7;
+			td.addToEntryVectorized(v, tm.getIndex(r), tm.getIndex(r2), tm.getIndex(r3), tm.getIndex(r4), tm.getIndex(r5),
+				tm.getIndex(r6), tm.getIndex(r7), tm.getIndex(r8), getIndex(r), getIndex(r2), getIndex(r3), getIndex(r4),
+				getIndex(r5), getIndex(r6), getIndex(r7), getIndex(r8), nCol);
+		}
 	}
 
 	/**
@@ -345,7 +417,7 @@ public abstract class AMapToData implements Serializable {
 	public void preAggregateDDC_SDCZMultiCol(AMapToData tm, ADictionary td, AOffset tof, double[] v, int nCol) {
 		final AOffsetIterator it = tof.getOffsetIterator();
 		final int size = tm.size() - 1;
-		int i = (size > 8) ? preAggregateDDC_SDCZMultiCol_vect(tm, td, tof, v, nCol, it, size) : 0;
+		int i = (size > 8) ? preAggregateDDC_SDCZMultiCol_vect(tm, td, v, nCol, it, size) : 0;
 
 		for(; i < size; i++) {
 			final int to = getIndex(it.value());
@@ -359,19 +431,13 @@ public abstract class AMapToData implements Serializable {
 		td.addToEntry(v, fr, to, nCol);
 	}
 
-	private int preAggregateDDC_SDCZMultiCol_vect(AMapToData tm, ADictionary td, AOffset tof, double[] v, int nCol,
+	private int preAggregateDDC_SDCZMultiCol_vect(AMapToData tm, ADictionary td, double[] v, int nCol,
 		AOffsetIterator it, int size) {
 		final int h = size % 8;
 		int i = 0;
 		while(i < size - h) {
-			int t1 = it.value();
-			int t2 = it.next();
-			int t3 = it.next();
-			int t4 = it.next();
-			int t5 = it.next();
-			int t6 = it.next();
-			int t7 = it.next();
-			int t8 = it.next();
+			int t1 = it.value(), t2 = it.next(), t3 = it.next(), t4 = it.next(), t5 = it.next(), t6 = it.next(),
+				t7 = it.next(), t8 = it.next();
 
 			t1 = getIndex(t1);
 			t2 = getIndex(t2);
@@ -382,14 +448,8 @@ public abstract class AMapToData implements Serializable {
 			t7 = getIndex(t7);
 			t8 = getIndex(t8);
 
-			int f1 = tm.getIndex(i);
-			int f2 = tm.getIndex(i + 1);
-			int f3 = tm.getIndex(i + 2);
-			int f4 = tm.getIndex(i + 3);
-			int f5 = tm.getIndex(i + 4);
-			int f6 = tm.getIndex(i + 5);
-			int f7 = tm.getIndex(i + 6);
-			int f8 = tm.getIndex(i + 7);
+			int f1 = tm.getIndex(i), f2 = tm.getIndex(i + 1), f3 = tm.getIndex(i + 2), f4 = tm.getIndex(i + 3),
+				f5 = tm.getIndex(i + 4), f6 = tm.getIndex(i + 5), f7 = tm.getIndex(i + 6), f8 = tm.getIndex(i + 7);
 
 			i += 8;
 			it.next();
@@ -417,23 +477,52 @@ public abstract class AMapToData implements Serializable {
 	protected void preAggregateSDCZ_DDCSingleCol(AMapToData tm, double[] td, AOffset of, double[] v) {
 		final AOffsetIterator itThis = of.getOffsetIterator();
 		final int size = size() - 1;
-
+		int tv = itThis.value();
 		for(int i = 0; i < size; i++) {
-			v[getIndex(i)] += td[tm.getIndex(itThis.value())];
-			itThis.next();
+			v[getIndex(i)] += td[tm.getIndex(tv)];
+			tv = itThis.next();
 		}
-		v[getIndex(size)] += td[tm.getIndex(itThis.value())];
+		v[getIndex(size)] += td[tm.getIndex(tv)];
 	}
 
 	protected void preAggregateSDCZ_DDCMultiCol(AMapToData tm, ADictionary td, AOffset of, double[] v, int nCol) {
 		final AOffsetIterator itThis = of.getOffsetIterator();
 		final int size = size() - 1;
+		int i = (size > 8) ? preAggregateSDCZ_DDCMultiCol_vect(tm, td, v, nCol, itThis, size) : 0;
 
-		for(int i = 0; i < size; i++) {
-			td.addToEntry(v, tm.getIndex(itThis.value()), getIndex(i), nCol);
-			itThis.next();
+		int tv = itThis.value();
+		for(; i < size; i++) {
+			td.addToEntry(v, tm.getIndex(tv), getIndex(i), nCol);
+			tv = itThis.next();
 		}
-		td.addToEntry(v, tm.getIndex(itThis.value()), getIndex(size), nCol);
+		td.addToEntry(v, tm.getIndex(tv), getIndex(size), nCol);
+	}
+
+	private int preAggregateSDCZ_DDCMultiCol_vect(AMapToData tm, ADictionary td, double[] v, int nCol,
+		AOffsetIterator it, int size) {
+		final int h = size % 8;
+		int i = 0;
+		while(i < size - h) {
+			int t1 = getIndex(i), t2 = getIndex(i + 1), t3 = getIndex(i + 2), t4 = getIndex(i + 3), t5 = getIndex(i + 4),
+				t6 = getIndex(i + 5), t7 = getIndex(i + 6), t8 = getIndex(i + 7);
+
+			int f1 = it.value(), f2 = it.next(), f3 = it.next(), f4 = it.next(), f5 = it.next(), f6 = it.next(),
+				f7 = it.next(), f8 = it.next();
+
+			f1 = tm.getIndex(f1);
+			f2 = tm.getIndex(f2);
+			f3 = tm.getIndex(f3);
+			f4 = tm.getIndex(f4);
+			f5 = tm.getIndex(f5);
+			f6 = tm.getIndex(f6);
+			f7 = tm.getIndex(f7);
+			f8 = tm.getIndex(f8);
+
+			i += 8;
+			it.next();
+			td.addToEntryVectorized(v, f1, f2, f3, f4, f5, f6, f7, f8, t1, t2, t3, t4, t5, t6, t7, t8, nCol);
+		}
+		return i;
 	}
 
 	public final void preAggregateSDCZ_SDCZ(AMapToData tm, ADictionary td, AOffset tof, AOffset of, Dictionary ret,

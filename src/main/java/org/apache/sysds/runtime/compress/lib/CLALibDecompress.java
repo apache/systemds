@@ -310,6 +310,7 @@ public class CLALibDecompress {
 		private final double _eps;
 		private final int _rl;
 		private final int _ru;
+		private final int _blklen;
 		private final double[] _constV;
 
 		protected DecompressDenseTask(List<AColGroup> colGroups, MatrixBlock ret, double eps, int rl, int ru,
@@ -319,24 +320,31 @@ public class CLALibDecompress {
 			_eps = eps;
 			_rl = rl;
 			_ru = ru;
+			_blklen = 32768 / ret.getNumColumns();
 			_constV = constV;
 		}
 
 		@Override
 		public Long call() {
-			final int blk = 1024;
-			long nnz = 0;
-			for(int b = _rl; b < _ru; b += blk) {
-				int e = Math.min(b + blk, _ru);
-				for(AColGroup grp : _colGroups)
-					grp.decompressToDenseBlock(_ret.getDenseBlock(), b, e);
+			try{
 
-				if(_constV != null)
-					addVector(_ret, _constV, _eps, b, e);
-				nnz += _ret.recomputeNonZeros(b, e - 1);
+				long nnz = 0;
+				for(int b = _rl; b < _ru; b += _blklen) {
+					final int e = Math.min(b + _blklen, _ru);
+					for(AColGroup grp : _colGroups)
+						grp.decompressToDenseBlock(_ret.getDenseBlock(), b, e);
+	
+					if(_constV != null)
+						addVector(_ret, _constV, _eps, b, e);
+					nnz += _ret.recomputeNonZeros(b, e - 1);
+				}
+	
+				return nnz;
 			}
-
-			return nnz;
+			catch(Exception e){
+				e.printStackTrace();
+				throw new DMLCompressionException("Failed dense decompression", e);
+			}
 		}
 	}
 

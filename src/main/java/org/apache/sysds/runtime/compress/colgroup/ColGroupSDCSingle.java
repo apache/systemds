@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -30,12 +31,14 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 /**
  * Column group that sparsely encodes the dictionary values. The idea is that all values is encoded with indexes except
@@ -61,12 +64,25 @@ public class ColGroupSDCSingle extends AMorphingMMColGroup {
 		super(numRows);
 	}
 
-	protected ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
+	private ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_indexes = offsets;
 		_zeros = false;
 		_defaultTuple = defaultTuple;
+	}
+
+	protected static AColGroup create(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple,
+		AOffset offsets, int[] cachedCounts) {
+		boolean allZero = true;
+		for(double d : defaultTuple)
+			allZero &= d == 0;
+		if(dict == null && allZero)
+			return new ColGroupEmpty(colIndices);
+		else if(allZero)
+			return ColGroupSDCSingleZeros.create(colIndices, numRows, dict, offsets, cachedCounts);
+		else
+			return new ColGroupSDCSingle(colIndices, numRows, dict, defaultTuple, offsets, cachedCounts);
 	}
 
 	@Override
@@ -256,16 +272,16 @@ public class ColGroupSDCSingle extends AMorphingMMColGroup {
 
 	@Override
 	protected void computeProduct(double[] c, int nRows) {
-		super.computeProduct(c, nRows);
-		for(int x = 0; x < _colIndexes.length; x++)
-			c[0] *= _defaultTuple[x];
+		final int count = _numRows - getCounts()[0];
+		_dict.productWithDefault(c, getCounts(), _defaultTuple, count);
 	}
 
 	@Override
 	protected void computeColProduct(double[] c, int nRows) {
 		super.computeColProduct(c, nRows);
+		int count = _numRows - getCounts()[0];
 		for(int x = 0; x < _colIndexes.length; x++)
-			c[_colIndexes[x]] *= _defaultTuple[x];
+			c[_colIndexes[x]] *= Math.pow(_defaultTuple[x], count);
 	}
 
 	@Override
@@ -292,8 +308,17 @@ public class ColGroupSDCSingle extends AMorphingMMColGroup {
 		final double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
 			newDefaultTuple[i] = op.executeScalar(_defaultTuple[i]);
-		return new ColGroupSDCSingle(_colIndexes, _numRows, _dict.applyScalarOp(op), newDefaultTuple, _indexes,
-			getCachedCounts());
+		final ADictionary nDict = _dict.applyScalarOp(op);
+		return create(_colIndexes, _numRows, nDict, newDefaultTuple, _indexes, getCachedCounts());
+	}
+
+	@Override
+	public AColGroup unaryOperation(UnaryOperator op) {
+		final double[] newDefaultTuple = new double[_defaultTuple.length];
+		for(int i = 0; i < _defaultTuple.length; i++)
+			newDefaultTuple[i] = op.fn.execute(_defaultTuple[i]);
+		final ADictionary nDict = _dict.applyUnaryOp(op);
+		return create(_colIndexes, _numRows, nDict, newDefaultTuple, _indexes, getCachedCounts());
 	}
 
 	@Override
@@ -302,7 +327,7 @@ public class ColGroupSDCSingle extends AMorphingMMColGroup {
 		for(int i = 0; i < _defaultTuple.length; i++)
 			newDefaultTuple[i] = op.fn.execute(v[_colIndexes[i]], _defaultTuple[i]);
 		final ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
-		return new ColGroupSDCSingle(_colIndexes, _numRows, newDict, newDefaultTuple, _indexes, getCachedCounts());
+		return create(_colIndexes, _numRows, newDict, newDefaultTuple, _indexes, getCachedCounts());
 	}
 
 	@Override
@@ -341,18 +366,30 @@ public class ColGroupSDCSingle extends AMorphingMMColGroup {
 	}
 
 	@Override
-	public ColGroupSDCSingleZeros extractCommon(double[] constV) {
+	public AColGroup replace(double pattern, double replace) {
+		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length);
+		double[] newDefaultTuple = new double[_defaultTuple.length];
+		for(int i = 0; i < _defaultTuple.length; i++)
+			newDefaultTuple[i] = _defaultTuple[i] == pattern ? replace : _defaultTuple[i];
+
+		return create(_colIndexes, _numRows, replaced, newDefaultTuple, _indexes, getCachedCounts());
+	}
+
+	@Override
+	public AColGroup extractCommon(double[] constV) {
 		for(int i = 0; i < _colIndexes.length; i++)
 			constV[_colIndexes[i]] += _defaultTuple[i];
 
 		ADictionary subtractedDict = _dict.subtractTuple(_defaultTuple);
-		return new ColGroupSDCSingleZeros(_colIndexes, _numRows, subtractedDict, _indexes, getCachedCounts());
+		return ColGroupSDCSingleZeros.create(_colIndexes, _numRows, subtractedDict, _indexes, getCachedCounts());
 	}
 
 	@Override
 	public long getNumberNonZeros(int nRows) {
 		long nnz = super.getNumberNonZeros(nRows);
-		nnz += _numRows - getCounts()[0];
+		final int count = _numRows - getCounts()[0];
+		for(int x = 0; x < _colIndexes.length; x++)
+			nnz += _defaultTuple[x] != 0 ? count : 0;
 		return nnz;
 	}
 
@@ -374,18 +411,19 @@ public class ColGroupSDCSingle extends AMorphingMMColGroup {
 			else {
 				double[] retDef = new double[max];
 				retDef[((int) _defaultTuple[0]) - 1] = 1;
-				return new ColGroupSDCSingle(Util.genColsIndices(max), nRows, new Dictionary(new double[max]), retDef, _indexes, null);
+				return new ColGroupSDCSingle(Util.genColsIndices(max), nRows, new Dictionary(new double[max]), retDef,
+					_indexes, null);
 			}
 		}
 		else {
 			if(def <= 0) {
 				if(ignore)
-					return new ColGroupSDCSingleZeros(Util.genColsIndices(max), nRows, d, _indexes, getCachedCounts());
+					return ColGroupSDCSingleZeros.create(Util.genColsIndices(max), nRows, d, _indexes, getCachedCounts());
 				else
 					throw new DMLRuntimeException("Invalid content of zero in rexpand");
 			}
 			else if(def > max)
-				return new ColGroupSDCSingleZeros(Util.genColsIndices(max), nRows, d, _indexes, getCachedCounts());
+				return ColGroupSDCSingleZeros.create(Util.genColsIndices(max), nRows, d, _indexes, getCachedCounts());
 			else {
 				double[] retDef = new double[max];
 				retDef[((int) _defaultTuple[0]) - 1] = 1;
@@ -395,9 +433,51 @@ public class ColGroupSDCSingle extends AMorphingMMColGroup {
 	}
 
 	@Override
+	public double getCost(ComputationCostEstimator e, int nRows) {
+		final int nVals = getNumValues();
+		final int nCols = getNumCols();
+		final int nRowsScanned = getCounts()[0];
+		return e.getCost(nRows, nRowsScanned, nCols, nVals, _dict.getSparsity());
+	}
+
+	@Override
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
+		ColGroupSDCSingle ret = (ColGroupSDCSingle) super.sliceMultiColumns(idStart, idEnd, outputCols);
+		ret._defaultTuple = new double[idEnd - idStart];
+		for(int i = idStart, j = 0; i < idEnd; i++, j++)
+			ret._defaultTuple[j] = _defaultTuple[i];
+		return ret;
+	}
+
+	@Override
+	protected AColGroup sliceSingleColumn(int idx) {
+		ColGroupSDCSingle ret = (ColGroupSDCSingle) super.sliceSingleColumn(idx);
+		ret._defaultTuple = new double[1];
+		ret._defaultTuple[0] = _defaultTuple[idx];
+		return ret;
+	}
+
+	@Override
+	public boolean containsValue(double pattern) {
+		if(pattern == 0 && _zeros)
+			return true;
+		boolean ret = _dict.containsValue(pattern);
+		if(ret == true)
+			return ret;
+		else {
+			for(double v : _defaultTuple)
+				if(v == pattern)
+					return true;
+			return false;
+		}
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
+		sb.append(String.format("\n%15s", "Default: "));
+		sb.append(Arrays.toString(_defaultTuple));
 		sb.append(String.format("\n%15s", "Indexes: "));
 		sb.append(_indexes.toString());
 		return sb.toString();

@@ -38,6 +38,10 @@ public class MapToBit extends AMapToData {
 	private final BitSet _data;
 	private final int _size;
 
+	protected MapToBit(int size){
+		this(2, size);
+	}
+
 	public MapToBit(int unique, int size) {
 		super(Math.min(unique, 2));
 		_data = new BitSet(size);

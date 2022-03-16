@@ -69,7 +69,7 @@ public abstract class EncodeSampleTest {
 		try {
 			// not that you should or would ever do this.
 			// but it is a nice and simple test.
-			IEncode j = e.join(e);
+			IEncode j = e.combine(e);
 			if(u != j.getUnique()) {
 				StringBuilder sb = new StringBuilder();
 				sb.append("invalid number of unique expected:");
@@ -94,7 +94,7 @@ public abstract class EncodeSampleTest {
 		try {
 			final MatrixBlock empty = new MatrixBlock(m.getNumRows(), m.getNumColumns(), true);
 			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(empty, t, 0);
-			assertEquals(u, emptyEncoding.join(e).getUnique());
+			assertEquals(u, emptyEncoding.combine(e).getUnique());
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -107,7 +107,7 @@ public abstract class EncodeSampleTest {
 		try {
 			final MatrixBlock empty = new MatrixBlock(m.getNumRows(), m.getNumColumns(), true);
 			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(empty, t, 0);
-			assertEquals(u, e.join(emptyEncoding).getUnique());
+			assertEquals(u, e.combine(emptyEncoding).getUnique());
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -120,7 +120,7 @@ public abstract class EncodeSampleTest {
 		try {
 			final MatrixBlock c = new MatrixBlock(m.getNumRows(), m.getNumColumns(), 1.0);
 			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(c, t, 0);
-			assertEquals(u, emptyEncoding.join(e).getUnique());
+			assertEquals(u, emptyEncoding.combine(e).getUnique());
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -134,7 +134,7 @@ public abstract class EncodeSampleTest {
 			final MatrixBlock c = new MatrixBlock(m.getNumRows(), m.getNumColumns(), 1.0);
 
 			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(c, t, 0);
-			assertEquals(u, e.join(emptyEncoding).getUnique());
+			assertEquals(u, e.combine(emptyEncoding).getUnique());
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -156,7 +156,7 @@ public abstract class EncodeSampleTest {
 	@Test
 	public void testGetSizeAfterJoinSelf() {
 		try {
-			assertTrue(e.join(e).size() <= (t ? m.getNumColumns() : m.getNumRows()));
+			assertTrue(e.combine(e).size() <= (t ? m.getNumColumns() : m.getNumRows()));
 		}
 		catch(Exception e) {
 			e.printStackTrace();

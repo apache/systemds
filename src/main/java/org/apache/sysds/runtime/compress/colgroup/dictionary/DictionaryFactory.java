@@ -35,8 +35,8 @@ import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class DictionaryFactory {
-	protected static final Log LOG = LogFactory.getLog(DictionaryFactory.class.getName());
+public interface DictionaryFactory {
+	static final Log LOG = LogFactory.getLog(DictionaryFactory.class.getName());
 
 	public enum Type {
 		FP64_DICT, MATRIX_BLOCK_DICT, INT8_DICT
@@ -66,32 +66,23 @@ public class DictionaryFactory {
 			return Dictionary.getInMemorySize(nrValues * nrColumns);
 	}
 
-	public static ADictionary create(DblArrayCountHashMap map, int nCols, boolean addZeroTuple) {
+	public static ADictionary create(DblArrayCountHashMap map, int nCols, boolean addZeroTuple, double sparsity) {
 		try {
-
 			final ArrayList<DArrCounts> vals = map.extractValues();
 			final int nVals = vals.size();
-			int nnz = 0;
-			for(int i = 0; i < nVals; i++) {
-				final DArrCounts dac = vals.get(i);
-				double[] dv = dac.key.getData();
-
-				for(double v : dv)
-					nnz += v != 0 ? 1 : 0;
-			}
 			final int nTuplesOut = nVals + (addZeroTuple ? 1 : 0);
-			boolean sparse = MatrixBlock.evalSparseFormatInMemory(nTuplesOut, nCols, nnz);
-			if(sparse) {
+			if(sparsity < 0.4) {
 				final MatrixBlock retB = new MatrixBlock(nTuplesOut, nCols, true);
 				retB.allocateSparseRowsBlock();
 				final SparseBlock sb = retB.getSparseBlock();
 				for(int i = 0; i < nVals; i++) {
 					final DArrCounts dac = vals.get(i);
-					double[] dv = dac.key.getData();
+					final double[] dv = dac.key.getData();
 					for(int k = 0; k < dv.length; k++)
-						sb.append(i, k, dv[k]);
+						sb.append(dac.id, k, dv[k]);
 				}
 				retB.recomputeNonZeros();
+				retB.examSparsity(true);
 				return new MatrixBlockDictionary(retB, nCols);
 			}
 			else {
@@ -148,6 +139,7 @@ public class DictionaryFactory {
 					sb.append(i, col, tuple[col]);
 			}
 			m.recomputeNonZeros();
+			m.examSparsity(true);
 			return new MatrixBlockDictionary(m, nCol);
 		}
 		else if(ubm instanceof MultiColBitmap) {
@@ -167,8 +159,25 @@ public class DictionaryFactory {
 		final int nCol = ubm.getNumColumns();
 		final int nVal = ubm.getNumValues() - (addZero ? 0 : 1);
 		if(nCol > 4 && sparsity < 0.4) {
-			// return sparse
-			throw new NotImplementedException("Not supported sparse allocation yet");
+			final MultiColBitmap mcbm = (MultiColBitmap) ubm;
+			final MatrixBlock m = new MatrixBlock(nVal, nCol, true);
+			m.allocateSparseRowsBlock();
+			final SparseBlock sb = m.getSparseBlock();
+
+			for(int i = 0; i < defaultIndex; i++) {
+				final double[] tuple = mcbm.getValues(i);
+				for(int col = 0; col < nCol; col++)
+					sb.append(i, col, tuple[col]);
+			}
+			System.arraycopy(mcbm.getValues(defaultIndex), 0, defaultTuple, 0, nCol);
+			for(int i = defaultIndex; i < ubm.getNumValues() - 1; i++) {
+				final double[] tuple = mcbm.getValues(i);
+				for(int col = 0; col < nCol; col++)
+					sb.append(i, col, tuple[col]);
+			}
+			m.recomputeNonZeros();
+			m.examSparsity(true);
+			return new MatrixBlockDictionary(m, nCol);
 		}
 		else {
 			double[] dict = new double[nCol * nVal];
@@ -217,6 +226,7 @@ public class DictionaryFactory {
 					sb.append(i, col, tuple[col]);
 			}
 			m.recomputeNonZeros();
+			m.examSparsity(true);
 			return new MatrixBlockDictionary(m, nCols);
 		}
 

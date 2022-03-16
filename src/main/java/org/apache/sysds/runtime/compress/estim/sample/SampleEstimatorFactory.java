@@ -22,14 +22,30 @@ package org.apache.sysds.runtime.compress.estim.sample;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 
-public class SampleEstimatorFactory {
+public interface SampleEstimatorFactory {
 
-	// private static final Log LOG = LogFactory.getLog(SampleEstimatorFactory.class.getName());
+	static final Log LOG = LogFactory.getLog(SampleEstimatorFactory.class.getName());
 
 	public enum EstimationType {
 		HassAndStokes, ShlosserEstimator, ShlosserJackknifeEstimator, SmoothedJackknifeEstimator,
+	}
+
+	/**
+	 * Estimate a distinct number of values based on frequencies.
+	 * 
+	 * @param frequencies A list of frequencies of unique values, NOTE all values contained should be larger than zero
+	 * @param nRows       The total number of rows to consider, NOTE should always be larger or equal to sum(frequencies)
+	 * @param sampleSize  The size of the sample, NOTE this should ideally be scaled to match the sum(frequencies) and
+	 *                    should always be lower or equal to nRows
+	 * @param type        The type of estimator to use
+	 * @return A estimated number of unique values
+	 */
+	public static int distinctCount(int[] frequencies, int nRows, int sampleSize, EstimationType type) {
+		return distinctCount(frequencies, nRows, sampleSize, type, null);
 	}
 
 	/**
@@ -45,7 +61,6 @@ public class SampleEstimatorFactory {
 	 */
 	public static int distinctCount(int[] frequencies, int nRows, int sampleSize, EstimationType type,
 		HashMap<Integer, Double> solveCache) {
-
 		if(frequencies == null || frequencies.length == 0)
 			// Frequencies for some reason is allocated as null or all values in the sample are zeros.
 			return 0;
@@ -56,9 +71,11 @@ public class SampleEstimatorFactory {
 			int est = distinctCountWithHistogram(frequencies.length, invHist, frequencies, nRows, sampleSize, type,
 				solveCache);
 			// Number of unique is trivially bounded by
-			// lower: the number of observed uniques in the sample
-			// upper: the number of rows minus the observed uniques total count, plus the observed number of uniques.
-			return Math.min(Math.max(frequencies.length, est), nRows - sampleSize + frequencies.length);
+			// lower: The number of observed uniques in the sample
+			final int low = Math.max(frequencies.length, est);
+			// upper: The number of rows minus the observed uniques total count, plus the observed number of uniques.
+			final int high = Math.min(low, nRows - sampleSize + frequencies.length);
+			return high;
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException(

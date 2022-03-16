@@ -33,46 +33,32 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int estimate,
-		int nrUniqueUpperBound) {
-		final int _numRows = getNumRows();
+	public CompressedSizeInfoColGroup getColGroupInfo(int[] colIndexes, int estimate, int nrUniqueUpperBound) {
 		final IEncode map = IEncode.createFromMatrixBlock(_data, _cs.transposed, colIndexes);
-		final EstimationFactors em = map.computeSizeEstimation(colIndexes, _numRows, _data.getSparsity(),
-			_data.getSparsity());
-		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+		return getFacts(map, colIndexes);
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup estimateCompressedColGroupSizeDeltaEncoded(int[] colIndexes, int estimate,
-		int nrUniqueUpperBound) {
-		final int _numRows = getNumRows();
+	public CompressedSizeInfoColGroup getDeltaColGroupInfo(int[] colIndexes, int estimate, int nrUniqueUpperBound) {
 		final IEncode map = IEncode.createFromMatrixBlockDelta(_data, _cs.transposed, colIndexes);
-		final EstimationFactors em = map.computeSizeEstimation(colIndexes, _numRows, _data.getSparsity(),
-			_data.getSparsity());
-		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+		return getFacts(map, colIndexes);
 	}
 
 	@Override
-	protected CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
-		CompressedSizeInfoColGroup g2, int joinedMaxDistinct) {
-		final int _numRows = getNumRows();
-		final IEncode map = g1.getMap().join(g2.getMap());
-		EstimationFactors em = null;
-		if(map != null)
-			em = map.computeSizeEstimation(joined, _numRows, _data.getSparsity(), _data.getSparsity());
-		if(em == null)
-			em = EstimationFactors.emptyFactors(joined.length, _numRows);
+	protected CompressedSizeInfoColGroup combine(int[] combinedColumns, CompressedSizeInfoColGroup g1,
+		CompressedSizeInfoColGroup g2, int maxDistinct) {
+		final IEncode map = g1.getMap().combine(g2.getMap());
+		return getFacts(map, combinedColumns);
+	}
 
-		return new CompressedSizeInfoColGroup(joined, em, _cs.validCompressions, map);
+	private CompressedSizeInfoColGroup getFacts(IEncode map, int[] colIndexes) {
+		final int _numRows = getNumRows();
+		final EstimationFactors em = map.extractFacts(colIndexes, _numRows, _data.getSparsity(), _data.getSparsity());
+		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
 	}
 
 	@Override
 	protected int worstCaseUpperBound(int[] columns) {
-		return getNumRows();
-	}
-
-	@Override
-	public final int getSampleSize() {
 		return getNumRows();
 	}
 

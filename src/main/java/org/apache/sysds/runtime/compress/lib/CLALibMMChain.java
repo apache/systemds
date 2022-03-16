@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.compress.lib;
 
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.lops.MapMultChain.ChainType;
@@ -33,7 +35,9 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
-public class CLALibMMChain {
+public interface CLALibMMChain {
+
+	static final Log LOG = LogFactory.getLog(CLALibMMChain.class.getName());
 
 	public static MatrixBlock mmChain(CompressedMatrixBlock x, MatrixBlock v, MatrixBlock w, MatrixBlock out,
 		ChainType ctype, int k) {

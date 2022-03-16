@@ -354,14 +354,14 @@ public interface IEncode {
 		return new SparseEncoding(d, o, zeros, counts, nRows);
 	}
 
-	public IEncode join(IEncode e);
+	public IEncode combine(IEncode e);
 
 	public int getUnique();
 
 	public int size();
 
-	public int[] getCounts();
+	// public int[] getCounts();
 
-	public EstimationFactors computeSizeEstimation(int[] cols, int nRows, double tupleSparsity, double matrixSparsity);
+	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity);
 
 }

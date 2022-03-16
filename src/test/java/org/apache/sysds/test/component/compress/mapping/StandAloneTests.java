@@ -25,12 +25,12 @@ import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToChar;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.DenseEncoding;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.junit.Test;
 
@@ -42,7 +42,7 @@ public class StandAloneTests {
 	public void testJoin_01() {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {2, 4, 6, 8})});
-		AMapToData c = MapToFactory.join(a, b);
+		AMapToData c = DenseEncoding.combine(a, b);
 		// compare(c, new int[] {3, 2, 0, 2, 0, 3, 1, 3, 1, 3});
 		compare(c, new int[] {0, 1, 2, 1, 2, 0, 3, 0, 3, 0});
 	}
@@ -50,7 +50,7 @@ public class StandAloneTests {
 	@Test
 	public void testJoin_02() {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
-		AMapToData c = MapToFactory.join(a, a);
+		AMapToData c = DenseEncoding.combine(a, a);
 		// compare(c, new int[] {1, 0, 0, 0, 0, 1, 1, 1, 1, 1});
 		compare(c, new int[] {0, 1, 1, 1, 1, 0, 0, 0, 0, 0});
 	}
@@ -59,7 +59,7 @@ public class StandAloneTests {
 	public void testJoin_03() {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3})});
-		AMapToData c = MapToFactory.join(a, b);
+		AMapToData c = DenseEncoding.combine(a, b);
 		// compare(c, new int[] {2, 0, 0, 0, 1, 2, 2, 2, 2, 2});
 		compare(c, new int[] {0, 1, 1, 1, 2, 0, 0, 0, 0, 0});
 	}
@@ -68,7 +68,7 @@ public class StandAloneTests {
 	public void testJoin_04() {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
-		AMapToData c = MapToFactory.join(a, b);
+		AMapToData c = DenseEncoding.combine(a, b);
 		// compare(c, new int[] {2, 0, 0, 0, 1, 2, 2, 2, 2, 2});
 		compare(c, new int[] {0, 1, 1, 1, 2, 0, 0, 0, 0, 0});
 	}
@@ -77,7 +77,7 @@ public class StandAloneTests {
 	public void testJoin_05() {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3}), gen(new int[] {4})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
-		AMapToData c = MapToFactory.join(a, b);
+		AMapToData c = DenseEncoding.combine(a, b);
 		// compare(c, new int[] {2, 0, 0, 0, 1, 2, 2, 2, 2, 2});
 		compare(c, new int[] {0, 1, 1, 1, 2, 0, 0, 0, 0, 0});
 	}
@@ -87,7 +87,7 @@ public class StandAloneTests {
 		AMapToData a = MapToFactory.create(10, true,
 			new IntArrayList[] {gen(new int[] {1, 2, 3}), gen(new int[] {4, 5})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
-		AMapToData c = MapToFactory.join(a, b);
+		AMapToData c = DenseEncoding.combine(a, b);
 		// compare(c, new int[] {3, 0, 0, 0, 1, 2, 3, 3, 3, 3});
 		compare(c, new int[] {0, 1, 1, 1, 2, 3, 0, 0, 0, 0});
 	}
@@ -97,7 +97,7 @@ public class StandAloneTests {
 		AMapToData a = MapToFactory.create(10, true,
 			new IntArrayList[] {gen(new int[] {1, 2, 3}), gen(new int[] {4, 5}), gen(new int[] {6, 7})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
-		AMapToData c = MapToFactory.join(a, b);
+		AMapToData c = DenseEncoding.combine(a, b);
 		// compare(c, new int[] {4, 0, 0, 0, 1, 2, 3, 3, 4, 4});
 		compare(c, new int[] {0, 1, 1, 1, 2, 3, 4, 4, 0, 0});
 	}
@@ -107,30 +107,22 @@ public class StandAloneTests {
 		AMapToData a = MapToFactory.create(11, true,
 			new IntArrayList[] {gen(new int[] {1, 2, 3}), gen(new int[] {4, 5}), gen(new int[] {6, 7})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
-		MapToFactory.join(a, b);
-	}
-
-	@Test(expected = DMLCompressionException.class)
-	public void testInvalidJoinWithToManyUniqueValues() {
-		AMapToData a = MapToFactory.create(10, 10000000);
-		AMapToData b = MapToFactory.create(10, 10000000);
-		MapToFactory.join(a, b);
+		DenseEncoding.combine(a, b);
 	}
 
 	@Test
 	public void test_null_argument_01() {
 		AMapToData a = null;
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
-		AMapToData c = MapToFactory.join(a, b);
+		AMapToData c = DenseEncoding.combine(a, b);
 		compare(c, new int[] {1, 0, 0, 0, 0, 1, 1, 1, 1, 1});
-		// compare(c, new int[] {0, 1, 1, 1, 1, 0, 0, 0, 0, 0});
 	}
 
 	@Test
 	public void test_null_argument_02() {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData b = null;
-		AMapToData c = MapToFactory.join(a, b);
+		AMapToData c = DenseEncoding.combine(a, b);
 		compare(c, new int[] {1, 0, 0, 0, 0, 1, 1, 1, 1, 1});
 	}
 

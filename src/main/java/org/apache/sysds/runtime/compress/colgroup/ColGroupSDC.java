@@ -26,19 +26,23 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 /**
  * Column group that sparsely encodes the dictionary values. The idea is that all values is encoded with indexes except
@@ -69,16 +73,23 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 	private ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 		AMapToData data, int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
+		if(data.getUnique() != dict.getNumberOfValues(colIndices.length))
+			throw new DMLCompressionException("Invalid construction of SDC group: number uniques: " + data.getUnique()
+				+ " vs." + dict.getNumberOfValues(colIndices.length));
+
 		_indexes = offsets;
 		_data = data;
 		_zeros = false;
 		_defaultTuple = defaultTuple;
+
+		if(data instanceof MapToBit && ((MapToBit) data).isEmpty())
+			throw new DMLCompressionException("Error in SDC construction should have been SDCSingle");
 	}
 
 	protected static AColGroup create(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple,
 		AOffset offsets, AMapToData data, int[] cachedCounts) {
 		if(dict == null)
-			return new ColGroupEmpty(colIndices);
+			throw new NotImplementedException("Not implemented case where SDC ends up with empty dict");
 		else {
 			boolean allZero = true;
 			for(double d : defaultTuple)
@@ -283,9 +294,8 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 
 	@Override
 	protected void computeProduct(double[] c, int nRows) {
-		super.computeProduct(c, nRows);
-		for(int x = 0; x < _colIndexes.length; x++)
-			c[0] *= _defaultTuple[x];
+		final int count = _numRows - _data.size();
+		_dict.productWithDefault(c, getCounts(), _defaultTuple, count);
 	}
 
 	@Override
@@ -328,9 +338,17 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 		final double[] newDefaultTuple = new double[_defaultTuple.length];
 		for(int i = 0; i < _defaultTuple.length; i++)
 			newDefaultTuple[i] = op.executeScalar(_defaultTuple[i]);
+		final ADictionary nDict = _dict.applyScalarOp(op);
+		return create(_colIndexes, _numRows, nDict, newDefaultTuple, _indexes, _data, getCachedCounts());
+	}
 
-		return create(_colIndexes, _numRows, _dict.applyScalarOp(op), newDefaultTuple, _indexes, _data,
-			getCachedCounts());
+	@Override
+	public AColGroup unaryOperation(UnaryOperator op) {
+		final double[] newDefaultTuple = new double[_defaultTuple.length];
+		for(int i = 0; i < _defaultTuple.length; i++)
+			newDefaultTuple[i] = op.fn.execute(_defaultTuple[i]);
+		final ADictionary nDict = _dict.applyUnaryOp(op);
+		return create(_colIndexes, _numRows, nDict, newDefaultTuple, _indexes, _data, getCachedCounts());
 	}
 
 	@Override
@@ -383,11 +401,8 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 	public AColGroup replace(double pattern, double replace) {
 		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length);
 		double[] newDefaultTuple = new double[_defaultTuple.length];
-		for(int i = 9; i < _defaultTuple.length; i++)
-			if(_defaultTuple[i] == pattern)
-				newDefaultTuple[i] = replace;
-			else
-				newDefaultTuple[i] = _defaultTuple[i];
+		for(int i = 0; i < _defaultTuple.length; i++)
+			newDefaultTuple[i] = _defaultTuple[i] == pattern ? replace : _defaultTuple[i];
 
 		return create(_colIndexes, _numRows, replaced, newDefaultTuple, _indexes, _data, getCachedCounts());
 	}
@@ -424,7 +439,7 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 			else {
 				double[] retDef = new double[max];
 				retDef[((int) def) - 1] = 1;
-				return new ColGroupSDCSingle(Util.genColsIndices(max), nRows, new Dictionary(new double[max]), retDef,
+				return ColGroupSDCSingle.create(Util.genColsIndices(max), nRows, new Dictionary(new double[max]), retDef,
 					indexes, null);
 			}
 		}
@@ -442,6 +457,46 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 				retDef[((int) def) - 1] = 1;
 				return ColGroupSDC.create(Util.genColsIndices(max), nRows, d, retDef, indexes, data, counts);
 			}
+		}
+	}
+
+	@Override
+	public double getCost(ComputationCostEstimator e, int nRows) {
+		final int nVals = getNumValues();
+		final int nCols = getNumCols();
+		final int nRowsScanned = _data.size();
+		return e.getCost(nRows, nRowsScanned, nCols, nVals, _dict.getSparsity());
+	}
+
+	@Override
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
+		ColGroupSDC ret = (ColGroupSDC) super.sliceMultiColumns(idStart, idEnd, outputCols);
+		ret._defaultTuple = new double[idEnd - idStart];
+		for(int i = idStart, j = 0; i < idEnd; i++, j++)
+			ret._defaultTuple[j] = _defaultTuple[i];
+		return ret;
+	}
+
+	@Override
+	protected AColGroup sliceSingleColumn(int idx) {
+		ColGroupSDC ret = (ColGroupSDC) super.sliceSingleColumn(idx);
+		ret._defaultTuple = new double[1];
+		ret._defaultTuple[0] = _defaultTuple[idx];
+		return ret;
+	}
+
+	@Override
+	public boolean containsValue(double pattern) {
+		if(pattern == 0 && _zeros)
+			return true;
+		boolean ret = _dict.containsValue(pattern);
+		if(ret == true)
+			return ret;
+		else {
+			for(double v : _defaultTuple)
+				if(v == pattern)
+					return true;
+			return false;
 		}
 	}
 

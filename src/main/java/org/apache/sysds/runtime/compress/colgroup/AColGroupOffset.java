@@ -24,7 +24,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -179,6 +181,11 @@ public abstract class AColGroupOffset extends AColGroupValue {
 	protected abstract boolean[] computeZeroIndicatorVector();
 
 	public abstract void countNonZerosPerRow(int[] rnnz, int rl, int ru);
+
+	@Override
+	public double getCost(ComputationCostEstimator e, int nRows) {
+		throw new NotImplementedException();
+	}
 
 	@Override
 	public String toString() {

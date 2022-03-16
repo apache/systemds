@@ -30,6 +30,10 @@ public class MapToUByte extends MapToByte {
 
 	private static final long serialVersionUID = -2498505439667351828L;
 
+	protected MapToUByte(int size) {
+		this(127, size);
+	}
+
 	public MapToUByte(int unique, int size) {
 		super(Math.min(unique, 127), new byte[size]);
 	}
@@ -39,13 +43,18 @@ public class MapToUByte extends MapToByte {
 	}
 
 	@Override
-	public MAP_TYPE getType(){
+	public MAP_TYPE getType() {
 		return MapToFactory.MAP_TYPE.UBYTE;
 	}
 
 	@Override
 	public int getIndex(int n) {
 		return _data[n];
+	}
+
+	@Override
+	public int setAndGet(int n, int v) {
+		return _data[n] = (byte) v;
 	}
 
 	@Override
@@ -81,35 +90,21 @@ public class MapToUByte extends MapToByte {
 				_data[i] = rv;
 	}
 
-	// @Override
-	// public void copy(AMapToData d) {
-	// 	if(d instanceof MapToChar) {
-	// 		char[] dd = ((MapToChar) d).getChars();
-	// 		for(int i = 0; i < size(); i++)
-	// 			_data[i] = (byte) (dd[i] % 128);
-	// 	}
-	// 	else
-	// 		for(int i = 0; i < size(); i++)
-	// 			set(i, d.getIndex(i) % 128);
-	// }
-
 	@Override
-	protected void preAggregateDenseToRowBy8(double[] mV, int off, double[] preAV, int cl, int cu) {
+	protected void preAggregateDenseToRowBy8(double[] mV, double[] preAV, int cl, int cu, int off) {
 		final int h = (cu - cl) % 8;
 		off += cl;
 		for(int rc = cl; rc < cl + h; rc++, off++)
 			preAV[_data[rc]] += mV[off];
 		for(int rc = cl + h; rc < cu; rc += 8, off += 8) {
-			int id1 = _data[rc], id2 = _data[rc + 1], id3 = _data[rc + 2], id4 = _data[rc + 3], id5 = _data[rc + 4],
-				id6 = _data[rc + 5], id7 = _data[rc + 6], id8 = _data[rc + 7];
-			preAV[id1] += mV[off];
-			preAV[id2] += mV[off + 1];
-			preAV[id3] += mV[off + 2];
-			preAV[id4] += mV[off + 3];
-			preAV[id5] += mV[off + 4];
-			preAV[id6] += mV[off + 5];
-			preAV[id7] += mV[off + 6];
-			preAV[id8] += mV[off + 7];
+			preAV[_data[rc]] += mV[off];
+			preAV[_data[rc + 1]] += mV[off + 1];
+			preAV[_data[rc + 2]] += mV[off + 2];
+			preAV[_data[rc + 3]] += mV[off + 3];
+			preAV[_data[rc + 4]] += mV[off + 4];
+			preAV[_data[rc + 5]] += mV[off + 5];
+			preAV[_data[rc + 6]] += mV[off + 6];
+			preAV[_data[rc + 7]] += mV[off + 7];
 		}
 	}
 

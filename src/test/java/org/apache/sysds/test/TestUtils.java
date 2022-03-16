@@ -857,12 +857,21 @@ public class TestUtils
 		long maxUnitsOfLeastPrecision, long maxAvgDistance, String message) {
 		if(expectedMatrix.isEmpty() && actualMatrix.isEmpty())
 			return;
-		if(expectedMatrix.isEmpty())
+		else if(expectedMatrix.isEmpty()) {
+			if(expectedMatrix.getNumRows() < 10)
+				fail(message + "\nThe expected output is empty while the actual matrix is not\n" + expectedMatrix + "\n\n"
+					+ "actual:" + actualMatrix);
 			fail(message + "\nThe expected output is empty while the actual matrix is not");
-		if(actualMatrix.isEmpty())
+		}
+		else if(actualMatrix.isEmpty()) {
+			if(expectedMatrix.getNumRows() < 10)
+				fail(message + "\nThe expected output is empty while the actual matrix is not\n" + expectedMatrix + "\n\n"
+					+ "actual:" + actualMatrix);
 			fail(message + "\nThe actual output is empty while the expected matrix is not");
-		if(expectedMatrix.isInSparseFormat() && actualMatrix.isInSparseFormat()){
-			compareMatricesBitAvgDistanceSparse(expectedMatrix.getSparseBlock(), actualMatrix.getSparseBlock(), maxUnitsOfLeastPrecision, maxAvgDistance, message, actualMatrix.getNumColumns());
+		}
+		else if(expectedMatrix.isInSparseFormat() && actualMatrix.isInSparseFormat()) {
+			compareMatricesBitAvgDistanceSparse(expectedMatrix.getSparseBlock(), actualMatrix.getSparseBlock(),
+				maxUnitsOfLeastPrecision, maxAvgDistance, message, actualMatrix.getNumColumns());
 			return;
 		}
 		final int rows = expectedMatrix.getNumRows();
@@ -872,11 +881,12 @@ public class TestUtils
 
 		for(int i = 0; i < rows && countErrors < 20; i++) {
 			for(int j = 0; j < cols && countErrors < 20; j++) {
-				double v1 = expectedMatrix.quickGetValue(i, j);
-				double v2 = actualMatrix.quickGetValue(i, j);
+				final double v1 = expectedMatrix.quickGetValue(i, j);
+				final double v2 = actualMatrix.quickGetValue(i, j);
 				if(v1 == 0 && v2 == 0)
-				continue;
+					continue;
 				else if(v1 == 0 || v2 == 0) {
+					// take care of small epsilon from zero
 					if(Math.abs(v1 - v2) > 1E-16) {
 						message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i + " " + j
 						+ " Not using Bit distance since one value is 0");
@@ -884,7 +894,7 @@ public class TestUtils
 					}
 				}
 				else {
-					final long distance = compareScalarBits(expectedMatrix.quickGetValue(i, j), actualMatrix.quickGetValue(i, j));
+					final long distance = compareScalarBits(v1, v2);
 					sumDistance += distance;
 					if(distance > maxUnitsOfLeastPrecision) {
 						message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i + " " + j + " Distance in bits: "
@@ -955,22 +965,34 @@ public class TestUtils
 	 * @return Percent distance
 	 */
 	public static double getPercentDistance(double x, double y, boolean ignoreZero){
-		if (Double.isNaN(x) && Double.isNaN(y))
-			return 1.0;
-		if (Double.isInfinite(x) && Double.isInfinite(y))
-			return 1.0;
-		if((x < 0 && y > 0 )||(x>0 && y< 0)) return 0.0;
-		double min = Math.abs(Math.min(x,y));
-		double max = Math.abs(Math.max(x,y));
-		if(ignoreZero && min < 0.0001){
-			return 1.0;
+		if (Double.isNaN(x)) {
+			if(Double.isNaN(y))
+				return 1.0;
+			else
+				return 0.0;
 		}
-		if(min < 0.0001 || max < 0.0001){
+		else if(Double.isNaN(y))
+			return 0.0;
+		else if(Double.isInfinite(x)) {
+			if(Double.isInfinite(y))
+				return 1.0;
+			else
+				return 0.0;
+		}
+		else if(Double.isInfinite(y))
+			return 0.0;
+		else if((x < 0 && y > 0) || (x > 0 && y < 0))
+			return 0.0;
+		double min = Math.abs(Math.min(x, y));
+		double max = Math.abs(Math.max(x, y));
+		if(ignoreZero && min < 0.0001)
+			return 1.0;
+		else if(min < 0.0001 || max < 0.0001) {
 			min += 0.0001;
 			max += 0.0001;
 		}
 
-		assertFalse("Failed! because nan from division of : " + min + " / " + max,Double.isNaN( min / max));
+		assertFalse("Failed! because nan from division of : " + min + " / " + max, Double.isNaN(min / max));
 		return min / max;
 	}
 
@@ -1063,23 +1085,25 @@ public class TestUtils
 
 		if(expectedMatrix.isEmpty() && actualMatrix.isEmpty())
 			return;
-		if(expectedMatrix.isInSparseFormat() && actualMatrix.isInSparseFormat()){
-			compareMatricesPercentageDistanceSparse(expectedMatrix.getSparseBlock(), actualMatrix.getSparseBlock(), percentDistanceAllowed, maxAveragePercentDistance, message, ignoreZero,actualMatrix.getNumColumns());
+		if(expectedMatrix.isInSparseFormat() && actualMatrix.isInSparseFormat()) {
+			compareMatricesPercentageDistanceSparse(expectedMatrix.getSparseBlock(), actualMatrix.getSparseBlock(),
+				percentDistanceAllowed, maxAveragePercentDistance, message, ignoreZero, actualMatrix.getNumColumns());
 			return;
 		}
-			
+
 		final int rows = expectedMatrix.getNumRows();
 		final int cols = expectedMatrix.getNumColumns();
 		int countErrors = 0;
 		double sumPercentDistance = 0;
-		
+
 		for(int i = 0; i < rows && countErrors < 20; i++) {
 			for(int j = 0; j < cols && countErrors < 20; j++) {
-				final double distance = getPercentDistance(expectedMatrix.quickGetValue(i, j), actualMatrix.quickGetValue(i, j), ignoreZero);
+				final double distance = getPercentDistance(expectedMatrix.quickGetValue(i, j),
+					actualMatrix.quickGetValue(i, j), ignoreZero);
 				sumPercentDistance += distance;
 				if(distance < percentDistanceAllowed) {
-					message += ("\nExpected: " + expectedMatrix.quickGetValue(i, j) + " vs actual: " + actualMatrix.quickGetValue(i, j) + " at " + i
-						+ " " + j + " Distance in percent " + distance);
+					message += ("\nExpected: " + expectedMatrix.quickGetValue(i, j) + " vs actual: "
+						+ actualMatrix.quickGetValue(i, j) + " at " + i + " " + j + " Distance in percent " + distance);
 					countErrors++;
 				}
 			}
@@ -1092,7 +1116,8 @@ public class TestUtils
 			if(countErrors != 0)
 				fail(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols));
 			if(avgDistance <= maxAveragePercentDistance)
-				fail(message + "\nThe avg distance: " + avgDistance + " was lower than threshold " + maxAveragePercentDistance);
+				fail(message + "\nThe avg distance: " + avgDistance + " was lower than threshold "
+					+ maxAveragePercentDistance);
 		}
 	}
 
@@ -1798,8 +1823,43 @@ public class TestUtils
 		return matrix;
 	}
 
+	/**
+	 *
+	 * Generates a test matrix with the specified parameters as a MatrixBlock.
+	 *
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param min minimum value
+	 * @param max maximum value
+	 * @param sparsity sparsity
+	 * @param seed seed
+	 * @return random MatrixBlock
+	 */
 	public static MatrixBlock generateTestMatrixBlock(int rows, int cols, double min, double max, double sparsity, long seed){
 		return MatrixBlock.randOperations(rows, cols, sparsity, min, max, "Uniform", seed);
+	}
+
+	/**
+	 *
+	 * Generates a symmetric test matrix with the specified parameters as a MatrixBlock.
+	 * TODO: generate the values without using the randOperation
+	 *
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param min minimum value
+	 * @param max maximum value
+	 * @param sparsity sparsity
+	 * @param seed seed
+	 * @return random symmetric MatrixBlock
+	 */
+	public static MatrixBlock generateTestMatrixBlockSym(int rows, int cols, double min, double max, double sparsity, long seed){
+		MatrixBlock m = MatrixBlock.randOperations(rows, cols, sparsity, min, max, "Uniform", seed);
+		for(int i = 0; i < rows; i++) {
+			for(int j = i+1; j < cols; j++) {
+				m.setValue(i,j, m.getValue(j,i));
+			}
+		}
+		return m;
 	}
 
 	/**

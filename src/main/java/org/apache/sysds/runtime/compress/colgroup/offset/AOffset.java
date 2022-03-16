@@ -28,7 +28,6 @@ import java.util.Map;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -90,10 +89,15 @@ public abstract class AOffset implements Serializable {
 		if(c != null && c.row == row)
 			return c.it.clone();
 		else {
-			if(memorizer != null && memorizer.containsKey(row))
-				return memorizer.get(row).clone();
+			AIterator it = null;
+			if(memorizer != null) {
+				it = memorizer.getOrDefault(row, null);
+
+				if(it != null)
+					return it.clone();
+			}
 			// Use the cached iterator if it is closer to the queried row.
-			AIterator it = c != null && c.row < row ? c.it.clone() : getIterator();
+			it = c != null && c.row < row ? c.it.clone() : getIterator();
 			it.skipTo(row);
 			// cache this new iterator.
 			cacheIterator(it.clone(), row);
@@ -256,30 +260,190 @@ public abstract class AOffset implements Serializable {
 		}
 	}
 
-	protected abstract void preAggregateDenseMapRowInt(double[] mV, int off, double[] preAV, int cu, int nVal,
-		int[] data, AIterator it);
+	protected void preAggregateDenseMapRowInt(double[] mV, int off, double[] preAV, int cu, int nVal, int[] data,
+		AIterator it) {
+		final int maxId = data.length - 1;
+		while(it.isNotOver(cu)) {
+			final int dx = it.getDataIndex();
+			preAV[data[dx]] += mV[off + it.value()];
+			if(dx < maxId)
+				it.next();
+			else
+				break;
+		}
+		cacheIterator(it, cu);
+	}
 
-	protected abstract void preAggregateDenseMapRowByte(double[] mV, int off, double[] preAV, int cu, int nVal,
-		byte[] data, AIterator it);
+	protected void preAggregateDenseMapRowByte(double[] mV, int off, double[] preAV, int cu, int nVal, byte[] data,
+		AIterator it) {
+		final int last = getOffsetToLast();
+		while(it.isNotOver(cu)) {
+			final int dx = it.getDataIndex();
+			preAV[data[dx] & 0xFF] += mV[off + it.value()];
+			if(it.value() < last)
+				it.next();
+			else
+				break;
+		}
+		cacheIterator(it, cu);
+	}
 
-	protected abstract void preAggregateDenseMapRowChar(double[] mV, int off, double[] preAV, int cu, int nVal,
-		char[] data, AIterator it);
+	protected void preAggregateDenseMapRowChar(double[] mV, int off, double[] preAV, int cu, int nVal, char[] data,
+		AIterator it) {
+		final int last = getOffsetToLast();
+		while(it.isNotOver(cu)) {
+			final int dx = it.getDataIndex();
+			preAV[data[dx]] += mV[off + it.value()];
+			if(it.value() < last)
+				it.next();
+			else
+				break;
+		}
+		cacheIterator(it, cu);
+	}
 
-	protected abstract void preAggregateDenseMapRowBit(double[] mV, int off, double[] preAV, int cu, int nVal,
-		BitSet data, AIterator it);
+	protected void preAggregateDenseMapRowBit(double[] mV, int off, double[] preAV, int cu, int nVal, BitSet data,
+		AIterator it) {
+		final int last = getOffsetToLast();
+		while(it.isNotOver(cu)) {
+			final int dx = it.getDataIndex();
+			preAV[data.get(dx) ? 1 : 0] += mV[off + it.value()];
+			if(it.value() < last)
+				it.next();
+			else
+				break;
+		}
+		cacheIterator(it, cu);
+	}
 
-	protected abstract void preAggregateDenseMapRowsInt(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
-		int nVal, int[] data, AIterator it);
+	protected void preAggregateDenseMapRowsInt(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
+		int[] data, AIterator it) {
+		final AIterator sIt = it.clone();
+		if(cu <= getOffsetToLast()) {
+			// inside offsets
+			for(int r = rl; r < ru; r++) {
+				final int offOut = (r - rl) * nVal;
+				final double[] vals = db.values(r);
+				final int off = db.pos(r);
+				final int cur = cu + off;
+				it = sIt.clone();
+				it.offset += off;
+				while(it.offset < cur) {
+					preAV[offOut + data[it.getDataIndex()] & 0xFF] += vals[it.offset];
+					it.next();
+				}
+				it.offset -= off;
+			}
+			cacheIterator(it, cu);
+		}
+		else {
+			final int maxId = data.length - 1;
+			// all the way to the end of offsets.
+			for(int r = rl; r < ru; r++) {
+				final int offOut = (r - rl) * nVal;
+				final int off = db.pos(r);
+				final double[] vals = db.values(r);
+				it = sIt.clone();
+				it.offset = it.offset + off;
+				preAV[offOut + data[it.getDataIndex()] & 0xFF] += vals[it.offset];
+				while(it.getDataIndex() < maxId) {
+					it.next();
+					preAV[offOut + data[it.getDataIndex()] & 0xFF] += vals[it.offset];
+				}
+			}
+		}
+	}
 
-	protected abstract void preAggregateDenseMapRowsChar(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
-		int nVal, char[] data, AIterator it);
+	protected void preAggregateDenseMapRowsChar(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
+		char[] data, AIterator it) {
+		if(cu <= getOffsetToLast())
+			preAggregateDenseMapRowsCharBelowEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
+		else
+			preAggregateDenseMapRowsCharEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
+	}
 
-	protected abstract void preAggregateDenseMapRowsByte(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
-		int nVal, byte[] data, AIterator it);
+	private void preAggregateDenseMapRowsCharBelowEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
+		int nVal, char[] data, AIterator it) {
+		final double[] vals = db.values(rl);
+		final int nCol = db.getCumODims(0);
+		while(it.offset < cu) {
+			final int dataOffset = data[it.getDataIndex()];
+			final int start = it.offset + nCol * rl;
+			final int end = it.offset + nCol * ru;
+			for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
+				preAV[offOut] += vals[off];
+			it.next();
+		}
+		cacheIterator(it, cu);
+	}
+
+	private void preAggregateDenseMapRowsCharEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
+		char[] data, AIterator it) {
+		final double[] vals = db.values(rl);
+		final int nCol = db.getCumODims(0);
+		final int last = getOffsetToLast();
+		int dataOffset = data[it.getDataIndex()];
+		int start = it.offset + nCol * rl;
+		int end = it.offset + nCol * ru;
+		for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
+			preAV[offOut] += vals[off];
+		while(it.offset < last) {
+			it.next();
+			dataOffset = data[it.getDataIndex()];
+			start = it.offset + nCol * rl;
+			end = it.offset + nCol * ru;
+			for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
+				preAV[offOut] += vals[off];
+		}
+	}
+
+	protected void preAggregateDenseMapRowsByte(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
+		byte[] data, AIterator it) {
+		if(cu <= getOffsetToLast())
+			preAggregateDenseMapRowsByteBelowEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
+		else
+			preAggregateDenseMapRowsByteEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
+	}
+
+	protected void preAggregateDenseMapRowsByteBelowEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
+		int nVal, byte[] data, AIterator it) {
+		final double[] vals = db.values(rl);
+		final int nCol = db.getCumODims(0);
+		while(it.offset < cu) {
+			final int dataOffset = data[it.getDataIndex()] & 0xFF;
+			final int start = it.offset + nCol * rl;
+			final int end = it.offset + nCol * ru;
+			for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
+				preAV[offOut] += vals[off];
+			it.next();
+		}
+
+		cacheIterator(it, cu);
+	}
+
+	protected void preAggregateDenseMapRowsByteEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
+		int nVal, byte[] data, AIterator it) {
+		final double[] vals = db.values(rl);
+		final int nCol = db.getCumODims(0);
+		final int last = getOffsetToLast();
+		int dataOffset = data[it.getDataIndex()] & 0xFF;
+		int start = it.offset + nCol * rl;
+		int end = it.offset + nCol * ru;
+		for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
+			preAV[offOut] += vals[off];
+		while(it.offset < last) {
+			it.next();
+			dataOffset = data[it.getDataIndex()] & 0xFF;
+			start = it.offset + nCol * rl;
+			end = it.offset + nCol * ru;
+			for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
+				preAV[offOut] += vals[off];
+		}
+	}
 
 	protected void preAggregateDenseMapRowsBit(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
 		BitSet data, AIterator it) {
-		if(cu < getOffsetToLast() + 1)
+		if(cu <= getOffsetToLast())
 			preAggregateDenseMapRowsBitBelowEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
 		else
 			preAggregateDenseMapRowsBitEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
@@ -289,6 +453,7 @@ public abstract class AOffset implements Serializable {
 		int nVal, BitSet data, AIterator it) {
 		final double[] vals = db.values(rl);
 		final int nCol = db.getCumODims(0);
+
 		while(it.offset < cu) {
 			final int dataOffset = data.get(it.getDataIndex()) ? 1 : 0;
 			final int start = it.offset + nCol * rl;
@@ -354,171 +519,163 @@ public abstract class AOffset implements Serializable {
 	}
 
 	private void preAggregateSparseMapRow(SparseBlock sb, double[] preAV, int r, int nVal, byte[] data, AIterator it) {
-		final int apos = sb.pos(r);
+		int apos = sb.pos(r);
 		final int alen = sb.size(r) + apos;
 		final int[] aix = sb.indexes(r);
 		final double[] avals = sb.values(r);
 
-		final int maxId = data.length - 1;
+		final int last = getOffsetToLast();
 
-		int j = apos;
-		while(j < alen) {
-			if(aix[j] == it.offset) {
-				preAV[data[it.getDataIndex()] & 0xFF] += avals[j++];
-				if(it.getDataIndex() >= maxId)
-					break;
-				it.next();
+		if(aix[alen - 1] < last) {
+			int v = it.value();
+			while(apos < alen) {
+				if(aix[apos] == v) {
+					preAV[data[it.getDataIndex()] & 0xFF] += avals[apos++];
+					v = it.next();
+				}
+				else if(aix[apos] < v)
+					apos++;
+				else
+					v = it.next();
 			}
-			else if(aix[j] < it.offset) {
-				j++;
+		}
+		else {
+			int v = it.value();
+			while(v < last) {
+				if(aix[apos] == v) {
+					preAV[data[it.getDataIndex()] & 0xFF] += avals[apos++];
+					v = it.next();
+				}
+				else if(aix[apos] < v)
+					apos++;
+				else
+					v = it.next();
 			}
-			else {
-				if(it.getDataIndex() >= maxId)
-					break;
-				it.next();
-			}
+			while(aix[apos] < last && apos < alen)
+				apos++;
+			if(v == aix[apos]) // process last element
+				preAV[data[it.getDataIndex()] & 0xFF] += avals[apos];
 		}
 	}
 
-	private void preAggregateSparseMapRow(SparseBlock sb, double[] preAV, int r, int nVal, char[] data, AIterator it) {
-		final int apos = sb.pos(r);
-		final int alen = sb.size(r) + apos;
-		final int[] aix = sb.indexes(r);
-		final double[] avals = sb.values(r);
-
-		final int maxId = data.length - 1;
-		int j = apos;
-		while(j < alen) {
-			if(aix[j] == it.offset) {
-				preAV[data[it.getDataIndex()]] += avals[j++];
-				if(it.getDataIndex() >= maxId)
-					break;
-				it.next();
-			}
-			else if(aix[j] < it.offset) {
-				j++;
-			}
-			else {
-				if(it.getDataIndex() >= maxId)
-					break;
-				it.next();
-			}
-		}
-	}
-
-	private void preAggregateSparseMapRow(SparseBlock sb, double[] preAV, int r, int nVal, int[] data, AIterator it) {
-		final int apos = sb.pos(r);
-		final int alen = sb.size(r) + apos;
-		final int[] aix = sb.indexes(r);
-		final double[] avals = sb.values(r);
-
-		final int maxId = data.length - 1;
-		int j = apos;
-		while(j < alen) {
-			if(aix[j] == it.offset) {
-				preAV[data[it.getDataIndex()]] += avals[j++];
-				if(it.getDataIndex() >= maxId)
-					break;
-				it.next();
-			}
-			else if(aix[j] < it.offset) {
-				j++;
-			}
-			else {
-				if(it.getDataIndex() >= maxId)
-					break;
-				it.next();
-			}
-		}
-	}
-
-	private void preAggregateSparseMapRow(SparseBlock sb, double[] preAV, int r, int nVal, BitSet data, AIterator it) {
-		final int apos = sb.pos(r);
+	private void preAggregateSparseMapRow(final SparseBlock sb, final double[] preAV, final int r, final int nVal,
+		final char[] data, final AIterator it) {
+		int apos = sb.pos(r);
 		final int alen = sb.size(r) + apos;
 		final int[] aix = sb.indexes(r);
 		final double[] avals = sb.values(r);
 		final int last = getOffsetToLast();
 
-		int j = apos;
-		while(it.offset < last && j < alen) {
-			if(aix[j] == it.offset) {
-				preAV[data.get(it.getDataIndex()) ? 1 : 0] += avals[j++];
-				it.next();
+		if(aix[alen - 1] < last) {
+			int v = it.value();
+			while(apos < alen) {
+				if(aix[apos] == v) {
+					preAV[data[it.getDataIndex()]] += avals[apos++];
+					v = it.next();
+				}
+				else if(aix[apos] < v)
+					apos++;
+				else
+					v = it.next();
 			}
-			if(j < alen)
-				while(it.offset < last && aix[j] > it.offset)
-					it.next();
-			while(j < alen && aix[j] < it.offset)
-				j++;
 		}
-		while(j < alen && aix[j] < it.offset)
-			j++;
-		if(j != alen && aix[j] == it.offset)
-			preAV[data.get(it.getDataIndex()) ? 1 : 0] += avals[j];
+		else {
+			int v = it.value();
+			while(v < last) {
+				if(aix[apos] == v) {
+					preAV[data[it.getDataIndex()]] += avals[apos++];
+					v = it.next();
+				}
+				else if(aix[apos] < v)
+					apos++;
+				else
+					v = it.next();
+			}
+			while(aix[apos] < last && apos < alen)
+				apos++;
+			if(v == aix[apos]) // process last element
+				preAV[data[it.getDataIndex()]] += avals[apos];
+		}
 	}
 
-	public void preAggregateSDCZ_SDCZMultiCol_char_char(ADictionary td, AOffset of, double[] dv, int nCol, char[] m,
-		char[] tm) {
+	private void preAggregateSparseMapRow(SparseBlock sb, double[] preAV, int r, int nVal, int[] data, AIterator it) {
+		int apos = sb.pos(r);
+		final int alen = sb.size(r) + apos;
+		final int[] aix = sb.indexes(r);
+		final double[] avals = sb.values(r);
+		final int last = getOffsetToLast();
 
-		final AOffsetIterator itThat = getOffsetIterator();
-		final AOffsetIterator itThis = of.getOffsetIterator();
-		final int tSize = tm.length - 1, size = m.length - 1;
-		int i = 0, j = 0;
-
-		while(i < tSize && j < size) {
-			final int tv = itThat.offset;
-			final int v = itThis.offset;
-			if(tv == v) {
-				final int fr = tm[i];
-				final int to = m[j];
-				td.addToEntry(dv, fr, to, nCol);
-				itThat.next();
-				itThis.next();
-				i++;
-				j++;
-			}
-			else if(tv < v) {
-				itThat.next();
-				i++;
-			}
-			else {
-				itThis.next();
-				j++;
+		if(aix[alen - 1] < last) {
+			int v = it.value();
+			while(apos < alen) {
+				if(aix[apos] == v) {
+					preAV[data[it.getDataIndex()]] += avals[apos++];
+					v = it.next();
+				}
+				else if(aix[apos] < v)
+					apos++;
+				else
+					v = it.next();
 			}
 		}
-
-		int tv = itThat.offset;
-		int v = itThis.offset;
-		if(tv == v) {
-			final int fr = tm[i];
-			final int to = m[j];
-			td.addToEntry(dv, fr, to, nCol);
-			return;
+		else {
+			int v = it.value();
+			while(v < last) {
+				if(aix[apos] == v) {
+					preAV[data[it.getDataIndex()]] += avals[apos++];
+					v = it.next();
+				}
+				else if(aix[apos] < v)
+					apos++;
+				else
+					v = it.next();
+			}
+			while(aix[apos] < last && apos < alen)
+				apos++;
+			if(v == aix[apos]) // process last element
+				preAV[data[it.getDataIndex()]] += avals[apos];
 		}
+	}
 
-		while(i < tSize && tv < v) { // this is at final
-			itThat.next();
-			i++;
-			tv = itThat.offset;
-			if(tv == v) {
-				final int fr = tm[i];
-				final int to = m[j];
-				td.addToEntry(dv, fr, to, nCol);
-				return;
+	private void preAggregateSparseMapRow(SparseBlock sb, double[] preAV, int r, int nVal, BitSet data, AIterator it) {
+
+		int apos = sb.pos(r);
+		final int alen = sb.size(r) + apos;
+		final int[] aix = sb.indexes(r);
+		final double[] avals = sb.values(r);
+		final int last = getOffsetToLast();
+
+		if(aix[alen - 1] < last) {
+			int v = it.value();
+			while(apos < alen) {
+				if(aix[apos] == v) {
+					preAV[data.get(it.getDataIndex()) ? 1 : 0] += avals[apos++];
+					v = it.next();
+				}
+				else if(aix[apos] < v)
+					apos++;
+				else
+					v = it.next();
 			}
 		}
-
-		while(j < size && v < tv) { // that is at final
-			itThis.next();
-			j++;
-			v = itThis.offset;
-			if(tv == v) {
-				final int fr = tm[i];
-				final int to = m[j];
-				td.addToEntry(dv, fr, to, nCol);
-				return;
+		else {
+			int v = it.value();
+			while(v < last) {
+				if(aix[apos] == v) {
+					preAV[data.get(it.getDataIndex()) ? 1 : 0] += avals[apos++];
+					v = it.next();
+				}
+				else if(aix[apos] < v)
+					apos++;
+				else
+					v = it.next();
 			}
+			while(aix[apos] < last && apos < alen)
+				apos++;
+			if(v == aix[apos]) // process last element
+				preAV[data.get(it.getDataIndex()) ? 1 : 0] += avals[apos];
 		}
+
 	}
 
 	@Override

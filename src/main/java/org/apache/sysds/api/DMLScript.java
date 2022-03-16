@@ -137,6 +137,8 @@ public class DMLScript
 	// Enable eager CUDA free on rmvar
 	public static boolean           EAGER_CUDA_FREE      = false;
 
+	// Global seed 
+	public static int               SEED                 = -1;
 
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -257,6 +259,7 @@ public class DMLScript
 			LINEAGE_ESTIMATE      = dmlOptions.lineage_estimate;
 			CHECK_PRIVACY         = dmlOptions.checkPrivacy;
 			LINEAGE_DEBUGGER      = dmlOptions.lineage_debugger;
+			SEED                  = dmlOptions.seed; 
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;

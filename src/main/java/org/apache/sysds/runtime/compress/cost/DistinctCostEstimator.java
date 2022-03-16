@@ -19,8 +19,11 @@
 
 package org.apache.sysds.runtime.compress.cost;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
  * A Cost based estimator that based the compression and co-coding cost on the number of distinct elements in the column
@@ -29,42 +32,29 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
  * The base cost of the uncompressed representation is the number of cells in the matrix that has a value. Aka nonzero
  * values.
  */
-public class DistinctCostEstimator implements ICostEstimate {
+public class DistinctCostEstimator extends ACostEstimate {
 	private static final long serialVersionUID = 4784682182584508597L;
 	private final static int toSmallForAnalysis = 64;
-
-	/**
-	 * This value specifies the maximum distinct count allowed int a coCoded group. Note that this value is the number
-	 * of distinct tuples not the total number of values. That value can be calculated by multiplying the number of
-	 * tuples with columns in the coCoded group.
-	 */
 	private final double largestDistinct;
-
-	private final int nRows;
-	private final double sparsity;
 
 	public DistinctCostEstimator(int nRows, CompressionSettings cs, double sparsity) {
 		this.largestDistinct = Math.min(4096, Math.max(256, (int) (nRows * cs.coCodePercentage)));
-		this.nRows = nRows;
-		this.sparsity = sparsity;
 	}
 
 	@Override
-	public double getUncompressedCost(CompressedSizeInfoColGroup g) {
-		final int nCols = g.getColumns().length;
-		return nRows * nCols * sparsity;
-	}
-
-	@Override
-	public double getCostOfColumnGroup(CompressedSizeInfoColGroup g) {
-		if(g == null)
-			return Double.POSITIVE_INFINITY;
+	protected double getCostSafe(CompressedSizeInfoColGroup g) {
 		int nVals = Math.max(g.getNumVals(), toSmallForAnalysis);
 		return nVals < largestDistinct ? nVals : Double.POSITIVE_INFINITY;
 	}
 
 	@Override
-	public boolean shouldAnalyze(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
-		return g1.getNumVals() * g2.getNumVals() < toSmallForAnalysis;
+	public double getCost(MatrixBlock mb) {
+		throw new NotImplementedException();
 	}
+
+	@Override
+	public double getCost(AColGroup cg, int nRows) {
+		throw new NotImplementedException();
+	}
+
 }

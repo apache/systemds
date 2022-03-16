@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress;
 
 import java.util.EnumSet;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
@@ -34,6 +35,10 @@ import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.Est
  */
 public class CompressionSettingsBuilder {
 	private double samplingRatio;
+	// private double samplePower = 0.6;
+	private double samplePower = 0.65;
+	// private double samplePower = 0.68;
+	// private double samplePower = 0.7;
 	private boolean allowSharedDictionary = false;
 	private String transposeInput;
 	private int seed = -1;
@@ -55,7 +60,7 @@ public class CompressionSettingsBuilder {
 
 		DMLConfig conf = ConfigurationManager.getDMLConfig();
 		this.lossy = conf.getBooleanValue(DMLConfig.COMPRESSED_LOSSY);
-		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED, CompressionType.CONST);
+		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED, CompressionType.CONST, CompressionType.EMPTY);
 		String[] validCompressionsString = conf.getTextValue(DMLConfig.COMPRESSED_VALID_COMPRESSIONS).split(",");
 		for(String comp : validCompressionsString)
 			validCompressions.add(CompressionType.valueOf(comp));
@@ -63,6 +68,8 @@ public class CompressionSettingsBuilder {
 		columnPartitioner = PartitionerType.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_COCODE));
 		costType = CostType.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_COST_MODEL));
 		transposeInput = conf.getTextValue(DMLConfig.COMPRESSED_TRANSPOSE);
+		seed = DMLScript.SEED;
+
 	}
 
 	/**
@@ -175,6 +182,8 @@ public class CompressionSettingsBuilder {
 			validCompressions.add(CompressionType.UNCOMPRESSED);
 		if(!validCompressions.contains(CompressionType.CONST))
 			validCompressions.add(CompressionType.CONST);
+		if(!validCompressions.contains(CompressionType.EMPTY))
+			validCompressions.add(CompressionType.EMPTY);
 		this.validCompressions = validCompressions;
 		return this;
 	}
@@ -322,7 +331,7 @@ public class CompressionSettingsBuilder {
 	 * @return The CompressionSettings
 	 */
 	public CompressionSettings create() {
-		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, seed, lossy,
+		return new CompressionSettings(samplingRatio, samplePower, allowSharedDictionary, transposeInput, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
 			minimumSampleSize, maxSampleSize, estimationType, costType, minimumCompressionRatio, isInSparkInstruction,
 			sdcSortType);

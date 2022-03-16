@@ -24,12 +24,11 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
-public class MapToFactory {
-	protected static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
+public interface MapToFactory {
+	static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
 
 	public enum MAP_TYPE {
 		BIT, UBYTE, BYTE, CHAR, INT;
@@ -83,6 +82,22 @@ public class MapToFactory {
 			return new MapToInt(numTuples, size);
 	}
 
+	public static AMapToData create(int size, MAP_TYPE t) {
+		switch(t) {
+			case BIT:
+				return new MapToBit(size);
+			case UBYTE:
+				return new MapToUByte(size);
+			case BYTE:
+				return new MapToByte(size);
+			case CHAR:
+				return new MapToChar(size);
+			case INT:
+			default:
+				return new MapToInt(size);
+		}
+	}
+
 	/**
 	 * Reshape the map, to a smaller instance if applicable.
 	 * 
@@ -96,27 +111,37 @@ public class MapToFactory {
 	public static AMapToData resize(AMapToData d, int numTuples) {
 		final int size = d.size();
 		AMapToData ret;
-		if(d instanceof MapToBit)
+		if(d instanceof MapToBit) {
+			d.setUnique(numTuples);
 			return d;
+		}
 		else if(numTuples <= 2 && size > 32)
 			ret = new MapToBit(numTuples, size);
-		else if(d instanceof MapToUByte)
+		else if(d instanceof MapToUByte) {
+			d.setUnique(numTuples);
 			return d;
-		else if(numTuples <= 127){
+		}
+		else if(numTuples <= 127) {
 			if(d instanceof MapToByte)
-				return ((MapToByte)d).toUByte();
+				return ((MapToByte) d).toUByte();
 			ret = new MapToUByte(numTuples, size);
 		}
-		else if(d instanceof MapToByte)
+		else if(d instanceof MapToByte) {
+			d.setUnique(numTuples);
 			return d;
+		}
 		else if(numTuples <= 256)
 			ret = new MapToByte(numTuples, size);
-		else if(d instanceof MapToChar)
+		else if(d instanceof MapToChar) {
+			d.setUnique(numTuples);
 			return d;
+		}
 		else if(numTuples <= (int) Character.MAX_VALUE + 1)
 			ret = new MapToChar(numTuples, size);
-		else // then the input was int and reshapes to int
+		else {// then the input was int and reshapes to int
+			d.setUnique(numTuples);
 			return d;
+		}
 
 		ret.copy(d);
 		return ret;
@@ -200,47 +225,5 @@ public class MapToFactory {
 			default:
 				return Integer.MAX_VALUE;
 		}
-	}
-
-	public static AMapToData join(AMapToData left, AMapToData right) {
-		if(left == null)
-			return right;
-		else if(right == null)
-			return left;
-		final int nVL = left.getUnique();
-		final int nVR = right.getUnique();
-		final int size = left.size();
-		final long maxUnique = (long) nVL * nVR;
-		if(maxUnique > (long) Integer.MAX_VALUE)
-			throw new DMLCompressionException(
-				"Joining impossible using linearized join, since each side has a large number of unique values");
-		if(size != right.size())
-			throw new DMLCompressionException("Invalid input maps to join, must contain same number of rows");
-
-		return computeJoin(left, right, size, nVL, (int) maxUnique);
-	}
-
-	private static AMapToData computeJoin(AMapToData left, AMapToData right, int size, int nVL, int maxUnique) {
-		AMapToData tmp = create(size, maxUnique);
-		return computeJoinUsingLinearizedMap(tmp, left, right, size, nVL, maxUnique);
-	}
-
-	private static AMapToData computeJoinUsingLinearizedMap(AMapToData tmp, AMapToData left, AMapToData right, int size,
-		int nVL, int maxUnique) {
-		int[] map = new int[maxUnique];
-		int newUID = 1;
-		for(int i = 0; i < size; i++) {
-			final int nv = left.getIndex(i) + right.getIndex(i) * nVL;
-			final int mapV = map[nv];
-			if(mapV == 0) {
-				tmp.set(i, newUID - 1);
-				map[nv] = newUID++;
-			}
-			else
-				tmp.set(i, mapV - 1);
-		}
-
-		tmp.setUnique(newUID - 1);
-		return tmp;
 	}
 }

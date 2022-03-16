@@ -35,8 +35,8 @@ import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class DictionaryFactory {
-	protected static final Log LOG = LogFactory.getLog(DictionaryFactory.class.getName());
+public interface DictionaryFactory {
+	static final Log LOG = LogFactory.getLog(DictionaryFactory.class.getName());
 
 	public enum Type {
 		FP64_DICT, MATRIX_BLOCK_DICT, INT8_DICT
@@ -66,7 +66,43 @@ public class DictionaryFactory {
 			return Dictionary.getInMemorySize(nrValues * nrColumns);
 	}
 
-	public static ADictionary create(DblArrayCountHashMap map, int nCols, boolean addZeroTuple, boolean deltaEncoded) {
+	public static ADictionary create(DblArrayCountHashMap map, int nCols, boolean addZeroTuple, double sparsity) {
+		try {
+			final ArrayList<DArrCounts> vals = map.extractValues();
+			final int nVals = vals.size();
+			final int nTuplesOut = nVals + (addZeroTuple ? 1 : 0);
+			if(sparsity < 0.4) {
+				final MatrixBlock retB = new MatrixBlock(nTuplesOut, nCols, true);
+				retB.allocateSparseRowsBlock();
+				final SparseBlock sb = retB.getSparseBlock();
+				for(int i = 0; i < nVals; i++) {
+					final DArrCounts dac = vals.get(i);
+					final double[] dv = dac.key.getData();
+					for(int k = 0; k < dv.length; k++)
+						sb.append(dac.id, k, dv[k]);
+				}
+				retB.recomputeNonZeros();
+				retB.examSparsity(true);
+				return new MatrixBlockDictionary(retB, nCols);
+			}
+			else {
+
+				final double[] resValues = new double[(nTuplesOut) * nCols];
+				for(int i = 0; i < nVals; i++) {
+					final DArrCounts dac = vals.get(i);
+					System.arraycopy(dac.key.getData(), 0, resValues, dac.id * nCols, nCols);
+				}
+				return new Dictionary(resValues);
+			}
+		}
+		catch(Exception e) {
+			LOG.error("Failed to create dictionary: ", e);
+			return null;
+		}
+
+	}
+
+	public static ADictionary createDelta(DblArrayCountHashMap map, int nCols, boolean addZeroTuple) {
 		final ArrayList<DArrCounts> vals = map.extractValues();
 		final int nVals = vals.size();
 		final double[] resValues = new double[(nVals + (addZeroTuple ? 1 : 0)) * nCols];
@@ -74,7 +110,7 @@ public class DictionaryFactory {
 			final DArrCounts dac = vals.get(i);
 			System.arraycopy(dac.key.getData(), 0, resValues, dac.id * nCols, nCols);
 		}
-		return deltaEncoded ? new DeltaDictionary(resValues, nCols) : new Dictionary(resValues);
+		return new DeltaDictionary(resValues, nCols);
 	}
 
 	public static ADictionary create(ABitmap ubm) {
@@ -103,6 +139,7 @@ public class DictionaryFactory {
 					sb.append(i, col, tuple[col]);
 			}
 			m.recomputeNonZeros();
+			m.examSparsity(true);
 			return new MatrixBlockDictionary(m, nCol);
 		}
 		else if(ubm instanceof MultiColBitmap) {
@@ -122,8 +159,25 @@ public class DictionaryFactory {
 		final int nCol = ubm.getNumColumns();
 		final int nVal = ubm.getNumValues() - (addZero ? 0 : 1);
 		if(nCol > 4 && sparsity < 0.4) {
-			// return sparse
-			throw new NotImplementedException("Not supported sparse allocation yet");
+			final MultiColBitmap mcbm = (MultiColBitmap) ubm;
+			final MatrixBlock m = new MatrixBlock(nVal, nCol, true);
+			m.allocateSparseRowsBlock();
+			final SparseBlock sb = m.getSparseBlock();
+
+			for(int i = 0; i < defaultIndex; i++) {
+				final double[] tuple = mcbm.getValues(i);
+				for(int col = 0; col < nCol; col++)
+					sb.append(i, col, tuple[col]);
+			}
+			System.arraycopy(mcbm.getValues(defaultIndex), 0, defaultTuple, 0, nCol);
+			for(int i = defaultIndex; i < ubm.getNumValues() - 1; i++) {
+				final double[] tuple = mcbm.getValues(i);
+				for(int col = 0; col < nCol; col++)
+					sb.append(i, col, tuple[col]);
+			}
+			m.recomputeNonZeros();
+			m.examSparsity(true);
+			return new MatrixBlockDictionary(m, nCol);
 		}
 		else {
 			double[] dict = new double[nCol * nVal];
@@ -172,6 +226,7 @@ public class DictionaryFactory {
 					sb.append(i, col, tuple[col]);
 			}
 			m.recomputeNonZeros();
+			m.examSparsity(true);
 			return new MatrixBlockDictionary(m, nCols);
 		}
 

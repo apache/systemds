@@ -21,10 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.BitSet;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class OffsetChar extends AOffset {
@@ -92,13 +89,19 @@ public class OffsetChar extends AOffset {
 	}
 
 	@Override
-	public IterateCharOffset getIterator() {
-		return new IterateCharOffset();
+	public AIterator getIterator() {
+		if(noZero)
+			return new IterateCharOffsetNoZero();
+		else
+			return new IterateCharOffset();
 	}
 
 	@Override
 	public AOffsetIterator getOffsetIterator() {
-		return new OffsetCharIterator();
+		if(noZero)
+			return new OffsetCharIteratorNoZero();
+		else
+			return new OffsetCharIterator();
 	}
 
 	@Override
@@ -106,6 +109,7 @@ public class OffsetChar extends AOffset {
 		out.writeByte(OffsetFactory.OFF_TYPE.CHAR.ordinal());
 		out.writeInt(offsetToFirst);
 		out.writeInt(offsets.length);
+		out.writeInt(offsetToLast);
 		for(char o : offsets)
 			out.writeChar(o);
 	}
@@ -123,7 +127,7 @@ public class OffsetChar extends AOffset {
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 4 + 4 + offsets.length * 2;
+		return 1 + 4 + 4 + 4 + offsets.length * 2;
 	}
 
 	@Override
@@ -158,166 +162,13 @@ public class OffsetChar extends AOffset {
 	public static OffsetChar readFields(DataInput in) throws IOException {
 		final int offsetToFirst = in.readInt();
 		final int offsetsLength = in.readInt();
+		final int offsetToLast = in.readInt();
 		final char[] offsets = new char[offsetsLength];
-		int offsetToLast = offsetToFirst;
-		for(int i = 0; i < offsetsLength; i++) {
+
+		for(int i = 0; i < offsetsLength; i++)
 			offsets[i] = in.readChar();
-			offsetToLast += offsets[i];
-		}
+
 		return new OffsetChar(offsets, offsetToFirst, offsetToLast);
-	}
-
-	@Override
-	protected final void preAggregateDenseMapRowByte(double[] mV, int off, double[] preAV, int cu, int nVal, byte[] data,
-		AIterator it) {
-		final int maxId = data.length - 1;
-		while(it.isNotOver(cu)) {
-			final int dx = it.getDataIndex();
-			preAV[data[dx] & 0xFF] += mV[off + it.value()];
-			if(dx < maxId)
-				it.next();
-			else
-				break;
-		}
-		cacheIterator(it, cu);
-	}
-
-	@Override
-	protected final void preAggregateDenseMapRowChar(double[] mV, int off, double[] preAV, int cu, int nVal, char[] data,
-		AIterator it) {
-		final int maxId = data.length - 1;
-		while(it.isNotOver(cu)) {
-			final int dx = it.getDataIndex();
-			preAV[data[dx]] += mV[off + it.value()];
-			if(dx < maxId)
-				it.next();
-			else
-				break;
-		}
-		cacheIterator(it, cu);
-	}
-
-	@Override
-	protected final void preAggregateDenseMapRowBit(double[] mV, int off, double[] preAV, int cu, int nVal, BitSet data,
-		AIterator it) {
-		it.offset += off;
-
-		if(cu > offsetToLast) {
-			final int last = offsetToLast + off;
-
-			while(it.offset < last) {
-				preAV[data.get(it.getDataIndex()) ? 1 : 0] += mV[it.offset];
-				it.next();
-
-			}
-			preAV[data.get(it.getDataIndex()) ? 1 : 0] += mV[it.offset];
-		}
-		else {
-			final int last = cu + off;
-			while(it.offset < last) {
-				preAV[data.get(it.getDataIndex()) ? 1 : 0] += mV[it.offset];
-				it.next();
-			}
-		}
-		it.offset -= off;
-		cacheIterator(it, cu);
-	}
-
-	@Override
-	protected void preAggregateDenseMapRowsByte(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
-		byte[] data, AIterator it) {
-
-		final AIterator sIt = it.clone();
-		if(cu < getOffsetToLast() + 1) {
-			// inside offsets
-			for(int r = rl; r < ru; r++) {
-				final int offOut = (r - rl) * nVal;
-				final double[] vals = db.values(r);
-				final int off = db.pos(r);
-				final int cur = cu + off;
-				it = sIt.clone();
-				it.offset += off;
-				while(it.offset < cur) {
-					preAV[offOut + data[it.getDataIndex()] & 0xFF] += vals[it.offset];
-					it.next();
-				}
-				it.offset -= off;
-			}
-			cacheIterator(it, cu);
-		}
-		else {
-			final int maxId = data.length - 1;
-			// all the way to the end of offsets.
-			for(int r = rl; r < ru; r++) {
-				final int offOut = (r - rl) * nVal;
-				final int off = db.pos(r);
-				final double[] vals = db.values(r);
-				it = sIt.clone();
-				it.offset = it.offset + off;
-				preAV[offOut + data[it.getDataIndex()] & 0xFF] += vals[it.offset];
-				while(it.getDataIndex() < maxId) {
-					it.next();
-					preAV[offOut + data[it.getDataIndex()] & 0xFF] += vals[it.offset];
-				}
-			}
-		}
-	}
-
-	@Override
-	protected void preAggregateDenseMapRowsChar(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
-		char[] data, AIterator it) {
-		final IterateCharOffset itb = (IterateCharOffset) it;
-		final int offsetStart = itb.offset;
-		final int indexStart = itb.index;
-		final int dataIndexStart = itb.dataIndex;
-		if(cu < getOffsetToLast() + 1) {
-
-			for(int r = rl; r < ru; r++) {
-				final int offOut = (r - rl) * nVal;
-				final double[] vals = db.values(r);
-				final int off = db.pos(r);
-				final int cur = cu + off;
-				itb.offset = offsetStart + off;
-				itb.index = indexStart;
-				itb.dataIndex = dataIndexStart;
-				while(itb.offset < cur) {
-					preAV[offOut + data[itb.dataIndex]] += vals[itb.offset];
-					itb.next();
-				}
-				itb.offset -= off;
-			}
-
-			cacheIterator(itb, cu);
-		}
-		else {
-			final int maxId = data.length - 1;
-			// all the way to the end.
-			for(int r = rl; r < ru; r++) {
-				final int offOut = (r - rl) * nVal;
-				final int off = db.pos(r);
-				final double[] vals = db.values(r);
-				itb.offset = offsetStart + off;
-				itb.index = indexStart;
-				itb.dataIndex = dataIndexStart;
-				preAV[offOut + data[itb.dataIndex]] += vals[itb.offset];
-				while(itb.dataIndex < maxId) {
-					itb.next();
-					preAV[offOut + data[itb.dataIndex]] += vals[itb.offset];
-				}
-			}
-		}
-	}
-
-	@Override
-	protected final void preAggregateDenseMapRowInt(double[] mV, int off, double[] preAV, int cu, int nVal, int[] data,
-		AIterator it) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	protected final void preAggregateDenseMapRowsInt(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
-		int nVal, int[] data, AIterator it) {
-		throw new NotImplementedException();
 	}
 
 	private class IterateCharOffset extends AIterator {
@@ -339,7 +190,7 @@ public class OffsetChar extends AOffset {
 		}
 
 		@Override
-		public void next() {
+		public int next() {
 			char v = offsets[index];
 			while(v == 0) {
 				offset += maxV;
@@ -349,6 +200,7 @@ public class OffsetChar extends AOffset {
 			offset += v;
 			index++;
 			dataIndex++;
+			return offset;
 		}
 
 		@Override
@@ -379,6 +231,61 @@ public class OffsetChar extends AOffset {
 		}
 	}
 
+	private class IterateCharOffsetNoZero extends AIterator {
+
+		protected int index;
+
+		private IterateCharOffsetNoZero() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		private IterateCharOffsetNoZero(int index, int offset) {
+			super(offset);
+			this.index = index;
+		}
+
+		@Override
+		public int next() {
+			char v = offsets[index];
+			while(v == 0) {
+				offset += maxV;
+				index++;
+				v = offsets[index];
+			}
+			offset += v;
+			index++;
+			return offset;
+		}
+
+		@Override
+		public int value() {
+			return offset;
+		}
+
+		@Override
+		public int skipTo(int idx) {
+			while(offset < idx && index < offsets.length)
+				next();
+			return offset;
+		}
+
+		@Override
+		public IterateCharOffsetNoZero clone() {
+			return new IterateCharOffsetNoZero(index, offset);
+		}
+
+		@Override
+		public int getDataIndex() {
+			return index;
+		}
+
+		@Override
+		public int getOffsetsIndex() {
+			return index;
+		}
+	}
+
 	private class OffsetCharIterator extends AOffsetIterator {
 
 		protected int index;
@@ -397,7 +304,24 @@ public class OffsetChar extends AOffset {
 				v = offsets[index];
 			}
 			index++;
-			return offset += v & 0xFF;
+			return offset += v;
+		}
+	}
+
+	private class OffsetCharIteratorNoZero extends AOffsetIterator {
+
+		protected int index;
+
+		private OffsetCharIteratorNoZero() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		@Override
+		public int next() {
+			char v = offsets[index];
+			index++;
+			return offset += v;
 		}
 	}
 }

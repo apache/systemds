@@ -79,7 +79,7 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 	}
 
 	@Override
-	public final void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
+	public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
 		throw new DMLCompressionException("This method should never be called");
 	}
 

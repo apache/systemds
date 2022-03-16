@@ -57,25 +57,23 @@ public class SparseEncoding implements IEncode {
 	}
 
 	@Override
-	public IEncode join(IEncode e) {
-		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
+	public IEncode combine(IEncode e) {
+		if((long) (getUnique()) * e.getUnique() > Integer.MAX_VALUE)
+			throw new DMLCompressionException("Invalid input to combine.");
+		else if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
 			return this;
 		else if(e instanceof SparseEncoding)
-			return joinSparse((SparseEncoding) e);
+			return combineSparse((SparseEncoding) e);
 		else
-			return ((DenseEncoding) e).joinSparse(this);
+			return e.combine(this);
 	}
 
-	protected IEncode joinSparse(SparseEncoding e) {
+	protected IEncode combineSparse(SparseEncoding e) {
 		if(e.map == map && e.off == off)
 			return this; // unlikely to happen but cheap to compute therefore this skip is included.
 
-		final long maxUnique = (long) e.getUnique() * getUnique();
-		if(maxUnique > (long) Integer.MAX_VALUE)
-			throw new DMLCompressionException(
-				"Joining impossible using linearized join, since each side has a large number of unique values");
-
-		final int[] d = new int[(int) maxUnique - 1];
+		final int maxUnique = e.getUnique() * getUnique();
+		final int[] d = new int[maxUnique - 1];
 
 		// We need at least this size of offsets, but i don't know if i need more.
 		final IntArrayList retOff = new IntArrayList(Math.max(e.size(), this.size()));
@@ -89,9 +87,9 @@ public class SparseEncoding implements IEncode {
 		final int nVl = getUnique();
 		final int nVr = e.getUnique();
 
-		final int unique = joinSparse(map, e.map, itl, itr, retOff, tmpVals, fl, fr, nVl, nVr, d);
+		final int unique = combineSparse(map, e.map, itl, itr, retOff, tmpVals, fl, fr, nVl, nVr, d);
 
-		if(retOff.size() < nRows * 0.3) {
+		if(retOff.size() < nRows * 0.2) {
 			final AOffset o = OffsetFactory.createOffset(retOff);
 			final AMapToData retMap = MapToFactory.create(tmpVals.size(), tmpVals.extractValues(), unique);
 			return new SparseEncoding(retMap, o, nRows - retOff.size(), retMap.getCounts(new int[unique - 1]), nRows);
@@ -102,13 +100,11 @@ public class SparseEncoding implements IEncode {
 			for(int i = 0; i < retOff.size(); i++)
 				retMap.set(retOff.get(i), tmpVals.get(i));
 
-			// add values.
-			IEncode ret = DenseEncoding.joinDenseCount(retMap);
-			return ret;
+			return new DenseEncoding(retMap);
 		}
 	}
 
-	private static int joinSparse(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr, IntArrayList retOff,
+	private static int combineSparse(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr, IntArrayList retOff,
 		IntArrayList tmpVals, int fl, int fr, int nVl, int nVr, int[] d) {
 
 		final int defR = (nVr - 1) * nVl;
@@ -198,13 +194,10 @@ public class SparseEncoding implements IEncode {
 	}
 
 	private static int addVal(int nv, int offset, int[] d, int newUID, IntArrayList tmpVals, IntArrayList offsets) {
-		final int mapV = d[nv];
-		if(mapV == 0) {
-			tmpVals.appendValue(newUID - 1);
-			d[nv] = newUID++;
-		}
-		else
-			tmpVals.appendValue(mapV - 1);
+		int mapV = d[nv];
+		if(mapV == 0)
+			mapV = d[nv] = newUID++;
+		tmpVals.appendValue(mapV - 1);
 		offsets.appendValue(offset);
 		return newUID;
 	}
@@ -220,16 +213,11 @@ public class SparseEncoding implements IEncode {
 	}
 
 	@Override
-	public int[] getCounts() {
-		return counts;
-	}
-
-	@Override
-	public EstimationFactors computeSizeEstimation(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
+	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
 		final int largestOffs = nRows - map.size(); // known largest off is zero tuples
 		tupleSparsity = Math.min((double) map.size() / (double) nRows, tupleSparsity);
-		return new EstimationFactors(cols.length, counts.length, map.size(), largestOffs, counts, 0, 0, nRows, false,
-			true, matrixSparsity, tupleSparsity);
+		return new EstimationFactors(cols.length, counts.length, map.size(), largestOffs, counts, 0, nRows, false, true,
+			matrixSparsity, tupleSparsity);
 	}
 
 	@Override

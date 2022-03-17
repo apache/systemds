@@ -101,6 +101,8 @@ public class DMLConfig
 	public static final String LOCAL_SPARK_NUM_THREADS = "sysds.local.spark.number.threads"; // the number of threads allowed to be used in the local spark configuration, default is * to enable use of all threads.
 	public static final String LINEAGECACHESPILL    = "sysds.lineage.cachespill"; // boolean: whether to spill cache entries to disk
 	public static final String COMPILERASSISTED_RW  = "sysds.lineage.compilerassisted"; // boolean: whether to apply compiler assisted rewrites
+	public static final String BUFFERPOOL_LIMIT     = "sysds.caching.bufferpoollimit"; // max buffer pool size in percentage
+	public static final String MEMORY_MANAGER       = "sysds.caching.memorymanager"; // static or unified memory manager
 	
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
@@ -161,6 +163,8 @@ public class DMLConfig
 		_defaultVals.put(NATIVE_BLAS_DIR,        "none" );
 		_defaultVals.put(LINEAGECACHESPILL,      "true" );
 		_defaultVals.put(COMPILERASSISTED_RW,    "true" );
+		_defaultVals.put(BUFFERPOOL_LIMIT,       "15"); // 15% of total heap
+		_defaultVals.put(MEMORY_MANAGER,         "static"); // static partitioning of heap
 		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false" );
 		_defaultVals.put(EVICTION_SHADOW_BUFFERSIZE,  "0.0" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
@@ -424,10 +428,11 @@ public class DMLConfig
 			COMPRESSED_LINALG, COMPRESSED_LOSSY, COMPRESSED_VALID_COMPRESSIONS, COMPRESSED_OVERLAPPING,
 			COMPRESSED_SAMPLING_RATIO, COMPRESSED_COCODE, COMPRESSED_TRANSPOSE, DAG_LINEARIZATION,
 			CODEGEN, CODEGEN_API, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
-			STATS_MAX_WRAP_LEN, LINEAGECACHESPILL, COMPILERASSISTED_RW, PRINT_GPU_MEMORY_INFO,
-			AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, 
-			LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE, GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR,
-			USE_SSL_FEDERATED_COMMUNICATION, DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, FEDERATED_TIMEOUT
+			STATS_MAX_WRAP_LEN, LINEAGECACHESPILL, COMPILERASSISTED_RW, BUFFERPOOL_LIMIT, MEMORY_MANAGER,
+			PRINT_GPU_MEMORY_INFO, AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION,
+			GPU_EVICTION_POLICY, LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE, GPU_MEMORY_ALLOCATOR,
+			GPU_MEMORY_UTILIZATION_FACTOR, USE_SSL_FEDERATED_COMMUNICATION, DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT,
+			FEDERATED_TIMEOUT
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

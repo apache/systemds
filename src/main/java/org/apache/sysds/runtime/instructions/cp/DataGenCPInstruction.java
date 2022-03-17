@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.UnifiedMemoryManager;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -303,8 +304,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		ScalarObject soresScalar = null;
 
 		// process specific datagen operator
-		if(method == OpOpDG.RAND)
+		if(method == OpOpDG.RAND) {
+			UnifiedMemoryManager.reserveOutputMem();
 			out = processRandInstruction(ec);
+		}
 		else if(method == OpOpDG.SEQ) {
 			double lfrom = ec.getScalarInput(seq_from).getDoubleValue();
 			double lto = ec.getScalarInput(seq_to).getDoubleValue();

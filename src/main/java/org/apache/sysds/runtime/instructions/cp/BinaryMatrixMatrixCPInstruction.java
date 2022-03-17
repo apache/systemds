@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.controlprogram.caching.UnifiedMemoryManager;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
@@ -48,6 +49,7 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 		boolean compressedRight = inBlock2 instanceof CompressedMatrixBlock;
 
 		MatrixBlock retBlock;
+		UnifiedMemoryManager.reserveOutputMem();
 
 		if(LibCommonsMath.isSupportedMatrixMatrixOperation(getOpcode()) && !compressedLeft && !compressedRight)
 			retBlock = LibCommonsMath.matrixMatrixOperations(inBlock1, inBlock2, getOpcode());

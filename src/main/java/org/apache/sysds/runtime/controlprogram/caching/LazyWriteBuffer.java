@@ -120,7 +120,7 @@ public class LazyWriteBuffer
 		
 		return numEvicted;
 	}
-	
+
 	public static void deleteBlock(String fname)
 	{
 		boolean requiresDelete = true;

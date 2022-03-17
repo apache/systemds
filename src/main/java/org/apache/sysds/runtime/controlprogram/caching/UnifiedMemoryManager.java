@@ -20,6 +20,17 @@
 package org.apache.sysds.runtime.controlprogram.caching;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.util.LocalFileUtils;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Unified Memory Manager - Initial Design
@@ -63,59 +74,92 @@ import org.apache.commons.lang.NotImplementedException;
  *      eviction. All pin requests have to be accepted, and once a non-dirty object is released
  *      (unpinned) it can be dropped without persisting it to local FS.
  *
+ * Example Scenarios for an Operation:
+ *  (1) Inputs are available in the UMM, enough space left for the output.
+ *  (2) Some inputs are pre-evicted. Read and pin those in the operational memory.
+ *  (3) Inputs are available in the UMM, not enough space left for the output.
+ *  	Evict cached objects to reserve worst-case output memory.
+ *  (4) Some inputs are pre-evicted and not enough space left for the inputs
+ *  	and output. Evict cache objects to make space for the inputs.
+ *  	Evict cached objects to reserve worst-case output memory.
+ *
  * Thread-safeness:
  * Initially, the UMM will be used in an instance-based manner. For global visibility and
  * use in parallel for loops, the UMM would need to provide a static, synchronized API, but
  * this constitutes a source of severe contention. In the future, we will consider a design
  * with thread-local UMMs for the individual parfor workers.
- *
- * Testing:
- * The UMM will be developed bottom up, and thus initially tested via component tests for
- * evaluating the eviction behavior for sequences of API requests. 
  */
+
 public class UnifiedMemoryManager
 {
-	public UnifiedMemoryManager(long capacity) {
-		//TODO implement
-		throw new NotImplementedException();
+	// Maximum size of UMM in bytes (85%)
+	private static long _limit;
+
+	// Current size in bytes
+	private static long _size;
+
+	// Operational memory limit in bytes
+	private static final long _opMemLimit;
+
+	// Eviction queue of <filename,buffer> pairs (implemented via linked hash map
+	// for (1) queue semantics and (2) constant time get/insert/delete operations)
+	private static UnifiedMemoryManager.EvictionQueue _mQueue;
+
+	// Maintenance service for synchronous or asynchronous delete of evicted files
+	private static UnifiedMemoryManager.MaintenanceService _fClean;
+
+	static {
+		//obtain the logical buffer size in bytes
+		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		_limit = (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
+		_opMemLimit = (long)(0.70 * maxMem); //FIXME: Remove hard-coded value
 	}
-	
+	// Pinned size of physical memory. Starts from 0 for an operation. Max is 70% of heap
+	// This increases only if the input is not present in the cache and read from FS
+	private static long _pinnedPhysicalMemSize = 0;
+	// Size of pinned virtual memory. This tracks the total input size
+	// This increases if the input is available in the cache.
+	private static long _pinnedVirtualMemSize = 0;
+
 	/**
 	 * Pins a cache block into operation memory.
-	 * 
-	 * @param key    unique identifier and local FS filename for eviction
-	 * @param block  cache block if not under UMM control, null otherwise
-	 * @param dirty  indicator if block is dirty (subject to buffer pool management)
-	 * @return       pinned cache block, potentially restored from local FS
 	 */
-	public CacheBlock pin(String key, CacheBlock block, boolean dirty) {
-		//TODO implement
-		throw new NotImplementedException();
+	public static void pin(CacheableData<?> cd) {
+		if (probe(cd)) {
+			cd.acquire(false, true); //read from cache
+			long toPinSize = cd.getDataSize();
+			// TODO: Consider deserialization overhead for sparse matrices
+			_pinnedVirtualMemSize += toPinSize;
+		}
+		else {
+			// TODO: Before restoring, calculate size and make space if not available
+			cd.acquire(false, true); //restore from FS
+			long toPinSize = cd.getDataSize();
+			_pinnedPhysicalMemSize += toPinSize;
+		}
 	}
-	
-	/**
-	 * Pins a virtual cache block into operation memory, by making a size reservation.
-	 * The provided size is an upper bound of the actual object size, and can be
-	 * updated on unpin (once the actual cache block is provided).
-	 * 
-	 * @param key    unique identifier and local FS filename for eviction
-	 * @param size   memory reservation in operation area
-	 * @param dirty  indicator if block is dirty (subject to buffer pool management)
+
+	/*
+	 * Reserve space for output in the operation memory
 	 */
-	public void pin(String key, long size, boolean dirty) {
-		//TODO implement
-		throw new NotImplementedException();
-	}
-	
-	/**
-	 * Unpins (releases) a cache block from operation memory. Dirty objects
-	 * are logically moved back to the buffer pool area.
-	 * 
-	 * @param key    unique identifier and local FS filename for eviction
-	 */
-	public void unpin(String key) {
-		//TODO implement
-		throw new NotImplementedException();
+	public static void reserveOutputMem() {
+		if (!CacheableData.UMM)
+			return;
+		// Worst case upper bound for output = 70% - size(inputs)
+		// FIXME: Parfor splits this 70% into smaller limits
+		long maxOutputSize = _opMemLimit - (_pinnedVirtualMemSize + _pinnedPhysicalMemSize);
+		// Get the available space in the unified memory
+		long freeMem = getUMMFree();
+		// Evict cached entries to make space in operation memory if needed
+		try {
+			if (freeMem < maxOutputSize)
+				makeSpace(maxOutputSize - freeMem);
+		}
+		catch (Exception e) {
+			throw new DMLRuntimeException("Pinning request of size "+(maxOutputSize-freeMem)+ " in the UMM failed.", e);
+		}
+		// Reserve max output memory
+		//_pinnedVirtualMemSize += maxOutSize;
 	}
 	
 	/**
@@ -123,25 +167,18 @@ public class UnifiedMemoryManager
 	 * the provided cache block differs from the UMM meta data, the UMM meta
 	 * data is updated. Use cases include update-in-place operations and
 	 * size reservations via worst-case upper bound estimates.
-	 * 
-	 * @param key    unique identifier and local FS filename for eviction
-	 * @param block  cache block which may be under UMM control, if null ignored
 	 */
-	public void unpin(String key, CacheBlock block) {
-		//TODO implement
-		throw new NotImplementedException();
-	}
-	
-	/**
-	 * Removes a cache block associated with the given key from all memory
-	 * areas, and deletes evicted representations (files in local FS). The
-	 * local file system deletes can happen asynchronously.
-	 * 
-	 * @param key    unique identifier and local FS filename for eviction
-	 */
-	public void delete(String key) {
-		//TODO implement
-		throw new NotImplementedException();
+	public static void unpin(CacheableData<?> cd, boolean isOutput) {
+		// TODO: Track preserved output memory to protect from other threads
+		if (isOutput)
+			return;
+		long toUnpinSize = cd.getDataSize();
+		// Update total pinned memory size
+		if (probe(cd))
+			// FIXME: goes negative if called from exportdata (write operation)
+			_pinnedVirtualMemSize -= toUnpinSize;
+		else
+			_pinnedPhysicalMemSize -= toUnpinSize;
 	}
 	
 	/**
@@ -152,5 +189,320 @@ public class UnifiedMemoryManager
 	public void deleteAll() {
 		//TODO implement
 		throw new NotImplementedException();
+	}
+
+	public static void init() {
+		_mQueue = new UnifiedMemoryManager.EvictionQueue();
+		_fClean = new UnifiedMemoryManager.MaintenanceService();
+		_size = 0;
+		_pinnedPhysicalMemSize = 0;
+		_pinnedVirtualMemSize = 0;
+		if( CacheableData.CACHING_BUFFER_PAGECACHE )
+			PageCache.init();
+	}
+
+	public static void cleanup() {
+		if( _mQueue != null )
+			_mQueue.clear();
+		if( _fClean != null )
+			_fClean.close();
+		if( CacheableData.CACHING_BUFFER_PAGECACHE )
+			PageCache.clear();
+		_size = 0;
+		_pinnedPhysicalMemSize = 0;
+		_pinnedVirtualMemSize = 0;
+	}
+
+	public static void setUMMLimit(long val) {
+		_limit = val;
+	}
+
+	public static long getUMMFree() {
+		synchronized(_mQueue) {
+			return _limit - (_size + _pinnedPhysicalMemSize);
+		}
+	}
+
+	public static long getUMMSize() {
+		synchronized(_mQueue) {
+			return _limit;
+		}
+	}
+
+	public static CacheBlock readBlock(String fname, boolean matrix)
+		throws IOException
+	{
+		CacheBlock cb = null;
+		ByteBuffer ldata = null;
+
+		//probe write buffer
+		synchronized (_mQueue)
+		{
+			ldata = _mQueue.get(fname);
+
+			//modify eviction order (accordingly to access)
+			if (CacheableData.CACHING_BUFFER_POLICY == LazyWriteBuffer.RPolicy.LRU
+				&& ldata != null)
+			{
+				//reinsert entry at end of eviction queue
+				_mQueue.remove (fname);
+				_mQueue.addLast (fname, ldata);
+			}
+		}
+
+		//deserialize or read from FS if required
+		if( ldata != null )
+		{
+			cb = ldata.deserializeBlock();
+			if (DMLScript.STATISTICS)
+				CacheStatistics.incrementFSBuffHits();
+		}
+		else
+		{
+			cb = LocalFileUtils.readCacheBlockFromLocal(fname, matrix);
+			if (DMLScript.STATISTICS)
+				CacheStatistics.incrementFSHits();
+		}
+
+		return cb;
+	}
+
+	public static boolean probe(CacheableData<?> cd) {
+		String filePath = cd.getCacheFilePathAndName();
+		return _mQueue.containsKey(filePath);
+	}
+
+	public static void makeSpace(long lSize) throws IOException {
+		int numEvicted = 0;
+		if (_size+lSize < _limit)
+			// Sufficient space is available
+			return;
+
+		synchronized (_mQueue) {
+			// Evict blobs to make room (by default FIFO)
+			while(_size + lSize > _limit && !_mQueue.isEmpty()) {
+				//remove first entry from eviction queue
+				Map.Entry<String, ByteBuffer> entry = _mQueue.removeFirst();
+				String ftmp = entry.getKey();
+				ByteBuffer tmp = entry.getValue();
+
+				if(tmp != null) {
+					//wait for pending serialization
+					tmp.checkSerialized();
+
+					//evict matrix
+					tmp.evictBuffer(ftmp);
+					tmp.freeMemory();
+					_size -= tmp.getSize();
+					numEvicted++;
+				}
+			}
+		}
+
+		if( DMLScript.STATISTICS ) {
+			CacheStatistics.incrementFSBuffWrites();
+			CacheStatistics.incrementFSWrites(numEvicted);
+		}
+	}
+
+	public static int writeBlock(String fname, CacheBlock cb)
+		throws IOException
+	{
+		//obtain basic meta data of cache block
+		long lSize = getCacheBlockSize(cb);
+		boolean requiresWrite = (lSize > _limit        //global buffer limit
+			|| !ByteBuffer.isValidCapacity(lSize, cb)); //local buffer limit
+		int numEvicted = 0;
+
+		//handle caching/eviction if it fits in writebuffer
+		if( !requiresWrite )
+		{
+			//create byte buffer handle (no block allocation yet)
+			ByteBuffer bbuff = new ByteBuffer( lSize );
+
+			//modify buffer pool
+			synchronized( _mQueue )
+			{
+				//evict matrices to make room (by default FIFO)
+				while( _size+lSize > _limit && !_mQueue.isEmpty() )
+				{
+					//remove first entry from eviction queue
+					Map.Entry<String, ByteBuffer> entry = _mQueue.removeFirst();
+					String ftmp = entry.getKey();
+					ByteBuffer tmp = entry.getValue();
+
+					if( tmp != null ) {
+						//wait for pending serialization
+						tmp.checkSerialized();
+
+						//evict matrix
+						tmp.evictBuffer(ftmp);
+						tmp.freeMemory();
+						_size -= tmp.getSize();
+						numEvicted++;
+					}
+				}
+
+				//put placeholder into buffer pool (reserve mem)
+				_mQueue.addLast(fname, bbuff);
+				_size += lSize;
+			}
+
+			//serialize matrix (outside synchronized critical path)
+			_fClean.serializeData(bbuff, cb);
+
+			if( DMLScript.STATISTICS ) {
+				CacheStatistics.incrementFSBuffWrites();
+				CacheStatistics.incrementFSWrites(numEvicted);
+			}
+		}
+		else
+		{
+			//write directly to local FS (bypass buffer if too large)
+			LocalFileUtils.writeCacheBlockToLocal(fname, cb);
+			if( DMLScript.STATISTICS ) {
+				CacheStatistics.incrementFSWrites();
+			}
+			numEvicted++;
+		}
+
+		return numEvicted;
+	}
+
+	public static long getCacheBlockSize(CacheBlock cb) {
+		return cb.isShallowSerialize() ?
+			cb.getInMemorySize() : cb.getExactSerializedSize();
+	}
+
+	public static void deleteBlock(String fname)
+	{
+		boolean requiresDelete = true;
+
+		synchronized( _mQueue )
+		{
+			//remove queue entry
+			ByteBuffer ldata = _mQueue.remove(fname);
+			if( ldata != null ) {
+				_size -= ldata.getSize();
+				requiresDelete = false;
+				ldata.freeMemory(); //cleanup
+			}
+		}
+
+		//delete from FS if required
+		if( requiresDelete )
+			_fClean.deleteFile(fname);
+	}
+
+	/**
+	 * Extended LinkedHashMap with convenience methods for adding and removing
+	 * last/first entries.
+	 *
+	 */
+	private static class EvictionQueue extends LinkedHashMap<String, ByteBuffer>
+	{
+		private static final long serialVersionUID = -5208333402581364859L;
+
+		public void addLast( String fname, ByteBuffer bbuff ) {
+			//put entry into eviction queue w/ 'addLast' semantics
+			put(fname, bbuff);
+		}
+
+		public Map.Entry<String, ByteBuffer> removeFirst()
+		{
+			//move iterator to first entry
+			Iterator<Map.Entry<String, ByteBuffer>> iter = entrySet().iterator();
+			Map.Entry<String, ByteBuffer> entry = iter.next();
+
+			//remove current iterator entry
+			iter.remove();
+
+			return entry;
+		}
+	}
+
+	/**
+	 * Maintenance service for abstraction of synchronous and asynchronous
+	 * file cleanup on rmvar/cpvar as well as serialization of matrices and
+	 * frames. The thread pool for asynchronous cleanup may increase the
+	 * number of threads temporarily to the number of concurrent delete tasks
+	 * (which is bounded to the parfor degree of parallelism).
+	 */
+	private static class MaintenanceService
+	{
+		private ExecutorService _pool = null;
+
+		public MaintenanceService() {
+			//create new threadpool for async cleanup
+			if( isAsync() )
+				_pool = Executors.newCachedThreadPool();
+		}
+
+		public void deleteFile(String fname) {
+			//sync or async file delete
+			if( CacheableData.CACHING_ASYNC_FILECLEANUP )
+				_pool.submit(new UnifiedMemoryManager.MaintenanceService.FileCleanerTask(fname));
+			else
+				LocalFileUtils.deleteFileIfExists(fname, true);
+		}
+
+		public void serializeData(ByteBuffer bbuff, CacheBlock cb) {
+			//sync or async file delete
+			if( CacheableData.CACHING_ASYNC_SERIALIZE )
+				_pool.submit(new UnifiedMemoryManager.MaintenanceService.DataSerializerTask(bbuff, cb));
+			else {
+				try {
+					bbuff.serializeBlock(cb);
+				}
+				catch(IOException ex) {
+					throw new DMLRuntimeException(ex);
+				}
+			}
+		}
+
+		public void close() {
+			//execute pending tasks and shutdown pool
+			if( isAsync() )
+				_pool.shutdown();
+		}
+
+		@SuppressWarnings("unused")
+		public boolean isAsync() {
+			return CacheableData.CACHING_ASYNC_FILECLEANUP
+				|| CacheableData.CACHING_ASYNC_SERIALIZE;
+		}
+
+		private static class FileCleanerTask implements Runnable {
+			private String _fname = null;
+
+			public FileCleanerTask( String fname ) {
+				_fname = fname;
+			}
+
+			@Override
+			public void run() {
+				LocalFileUtils.deleteFileIfExists(_fname, true);
+			}
+		}
+
+		private static class DataSerializerTask implements Runnable {
+			private ByteBuffer _bbuff = null;
+			private CacheBlock _cb = null;
+
+			public DataSerializerTask(ByteBuffer bbuff, CacheBlock cb) {
+				_bbuff = bbuff;
+				_cb = cb;
+			}
+
+			@Override
+			public void run() {
+				try {
+					_bbuff.serializeBlock(_cb);
+				}
+				catch(IOException ex) {
+					throw new DMLRuntimeException(ex);
+				}
+			}
+		}
 	}
 }

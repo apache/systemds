@@ -83,10 +83,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	static DMLConfig conf = ConfigurationManager.getDMLConfig();
 
 	// global constant configuration parameters
-	public static final boolean UMM = conf.getTextValue(DMLConfig.MEMORY_MANAGER).equalsIgnoreCase("unified");
-	public static final long    CACHING_THRESHOLD = (long)Math.max(4*1024, //obj not s.t. caching
+	public static boolean UMM = conf.getTextValue(DMLConfig.MEMORY_MANAGER).equalsIgnoreCase("unified");
+	public static final long CACHING_THRESHOLD = (long)Math.max(4*1024, //obj not s.t. caching
 		1e-5 * InfrastructureAnalyzer.getLocalMaxMemory());       //if below threshold [in bytes]
-	public static final double CACHING_BUFFER_SIZE = (double)(conf.getIntValue(DMLConfig.BUFFERPOOL_LIMIT))/100; //15%
+	public static double CACHING_BUFFER_SIZE = (double)(conf.getIntValue(DMLConfig.BUFFERPOOL_LIMIT))/100; //15%
+	//TODO: Set to min 15% if lesser is in config
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO;
 	public static final boolean CACHING_BUFFER_PAGECACHE = false;
 	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;
@@ -596,9 +597,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		else if( _data!=null && DMLScript.STATISTICS ) {
 			CacheStatistics.incrementMemHits();
 		}
-		
-		//cache status maintenance
-		acquire( false, _data==null );
+
+		if (UMM && _data == null)
+			// Restore and pin this blob into memory
+			UnifiedMemoryManager.pin(this);
+
+		if (!UMM)
+			//cache status maintenance
+			acquire( false, _data==null );
+
 		return _data;
 	}
 	
@@ -698,7 +705,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			//compact empty in-memory block 
 			_data.compactEmptyBlock();
 		}
-		
+
+		if (UMM)
+			// pass output as true if not empty and not read/modify (i.e output) FIXME
+			UnifiedMemoryManager.unpin(this, write);
+
 		//cache status maintenance (pass cacheNoWrite flag)
 		release(_isAcquireFromEmpty && !_requiresLocalWrite);
 		
@@ -709,7 +720,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			if( ( write && !hasValidLineage() ) || _requiresLocalWrite ) {
 				String filePath = getCacheFilePathAndName();
 				try {
-					LazyWriteBuffer.writeBlock(filePath, _data);
+					if (UMM)
+						UnifiedMemoryManager.writeBlock(filePath, _data);
+					else
+						LazyWriteBuffer.writeBlock(filePath, _data);
 				}
 				catch (Exception e) {
 					throw new DMLRuntimeException("Eviction to local path " + filePath + " ("+hashCode()+") failed.", e);
@@ -1019,8 +1033,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			LOG.trace("CACHE: Freeing evicted matrix...  " + hashCode() + "  HDFS path: " + 
 				(_hdfsFileName == null ? "null" : _hdfsFileName) + " Eviction path: " + cacheFilePathAndName);
 		
-		if(isCachingActive())
-			LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
+		if(isCachingActive()) {
+			if (UMM)
+				UnifiedMemoryManager.deleteBlock(cacheFilePathAndName);
+			else
+				LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
+		}
 		
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Freeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
@@ -1031,7 +1049,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 	
 	public static boolean isBelowCachingThreshold(CacheBlock data) {
-		return LazyWriteBuffer.getCacheBlockSize(data) <= CACHING_THRESHOLD;
+		boolean ret;
+		if (UMM)
+			ret = UnifiedMemoryManager.getCacheBlockSize(data) <= CACHING_THRESHOLD;
+		else
+			ret = LazyWriteBuffer.getCacheBlockSize(data) <= CACHING_THRESHOLD;
+		return ret;
 	}
 	
 	public long getDataSize() {
@@ -1355,6 +1378,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public synchronized static void cleanupCacheDir() {
 		//cleanup remaining cached writes
 		LazyWriteBuffer.cleanup();
+		UnifiedMemoryManager.cleanup();
 		
 		//delete cache dir and files
 		cleanupCacheDir(true);
@@ -1422,11 +1446,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	
 		//init write-ahead buffer
 		LazyWriteBuffer.init();
+		//init unified memory manager
+		UnifiedMemoryManager.init();
 		_refBCs.set(0);
 		
 		_activeFlag = true; //turn on caching
 	}
-	
+
 	public static boolean isCachingActive() {
 		return _activeFlag;
 	}

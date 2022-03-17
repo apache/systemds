@@ -36,6 +36,7 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -79,11 +80,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	/** Global logging instance for all subclasses of CacheableData */
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
-	
+	static DMLConfig conf = ConfigurationManager.getDMLConfig();
+
 	// global constant configuration parameters
+	public static final boolean UMM = conf.getTextValue(DMLConfig.MEMORY_MANAGER).equalsIgnoreCase("unified");
 	public static final long    CACHING_THRESHOLD = (long)Math.max(4*1024, //obj not s.t. caching
 		1e-5 * InfrastructureAnalyzer.getLocalMaxMemory());       //if below threshold [in bytes]
-	public static final double CACHING_BUFFER_SIZE = 0.15;
+	public static final double CACHING_BUFFER_SIZE = (double)(conf.getIntValue(DMLConfig.BUFFERPOOL_LIMIT))/100; //15%
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO;
 	public static final boolean CACHING_BUFFER_PAGECACHE = false;
 	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;

@@ -196,9 +196,10 @@ public class HopRel {
 		strB.append(", FedOut: ");
 		strB.append(fedOut);
 		strB.append(", Cost: ");
-		strB.append(cost);
-		strB.append(", Number of inputs: ");
-		strB.append(inputDependency.size());
+		strB.append(cost.getTotal());
+		strB.append(", Inputs: ");
+		strB.append(inputDependency.stream().map(i -> "{" + i.getHopRef().getHopID() +
+			", " + i.getFederatedOutput() + "}").collect(Collectors.toList()));
 		strB.append("}");
 		return strB.toString();
 	}

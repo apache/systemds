@@ -58,9 +58,13 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 	private final static String SPEC2b = "homes3/homes.tfspec_dummy2.json";
 	private final static String SPEC3 = "homes3/homes.tfspec_bin.json"; // recode
 	private final static String SPEC3b = "homes3/homes.tfspec_bin2.json"; // recode
+	private final static String SPEC3c   = "homes3/homes.tfspec_bin_height.json"; //recode
+	private final static String SPEC3d   = "homes3/homes.tfspec_bin_height2.json"; //recode
 	private final static String SPEC6 = "homes3/homes.tfspec_recode_dummy.json";
 	private final static String SPEC6b = "homes3/homes.tfspec_recode_dummy2.json";
 	private final static String SPEC7 = "homes3/homes.tfspec_binDummy.json"; // recode+dummy
+	private final static String SPEC7c   = "homes3/homes.tfspec_binHeightDummy.json"; //recode+dummy
+	private final static String SPEC7d   = "homes3/homes.tfspec_binHeightDummy2.json"; //recode+dummy
 	private final static String SPEC7b = "homes3/homes.tfspec_binDummy2.json"; // recode+dummy
 	private final static String SPEC8 = "homes3/homes.tfspec_hash.json";
 	private final static String SPEC8b = "homes3/homes.tfspec_hash2.json";
@@ -77,8 +81,11 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 	private static final int[] BIN_col3 = new int[] {1, 4, 2, 3, 3, 2, 4};
 	private static final int[] BIN_col8 = new int[] {1, 2, 2, 2, 2, 2, 3};
 
+	private static final int[] BIN_HEIGHT_col3 = new int[]{1,3,1,3,3,2,3};
+	private static final int[] BIN_HEIGHT_col8 = new int[]{1,2,2,3,2,2,3};
+
 	public enum TransformType {
-		RECODE, DUMMY, RECODE_DUMMY, BIN, BIN_DUMMY, IMPUTE, OMIT, HASH, HASH_RECODE,
+		RECODE, DUMMY, RECODE_DUMMY, BIN, BIN_DUMMY, IMPUTE, OMIT, HASH, HASH_RECODE, BIN_HEIGHT_DUMMY, BIN_HEIGHT,
 	}
 
 	@Override
@@ -87,104 +94,119 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"y"}));
 	}
 
+//	@Test
+//	public void testHomesRecodeIDsCSV() {
+//		runTransformTest(TransformType.RECODE, false, false);
+//	}
+//
+//	@Test
+//	public void testHomesDummycodeIDsCSV() {
+//		runTransformTest(TransformType.DUMMY, false, false);
+//	}
+//
+//	@Test
+//	public void testHomesRecodeDummycodeIDsCSV() {
+//		runTransformTest(TransformType.RECODE_DUMMY, false, false);
+//	}
+//
+//	@Test
+//	public void testHomesBinningIDsCSV() {
+//		runTransformTest(TransformType.BIN, false, false);
+//	}
+//
+//	@Test
+//	public void testHomesBinningDummyIDsCSV() {
+//		runTransformTest(TransformType.BIN_DUMMY, false, false);
+//	}
+//
+//	@Test
+//	public void testHomesOmitIDsCSV() {
+//		runTransformTest(TransformType.OMIT, false, false);
+//	}
+//
+//	@Test
+//	public void testHomesImputeIDsCSV() {
+//		runTransformTest(TransformType.IMPUTE, false, false);
+//	}
+//
+//	@Test
+//	public void testHomesRecodeColnamesCSV() {
+//		runTransformTest(TransformType.RECODE, true, false);
+//	}
+//
+//	@Test
+//	public void testHomesDummycodeColnamesCSV() {
+//		runTransformTest(TransformType.DUMMY, true, false);
+//	}
+//
+//	@Test
+//	public void testHomesRecodeDummycodeColnamesCSV() {
+//		runTransformTest(TransformType.RECODE_DUMMY, true, false);
+//	}
+//
+//	@Test
+//	public void testHomesBinningColnamesCSV() {
+//		runTransformTest(TransformType.BIN, true, false);
+//	}
+//
+//	@Test
+//	public void testHomesBinningDummyColnamesCSV() {
+//		runTransformTest(TransformType.BIN_DUMMY, true, false);
+//	}
+//
+//	@Test
+//	public void testHomesOmitColnamesCSV() { runTransformTest(TransformType.OMIT, true, false); }
+//
+//	@Test
+//	public void testHomesImputeColnamesCSV() {
+//		runTransformTest(TransformType.IMPUTE, true, false);
+//	}
+//
+//	@Test
+//	public void testHomesHashColnamesCSV() {
+//		runTransformTest(TransformType.HASH, true, false);
+//	}
+//
+//	@Test
+//	public void testHomesHashIDsCSV() {
+//		runTransformTest(TransformType.HASH, false, false);
+//	}
+//
+//	@Test
+//	public void testHomesHashRecodeColnamesCSV() {
+//		runTransformTest(TransformType.HASH_RECODE, true, false);
+//	}
+//
+//	@Test
+//	public void testHomesHashRecodeIDsCSV() {
+//		runTransformTest(TransformType.HASH_RECODE, false, false);
+//	}
+//
+//	@Ignore //FIXME
+//	@Test
+//	public void testHomesDummycodeIDsCSVLineage() {
+//		runTransformTest(TransformType.DUMMY, false, true);
+//	}
+//
+//	@Ignore //FIXME
+//	@Test
+//	public void testHomesRecodeDummycodeIDsCSVLineage() {
+//		runTransformTest(TransformType.RECODE_DUMMY, false, true);
+//	}
+
 	@Test
-	public void testHomesRecodeIDsCSV() {
-		runTransformTest(TransformType.RECODE, false, false);
+	public void testHomesEqualHeightBinningIDsSingleNodeCSV() {
+		runTransformTest(TransformType.BIN_HEIGHT, true, false);
 	}
 
 	@Test
-	public void testHomesDummycodeIDsCSV() {
-		runTransformTest(TransformType.DUMMY, false, false);
+	public void testHomesHeightBinningDummyIDsSingleNodeCSV() {
+		runTransformTest(TransformType.BIN_HEIGHT_DUMMY, false, false);
 	}
 
 	@Test
-	public void testHomesRecodeDummycodeIDsCSV() {
-		runTransformTest(TransformType.RECODE_DUMMY, false, false);
-	}
-
-	@Test
-	public void testHomesBinningIDsCSV() {
-		runTransformTest(TransformType.BIN, false, false);
-	}
-
-	@Test
-	public void testHomesBinningDummyIDsCSV() {
-		runTransformTest(TransformType.BIN_DUMMY, false, false);
-	}
-
-	@Test
-	public void testHomesOmitIDsCSV() {
-		runTransformTest(TransformType.OMIT, false, false);
-	}
-
-	@Test
-	public void testHomesImputeIDsCSV() {
-		runTransformTest(TransformType.IMPUTE, false, false);
-	}
-
-	@Test
-	public void testHomesRecodeColnamesCSV() {
-		runTransformTest(TransformType.RECODE, true, false);
-	}
-
-	@Test
-	public void testHomesDummycodeColnamesCSV() {
-		runTransformTest(TransformType.DUMMY, true, false);
-	}
-
-	@Test
-	public void testHomesRecodeDummycodeColnamesCSV() {
-		runTransformTest(TransformType.RECODE_DUMMY, true, false);
-	}
-
-	@Test
-	public void testHomesBinningColnamesCSV() {
-		runTransformTest(TransformType.BIN, true, false);
-	}
-
-	@Test
-	public void testHomesBinningDummyColnamesCSV() {
-		runTransformTest(TransformType.BIN_DUMMY, true, false);
-	}
-
-	@Test
-	public void testHomesOmitColnamesCSV() { runTransformTest(TransformType.OMIT, true, false); }
-
-	@Test
-	public void testHomesImputeColnamesCSV() {
-		runTransformTest(TransformType.IMPUTE, true, false);
-	}
-
-	@Test
-	public void testHomesHashColnamesCSV() {
-		runTransformTest(TransformType.HASH, true, false);
-	}
-
-	@Test
-	public void testHomesHashIDsCSV() {
-		runTransformTest(TransformType.HASH, false, false);
-	}
-
-	@Test
-	public void testHomesHashRecodeColnamesCSV() {
-		runTransformTest(TransformType.HASH_RECODE, true, false);
-	}
-
-	@Test
-	public void testHomesHashRecodeIDsCSV() {
-		runTransformTest(TransformType.HASH_RECODE, false, false);
-	}
-
-	@Ignore //FIXME
-	@Test
-	public void testHomesDummycodeIDsCSVLineage() {
-		runTransformTest(TransformType.DUMMY, false, true);
-	}
-
-	@Ignore //FIXME
-	@Test
-	public void testHomesRecodeDummycodeIDsCSVLineage() {
-		runTransformTest(TransformType.RECODE_DUMMY, false, true);
+	public void  testHomesHeightBinningDummyColnamesSingleNodeCSV() {
+		runTransformTest(TransformType.BIN_HEIGHT_DUMMY, true, false);
 	}
 
 	private void runTransformTest(TransformType type, boolean colnames, boolean lineage) {
@@ -197,10 +219,12 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			case RECODE: SPEC = colnames ? SPEC1b : SPEC1; DATASET = DATASET1; break;
 			case DUMMY: SPEC = colnames ? SPEC2b : SPEC2; DATASET = DATASET1; break;
 			case BIN: SPEC = colnames ? SPEC3b : SPEC3; DATASET = DATASET1; break;
+			case BIN_HEIGHT:    SPEC = colnames?SPEC3d:SPEC3c; DATASET = DATASET1; break;
 			case IMPUTE: SPEC = colnames ? SPEC4b : SPEC4; DATASET = DATASET2; break;
 			case OMIT: SPEC = colnames ? SPEC5b : SPEC5; DATASET = DATASET2; break;
 			case RECODE_DUMMY: SPEC = colnames ? SPEC6b : SPEC6; DATASET = DATASET1; break;
 			case BIN_DUMMY: SPEC = colnames ? SPEC7b : SPEC7; DATASET = DATASET1; break;
+			case BIN_HEIGHT_DUMMY:    SPEC = colnames?SPEC7d:SPEC7c; DATASET = DATASET1; break;
 			case HASH: SPEC = colnames ? SPEC8b : SPEC8; DATASET = DATASET1; break;
 			case HASH_RECODE: SPEC = colnames ? SPEC9b : SPEC9; DATASET = DATASET1; break;
 		}
@@ -294,7 +318,25 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 						Assert.assertEquals((j == BIN_col8[i] - 1) ? 1 : 0, R1[i][10 + j], 1e-8);
 					}
 				}
+			} else if (type == TransformType.BIN_HEIGHT) {
+				for(int i=0; i<7; i++) {
+					Assert.assertEquals(BIN_HEIGHT_col3[i], R1[i][2], 1e-8);
+					Assert.assertEquals(BIN_HEIGHT_col8[i], R1[i][7], 1e-8);
+				}
+			} else if (type == TransformType.BIN_HEIGHT_DUMMY) {
+				Assert.assertEquals(14, R1[0].length);
+				for(int i=0; i<7; i++) {
+					for(int j=0; j<4; j++) { //check dummy coded
+						Assert.assertEquals((j==BIN_HEIGHT_col3[i]-1)?
+							1:0, R1[i][2+j], 1e-8);
+					}
+					for(int j=0; j<3; j++) { //check dummy coded
+						Assert.assertEquals((j==BIN_HEIGHT_col8[i]-1)?
+							1:0, R1[i][10+j], 1e-8);
+					}
+				}
 			}
+
 			// assert reuse count
 			if (lineage)
 				Assert.assertTrue(LineageCacheStatistics.getInstHits() > 0);

@@ -106,6 +106,15 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
+	public void build(CacheBlock in, double[] equiHeightMaxs) {
+		for(ColumnEncoder columnEncoder : _columnEncoders)
+			if(columnEncoder instanceof ColumnEncoderBin && ((ColumnEncoderBin) columnEncoder).getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT)
+				columnEncoder.build(in, equiHeightMaxs);
+			else
+				columnEncoder.build(in);
+	}
+
+	@Override
 	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int nParition, int outputCol) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<Integer> sizes = new ArrayList<>();

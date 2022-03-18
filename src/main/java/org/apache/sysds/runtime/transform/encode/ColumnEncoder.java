@@ -212,6 +212,10 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		// do nothing
 	}
 
+	public void build(CacheBlock in, double[] equiHeightMaxs) {
+		// do nothing
+	}
+
 	/**
 	 * Merges another encoder, of a compatible type, in after a certain position. Resizes as necessary.
 	 * <code>ColumnEncoders</code> are compatible with themselves and <code>EncoderComposite</code> is compatible with

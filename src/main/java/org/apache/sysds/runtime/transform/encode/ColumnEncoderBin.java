@@ -115,6 +115,22 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
 	}
 
+	public void build(CacheBlock in, double[] equiHeightMaxs) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		if(!isApplicable())
+			return;
+		if(_binMethod == BinMethod.EQUI_WIDTH) {
+			double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
+			computeBins(pairMinMax[0], pairMinMax[1]);
+		}
+		else if(_binMethod == BinMethod.EQUI_HEIGHT) {
+			computeFedEqualHeightBins(equiHeightMaxs);
+		}
+
+		if(DMLScript.STATISTICS)
+			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
+	}
+
 	protected double getCode(CacheBlock in, int row){
 		// find the right bucket for a single row
 		double bin = 0;
@@ -245,6 +261,16 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		}
 		_binMaxs[_numBin-1] = sortedCol[n-1];
 		_binMins[0] = sortedCol[0];
+		System.arraycopy(_binMaxs, 0, _binMins, 1, _numBin - 1);
+	}
+
+	private void computeFedEqualHeightBins(double[] binMaxs) {
+		if(_binMins == null || _binMaxs == null) {
+			_binMins = new double[_numBin];
+			_binMaxs = new double[_numBin];
+		}
+		System.arraycopy(binMaxs, 1, _binMaxs, 0, _numBin - 1);
+		_binMins[0] = binMaxs[0];
 		System.arraycopy(_binMaxs, 0, _binMins, 1, _numBin - 1);
 	}
 

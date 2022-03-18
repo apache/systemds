@@ -28,6 +28,9 @@ public class Binary extends CodeTemplate {
 		boolean scalarVector, boolean scalarInput, boolean vectorVector)
 	{
 		switch (type) {
+			case AGGMAX_ROWMAXS_VECTMULT:
+				return sparseLhs ? "\tdouble %TMP% = LibSpoofPrimitives.aggMaxRowMaxsVectMult(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen);\n" :
+						"\tdouble %TMP% = LibSpoofPrimitives.aggMaxRowMaxsVectMult(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
 			case DOT_PRODUCT:
 				return sparseLhs ? "    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen);\n" :
 						"    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";

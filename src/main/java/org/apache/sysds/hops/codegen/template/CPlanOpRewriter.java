@@ -23,9 +23,11 @@ import java.util.ArrayList;
 
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
 import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysds.hops.codegen.cplan.CNodeOuterProduct;
+import org.apache.sysds.hops.codegen.cplan.CNodeRow;
 import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
@@ -56,6 +58,9 @@ public class CPlanOpRewriter
 		}
 		else {
 			tpl.setOutput(rSimplifyCNode(tpl.getOutput()));
+			if(tpl instanceof CNodeRow && TemplateUtils.isBinary(tpl.getOutput(), BinType.AGGMAX_ROWMAXS_VECTMULT)) {
+				((CNodeRow) tpl).setNumVectorIntermediates(((CNodeRow) tpl).getNumVectorIntermediates()-2);
+			}
 		}
 		
 		return tpl;
@@ -73,10 +78,24 @@ public class CPlanOpRewriter
 		node = rewriteBinaryPow2Vect(node);  //X^2 -> X*X
 		node = rewriteBinaryMult2(node);     //x*2 -> x+x;
 		node = rewriteBinaryMult2Vect(node); //X*2 -> X+X;
-		
+		node = rewriteMaxRowMaxsVectMult(node); // max(rowMaxs(G * t(c)), c); see components.dml
+
 		return node;
 	}
-	
+
+	private static CNode rewriteMaxRowMaxsVectMult(CNode node) {
+		if(TemplateUtils.isBinary(node, BinType.MAX)) {
+			CNode left = node.getInput().get(0);
+			CNode right = node.getInput().get(1);
+			return (TemplateUtils.isUnary(left, UnaryType.ROW_MAXS) &&
+					TemplateUtils.isBinary(left.getInput().get(0), BinType.VECT_MULT) &&
+					TemplateUtils.isUnary(right, UnaryType.LOOKUP_R) ? new CNodeBinary(left.getInput().get(0).getInput().get(0),
+					right.getInput().get(0), BinType.AGGMAX_ROWMAXS_VECTMULT) : node);
+		}
+		else
+			return(node);
+	}
+
 	private static CNode rewriteRowCountNnz(CNode node) {
 		return (TemplateUtils.isUnary(node, UnaryType.ROW_SUMS)
 			&& TemplateUtils.isBinary(node.getInput().get(0), BinType.VECT_NOTEQUAL_SCALAR)

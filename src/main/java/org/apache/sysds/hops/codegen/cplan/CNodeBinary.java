@@ -30,6 +30,7 @@ import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 public class CNodeBinary extends CNode {
 
 	public enum BinType {
+		AGGMAX_ROWMAXS_VECTMULT,
 		//matrix multiplication operations
 		DOT_PRODUCT, VECT_MATRIXMULT, VECT_OUTERMULT_ADD,
 		//vector-scalar-add operations

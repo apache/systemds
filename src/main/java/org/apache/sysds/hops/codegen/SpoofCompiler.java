@@ -38,6 +38,7 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeCell;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
 import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
@@ -945,7 +946,8 @@ public class SpoofCompiler {
 					&& TemplateUtils.hasSingleOperation(tpl) )
 				|| (tpl instanceof CNodeRow && (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
 					|| ((CNodeRow)tpl).getRowType()==RowType.NO_AGG_B1
-					|| ((CNodeRow)tpl).getRowType()==RowType.ROW_AGG )
+					|| (((CNodeRow)tpl).getRowType()==RowType.ROW_AGG  && !TemplateUtils.isBinary(tpl.getOutput(),
+							CNodeBinary.BinType.AGGMAX_ROWMAXS_VECTMULT)))
 					&& TemplateUtils.hasSingleOperation(tpl))
 				|| TemplateUtils.hasNoOperation(tpl) ) 
 			{

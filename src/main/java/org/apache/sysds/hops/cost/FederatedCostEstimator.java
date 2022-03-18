@@ -203,8 +203,8 @@ public class FederatedCostEstimator {
 			return root.getCostObject();
 		}
 		else {
-			// If no input has FOUT, the root will be processed by the coordinator
-			boolean hasFederatedInput = root.inputDependency.stream().anyMatch(in -> in.hopRef.hasFederatedOutput());
+			// If no input has FOUT, the root will be processed by the coordinator with no input data transfer
+			boolean hasFederatedInput = root.inputDependency.stream().anyMatch(HopRel::hasFederatedOutput);
 			// The input cost is included the first time the input hop is used.
 			// For additional usage, the additional cost is zero (disregarding potential read cost).
 			double inputCosts = root.inputDependency.stream()
@@ -230,6 +230,8 @@ public class FederatedCostEstimator {
 			// If the root is a federated DataOp, the data is forced to the coordinator even if no input is LOUT
 			double outputTransferCost = ( root.hasLocalOutput() && (hasFederatedInput || root.hopRef.isFederatedDataOp()) ) ?
 				root.hopRef.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_NETWORK_BANDWIDTH_BYTES_PS : 0;
+			//TODO: The getInputMemEstimate takes memory estimate from the input of hopRef, but it should
+			// take it from the input hops in root hoprel
 			double readCost = root.hopRef.getInputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_READ_BANDWIDTH_BYTES_PS;
 
 			double rootRepetitions = root.hopRef.getRepetitions();

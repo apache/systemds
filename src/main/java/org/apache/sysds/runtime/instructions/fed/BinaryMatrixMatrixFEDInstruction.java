@@ -72,6 +72,13 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			}
 			fedMo = mo2; // for setting the output federated mapping afterwards
 		}
+		else if ( mo2.isFederated(FType.BROADCAST) && !mo1.isFederated() ){
+			FederatedRequest fr1 = mo2.getFedMapping().broadcast(mo1);
+			fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
+				new long[]{mo2.getFedMapping().getID(), fr1.getID()}, true);
+			mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
+			fedMo = mo2;
+		}
 		else { // matrix-matrix binary operations -> lhs fed input -> fed output
 			if(mo1.isFederated(FType.FULL) ) {
 				// full federated (row and col)

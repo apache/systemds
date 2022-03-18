@@ -21,12 +21,15 @@ package org.apache.sysds.hops.fedplanner;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -51,6 +54,7 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 
 public class FederatedPlannerCostbased extends AFederatedPlanner {
@@ -65,6 +69,9 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 * Terminal hops in DML program given to this rewriter.
 	 */
 	private final static List<Hop> terminalHops = new ArrayList<>();
+	private final static Map<String, Hop> transientWrites = new HashMap<>();
+	Map<Long, FTypes.FType> memo = new HashMap<>();
+	Map<String, FTypes.FType> fedVars = new HashMap<>();
 
 	public List<Hop> getTerminalHops(){
 		return terminalHops;
@@ -274,6 +281,8 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 			visitFedPlanHop(root);
 			if ( HopRewriteUtils.isTerminalHop(root) )
 				terminalHops.add(root);
+			else if ( HopRewriteUtils.isData(root, Types.OpOpData.TRANSIENTWRITE) )
+				transientWrites.put(root.getName(), root);
 		}
 	}
 
@@ -287,21 +296,75 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		if(hopRelMemo.containsHop(currentHop))
 			return;
 		// If the currentHop has input, then the input should be visited depth-first
-		if(currentHop.getInput() != null && currentHop.getInput().size() > 0) {
-			debugLog(currentHop);
-			for(Hop input : currentHop.getInput())
-				visitFedPlanHop(input);
-		}
+		debugLog(currentHop);
+		for(Hop input : currentHop.getInput())
+			visitFedPlanHop(input);
+		updateMemo(currentHop);
 		// Put FOUT, LOUT, and None HopRels into the memo table
-		ArrayList<HopRel> hopRels = new ArrayList<>();
-		if(isFedInstSupportedHop(currentHop)) {
-			for(FEDInstruction.FederatedOutput fedoutValue : FEDInstruction.FederatedOutput.values())
-				if(isFedOutSupported(currentHop, fedoutValue))
-					hopRels.add(new HopRel(currentHop, fedoutValue, hopRelMemo));
-		}
+		ArrayList<HopRel> hopRels = getFedPlans(currentHop);
 		if(hopRels.isEmpty())
 			hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE, hopRelMemo));
+		addTrace(hopRels);
 		hopRelMemo.put(currentHop, hopRels);
+	}
+
+	private void updateMemo(Hop currentHop){
+		if( HopRewriteUtils.isData(currentHop, Types.OpOpData.FEDERATED) )
+			memo.put(currentHop.getHopID(), deriveFType((DataOp)currentHop));
+		if( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) )
+			fedVars.put(currentHop.getName(), memo.get(currentHop.getInput(0).getHopID()));
+		else if( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) ){
+			//Hop tWrite = fedVars.get(currentHop.getName());
+			//FTypes.FType tWriteFtype = memo.get(tWrite.getHopID());
+			memo.put(currentHop.getHopID(), fedVars.get(currentHop.getName()));
+		}
+		else if ( allowsFederated(currentHop, memo) )
+			memo.put(currentHop.getHopID(), getFederatedOut(currentHop, memo));
+		else {
+			memo.put(currentHop.getHopID(), null);
+		}
+	}
+
+	/**
+	 * Get the alternative plans regarding the federated output for given currentHop.
+	 * @param currentHop for which alternative federated plans are generated
+	 * @return list of alternative plans
+	 */
+	private ArrayList<HopRel> getFedPlans(Hop currentHop){
+		ArrayList<HopRel> hopRels = new ArrayList<>();
+		if ( isFedInstSupportedHop(currentHop) ){
+			ArrayList<Hop> inputHops = currentHop.getInput();
+			if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) ){
+				Hop tWriteHop = transientWrites.get(currentHop.getName());
+				if ( tWriteHop == null )
+					throw new DMLRuntimeException("Transient write not found for " + currentHop);
+				inputHops = new ArrayList<>(Collections.singletonList(tWriteHop));
+			}
+			if ( isFOUTSupported(currentHop, inputHops) )
+				hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.FOUT, hopRelMemo, inputHops));
+			if ( isLOUTSupported(currentHop) )
+				hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.LOUT, hopRelMemo, inputHops));
+		}
+		return hopRels;
+	}
+
+	/**
+	 * Checks to see if the currentHop supports FOUT.
+	 * @param currentHop for which FOUT support is checked
+	 * @param inputHops of currentHop
+	 * @return true if FOUT is supported by the currentHop
+	 */
+	private boolean isFOUTSupported(Hop currentHop, ArrayList<Hop> inputHops){
+		if ( !allowsFederated(currentHop, memo) )
+			return false;
+		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
+		if(currentHop instanceof AggUnaryOp && currentHop.isScalar())
+			return false;
+		// It can only be FOUT if at least one of the inputs are FOUT, except if it is a federated DataOp
+		if(inputHops.stream().noneMatch(hopRelMemo::hasFederatedOutputAlternative)
+			&& !currentHop.isFederatedDataOp())
+			return false;
+		return true;
 	}
 
 	/**
@@ -322,6 +385,14 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		}
 	}
 
+	private void addTrace(ArrayList<HopRel> hopRels){
+		if (LOG.isTraceEnabled()){
+			for(HopRel hr : hopRels){
+				LOG.trace(hr);
+			}
+		}
+	}
+
 	/**
 	 * Checks if the instructions related to the given hop supports FOUT/LOUT processing.
 	 *
@@ -332,43 +403,6 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		// The following operations are supported given that the above conditions have not returned already
 		return (hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
 			|| hop instanceof AggUnaryOp || hop instanceof TernaryOp || hop instanceof DataOp);
-	}
-
-	/**
-	 * Checks if the associatedHop supports the given federated output value.
-	 *
-	 * @param associatedHop to check support of
-	 * @param fedOut        federated output value
-	 * @return true if associatedHop supports fedOut
-	 */
-	private boolean isFedOutSupported(Hop associatedHop, FEDInstruction.FederatedOutput fedOut) {
-		switch(fedOut) {
-			case FOUT:
-				return isFOUTSupported(associatedHop);
-			case LOUT:
-				return isLOUTSupported(associatedHop);
-			case NONE:
-				return false;
-			default:
-				return true;
-		}
-	}
-
-	/**
-	 * Checks to see if the associatedHop supports FOUT.
-	 *
-	 * @param associatedHop for which FOUT support is checked
-	 * @return true if FOUT is supported by the associatedHop
-	 */
-	private boolean isFOUTSupported(Hop associatedHop) {
-		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
-		if(associatedHop instanceof AggUnaryOp && associatedHop.isScalar())
-			return false;
-		// It can only be FOUT if at least one of the inputs are FOUT, except if it is a federated DataOp
-		if(associatedHop.getInput().stream().noneMatch(hopRelMemo::hasFederatedOutputAlternative)
-			&& !associatedHop.isFederatedDataOp())
-			return false;
-		return true;
 	}
 
 	/**

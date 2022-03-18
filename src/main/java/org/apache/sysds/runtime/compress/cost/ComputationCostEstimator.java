@@ -110,8 +110,6 @@ public class ComputationCostEstimator extends ACostEstimate {
 	 * @return A cost
 	 */
 	public double getCost(int nRows, int nRowsScanned, int nCols, int nVals, double sparsity) {
-		if(LOG.isTraceEnabled())
-			LOG.trace(nRows + " " + nRowsScanned + " " + nCols + " " + nVals + " " + sparsity);
 		sparsity = (nCols < 3 || _isDensifying || sparsity > 0.4) ? 1 : sparsity;
 
 		if((double) nRowsScanned / nRows > 0.6)

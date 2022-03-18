@@ -19,40 +19,21 @@
 
 package org.apache.sysds.test.component.compress.offset;
 
-import static org.junit.Assert.fail;
-
-import java.util.Arrays;
-
-import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
-public class OffsetTestPreAggregateSparseChar extends OffsetTestPreAggregateSparse {
+public class OffsetTestPreAggregateSparseInt extends OffsetTestPreAggregateSparse {
 
-	public OffsetTestPreAggregateSparseChar(int[] data, OFF_TYPE type) {
+	public OffsetTestPreAggregateSparseInt(int[] data, OFF_TYPE type) {
 		super(data, type);
-	}
-
-	@Test
-	public void testToString() {
-		String obs = getString(a);
-		String vs = Arrays.toString(data);
-		if(!obs.equals(vs))
-			fail("\nThe strings are not equivalent ");
-	}
-
-	private String getString(AOffset a) {
-		String os = a.toString();
-		return os.substring(os.indexOf("["), os.length());
 	}
 
 	@Override
 	protected void preAggMapRow(int row) {
 		double[] preAV = new double[1];
-		char[] m = new char[data.length];
+		int[] m = new int[data.length];
 		a.preAggregateSparseMap(this.leftM.getSparseBlock(), preAV, row, 1 + row, 0, m);
 		verifyPreAggMapRow(preAV, row);
 	}
@@ -60,7 +41,7 @@ public class OffsetTestPreAggregateSparseChar extends OffsetTestPreAggregateSpar
 	@Override
 	public void preAggMapAllRows() {
 		double[] preAV = new double[4];
-		char[] m = new char[data.length];
+		int[] m = new int[data.length];
 		a.preAggregateSparseMap(this.leftM.getSparseBlock(), preAV, 0, 2, 0, m);
 		verifyPreAggMapAllRow(preAV);
 	}

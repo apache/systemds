@@ -41,11 +41,6 @@ public class ConstEncoding implements IEncode {
 	}
 
 	@Override
-	public int size() {
-		return 1;
-	}
-
-	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());

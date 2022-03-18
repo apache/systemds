@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.bitmap.Bitmap;
 import org.apache.sysds.runtime.compress.bitmap.MultiColBitmap;
 import org.apache.sysds.runtime.compress.utils.DArrCounts;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
+import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -116,6 +117,7 @@ public interface DictionaryFactory {
 	public static ADictionary create(ABitmap ubm) {
 		return create(ubm, 1.0);
 	}
+
 
 	public static ADictionary create(ABitmap ubm, double sparsity, boolean withZeroTuple) {
 		return (withZeroTuple) ? createWithAppendedZeroTuple(ubm, sparsity) : create(ubm, sparsity);
@@ -234,6 +236,12 @@ public interface DictionaryFactory {
 		for(int i = 0; i < nVals; i++)
 			System.arraycopy(mcbm.getValues(i), 0, resValues, i * nCols, nCols);
 
+		return new Dictionary(resValues);
+	}
+
+
+	public static ADictionary create(DoubleCountHashMap map){
+		final double[] resValues = map.getDictionary();
 		return new Dictionary(resValues);
 	}
 }

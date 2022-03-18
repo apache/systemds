@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.BitSet;
 
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
@@ -48,6 +49,10 @@ public class MapToInt extends AMapToData {
 	private MapToInt(int unique, int[] data) {
 		super(unique);
 		_data = data;
+	}
+
+	protected int[] getData() {
+		return _data;
 	}
 
 	@Override
@@ -180,6 +185,24 @@ public class MapToInt extends AMapToData {
 	@Override
 	public int getUpperBoundValue() {
 		return Integer.MAX_VALUE;
+	}
+
+	@Override
+	public void copyInt(int[] d) {
+		for(int i = 0; i < _data.length; i++)
+			_data[i] = d[i];
+	}
+
+	@Override
+	public void copyBit(BitSet d) {
+		for(int i = d.nextSetBit(0); i >= 0; i = d.nextSetBit(i + 1))
+			_data[i] = 1;
+	}
+
+	@Override
+	public void count(int[] ret){
+		for(int i = 0; i < _data.length; i++)
+			ret[_data[i]]++; 
 	}
 
 }

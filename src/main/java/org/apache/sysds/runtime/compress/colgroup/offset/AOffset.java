@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -678,6 +679,24 @@ public abstract class AOffset implements Serializable {
 
 	}
 
+	public boolean equals(AOffset b) {
+		if(getOffsetToLast() == b.getOffsetToLast()) {
+			int last = getOffsetToLast();
+			AOffsetIterator ia = getOffsetIterator();
+			AOffsetIterator ib = b.getOffsetIterator();
+			while(ia.value() < last) {
+				if(ia.value() != ib.value())
+					return false;
+				ia.next();
+				ib.next();
+				if(ib.value() == last && ia.value() != last)
+					return false;
+			}
+			return true;
+		}
+		return false;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -692,6 +711,11 @@ public abstract class AOffset implements Serializable {
 		}
 		sb.append(it.offset);
 		sb.append("]");
+
+		if(it.offset != last)
+			throw new DMLCompressionException(
+				"Invalid iteration of offset when making string, the last offset is not equal to a iteration: "
+					+ getOffsetToLast() + " String: " + sb.toString());
 		return sb.toString();
 	}
 

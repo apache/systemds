@@ -73,9 +73,13 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 	private ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 		AMapToData data, int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
-		if(data.getUnique() != dict.getNumberOfValues(colIndices.length))
+		if(data.getUnique() != dict.getNumberOfValues(colIndices.length)) {
+			if(data.getUnique() != data.getMax())
+				throw new DMLCompressionException(
+					"Invalid unique count compared to actual: " + data.getUnique() + " " + data.getMax());
 			throw new DMLCompressionException("Invalid construction of SDC group: number uniques: " + data.getUnique()
 				+ " vs." + dict.getNumberOfValues(colIndices.length));
+		}
 
 		_indexes = offsets;
 		_data = data;

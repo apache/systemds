@@ -21,9 +21,9 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 
 import java.io.DataInput;
 import java.io.IOException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public interface OffsetFactory {
@@ -32,7 +32,7 @@ public interface OffsetFactory {
 
 	/** The specific underlying types of offsets. */
 	public enum OFF_TYPE {
-		BYTE, CHAR
+		BYTE, CHAR, SINGLE_OFFSET
 	}
 
 	/**
@@ -76,15 +76,21 @@ public interface OffsetFactory {
 	 * @return A new Offset.
 	 */
 	public static AOffset createOffset(int[] indexes, int apos, int alen) {
+
+		final int endLength = alen - apos - 1;
+		if(endLength < 0)
+			throw new DMLCompressionException("Invalid empty offset to create");
+		else if(endLength == 0) // means size of 1 since we store the first offset outside the list
+			return new OffsetSingle(indexes[apos]);
+
 		final int minValue = indexes[apos];
 		final int maxValue = indexes[alen - 1];
 		final int range = maxValue - minValue;
-		final int endLength = alen - apos - 1;
 		// -1 because one index is skipped using a first idex allocated as a int.
 
 		final int correctionByte = correctionByte(range, endLength);
 		final int correctionChar = correctionChar(range, endLength);
-	
+
 		final long byteSize = OffsetByte.estimateInMemorySize(endLength + correctionByte);
 		final long charSize = OffsetChar.estimateInMemorySize(endLength + correctionChar);
 
@@ -104,6 +110,8 @@ public interface OffsetFactory {
 	public static AOffset readIn(DataInput in) throws IOException {
 		OFF_TYPE t = OFF_TYPE.values()[in.readByte()];
 		switch(t) {
+			case SINGLE_OFFSET:
+				return OffsetSingle.readFields(in);
 			case BYTE:
 				return OffsetByte.readFields(in);
 			case CHAR:
@@ -127,17 +135,19 @@ public interface OffsetFactory {
 	public static long estimateInMemorySize(int size, int nRows) {
 		if(size == 0)
 			return 8; // If this is the case, then the compression results in constant col groups
-		else {
-			final int avgDiff = nRows / size;
-			if(avgDiff < 256) {
-				final int correctionByte = correctionByte(nRows, size);
-				return OffsetByte.estimateInMemorySize(size - 1 + correctionByte);
-			}
-			else {
-				final int correctionChar = correctionChar(nRows, size);
-				return OffsetChar.estimateInMemorySize(size - 1 + correctionChar);
-			}
+		else if(size == 1)
+			return OffsetSingle.estimateInMemorySize();
+
+		final int avgDiff = nRows / size;
+		if(avgDiff < 256) {
+			final int correctionByte = correctionByte(nRows, size);
+			return OffsetByte.estimateInMemorySize(size - 1 + correctionByte);
 		}
+		else {
+			final int correctionChar = correctionChar(nRows, size);
+			return OffsetChar.estimateInMemorySize(size - 1 + correctionChar);
+		}
+
 	}
 
 	public static int correctionByte(int nRows, int size) {

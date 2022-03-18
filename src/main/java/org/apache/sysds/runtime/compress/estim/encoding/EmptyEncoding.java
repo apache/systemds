@@ -42,11 +42,6 @@ public class EmptyEncoding implements IEncode {
 	}
 
 	@Override
-	public int size() {
-		return 0;
-	}
-
-	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());

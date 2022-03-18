@@ -127,16 +127,12 @@ public abstract class EncodeSampleMultiColTest extends EncodeSampleTest {
 	}
 
 	private void partJoinVerification(IEncode er) {
-		boolean sameClass = e.getClass() == er.getClass();
-		boolean incorrectSize = sameClass && e.size() != er.size();
-
 		boolean incorrectUnique = e.getUnique() != er.getUnique();
 
-		if(incorrectUnique || incorrectSize) {
+		if(incorrectUnique) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("\nFailed joining sub parts to recreate whole.");
 			sb.append("\nexpected unique:" + e.getUnique() + " got:" + er.getUnique());
-			sb.append("\nexpected Size:" + e.size() + " got:" + er.size());
 
 			sb.append("\n\nRead:");
 			sb.append(e);

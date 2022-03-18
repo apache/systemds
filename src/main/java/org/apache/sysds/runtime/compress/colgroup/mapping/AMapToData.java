@@ -22,10 +22,12 @@ package org.apache.sysds.runtime.compress.colgroup.mapping;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -326,12 +328,15 @@ public abstract class AMapToData implements Serializable {
 	 * @param counts The object to return.
 	 * @return the Counts
 	 */
-	public int[] getCounts(int[] counts) {
-		final int sz = size();
-		for(int i = 0; i < sz; i++)
-			counts[getIndex(i)]++;
+	public final int[] getCounts(int[] counts) {
+		count(counts);
+
+		if(counts[counts.length - 1] == 0)
+			throw new DMLCompressionException("Invalid number unique");
 		return counts;
 	}
+
+	protected abstract void count(int[] ret); 
 
 	/**
 	 * PreAggregate into dictionary with two sides of DDC.
@@ -646,9 +651,38 @@ public abstract class AMapToData implements Serializable {
 	 * @param d Map to copy all values into.
 	 */
 	public void copy(AMapToData d) {
-		final int sz = size();
-		for(int i = 0; i < sz; i++)
-			set(i, d.getIndex(i));
+		if(d.nUnique == 1)
+			return;
+		else if(d instanceof MapToBit)
+			copyBit((MapToBit) d);
+		else if(d instanceof MapToInt)
+			copyInt((MapToInt) d);
+		else {
+			final int sz = size();
+			for(int i = 0; i < sz; i++)
+				set(i, d.getIndex(i));
+		}
+	}
+
+	protected void copyInt(MapToInt d) {
+		copyInt(d.getData());
+	}
+
+	protected void copyBit(MapToBit d) {
+		copyBit(d.getData());
+	}
+
+	public abstract void copyInt(int[] d);
+
+	public abstract void copyBit(BitSet d);
+
+	public int getMax() {
+		int m = -1;
+		for(int i = 0; i < size(); i++) {
+			int v = getIndex(i);
+			m = v > m ? v : m;
+		}
+		return m;
 	}
 
 	@Override

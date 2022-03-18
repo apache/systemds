@@ -48,10 +48,10 @@ public class OffsetChar extends AOffset {
 			endSize += 1 + (nv - ov - 1) / maxV;
 			ov = nv;
 		}
+		this.noZero = endSize == alen - apos - 1;
 		offsets = new char[endSize];
 		ov = offsetToFirst;
 		int p = 0;
-
 		for(int i = apos + 1; i < alen; i++) {
 			final int nv = indexes[i];
 			final int offsetSize = (nv - ov);
@@ -65,10 +65,9 @@ public class OffsetChar extends AOffset {
 				p += div; // skip values
 				offsets[p++] = (char) (mod);
 			}
-
 			ov = nv;
 		}
-		this.noZero = getNoZero();
+
 	}
 
 	private OffsetChar(char[] offsets, int offsetToFirst, int offsetToLast) {

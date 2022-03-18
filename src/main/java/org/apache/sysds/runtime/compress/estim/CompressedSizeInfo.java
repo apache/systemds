@@ -57,6 +57,11 @@ public class CompressedSizeInfo {
 		return this;
 	}
 
+	public void clearMaps(){
+		for(CompressedSizeInfoColGroup g : compressionInfo)
+			g.clearMap();
+	}
+
 	/**
 	 * Method for returning the calculated memory usage from this specific compression plan.
 	 * 

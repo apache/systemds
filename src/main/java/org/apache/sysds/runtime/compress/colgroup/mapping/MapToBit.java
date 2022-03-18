@@ -54,6 +54,10 @@ public class MapToBit extends AMapToData {
 		_size = size;
 	}
 
+	protected BitSet getData(){
+		return _data;
+	}
+
 	@Override
 	public MAP_TYPE getType() {
 		return MapToFactory.MAP_TYPE.BIT;
@@ -151,18 +155,16 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public int[] getCounts(int[] counts) {
+	protected void count(int[] ret){
 		final int sz = size();
-
-		if(counts.length == 1)
-			counts[0] = sz;
+		if(ret.length == 1)
+			ret[0] = sz;
 		else {
-			counts[1] = _data.cardinality();
-			counts[0] = sz - counts[1];
+			ret[1] = _data.cardinality();
+			ret[0] = sz - ret[1];
 		}
-
-		return counts;
 	}
+
 
 	@Override
 	public void preAggregateDDC_DDCSingleCol(AMapToData tm, double[] td, double[] v) {
@@ -209,6 +211,20 @@ public class MapToBit extends AMapToData {
 
 	public boolean isEmpty(){
 		return _data.isEmpty();
+	}
+
+	@Override
+	public void copyInt(int[] d){
+		// start from end because bitset is allocating based on last bit set.
+		for(int i = d.length-1; i >-1; i--)
+			if(d[i] != 0)
+				_data.set(i);
+	}
+
+	@Override
+	public void copyBit(BitSet d){
+		_data.clear();
+		_data.or(d);
 	}
 
 	private static class JoinBitSets {

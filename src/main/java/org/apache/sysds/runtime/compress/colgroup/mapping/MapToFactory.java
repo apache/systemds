@@ -122,8 +122,11 @@ public interface MapToFactory {
 			return d;
 		}
 		else if(numTuples <= 127) {
-			if(d instanceof MapToByte)
-				return ((MapToByte) d).toUByte();
+			if(d instanceof MapToByte){
+				ret = ((MapToByte) d).toUByte();
+				ret.setUnique(numTuples);
+				return ret;
+			}
 			ret = new MapToUByte(numTuples, size);
 		}
 		else if(d instanceof MapToByte) {

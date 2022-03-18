@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
@@ -62,10 +63,8 @@ import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
-import org.apache.sysds.runtime.util.DataConverter;
 
 /**
  * Factory class for constructing ColGroups.
@@ -82,6 +81,8 @@ public class ColGroupFactory {
 	private final int nRow;
 	private final int nCol;
 
+	private final ExecutorService pool;
+
 	private ColGroupFactory(MatrixBlock in, CompressedSizeInfo csi, CompressionSettings cs, ACostEstimate ce, int k) {
 		this.in = in;
 		this.csi = csi;
@@ -92,6 +93,7 @@ public class ColGroupFactory {
 		this.nRow = cs.transposed ? in.getNumColumns() : in.getNumRows();
 		this.nCol = cs.transposed ? in.getNumRows() : in.getNumColumns();
 
+		this.pool = (k > 1) ? CommonThreadPool.get(k) : null;
 	}
 
 	/**
@@ -127,6 +129,13 @@ public class ColGroupFactory {
 	}
 
 	private List<AColGroup> compress() {
+		List<AColGroup> ret = compressExecute();
+		if(pool != null)
+			pool.shutdown();
+		return ret;
+	}
+
+	private List<AColGroup> compressExecute() {
 		for(CompressedSizeInfoColGroup g : csi.getInfo())
 			g.clearMap();
 		if(in.isEmpty()) {
@@ -151,7 +160,6 @@ public class ColGroupFactory {
 
 	private List<AColGroup> compressColGroupsParallel() {
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			List<CompressTask> tasks = new ArrayList<>();
 
 			List<List<CompressedSizeInfoColGroup>> threadGroups = makeGroups();
@@ -162,7 +170,6 @@ public class ColGroupFactory {
 			List<AColGroup> ret = new ArrayList<>();
 			for(Future<Collection<AColGroup>> t : pool.invokeAll(tasks))
 				ret.addAll(t.get());
-			pool.shutdown();
 			return ret;
 		}
 		catch(InterruptedException | ExecutionException e) {
@@ -224,14 +231,8 @@ public class ColGroupFactory {
 			((colIndexes.length > 1 && in.getSparsity() < 0.001) || colIndexes.length == 1))
 			// Leverage the Sparse matrix, to construct SDC group
 			return compressSDCFromSparseTransposedBlock(colIndexes, nrUniqueEstimate, cg.getTupleSparsity());
-		else if(colIndexes.length > 1 && ct == CompressionType.DDC)
+		else if(ct == CompressionType.DDC)
 			return directCompressDDC(colIndexes, cg);
-		else if(ct == CompressionType.DeltaDDC) {
-			if(colIndexes.length > 1)
-				return directCompressDeltaDDC(colIndexes, in, cs, cg, k);
-			else
-				return compressDeltaDDC(colIndexes, in, cs, cg);
-		}
 		else {
 			final int numRows = cs.transposed ? in.getNumColumns() : in.getNumRows();
 			final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, cs.transposed, nrUniqueEstimate,
@@ -271,22 +272,31 @@ public class ColGroupFactory {
 		}
 	}
 
-	private static AColGroup directCompressDeltaDDC(int[] colIndexes, MatrixBlock raw, CompressionSettings cs,
-		CompressedSizeInfoColGroup cg, int k) {
-		final int rlen = cs.transposed ? raw.getNumColumns() : raw.getNumRows();
-		// use a Map that is at least char size.
-		final AMapToData d = MapToFactory.create(rlen, MAP_TYPE.INT);
-		if(cs.transposed) {
-			LOG.warn("In-effecient transpose back of the input matrix to do delta encoding");
-			raw = LibMatrixReorg.transposeInPlace(raw, k);
-			cs.transposed = false;
-		}
-		// Delta encode the raw data
-		raw = deltaEncodeMatrixBlock(raw);
-		return directCompressDDCDeltaColGroup(colIndexes, raw, cs, cg, d, rlen, k);
+	private AColGroup directCompressDDC(int[] colIndexes, CompressedSizeInfoColGroup cg) {
+		if(colIndexes.length > 1)
+			return directCompressDDCMultiCol(colIndexes, cg);
+		else
+			return directCompressDDCSingleCol(colIndexes, cg);
 	}
 
-	private AColGroup directCompressDDC(int[] colIndexes, CompressedSizeInfoColGroup cg) {
+	private AColGroup directCompressDDCSingleCol(int[] colIndexes, CompressedSizeInfoColGroup cg) {
+		final int col = colIndexes[0];
+		final AMapToData d = MapToFactory.create(nRow, MAP_TYPE.INT);
+		final DoubleCountHashMap map = new DoubleCountHashMap(cg.getNumVals());
+
+		// unlike multi-col no special handling of zero entries are needed.
+		if(cs.transposed)
+			readToMapDDCTransposed(col, map, d);
+		else
+			readToMapDDC(col, map, d);
+
+		ADictionary dict = DictionaryFactory.create(map);
+		final int nUnique = map.size();
+		final AMapToData resData = MapToFactory.resize(d, nUnique);
+		return ColGroupDDC.create(colIndexes, nRow, dict, resData, null);
+	}
+
+	private AColGroup directCompressDDCMultiCol(int[] colIndexes, CompressedSizeInfoColGroup cg) {
 		final AMapToData d = MapToFactory.create(nRow, MAP_TYPE.INT);
 		final int fill = d.getUpperBoundValue();
 		d.fill(fill);
@@ -294,9 +304,9 @@ public class ColGroupFactory {
 		final DblArrayCountHashMap map = new DblArrayCountHashMap(cg.getNumVals(), colIndexes.length);
 		boolean extra;
 		if(nRow < CompressionSettings.PAR_DDC_THRESHOLD || k == 1)
-			extra = readToMapDDC(colIndexes, in, map, cs, d, 0, nRow, fill);
+			extra = readToMapDDC(colIndexes, map, d, 0, nRow, fill);
 		else
-			extra = parallelReadToMapDDC(colIndexes, in, map, cs, d, nRow, fill, k);
+			extra = parallelReadToMapDDC(colIndexes, map, d, nRow, fill, k);
 
 		if(map.size() == 0)
 			// If the column was empty.
@@ -317,38 +327,8 @@ public class ColGroupFactory {
 		return ColGroupDDC.create(colIndexes, nRow, dict, resData, null);
 	}
 
-	private static AColGroup directCompressDDCDeltaColGroup(int[] colIndexes, MatrixBlock raw, CompressionSettings cs,
-		CompressedSizeInfoColGroup cg, AMapToData data, int rlen, int k) {
-		final int fill = data.getUpperBoundValue();
-		data.fill(fill);
-
-		DblArrayCountHashMap map = new DblArrayCountHashMap(cg.getNumVals(), colIndexes.length);
-		boolean extra;
-		if(rlen < CompressionSettings.PAR_DDC_THRESHOLD || k == 1)
-			extra = readToMapDDC(colIndexes, raw, map, cs, data, 0, rlen, fill);
-		else
-			extra = parallelReadToMapDDC(colIndexes, raw, map, cs, data, rlen, fill, k);
-
-		if(map.size() == 0)
-			// If the column was empty.
-			// This is highly unlikely but could happen if forced compression of
-			// not transposed column and the estimator says use DDC.
-			return new ColGroupEmpty(colIndexes);
-		ADictionary dict = DictionaryFactory.createDelta(map, colIndexes.length, extra);
-		if(extra) {
-			data.replace(fill, map.size());
-			data.setUnique(map.size() + 1);
-		}
-		else
-			data.setUnique(map.size());
-
-		AMapToData resData = MapToFactory.resize(data, map.size() + (extra ? 1 : 0));
-		return ColGroupDeltaDDC.create(colIndexes, rlen, dict, resData, null);
-	}
-
-	private static boolean readToMapDDC(final int[] colIndexes, final MatrixBlock raw, final DblArrayCountHashMap map,
-		final CompressionSettings cs, final AMapToData data, final int rl, final int ru, final int fill) {
-		ReaderColumnSelection reader = ReaderColumnSelection.createReader(raw, colIndexes, cs.transposed, rl, ru);
+	private boolean readToMapDDC(int[] colIndexes, DblArrayCountHashMap map, AMapToData data, int rl, int ru, int fill) {
+		ReaderColumnSelection reader = ReaderColumnSelection.createReader(in, colIndexes, cs.transposed, rl, ru);
 		DblArray cellVals = reader.nextRow();
 		boolean extra = false;
 		int r = rl;
@@ -372,45 +352,90 @@ public class ColGroupFactory {
 		return extra;
 	}
 
-	private static boolean parallelReadToMapDDC(final int[] colIndexes, final MatrixBlock raw,
-		final DblArrayCountHashMap map, final CompressionSettings cs, final AMapToData data, final int rlen,
-		final int fill, final int k) {
+	private void readToMapDDC(int col, DoubleCountHashMap map, AMapToData data) {
+		if(in.isInSparseFormat()) {
+			// not good but could happen
+			final SparseBlock sb = in.getSparseBlock();
+			for(int r = 0; r < nRow; r++) {
+				if(sb.isEmpty(r))
+					data.set(r, map.increment(0));
+				else {
+					final int apos = sb.pos(r);
+					final int alen = sb.size(r) + apos;
+					final int[] aix = sb.indexes(r);
+					final int idx = Arrays.binarySearch(aix, apos, alen, col);
+					if(idx < 0)
+						data.set(r, map.increment(0));
+					else
+						data.set(r, map.increment(sb.values(r)[idx]));
+				}
+			}
+		}
+		else if(in.getDenseBlock().isContiguous()) {
+			final double[] dv = in.getDenseBlockValues();
+			int off = col;
+			for(int r = 0; r < nRow; r++, off += nCol) {
+				final int id = map.increment(dv[off]);
+				data.set(r, id);
+			}
+		}
+		else {
+			throw new NotImplementedException();
+		}
+	}
+
+	private void readToMapDDCTransposed(int col, DoubleCountHashMap map, AMapToData data) {
+		if(in.isInSparseFormat()) {
+			// good
+			SparseBlock sb = in.getSparseBlock();
+			if(sb.isEmpty(col))
+				return;
+
+			final int apos = sb.pos(col);
+			final int alen = sb.size(col) + apos;
+			final int[] aix = sb.indexes(col);
+			final double[] aval = sb.values(col);
+			// count zeros
+			map.increment(0, nRow - apos - alen);
+			// insert all other counts
+			for(int j = apos; j < alen; j++) {
+				final int id = map.increment(aval[j]);
+				data.set(aix[j], id);
+			}
+		}
+		else if(in.getDenseBlock().isContiguous()) {
+			double[] dv = in.getDenseBlockValues();
+			int off = col * nRow;
+			for(int r = 0; r < nRow; r++, off++) {
+				final int id = map.increment(dv[off]);
+				data.set(r, id);
+			}
+		}
+		else {
+			throw new NotImplementedException();
+		}
+	}
+
+	private boolean parallelReadToMapDDC(int[] colIndexes, DblArrayCountHashMap map, AMapToData data, int rlen, int fill,
+		int k) {
 
 		try {
 			final int blk = Math.max(rlen / colIndexes.length / k, 64000 / colIndexes.length);
-			ExecutorService pool = CommonThreadPool.get(Math.min(Math.max(rlen / blk, 1), k));
-			List<readToMapDDCTask> tasks = new ArrayList<>();
 
+			List<readToMapDDCTask> tasks = new ArrayList<>();
 			for(int i = 0; i < rlen; i += blk) {
 				int end = Math.min(rlen, i + blk);
-				tasks.add(new readToMapDDCTask(colIndexes, raw, map, cs, data, i, end, fill));
+				tasks.add(new readToMapDDCTask(colIndexes, map, data, i, end, fill));
 			}
 			boolean extra = false;
 			for(Future<Boolean> t : pool.invokeAll(tasks))
 				extra |= t.get();
 
-			pool.shutdown();
 			return extra;
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException("Failed to parallelize DDC compression");
 		}
-	}
-
-	private static MatrixBlock deltaEncodeMatrixBlock(MatrixBlock mb) {
-		LOG.warn("Delta encoding entire matrix input!!");
-		int rows = mb.getNumRows();
-		int cols = mb.getNumColumns();
-		double[][] ret = new double[rows][cols];
-		double[] a = mb.getDenseBlockValues();
-		for(int i = 0, ix = 0; i < rows; i++) {
-			int prevRowOff = i > 0 ? ix - cols : 0;
-			for(int j = 0; j < cols; j++, ix++) {
-				double currentValue = a[ix];
-				ret[i][j] = i > 0 ? currentValue - a[prevRowOff + j] : currentValue;
-			}
-		}
-		return DataConverter.convertToMatrixBlock(ret);
 	}
 
 	private static AColGroup compressSDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,
@@ -446,11 +471,9 @@ public class ColGroupFactory {
 			ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
 			return compressSDCZero(colIndexes, rlen, ubm, dict, cs);
 		}
-		else {
-			double[] defaultTuple = new double[colIndexes.length];
-			ADictionary dict = DictionaryFactory.create(ubm, largestIndex, defaultTuple, tupleSparsity, numZeros > 0);
-			return compressSDCNormal(colIndexes, numZeros, rlen, ubm, largestIndex, dict, defaultTuple, cs);
-		}
+		else
+			return compressSDCNormal(colIndexes, numZeros, rlen, ubm, largestIndex, tupleSparsity, cs);
+
 	}
 
 	private static AColGroup compressSDCZero(int[] colIndexes, int rlen, ABitmap ubm, ADictionary dict,
@@ -464,9 +487,11 @@ public class ColGroupFactory {
 	}
 
 	private static AColGroup compressSDCNormal(int[] colIndexes, int numZeros, int rlen, ABitmap ubm, int largestIndex,
-		ADictionary dict, double[] defaultTuple, CompressionSettings cs) {
-		IntArrayList[] offsets = ubm.getOffsetList();
-		AInsertionSorter s = InsertionSorterFactory.createNegative(rlen, offsets, largestIndex, cs.sdcSortType);
+		double tupleSparsity, CompressionSettings cs) {
+		final double[] defaultTuple = new double[colIndexes.length];
+		final ADictionary dict = DictionaryFactory.create(ubm, largestIndex, defaultTuple, tupleSparsity, numZeros > 0);
+		AInsertionSorter s = InsertionSorterFactory.createNegative(rlen, ubm.getOffsetList(), largestIndex,
+			cs.sdcSortType);
 		AOffset indexes = OffsetFactory.createOffset(s.getIndexes());
 		AMapToData _data = s.getData();
 		_data = MapToFactory.resize(_data, dict.getNumberOfValues(colIndexes.length));
@@ -500,27 +525,6 @@ public class ColGroupFactory {
 		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity, zeros);
 		AMapToData data = MapToFactory.create(rlen, zeros, ubm.getOffsetList());
 		return ColGroupDDC.create(colIndexes, rlen, dict, data, null);
-	}
-
-	private static AColGroup compressDeltaDDC(int[] colIndexes, MatrixBlock in, CompressionSettings cs,
-		CompressedSizeInfoColGroup cg) {
-
-		LOG.warn("Multi column Delta encoding only supported if delta encoding is only compression");
-		if(cs.transposed) {
-			LibMatrixReorg.transposeInPlace(in, 1);
-			cs.transposed = false;
-		}
-		// Delta encode the raw data
-		in = deltaEncodeMatrixBlock(in);
-
-		final int rlen = in.getNumRows();
-		// TODO Add extractBitMap that is delta to not require delta encoding entire input matrix.
-		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, cs.transposed, cg.getNumVals(),
-			cs.sortTuplesByFrequency);
-		boolean zeros = ubm.getNumOffsets() < rlen;
-		ADictionary dict = DictionaryFactory.create(ubm, cg.getTupleSparsity(), zeros);
-		AMapToData data = MapToFactory.create(rlen, zeros, ubm.getOffsetList());
-		return ColGroupDeltaDDC.create(colIndexes, rlen, dict, data, null);
 	}
 
 	private static AColGroup compressOLE(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,
@@ -675,6 +679,32 @@ public class ColGroupFactory {
 				return ColGroupSDCZeros.create(cols, nRow, new Dictionary(dict), offsets, mapToData, counts);
 			}
 		}
+		else if(entries.length == 1) {
+			// SDCSingle and we know all values are x or 0
+			final int nonZeros = nRow - entries[0].count;
+			final double x = entries[0].key;
+			final double[] defaultTuple = new double[] {x};
+			final ADictionary zeroDict = new Dictionary(new double[] {0});
+			final int[] counts = new int[] {nonZeros};
+			final int[] notZeroOffsets = new int[nonZeros];
+			final int[] aix = sb.indexes(sbRow);
+			int i = 0;
+			int r = 0;
+			for(int j = apos; r < aix[alen-1]; r++){
+				if(r == aix[j])
+					j++;
+				else
+					notZeroOffsets[i++] = r;
+			}
+			r++;
+
+			for(; r < nRow; r++, i++)
+				notZeroOffsets[i] = r;
+
+			final AOffset offsets = OffsetFactory.createOffset(notZeroOffsets);
+
+			return ColGroupSDCSingle.create(cols, nRow, zeroDict, defaultTuple, offsets, counts);
+		}
 		else {
 			final ABitmap ubm = BitmapEncoder.extractBitmap(cols, in, true, entries.length, true);
 			// zero is not the default value fall back to the standard compression path.
@@ -705,22 +735,18 @@ public class ColGroupFactory {
 		}
 	}
 
-	static class readToMapDDCTask implements Callable<Boolean> {
+	private class readToMapDDCTask implements Callable<Boolean> {
 		private final int[] _colIndexes;
-		private final MatrixBlock _raw;
 		private final DblArrayCountHashMap _map;
-		private final CompressionSettings _cs;
 		private final AMapToData _data;
 		private final int _rl;
 		private final int _ru;
 		private final int _fill;
 
-		protected readToMapDDCTask(int[] colIndexes, MatrixBlock raw, DblArrayCountHashMap map, CompressionSettings cs,
-			AMapToData data, int rl, int ru, int fill) {
+		protected readToMapDDCTask(int[] colIndexes, DblArrayCountHashMap map, AMapToData data, int rl, int ru,
+			int fill) {
 			_colIndexes = colIndexes;
-			_raw = raw;
 			_map = map;
-			_cs = cs;
 			_data = data;
 			_rl = rl;
 			_ru = ru;
@@ -729,7 +755,7 @@ public class ColGroupFactory {
 
 		@Override
 		public Boolean call() {
-			return Boolean.valueOf(readToMapDDC(_colIndexes, _raw, _map, _cs, _data, _rl, _ru, _fill));
+			return Boolean.valueOf(readToMapDDC(_colIndexes, _map, _data, _rl, _ru, _fill));
 		}
 	}
 

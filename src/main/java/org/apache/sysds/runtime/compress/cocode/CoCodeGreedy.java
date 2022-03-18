@@ -20,17 +20,18 @@
 package org.apache.sysds.runtime.compress.cocode;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CoCodeGreedy extends AColumnCoCoder {
@@ -64,23 +65,29 @@ public class CoCodeGreedy extends AColumnCoCoder {
 
 		final List<ColIndexes> workSet = new ArrayList<>(inputColumns.size());
 
-		// assume that we can at max reduce 90 % of cost if combined
-		final double costFilterThreshold = 0.9;
-
 		final ExecutorService pool = CommonThreadPool.get(k);
 		for(int i = 0; i < inputColumns.size(); i++) {
 			CompressedSizeInfoColGroup g = inputColumns.get(i);
 			workSet.add(new ColIndexes(g.getColumns()));
 		}
 
-		// if(k > 1)
-		// parallelFirstCombine(workSet, mem, cEst, pool);
+		if(k > 1)
+			parallelFirstCombine(workSet, pool);
+
+		// second layer to keep the second best combination
+		double secondChange = 0;
+		CompressedSizeInfoColGroup secondTmp = null;
+		ColIndexes secondSelectedJ = null, secondSelected1 = null, secondSelected2 = null;
 
 		// Process merging iterations until no more change
 		while(workSet.size() > 1) {
-			double changeInCost = 0;
-			CompressedSizeInfoColGroup tmp = null;
-			ColIndexes selected1 = null, selected2 = null;
+			if(secondChange != 0)
+				mem.incst4();
+			// maintain selected
+			double changeInCost = secondChange;
+			CompressedSizeInfoColGroup tmp = secondTmp;
+			ColIndexes selectedJ = secondSelectedJ, selected1 = secondSelected1, selected2 = secondSelected2;
+
 			for(int i = 0; i < workSet.size(); i++) {
 				for(int j = i + 1; j < workSet.size(); j++) {
 					final ColIndexes c1 = workSet.get(i);
@@ -94,54 +101,65 @@ public class CoCodeGreedy extends AColumnCoCoder {
 					// Since even if the entire size of one of the column lists is removed,
 					// it still does not improve compression.
 					// In the case of workload we relax the requirement for the filter.
-					// if(-Math.min(costC1, costC2) > changeInCost)
-					if(-Math.min(costC1, costC2) * costFilterThreshold > changeInCost)
+					if(-Math.min(costC1, costC2) > changeInCost)
 						continue;
 
-					// Join the two column groups.
-					// and Memorize the new join.
-					final CompressedSizeInfoColGroup c1c2Inf = mem.getOrCreate(c1, c2);
+					// Combine the two column groups.
+					// and Memorize the new Combine.
+					final int[] c = Util.combine(c1._indexes, c2._indexes);
+					final ColIndexes cI = new ColIndexes(c);
+					final CompressedSizeInfoColGroup c1c2Inf = mem.getOrCreate(cI, c1, c2);
 					final double costC1C2 = _cest.getCost(c1c2Inf);
 					final double newCostIfJoined = costC1C2 - costC1 - costC2;
 
-					// Select the best join of either the currently selected
+					// Select the best Combine of either the currently selected
 					// or keep the old one.
-					if((tmp == null && newCostIfJoined < changeInCost) || tmp != null && (newCostIfJoined < changeInCost ||
-						newCostIfJoined == changeInCost && c1c2Inf.getColumns().length < tmp.getColumns().length)) {
-						changeInCost = newCostIfJoined;
-						tmp = c1c2Inf;
-						selected1 = c1;
-						selected2 = c2;
+					if(newCostIfJoined < 0) {
+						if(tmp == null) {
+							changeInCost = newCostIfJoined;
+							tmp = c1c2Inf;
+							selectedJ = cI;
+							selected1 = c1;
+							selected2 = c2;
+						}
+						else if((newCostIfJoined < changeInCost ||
+							newCostIfJoined == changeInCost && c1c2Inf.getColumns().length < tmp.getColumns().length)) {
+
+							if(selected1 != secondSelected1 && selected2 != secondSelected2) {
+								secondTmp = tmp;
+								secondSelectedJ = selectedJ;
+								secondSelected1 = selected1;
+								secondSelected2 = selected2;
+								secondChange = changeInCost;
+							}
+							
+							changeInCost = newCostIfJoined;
+							tmp = c1c2Inf;
+							selectedJ = cI;
+							selected1 = c1;
+							selected2 = c2;
+						}
 					}
 				}
 			}
 
 			if(tmp != null) {
+				// remove from workset
 				workSet.remove(selected1);
 				workSet.remove(selected2);
-				mem.remove(selected1, selected2);
+				mem.remove(selected1, selected2); // remove all memorized values of the combined columns
 
-				Collections.sort(workSet, new CompareColumns());
+				// ColIndexes combined = new ColIndexes(tmp.getColumns());
+				mem.put(selectedJ, tmp); // add back the new combination to memorizer
+				workSet.add(selectedJ);
+				if(selectedJ.contains(secondSelected1, secondSelected2)) {
+					secondTmp = null;
+					secondSelectedJ = null;
+					secondSelected1 = null;
+					secondSelected2 = null;
+					secondChange = 0;
+				}
 
-				final ColIndexes a = new ColIndexes(tmp.getColumns());
-				// if(k > 1) {
-				// final List<CombineTask> tasks = new ArrayList<>();
-				// final int size = workSet.size();
-				// try {
-				// // combine the first k columns...
-				// // just to parallelize at least the first couple of options.
-				// // This potentially filters out some of the options quickly.
-				// for(int j = 0; j < Math.min(k, size); j++)
-				// tasks.add(new CombineTask(a, workSet.get(j), mem));
-
-				// for(Future<Object> t : pool.invokeAll(tasks))
-				// t.get();
-				// }
-				// catch(Exception e) {
-				// throw new DMLCompressionException("Failed parallelize first level all join all", e);
-				// }
-				// }
-				workSet.add(a);
 			}
 			else
 				break;
@@ -159,54 +177,51 @@ public class CoCodeGreedy extends AColumnCoCoder {
 		return ret;
 	}
 
-	// protected static void parallelFirstCombine(List<ColIndexes> workSet, Memorizer mem, ACostEstimate cEst,
-	// ExecutorService pool) {
-	// try {
-	// final List<CombineTask> tasks = new ArrayList<>();
-	// final int size = workSet.size();
-	// for(int i = 0; i < size; i++)
-	// for(int j = i + 1; j < size; j++)
-	// tasks.add(new CombineTask(workSet.get(i), workSet.get(j), mem));
+	protected void parallelFirstCombine(List<ColIndexes> workSet, ExecutorService pool) {
+		try {
+			final List<CombineTask> tasks = new ArrayList<>();
+			final int size = workSet.size();
+			for(int i = 0; i < size; i++)
+				for(int j = i + 1; j < size; j++)
+					tasks.add(new CombineTask(workSet.get(i), workSet.get(j)));
 
-	// for(Future<Object> t : pool.invokeAll(tasks))
-	// t.get();
-	// }
-	// catch(Exception e) {
-	// throw new DMLCompressionException("Failed parallelize first level all join all", e);
-	// }
-	// }
+			for(Future<Object> t : pool.invokeAll(tasks))
+				t.get();
+		}
+		catch(Exception e) {
+			throw new DMLCompressionException("Failed parallelize first level all join all", e);
+		}
+	}
 
-	protected static class CombineTask implements Callable<Object> {
+	protected class CombineTask implements Callable<Object> {
 		private final ColIndexes _c1, _c2;
-		private final Memorizer _m;
 
-		protected CombineTask(ColIndexes c1, ColIndexes c2, Memorizer m) {
+		protected CombineTask(ColIndexes c1, ColIndexes c2) {
 			_c1 = c1;
 			_c2 = c2;
-			_m = m;
 		}
 
 		@Override
 		public Object call() {
-			_m.getOrCreate(_c1, _c2);
+			final int[] c = Util.combine(_c1._indexes, _c2._indexes);
+			final ColIndexes cI = new ColIndexes(c);
+			mem.getOrCreate(cI, _c1, _c2);
 			return null;
-
 		}
 	}
 
-	private class CompareColumns implements Comparator<ColIndexes> {
+	// private class CompareColumns implements Comparator<ColIndexes> {
 
-		@Override
-		public int compare(ColIndexes arg0, ColIndexes arg1) {
-			final double c1 = _cest.getCost(mem.get(arg0));
-			final double c2 = _cest.getCost(mem.get(arg1));
-			if(c1 > c2)
-				return -1;
-			else if(c1 == c2)
-				return 0;
-			else
-				return 1;
-		}
-
-	}
+	// @Override
+	// public int compare(ColIndexes arg0, ColIndexes arg1) {
+	// final double c1 = _cest.getCost(mem.get(arg0));
+	// final double c2 = _cest.getCost(mem.get(arg1));
+	// if(c1 > c2)
+	// return -1;
+	// else if(c1 == c2)
+	// return 0;
+	// else
+	// return 1;
+	// }
+	// }
 }

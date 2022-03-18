@@ -72,7 +72,7 @@ public class CLALibRightMultBy {
 		}
 		else {
 			if(m2 instanceof CompressedMatrixBlock)
-				m2 = ((CompressedMatrixBlock) m2).getUncompressed("Uncompressed right side of right MM");
+				m2 = ((CompressedMatrixBlock) m2).getUncompressed("Uncompressed right side of right MM", k);
 
 			if(!allowOverlap) {
 				LOG.trace("Overlapping output not allowed in call to Right MM");
@@ -224,7 +224,7 @@ public class CLALibRightMultBy {
 	}
 
 	private static boolean RMMParallel(List<AColGroup> filteredGroups, MatrixBlock that, List<AColGroup> retCg, int k) {
-		ExecutorService pool = CommonThreadPool.get(k);
+		final ExecutorService pool = CommonThreadPool.get(k);
 		boolean containsNull = false;
 		try {
 			List<Callable<AColGroup>> tasks = new ArrayList<>(filteredGroups.size());
@@ -241,6 +241,7 @@ public class CLALibRightMultBy {
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException(e);
 		}
+		pool.shutdown();
 		return containsNull;
 	}
 

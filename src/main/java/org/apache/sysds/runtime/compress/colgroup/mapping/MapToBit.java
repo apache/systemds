@@ -26,9 +26,6 @@ import java.util.BitSet;
 
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
-import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToBit extends AMapToData {
@@ -38,7 +35,7 @@ public class MapToBit extends AMapToData {
 	private final BitSet _data;
 	private final int _size;
 
-	protected MapToBit(int size){
+	protected MapToBit(int size) {
 		this(2, size);
 	}
 
@@ -52,6 +49,14 @@ public class MapToBit extends AMapToData {
 		super(unique);
 		_data = d;
 		_size = size;
+		if(_data.isEmpty()) {
+			unique = 1;
+			LOG.warn("Empty bit set should not happen");
+		}
+	}
+
+	protected BitSet getData() {
+		return _data;
 	}
 
 	@Override
@@ -81,21 +86,12 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public long getExactSizeOnDisk() {
-		final int dSize = _data.size();
-		long size = 1 + 4 + 4 + 4; // base variables
-		size += (dSize / 64) * 8; // all longs except last
-		// size += (dSize % 64 == 0 ? 0 : 8); // last long
-		return size;
-	}
-
-	@Override
 	public void set(int n, int v) {
 		_data.set(n, v == 1);
 	}
 
 	@Override
-	public int setAndGet(int n, int v){
+	public int setAndGet(int n, int v) {
 		_data.set(n, v == 1);
 		return 1;
 	}
@@ -115,10 +111,16 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
+	public long getExactSizeOnDisk() {
+		long size = 1 + 4 + 4; // base variables
+		size += _data.toLongArray().length * 8;
+		return size;
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		long[] internals = _data.toLongArray();
 		out.writeByte(MAP_TYPE.BIT.ordinal());
-		out.writeInt(getUnique());
 		out.writeInt(_size);
 		out.writeInt(internals.length);
 		for(int i = 0; i < internals.length; i++)
@@ -126,23 +128,11 @@ public class MapToBit extends AMapToData {
 	}
 
 	protected static MapToBit readFields(DataInput in) throws IOException {
-		int unique = in.readInt();
 		int size = in.readInt();
 		long[] internalLong = new long[in.readInt()];
 		for(int i = 0; i < internalLong.length; i++)
 			internalLong[i] = in.readLong();
-
-		return new MapToBit(unique, BitSet.valueOf(internalLong), size);
-	}
-
-	@Override
-	public void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
-		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), _data);
-	}
-
-	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
-		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), _data);
+		return new MapToBit(2, BitSet.valueOf(internalLong), size);
 	}
 
 	@Override
@@ -151,17 +141,10 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public int[] getCounts(int[] counts) {
+	protected void count(int[] ret) {
 		final int sz = size();
-
-		if(counts.length == 1)
-			counts[0] = sz;
-		else {
-			counts[1] = _data.cardinality();
-			counts[0] = sz - counts[1];
-		}
-
-		return counts;
+		ret[1] = _data.cardinality();
+		ret[0] = sz - ret[1];
 	}
 
 	@Override
@@ -207,8 +190,36 @@ public class MapToBit extends AMapToData {
 		}
 	}
 
-	public boolean isEmpty(){
+	public boolean isEmpty() {
 		return _data.isEmpty();
+	}
+
+	@Override
+	public void copy(AMapToData d) {
+		if(d instanceof MapToBit)
+			copyBit((MapToBit) d);
+		else if(d instanceof MapToInt)
+			copyInt((MapToInt) d);
+		else {
+			final int sz = size();
+			for(int i = 0; i < sz; i++)
+				if(d.getIndex(i) != 0)
+					_data.set(i);
+		}
+	}
+
+	@Override
+	public void copyInt(int[] d) {
+		// start from end because bitset is allocating based on last bit set.
+		for(int i = d.length - 1; i > -1; i--)
+			if(d[i] != 0)
+				_data.set(i);
+	}
+
+	@Override
+	public void copyBit(BitSet d) {
+		_data.clear();
+		_data.or(d);
 	}
 
 	private static class JoinBitSets {
@@ -252,5 +263,13 @@ public class MapToBit extends AMapToData {
 			final int longest = Math.max(t_longs.length, _longs.length);
 			ff += size - (longest * 64); // remainder
 		}
+	}
+
+	@Override
+	public AMapToData resize(int unique) {
+		if(unique <= 1)
+			return new MapToZero(size());
+		else
+			return this;
 	}
 }

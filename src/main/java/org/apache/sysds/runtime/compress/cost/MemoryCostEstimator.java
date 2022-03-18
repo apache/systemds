@@ -43,4 +43,9 @@ public class MemoryCostEstimator extends ACostEstimate {
 	public double getCost(AColGroup cg, int nRows) {
 		return cg.estimateInMemorySize();
 	}
+
+	@Override
+	public boolean shouldSparsify() {
+		return false;
+	}
 }

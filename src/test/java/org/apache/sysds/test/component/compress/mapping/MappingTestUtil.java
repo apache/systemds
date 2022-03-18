@@ -23,7 +23,9 @@ import static org.junit.Assert.fail;
 
 import java.util.Random;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToCharPByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
@@ -35,6 +37,8 @@ public class MappingTestUtil {
 		AMapToData[] ret = new AMapToData[getTypeSize(m.getType())];
 		int idx = 0;
 		switch(m.getType()) {
+			case ZERO:
+				ret[idx++] = MapToFactory.resizeForce(m, MAP_TYPE.ZERO);
 			case BIT:
 				ret[idx++] = MapToFactory.resizeForce(m, MAP_TYPE.UBYTE);
 			case UBYTE:
@@ -42,6 +46,8 @@ public class MappingTestUtil {
 			case BYTE:
 				ret[idx++] = MapToFactory.resizeForce(m, MAP_TYPE.CHAR);
 			case CHAR:
+				ret[idx++] = MapToFactory.resizeForce(m, MAP_TYPE.CHAR_BYTE);
+			case CHAR_BYTE:
 				ret[idx++] = MapToFactory.resizeForce(m, MAP_TYPE.INT);
 			case INT:
 				// none
@@ -53,14 +59,18 @@ public class MappingTestUtil {
 		switch(t) {
 			case INT:
 				return 0;
-			case CHAR:
+			case CHAR_BYTE:
 				return 1;
-			case BYTE:
+			case CHAR:
 				return 2;
-			case UBYTE:
+			case BYTE:
 				return 3;
-			case BIT:
+			case UBYTE:
 				return 4;
+			case BIT:
+				return 5;
+			case ZERO:
+				return 6;
 			default:
 				fail("Unknown type: " + t);
 				return -1;
@@ -85,5 +95,27 @@ public class MappingTestUtil {
 				offs.appendValue(off);
 		}
 		return OffsetFactory.createOffset(offs);
+	}
+
+
+	public static int getUpperBoundValue(MAP_TYPE t) {
+		switch(t) {
+			case ZERO:
+				return 0;
+			case BIT:
+				return 1;
+			case UBYTE:
+				return 127;
+			case BYTE:
+				return 255;
+			case CHAR:
+				return Character.MAX_VALUE;
+			case CHAR_BYTE:
+				return MapToCharPByte.max - 1;
+			case INT:
+				return Integer.MAX_VALUE;
+			default:
+				throw new DMLCompressionException("Unsupported type " + t);
+		}
 	}
 }

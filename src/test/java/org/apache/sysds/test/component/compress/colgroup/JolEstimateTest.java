@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
@@ -163,7 +164,9 @@ public abstract class JolEstimateTest {
 			final CompressedSizeInfoColGroup cInfo = est.getColGroupInfo(colIndexes);
 			// LOG.error(cg);
 			final int estimateNUniques = cInfo.getNumVals();
-			final long estimateCSI = cInfo.getCompressionSize(cg.getCompType());
+
+			final long estimateCSI = (cg.getCompType() == CompressionType.CONST) ? ColGroupSizes
+				.estimateInMemorySizeCONST(cg.getNumCols(), 1.0, false) : cInfo.getCompressionSize(cg.getCompType());
 			final double minTolerance = actualSize * tolerance *
 				(ratio < 1 && mbt.getSparsity() < 0.8 ? mbt.getSparsity() + 0.2 : 1);
 			final double maxTolerance = actualSize / tolerance +

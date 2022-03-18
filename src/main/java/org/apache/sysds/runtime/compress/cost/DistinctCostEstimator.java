@@ -57,4 +57,8 @@ public class DistinctCostEstimator extends ACostEstimate {
 		throw new NotImplementedException();
 	}
 
+	@Override
+	public boolean shouldSparsify() {
+		return false;
+	}
 }

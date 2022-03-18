@@ -44,15 +44,17 @@ public class CLALibUnary {
 			// when in overlapping state it is guaranteed that there is no infinites, NA, or NANs.
 			if(Builtin.isBuiltinCode(op.fn, BuiltinCode.ISINF, BuiltinCode.ISNA, BuiltinCode.ISNAN))
 				return new MatrixBlock(r, c, 0);
+			if(op.fn instanceof Builtin)
+			return m.getUncompressed("Unary Op not supported Overlapping builtin: " + ((Builtin)(op.fn)).getBuiltinCode(), op.getNumThreads()).unaryOperations(op, null);
 			else
-				return m.getUncompressed(op.toString()).unaryOperations(op, null);
+				return m.getUncompressed("Unary Op not supported Overlapping: " + op.fn.getClass().getSimpleName(), op.getNumThreads()).unaryOperations(op, null);
 		}
 		else if(Builtin.isBuiltinCode(op.fn, BuiltinCode.ISINF, BuiltinCode.ISNAN, BuiltinCode.ISNA) &&
 			!m.containsValue(op.getPattern()))
 			return new MatrixBlock(r, c, 0); // avoid unnecessary allocation
 		else if(LibMatrixAgg.isSupportedUnaryOperator(op)) {
 			// e.g., cumsum/cumprod/cummin/cumax/cumsumprod
-			return m.getUncompressed(op.toString()).unaryOperations(op, null);
+			return m.getUncompressed("Unary Op not supported: " + op.fn.getClass().getSimpleName(), op.getNumThreads()).unaryOperations(op, null);
 		}
 		else {
 

@@ -218,7 +218,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @param k degree of parallelism
 	 * @return a new uncompressed matrix block containing the contents of this block
 	 */
-	public MatrixBlock decompress(int k) {
+	public synchronized MatrixBlock decompress(int k) {
 		// Early out if empty.
 		if(isEmpty())
 			return new MatrixBlock(rlen, clen, true, 0);
@@ -508,11 +508,16 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
-		if(isOverlapping()) {
+		if(Double.isInfinite(pattern)) {
+			LOG.info("Ignoring replace infinite in compression since it does not contain this value");
+			return this;
+		}
+		else if(isOverlapping()) {
 			final String message = "replaceOperations " + pattern + " -> " + replacement;
 			return getUncompressed(message).replaceOperations(result, pattern, replacement);
 		}
 		else {
+
 			CompressedMatrixBlock ret = new CompressedMatrixBlock(getNumRows(), getNumColumns());
 			final List<AColGroup> prev = getColGroups();
 			final int colGroupsLength = prev.size();
@@ -726,14 +731,14 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that) {
 		MatrixBlock right = getUncompressed(that);
-		return getUncompressed("covOperations").covOperations(op, right);
+		return getUncompressed("covOperations", op.getNumThreads()).covOperations(op, right);
 	}
 
 	@Override
 	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) {
 		MatrixBlock right1 = getUncompressed(that);
 		MatrixBlock right2 = getUncompressed(weights);
-		return getUncompressed("covOperations").covOperations(op, right1, right2);
+		return getUncompressed("covOperations", op.getNumThreads()).covOperations(op, right1, right2);
 	}
 
 	@Override
@@ -866,9 +871,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		}
 
 		if(m2 instanceof CompressedMatrixBlock)
-			m2 = ((CompressedMatrixBlock) m2).getUncompressed("Ternary Operator arg2 " + op.fn.getClass().getSimpleName());
+			m2 = ((CompressedMatrixBlock) m2).getUncompressed("Ternary Operator arg2 " + op.fn.getClass().getSimpleName(),
+				op.getNumThreads());
 		if(m3 instanceof CompressedMatrixBlock)
-			m3 = ((CompressedMatrixBlock) m3).getUncompressed("Ternary Operator arg3 " + op.fn.getClass().getSimpleName());
+			m3 = ((CompressedMatrixBlock) m3).getUncompressed("Ternary Operator arg3 " + op.fn.getClass().getSimpleName(),
+				op.getNumThreads());
 
 		if(s2 != s3 && (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply)) {
 			// SPECIAL CASE for sparse-dense combinations of common +* and -*
@@ -933,20 +940,26 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	public MatrixBlock getUncompressed() {
-		MatrixBlock d_compressed = getCachedDecompressed();
-		if(d_compressed != null)
-			return d_compressed;
-		else if(isEmpty())
-			return new MatrixBlock(getNumRows(), getNumColumns(), true);
-		else if(ConfigurationManager.isParallelMatrixOperations())
-			return this.decompress(InfrastructureAnalyzer.getLocalParallelism());
-		else
-			return this.decompress(1);
+		return getUncompressed((String) null);
 	}
 
 	public MatrixBlock getUncompressed(String operation) {
-		printDecompressWarning(operation);
-		return getUncompressed();
+		return getUncompressed(operation,
+			ConfigurationManager.isParallelMatrixOperations() ? InfrastructureAnalyzer.getLocalParallelism() : 1);
+	}
+
+	public MatrixBlock getUncompressed(String operation, int k) {
+		final MatrixBlock d_compressed = getCachedDecompressed();
+		if(d_compressed != null)
+			return d_compressed;
+		// Print warning if we do not have a cached decompressed version.
+		if(operation != null)
+			printDecompressWarning(operation);
+
+		if(isEmpty())
+			return new MatrixBlock(getNumRows(), getNumColumns(), true);
+
+		return this.decompress(k);
 	}
 
 	private static void printDecompressWarning(String operation) {

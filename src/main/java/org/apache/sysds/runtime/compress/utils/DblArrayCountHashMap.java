@@ -92,8 +92,7 @@ public class DblArrayCountHashMap {
 		Bucket ob = _data[ix];
 		_data[ix] = new Bucket(new DArrCounts(new DblArray(key), _size));
 		_data[ix].n = ob;
-		final int id = _size;
-		_size++;
+		final int id = _size++;
 		if(_size >= LOAD_FACTOR * _data.length)
 			resize();
 		return id;
@@ -125,6 +124,25 @@ public class DblArrayCountHashMap {
 		}
 
 		return ret;
+	}
+
+	public void replaceWithUIDs() {
+		int i = 0;
+		for(Bucket e : _data)
+			while(e != null) {
+				e.v.count = i++;
+				e = e.n;
+			}
+	}
+
+	public int getSumCounts(){
+		int c = 0;
+		for(Bucket e : _data)
+			while(e != null) {
+				c += e.v.count;
+				e = e.n;
+			}
+		return c;
 	}
 
 	public int[] getUnorderedCountsAndReplaceWithUIDs() {

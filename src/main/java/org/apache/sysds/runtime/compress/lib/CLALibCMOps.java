@@ -35,7 +35,7 @@ public class CLALibCMOps {
 		if(cmb.isEmpty())
 			return LibMatrixAgg.aggregateCmCov(cmb, null, null, op.fn);
 		else if(cmb.isOverlapping())
-			return cmb.getUncompressed("cmOperations on overlapping state").cmOperations(op);
+			return cmb.getUncompressed("cmOperations on overlapping state", op.getNumThreads()).cmOperations(op);
 		else {
 			final List<AColGroup> groups = cmb.getColGroups();
 			if(groups.size() == 1)

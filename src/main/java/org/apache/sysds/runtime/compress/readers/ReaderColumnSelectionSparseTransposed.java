@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.readers;
 
+import java.util.Arrays;
+
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -31,59 +33,132 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  */
 public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection {
 
-	private SparseBlock a;
+	// sparse block to iterate through
+	private final SparseBlock a;
 	// current sparse skip positions.
-	private int[] sparsePos = null;
+	private final int[] sparsePos;
 
+	private boolean atEnd = false;
 
 	protected ReaderColumnSelectionSparseTransposed(MatrixBlock data, int[] colIndexes, int rl, int ru) {
 		super(colIndexes, rl, Math.min(ru, data.getNumColumns()));
 		sparsePos = new int[colIndexes.length];
-
 		a = data.getSparseBlock();
-		// Use -1 to indicate that this column is done.
+		_rl = _rl + 1; // correct row since this iterator use the exact row
+
 		for(int i = 0; i < colIndexes.length; i++) {
-			if(a.isEmpty(_colIndexes[i]))
+			final int c = _colIndexes[i];
+			if(a.isEmpty(c)) {
+				atEnd = true;
 				sparsePos[i] = -1;
-			else
-				sparsePos[i] = a.pos(_colIndexes[i]);
+			}
+			else {
+				final int[] aIdx = a.indexes(c);
+				final int pos = a.pos(c);
+				final int len = a.size(c) + pos;
+				final int spa = Arrays.binarySearch(aIdx, pos, len, _rl);
+				if(spa >= 0) {
+					if(aIdx[spa] < _ru)
+						sparsePos[i] = spa;
+					else {
+						sparsePos[i] = -1;
+						atEnd = true;
+					}
+				}
+				else { // spa < 0 or larger.
+					final int spaC = Math.abs(spa + 1);
+					if(spaC < len && aIdx[spaC] < _ru)
+						sparsePos[i] = spaC;
+					else {
+						atEnd = true;
+						sparsePos[i] = -1;
+					}
+				}
+			}
 		}
 	}
 
 	protected DblArray getNextRow() {
-		if(_rl == _ru - 1)
+		if(!atEnd)
+			return getNextRowBeforeEnd();
+		else
+			return getNextRowAtEnd();
+	}
+
+	protected DblArray getNextRowBeforeEnd() {
+		skipToRow();
+		if(_rl >= _ru) { // if done return null
+			_rl = _ru;
 			return null;
-
-		_rl++;
-
-		boolean zeroResult = true;
-		boolean allDone = true;
+		}
 		for(int i = 0; i < _colIndexes.length; i++) {
-			int colidx = _colIndexes[i];
-			if(sparsePos[i] != -1) {
-				allDone = false;
-				final int alen = a.size(colidx) + a.pos(colidx);
-				final int[] aix = a.indexes(colidx);
-				final double[] avals = a.values(colidx);
-				while(sparsePos[i] < alen && aix[sparsePos[i]] < _rl)
-					sparsePos[i] += 1;
-
-				if(sparsePos[i] >= alen) {
-					// Mark this column as done.
+			final int c = _colIndexes[i];
+			final int sp = sparsePos[i];
+			final int[] aix = a.indexes(c);
+			if(aix[sp] == _rl) {
+				final double[] avals = a.values(c);
+				reusableArr[i] = avals[sp];
+				final int spa = sparsePos[i]++;
+				final int len = a.size(c) + a.pos(c) - 1;
+				if(spa >= len || aix[spa] >= _ru) {
 					sparsePos[i] = -1;
-					reusableArr[i] = 0;
+					atEnd = true;
 				}
-				else if(aix[sparsePos[i]] == _rl) {
-					reusableArr[i] = avals[sparsePos[i]];
-					zeroResult = false;
+			}
+			else
+				reusableArr[i] = 0;
+		}
+
+		return reusableReturn;
+	}
+
+	private void skipToRow() {
+		_rl = a.indexes(_colIndexes[0])[sparsePos[0]];
+		for(int i = 1; i < _colIndexes.length; i++)
+			_rl = Math.min(a.indexes(_colIndexes[i])[sparsePos[i]], _rl);
+	}
+
+	protected DblArray getNextRowAtEnd() {
+		// at end
+		skipToRowAtEnd();
+
+		if(_rl == _ru) { // if done return null
+			_rl = _ru;
+			return null;
+		}
+
+		for(int i = 0; i < _colIndexes.length; i++) {
+			int c = _colIndexes[i];
+			final int sp = sparsePos[i];
+			if(sp != -1) {
+				final int[] aix = a.indexes(c);
+				if(aix[sp] == _rl) {
+					final double[] avals = a.values(c);
+					reusableArr[i] = avals[sp];
+					if(++sparsePos[i] >= a.size(c) + a.pos(c))
+						sparsePos[i] = -1;
 				}
 				else
 					reusableArr[i] = 0;
 			}
 		}
-		if(allDone)
-			_rl = _ru - 1;
-		return zeroResult ? emptyReturn : reusableReturn;
+		return reusableReturn;
+	}
 
+	private void skipToRowAtEnd() {
+		boolean allDone = true;
+		int mr = _ru;
+		for(int i = 0; i < _colIndexes.length; i++) {
+			final int sp = sparsePos[i];
+			if(sp != -1) {
+				allDone = false;
+				mr = Math.min(a.indexes(_colIndexes[i])[sp], mr);
+			}
+			else
+				reusableArr[i] = 0;
+		}
+		_rl = mr;
+		if(allDone)
+			_rl = _ru;
 	}
 }

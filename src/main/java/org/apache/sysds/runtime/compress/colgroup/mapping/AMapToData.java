@@ -22,10 +22,12 @@ package org.apache.sysds.runtime.compress.colgroup.mapping;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -305,8 +307,9 @@ public abstract class AMapToData implements Serializable {
 	 * @param cu      The column in m to end at (not inclusive)
 	 * @param indexes The Offset Indexes to iterate through
 	 */
-	public abstract void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu,
-		AOffset indexes);
+	public final void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
+		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), this);
+	}
 
 	/**
 	 * PreAggregate the SparseBlock in the range of rows given.
@@ -317,7 +320,51 @@ public abstract class AMapToData implements Serializable {
 	 * @param ru      The row to end at (not inclusive)
 	 * @param indexes The Offset Indexes to iterate through
 	 */
-	public abstract void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes);
+	public final void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
+		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), this);
+	}
+
+	/**
+	 * PreAggregate the sparseblock in the range of rows given.
+	 * 
+	 * @param sb    Sparse block to preAggregate from
+	 * @param preAV Pre aggregate target
+	 * @param rl    row index in sb
+	 * @param ru    upper row index in sp (not inclusive)
+	 */
+	public final void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru) {
+		if(rl == ru - 1)
+			preAggregateSparseSingleRow(sb, preAV, rl);
+		else
+			preAggregateSparseMultiRow(sb, preAV, rl, ru);
+	}
+
+	private final void preAggregateSparseSingleRow(final SparseBlock sb, final double[] preAV, final int r) {
+		if(sb.isEmpty(r))
+			return;
+		final int apos = sb.pos(r);
+		final int alen = sb.size(r) + apos;
+		final int[] aix = sb.indexes(r);
+		final double[] avals = sb.values(r);
+		for(int j = apos; j < alen; j++)
+			preAV[getIndex(aix[j])] += avals[j];
+	}
+
+	private final void preAggregateSparseMultiRow(final SparseBlock sb, final double[] preAV, final int rl,
+		final int ru) {
+		final int unique = getUnique();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+			final int apos = sb.pos(r);
+			final int alen = sb.size(r) + apos;
+			final int[] aix = sb.indexes(r);
+			final double[] avals = sb.values(r);
+			final int off = unique * (r - rl);
+			for(int j = apos; j < alen; j++)
+				preAV[off + getIndex(aix[j])] += avals[j];
+		}
+	}
 
 	/**
 	 * Get the number of counts of each unique value contained in this map. Note that in the case the mapping is shorter
@@ -326,11 +373,24 @@ public abstract class AMapToData implements Serializable {
 	 * @param counts The object to return.
 	 * @return the Counts
 	 */
-	public int[] getCounts(int[] counts) {
-		final int sz = size();
-		for(int i = 0; i < sz; i++)
-			counts[getIndex(i)]++;
+	public final int[] getCounts(int[] counts) {
+		count(counts);
+
+		if(counts[counts.length - 1] == 0) {
+			int actualUnique = counts.length;
+			for(; actualUnique > 1; actualUnique--) {
+				if(counts[actualUnique - 1] > 0)
+					break;
+			}
+			throw new DMLCompressionException("Invalid number unique expected: " + counts.length + " but is actually: "
+				+ actualUnique + " type: " + getType());
+		}
 		return counts;
+	}
+
+	protected void count(int[] ret) {
+		for(int i = 0; i < size(); i++)
+			ret[getIndex(i)]++;
 	}
 
 	/**
@@ -372,7 +432,6 @@ public abstract class AMapToData implements Serializable {
 	protected void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
 		final int sz = size();
 		final int h = sz % 8;
-
 		for(int r = 0; r < h; r++)
 			td.addToEntry(v, tm.getIndex(r), getIndex(r), nCol);
 
@@ -646,10 +705,41 @@ public abstract class AMapToData implements Serializable {
 	 * @param d Map to copy all values into.
 	 */
 	public void copy(AMapToData d) {
-		final int sz = size();
-		for(int i = 0; i < sz; i++)
-			set(i, d.getIndex(i));
+		if(d.nUnique == 1)
+			return;
+		else if(d instanceof MapToBit)
+			copyBit((MapToBit) d);
+		else if(d instanceof MapToInt)
+			copyInt((MapToInt) d);
+		else {
+			final int sz = size();
+			for(int i = 0; i < sz; i++)
+				set(i, d.getIndex(i));
+		}
 	}
+
+	protected void copyInt(MapToInt d) {
+		copyInt(d.getData());
+	}
+
+	protected void copyBit(MapToBit d) {
+		copyBit(d.getData());
+	}
+
+	public abstract void copyInt(int[] d);
+
+	public abstract void copyBit(BitSet d);
+
+	public int getMax() {
+		int m = -1;
+		for(int i = 0; i < size(); i++) {
+			int v = getIndex(i);
+			m = v > m ? v : m;
+		}
+		return m;
+	}
+
+	public abstract AMapToData resize(int unique);
 
 	@Override
 	public String toString() {

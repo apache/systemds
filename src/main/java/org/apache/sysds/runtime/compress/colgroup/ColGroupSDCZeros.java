@@ -36,9 +36,11 @@ import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
@@ -103,15 +105,17 @@ public class ColGroupSDCZeros extends ASDCZero {
 			return;
 		else if(it.value() >= ru)
 			_indexes.cacheIterator(it, ru);
-		else
-			decompressToDenseBlockDenseDictionary(db, rl, ru, offR, offC, values, it);
+		else{
+			decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, values, it);
+			_indexes.cacheIterator(it, ru);
+		}
 	}
 
 	@Override
-	public final void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+	public final void decompressToDenseBlockDenseDictionaryWithProvidedIterator(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values, AIterator it) {
-			final int last = _indexes.getOffsetToLast();
-		if(it == null || it.value() >= ru  || rl > last)
+		final int last = _indexes.getOffsetToLast();
+		if(it == null || it.value() >= ru || rl > last)
 			return;
 		final boolean post = ru > last;
 		final boolean contiguous = db.isContiguous();
@@ -126,14 +130,12 @@ public class ColGroupSDCZeros extends ASDCZero {
 				decompressToDenseBlockDenseDictionaryPreSingleColOutContiguous(db, ru, offR, offC, values, it, _data);
 			else
 				decompressToDenseBlockDenseDictionaryPreSingleColContiguous(db, rl, ru, offR, offC, values, it);
-			_indexes.cacheIterator(it, ru);
 		}
 		else {
 			if(_colIndexes.length == db.getDim(1))
 				decompressToDenseBlockDenseDictionaryPreAllCols(db, rl, ru, offR, offC, values, it);
 			else
 				decompressToDenseBlockDenseDictionaryPreGeneric(db, rl, ru, offR, offC, values, it);
-			_indexes.cacheIterator(it, ru);
 		}
 	}
 
@@ -459,17 +461,13 @@ public class ColGroupSDCZeros extends ASDCZero {
 		boolean isSparseSafeOp = op.sparseSafe || val0 == 0;
 		if(isSparseSafeOp)
 			return create(_colIndexes, _numRows, _dict.applyScalarOp(op), _indexes, _data, getCachedCounts());
-		else if(op.fn instanceof Plus) {
-			double[] reference = new double[_colIndexes.length];
-			for(int i = 0; i < _colIndexes.length; i++)
-				reference[i] = val0;
-			return ColGroupPFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
+		else if(op.fn instanceof Plus || (op.fn instanceof Minus && op instanceof RightScalarOperator)) {
+			final double[] reference = FORUtil.createReference(_colIndexes.length, val0);
+			return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
 		}
 		else {
-			ADictionary newDict = _dict.applyScalarOp(op);
-			double[] defaultTuple = new double[_colIndexes.length];
-			for(int i = 0; i < _colIndexes.length; i++)
-				defaultTuple[i] = val0;
+			final ADictionary newDict = _dict.applyScalarOp(op);
+			final double[] defaultTuple = FORUtil.createReference(_colIndexes.length, val0);
 			return ColGroupSDC.create(_colIndexes, _numRows, newDict, defaultTuple, _indexes, _data, getCachedCounts());
 		}
 	}
@@ -495,7 +493,7 @@ public class ColGroupSDCZeros extends ASDCZero {
 		}
 		else if(op.fn instanceof Plus) {
 			double[] reference = ColGroupUtils.binaryDefRowLeft(op, v, _colIndexes);
-			return ColGroupPFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
+			return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
 		}
 		else {
 			ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
@@ -514,7 +512,7 @@ public class ColGroupSDCZeros extends ASDCZero {
 		}
 		else if(op.fn instanceof Plus) {
 			double[] def = ColGroupUtils.binaryDefRowRight(op, v, _colIndexes);
-			return ColGroupPFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), def);
+			return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), def);
 		}
 		else {
 			ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);
@@ -638,6 +636,16 @@ public class ColGroupSDCZeros extends ASDCZero {
 		final int nCols = getNumCols();
 		final int nRowsScanned = _data.size();
 		return e.getCost(nRows, nRowsScanned, nCols, nVals, _dict.getSparsity());
+	}
+
+	@Override
+	protected int getIndexesSize() {
+		return _data.size();
+	}
+
+	@Override
+	protected int numRowsToMultiply() {
+		return _data.size();
 	}
 
 	@Override

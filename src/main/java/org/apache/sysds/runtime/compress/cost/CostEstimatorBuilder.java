@@ -50,6 +50,10 @@ public final class CostEstimatorBuilder implements Serializable {
 			addNode(1, n, counter);
 	}
 
+	public CostEstimatorBuilder(InstructionTypeCounter counter) {
+		this.counter = counter;
+	}
+
 	protected ACostEstimate create(boolean isInSpark) {
 		return new ComputationCostEstimator(counter);
 	}
@@ -121,26 +125,16 @@ public final class CostEstimatorBuilder implements Serializable {
 
 	public boolean shouldTryToCompress() {
 		int numberOps = 0;
-		numberOps += counter.scans + counter.leftMultiplications * 2 + counter.rightMultiplications * 2 +
-			counter.compressedMultiplications * 4 + counter.dictionaryOps;
-		numberOps -= counter.decompressions + counter.overlappingDecompressions * 2;
-
-		final int nrMultiplications = counter.leftMultiplications + counter.rightMultiplications +
-			counter.compressedMultiplications;
-		final int nrDecompressions = counter.decompressions + counter.overlappingDecompressions * 2;
-		if(counter.decompressions == 0 && counter.rightMultiplications == counter.overlappingDecompressions &&
-			numberOps > 10)
-			return true;
-		if(nrDecompressions > nrMultiplications || (nrDecompressions > 1 && nrMultiplications < 1))
-			// This condition is added for l2svm and mLogReg y dataset, that is compressing while it should not.
-			return false;
+		numberOps += counter.scans + counter.leftMultiplications + counter.rightMultiplications +
+			counter.compressedMultiplications + counter.dictionaryOps;
+		numberOps -= counter.decompressions + counter.overlappingDecompressions;
 		return numberOps > 4;
-
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
+		sb.append("CostVector: ");
 		sb.append(counter);
 		return sb.toString();
 	}

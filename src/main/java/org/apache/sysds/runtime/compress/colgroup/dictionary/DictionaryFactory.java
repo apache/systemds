@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.bitmap.Bitmap;
 import org.apache.sysds.runtime.compress.bitmap.MultiColBitmap;
 import org.apache.sysds.runtime.compress.utils.DArrCounts;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
+import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -99,18 +100,6 @@ public interface DictionaryFactory {
 			LOG.error("Failed to create dictionary: ", e);
 			return null;
 		}
-
-	}
-
-	public static ADictionary createDelta(DblArrayCountHashMap map, int nCols, boolean addZeroTuple) {
-		final ArrayList<DArrCounts> vals = map.extractValues();
-		final int nVals = vals.size();
-		final double[] resValues = new double[(nVals + (addZeroTuple ? 1 : 0)) * nCols];
-		for(int i = 0; i < nVals; i++) {
-			final DArrCounts dac = vals.get(i);
-			System.arraycopy(dac.key.getData(), 0, resValues, dac.id * nCols, nCols);
-		}
-		return new DeltaDictionary(resValues, nCols);
 	}
 
 	public static ADictionary create(ABitmap ubm) {
@@ -234,6 +223,11 @@ public interface DictionaryFactory {
 		for(int i = 0; i < nVals; i++)
 			System.arraycopy(mcbm.getValues(i), 0, resValues, i * nCols, nCols);
 
+		return new Dictionary(resValues);
+	}
+
+	public static ADictionary create(DoubleCountHashMap map) {
+		final double[] resValues = map.getDictionary();
 		return new Dictionary(resValues);
 	}
 }

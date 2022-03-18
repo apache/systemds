@@ -23,11 +23,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.BitSet;
 
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
-import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToByte extends AMapToData {
@@ -133,14 +131,22 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public void copy(AMapToData d) {
-		if(d instanceof MapToChar) {
-			char[] dd = ((MapToChar) d).getChars();
-			for(int i = 0; i < size(); i++)
-				_data[i] = (byte) dd[i];
+	public void copyInt(int[] d) {
+		for(int i = 0; i < _data.length; i++)
+			_data[i] = (byte) d[i];
+	}
+
+	@Override
+	public void copyBit(BitSet d) {
+		for(int i = d.nextSetBit(0); i >= 0; i = d.nextSetBit(i + 1)) {
+			_data[i] = 1;
 		}
-		else
-			super.copy(d);
+	}
+
+	@Override
+	public void count(int[] ret) {
+		for(int i = 0; i < _data.length; i++)
+			ret[_data[i] & 0xFF]++;
 	}
 
 	@Override
@@ -162,17 +168,28 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public final void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
-		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), _data);
-	}
-
-	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
-		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), _data);
-	}
-
-	@Override
 	public int getUpperBoundValue() {
 		return 255;
+	}
+
+	@Override
+	public AMapToData resize(int unique){
+		final int size = _data.length;
+		AMapToData ret;
+		if(unique <= 1)
+			return new MapToZero(size);
+		else if(unique == 2 && size > 32)
+			ret = new MapToBit(unique, size);
+		else if (unique <= 127){
+			ret = toUByte();
+			ret.setUnique(unique);
+			return ret;
+		}
+		else{
+			setUnique(unique);
+			return this;
+		}
+		ret.copy(this);
+		return ret;
 	}
 }

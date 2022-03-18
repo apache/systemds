@@ -221,8 +221,8 @@ public class CLALibLeftMultBy {
 
 	private static void LMMParallel(List<AColGroup> npa, List<APreAgg> pa, MatrixBlock that, MatrixBlock ret,
 		double[] rowSums, boolean overlapping, int k) {
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			final ExecutorService pool = CommonThreadPool.get(k);
 			final ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
 
 			final int rl = that.getNumRows();
@@ -291,13 +291,12 @@ public class CLALibLeftMultBy {
 				}
 			}
 
-			pool.shutdown();
 		}
-		catch(InterruptedException |
-
-			ExecutionException e) {
+		catch(InterruptedException | ExecutionException e) {
+			pool.shutdown();
 			throw new DMLRuntimeException(e);
 		}
+		pool.shutdown();
 	}
 
 	private static void LMMTaskExec(List<AColGroup> npa, List<APreAgg> pa, MatrixBlock that, MatrixBlock ret, int rl,

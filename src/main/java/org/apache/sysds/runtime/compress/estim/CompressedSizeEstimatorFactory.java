@@ -40,6 +40,8 @@ public interface CompressedSizeEstimatorFactory {
 		final int nCols = cs.transposed ? data.getNumRows() : data.getNumColumns();
 		final double sparsity = data.getSparsity();
 		final int sampleSize = getSampleSize(cs, nRows, nCols, sparsity);
+		if(data.isEmpty())
+			return createExactEstimator(data, cs);
 		return createEstimator(data, cs, sampleSize, k, nRows);
 	}
 

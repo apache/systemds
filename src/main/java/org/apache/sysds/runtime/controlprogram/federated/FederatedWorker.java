@@ -44,6 +44,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.log4j.Logger;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 
 public class FederatedWorker {
@@ -67,7 +68,8 @@ public class FederatedWorker {
 
 	public void run() throws CertificateException, SSLException {
 		log.info("Setting up Federated Worker on port " + _port);
-		final int EVENT_LOOP_THREADS = Math.max(4, Runtime.getRuntime().availableProcessors() * 4);
+		int par_conn = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.FEDERATED_PAR_CONN);
+		final int EVENT_LOOP_THREADS = (par_conn > 0) ? par_conn : InfrastructureAnalyzer.getLocalParallelism();
 		NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
 		ThreadPoolExecutor workerTPE = new ThreadPoolExecutor(1, Integer.MAX_VALUE,
 			10, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(true));

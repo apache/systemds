@@ -28,6 +28,8 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public abstract class ASDCZero extends APreAgg {
+	private static final long serialVersionUID = -69266306137398807L;
+	
 	/** Sparse row indexes for the data */
 	protected AOffset _indexes;
 

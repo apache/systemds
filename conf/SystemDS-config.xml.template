@@ -118,6 +118,12 @@
     <!-- set the federated plan generator (none, [runtime], compile_fed_all, compile_fed_heuristic, compile_cost_based) -->
     <sysds.federated.planner>runtime</sysds.federated.planner>
 
+    <!-- set the degree of parallelism of the federated worker event loop (<=0 means number of virtual cores) -->
+    <sysds.federated.par_conn>0</sysds.federated.par_conn>
+
+    <!-- set the degree of parallelism of the federated worker instructions (<=0 means number of virtual cores) -->
+    <sysds.federated.par_inst>0</sysds.federated.par_inst>
+
     <!-- set buffer pool threshold (max size) in % of total heap -->
     <sysds.caching.bufferpoollimit>15</sysds.caching.bufferpoollimit>
 

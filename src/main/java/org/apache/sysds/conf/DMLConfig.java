@@ -116,6 +116,8 @@ public class DMLConfig
 	public static final String DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT = "sysds.federated.initialization.timeout"; // int seconds
 	public static final String FEDERATED_TIMEOUT = "sysds.federated.timeout"; // single request timeout default -1 to indicate infinite.
 	public static final String FEDERATED_PLANNER = "sysds.federated.planner";
+	public static final String FEDERATED_PAR_INST = "sysds.federated.par_inst";
+	public static final String FEDERATED_PAR_CONN = "sysds.federated.par_conn";
 	public static final int DEFAULT_FEDERATED_PORT = 4040; // borrowed default Spark Port
 	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 2;
 	
@@ -181,6 +183,8 @@ public class DMLConfig
 		_defaultVals.put(DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, "10");
 		_defaultVals.put(FEDERATED_TIMEOUT,      "-1");
 		_defaultVals.put(FEDERATED_PLANNER,      FederatedPlanner.RUNTIME.name());
+		_defaultVals.put(FEDERATED_PAR_CONN,     "-1"); // vcores
+		_defaultVals.put(FEDERATED_PAR_INST,     "-1"); // vcores
 	}
 	
 	public DMLConfig() {

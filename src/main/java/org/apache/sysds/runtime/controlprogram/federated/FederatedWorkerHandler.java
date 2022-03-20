@@ -37,6 +37,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
@@ -48,6 +49,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.Instruction.IType;
 import org.apache.sysds.runtime.instructions.InstructionParser;
@@ -436,8 +438,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		// set the number of threads according to the number of processors on the federated worker
 		if(receivedInstruction.getOperator() instanceof MultiThreadedOperator) {
-			int numProcessors = Runtime.getRuntime().availableProcessors();
-			((MultiThreadedOperator)receivedInstruction.getOperator()).setNumThreads(numProcessors);
+			int par_inst = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.FEDERATED_PAR_INST);
+			((MultiThreadedOperator)receivedInstruction.getOperator())
+				.setNumThreads((par_inst > 0) ? par_inst : InfrastructureAnalyzer.getLocalParallelism());
 		}
 
 		BasicProgramBlock pb = new BasicProgramBlock(null);

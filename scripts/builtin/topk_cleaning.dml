@@ -57,8 +57,9 @@ source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
 source("scripts/builtin/bandit.dml") as bandit;
 
 s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"), Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives,
-  Frame[Unknown] parameters, String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, Integer resource_val = 20, Integer max_iter = 10, Double sample = 1.0,
-  Double expectedIncrease=1.0, Integer seed = -1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, Boolean enablePruning = FALSE, String output)
+  Frame[Unknown] parameters, Frame[String] refSol = as.frame("NaN"), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, Integer resource_val = 20, Integer max_iter = 10,
+  Double sample = 1.0, Double expectedIncrease=1.0, Integer seed = -1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, Boolean enablePruning = FALSE,
+  String output)
   return(Boolean perf)
   # return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores, Frame[Unknown] bestLogical,
   # Frame[Unknown] features, Double dirtyScore, Matrix[Double] evalFunHp)
@@ -138,18 +139,17 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   metaList['distY'] = dist
 
   print("-- Cleaning - Enum Logical Pipelines: ");
-  [bestLogical, con, refChanges] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest,
-  initial_population=logical, seed = seed,  max_iter=max_iter, metaList = metaList,
+  [bestLogical, con, refChanges, acc] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest,
+  initial_population=logical, refSol=refSol, seed = seed,  max_iter=max_iter, metaList = metaList,
   evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, primitives=primitives, param=parameters,
   dirtyScore = (dirtyScore + expectedIncrease), cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)
   t6 = time(); print("---- finalized in: "+(t6-t5)/1e9+"s");
-
   topKPipelines = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); features = as.frame("NULL")
   
   # # [topKPipelines, topKHyperParams, topKScores, features] = 
   perf = bandit(X_train=eXtrain, Y_train=eYtrain, X_test=eXtest, Y_test=eYtest,  metaList=metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, lp=bestLogical, primitives=primitives, param=parameters, baseLineScore=dirtyScore,
-    k=topK, R=resource_val, cv=cv, cvk=cvk, ref=refChanges, enablePruning = enablePruning, output=output, verbose=TRUE);  
+    k=topK, R=resource_val, cv=cv, cvk=cvk, ref=refChanges, seed=seed, enablePruning = enablePruning, output=output, verbose=TRUE);  
   t7 = time(); print("-- Cleaning - Enum Physical Pipelines: "+(t7-t6)/1e9+"s");
 }
 

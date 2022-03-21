@@ -53,7 +53,12 @@ m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
     stop("MSVM: Invalid Y input, containing negative values")
   if(verbose)
     print("Running Multiclass-SVM")
-
+  # Robustness for datasets with missing values (causing NaN gradients)
+  numNaNs = sum(isNaN(X))
+  if( numNaNs > 0 ) {
+    print("msvm: matrix X contains "+numNaNs+" missing values, replacing with 0.")
+    X = replace(target=X, pattern=NaN, replacement=0);
+  }
   num_rows_in_w = ncol(X)
   if(intercept) {
     # append once, and call l2svm always with intercept=FALSE 

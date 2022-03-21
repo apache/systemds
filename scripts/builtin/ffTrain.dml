@@ -72,14 +72,15 @@ source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64, 
   Integer epochs=20, Double learning_rate=0.003, String out_activation, 
   String loss_fcn, Boolean shuffle=FALSE, Double validation_split = 0.0, 
-  Integer seed=-1, Boolean verbose=FALSE) 
+  Integer seed=-1, Integer decay = 0.99, Boolean verbose=FALSE) 
   return (List[unknown] model)
 {
 
   N = nrow(X) # number of samples
   D = ncol(X) # number of features
+  if(min(Y) != max(Y))
+    Y = toOneHot(Y, max(Y))
   t = ncol(Y) # number of targets
-
   if(shuffle) {
     [X, Y] = shuffle(X, Y)
   }
@@ -98,7 +99,10 @@ m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64,
 
   # Init layers
   [W1, b1] = affine::init(D, H1, seed)
-  [W2, b2] = affine::init(H1, t, seed)
+
+  dim = ifelse(t > 1, t, 1)
+  [W2, b2] = affine::init(H1, dim, seed)
+
 
   # Initialize SGD
   lr = learning_rate
@@ -177,7 +181,7 @@ feed_backward = function(Matrix[double] X, List[unknown] layers, List[unknown] c
   p = 0.35 # dropout probability
   
   if (as.scalar(layers["activation"]) != "logits")
-    dout = apply_activation_backward(dout, as.matrix(cache["out2"]), as.scalar(layers["activation"]))
+    dout = apply_activation_backward(dout, as.matrix(cache["outs2"]), as.scalar(layers["activation"]))
   # Layer 2
   [doutd1, dW2, db2] = affine::backward(dout, as.matrix(cache["outd1"]), as.matrix(layers["W2"]), as.matrix(layers["b2"]))
   # Layer 1

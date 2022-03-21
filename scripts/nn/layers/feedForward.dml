@@ -55,11 +55,11 @@ feedForward = function(Matrix[double] X, List[unknown] layers, Boolean predict =
   # layer 2
   out2 = affine::forward(outd1, as.matrix(layers["W2"]), as.matrix(layers["b2"]))
   
-  if (as.scalar(layers["activation"]) == "logits") {
-    cache = list(out1=out1, outr1=outr1, outd1=outd1, maskd1=maskd1, out2=out2)
-  } else {
+  if (as.scalar(layers["activation"]) != "logits") {
     outs2 = apply_activation(out2, as.scalar(layers["activation"]))
     cache = list(out1=out1, outr1=outr1, outd1=outd1, maskd1=maskd1, out2=out2, outs2=outs2)
+  } else {
+    cache = list(out1=out1, outr1=outr1, outd1=outd1, maskd1=maskd1, out2=out2)
   }
 }
 

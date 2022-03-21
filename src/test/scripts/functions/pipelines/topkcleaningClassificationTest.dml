@@ -37,7 +37,7 @@ output=$output
 testCV = as.logical($testCV)
 cvk = as.integer($cvk)
 trainTestSplit = as.double($split)
-evalFunc = "evalClassification"
+evalFunc = "evalClassificationMSVM"
 split = nrow(F) * trainTestSplit
 if(testCV) {
 
@@ -59,7 +59,7 @@ metaInfo = metaInfo[, 2:ncol(metaInfo)]
 # [topKPipelines, topKHyperParams, topKScores, bestLogical, features, dirtyScore, evalHp] = 
 result = topk_cleaning(dataTrain=trainData, dataTest=testData, metaData=metaInfo, primitives=primitives, parameters=param,
   evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),topK=topK, resource_val=resources,
-  expectedIncrease=expectedIncrease, seed = 42, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output) 
+  expectedIncrease=expectedIncrease, seed = 23, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output) 
 
 write(result, $O)
 
@@ -101,4 +101,90 @@ return(Matrix[Double] output, Matrix[Double] error)
 accuracy = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (Matrix[Double] err) {
   [M,yhat,acc] = multiLogRegPredict(X=X, B=B, Y=y, verbose=FALSE);
   err = as.matrix(1-(acc/100));
+}
+
+
+evalClassificationNN = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
+  Matrix[Double] evalFunHp)
+return(Matrix[Double] output, Matrix[Double] error)
+{
+  # evalFunHp = matrix("50 0.0003", rows=1, cols=2)
+  if(is.na(as.scalar(evalFunHp[1,1])))
+  {
+    print("starting gridsearch for NN")
+    nc = max(Y);
+    params = list("learning_rate", "decay")
+    paramRanges = list(10^seq(1,-5), seq(0, 1, 0.1))
+    trainArgs = list(X=X, Y=Y, batch_size=128, epochs=25, learning_rate=-1, out_activation="softmax", 
+    loss_fcn="cel", shuffle=FALSE, validation_split = 0.7, seed=-1, decay=-1, verbose=TRUE)
+    dataArgs = list("X", "Y");
+    [B1,opt] = utils::topkGridSearch(X=X, y=Y, train="ffTrain", predict="ffaccuracy", numB=(ncol(X)+1)*(nc-1),
+      params=params, paramValues=paramRanges, dataArgs=dataArgs, trainArgs=trainArgs, cv=TRUE, cvk=3, verbose=TRUE);
+    evalFunHp = as.matrix(opt) # opt #
+    # opt = matrix("2 10 0.001", rows=1, cols=3)
+    # evalFunHp = opt
+  }
+  if(min(Y) == max(Y))
+  {
+    accuracy = as.matrix(0)
+    a = 0
+  }
+  else {
+    model = ffTrain(X=X, Y=Y, batch_size=128, epochs=25, learning_rate=as.scalar(evalFunHp[1,1]), out_activation="softmax", 
+    loss_fcn="cel", shuffle=FALSE, validation_split = 0.0, decay=as.scalar(evalFunHp[1,2]), seed=-1, verbose=TRUE)
+    prediction = ffPredict(model, Xtest, 64)
+    accuracy = as.matrix(mean(rowIndexMax(prediction) == Ytest))
+    print("predictions: "+toString(prediction))
+    print("accuracy: "+toString(accuracy))
+    error = (Ytest == rowIndexMax(prediction))
+  }
+  output = cbind(accuracy, evalFunHp)
+}
+
+ffaccuracy = function(Matrix[Double] X, Matrix[Double] y, List[Unknown] model) return (Matrix[Double] err) {
+  prediction = ffPredict(model, X, 64)
+  accuracy = sum(y == rowIndexMax(prediction))/nrow(y)
+  print("gridsearch accuracy: "+toString(accuracy))
+  err = as.matrix(1-(accuracy/100));
+}
+
+
+evalClassificationMSVM = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
+  Matrix[Double] evalFunHp)
+return(Matrix[Double] output, Matrix[Double] error)
+{
+  if(is.na(as.scalar(evalFunHp[1,1])))
+  {
+    nc = max(Y);
+    params = list("intercept", "lambda", "epsilon")
+    paramRanges = list(seq(0, 1), 10^seq(1,-3), 10^seq(1,-5));
+    trainArgs = list(X=X, Y=Y, intercept=-1, lambda=-1, epsilon=-1, maxIterations=1000,  verbose=FALSE);
+    dataArgs = list("X", "Y");
+    [B1,opt] = gridSearch(X=X, y=Y, train="msvm", predict="accuracyMSVM", numB=(ncol(X)+1)*(nc),
+      params=params, paramValues=paramRanges, dataArgs=dataArgs, trainArgs=trainArgs, cv=TRUE, cvk=3, verbose=TRUE);
+    evalFunHp = as.matrix(opt) # opt #
+    # opt = matrix("2 10 0.001", rows=1, cols=3)
+    # evalFunHp = opt
+  }
+  if(min(Y) == max(Y))
+  {
+    accuracy = as.matrix(0)
+    a = 0
+  }
+  else {
+    beta = msvm(X=X, Y=Y, intercept=as.scalar(evalFunHp[1,1]), lambda=as.scalar(evalFunHp[1,2]), epsilon=as.scalar(evalFunHp[1,3]), 
+      maxIterations=1000, verbose=FALSE);
+    yhat = msvmPredict(X=Xtest, W=beta);
+    yhat = rowIndexMax(yhat)
+    accuracy = mean(yhat == Ytest) * 100
+    error = yhat != Ytest
+    accuracy = as.matrix(accuracy)
+  }
+  output = cbind(accuracy, evalFunHp)
+}
+accuracyMSVM = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (Matrix[Double] err) {
+  yhat = msvmPredict(X=X, W=B);
+  yhat = rowIndexMax(yhat)
+  acc = mean(yhat == y)
+  err = as.matrix(1-(acc));
 }

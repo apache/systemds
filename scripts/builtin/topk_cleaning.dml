@@ -149,7 +149,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   # # [topKPipelines, topKHyperParams, topKScores, features] = 
   perf = bandit(X_train=eXtrain, Y_train=eYtrain, X_test=eXtest, Y_test=eYtest,  metaList=metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, lp=bestLogical, primitives=primitives, param=parameters, baseLineScore=dirtyScore,
-    k=topK, R=resource_val, cv=cv, cvk=cvk, ref=refChanges, enablePruning = enablePruning, output=output, verbose=TRUE);  
+    k=topK, R=resource_val, cv=cv, cvk=cvk, ref=refChanges, seed=seed, enablePruning = enablePruning, output=output, verbose=TRUE);  
   t7 = time(); print("-- Cleaning - Enum Physical Pipelines: "+(t7-t6)/1e9+"s");
 }
 

@@ -60,7 +60,6 @@ return (Frame[Unknown] output, boolean converged, Double refChanges)
 
   finalOutput = list()
   mask = as.matrix(metaList['mask'])
-  num_exec = 1
   prefix = as.scalar(ctx["prefix"]);  
   iter = 1
   populationLength = 0
@@ -71,13 +70,12 @@ return (Frame[Unknown] output, boolean converged, Double refChanges)
 
   # unrolled by physical pipelines
   pipelines = frame(0, rows=nrow(primitives)^ncol(primitives), cols=max(ncol(initial_population), ncol(ref)))
-  parfor(i in 1:nrow(initial_population), check = 0) { 
+  for(i in 1:nrow(initial_population)) { 
     pconf = bandit::get_physical_configurations(initial_population[i], 0, primitives)
     end = end + nrow(pconf)
     pipelines[start:end, 1:ncol(pconf)] = pconf
     start = end + 1
   }
-
   pipelines = removeEmpty(target = pipelines, margin="rows") 
   if(sum(mask) > 0)
   {
@@ -94,11 +92,11 @@ return (Frame[Unknown] output, boolean converged, Double refChanges)
   while(!converged & iter <= max_iter)
   {
     populationLength = max(populationLength, ncol(population))
-    id = seq(1, nrow(population))
+    id = matrix(seq(1, nrow(population)*2), rows=nrow(population), cols=2)
     print(prefix+" EnumLP iteration "+iter+"/"+as.integer(max_iter)+":" );
     # # # execute the physical pipelines
-    [outPip, outHp, p, refChanges] = bandit::run_with_hyperparam(cbind(as.frame(id), population), 
-      num_exec, X, y, Xtest, ytest, metaList, evaluationFunc, evalFunHp, param, cv, cvk, 0, FALSE, TRUE)
+    [outPip, outHp, p, refChanges] = bandit::run_with_hyperparam(ph_pip=cbind(as.frame(id), population),
+      X=X, Y=y, Xtest=Xtest, Ytest=ytest, metaList=metaList, evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, param=param, cv=cv, cvk=cvk, seed=seed, default=TRUE)
     # # sort the configurations score-wise
     actPip = cbind(as.frame(outPip[, 1]), as.frame(refChanges))
     actPip = cbind(actPip, population)
@@ -115,7 +113,7 @@ return (Frame[Unknown] output, boolean converged, Double refChanges)
     children = frame(0, rows=populationSize, cols=ncol(sortedPipelines))
     sortedPipelines = sortedPipelines[, 3:ncol(sortedPipelines)]
     # # randomly pick the pipelines for transitions
-    pipRand = sample(nrow(sortedPipelines), populationSize, TRUE)
+    pipRand = sample(nrow(sortedPipelines), populationSize, TRUE, seed)
     if(!converged) {
       parfor(i in 1:nrow(children), check=0) {
         idxR = (nrow(children) * (iter - 1)) + i
@@ -129,7 +127,7 @@ return (Frame[Unknown] output, boolean converged, Double refChanges)
         if(random == 1)
           c1 = addition(top, allOps[as.scalar(opToAdd[idxR])]) 
         else if(random == 2)
-          c1 = mutation(top) 
+          c1 = mutation(top, seed) 
         else if(random == 3)
           c1 = removal(top, as.scalar(opToRemove[idxR])) 
         
@@ -159,8 +157,8 @@ return (Frame[Unknown] output, boolean converged, Double refChanges)
   output = removeEmpty(target=output, margin="rows")
   output = frameSort(output, sort_mask, FALSE)
   refChanges = as.double(as.scalar(output[nrow(output), 2]))
-  halfing = max(floor(nrow(output)/2), 1)
-  output = output[halfing:nrow(output), 3:ncol(output)]
+  # halfing = max(floor(nrow(output)/2), 1)
+  output = output[,3:ncol(output)]
 }
 
 addition = function(Frame[Unknown] top, Frame[Unknown] allOps)
@@ -169,12 +167,12 @@ return (Frame [Unknown] child)
   child = cbind(allOps, top)
 }
 
-mutation = function(Frame[Unknown] child)
+mutation = function(Frame[Unknown] child, Integer seed)
 return (Frame [Unknown] mChild)
 {
   if(ncol(child) >= 2)
   {
-    r = sample(ncol(child), 2)
+    r = sample(ncol(child), 2, FALSE, seed)
     r1 = as.scalar(r[1,1])
     r2 = as.scalar(r[2,1])
     temp = child[1, r1]

@@ -371,16 +371,19 @@ public class FederationUtils {
 				return new DoubleObject(aggMean(ffr, map).getValue(0,0));
 			}
 			else if(aop.aggOp.increOp.fn instanceof CM) {
-				double var = ((ScalarObject) ffr[0].get().getData()[0]).getDoubleValue();
-				double mean = ((ScalarObject) meanFfr[0].get().getData()[0]).getDoubleValue();
-				long size = map.getFederatedRanges()[0].getSize();
-				for(int i = 0; i < ffr.length - 1; i++) {
-					long l = size + map.getFederatedRanges()[i+1].getSize();
-					double k = ((size * var) + (map.getFederatedRanges()[i+1].getSize() * ((ScalarObject) ffr[i+1].get().getData()[0]).getDoubleValue())) / l;
-					var = k + (size * map.getFederatedRanges()[i+1].getSize()) * Math.pow((mean - ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue()) / l, 2);
-					mean = (mean *  size + ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue() * (map.getFederatedRanges()[i+1].getSize())) / l;
-					size = l;
+				long size1 = map.getFederatedRanges()[0].getSize();
+				double mean1 = ((ScalarObject) meanFfr[0].get().getData()[0]).getDoubleValue();
+				double squaredM1 = ((ScalarObject) ffr[0].get().getData()[0]).getDoubleValue() * (size1 - 1);
+				for(int i = 1; i < ffr.length; i++) {
+					long size2 = map.getFederatedRanges()[i].getSize();
+					double delta = ((ScalarObject) meanFfr[i].get().getData()[0]).getDoubleValue() - mean1;
+					double squaredM2 =  ((ScalarObject) ffr[i].get().getData()[0]).getDoubleValue() * (size2 - 1);
+					squaredM1 = squaredM1 + squaredM2 + (Math.pow(delta, 2) * size1 * size2 / (size1 + size2));
+
+					size1 += size2;
+					mean1 = mean1 + delta * size2 / size1;
 				}
+				double var = squaredM1 / (size1 - 1);
 				return new DoubleObject(var);
 
 			}

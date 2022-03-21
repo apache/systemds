@@ -34,6 +34,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.PickByCount.OperationTypes;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -174,6 +176,49 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			getSingleQuantileResult(ret, ec, fedMap, varID, average, false, (int) vectorLength);
 	}
 
+	public <T> void getEquiHeightBins(FrameObject inFrame, int colID, double[] quantiles) {
+		FederationMap fedMap = inFrame.getFedMapping();
+
+		// Find min and max
+		long varID = FederationUtils.getNextFedDataID();
+		List<double[]> minMax = new ArrayList<>();
+		fedMap.mapParallel(varID, (range, data) -> {
+			try {
+				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
+					FederatedRequest.RequestType.EXEC_UDF, -1,
+					new QuantilePickFEDInstruction.MinMax(data.getVarID()))).get();
+				if(!response.isSuccessful())
+					response.throwExceptionFromResponse();
+				double[] rangeMinMax = (double[]) response.getData()[0];
+				minMax.add(rangeMinMax);
+
+				return null;
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		});
+
+		// Find weights sum, min and max
+		double globalMin = Double.MAX_VALUE, globalMax = Double.MIN_VALUE, vectorLength = inFrame.getNumColumns() == 2 ? 0 : inFrame.getNumRows(), sumWeights = 0.0;
+		for(double[] values : minMax) {
+			globalMin = Math.min(globalMin, values[0]);
+			globalMax = Math.max(globalMax, values[1]);
+			sumWeights += values[3];
+		}
+
+		// If multiple quantiles take first histogram and reuse bins, otherwise recursively get bin with result
+		int numBuckets = 256; // (int) Math.round(in.getNumRows() / 2.0);
+
+		T ret = createHistogram(inFrame, (int) vectorLength, globalMin, globalMax, numBuckets, -1, false);
+
+		// Compute and set results
+		if(quantiles != null && quantiles.length > 1) {
+			computeMultipleQuantiles(ec, in, (Map<ImmutablePair<Double, Double>, Integer>) ret, quantiles, (int) vectorLength, varID, _type);
+		} else
+			getSingleQuantileResult(ret, ec, fedMap, varID, false, false, (int) vectorLength);
+	}
+
 	private <T> void computeMultipleQuantiles(ExecutionContext ec, MatrixObject in, Map<ImmutablePair<Double, Double>, Integer> buckets, double[] quantiles, int vectorLength, long varID, OperationTypes type) {
 		MatrixBlock out = new MatrixBlock(quantiles.length, 1, false);
 		ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>>[] bucketsWithIndex = new ImmutableTriple[quantiles.length];
@@ -282,7 +327,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		ec.setScalarOutput(output.getName(), new DoubleObject(result));
 	}
 
-	public <T> T createHistogram(MatrixObject in, int vectorLength,  double globalMin, double globalMax, int numBuckets, int quantileIndex, boolean average) {
+	public <T> T createHistogram(CacheableData in, int vectorLength,  double globalMin, double globalMax, int numBuckets, int quantileIndex, boolean average) {
 		FederationMap fedMap = in.getFedMapping();
 
 		Map<ImmutablePair<Double, Double>, Integer> buckets = new LinkedHashMap<>();

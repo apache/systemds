@@ -26,6 +26,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
@@ -42,6 +43,11 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	public static final String MAX_PREFIX = "max";
 	public static final String NBINS_PREFIX = "nbins";
 	private static final long serialVersionUID = 1917445005206076078L;
+
+	public int getNumBin() {
+		return _numBin;
+	}
+
 	protected int _numBin = -1;
 	private BinMethod _binMethod = BinMethod.EQUI_WIDTH;
 

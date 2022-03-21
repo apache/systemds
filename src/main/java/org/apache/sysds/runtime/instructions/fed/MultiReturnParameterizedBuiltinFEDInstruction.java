@@ -199,11 +199,49 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		});
 
 		// compute quantiles to pick
+		Map<Integer, double[]> quantilesPerColumn = new HashMap<>();
 		for(MultiColumnEncoder multiColumnEncoder : encoders.values()) {
-			multiColumnEncoder.getColumnEncoders()
+			for(Encoder enc : multiColumnEncoder.getColumnEncoders()) {
+				if(enc instanceof ColumnEncoderBin && ((ColumnEncoderBin) enc).getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
+					double range = (double) fin.getNumRows() / ((ColumnEncoderBin) enc).getNumBin();
+					double[] quantiles = new double[((ColumnEncoderBin) enc).getNumBin()-1];
+					for(int i = 0; i < quantiles.length; i++) {
+						quantiles[i] = range * (i + 1);
+					}
+					quantilesPerColumn.put(((ColumnEncoderBin) enc).getColID(), quantiles);
+				}
+			}
 		}
 
-//		new QuantilePickFEDInstruction(null, input1, new CPOperand());
+		// calculate all quantiles
+		Map<Integer, double[]> equiHeightBinsPerColumn = new HashMap<>();
+		for(Map.Entry<Integer, double[]> colQuantiles : quantilesPerColumn.entrySet()) {
+			// TODO
+			new QuantilePickFEDInstruction(null, input1, new CPOperand());
+		}
+
+		// encoder build
+		fedMapping.forEachParallel((range, data) -> {
+			int columnOffset = (int) range.getBeginDims()[1];
+
+			// create an encoder with the given spec. The columnOffset (which is 0 based) has to be used to
+			// tell the federated worker how much the indexes in the spec have to be offset.
+			Future<FederatedResponse> responseFuture = data.executeFederatedOperation(new FederatedRequest(
+				RequestType.EXEC_UDF, -1, new BuildFrameEncoderWithEqualHeight(data.getVarID(), encoders.get(range), equiHeightBinsPerColumn));
+			// collect responses with encoders
+			try {
+				FederatedResponse response = responseFuture.get();
+				MultiColumnEncoder encoder = (MultiColumnEncoder) response.getData()[0];
+				// merge this encoder into a composite encoder
+				synchronized(globalEncoder) {
+					globalEncoder.mergeAt(encoder, columnOffset, (int) (range.getBeginDims()[0] + 1));
+				}
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException("Federated encoder creation failed: ", e);
+			}
+			return null;
+		});
 
 		// sort for consistent encoding in local and federated
 		if(ColumnEncoderRecode.SORT_RECODE_MAP) {
@@ -327,9 +365,9 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 	public static class BuildFrameEncoderWithEqualHeight extends FederatedUDF {
 		private static final long serialVersionUID = -406398659198055525L;
 		private final MultiColumnEncoder _encoder;
-		private final double[] _quantiles;
+		private final Map<Integer, double[]> _quantiles;
 
-		public BuildFrameEncoderWithEqualHeight(long input, MultiColumnEncoder encoder, double[] quantiles) {
+		public BuildFrameEncoderWithEqualHeight(long input, MultiColumnEncoder encoder, Map<Integer, double[]> quantiles) {
 			super(new long[] {input});
 			_encoder = encoder;
 			_quantiles = quantiles;
@@ -339,7 +377,6 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			FrameObject fo = (FrameObject) data[0];
 			FrameBlock fb = fo.acquireRead();
-			String[] colNames = fb.getColumnNames();
 
 			// build necessary structures for encoding
 			_encoder.build(fb, 1, _quantiles);
@@ -347,7 +384,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			//FIXME how to merge later
 
 			// create federated response
-			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {_encoder, fb.getColumnNames()});
+			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {_encoder});
 		}
 
 		@Override

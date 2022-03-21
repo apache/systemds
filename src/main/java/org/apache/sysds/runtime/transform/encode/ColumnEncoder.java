@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -215,6 +216,11 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	public void build(CacheBlock in, double[] equiHeightMaxs) {
 		// do nothing
 	}
+
+	public void build(CacheBlock in, Map<Integer, double[]> equiHeightMaxs) {
+		// do nothing
+	}
+
 
 	/**
 	 * Merges another encoder, of a compatible type, in after a certain position. Resizes as necessary.

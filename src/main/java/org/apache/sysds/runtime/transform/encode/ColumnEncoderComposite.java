@@ -106,12 +106,13 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(CacheBlock in, double[] equiHeightMaxs) {
+	public void build(CacheBlock in, Map<Integer, double[]> equiHeightMaxs) {
 		for(ColumnEncoder columnEncoder : _columnEncoders)
-			if(columnEncoder instanceof ColumnEncoderBin && ((ColumnEncoderBin) columnEncoder).getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT)
-				columnEncoder.build(in, equiHeightMaxs);
-			else
+			if(columnEncoder instanceof ColumnEncoderBin && ((ColumnEncoderBin) columnEncoder).getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
+				columnEncoder.build(in, equiHeightMaxs.get(columnEncoder.getColID()));
+			} else {
 				columnEncoder.build(in);
+			}
 	}
 
 	@Override

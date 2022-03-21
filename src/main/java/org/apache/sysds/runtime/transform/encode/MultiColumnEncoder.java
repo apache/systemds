@@ -261,7 +261,7 @@ public class MultiColumnEncoder implements Encoder {
 			legacyBuild((FrameBlock) in);
 	}
 
-	public void build(CacheBlock in, int k, double[] equiHeightBinMaxs) {
+	public void build(CacheBlock in, int k, Map<Integer, double[]> equiHeightBinMaxs) {
 		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
 			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
 		if(_nPartitions == null) //happens if this method is directly called

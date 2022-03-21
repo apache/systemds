@@ -41,6 +41,12 @@
 m_msvmPredict = function(Matrix[Double] X, Matrix[Double] W)
   return(Matrix[Double] YRaw, Matrix[Double] Y)
 {
+  # Robustness for datasets with missing values 
+  numNaNs = sum(isNaN(X))
+  if( numNaNs > 0 ) {
+    print("msvm: matrix X contains "+numNaNs+" missing values, replacing with 0.")
+    X = replace(target=X, pattern=NaN, replacement=0);
+  }
   if(ncol(X) != nrow(W)){
     if(ncol(X) + 1 != nrow(W)){
       stop("MSVM Predict: Invalid shape of W ["+ncol(W)+","+nrow(W)+"] or X ["+ncol(X)+","+nrow(X)+"]")

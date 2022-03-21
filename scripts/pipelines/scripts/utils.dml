@@ -202,14 +202,12 @@ return(Frame[Unknown] data)
   # step 2 fix invalid lengths
   # q0 = 0.05
   # q1 = 0.95
-  # print(prefix+" fixing invalid lengths between "+q0+" and "+q1+" quantile");
 
-  # [train, mask, qlow, qup] = fixInvalidLengths(train, mask, q0, q1)
+  # [data, mask, qlow, qup] = fixInvalidLengths(data, mask, q0, q1)
 
   
   # step 3 fix swap values
-  # print(prefix+" value swap fixing");
-  # train = valueSwap(train, schema)
+  # data = valueSwap(data, schema)
 
   # step 3 drop invalid types
   data = dropInvalidType(data, schema)
@@ -237,16 +235,3 @@ return(Frame[Unknown] data)
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

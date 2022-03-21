@@ -375,8 +375,8 @@ SMOTE  = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask, Integ
 return (Matrix[Double] X, Matrix[Double] Y)
 {
   # get the class count 
-  for(k in 1:max(Y)) {
-    classes = table(Y, 1)
+  classes = table(Y, 1)
+  for(k in 1:nrow(classes) - 1) {
     minClass = min(classes)
     maxClass = max(classes)
     diff = (maxClass - minClass)/sum(classes)

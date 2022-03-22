@@ -181,8 +181,9 @@ public abstract class APreAgg extends AColGroupValue {
 		else {
 			final boolean left = shouldPreAggregateLeft(lg);
 			if(shouldDirectMultiply(lg, leftIdx.length, rightIdx.length, left))
-				throw new NotImplementedException();
-			else if(left) {
+				LOG.warn("Not implemented direct tsmm colgroup");
+
+			if(left) {
 				final ADictionary lpa = this.preAggregateThatIndexStructure(lg);
 				if(lpa != null)
 					DictLibMatrixMult.TSMMToUpperTriangle(lpa, _dict, leftIdx, rightIdx, result);
@@ -235,10 +236,16 @@ public abstract class APreAgg extends AColGroupValue {
 			DictLibMatrixMult.TSMMDictionaryWithScaling(rDict, getCounts(), leftIdx, rightIdx, result);
 		else if(sameIdx)
 			DictLibMatrixMult.MMDictsWithScaling(lDict, rDict, leftIdx, rightIdx, result, getCounts());
-		else if(shouldPreAggregateLeft(lhs)) // left preAgg
-			DictLibMatrixMult.MMDicts(lDict, lhs.preAggregateThatIndexStructure(this), leftIdx, rightIdx, result);
-		else // right preAgg
-			DictLibMatrixMult.MMDicts(this.preAggregateThatIndexStructure(lhs), rDict, leftIdx, rightIdx, result);
+		else if(shouldPreAggregateLeft(lhs)) {// left preAgg
+			final ADictionary lhsPA = lhs.preAggregateThatIndexStructure(this);
+			if(lhsPA != null)
+				DictLibMatrixMult.MMDicts(lDict, lhsPA, leftIdx, rightIdx, result);
+		}
+		else {// right preAgg
+			final ADictionary rhsPA = preAggregateThatIndexStructure(lhs);
+			if(rhsPA != null)
+				DictLibMatrixMult.MMDicts(rhsPA, rDict, leftIdx, rightIdx, result);
+		}
 
 	}
 

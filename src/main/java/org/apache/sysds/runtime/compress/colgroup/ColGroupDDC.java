@@ -63,6 +63,7 @@ public class ColGroupDDC extends APreAgg {
 				+ dict.getNumberOfValues(colIndexes.length));
 		_zeros = false;
 		_data = data;
+		
 	}
 
 	protected static AColGroup create(int[] colIndexes, int numRows, ADictionary dict, AMapToData data,

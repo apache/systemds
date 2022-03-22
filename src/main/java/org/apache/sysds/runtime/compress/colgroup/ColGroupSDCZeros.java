@@ -110,8 +110,8 @@ public class ColGroupSDCZeros extends ASDCZero {
 	@Override
 	public final void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values, AIterator it) {
-			final int last = _indexes.getOffsetToLast();
-		if(it == null || it.value() >= ru  || rl > last)
+		final int last = _indexes.getOffsetToLast();
+		if(it == null || it.value() >= ru || rl > last)
 			return;
 		final boolean post = ru > last;
 		final boolean contiguous = db.isContiguous();
@@ -640,8 +640,13 @@ public class ColGroupSDCZeros extends ASDCZero {
 		return e.getCost(nRows, nRowsScanned, nCols, nVals, _dict.getSparsity());
 	}
 
-	@Override 
-	protected int getIndexesSize(){
+	@Override
+	protected int getIndexesSize() {
+		return _data.size();
+	}
+
+	@Override
+	protected int numRowsToMultiply() {
 		return _data.size();
 	}
 

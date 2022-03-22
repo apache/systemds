@@ -658,6 +658,11 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
+	protected  int numRowsToMultiply(){
+		return getCounts()[0];
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

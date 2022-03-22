@@ -344,9 +344,65 @@ public class DictLibMatrixMult {
 
 	protected static void MMToUpperTriangleSparseDense(SparseBlock left, double[] right, int[] rowsLeft, int[] colsRight,
 		MatrixBlock result) {
+		final int loc = location(rowsLeft, colsRight);
+		if(loc < 0)
+			MMToUpperTriangleSparseDenseAllUpperTriangle(left, right, rowsLeft, colsRight, result);
+		else if(loc > 0)
+			MMToUpperTriangleSparseDenseAllLowerTriangle(left, right, rowsLeft, colsRight, result);
+		else
+			MMToUpperTriangleSparseDenseDiagonal(left, right, rowsLeft, colsRight, result);
+	}
+
+	protected static void MMToUpperTriangleSparseDenseAllUpperTriangle(SparseBlock left, double[] right, int[] rowsLeft,
+		int[] colsRight, MatrixBlock result) {
 		final double[] resV = result.getDenseBlockValues();
 		final int commonDim = Math.min(left.numRows(), right.length / colsRight.length);
 		final int resCols = result.getNumColumns();
+		for(int i = 0; i < commonDim; i++) {
+			if(left.isEmpty(i))
+				continue;
+			final int apos = left.pos(i);
+			final int alen = left.size(i) + apos;
+			final int[] aix = left.indexes(i);
+			final double[] leftVals = left.values(i);
+			final int offRight = i * colsRight.length;
+			for(int k = apos; k < alen; k++) {
+				final int rowOut = rowsLeft[aix[k]];
+				final double vl = leftVals[k];
+				for(int j = 0; j < colsRight.length; j++)
+					resV[colsRight[j] * resCols + rowOut] += vl * right[offRight + j];
+			}
+		}
+	}
+
+	protected static void MMToUpperTriangleSparseDenseAllLowerTriangle(SparseBlock left, double[] right, int[] rowsLeft,
+		int[] colsRight, MatrixBlock result) {
+		final double[] resV = result.getDenseBlockValues();
+		final int commonDim = Math.min(left.numRows(), right.length / colsRight.length);
+		final int resCols = result.getNumColumns();
+		for(int i = 0; i < commonDim; i++) {
+			if(left.isEmpty(i))
+				continue;
+			final int apos = left.pos(i);
+			final int alen = left.size(i) + apos;
+			final int[] aix = left.indexes(i);
+			final double[] leftVals = left.values(i);
+			final int offRight = i * colsRight.length;
+			for(int k = apos; k < alen; k++) {
+				final int rowOut = rowsLeft[aix[k]] * resCols;
+				final double vl = leftVals[k];
+				for(int j = 0; j < colsRight.length; j++)
+					resV[colsRight[j] + rowOut] += vl * right[offRight + j];
+			}
+		}
+	}
+
+	protected static void MMToUpperTriangleSparseDenseDiagonal(SparseBlock left, double[] right, int[] rowsLeft,
+		int[] colsRight, MatrixBlock result) {
+		final double[] resV = result.getDenseBlockValues();
+		final int commonDim = Math.min(left.numRows(), right.length / colsRight.length);
+		final int resCols = result.getNumColumns();
+		// generic
 		for(int i = 0; i < commonDim; i++) {
 			if(left.isEmpty(i))
 				continue;
@@ -409,11 +465,9 @@ public class DictLibMatrixMult {
 			for(int i = 0; i < rowsLeft.length; i++) {
 				final int rowOut = rowsLeft[i] * resCols;
 				final double vl = left[offL + i];
-				if(vl != 0) {
-					for(int j = 0; j < colsRight.length; j++)
-						resV[colsRight[j] + rowOut] += vl * right[offR + j];
+				for(int j = 0; j < colsRight.length; j++)
+					resV[colsRight[j] + rowOut] += vl * right[offR + j];
 
-				}
 			}
 		}
 	}
@@ -429,12 +483,10 @@ public class DictLibMatrixMult {
 			for(int i = 0; i < rowsLeft.length; i++) {
 				final int rowOut = rowsLeft[i];
 				final double vl = left[offL + i];
-				if(vl != 0) {
-					for(int j = 0; j < colsRight.length; j++) {
-						final double vr = right[offR + j];
-						final int colOut = colsRight[j];
-						addToUpperTriangle(resCols, rowOut, colOut, resV, vl * vr);
-					}
+				for(int j = 0; j < colsRight.length; j++) {
+					final double vr = right[offR + j];
+					final int colOut = colsRight[j];
+					addToUpperTriangle(resCols, rowOut, colOut, resV, vl * vr);
 				}
 			}
 		}

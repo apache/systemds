@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetChar;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetSingle;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetTwo;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -218,6 +219,11 @@ public class OffsetTests {
 				case SINGLE_OFFSET:
 					if(data.length == 1) {
 						estimatedSize = OffsetSingle.estimateInMemorySize();
+						break;
+					}
+				case TWO_OFFSET:
+					if(data.length == 2) {
+						estimatedSize = OffsetTwo.estimateInMemorySize();
 						break;
 					}
 				case BYTE:

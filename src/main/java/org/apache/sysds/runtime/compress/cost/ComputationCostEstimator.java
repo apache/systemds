@@ -122,6 +122,7 @@ public class ComputationCostEstimator extends ACostEstimate {
 		cost += decompressionCost(nVals, nCols, nRowsScanned, sparsity);
 		cost += overlappingDecompressionCost(nRowsScanned);
 		cost += compressedMultiplicationCost(nRowsScanned, nVals, nCols, sparsity);
+		cost += 100; // base cost 
 		return cost;
 	}
 

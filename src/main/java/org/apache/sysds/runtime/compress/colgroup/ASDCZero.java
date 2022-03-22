@@ -187,4 +187,6 @@ public abstract class ASDCZero extends APreAgg {
 	public AIterator getIterator(int row) {
 		return _indexes.getIterator(row);
 	}
+
+	protected abstract int getIndexesSize();
 }

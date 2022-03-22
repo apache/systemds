@@ -235,6 +235,8 @@ public class CompressedMatrixBlockFactory {
 
 		// clear extra data from analysis
 		compressionGroups.clearMaps();
+		informationExtractor.clearNNZ();
+		
 		transposePhase();
 		compressPhase();
 		finalizePhase();

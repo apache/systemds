@@ -67,7 +67,7 @@ public class OffsetChar extends AOffset {
 			}
 			ov = nv;
 		}
-
+		toString();
 	}
 
 	private OffsetChar(char[] offsets, int offsetToFirst, int offsetToLast) {

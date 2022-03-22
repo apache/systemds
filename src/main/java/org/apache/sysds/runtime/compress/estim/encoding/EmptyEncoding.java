@@ -23,10 +23,7 @@ import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 
 /** Empty encoding for cases where the entire group of columns is zero */
 public class EmptyEncoding implements IEncode {
-
-	/** always a empty int array */
-	private static final int[] counts = new int[] {};
-
+	
 	// empty constructor
 	public EmptyEncoding() {
 	}
@@ -50,6 +47,6 @@ public class EmptyEncoding implements IEncode {
 
 	@Override
 	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
-		return new EstimationFactors(cols.length, 0, 0, nRows, counts, 0, nRows, false, true, 0, 0);
+		return new EstimationFactors(cols.length, 0, 0);
 	}
 }

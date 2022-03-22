@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.compress.estim;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,7 +45,7 @@ public class CompressedSizeInfoColGroup {
 	private final double _cardinalityRatio;
 	private final long _minSize;
 	private final CompressionType _bestCompressionType;
-	private final Map<CompressionType, Long> _sizes;
+	private final EnumMap<CompressionType, Long> _sizes;
 
 	/**
 	 * Map containing a mapping to unique values, but not necessarily the actual values contained in this column group
@@ -81,9 +81,9 @@ public class CompressedSizeInfoColGroup {
 		_cols = columns;
 		_facts = new EstimationFactors(columns.length, 0, nRows);
 		_cardinalityRatio = 0;
-		_sizes = new HashMap<>();
+		_sizes = new EnumMap<>(CompressionType.class);
 		final CompressionType ct = CompressionType.EMPTY;
-		_sizes.put(ct, getCompressionSize(columns.length, ct, _facts));
+		_sizes.put(ct,  ColGroupSizes.estimateInMemorySizeEMPTY(columns.length));
 		_bestCompressionType = ct;
 		_minSize = _sizes.get(ct);
 		_map = null;
@@ -94,7 +94,7 @@ public class CompressedSizeInfoColGroup {
 		if(_sizes != null) {
 			Long s = _sizes.get(ct);
 			if(s == null)
-				throw new DMLCompressionException("Asked fro valid " + ct + " but got null. contains:" + _sizes);
+				throw new DMLCompressionException("Asked for valid " + ct + " but got null. contains:" + _sizes);
 			return _sizes.get(ct);
 		}
 		else
@@ -167,9 +167,9 @@ public class CompressedSizeInfoColGroup {
 		return _facts.numOffs < _facts.numRows;
 	}
 
-	private static Map<CompressionType, Long> calculateCompressionSizes(int numCols, EstimationFactors fact,
+	private static EnumMap<CompressionType, Long> calculateCompressionSizes(int numCols, EstimationFactors fact,
 		Set<CompressionType> validCompressionTypes) {
-		Map<CompressionType, Long> res = new HashMap<>();
+		EnumMap<CompressionType, Long> res = new EnumMap<CompressionType, Long>(CompressionType.class);
 		for(CompressionType ct : validCompressionTypes) {
 			long compSize = getCompressionSize(numCols, ct, fact);
 			if(compSize > 0)
@@ -234,11 +234,7 @@ public class CompressedSizeInfoColGroup {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
 		sb.append("cols: " + Arrays.toString(_cols));
-		sb.append(" Best Type: " + _bestCompressionType);
-		sb.append(" Cardinality: ");
-		sb.append(_cardinalityRatio);
-		sb.append(" mostCommonFraction: ");
-		sb.append(getMostCommonFraction());
+		sb.append(String.format(" common: %4.3f", getMostCommonFraction()));
 		sb.append(" Sizes: ");
 		sb.append(_sizes);
 		sb.append(" facts: " + _facts);

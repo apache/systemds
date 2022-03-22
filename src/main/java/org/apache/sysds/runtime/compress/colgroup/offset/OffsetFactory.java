@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 
 import java.io.DataInput;
 import java.io.IOException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -32,7 +33,7 @@ public interface OffsetFactory {
 
 	/** The specific underlying types of offsets. */
 	public enum OFF_TYPE {
-		BYTE, CHAR, SINGLE_OFFSET
+		BYTE, CHAR, SINGLE_OFFSET, TWO_OFFSET
 	}
 
 	/**
@@ -82,6 +83,8 @@ public interface OffsetFactory {
 			throw new DMLCompressionException("Invalid empty offset to create");
 		else if(endLength == 0) // means size of 1 since we store the first offset outside the list
 			return new OffsetSingle(indexes[apos]);
+		else if(endLength == 1)
+			return new OffsetTwo(indexes[apos], indexes[apos + 1]);
 
 		final int minValue = indexes[apos];
 		final int maxValue = indexes[alen - 1];
@@ -112,6 +115,8 @@ public interface OffsetFactory {
 		switch(t) {
 			case SINGLE_OFFSET:
 				return OffsetSingle.readFields(in);
+			case TWO_OFFSET:
+				return OffsetTwo.readFields(in);
 			case BYTE:
 				return OffsetByte.readFields(in);
 			case CHAR:
@@ -137,6 +142,8 @@ public interface OffsetFactory {
 			return 8; // If this is the case, then the compression results in constant col groups
 		else if(size == 1)
 			return OffsetSingle.estimateInMemorySize();
+		else if(size == 2)
+			return OffsetTwo.estimateInMemorySize();
 
 		final int avgDiff = nRows / size;
 		if(avgDiff < 256) {

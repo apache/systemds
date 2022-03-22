@@ -180,7 +180,7 @@ public class LibMatrixReorg {
 			transposeUltraSparse(in, out);
 		else if( in.sparse && out.sparse )
 			transposeSparseToSparse(in, out, 0, in.rlen, 0, in.clen, 
-				countNnzPerColumn(in, 0, in.rlen));
+				countNnzPerColumn(in, 4096));
 		else if( in.sparse )
 			transposeSparseToDense(in, out, 0, in.rlen, 0, in.clen);
 		else
@@ -1818,17 +1818,35 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static int[] countNnzPerColumn(MatrixBlock in, int rl, int ru) {
+	private static int[] countNnzPerColumn(MatrixBlock in, int maxCol) {
+		return countNnzPerColumn(in, 0, in.getNumRows(), maxCol);
+	}
+
+	private static int[] countNnzPerColumn(MatrixBlock in, int rl, int ru, int maxCol) {
 		//initial pass to determine capacity (this helps to prevent
 		//sparse row reallocations and mem inefficiency w/ skew
 		int[] cnt = null;
-		if( in.sparse && in.clen <= 4096 ) { //16KB
+		if(in.clen <= maxCol) {
 			SparseBlock a = in.sparseBlock;
 			cnt = new int[in.clen];
 			for( int i=rl; i<ru; i++ ) {
 				if( !a.isEmpty(i) )
 					countAgg(cnt, a.indexes(i), a.pos(i), a.size(i));
 			}
+		}
+		return cnt;
+	}
+
+	public static int[] countNnzPerColumn(MatrixBlock in) {
+		return countNnzPerColumn(in, 0, in.getNumRows());
+	}
+
+	public static int[] countNnzPerColumn(MatrixBlock in, int rl, int ru) {
+		final int[] cnt = new int[in.clen];
+		final SparseBlock a = in.sparseBlock;
+		for(int i = rl; i < ru; i++) {
+			if(!a.isEmpty(i))
+				countAgg(cnt, a.indexes(i), a.pos(i), a.size(i));
 		}
 		return cnt;
 	}

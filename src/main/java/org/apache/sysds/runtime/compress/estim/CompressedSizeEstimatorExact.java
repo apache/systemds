@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.estim;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.estim.encoding.EmptyEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -35,6 +36,8 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 	@Override
 	public CompressedSizeInfoColGroup getColGroupInfo(int[] colIndexes, int estimate, int nrUniqueUpperBound) {
 		final IEncode map = IEncode.createFromMatrixBlock(_data, _cs.transposed, colIndexes);
+		if(map instanceof EmptyEncoding)
+			return new CompressedSizeInfoColGroup(colIndexes, getNumRows());
 		return getFacts(map, colIndexes);
 	}
 

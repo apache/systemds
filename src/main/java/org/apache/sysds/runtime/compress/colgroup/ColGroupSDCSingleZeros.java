@@ -652,6 +652,11 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		return e.getCost(nRows, nRowsScanned, nCols, nVals, _dict.getSparsity());
 	}
 
+	@Override 
+	protected int getIndexesSize(){
+		return getCounts()[0];
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

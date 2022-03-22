@@ -34,8 +34,6 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -49,7 +47,6 @@ import org.apache.sysds.runtime.compress.colgroup.insertionsort.AInsertionSorter
 import org.apache.sysds.runtime.compress.colgroup.insertionsort.InsertionSorterFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
@@ -195,27 +192,38 @@ public class ColGroupFactory {
 		if(LOG.isDebugEnabled() && nCol < 1000 && ce != null) {
 			final Timing time = new Timing(true);
 			final AColGroup ret = compressColGroupForced(cg);
-			synchronized(this) {
-				LOG.debug(
-					String.format("time[ms]: %10.2f %20s %s cols:%s wanted:%s", time.stop(), getColumnTypesString(ret),
-						getEstimateVsActualSize(ret, cg), Arrays.toString(cg.getColumns()), cg.getBestCompressionType()));
-			}
+			logEstVsActual(time.stop(), ret, cg);
 			return ret;
 		}
 		return compressColGroupForced(cg);
 	}
 
-	private String getColumnTypesString(AColGroup ret) {
-		return ret.getClass().getSimpleName().toString();
-	}
+	private void logEstVsActual(double time, AColGroup act, CompressedSizeInfoColGroup est) {
+		final double estC = ce.getCost(est);
+		final double actC = ce.getCost(act, nRow);
+		final String retType = act.getClass().getSimpleName().toString();
+		final String cols = Arrays.toString(est.getColumns());
+		final String wanted = est.getBestCompressionType().toString();
+		if(estC < actC * 0.75) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("The estimate cost is significantly off : distinct: ");
+			sb.append(est.getNumVals());
+			sb.append(" ");
+			sb.append(act.getNumValues());
+			sb.append("\n estimate offsets:");
+			sb.append(est.getNumOffs());
+			if(act instanceof ColGroupSDCZeros )
+				sb.append("  act:" + ((ColGroupSDCZeros)act).getIndexesSize());
+			String warning = sb.toString();
 
-	private String getEstimateVsActualSize(AColGroup ret, CompressedSizeInfoColGroup cg) {
-		Level before = Logger.getLogger(ACostEstimate.class.getName()).getLevel();
-		Logger.getLogger(ACostEstimate.class.getName()).setLevel(Level.TRACE);
-		final double est = ce.getCost(cg);
-		final double act = ce.getCost(ret, nRow);
-		Logger.getLogger(ACostEstimate.class.getName()).setLevel(before);
-		return String.format("[B] %10.0f -- %10.0f", est, act);
+			LOG.debug(String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f cols:%s wanted:%s\n%s", time, retType,
+				estC, actC, cols, wanted, warning));
+		}
+		else {
+			LOG.debug(String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f cols:%s wanted:%s", time, retType,
+				estC, actC, cols, wanted));
+		}
+
 	}
 
 	private AColGroup compressColGroupForced(CompressedSizeInfoColGroup cg) {
@@ -234,6 +242,7 @@ public class ColGroupFactory {
 		else if(ct == CompressionType.DDC)
 			return directCompressDDC(colIndexes, cg);
 		else {
+			LOG.debug("Default slow path: " + ct + "  " + cs.transposed + " " + Arrays.toString(colIndexes));
 			final int numRows = cs.transposed ? in.getNumColumns() : in.getNumRows();
 			final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, cs.transposed, nrUniqueEstimate,
 				cs.sortTuplesByFrequency);
@@ -281,7 +290,7 @@ public class ColGroupFactory {
 
 	private AColGroup directCompressDDCSingleCol(int[] colIndexes, CompressedSizeInfoColGroup cg) {
 		final int col = colIndexes[0];
-		final AMapToData d = MapToFactory.create(nRow, MAP_TYPE.INT);
+		final AMapToData d = MapToFactory.create(nRow, Math.max(Math.min(cg.getNumOffs() + 1, nRow), 126));
 		final DoubleCountHashMap map = new DoubleCountHashMap(cg.getNumVals());
 
 		// unlike multi-col no special handling of zero entries are needed.
@@ -297,7 +306,7 @@ public class ColGroupFactory {
 	}
 
 	private AColGroup directCompressDDCMultiCol(int[] colIndexes, CompressedSizeInfoColGroup cg) {
-		final AMapToData d = MapToFactory.create(nRow, MAP_TYPE.INT);
+		final AMapToData d = MapToFactory.create(nRow, Math.max(Math.min(cg.getNumOffs() + 1, nRow), 126));
 		final int fill = d.getUpperBoundValue();
 		d.fill(fill);
 
@@ -690,7 +699,7 @@ public class ColGroupFactory {
 			final int[] aix = sb.indexes(sbRow);
 			int i = 0;
 			int r = 0;
-			for(int j = apos; r < aix[alen-1]; r++){
+			for(int j = apos; r < aix[alen - 1]; r++) {
 				if(r == aix[j])
 					j++;
 				else

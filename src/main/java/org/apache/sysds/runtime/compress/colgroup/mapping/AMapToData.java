@@ -307,8 +307,9 @@ public abstract class AMapToData implements Serializable {
 	 * @param cu      The column in m to end at (not inclusive)
 	 * @param indexes The Offset Indexes to iterate through
 	 */
-	public abstract void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu,
-		AOffset indexes);
+	public void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
+		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), this);
+	}
 
 	/**
 	 * PreAggregate the SparseBlock in the range of rows given.
@@ -319,7 +320,9 @@ public abstract class AMapToData implements Serializable {
 	 * @param ru      The row to end at (not inclusive)
 	 * @param indexes The Offset Indexes to iterate through
 	 */
-	public abstract void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes);
+	public void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
+		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), this);
+	}
 
 	/**
 	 * Get the number of counts of each unique value contained in this map. Note that in the case the mapping is shorter
@@ -331,12 +334,22 @@ public abstract class AMapToData implements Serializable {
 	public final int[] getCounts(int[] counts) {
 		count(counts);
 
-		if(counts[counts.length - 1] == 0)
-			throw new DMLCompressionException("Invalid number unique");
+		if(counts[counts.length - 1] == 0) {
+			int actualUnique = counts.length;
+			for(; actualUnique > 1; actualUnique--) {
+				if(counts[actualUnique - 1] > 0)
+					break;
+			}
+			throw new DMLCompressionException(
+				"Invalid number unique expected: " + counts.length + " but is actually: " + actualUnique + " type: " + getType());
+		}
 		return counts;
 	}
 
-	protected abstract void count(int[] ret); 
+	protected void count(int[] ret) {
+		for(int i = 0; i < size(); i++)
+			ret[getIndex(i)]++;
+	}
 
 	/**
 	 * PreAggregate into dictionary with two sides of DDC.
@@ -684,6 +697,8 @@ public abstract class AMapToData implements Serializable {
 		}
 		return m;
 	}
+
+	public abstract AMapToData resize(int unique);
 
 	@Override
 	public String toString() {

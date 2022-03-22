@@ -51,7 +51,7 @@ public abstract class AColGroup implements Serializable {
 	private static final long serialVersionUID = -1318908671481L;
 
 	/** Public super types of compression ColGroups supported */
-	public enum CompressionType {
+	public static enum CompressionType {
 		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, PFOR, DeltaDDC
 	}
 
@@ -60,7 +60,7 @@ public abstract class AColGroup implements Serializable {
 	 * 
 	 * Protected such that outside the ColGroup package it should be unknown which specific subtype is used.
 	 */
-	protected enum ColGroupType {
+	protected static enum ColGroupType {
 		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros, PFOR, DeltaDDC;
 	}
 

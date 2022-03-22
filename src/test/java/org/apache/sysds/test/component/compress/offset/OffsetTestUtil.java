@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetChar;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetSingle;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetTwo;
 
 public class OffsetTestUtil {
 
@@ -33,10 +34,12 @@ public class OffsetTestUtil {
 			case SINGLE_OFFSET:
 				if(data.length == 1)
 					return new OffsetSingle(data[0]);
+			case TWO_OFFSET:
+				if(data.length == 2)
+					return new OffsetTwo(data[0], data[1]);
 			case BYTE:
 				return new OffsetByte(data);
 			case CHAR:
-
 				return new OffsetChar(data);
 			default:
 				throw new NotImplementedException("not implemented");

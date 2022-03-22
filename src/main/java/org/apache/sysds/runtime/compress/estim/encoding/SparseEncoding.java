@@ -92,9 +92,14 @@ public class SparseEncoding implements IEncode {
 		final int unique = combineSparse(map, e.map, itl, itr, retOff, tmpVals, fl, fr, nVl, nVr, d);
 
 		if(retOff.size() < nRows * 0.2) {
-			final AOffset o = OffsetFactory.createOffset(retOff);
-			final AMapToData retMap = MapToFactory.create(tmpVals.size(), tmpVals.extractValues(), unique - 1);
-			return new SparseEncoding(retMap, o, nRows - retOff.size(), nRows);
+			try {
+				final AOffset o = OffsetFactory.createOffset(retOff);
+				final AMapToData retMap = MapToFactory.create(tmpVals.size(), tmpVals.extractValues(), unique - 1);
+				return new SparseEncoding(retMap, o, nRows - retOff.size(), nRows);
+			}
+			catch(Exception ex) {
+				throw new DMLCompressionException("Failed combining sparse " + retOff + " " +this + "  " + e, ex);
+			}
 		}
 		else {
 			// there will always be a zero therefore unique is not subtracted one.

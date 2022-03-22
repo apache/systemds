@@ -56,8 +56,8 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			{1000, 1, false},
-			{16, 1, true}
+//			{1000, 1, false},
+			{128, 1, true}
 		});
 	}
 

@@ -41,6 +41,8 @@ public class FederatedQuantileWeightsTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/federated/quantile/";
 	private final static String TEST_NAME1 = "FederatedQuantileWeightsTest";
 	private final static String TEST_NAME2 = "FederatedMedianWeightsTest";
+	private final static String TEST_NAME3 = "FederatedIQRWeightsTest";
+	private final static String TEST_NAME4 = "FederatedQuantilesWeightsTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedQuantileWeightsTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
@@ -53,7 +55,7 @@ public class FederatedQuantileWeightsTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
 			{1000, false},
-			{12, true}});
+			{128, true}});
 	}
 
 	@Override
@@ -61,6 +63,8 @@ public class FederatedQuantileWeightsTest extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"S.scalar"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"S.scalar"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"S.scalar"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"S"}));
 	}
 
 	@Test
@@ -76,10 +80,10 @@ public class FederatedQuantileWeightsTest extends AutomatedTestBase {
 	public void federatedMedianCP() { federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME2, -1); }
 
 	@Test
-	public void federatedIQMCP() { federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME1, -1); }
+	public void federatedIQMCP() { federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME3, -1); }
 
 	@Test
-	public void federatedQuantilesCP() { federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME1, -1); }
+	public void federatedQuantilesCP() { federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME4, -1); }
 
 	public void federatedQuartile(Types.ExecMode execMode, String TEST_NAME, double p) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;

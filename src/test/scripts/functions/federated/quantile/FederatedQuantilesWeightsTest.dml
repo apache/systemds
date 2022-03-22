@@ -19,10 +19,16 @@
 #
 #-------------------------------------------------------------
 
-A = federated(addresses=list($in_X1), ranges=list(list(0, 0), list($rows, $cols)));
+if ($rP) {
+    A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+} else {
+    A = federated(addresses=list($in_X1), ranges=list(list(0, 0), list($rows, $cols)));
+}
 P = matrix(0.25, 3, 1);
 P[2,1] = 0.5;
 P[3,1] = 0.75;
 W = read($W);
-s = quantile(X=A, W=W, P=P);
+s = quantile(A, W, P);
 write(s, $out_S);

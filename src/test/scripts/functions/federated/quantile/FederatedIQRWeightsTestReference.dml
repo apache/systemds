@@ -19,7 +19,11 @@
 #
 #-------------------------------------------------------------
 
-A = read($1);
+if($3) {
+  A = rbind(read($5), read($6), read($7), read($8));
+}
+else { A = read($5); }
 W = read($4);
 s = interQuartileMean(A, W);
+
 write(s, $2);

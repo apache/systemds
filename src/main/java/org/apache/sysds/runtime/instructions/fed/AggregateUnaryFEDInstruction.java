@@ -250,7 +250,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			FederatedRequest meanFr1 =  FederationUtils.callInstruction(meanInstr, output, id,
 				new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, isSpark ? ExecType.SPARK : ExecType.CP, isSpark);
 			FederatedRequest meanFr2 = new FederatedRequest(RequestType.GET_VAR, meanFr1.getID());
-			meanTmp = map.execute(getTID(), isSpark ?
+			meanTmp = map.execute(getTID(), true, isSpark ?
 				new FederatedRequest[] {tmpRequest, meanFr1, meanFr2} :
 				new FederatedRequest[] {meanFr1, meanFr2});
 		}
@@ -261,7 +261,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
 		
 		//execute federated commands and cleanups
-		Future<FederatedResponse>[] tmp = map.execute(getTID(), isSpark ?
+		Future<FederatedResponse>[] tmp = map.execute(getTID(), true, isSpark ?
 			new FederatedRequest[] {tmpRequest, fr1, fr2} :
 			new FederatedRequest[] { fr1, fr2});
 		if( output.isScalar() )

@@ -87,14 +87,16 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public double aggregateWithReference(double init, Builtin fn, double[] reference) {
+	public double aggregateWithReference(double init, Builtin fn, double[] reference, boolean def) {
 		final int nCol = reference.length;
 		double ret = init;
 		for(int i = 0; i < _values.length; i++)
 			ret = fn.execute(ret, _values[i] + reference[i % nCol]);
 
-		for(int i = 0; i < nCol; i++)
-			ret = fn.execute(ret, reference[i]);
+		if(def)
+			for(int i = 0; i < nCol; i++)
+				ret = fn.execute(ret, reference[i]);
+
 		return ret;
 	}
 
@@ -653,14 +655,15 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference) {
+	public void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference, boolean def) {
 		final int nCol = reference.length;
 		final int rlen = _values.length / nCol;
 		for(int k = 0; k < rlen; k++)
 			for(int j = 0, valOff = k * nCol; j < nCol; j++)
 				c[colIndexes[j]] = fn.execute(c[colIndexes[j]], _values[valOff + j] + reference[j]);
-		for(int i = 0; i < nCol; i++)
-			c[colIndexes[i]] = fn.execute(c[colIndexes[i]], reference[i]);
+		if(def)
+			for(int i = 0; i < nCol; i++)
+				c[colIndexes[i]] = fn.execute(c[colIndexes[i]], reference[i]);
 	}
 
 	@Override

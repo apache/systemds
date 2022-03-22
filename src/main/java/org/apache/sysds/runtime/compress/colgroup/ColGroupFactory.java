@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.insertionsort.AInsertionSorter;
 import org.apache.sysds.runtime.compress.colgroup.insertionsort.InsertionSorterFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -60,7 +61,10 @@ import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 /**
@@ -157,45 +161,38 @@ public class ColGroupFactory {
 
 	private List<AColGroup> compressColGroupsParallel() {
 		try {
-			List<CompressTask> tasks = new ArrayList<>();
+			final List<CompressedSizeInfoColGroup> groups = csi.getInfo();
+			final int nGroups = groups.size();
+			// final int blkz = nGroups * 10 / k;
+			final int skip = Math.min(k * 10, nGroups);
+			final List<CompressTask> tasks = new ArrayList<>(skip);
 
-			List<List<CompressedSizeInfoColGroup>> threadGroups = makeGroups();
-			for(List<CompressedSizeInfoColGroup> tg : threadGroups)
-				if(!tg.isEmpty())
-					tasks.add(new CompressTask(tg));
+			// sort to make the "assumed" big jobs first.
+			Collections.sort(groups, Comparator.comparing(g -> -g.getNumVals()));
 
-			List<AColGroup> ret = new ArrayList<>();
-			for(Future<Collection<AColGroup>> t : pool.invokeAll(tasks))
-				ret.addAll(t.get());
-			return ret;
+			final AColGroup[] ret = new AColGroup[nGroups];
+
+			for(int i = 0; i < skip; i++)
+				tasks.add(new CompressTask(groups, ret, i, skip));
+
+			for(Future<Object> t : pool.invokeAll(tasks))
+				t.get();
+
+			return Arrays.asList(ret);
 		}
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("Failed compression ", e);
 		}
 	}
 
-	private List<List<CompressedSizeInfoColGroup>> makeGroups() {
-		// sort by number of distinct items
-		final List<CompressedSizeInfoColGroup> groups = csi.getInfo();
-		Collections.sort(groups, Comparator.comparing(g -> -g.getNumVals()));
-		List<List<CompressedSizeInfoColGroup>> ret = new ArrayList<>();
-		for(int i = 0; i < k; i++)
-			ret.add(new ArrayList<>());
-
-		for(int i = 0; i < groups.size(); i++)
-			ret.get(i % k).add(groups.get(i));
-
-		return ret;
-	}
-
 	protected AColGroup compressColGroup(CompressedSizeInfoColGroup cg) {
 		if(LOG.isDebugEnabled() && nCol < 1000 && ce != null) {
 			final Timing time = new Timing(true);
-			final AColGroup ret = compressColGroupForced(cg);
+			final AColGroup ret = compressColGroupAllSteps(cg);
 			logEstVsActual(time.stop(), ret, cg);
 			return ret;
 		}
-		return compressColGroupForced(cg);
+		return compressColGroupAllSteps(cg);
 	}
 
 	private void logEstVsActual(double time, AColGroup act, CompressedSizeInfoColGroup est) {
@@ -212,8 +209,8 @@ public class ColGroupFactory {
 			sb.append(act.getNumValues());
 			sb.append("\n estimate offsets:");
 			sb.append(est.getNumOffs());
-			if(act instanceof ColGroupSDCZeros )
-				sb.append("  act:" + ((ColGroupSDCZeros)act).getIndexesSize());
+			if(act instanceof ColGroupSDCZeros)
+				sb.append("  act:" + ((ColGroupSDCZeros) act).getIndexesSize());
 			String warning = sb.toString();
 
 			LOG.debug(String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f cols:%s wanted:%s\n%s", time, retType,
@@ -226,7 +223,33 @@ public class ColGroupFactory {
 
 	}
 
-	private AColGroup compressColGroupForced(CompressedSizeInfoColGroup cg) {
+	private AColGroup compressColGroupAllSteps(CompressedSizeInfoColGroup cg) {
+		AColGroup g = compressColGroupInitial(cg);
+		final int nCol = g.getColIndices().length;
+		if(ce.shouldSparsify() && nCol > 6 && g instanceof ColGroupDDC) {
+			final ColGroupDDC gDDC = (ColGroupDDC) g;
+			ADictionary d = gDDC._dict;
+			MatrixBlockDictionary mbd = d.getMBDict(nCol);
+			final int nVal = g.getNumValues();
+			MatrixBlock mb = mbd.getMatrixBlock();
+			if(mb == null || mb.isEmpty())
+				return g;
+			int[] nnz = LibMatrixReorg.countNnzPerColumn(mb);
+			MatrixBlock s = new MatrixBlock(1, nCol, false);
+			s.allocateDenseBlock();
+			double[] reference = s.getDenseBlockValues();
+			for(int i = 0; i < nCol; i++)
+				if(nnz[i] > nVal / 2)
+					reference[i] = 1;
+			MatrixBlock mmb = mb.binaryOperations(new BinaryOperator(Minus.getMinusFnObject()), s);
+					
+			MatrixBlockDictionary mDict = new MatrixBlockDictionary(mmb, nCol);
+			g = ColGroupDDCFOR.create(g.getColIndices(), nRow, mDict, gDDC._data, gDDC.getCachedCounts(), reference);
+		}
+		return g;
+	}
+
+	private AColGroup compressColGroupInitial(CompressedSizeInfoColGroup cg) {
 		final int[] colIndexes = cg.getColumns();
 		final int nrUniqueEstimate = cg.getNumVals();
 		CompressionType ct = cg.getBestCompressionType();
@@ -721,21 +744,26 @@ public class ColGroupFactory {
 		}
 	}
 
-	class CompressTask implements Callable<Collection<AColGroup>> {
+	class CompressTask implements Callable<Object> {
 
 		private final List<CompressedSizeInfoColGroup> _groups;
+		private final AColGroup[] _ret;
+		private final int _off;
+		private final int _step;
 
-		protected CompressTask(List<CompressedSizeInfoColGroup> groups) {
+		protected CompressTask(List<CompressedSizeInfoColGroup> groups, AColGroup[] ret, int off, int step) {
 			_groups = groups;
+			_ret = ret;
+			_off = off;
+			_step = step;
 		}
 
 		@Override
-		public Collection<AColGroup> call() {
+		public Collection<Object> call() {
 			try {
-				ArrayList<AColGroup> res = new ArrayList<>(_groups.size());
-				for(CompressedSizeInfoColGroup g : _groups)
-					res.add(compressColGroup(g));
-				return res;
+				for(int i = _off; i < _groups.size(); i += _step)
+					_ret[i] = compressColGroup(_groups.get(i));
+				return null;
 			}
 			catch(Exception e) {
 				e.printStackTrace();
@@ -765,26 +793,6 @@ public class ColGroupFactory {
 		@Override
 		public Boolean call() {
 			return Boolean.valueOf(readToMapDDC(_colIndexes, _map, _data, _rl, _ru, _fill));
-		}
-	}
-
-	/**
-	 * Temp reuse object, to contain intermediates for compressing column groups that can be used by the same thread
-	 * again for subsequent compressions.
-	 */
-	static class Tmp {
-		private DoubleCountHashMap dblCountMap;
-
-		protected Tmp() {
-			dblCountMap = null;
-		}
-
-		protected DoubleCountHashMap getDblCountMap(int size) {
-			if(dblCountMap != null)
-				dblCountMap.reset(size);
-			else
-				dblCountMap = new DoubleCountHashMap(size);
-			return dblCountMap;
 		}
 	}
 }

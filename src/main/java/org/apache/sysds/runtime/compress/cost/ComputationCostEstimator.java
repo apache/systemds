@@ -122,7 +122,7 @@ public class ComputationCostEstimator extends ACostEstimate {
 		cost += decompressionCost(nVals, nCols, nRowsScanned, sparsity);
 		cost += overlappingDecompressionCost(nRowsScanned);
 		cost += compressedMultiplicationCost(nRowsScanned, nVals, nCols, sparsity);
-		cost += 100; // base cost 
+		cost += 100; // base cost
 		return cost;
 	}
 
@@ -154,6 +154,11 @@ public class ComputationCostEstimator extends ACostEstimate {
 	@Override
 	public double getCost(AColGroup cg, int nRows) {
 		return cg.getCost(this, nRows);
+	}
+
+	@Override
+	public boolean shouldSparsify() {
+		return _leftMultiplications > 0 || _compressedMultiplication > 0 || _rightMultiplications > 0;
 	}
 
 	private double dictionaryOpsCost(double nVals, double nCols, double sparsity) {

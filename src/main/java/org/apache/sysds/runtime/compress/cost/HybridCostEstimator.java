@@ -60,4 +60,9 @@ public class HybridCostEstimator extends ACostEstimate {
 	public double getCost(AColGroup cg, int nRows) {
 		throw new NotImplementedException();
 	}
+
+	@Override
+	public  boolean shouldSparsify(){
+		return false;
+	}
 }

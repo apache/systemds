@@ -460,16 +460,12 @@ public class ColGroupSDCZeros extends ASDCZero {
 		if(isSparseSafeOp)
 			return create(_colIndexes, _numRows, _dict.applyScalarOp(op), _indexes, _data, getCachedCounts());
 		else if(op.fn instanceof Plus) {
-			double[] reference = new double[_colIndexes.length];
-			for(int i = 0; i < _colIndexes.length; i++)
-				reference[i] = val0;
-			return ColGroupPFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
+			final double[] reference = FORUtil.createReference(_colIndexes.length, val0);
+			return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
 		}
 		else {
 			ADictionary newDict = _dict.applyScalarOp(op);
-			double[] defaultTuple = new double[_colIndexes.length];
-			for(int i = 0; i < _colIndexes.length; i++)
-				defaultTuple[i] = val0;
+			final double[] defaultTuple = FORUtil.createReference(_colIndexes.length, val0);
 			return ColGroupSDC.create(_colIndexes, _numRows, newDict, defaultTuple, _indexes, _data, getCachedCounts());
 		}
 	}
@@ -495,7 +491,7 @@ public class ColGroupSDCZeros extends ASDCZero {
 		}
 		else if(op.fn instanceof Plus) {
 			double[] reference = ColGroupUtils.binaryDefRowLeft(op, v, _colIndexes);
-			return ColGroupPFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
+			return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), reference);
 		}
 		else {
 			ADictionary newDict = _dict.binOpLeft(op, v, _colIndexes);
@@ -514,7 +510,7 @@ public class ColGroupSDCZeros extends ASDCZero {
 		}
 		else if(op.fn instanceof Plus) {
 			double[] def = ColGroupUtils.binaryDefRowRight(op, v, _colIndexes);
-			return ColGroupPFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), def);
+			return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), def);
 		}
 		else {
 			ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);

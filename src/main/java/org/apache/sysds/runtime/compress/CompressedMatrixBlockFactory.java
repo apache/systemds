@@ -382,7 +382,6 @@ public class CompressedMatrixBlockFactory {
 			res.setNonZeros(oldNNZ);
 
 		logPhase();
-
 	}
 
 	private Pair<MatrixBlock, CompressionStatistics> abortCompression() {

@@ -1842,12 +1842,32 @@ public class LibMatrixReorg {
 	}
 
 	public static int[] countNnzPerColumn(MatrixBlock in, int rl, int ru) {
+		if(in.isInSparseFormat())
+			return countNnzPerColumnSparse(in, rl, ru);
+		else
+			return countNnzPerColumnDense(in, rl, ru);
+	}
+
+	private static int[] countNnzPerColumnSparse(MatrixBlock in, int rl, int ru) {
 		final int[] cnt = new int[in.clen];
 		final SparseBlock a = in.sparseBlock;
 		for(int i = rl; i < ru; i++) {
 			if(!a.isEmpty(i))
 				countAgg(cnt, a.indexes(i), a.pos(i), a.size(i));
 		}
+		return cnt;
+	}
+
+
+	private static int[] countNnzPerColumnDense(MatrixBlock in, int rl, int ru) {
+		final int[] cnt = new int[in.clen];
+		final double[] dV = in.getDenseBlockValues();
+		int off = rl * in.clen;
+		for(int i = rl; i < ru; i++)
+			for(int j = 0; j < in.clen; j++)
+				if(dV[off++] != 0)
+					cnt[j]++;
+			
 		return cnt;
 	}
 

@@ -123,6 +123,14 @@ public abstract class ACostEstimate implements Serializable {
 	 */
 	protected abstract double getCostSafe(CompressedSizeInfoColGroup g);
 
+	/**
+	 * Ask the cost estimator if it is a good idea to try to sparsify a column group. It is the same as asking if it is a
+	 * good idea to make FOR on top of the column group.
+	 * 
+	 * @return true if yes
+	 */
+	public abstract boolean shouldSparsify();
+
 	@Override
 	public String toString() {
 		return this.getClass().getSimpleName();

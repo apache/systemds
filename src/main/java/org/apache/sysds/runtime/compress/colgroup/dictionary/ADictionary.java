@@ -82,9 +82,10 @@ public abstract class ADictionary implements Serializable {
 	 * @param init      The initial value, in cases such as Max value this could be -infinity.
 	 * @param fn        The function to apply to the values
 	 * @param reference The reference offset to each value in the dictionary
+	 * @param def       If the reference should be treated as an instance of only as reference
 	 * @return The aggregated value as a double.
 	 */
-	public abstract double aggregateWithReference(double init, Builtin fn, double[] reference);
+	public abstract double aggregateWithReference(double init, Builtin fn, double[] reference, boolean def);
 
 	/**
 	 * Aggregate all entries in the rows.
@@ -132,8 +133,10 @@ public abstract class ADictionary implements Serializable {
 	 * @param fn         The function to apply to individual columns
 	 * @param reference  The reference offset values to add to each cell.
 	 * @param colIndexes The mapping to the target columns from the individual columns
+	 * @param def        If the reference should be treated as a tuple as well
 	 */
-	public abstract void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference);
+	public abstract void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference,
+		boolean def);
 
 	/**
 	 * Allocate a new dictionary and applies the scalar operation on each cell of the to then return the new dictionary.

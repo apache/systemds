@@ -34,6 +34,8 @@ import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -63,7 +65,7 @@ public class ColGroupDDC extends APreAgg {
 				+ dict.getNumberOfValues(colIndexes.length));
 		_zeros = false;
 		_data = data;
-		
+
 	}
 
 	protected static AColGroup create(int[] colIndexes, int numRows, ADictionary dict, AMapToData data,
@@ -336,6 +338,16 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
+		if((op.fn instanceof Plus || op.fn instanceof Minus)
+		// && _dict instanceof MatrixBlockDictionary &&
+		// ((MatrixBlockDictionary) _dict).getMatrixBlock().isInSparseFormat()
+		) {
+			final double v0 = op.executeScalar(0);
+			if(v0 == 0)
+				return this;
+			final double[] reference = FORUtil.createReference(_colIndexes.length, v0);
+			return ColGroupDDCFOR.create(_colIndexes, _numRows, _dict, _data, getCachedCounts(), reference);
+		}
 		return create(_colIndexes, _numRows, _dict.applyScalarOp(op), _data, getCachedCounts());
 	}
 
@@ -352,7 +364,14 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
-		ADictionary ret = _dict.binOpRight(op, v, _colIndexes);
+		if((op.fn instanceof Plus || op.fn instanceof Minus)
+		// && _dict instanceof MatrixBlockDictionary &&
+		// ((MatrixBlockDictionary) _dict).getMatrixBlock().isInSparseFormat()
+		) {
+			final double[] reference = ColGroupUtils.binaryDefRowRight(op, v, _colIndexes);
+			return ColGroupDDCFOR.create(_colIndexes, _numRows, _dict, _data, getCachedCounts(), reference);
+		}
+		final ADictionary ret = _dict.binOpRight(op, v, _colIndexes);
 		return create(_colIndexes, _numRows, ret, _data, getCachedCounts());
 	}
 
@@ -383,7 +402,7 @@ public class ColGroupDDC extends APreAgg {
 	}
 
 	@Override
-	protected  int numRowsToMultiply(){
+	protected int numRowsToMultiply() {
 		return _numRows;
 	}
 

@@ -131,13 +131,14 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public double aggregateWithReference(double init, Builtin fn, double[] reference) {
+	public double aggregateWithReference(double init, Builtin fn, double[] reference, boolean def) {
 		final int nCol = reference.length;
 		final int nRows = _data.getNumRows();
 		double ret = init;
 
-		for(int i = 0; i < nCol; i++)
-			ret = fn.execute(ret, reference[i]);
+		if(def)
+			for(int i = 0; i < nCol; i++)
+				ret = fn.execute(ret, reference[i]);
 
 		if(!_data.isEmpty() && _data.isInSparseFormat()) {
 			final SparseBlock sb = _data.getSparseBlock();
@@ -300,14 +301,15 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference) {
+	public void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference, boolean def) {
 		final int nCol = _data.getNumColumns();
 		final int nRow = _data.getNumRows();
 
-		for(int j = 0; j < colIndexes.length; j++) {
-			final int idx = colIndexes[j];
-			c[idx] = fn.execute(c[idx], reference[j]);
-		}
+		if(def)
+			for(int j = 0; j < colIndexes.length; j++) {
+				final int idx = colIndexes[j];
+				c[idx] = fn.execute(c[idx], reference[j]);
+			}
 		if(!_data.isEmpty() && _data.isInSparseFormat()) {
 			final SparseBlock sb = _data.getSparseBlock();
 			for(int i = 0; i < nRow; i++) {

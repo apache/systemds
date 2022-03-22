@@ -181,7 +181,10 @@ public class BinaryOp extends MultiThreadedHop {
 	public boolean isMultiThreadedOpType() {
 		return !getDataType().isScalar()
 			|| getOp() == OpOp2.COV
-			|| getOp() == OpOp2.MOMENT;
+			|| getOp() == OpOp2.MOMENT
+			|| getOp() == OpOp2.IQM
+			|| getOp() == OpOp2.MEDIAN
+			|| getOp() == OpOp2.QUANTILE;
 	}
 	
 	@Override
@@ -233,11 +236,12 @@ public class BinaryOp extends MultiThreadedHop {
 	}
 	
 	private void constructLopsIQM(ExecType et) {
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		SortKeys sort = SortKeys.constructSortByValueLop(
 				getInput().get(0).constructLops(), 
 				getInput().get(1).constructLops(), 
 				SortKeys.OperationTypes.WithWeights, 
-				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
+				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et, k);
 		sort.getOutputParameters().setDimensions(
 				getInput().get(0).getDim1(),
 				getInput().get(0).getDim2(), 
@@ -256,11 +260,12 @@ public class BinaryOp extends MultiThreadedHop {
 	}
 	
 	private void constructLopsMedian(ExecType et) {
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		SortKeys sort = SortKeys.constructSortByValueLop(
 				getInput().get(0).constructLops(), 
 				getInput().get(1).constructLops(), 
 				SortKeys.OperationTypes.WithWeights, 
-				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
+				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et, k);
 		sort.getOutputParameters().setDimensions(
 				getInput().get(0).getDim1(),
 				getInput().get(0).getDim2(),
@@ -317,10 +322,11 @@ public class BinaryOp extends MultiThreadedHop {
 		else
 			pick_op = PickByCount.OperationTypes.RANGEPICK;
 
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		SortKeys sort = SortKeys.constructSortByValueLop(
 			getInput().get(0).constructLops(), 
 			SortKeys.OperationTypes.WithoutWeights, 
-			DataType.MATRIX, ValueType.FP64, et );
+			DataType.MATRIX, ValueType.FP64, et, k );
 		sort.getOutputParameters().setDimensions(
 			getInput().get(0).getDim1(),
 			getInput().get(0).getDim2(),

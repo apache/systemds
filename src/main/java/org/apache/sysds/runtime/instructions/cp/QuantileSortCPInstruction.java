@@ -36,14 +36,36 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  *  
  */
 public class QuantileSortCPInstruction extends UnaryCPInstruction {
+	int _numThreads;
 
-	private QuantileSortCPInstruction(CPOperand in, CPOperand out, String opcode, String istr) {
+	private QuantileSortCPInstruction(CPOperand in, CPOperand out, String opcode, String istr, int k) {
 		this(in, null, out, opcode, istr);
+		_numThreads = k;
 	}
 
 	private QuantileSortCPInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
 		super(CPType.QSort, null, in1, in2, out, opcode, istr);
+	}
+
+	private static void parseInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+
+		String opcode = parts[0];
+		out.split(parts[parts.length-2]);
+
+		switch(parts.length) {
+			case 4:
+				in1.split(parts[1]);
+				in2 = null;
+				break;
+			case 5:
+				in1.split(parts[1]);
+				in2.split(parts[2]);
+				break;
+			default:
+				throw new DMLRuntimeException("Unexpected number of operands in the instruction: " + instr);
+		}
 	}
 
 	public static QuantileSortCPInstruction parseInstruction ( String str ) {
@@ -55,15 +77,18 @@ public class QuantileSortCPInstruction extends UnaryCPInstruction {
 		String opcode = parts[0];
 		
 		if ( opcode.equalsIgnoreCase(SortKeys.OPCODE) ) {
-			if ( parts.length == 3 ) {
+			int k = Integer.parseInt(parts[parts.length-1]); //#threads
+			if ( parts.length == 4 ) {
 				// Example: sort:mVar1:mVar2 (input=mVar1, output=mVar2)
-				parseUnaryInstruction(str, in1, out);
-				return new QuantileSortCPInstruction(in1, out, opcode, str);
+				InstructionUtils.checkNumFields(str, 3);
+				parseInstruction(str, in1, null, out);
+				return new QuantileSortCPInstruction(in1, out, opcode, str, k);
 			}
-			else if ( parts.length == 4 ) {
+			else if ( parts.length == 5 ) {
 				// Example: sort:mVar1:mVar2:mVar3 (input=mVar1, weights=mVar2, output=mVar3)
+				InstructionUtils.checkNumFields(str, 4);
 				in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-				parseUnaryInstruction(str, in1, in2, out);
+				parseInstruction(str, in1, in2, out);
 				return new QuantileSortCPInstruction(in1, in2, out, opcode, str);
 			}
 			else {
@@ -85,7 +110,7 @@ public class QuantileSortCPInstruction extends UnaryCPInstruction {
 		}
 		
  		//process core instruction
-		MatrixBlock resultBlock = matBlock.sortOperations(wtBlock, new MatrixBlock());
+		MatrixBlock resultBlock = matBlock.sortOperations(wtBlock, new MatrixBlock(), _numThreads);
 		
 		//release inputs
 		ec.releaseMatrixInput(input1.getName());

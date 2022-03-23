@@ -39,19 +39,18 @@ public class QuantileSortCPInstruction extends UnaryCPInstruction {
 	int _numThreads;
 
 	private QuantileSortCPInstruction(CPOperand in, CPOperand out, String opcode, String istr, int k) {
-		this(in, null, out, opcode, istr);
-		_numThreads = k;
+		this(in, null, out, opcode, istr, k);
 	}
 
 	private QuantileSortCPInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
+			String istr, int k) {
 		super(CPType.QSort, null, in1, in2, out, opcode, istr);
+		_numThreads = k;
 	}
 
 	private static void parseInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
 
-		String opcode = parts[0];
 		out.split(parts[parts.length-2]);
 
 		switch(parts.length) {
@@ -89,7 +88,7 @@ public class QuantileSortCPInstruction extends UnaryCPInstruction {
 				InstructionUtils.checkNumFields(str, 4);
 				in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 				parseInstruction(str, in1, in2, out);
-				return new QuantileSortCPInstruction(in1, in2, out, opcode, str);
+				return new QuantileSortCPInstruction(in1, in2, out, opcode, str, k);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);

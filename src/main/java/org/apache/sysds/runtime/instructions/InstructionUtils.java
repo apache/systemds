@@ -225,7 +225,15 @@ public class InstructionUtils
 		
 		return ret;
 	}
-	
+
+	public static String stripThreadCount(String str) {
+		String[] parts = str.split(Instruction.OPERAND_DELIM, -1);
+		String[] ret = new String[parts.length-1];
+		for (int i=0; i<parts.length-1; i++) //strip-off the thread count
+			ret[i] = parts[i];
+		return concatOperands(ret);
+	}
+
 	public static ExecType getExecType( String str ) {
 		try{
 			int ix = str.indexOf(Instruction.OPERAND_DELIM);

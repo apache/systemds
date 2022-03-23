@@ -4820,6 +4820,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
+		return sortOperations(weights, result, 1);
+	}
+
+	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result, int k) {
 		boolean wtflag = (weights!=null);
 		
 		MatrixBlock wts= (weights == null ? null : checkType(weights));
@@ -4877,7 +4881,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		// Sort td and tw based on values inside td (ascending sort), incl copy into result
 		SortIndex sfn = new SortIndex(1, false, false);
-		ReorgOperator rop = new ReorgOperator(sfn);
+		ReorgOperator rop = new ReorgOperator(sfn, k);
 		LibMatrixReorg.reorg(tdw, result, rop);
 		
 		return result;

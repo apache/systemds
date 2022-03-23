@@ -149,7 +149,9 @@ public class TernaryOp extends MultiThreadedHop
 	public boolean isMultiThreadedOpType() {
 		return _op == OpOp3.IFELSE
 			|| _op == OpOp3.MINUS_MULT
-			|| _op == OpOp3.PLUS_MULT;
+			|| _op == OpOp3.PLUS_MULT
+			|| _op == OpOp3.QUANTILE
+			|| _op == OpOp3.INTERQUANTILE;
 	}
 	
 	@Override
@@ -247,9 +249,10 @@ public class TernaryOp extends MultiThreadedHop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.QUANTILE + " or " + OpOp3.INTERQUANTILE );
 		
 		ExecType et = optFindExecType();
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		SortKeys sort = SortKeys.constructSortByValueLop(getInput().get(0).constructLops(),
 			getInput().get(1).constructLops(), SortKeys.OperationTypes.WithWeights, 
-			getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
+			getInput().get(0).getDataType(), getInput().get(0).getValueType(), et, k);
 		PickByCount pick = new PickByCount(sort, getInput().get(2).constructLops(),
 			getDataType(), getValueType(), (_op == OpOp3.QUANTILE) ?
 			PickByCount.OperationTypes.VALUEPICK : PickByCount.OperationTypes.RANGEPICK, et, true);

@@ -197,12 +197,11 @@ public class UnaryOp extends MultiThreadedHop
 	private Lop constructLopsMedian() 
 	{
 		ExecType et = optFindExecType();
-
-		
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		SortKeys sort = SortKeys.constructSortByValueLop(
 							getInput().get(0).constructLops(), 
 							SortKeys.OperationTypes.WithoutWeights, 
-							DataType.MATRIX, ValueType.FP64, et );
+							DataType.MATRIX, ValueType.FP64, et, k );
 		sort.getOutputParameters().setDimensions(
 				getInput().get(0).getDim1(),
 				getInput().get(0).getDim2(),
@@ -225,14 +224,13 @@ public class UnaryOp extends MultiThreadedHop
 	
 	private Lop constructLopsIQM() 
 	{
-
 		ExecType et = optFindExecType();
-
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		Hop input = getInput().get(0);
-				SortKeys sort = SortKeys.constructSortByValueLop(
-				input.constructLops(), 
-				SortKeys.OperationTypes.WithoutWeights, 
-				DataType.MATRIX, ValueType.FP64, et );
+		SortKeys sort = SortKeys.constructSortByValueLop(
+			input.constructLops(),
+			SortKeys.OperationTypes.WithoutWeights,
+			DataType.MATRIX, ValueType.FP64, et, k );
 		sort.getOutputParameters().setDimensions(
 				input.getDim1(),
 				input.getDim2(),
@@ -456,7 +454,9 @@ public class UnaryOp extends MultiThreadedHop
 			|| _op == OpOp1.LOG
 			|| _op == OpOp1.SIGMOID
 			|| _op == OpOp1.COMPRESS
-			|| _op == OpOp1.DECOMPRESS);
+			|| _op == OpOp1.DECOMPRESS
+			|| _op == OpOp1.MEDIAN
+			|| _op == OpOp1.IQM);
 	}
 	
 	public boolean isMetadataOperation() {

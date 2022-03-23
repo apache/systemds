@@ -43,9 +43,9 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -56,18 +56,13 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderBin;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderComposite;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
-import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.IndexRange;
-import org.apache.sysds.utils.Hash;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 
 public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
 	protected final ArrayList<CPOperand> _outputs;
@@ -114,50 +109,54 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		MultiColumnEncoder globalEncoder = new MultiColumnEncoder(new ArrayList<>());
 
 		boolean containsEquiWidthEncoder = !fin.isFederated(FTypes.FType.ROW) && spec.toLowerCase().contains("equi-height");
+		if(containsEquiWidthEncoder) {
+			createGlobalEncoderWithEquiHeight(ec);
+		} else {
+			// first create encoders at the federated workers, then collect them and aggregate them to a single large
+			// encoder
+			FederationMap fedMapping = fin.getFedMapping();
+			fedMapping.forEachParallel((range, data) -> {
+				int columnOffset = (int) range.getBeginDims()[1];
 
-
-		// first create encoders at the federated workers, then collect them and aggregate them to a single large
-		// encoder
-		FederationMap fedMapping = fin.getFedMapping();
-		fedMapping.forEachParallel((range, data) -> {
-			int columnOffset = (int) range.getBeginDims()[1];
-
-			// create an encoder with the given spec. The columnOffset (which is 0 based) has to be used to
-			// tell the federated worker how much the indexes in the spec have to be offset.
-			Future<FederatedResponse> responseFuture = data.executeFederatedOperation(new FederatedRequest(
-				RequestType.EXEC_UDF, -1, new CreateFrameEncoder(data.getVarID(), spec, columnOffset + 1)));
-			// collect responses with encoders
-			try {
-				FederatedResponse response = responseFuture.get();
-				MultiColumnEncoder encoder = (MultiColumnEncoder) response.getData()[0];
-				// merge this encoder into a composite encoder
-				synchronized(globalEncoder) {
-					globalEncoder.mergeAt(encoder, columnOffset, (int) (range.getBeginDims()[0] + 1));
+				// create an encoder with the given spec. The columnOffset (which is 0 based) has to be used to
+				// tell the federated worker how much the indexes in the spec have to be offset.
+				Future<FederatedResponse> responseFuture = data.executeFederatedOperation(new FederatedRequest(
+					RequestType.EXEC_UDF,
+					-1,
+					new CreateFrameEncoder(data.getVarID(), spec, columnOffset + 1)));
+				// collect responses with encoders
+				try {
+					FederatedResponse response = responseFuture.get();
+					MultiColumnEncoder encoder = (MultiColumnEncoder) response.getData()[0];
+					// merge this encoder into a composite encoder
+					synchronized(globalEncoder) {
+						globalEncoder.mergeAt(encoder, columnOffset, (int) (range.getBeginDims()[0] + 1));
+					}
+					// no synchronization necessary since names should anyway match
+					String[] subRangeColNames = (String[]) response.getData()[1];
+					System.arraycopy(subRangeColNames, 0, colNames, (int) range.getBeginDims()[1], subRangeColNames.length);
 				}
-				// no synchronization necessary since names should anyway match
-				String[] subRangeColNames = (String[]) response.getData()[1];
-				System.arraycopy(subRangeColNames, 0, colNames, (int) range.getBeginDims()[1], subRangeColNames.length);
-			}
-			catch(Exception e) {
-				throw new DMLRuntimeException("Federated encoder creation failed: ", e);
-			}
-			return null;
-		});
+				catch(Exception e) {
+					throw new DMLRuntimeException("Federated encoder creation failed: ", e);
+				}
+				return null;
+			});
 
-		// sort for consistent encoding in local and federated
-		if(ColumnEncoderRecode.SORT_RECODE_MAP) {
-			globalEncoder.applyToAll(ColumnEncoderRecode.class, ColumnEncoderRecode::sortCPRecodeMaps);
+			// sort for consistent encoding in local and federated
+			if(ColumnEncoderRecode.SORT_RECODE_MAP) {
+				globalEncoder.applyToAll(ColumnEncoderRecode.class, ColumnEncoderRecode::sortCPRecodeMaps);
+			}
+
+			FrameBlock meta = new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING);
+			meta.setColumnNames(colNames);
+			globalEncoder.getMetaData(meta);
+			globalEncoder.initMetaData(meta);
+
+			encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutput(0)));
+
+			// release input and outputs
+			ec.setFrameOutput(getOutput(1).getName(), meta);
 		}
-
-		FrameBlock meta = new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING);
-		meta.setColumnNames(colNames);
-		globalEncoder.getMetaData(meta);
-		globalEncoder.initMetaData(meta);
-
-		encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutput(0)));
-
-		// release input and outputs
-		ec.setFrameOutput(getOutput(1).getName(), meta);
 	}
 
 	public void createGlobalEncoderWithEquiHeight(ExecutionContext ec) {
@@ -210,6 +209,17 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 						quantiles[i] = range * (i + 1);
 					}
 					quantilesPerColumn.put(((ColumnEncoderBin) enc).getColID(), quantiles);
+				} else if(enc instanceof ColumnEncoderComposite) {
+					for(Encoder compositeEncoder : ((ColumnEncoderComposite) enc).getEncoders()) {
+						if(compositeEncoder instanceof ColumnEncoderBin && ((ColumnEncoderBin) compositeEncoder).getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
+							double range = (double) fin.getNumRows() / ((ColumnEncoderBin) compositeEncoder).getNumBin();
+							double[] quantiles = new double[((ColumnEncoderBin) compositeEncoder).getNumBin()-1];
+							for(int i = 0; i < quantiles.length; i++) {
+								quantiles[i] = range * (i + 1);
+							}
+							quantilesPerColumn.put(((ColumnEncoderBin) compositeEncoder).getColID(), quantiles);
+						}
+					}
 				}
 			}
 		}
@@ -219,7 +229,8 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		for(Map.Entry<Integer, double[]> colQuantiles : quantilesPerColumn.entrySet()) {
 			// FIXME
 			QuantilePickFEDInstruction quantileInstr = new QuantilePickFEDInstruction(null, input1, output, PickByCount.OperationTypes.VALUEPICK, true, "qpick", "");
-			quantileInstr.getEquiHeightBins(ec, colQuantiles.getKey(), colQuantiles.getValue());
+			MatrixBlock quantiles = quantileInstr.getEquiHeightBins(ec, colQuantiles.getKey(), colQuantiles.getValue());
+			equiHeightBinsPerColumn.put(colQuantiles.getKey(), quantiles.getDenseBlockValues());
 		}
 
 		// encoder build

@@ -25,23 +25,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.Adler32;
-import java.util.zip.Checksum;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.PickByCount.OperationTypes;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -56,13 +50,9 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
-import org.apache.sysds.runtime.util.IndexRange;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 @SuppressWarnings("unchecked")
 public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
@@ -186,8 +176,11 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		T ret = createHistogram(in, (int) vectorLength, globalMin, globalMax, numBuckets, -1, false);
 
 		// Compute and set results
-		return computeMultipleQuantiles(ec, in, (int[]) ret, quantiles, (int) vectorLength, varID, (globalMax-globalMin) / numBuckets, globalMin, _type, true);
+		MatrixBlock res =  computeMultipleQuantiles(ec, in, (int[]) ret, quantiles, (int) vectorLength, varID, (globalMax-globalMin) / numBuckets, globalMin, _type, true);
 
+		ec.removeVariable(String.valueOf(varID));
+
+		return res;
 	}
 
 	public <T> void processRowQPick(ExecutionContext ec) {
@@ -243,6 +236,8 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 		// Compute and set results
 		if(quantiles != null && quantiles.length > 1) {
+			double finalVectorLength = vectorLength;
+			quantiles = Arrays.stream(quantiles).map(val -> (int) Math.round(finalVectorLength * val)).toArray();
 			computeMultipleQuantiles(ec, in, (int[]) ret, quantiles, (int) vectorLength, varID, (globalMax-globalMin) / numBuckets, globalMin, _type, false);
 		} else
 			getSingleQuantileResult(ret, ec, fedMap, varID, average, false, (int) vectorLength, null);
@@ -259,12 +254,12 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			sizeBeforeTmp += bucketsFrequencies[j];
 
 			for(int i = 0; i < quantiles.length; i++) {
-				int quantileIndex = (int) Math.round(vectorLength * quantiles[i]);
+
 				ImmutablePair<Double, Double> bucketWithQ;
 
-				if(quantileIndex > sizeBefore && quantileIndex <= sizeBeforeTmp) {
+				if(quantiles[i] > sizeBefore && quantiles[i] <= sizeBeforeTmp) {
 					bucketWithQ = new ImmutablePair<>(min + (j * bucketRange), min + ((j+1) * bucketRange));
-					bucketsWithIndex[i] = new ImmutableTriple<>(quantileIndex == 1 ? 1 : quantileIndex - sizeBefore, bucketsFrequencies[j], bucketWithQ);
+					bucketsWithIndex[i] = new ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>>(quantiles[i] == 1 ? 1 : (int) quantiles[i] - sizeBefore, bucketsFrequencies[j], bucketWithQ);
 					countFoundBins++;
 				}
 			}

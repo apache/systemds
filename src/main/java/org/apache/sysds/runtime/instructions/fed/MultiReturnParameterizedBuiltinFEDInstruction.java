@@ -35,6 +35,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.fedplanner.FTypes;
+import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -216,8 +217,9 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		// calculate all quantiles
 		Map<Integer, double[]> equiHeightBinsPerColumn = new HashMap<>();
 		for(Map.Entry<Integer, double[]> colQuantiles : quantilesPerColumn.entrySet()) {
-			// TODO
-			new QuantilePickFEDInstruction(null, input1, new CPOperand());
+			// FIXME
+			QuantilePickFEDInstruction quantileInstr = new QuantilePickFEDInstruction(null, input1, output, PickByCount.OperationTypes.VALUEPICK, true, "qpick", "");
+			quantileInstr.getEquiHeightBins(ec, colQuantiles.getKey(), colQuantiles.getValue());
 		}
 
 		// encoder build
@@ -227,7 +229,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			// create an encoder with the given spec. The columnOffset (which is 0 based) has to be used to
 			// tell the federated worker how much the indexes in the spec have to be offset.
 			Future<FederatedResponse> responseFuture = data.executeFederatedOperation(new FederatedRequest(
-				RequestType.EXEC_UDF, -1, new BuildFrameEncoderWithEqualHeight(data.getVarID(), encoders.get(range), equiHeightBinsPerColumn));
+				RequestType.EXEC_UDF, -1, new BuildFrameEncoderWithEqualHeight(data.getVarID(), encoders.get(range), equiHeightBinsPerColumn)));
 			// collect responses with encoders
 			try {
 				FederatedResponse response = responseFuture.get();

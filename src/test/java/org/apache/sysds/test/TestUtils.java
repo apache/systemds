@@ -1135,23 +1135,29 @@ public class TestUtils
 			if(sbe.isEmpty(i))
 				continue;
 			
-			if(sba.size(i) != sbe.size(i))
-				fail(message+"\nNumber of values are not equal in row: " + i);
+			final double[] e = sbe.values(i);
+			final double[] a = sba.values(i);
+			final int epos = sbe.pos(i);
+			final int apos = sba.pos(i);
+			final int elen = sbe.size(i) + epos;
+			if(sba.size(i) != sbe.size(i)){
+				String err  = message + "\nNumber of values are not equal in row: " + i + "  actual: " + sba.size(i) + " expected: " + sbe.size(i);
+				for(int j = epos ; j < elen; j++)
+					err+= " " +e[j];
+				for(int j = apos ; j < sba.size(i) + apos; j++)
+					err+= " " + a[j];
+				fail(err);
+			}
 
-				final double[] e = sbe.values(i);
-				final double[] a = sba.values(i);
-				final int epos = sbe.pos(i);
-				final int apos = sba.pos(i);
-				final int elen = sbe.size(i) + epos;
-				for(int j = apos, jj = epos; jj < elen; j++, jj++){
-					final double distance = getPercentDistance(e[jj], a[j], ignoreZero);
-					sumPercentDistance += distance;
-					if(distance < percentDistanceAllowed) {
-						message += ("\nExpected: " + e[jj] + " vs actual: " +  a[j] + " at " + i
-							+ " " + j + " Distance in percent " + distance);
-						countErrors++;
-					}
+			for(int j = apos, jj = epos; jj < elen; j++, jj++){
+				final double distance = getPercentDistance(e[jj], a[j], ignoreZero);
+				sumPercentDistance += distance;
+				if(distance < percentDistanceAllowed) {
+					message += ("\nExpected: " + e[jj] + " vs actual: " +  a[j] + " at " + i
+						+ " " + j + " Distance in percent " + distance);
+					countErrors++;
 				}
+			}
 		}
 
 		if(countErrors == 20){
@@ -1267,12 +1273,13 @@ public class TestUtils
 	}
 
 	public static void compareMatrices(MatrixBlock m1, MatrixBlock m2, double tolerance) {
-		double[][] ret1 = DataConverter.convertToDoubleMatrix(m1);
-		double[][] ret2 = DataConverter.convertToDoubleMatrix(m2);
-		compareMatrices(ret1, ret2, m2.getNumRows(), m2.getNumColumns(), tolerance, null);
+		compareMatrices(m1, m2, tolerance, null);
 	}
 
 	public static void compareMatrices(MatrixBlock m1, MatrixBlock m2, double tolerance, String message) {
+		if(m1.getNumRows() != m2.getNumRows() || m1.getNumColumns() != m2.getNumColumns())
+			fail("Matrices are different sizes " + m1.getNumRows() + "," + m1.getNumColumns() + " vs " + m2.getNumRows()
+				+ "," + m2.getNumColumns());
 		double[][] ret1 = DataConverter.convertToDoubleMatrix(m1);
 		double[][] ret2 = DataConverter.convertToDoubleMatrix(m2);
 		compareMatrices(ret1, ret2, m2.getNumRows(), m2.getNumColumns(), tolerance, message);

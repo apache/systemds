@@ -42,7 +42,7 @@ public interface MapToFactory {
 	}
 
 	public static AMapToData create(int size, boolean zeros, IntArrayList[] values) {
-		AMapToData _data = MapToFactory.create(size, values.length + (zeros ? 1 : 0));
+		AMapToData _data = create(size, values.length + (zeros ? 1 : 0));
 
 		if(zeros)
 			_data.fill(values.length);
@@ -57,7 +57,7 @@ public interface MapToFactory {
 	}
 
 	public static AMapToData create(int size, int[] values, int nUnique) {
-		AMapToData _data = MapToFactory.create(size, nUnique);
+		AMapToData _data = create(size, nUnique);
 		_data.copyInt(values);
 		return _data;
 	}
@@ -69,7 +69,7 @@ public interface MapToFactory {
 	 * @param numTuples The maximum value to be able to represent inside the map.
 	 * @return A new map
 	 */
-	public static AMapToData create(int size, int numTuples) {
+	public static AMapToData create(final int size, final int numTuples) {
 		if(numTuples <= 1)
 			return new MapToZero(size);
 		else if(numTuples == 2 && size > 32)

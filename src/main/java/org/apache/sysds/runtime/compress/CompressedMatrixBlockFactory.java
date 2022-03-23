@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.compress.cost.MemoryCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -105,6 +106,10 @@ public class CompressedMatrixBlockFactory {
 		return compress(mb, 1, new CompressionSettingsBuilder(), root);
 	}
 
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, CostEstimatorBuilder csb) {
+		return compress(mb, 1, new CompressionSettingsBuilder(), csb);
+	}
+
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb,
 		CompressionSettingsBuilder customSettings) {
 		return compress(mb, 1, customSettings, (WTreeRoot) null);
@@ -116,6 +121,10 @@ public class CompressedMatrixBlockFactory {
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, WTreeRoot root) {
 		return compress(mb, k, new CompressionSettingsBuilder(), root);
+	}
+
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, CostEstimatorBuilder csb) {
+		return compress(mb, k, new CompressionSettingsBuilder(), csb);
 	}
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, ACostEstimate costEstimator) {
@@ -236,7 +245,7 @@ public class CompressedMatrixBlockFactory {
 		// clear extra data from analysis
 		compressionGroups.clearMaps();
 		informationExtractor.clearNNZ();
-		
+
 		transposePhase();
 		compressPhase();
 		finalizePhase();
@@ -252,6 +261,13 @@ public class CompressedMatrixBlockFactory {
 		informationExtractor = CompressedSizeEstimatorFactory.createEstimator(mb, compSettings, k);
 		// Compute the individual columns cost information
 		compressionGroups = informationExtractor.computeCompressedSizeInfos(k);
+
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("Logging all individual columns estimated cost:");
+			for(CompressedSizeInfoColGroup g : compressionGroups.getInfo())
+				LOG.trace(String.format("Cost: %8.0f Size: %16d %15s", costEstimator.getCost(g), g.getMinSize(),
+					Arrays.toString(g.getColumns())));
+		}
 
 		_stats.estimatedSizeCols = compressionGroups.memoryEstimate();
 		_stats.estimatedCostCols = costEstimator.getCost(compressionGroups);
@@ -310,10 +326,10 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	private void transposePhase() {
-		final boolean haveMemory = Runtime.getRuntime().freeMemory() - (mb.estimateSizeInMemory() *2) > 0;
+		final boolean haveMemory = Runtime.getRuntime().freeMemory() - (mb.estimateSizeInMemory() * 2) > 0;
 		if(!compSettings.transposed && haveMemory) {
 			transposeHeuristics();
-			if(compSettings.transposed ) {
+			if(compSettings.transposed) {
 				boolean sparse = mb.isInSparseFormat();
 				mb = LibMatrixReorg.transpose(mb, new MatrixBlock(mb.getNumColumns(), mb.getNumRows(), sparse), k, true);
 				mb.evalSparseFormatInMemory();
@@ -335,8 +351,8 @@ public class CompressedMatrixBlockFactory {
 				if(mb.isInSparseFormat()) {
 					boolean haveManyColumns = mb.getNumColumns() > 10000;
 					boolean isNnzLowAndVerySparse = mb.getNonZeros() < 1000 && mb.getSparsity() < 0.4;
-					boolean isAboveRowNumbers = mb.getNumRows() > 500000;
-					boolean isAboveThreadToColumnRatio = compressionGroups.getNumberColGroups() > mb.getNumColumns() / 4;
+					boolean isAboveRowNumbers = mb.getNumRows() > 500000 && mb.getSparsity() < 0.4;
+					boolean isAboveThreadToColumnRatio = compressionGroups.getNumberColGroups() > mb.getNumColumns() / 30;
 					compSettings.transposed = haveManyColumns || isNnzLowAndVerySparse ||
 						(isAboveRowNumbers && isAboveThreadToColumnRatio);
 				}
@@ -374,6 +390,9 @@ public class CompressedMatrixBlockFactory {
 		}
 
 		_stats.setColGroupsCounts(res.getColGroups());
+
+		if(compSettings.isInSparkInstruction)
+			res.clearSoftReferenceToDecompressed();
 
 		final long oldNNZ = mb.getNonZeros();
 		if(oldNNZ <= 0L)

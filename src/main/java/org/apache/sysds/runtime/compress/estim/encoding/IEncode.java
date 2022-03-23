@@ -356,4 +356,10 @@ public interface IEncode {
 
 	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity);
 
+
+	/**
+	 * Signify if the counts are including zero or without zero.
+	 * @return is dense
+	 */
+	public abstract boolean isDense();
 }

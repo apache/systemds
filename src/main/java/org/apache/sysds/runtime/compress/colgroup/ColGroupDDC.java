@@ -27,6 +27,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -63,8 +64,10 @@ public class ColGroupDDC extends APreAgg {
 		if(data.getUnique() != dict.getNumberOfValues(colIndexes.length))
 			throw new DMLCompressionException("Invalid construction of DDC group " + data.getUnique() + " vs. "
 				+ dict.getNumberOfValues(colIndexes.length));
+
 		_zeros = false;
 		_data = data;
+		getCounts();
 
 	}
 
@@ -83,7 +86,19 @@ public class ColGroupDDC extends APreAgg {
 	@Override
 	protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		SparseBlock sb) {
-		throw new NotImplementedException();
+		for(int r = rl, offT = rl + offR; r < ru; r++, offT++) {
+			final int vr = _data.getIndex(r);
+			if(sb.isEmpty(vr))
+				continue;
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT) + offC;
+			final int apos = sb.pos(vr);
+			final int alen = sb.size(vr) + apos;
+			final int[] aix = sb.indexes(vr);
+			final double[] aval = sb.values(vr);
+			for(int j = apos; j < alen; j++)
+				c[off + _colIndexes[aix[j]]] += aval[j];
+		}
 	}
 
 	@Override
@@ -97,9 +112,10 @@ public class ColGroupDDC extends APreAgg {
 		}
 		else if(db.isContiguous() && _colIndexes.length == db.getDim(1) && offC == 0)
 			decompressToDenseBlockDenseDictAllColumnsContiguous(db, rl, ru, offR, values);
+		else if(db.isContiguous() && offC == 0)
+			decompressToDenseBlockDenseDictNoColOffset(db, rl, ru, offR, values);
 		else
 			decompressToDenseBlockDenseDictGeneric(db, rl, ru, offR, offC, values);
-
 	}
 
 	private void decompressToDenseBlockDenseDictSingleColContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
@@ -129,6 +145,19 @@ public class ColGroupDDC extends APreAgg {
 			final int offStart = (offR + r) * nCol;
 			for(int vOff = start, off = offStart; vOff < end; vOff++, off++)
 				c[off] += values[vOff];
+		}
+	}
+
+	private void decompressToDenseBlockDenseDictNoColOffset(DenseBlock db, int rl, int ru, int offR, double[] values) {
+		// generic
+		final int nCol = _colIndexes.length;
+		final int colOut = db.getDim(1);
+		int off = (rl + offR) * colOut;
+		for(int i = rl, offT = rl + offR; i < ru; i++, off += colOut) {
+			final double[] c = db.values(offT);
+			final int rowIndex = _data.getIndex(i) * nCol;
+			for(int j = 0; j < nCol; j++)
+				c[off + _colIndexes[j]] += values[rowIndex + j];
 		}
 	}
 
@@ -281,17 +310,7 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
-		if(rl == ru - 1)
-			for(int r = rl; r < ru; r++) {
-				final int apos = sb.pos(r);
-				final int alen = sb.size(r) + apos;
-				final int[] aix = sb.indexes(r);
-				final double[] avals = sb.values(r);
-				for(int j = apos; j < alen; j++)
-					preAgg[_data.getIndex(aix[j])] += avals[j];
-			}
-		else
-			throw new NotImplementedException();
+		_data.preAggregateSparse(sb, preAgg, rl, ru);
 	}
 
 	@Override
@@ -338,10 +357,8 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
-		if((op.fn instanceof Plus || op.fn instanceof Minus)
-		// && _dict instanceof MatrixBlockDictionary &&
-		// ((MatrixBlockDictionary) _dict).getMatrixBlock().isInSparseFormat()
-		) {
+		if((op.fn instanceof Plus || op.fn instanceof Minus) && _dict instanceof MatrixBlockDictionary &&
+			((MatrixBlockDictionary) _dict).getMatrixBlock().isInSparseFormat()) {
 			final double v0 = op.executeScalar(0);
 			if(v0 == 0)
 				return this;
@@ -364,10 +381,8 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
-		if((op.fn instanceof Plus || op.fn instanceof Minus)
-		// && _dict instanceof MatrixBlockDictionary &&
-		// ((MatrixBlockDictionary) _dict).getMatrixBlock().isInSparseFormat()
-		) {
+		if((op.fn instanceof Plus || op.fn instanceof Minus) && _dict instanceof MatrixBlockDictionary &&
+			((MatrixBlockDictionary) _dict).getMatrixBlock().isInSparseFormat()) {
 			final double[] reference = ColGroupUtils.binaryDefRowRight(op, v, _colIndexes);
 			return ColGroupDDCFOR.create(_colIndexes, _numRows, _dict, _data, getCachedCounts(), reference);
 		}

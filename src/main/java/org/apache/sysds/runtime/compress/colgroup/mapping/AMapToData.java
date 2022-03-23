@@ -307,7 +307,7 @@ public abstract class AMapToData implements Serializable {
 	 * @param cu      The column in m to end at (not inclusive)
 	 * @param indexes The Offset Indexes to iterate through
 	 */
-	public void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
+	public final void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
 		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), this);
 	}
 
@@ -320,8 +320,50 @@ public abstract class AMapToData implements Serializable {
 	 * @param ru      The row to end at (not inclusive)
 	 * @param indexes The Offset Indexes to iterate through
 	 */
-	public void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
+	public final void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
 		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), this);
+	}
+
+	/**
+	 * PreAggregate the sparseblock in the range of rows given.
+	 * 
+	 * @param sb    Sparse block to preAggregate from
+	 * @param preAV Pre aggregate target
+	 * @param rl    row index in sb
+	 * @param ru    upper row index in sp (not inclusive)
+	 */
+	public final void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru) {
+		if(rl == ru - 1)
+			preAggregateSparseSingleRow(sb, preAV, rl);
+		else
+			preAggregateSparseMultiRow(sb, preAV, rl, ru);
+	}
+
+	private final void preAggregateSparseSingleRow(final SparseBlock sb, final double[] preAV, final int r) {
+		if(sb.isEmpty(r))
+			return;
+		final int apos = sb.pos(r);
+		final int alen = sb.size(r) + apos;
+		final int[] aix = sb.indexes(r);
+		final double[] avals = sb.values(r);
+		for(int j = apos; j < alen; j++)
+			preAV[getIndex(aix[j])] += avals[j];
+	}
+
+	private final void preAggregateSparseMultiRow(final SparseBlock sb, final double[] preAV, final int rl,
+		final int ru) {
+		final int unique = getUnique();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+			final int apos = sb.pos(r);
+			final int alen = sb.size(r) + apos;
+			final int[] aix = sb.indexes(r);
+			final double[] avals = sb.values(r);
+			final int off = unique * (r - rl);
+			for(int j = apos; j < alen; j++)
+				preAV[off + getIndex(aix[j])] += avals[j];
+		}
 	}
 
 	/**
@@ -340,8 +382,8 @@ public abstract class AMapToData implements Serializable {
 				if(counts[actualUnique - 1] > 0)
 					break;
 			}
-			throw new DMLCompressionException(
-				"Invalid number unique expected: " + counts.length + " but is actually: " + actualUnique + " type: " + getType());
+			throw new DMLCompressionException("Invalid number unique expected: " + counts.length + " but is actually: "
+				+ actualUnique + " type: " + getType());
 		}
 		return counts;
 	}
@@ -390,7 +432,6 @@ public abstract class AMapToData implements Serializable {
 	protected void preAggregateDDC_DDCMultiCol(AMapToData tm, ADictionary td, double[] v, int nCol) {
 		final int sz = size();
 		final int h = sz % 8;
-
 		for(int r = 0; r < h; r++)
 			td.addToEntry(v, tm.getIndex(r), getIndex(r), nCol);
 

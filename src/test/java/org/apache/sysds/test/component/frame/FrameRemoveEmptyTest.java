@@ -19,11 +19,17 @@
 
 package org.apache.sysds.test.component.frame;
 
+import static org.junit.Assert.fail;
+
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -32,6 +38,9 @@ import org.apache.sysds.test.functions.unary.matrix.RemoveEmptyTest;
 import org.junit.Test;
 
 public class FrameRemoveEmptyTest extends AutomatedTestBase {
+
+	// private static final Log LOG = LogFactory.getLog(FrameRemoveEmptyTest.class.getName());
+
 	private final static String TEST_NAME1 = "removeEmpty1";
 	private final static String TEST_NAME2 = "removeEmpty2";
 	private final static String TEST_DIR = "functions/frame/";
@@ -44,8 +53,8 @@ public class FrameRemoveEmptyTest extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"V"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"V"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
 	}
 
 	@Test
@@ -100,21 +109,28 @@ public class FrameRemoveEmptyTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] {"-explain", "-args", input("V"), input("I"), margin, output("V")};
+			programArgs = new String[] {"-explain", "-args", input("V"), input("I"), margin, output("R")};
 
 			Pair<MatrixBlock, MatrixBlock> data = createInputMatrix(margin, bSelectIndex, fullSelect);
 			MatrixBlock in = data.getKey();
 			MatrixBlock select = data.getValue();
 
-			runTest(true, false, null, -1);
-
-			double[][] outArray = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromOutputDir("V"));
-			MatrixBlock out = new MatrixBlock(outArray.length, outArray[0].length, false);
-			out.init(outArray, outArray.length, outArray[0].length);
+			runTest(null);
 
 			MatrixBlock expected = fullSelect ? in :
 				in.removeEmptyOperations(new MatrixBlock(), margin.equals("rows"), false, select);
+
+			HashMap<CellIndex, Double> outMap = readDMLMatrixFromOutputDir("R");
+			MatrixBlock out = new MatrixBlock(expected.getNumRows(), expected.getNumColumns(), true);
+			for(Entry<CellIndex,Double> e : outMap.entrySet())
+				if(e.getValue() != 0)
+					out.setValue(e.getKey().row -1, e.getKey().column -1, e.getValue());
+			
 			TestUtils.compareMatrices(expected, out, 0);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail("Failed test because of exception " + e);
 		}
 		finally {
 			// reset platform for additional tests

@@ -162,11 +162,10 @@ public class CLALibScalar {
 		CompressedMatrixBlock ret, int k) {
 		if(colGroups == null)
 			return;
-		ExecutorService pool = CommonThreadPool.get(k);
+		final ExecutorService pool = CommonThreadPool.get(k);
 		List<ScalarTask> tasks = partition(sop, colGroups);
 		try {
 			List<Future<List<AColGroup>>> rtasks = pool.invokeAll(tasks);
-			pool.shutdown();
 			List<AColGroup> newColGroups = new ArrayList<>();
 			for(Future<List<AColGroup>> f : rtasks) {
 				newColGroups.addAll(f.get());
@@ -174,8 +173,10 @@ public class CLALibScalar {
 			ret.allocateColGroupList(newColGroups);
 		}
 		catch(InterruptedException | ExecutionException e) {
+			pool.shutdown();
 			throw new DMLRuntimeException(e);
 		}
+		pool.shutdown();
 	}
 
 	private static List<ScalarTask> partition(ScalarOperator sop, List<AColGroup> colGroups) {

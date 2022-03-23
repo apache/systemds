@@ -88,7 +88,7 @@ public class Memorizer {
 	}
 
 	public String stats() {
-		return " possible: " + st1 + " requests: " + st2 + " joined: " + st3  + " outSecond: "+ st4;
+		return " possible: " + st1 + " requests: " + st2 + " combined: " + st3  + " outSecond: "+ st4;
 	}
 
 	public void resetStats() {

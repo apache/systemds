@@ -49,4 +49,9 @@ public class EmptyEncoding implements IEncode {
 	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
 		return new EstimationFactors(cols.length, 0, 0);
 	}
+	
+	@Override
+	public  boolean isDense(){
+		return false;
+	}
 }

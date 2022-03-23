@@ -37,6 +37,8 @@ public abstract class APreAgg extends AColGroupValue {
 
 	private static final long serialVersionUID = 3250955207277128281L;
 
+	private static boolean loggedWarningForDirect = false;
+
 	/**
 	 * Constructor for serialization
 	 * 
@@ -180,8 +182,10 @@ public abstract class APreAgg extends AColGroupValue {
 			DictLibMatrixMult.TSMMToUpperTriangleScaling(lg._dict, _dict, leftIdx, rightIdx, getCounts(), result);
 		else {
 			final boolean left = shouldPreAggregateLeft(lg);
-			if(shouldDirectMultiply(lg, leftIdx.length, rightIdx.length, left))
+			if(!loggedWarningForDirect && shouldDirectMultiply(lg, leftIdx.length, rightIdx.length, left)){
+				loggedWarningForDirect = true;
 				LOG.warn("Not implemented direct tsmm colgroup");
+			}
 
 			if(left) {
 				final ADictionary lpa = this.preAggregateThatIndexStructure(lg);

@@ -24,7 +24,6 @@ import java.util.Collection;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -42,12 +41,12 @@ public class JolEstimateUncompressedTest extends JolEstimateTest {
 		ArrayList<Object[]> tests = new ArrayList<>();
 		
 		// single cell
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{0}})});
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1}})});
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{42151}})});
+		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{0}})});
+		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1}})});
+		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{42151}})});
 		
 		// Const
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1,1,1}})});
+		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1,1,1}})});
 		
 		// Empty
 		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(1, 1, 0, 0, 0.0, 7)});
@@ -63,7 +62,7 @@ public class JolEstimateUncompressedTest extends JolEstimateTest {
 		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(13, 100, 0, 100, 1.0, 7)});
 
 		// Const multi column
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1,1,1},{1,1,1},{1,1,1}})});
+		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1,1,1},{1,1,1},{1,1,1}})});
 		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(13, 100, 1, 1, 1.0, 7)});
 		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(30, 100, 1, 1, 1.0, 7)});
 		

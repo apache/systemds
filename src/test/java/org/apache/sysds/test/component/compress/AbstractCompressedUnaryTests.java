@@ -28,6 +28,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -43,8 +44,8 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 
 	public AbstractCompressedUnaryTests(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov, int parallelism,
-		Collection<CompressionType> ct) {
-		super(sparType, valType, valRange, compSettings, matrixTypology, ov, parallelism, ct);
+		Collection<CompressionType> ct, CostEstimatorBuilder csb) {
+		super(sparType, valType, valRange, compSettings, matrixTypology, ov, parallelism, ct, csb);
 	}
 
 	enum AggType {

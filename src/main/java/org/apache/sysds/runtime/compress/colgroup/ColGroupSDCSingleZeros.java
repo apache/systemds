@@ -93,11 +93,11 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		else if(it.value() >= ru)
 			_indexes.cacheIterator(it, ru);
 		else
-			decompressToDenseBlockDenseDictionary(db, rl, ru, offR, offC, values, it);
+			decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, values, it);
 	}
 
 	@Override
-	public void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC, double[] values,
+	public void decompressToDenseBlockDenseDictionaryWithProvidedIterator(DenseBlock db, int rl, int ru, int offR, int offC, double[] values,
 		AIterator it) {
 		final int last = _indexes.getOffsetToLast();
 		if(it == null || it.value() >= ru || rl > last)
@@ -341,42 +341,87 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 
 	@Override
 	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru) {
-		final AIterator it = _indexes.getIterator();
-		if(rl == ru - 1) {
-			final int apos = sb.pos(rl);
-			final int alen = sb.size(rl) + apos;
-			final int[] aix = sb.indexes(rl);
-			final double[] avals = sb.values(rl);
-			final int offsetToLast = _indexes.getOffsetToLast();
-
-			double ret = 0;
-			int j = apos;
-
-			while(true) {
-				final int idx = aix[j];
-
-				if(idx == it.value()) {
-					ret += avals[j++];
-					if(j >= alen || it.value() >= offsetToLast)
-						break;
-					it.next();
-				}
-				else if(idx < it.value()) {
-					j++;
-					if(j >= alen)
-						break;
-				}
-				else {
-					if(it.value() >= offsetToLast)
-						break;
-					it.next();
-				}
-			}
-
-			preAgg[0] = ret;
-		}
+		final AOffsetIterator it = _indexes.getOffsetIterator();
+		if(rl == ru - 1)
+			preAggregateSparseSingleRow(sb, preAgg, rl, _indexes.getOffsetToLast(), it);
 		else
-			throw new NotImplementedException();
+			preAggregateSparseMultiRow(sb, preAgg, rl, ru, _indexes.getOffsetToLast(), it);
+	}
+
+	private static void preAggregateSparseSingleRow(final SparseBlock sb, final double[] preAgg, final int r,
+		final int last, final AOffsetIterator it) {
+		if(sb.isEmpty(r))
+			return;
+
+		final int apos = sb.pos(r);
+		final int alen = sb.size(r) + apos;
+		final int[] aix = sb.indexes(r);
+		final double[] avals = sb.values(r);
+
+		double ret = 0;
+		int i = it.value();
+		int j = apos;
+		while(i < last && j < alen) {
+			final int idx = aix[j];
+			if(idx == i) {
+				ret += avals[j++];
+				i = it.next();
+			}
+			else if(idx < i)
+				j++;
+			else
+				i = it.next();
+		}
+
+		while(j < alen && aix[j] < last)
+			j++;
+
+		if(j < alen && aix[j] == last)
+			ret += avals[j];
+
+		preAgg[0] = ret;
+	}
+
+	private static void preAggregateSparseMultiRow(final SparseBlock sb, final double[] preAgg, final int rl,
+		final int ru, final int last, final AOffsetIterator it) {
+
+		int i = it.value();
+		final int[] aOffs = new int[ru - rl];
+
+		// Initialize offsets for each row
+		for(int r = rl; r < ru; r++)
+			aOffs[r - rl] = sb.pos(r);
+
+		while(i < last) { // while we are not done iterating
+			for(int r = rl; r < ru; r++) {
+				final int off = r - rl;
+				int apos = aOffs[off]; // current offset
+				final int alen = sb.size(r) + sb.pos(r);
+				final int[] aix = sb.indexes(r);
+				while(apos < alen && aix[apos] < i)// increment all pointers to offset
+					apos++;
+
+				if(apos < alen && aix[apos] == i)
+					preAgg[off] += sb.values(r)[apos];
+				aOffs[off] = apos;
+			}
+			i = it.next();
+		}
+
+		// process final element
+		for(int r = rl; r < ru; r++) {
+			final int off = r - rl;
+			int apos = aOffs[off];
+			final int alen = sb.size(r) + sb.pos(r);
+			final int[] aix = sb.indexes(r);
+			while(apos < alen && aix[apos] < last)
+				apos++;
+
+			if(apos < alen && aix[apos] == last)
+				preAgg[off] += sb.values(r)[apos];
+			aOffs[off] = apos;
+		}
+
 	}
 
 	@Override
@@ -652,13 +697,13 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		return e.getCost(nRows, nRowsScanned, nCols, nVals, _dict.getSparsity());
 	}
 
-	@Override 
-	protected int getIndexesSize(){
+	@Override
+	protected int getIndexesSize() {
 		return getCounts()[0];
 	}
 
 	@Override
-	protected  int numRowsToMultiply(){
+	protected int numRowsToMultiply() {
 		return getCounts()[0];
 	}
 

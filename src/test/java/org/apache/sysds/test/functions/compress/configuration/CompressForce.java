@@ -77,12 +77,12 @@ public class CompressForce extends CompressBase {
 
 	@Test
 	public void testSequence_CP() {
-		runTest(1500, 1, 1, 1, ExecType.CP, "plus_mm_ewbm_sum");
+		runTest(1500, 1, 0, 1, ExecType.CP, "plus_mm_ewbm_sum");
 	}
 
 	@Test
 	public void testSequence_SP() {
-		runTest(1500, 1, 2, 1, ExecType.SPARK, "plus_mm_ewbm_sum");
+		runTest(1500, 1, 0, 1, ExecType.SPARK, "plus_mm_ewbm_sum");
 	}
 
 	@Test
@@ -97,17 +97,17 @@ public class CompressForce extends CompressBase {
 
 	@Test
 	public void test_ElementWiseBinaryMultiplyOp_right_CP() {
-		runTest(1500, 1, 1, 1, ExecType.CP, "ewbm_right");
+		runTest(1500, 1, 0, 1, ExecType.CP, "ewbm_right");
 	}
 
 	@Test
 	public void test_ElementWiseBinaryMultiplyOp_right_SP() {
-		runTest(1500, 1, 2, 1, ExecType.SPARK, "ewbm_right");
+		runTest(1500, 1, 0, 1, ExecType.SPARK, "ewbm_right");
 	}
 
 	@Test
 	public void test_ElementWiseBinaryMultiplyOp_left_CP() {
-		runTest(1500, 1, 1, 1, ExecType.CP, "ewbm_left");
+		runTest(1500, 1, 0, 1, ExecType.CP, "ewbm_left");
 	}
 
 	@Test
@@ -117,7 +117,7 @@ public class CompressForce extends CompressBase {
 
 	@Test
 	public void test_ElementWiseBinaryMultiplyOp_left_SP_larger() {
-		runTest(1500, 15, 2, 1, ExecType.SPARK, "ewbm_left");
+		runTest(1500, 15, 0, 1, ExecType.SPARK, "ewbm_left");
 	}
 
 	@Test

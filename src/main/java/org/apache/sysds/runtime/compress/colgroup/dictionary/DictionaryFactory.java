@@ -103,16 +103,16 @@ public interface DictionaryFactory {
 
 	}
 
-	public static ADictionary createDelta(DblArrayCountHashMap map, int nCols, boolean addZeroTuple) {
-		final ArrayList<DArrCounts> vals = map.extractValues();
-		final int nVals = vals.size();
-		final double[] resValues = new double[(nVals + (addZeroTuple ? 1 : 0)) * nCols];
-		for(int i = 0; i < nVals; i++) {
-			final DArrCounts dac = vals.get(i);
-			System.arraycopy(dac.key.getData(), 0, resValues, dac.id * nCols, nCols);
-		}
-		return new DeltaDictionary(resValues, nCols);
-	}
+	// public static ADictionary createDelta(DblArrayCountHashMap map, int nCols, boolean addZeroTuple) {
+	// 	final ArrayList<DArrCounts> vals = map.extractValues();
+	// 	final int nVals = vals.size();
+	// 	final double[] resValues = new double[(nVals + (addZeroTuple ? 1 : 0)) * nCols];
+	// 	for(int i = 0; i < nVals; i++) {
+	// 		final DArrCounts dac = vals.get(i);
+	// 		System.arraycopy(dac.key.getData(), 0, resValues, dac.id * nCols, nCols);
+	// 	}
+	// 	return new DeltaDictionary(resValues, nCols);
+	// }
 
 	public static ADictionary create(ABitmap ubm) {
 		return create(ubm, 1.0);

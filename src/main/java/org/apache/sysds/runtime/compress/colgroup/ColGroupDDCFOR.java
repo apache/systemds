@@ -224,9 +224,8 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 		final double[] newRef = new double[_reference.length];
 		for(int i = 0; i < _reference.length; i++)
 			newRef[i] = op.executeScalar(_reference[i]);
-		if(op.fn instanceof Plus || op.fn instanceof Minus) {
+		if(op.fn instanceof Plus || op.fn instanceof Minus) 
 			return create(_colIndexes, _numRows, _dict, _data, getCachedCounts(), newRef);
-		}
 		else if(op.fn instanceof Multiply || op.fn instanceof Divide) {
 			final ADictionary newDict = _dict.applyScalarOp(op);
 			return create(_colIndexes, _numRows, newDict, _data, getCachedCounts(), newRef);
@@ -449,12 +448,20 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	public long getNumberNonZeros(int nRows) {
-		final int[] counts = getCounts();
-		final int count = _numRows - _data.size();
-		long c = _dict.getNumberNonZerosWithReference(counts, _reference, nRows);
-		for(int x = 0; x < _colIndexes.length; x++)
-			c += _reference[x] != 0 ? count : 0;
-		return c;
+		long nnz = 0;
+		int refCount= 0;
+		for(int i = 0; i < _reference.length; i ++)
+			if(_reference[i] != 0)
+				refCount ++;
+
+		if (refCount == _colIndexes.length)
+			return (long)_colIndexes.length * nRows;
+		else{
+			nnz += _dict.getNumberNonZerosWithReference(getCounts(), _reference, nRows);
+			nnz += refCount * nRows;
+		}
+
+		return Math.min((long)_colIndexes.length * nRows, nnz);
 	}
 
 	@Override
@@ -505,6 +512,8 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 		op.fn.execute(ret, _reference[0], count);
 		return ret;
 	}
+
+
 
 	@Override
 	public String toString() {

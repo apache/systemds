@@ -186,6 +186,21 @@ public class DoubleCountHashMap {
 		return counts;
 	}
 
+	public double getMostFrequent(){
+		double f = 0;
+		int fq = 0;
+		for(Bucket e: _data){
+			while(e != null){
+				if(e.v.count > fq){
+					fq = e.v.count;
+					f = e.v.key;
+				}
+				e = e.n;
+			}
+		}
+		return f;
+	}
+
 	private void resize() {
 		// check for integer overflow on resize
 		if(_data.length > Integer.MAX_VALUE / RESIZE_FACTOR)

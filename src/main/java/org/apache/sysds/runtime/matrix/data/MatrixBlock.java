@@ -1102,16 +1102,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return true if matrix block should be in sparse format in memory
 	 */
 	public boolean evalSparseFormatInMemory() {
+		return evalSparseFormatInMemory(false);
+	}
+	
+	public boolean evalSparseFormatInMemory(boolean allowCSR) {
 		//ensure exact size estimates for write
 		if( nonZeros<=0 )
 			recomputeNonZeros();
 		
 		//decide on in-memory representation
-		return evalSparseFormatInMemory(rlen, clen, nonZeros);
+		return evalSparseFormatInMemory(rlen, clen, nonZeros, allowCSR);
 	}
-	
+
 	@SuppressWarnings("unused")
-	private boolean evalSparseFormatInMemory(boolean transpose)
+	private boolean evalSparseFormatInMemoryTranspose(boolean transpose)
 	{
 		int lrlen = (transpose) ? clen : rlen;
 		int lclen = (transpose) ? rlen : clen;
@@ -1169,7 +1173,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 */
 	public void examSparsity(boolean allowCSR) {
 		//determine target representation
-		boolean sparseDst = evalSparseFormatInMemory(); 
+		boolean sparseDst = evalSparseFormatInMemory(allowCSR); 
 		
 		//check for empty blocks (e.g., sparse-sparse)
 		if( isEmptyBlock(false) ) {
@@ -1198,17 +1202,21 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param nnz number of non-zeros
 	 * @return true if matrix block shold be in sparse format in memory
 	 */
-	public static boolean evalSparseFormatInMemory( final long nrows, final long ncols, final long nnz )
-	{
+	public static boolean evalSparseFormatInMemory(long nrows, long ncols, long nnz) {
+		return evalSparseFormatInMemory(nrows, ncols, nnz, false);
+	}
+
+	public static boolean evalSparseFormatInMemory(final long nrows, final long ncols, final long nnz,
+		final boolean allowCSR) {
 		//evaluate sparsity threshold
 		double lsparsity = (double)nnz/nrows/ncols;
-		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT);
+		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT) && ncols > 1;
 		
 		//compare size of sparse and dense representation in order to prevent
 		//that the sparse size exceed the dense size since we use the dense size
 		//as worst-case estimate if unknown (and it requires less io from 
 		//main memory).
-		double sizeSparse = estimateSizeSparseInMemory(nrows, ncols, lsparsity);
+		double sizeSparse = estimateSizeSparseInMemory(nrows, ncols, lsparsity, allowCSR);
 		double sizeDense = estimateSizeDenseInMemory(nrows, ncols);
 		
 		return lsparse && (sizeSparse<sizeDense);
@@ -2585,6 +2593,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			return estimateSizeDenseInMemory(nrows, ncols);
 	}
 
+	public long estimateSizeDenseInMemory(){
+		return estimateSizeDenseInMemory(rlen, clen);
+	}
+
 	public static long estimateSizeDenseInMemory(long nrows, long ncols) {
 		double size = getHeaderSize()
 			+ DenseBlockFactory.estimateSizeDenseInMemory(nrows, ncols);
@@ -2592,8 +2604,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 
+	public long estimateSizeSparseInMemory() {
+		return estimateSizeSparseInMemory(rlen, clen, getSparsity());
+	}
+
 	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity) {
 		return estimateSizeSparseInMemory(nrows, ncols, sparsity, DEFAULT_SPARSEBLOCK);
+	}
+
+	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity, boolean allowCSR) {
+		if(allowCSR)
+			return estimateSizeSparseInMemory(nrows, ncols, sparsity, SparseBlock.Type.CSR);
+		else 
+			return estimateSizeSparseInMemory(nrows, ncols, sparsity, DEFAULT_SPARSEBLOCK);
+	}
+
+	public long estimateSizeSparseInMemory(SparseBlock.Type stype){
+		return estimateSizeSparseInMemory(rlen, clen, getSparsity(), stype);
 	}
 	
 	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity, SparseBlock.Type stype) {
@@ -3087,10 +3114,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 
 			if(m2 instanceof CompressedMatrixBlock)
 				m2 = ((CompressedMatrixBlock) m2)
-					.getUncompressed("Ternary Operator arg2 " + op.fn.getClass().getSimpleName());
+					.getUncompressed("Ternary Operator arg2 " + op.fn.getClass().getSimpleName(), op.getNumThreads());
 			if(m3 instanceof CompressedMatrixBlock)
 				m3 = ((CompressedMatrixBlock) m3)
-					.getUncompressed("Ternary Operator arg3 " + op.fn.getClass().getSimpleName());
+					.getUncompressed("Ternary Operator arg3 " + op.fn.getClass().getSimpleName(), op.getNumThreads());
 
 			ret.reset(m, n, sparseOutput);
 
@@ -3763,6 +3790,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		boolean plus = fn instanceof Plus;
 		Builtin bfn = !plus ? (Builtin)((SimpleOperator)op).fn : null;
 		
+		for(int i = 0; i < matrices.length; i++)
+			if(matrices[i] instanceof CompressedMatrixBlock)
+				matrices[i] = CompressedMatrixBlock.getUncompressed(matrices[i], "Nary operation process add row");
+
 		//process all scalars
 		double init = plus ? 0 :(bfn.getBuiltinCode() == BuiltinCode.MIN) ?
 			Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
@@ -3831,8 +3862,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		for( MatrixBlock in : inputs ) {
 			if( in.isEmptyBlock(false) )
 				continue;
-			if(in instanceof CompressedMatrixBlock)
-				in = CompressedMatrixBlock.getUncompressed(in, "ProcessAddRow");
 			
 			if( in.isInSparseFormat() ) {
 				SparseBlock a = in.getSparseBlock();
@@ -5055,11 +5084,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
 			AggregateTernaryOperator op, boolean inCP) {
 		if(m1 instanceof CompressedMatrixBlock)
-			m1 = ((CompressedMatrixBlock) m1).getUncompressed("Aggregate Ternary Operator arg1 " + op.getClass().getSimpleName());
+			m1 = ((CompressedMatrixBlock) m1).getUncompressed("Aggregate Ternary Operator arg1 " + op.getClass().getSimpleName(), op.getNumThreads());
 		if(m2 instanceof CompressedMatrixBlock)
-			m2 = ((CompressedMatrixBlock) m2).getUncompressed("Aggregate Ternary Operator arg2 " + op.getClass().getSimpleName());
+			m2 = ((CompressedMatrixBlock) m2).getUncompressed("Aggregate Ternary Operator arg2 " + op.getClass().getSimpleName(), op.getNumThreads());
 		if(m3 instanceof CompressedMatrixBlock)
-			m3 = ((CompressedMatrixBlock) m3).getUncompressed("Aggregate Ternary Operator arg3 " + op.getClass().getSimpleName());
+			m3 = ((CompressedMatrixBlock) m3).getUncompressed("Aggregate Ternary Operator arg3 " + op.getClass().getSimpleName(), op.getNumThreads());
 
 		//create output matrix block w/ corrections
 		int rl = (op.indexFn instanceof ReduceRow) ? 2 : 1;

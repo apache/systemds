@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.cost;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -110,19 +111,19 @@ public class ComputationCostEstimator extends ACostEstimate {
 	 * @return A cost
 	 */
 	public double getCost(int nRows, int nRowsScanned, int nCols, int nVals, double sparsity) {
-		sparsity = (nCols < 3 || _isDensifying || sparsity > 0.4) ? 1 : sparsity;
+		sparsity = (nCols < 3 || sparsity > 0.4) ? 1 : sparsity;
 
-		if((double) nRowsScanned / nRows > 0.6)
-			nRowsScanned = nRows;
 		double cost = 0;
-		cost += leftMultCost(nRowsScanned, nCols, nVals, sparsity);
+		cost += leftMultCost(nRowsScanned, nRows, nCols, nVals, sparsity);
 		cost += scanCost(nRowsScanned, nCols, nVals, sparsity);
 		cost += dictionaryOpsCost(nVals, nCols, sparsity);
 		cost += rightMultCost(nCols, nVals, sparsity);
 		cost += decompressionCost(nVals, nCols, nRowsScanned, sparsity);
 		cost += overlappingDecompressionCost(nRowsScanned);
-		cost += compressedMultiplicationCost(nRowsScanned, nVals, nCols, sparsity);
+		cost += compressedMultiplicationCost(nRowsScanned, nRows, nVals, nCols, sparsity);
 		cost += 100; // base cost
+		if(cost < 0)
+			throw new DMLCompressionException("Ivalid negative cost: " + cost);
 		return cost;
 	}
 
@@ -133,8 +134,8 @@ public class ComputationCostEstimator extends ACostEstimate {
 	@Override
 	public double getCost(MatrixBlock mb) {
 		double cost = 0;
-		final int nCols = mb.getNumColumns();
-		final int nRows = mb.getNumRows();
+		final double nCols = mb.getNumColumns();
+		final double nRows = mb.getNumRows();
 		final double sparsity = (nCols < 3 || _isDensifying) ? 1 : mb.getSparsity();
 
 		cost += dictionaryOpsCost(nRows, nCols, sparsity);
@@ -144,10 +145,11 @@ public class ComputationCostEstimator extends ACostEstimate {
 		// Scan cost we set the rows scanned to zero, since they
 		// are not indirectly scanned like in compression
 		cost += scanCost(0, nRows, nCols, sparsity);
-		cost += compressedMultiplicationCost(0, nRows, nCols, sparsity);
-
+		cost += compressedMultiplicationCost(0, 0, nRows, nCols, sparsity);
 		// decompression cost ... 0 for both overlapping and normal decompression
 
+		if(cost < 0)
+			throw new DMLCompressionException("Invalid negative cost : " + cost);
 		return cost;
 	}
 
@@ -168,9 +170,9 @@ public class ComputationCostEstimator extends ACostEstimate {
 		return _dictionaryOps * sparsity * nVals * nCols * 2;
 	}
 
-	private double leftMultCost(double nRows, double nCols, double nVals, double sparsity) {
+	private double leftMultCost(double nRowsScanned, double nRows, double nCols, double nVals, double sparsity) {
 		// Plus nVals * 2 because of allocation of nVals array and scan of that
-		final double preScalingCost = nRows + nVals * 2;
+		final double preScalingCost = Math.max(nRowsScanned, nRows / 10) + nVals * 2;
 		final double postScalingCost = sparsity * nVals * nCols;
 		return leftMultCost(preScalingCost, postScalingCost);
 	}
@@ -201,9 +203,9 @@ public class ComputationCostEstimator extends ACostEstimate {
 		return _scans * (nRowsScanned + nVals * nCols * sparsity);
 	}
 
-	private double compressedMultiplicationCost(double nRowsScanned, double nVals, double nCols, double sparsity) {
+	private double compressedMultiplicationCost(double nRowsScanned, double nRows, double nVals, double nCols, double sparsity) {
 		// return _compressedMultiplication * Math.max(nRowsScanned * nCols ,nVals * nCols * sparsity );
-		return _compressedMultiplication * (nRowsScanned + nVals * nCols * sparsity);
+		return _compressedMultiplication * (Math.max(nRowsScanned, nRows / 10) + nVals * nCols * sparsity);
 	}
 
 	@Override

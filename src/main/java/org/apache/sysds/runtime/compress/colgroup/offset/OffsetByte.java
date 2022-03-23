@@ -308,14 +308,14 @@ public class OffsetByte extends AOffset {
 		}
 
 		@Override
-		public int next() {
+		public final int next() {
 			offset += offsets[index];
 			index++;
 			return offset;
 		}
 
 		@Override
-		public int skipTo(int idx) {
+		public final int skipTo(int idx) {
 			while(offset < idx && index < offsets.length) {
 				offset += offsets[index];
 				index++;
@@ -325,7 +325,7 @@ public class OffsetByte extends AOffset {
 		}
 
 		@Override
-		public IterateByteOffsetNoOverHalf clone() {
+		public final IterateByteOffsetNoOverHalf clone() {
 			return new IterateByteOffsetNoOverHalf(index, offset);
 		}
 	}

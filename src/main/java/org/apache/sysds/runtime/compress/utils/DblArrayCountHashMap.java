@@ -135,6 +135,16 @@ public class DblArrayCountHashMap {
 			}
 	}
 
+	public int getSumCounts(){
+		int c = 0;
+		for(Bucket e : _data)
+			while(e != null) {
+				c += e.v.count;
+				e = e.n;
+			}
+		return c;
+	}
+
 	public int[] getUnorderedCountsAndReplaceWithUIDs() {
 		final int[] counts = new int[_size];
 		int i = 0;

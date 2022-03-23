@@ -475,6 +475,11 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
+	public ADictionary binOpRight(BinaryOperator op, double[] v) {
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public ADictionary binOpLeftWithReference(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
 		double[] newReference) {
 		throw new NotImplementedException();

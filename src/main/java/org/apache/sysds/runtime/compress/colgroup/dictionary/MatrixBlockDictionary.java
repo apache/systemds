@@ -64,12 +64,11 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	public MatrixBlockDictionary(MatrixBlock data, int nCol) {
-
-		if(data.isEmpty())
+		data.examSparsity(true);
+		if(data.getNumColumns() != nCol)
+			throw new DMLCompressionException("Invalid number of columns in dictionary");
+		else if(data.isEmpty())
 			throw new DMLCompressionException("Invalid construction of empty dictionary");
-		else if(data.getNumColumns() != nCol)
-			throw new DMLCompressionException(
-				"Invalid construction expected nCol: " + nCol + " but matrix block contains: " + data.getNumColumns());
 		else if(data.isInSparseFormat() && data.getSparseBlock() instanceof SparseBlockMCSR) {
 			SparseBlock csr = SparseBlockFactory.copySparseBlock(SparseBlock.Type.CSR, data.getSparseBlock(), false);
 			data.setSparseBlock(csr);
@@ -94,7 +93,8 @@ public class MatrixBlockDictionary extends ADictionary {
 	public double[] getValues() {
 		if(_data.isInSparseFormat()) {
 			LOG.warn("Inefficient call to getValues for a MatrixBlockDictionary because it was sparse");
-			_data.sparseToDense();
+			throw new DMLCompressionException("Should not call this function");
+			// _data.sparseToDense();
 		}
 		return _data.getDenseBlockValues();
 	}
@@ -153,6 +153,13 @@ public class MatrixBlockDictionary extends ADictionary {
 					final double v = avals[k] + reference[aix[k]];
 					ret = fn.execute(ret, v);
 				}
+			}
+			if(!def) {
+				final int[] nnz = LibMatrixReorg.countNnzPerColumn(_data);
+				for(int i = 0; i < nnz.length; i++)
+					if(nnz[i] < nRows)
+						ret = fn.execute(ret, reference[i]);
+
 			}
 		}
 		else if(!_data.isEmpty()) {
@@ -310,7 +317,7 @@ public class MatrixBlockDictionary extends ADictionary {
 				final int idx = colIndexes[j];
 				c[idx] = fn.execute(c[idx], reference[j]);
 			}
-		if(!_data.isEmpty() && _data.isInSparseFormat()) {
+		if(_data.isInSparseFormat()) {
 			final SparseBlock sb = _data.getSparseBlock();
 			for(int i = 0; i < nRow; i++) {
 				if(sb.isEmpty(i))
@@ -325,8 +332,16 @@ public class MatrixBlockDictionary extends ADictionary {
 					c[idx] = fn.execute(c[idx], avals[k] + reference[aix[k]]);
 				}
 			}
+			if(!def) {
+				final int[] nnz = LibMatrixReorg.countNnzPerColumn(_data);
+				for(int i = 0; i < nnz.length; i++)
+					if(nnz[i] < nRow) {
+						final int idx = colIndexes[i];
+						c[idx] = fn.execute(c[idx], reference[i]);
+					}
+			}
 		}
-		else if(!_data.isEmpty()) {
+		else {
 			final double[] values = _data.getDenseBlockValues();
 			int off = 0;
 			for(int k = 0; k < nRow; k++) {
@@ -470,9 +485,17 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
+	public MatrixBlockDictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
 		MatrixBlock rowVector = Util.extractValues(v, colIndexes);
 		return new MatrixBlockDictionary(_data.binaryOperations(op, rowVector, null), _data.getNumColumns());
+	}
+
+	@Override
+	public MatrixBlockDictionary binOpRight(BinaryOperator op, double[] v) {
+		MatrixBlock rowVector = new MatrixBlock(1, v.length, v);
+		MatrixBlock ret = _data.binaryOperations(op, rowVector, null);
+		ret.examSparsity(true);
+		return new MatrixBlockDictionary(ret, _data.getNumColumns());
 	}
 
 	@Override
@@ -899,7 +922,9 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
-		MatrixBlock retBlock = _data.slice(0, _data.getNumRows() - 1, idxStart, idxEnd - 1);
+		final MatrixBlock retBlock = _data.slice(0, _data.getNumRows() - 1, idxStart, idxEnd - 1);
+		if(retBlock.isEmpty())
+			return null;
 		return new MatrixBlockDictionary(retBlock, idxEnd - idxStart);
 	}
 

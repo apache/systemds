@@ -191,7 +191,7 @@ public class CompressedSizeInfoColGroup {
 		switch(ct) {
 			case DeltaDDC: // TODO add proper extraction
 			case DDC:
-				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
+				nv = fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0);
 				// + 1 if the column contains zero
 				return ColGroupSizes.estimateInMemorySizeDDC(numCols, nv, fact.numRows, fact.tupleSparsity, fact.lossy);
 			case RLE:
@@ -209,9 +209,7 @@ public class CompressedSizeInfoColGroup {
 				return ColGroupSizes.estimateInMemorySizeSDC(numCols, fact.numVals, fact.numRows, fact.largestOff,
 					fact.tupleSparsity, fact.zeroIsMostFrequent, fact.lossy);
 			case CONST:
-				if(fact.numOffs == 0)
-					return -1;
-				else if(fact.numOffs == fact.numRows && fact.numVals == 1)
+				if(fact.numOffs == fact.numRows && fact.numVals == 1)
 					return ColGroupSizes.estimateInMemorySizeCONST(numCols, fact.tupleSparsity, fact.lossy);
 				else
 					return -1;

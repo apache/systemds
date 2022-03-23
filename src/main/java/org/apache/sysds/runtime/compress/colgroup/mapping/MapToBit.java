@@ -49,7 +49,7 @@ public class MapToBit extends AMapToData {
 		super(unique);
 		_data = d;
 		_size = size;
-		if(_data.isEmpty()){
+		if(_data.isEmpty()) {
 			unique = 1;
 			LOG.warn("Empty bit set should not happen");
 		}
@@ -192,6 +192,20 @@ public class MapToBit extends AMapToData {
 
 	public boolean isEmpty() {
 		return _data.isEmpty();
+	}
+
+	@Override
+	public void copy(AMapToData d) {
+		if(d instanceof MapToBit)
+			copyBit((MapToBit) d);
+		else if(d instanceof MapToInt)
+			copyInt((MapToInt) d);
+		else {
+			final int sz = size();
+			for(int i = 0; i < sz; i++)
+				if(d.getIndex(i) != 0)
+					_data.set(i);
+		}
 	}
 
 	@Override

@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
@@ -148,6 +150,8 @@ public class LibMatrixReorg {
 	}
 
 	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out ) {
+		if(in instanceof CompressedMatrixBlock)
+			throw new DMLCompressionException("Invalid call to transposed with a compressed matrix block");
 		//sparse-safe operation
 		if( in.isEmptyBlock(false) )
 			return out;

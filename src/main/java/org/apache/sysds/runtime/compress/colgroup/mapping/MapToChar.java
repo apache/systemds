@@ -26,9 +26,6 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
-import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToChar extends AMapToData {
@@ -174,15 +171,6 @@ public class MapToChar extends AMapToData {
 		}
 	}
 
-	@Override
-	public void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
-		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), this);
-	}
-
-	@Override
-	public void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
-		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), this);
-	}
 
 	@Override
 	public int getUpperBoundValue() {

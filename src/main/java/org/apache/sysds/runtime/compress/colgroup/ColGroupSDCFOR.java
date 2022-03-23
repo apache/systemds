@@ -87,23 +87,17 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 		_reference = reference;
 	}
 
-	protected static AColGroup create(int[] colIndexes, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
+	protected static AColGroup create(int[] colIndexes, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
 		int[] cachedCounts, double[] reference) {
-		if(dict == null) {
-			// either ColGroupEmpty or const
-			boolean allZero = true;
-			for(double d : reference)
-				if(d != 0) {
-					allZero = false;
-					break;
-				}
-
-			if(allZero)
-				return new ColGroupEmpty(colIndexes);
-			else
-				return ColGroupConst.create(colIndexes, reference);
-		}
-		return new ColGroupSDCFOR(colIndexes, numRows, dict, indexes, data, cachedCounts, reference);
+		final boolean allZero = FORUtil.allZero(reference);
+		if(allZero && dict == null)
+			return new ColGroupEmpty(colIndexes);
+		else if(dict == null)
+			return ColGroupConst.create(colIndexes, reference);
+		else if(allZero)
+			return ColGroupSDCZeros.create(colIndexes, numRows, dict, offsets, data, cachedCounts);
+		else
+			return new ColGroupSDCFOR(colIndexes, numRows, dict, offsets, data, cachedCounts, reference);
 	}
 
 	@Override
@@ -146,9 +140,8 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 		final double[] newRef = new double[_reference.length];
 		for(int i = 0; i < _reference.length; i++)
 			newRef[i] = op.executeScalar(_reference[i]);
-		if(op.fn instanceof Plus || op.fn instanceof Minus) {
+		if(op.fn instanceof Plus || op.fn instanceof Minus)
 			return create(_colIndexes, _numRows, _dict, _indexes, _data, getCachedCounts(), newRef);
-		}
 		else if(op.fn instanceof Multiply || op.fn instanceof Divide) {
 			final ADictionary newDict = _dict.applyScalarOp(op);
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);

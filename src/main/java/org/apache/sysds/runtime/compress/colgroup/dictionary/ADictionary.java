@@ -225,6 +225,15 @@ public abstract class ADictionary implements Serializable {
 	public abstract ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes);
 
 	/**
+	 * Apply binary row operation on the right side.
+	 * 
+	 * @param op The operation to this dictionary
+	 * @param v  The values to apply on the dictionary (same number of cols as the dictionary)
+	 * @return A new dictionary containing the updated values.
+	 */
+	public abstract ADictionary binOpRight(BinaryOperator op, double[] v);
+
+	/**
 	 * Apply the binary operator such that each value is offset by the reference before application. Then put the result
 	 * into the new dictionary, but offset it by the new reference.
 	 * 

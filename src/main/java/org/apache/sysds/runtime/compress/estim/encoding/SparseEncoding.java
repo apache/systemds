@@ -83,7 +83,7 @@ public class SparseEncoding implements IEncode {
 		final int sl = map.size();
 		final int sr = e.map.size();
 
-		if(sl + sr > nRows * 0.4)
+		if(sl + sr > nRows / 2)
 			return combineSparseToDense(map, e.map, itl, itr, fl, fr, nVl, nVr, d, nRows, maxUnique);
 
 		final IntArrayList retOff = new IntArrayList(Math.max(sr, sl));
@@ -91,7 +91,7 @@ public class SparseEncoding implements IEncode {
 
 		final int unique = combineSparse(map, e.map, itl, itr, retOff, tmpVals, fl, fr, nVl, nVr, d);
 
-		if(retOff.size() < nRows * 0.2) {
+		if(retOff.size() < nRows / 4) {
 			try {
 				final AOffset o = OffsetFactory.createOffset(retOff);
 				final AMapToData retMap = MapToFactory.create(tmpVals.size(), tmpVals.extractValues(), unique - 1);
@@ -279,6 +279,12 @@ public class SparseEncoding implements IEncode {
 		final int[] counts = map.getCounts(new int[map.getUnique()]);
 		return new EstimationFactors(cols.length, map.getUnique(), map.size(), largestOffs, counts, 0, nRows, false, true,
 			matrixSparsity, tupleSparsity);
+	}
+
+	
+	@Override
+	public  boolean isDense(){
+		return false;
 	}
 
 	@Override

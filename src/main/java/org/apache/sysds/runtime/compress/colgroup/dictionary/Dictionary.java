@@ -217,6 +217,18 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	public Dictionary binOpRight(BinaryOperator op, double[] v){
+		final ValueFunction fn = op.fn;
+		final double[] retVals = new double[_values.length];
+		final int len = size();
+		final int lenV = v.length;
+		for(int i = 0; i < len; i++)
+			retVals[i] = fn.execute(_values[i], v[i % lenV]);
+		return new Dictionary(retVals);
+	}
+
+
+	@Override
 	public Dictionary binOpRightWithReference(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
 		double[] newReference) {
 		final ValueFunction fn = op.fn;

@@ -101,18 +101,19 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	private CompressedSizeInfoColGroup extractInfo(IEncode map, int[] colIndexes, int maxDistinct) {
 		final EstimationFactors sampleFacts = map.extractFacts(colIndexes, _sampleSize, _data.getSparsity(),
 			_data.getSparsity());
-		final EstimationFactors em = scaleFactors(sampleFacts, colIndexes, maxDistinct);
+		final EstimationFactors em = scaleFactors(sampleFacts, colIndexes, maxDistinct, map.isDense());
 		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
 	}
 
-	private EstimationFactors scaleFactors(EstimationFactors sampleFacts, int[] colIndexes, int maxDistinct) {
+	private EstimationFactors scaleFactors(EstimationFactors sampleFacts, int[] colIndexes, int maxDistinct, boolean dense) {
 		final int numRows = getNumRows();
+		final int nCol = colIndexes.length;
 
 		final double scalingFactor = (double) numRows / _sampleSize;
 
 		final long nnz = calculateNNZ(colIndexes, scalingFactor);
 		final int numOffs = calculateOffs(sampleFacts, numRows, scalingFactor, colIndexes, (int) nnz);
-		final int estDistinct = distinctCountScale(sampleFacts, numOffs, maxDistinct);
+		final int estDistinct = distinctCountScale(sampleFacts, numOffs, numRows, maxDistinct, dense, nCol);
 
 		// calculate the largest instance count.
 		final int maxLargestInstanceCount = numRows - estDistinct + 1;
@@ -123,7 +124,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
 		final double overallSparsity = calculateSparsity(colIndexes, nnz, scalingFactor, sampleFacts.overAllSparsity);
 		// For robustness safety add 10 percent more tuple sparsity
-		final double tupleSparsity = Math.min(overallSparsity + 0.1, 1.0);
+		final double tupleSparsity = Math.min(overallSparsity * 1.3, 1.0); // increase sparsity by 30%.
 		try {
 			return new EstimationFactors(colIndexes.length, estDistinct, numOffs, mostFrequentOffsetCount,
 				sampleFacts.frequencies, sampleFacts.numSingle, numRows, sampleFacts.lossy, sampleFacts.zeroIsMostFrequent,
@@ -133,24 +134,26 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 			throw new DMLCompressionException("Invalid construction of estimation factors with observed values:\n"
 				+ Arrays.toString(colIndexes) + " " + nnz + " " + numOffs + "  " + estDistinct + "  "
 				+ maxLargestInstanceCount + "  " + scaledLargestInstanceCount + " " + mostFrequentOffsetCount + " "
-				+ overallSparsity + " " + tupleSparsity + "\n" + nnzCols[colIndexes[0]]);
+				+ overallSparsity + " " + tupleSparsity + "\n" + nnzCols[colIndexes[0]], e);
 		}
 
 	}
 
-	private int distinctCountScale(EstimationFactors sampleFacts, int numOffs, int maxDistinct) {
+	private int distinctCountScale(EstimationFactors sampleFacts, int numOffs, int numRows, int maxDistinct, boolean dense, int nCol) {
 		// the frequencies of non empty entries.
 		final int[] freq = sampleFacts.frequencies;
 		if(freq == null || freq.length == 0)
-			return numOffs;
+			return numOffs; // very aggressive number of distinct
 		// sampled size is smaller than actual if there was empty rows.
 		// and the more we can reduce this value the more accurate the estimation will become.
 		final int sampledSize = sampleFacts.numOffs;
-		int est = SampleEstimatorFactory.distinctCount(freq, numOffs, sampledSize, _cs.estimationType);
+		int est = SampleEstimatorFactory.distinctCount(freq, dense ? numRows : numOffs, sampledSize, _cs.estimationType);
 		if(est > 10000)
 			est += est * 0.5;
+		if(nCol > 4) // Increase estimate if we get into many columns cocoding to be safe
+			est += ((double)est) * ((double)nCol) / 10;
 		// Bound the estimate with the maxDistinct.
-		return Math.max(Math.min(est, maxDistinct), 1);
+		return Math.max(Math.min(est, Math.min(maxDistinct, numOffs)), 1);
 	}
 
 	private int calculateOffs(EstimationFactors sampleFacts, int numRows, double scalingFactor, int[] colIndexes,

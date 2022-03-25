@@ -87,12 +87,14 @@ public class FTypes
 
 		public boolean isRowPartitioned() {
 			return _partType == FPartitioning.ROW
-				|| _partType == FPartitioning.NONE;
+				|| (_partType == FPartitioning.NONE
+				&& !(_repType == FReplication.OVERLAP));
 		}
 
 		public boolean isColPartitioned() {
 			return _partType == FPartitioning.COL
-				|| _partType == FPartitioning.NONE;
+				|| (_partType == FPartitioning.NONE
+				&& !(_repType == FReplication.OVERLAP));
 		}
 
 		public FPartitioning getPartType() {

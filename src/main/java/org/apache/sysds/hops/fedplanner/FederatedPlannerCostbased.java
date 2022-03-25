@@ -243,6 +243,8 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		root.setFederatedOutput(updateHopRel.getFederatedOutput());
 		root.setFederatedCost(updateHopRel.getCostObject());
 		forceFixedFedOut(root);
+		LOG.trace("Updated fedOut to " + updateHopRel.getFederatedOutput() + " for hop "
+			+ root.getHopID() + " opcode: " + root.getOpString());
 		hopRelUpdatedFinal.add(root.getHopID());
 	}
 
@@ -355,7 +357,9 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 * @return true if FOUT is supported by the currentHop
 	 */
 	private boolean isFOUTSupported(Hop currentHop, ArrayList<Hop> inputHops){
-		if ( !allowsFederated(currentHop, memo) )
+		//if ( !currentHop.isFederatedDataOp() && !allowsFederated(currentHop, memo) )
+		//	return false;
+		if (currentHop.isScalar())
 			return false;
 		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
 		if(currentHop instanceof AggUnaryOp && currentHop.isScalar())
@@ -400,6 +404,9 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 * @return true if federated instructions related to hop supports FOUT/LOUT processing
 	 */
 	private boolean isFedInstSupportedHop(Hop hop) {
+		//TODO: This is to prevent PART input to TSMM, so this check can be removed when this case is supported
+		if ( hop instanceof AggBinaryOp && ((AggBinaryOp)hop).checkTransposeSelf() != null)
+			return false;
 		// The following operations are supported given that the above conditions have not returned already
 		return (hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
 			|| hop instanceof AggUnaryOp || hop instanceof TernaryOp || hop instanceof DataOp);

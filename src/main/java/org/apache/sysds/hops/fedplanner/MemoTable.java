@@ -87,6 +87,14 @@ public class MemoTable {
 		return hopRelMemo.get(root.getHopID()).stream().filter(HopRel::hasFederatedOutput).findFirst();
 	}
 
+	public HopRel getLOUTOrNONEAlternative(Hop root){
+		return hopRelMemo.get(root.getHopID())
+			.stream()
+			.filter(inHopRel -> !inHopRel.hasFederatedOutput())
+			.min(Comparator.comparingDouble(HopRel::getCost))
+			.orElseThrow(() -> new DMLException("Hop root " + root.getHopID() + " " + root + " has no LOUT alternative"));
+	}
+
 	/**
 	 * Memoize hopRels related to given root.
 	 * @param root for which hopRels are added

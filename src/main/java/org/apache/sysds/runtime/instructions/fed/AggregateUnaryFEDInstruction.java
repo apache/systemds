@@ -101,7 +101,11 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	private void processDefault(ExecutionContext ec){
 		AggregateUnaryOperator aop = (AggregateUnaryOperator) _optr;
 		MatrixObject in = ec.getMatrixObject(input1);
+		if ( !in.isFederated() )
+			throw new DMLRuntimeException("Input is not federated " + input1);
 		FederationMap map = in.getFedMapping();
+		if ( map == null )
+			throw new DMLRuntimeException("Input federation map is null for input " + input1);
 
 		if((instOpcode.equalsIgnoreCase("uarimax") || instOpcode.equalsIgnoreCase("uarimin")) && in.isFederated(FType.COL))
 			instString = InstructionUtils.replaceOperand(instString, 5, "2");

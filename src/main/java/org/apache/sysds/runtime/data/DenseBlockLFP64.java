@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.data;
 
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.util.Arrays;
@@ -52,6 +53,11 @@ public class DenseBlockLFP64 extends DenseBlockLDRB
 	@Override
 	public boolean isNumeric() {
 		return true;
+	}
+	
+	@Override
+	public boolean isNumeric(ValueType vt) {
+		return ValueType.FP64 == vt;
 	}
 
 	@Override

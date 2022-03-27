@@ -20,6 +20,7 @@
 
 package org.apache.sysds.runtime.data;
 
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -49,6 +50,11 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	@Override
 	public boolean isNumeric() {
 		return true;
+	}
+	
+	@Override
+	public boolean isNumeric(ValueType vt) {
+		return ValueType.FP64 == vt;
 	}
 	
 	@Override

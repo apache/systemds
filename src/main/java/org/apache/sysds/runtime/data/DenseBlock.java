@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.data;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -223,6 +224,13 @@ public abstract class DenseBlock implements Serializable
 	 * @return true if numeric (FP, INT, BOOLEAN)
 	 */
 	public abstract boolean isNumeric();
+	
+	/**
+	 * Indicates if the dense block is a specific numeric value type.
+	 * @return true if numeric and of value type vt
+	 */
+	public abstract boolean isNumeric(ValueType vt);
+	
 	
 	/**
 	 * Indicates if the dense block has a single
@@ -472,41 +480,23 @@ public abstract class DenseBlock implements Serializable
 	 * @return self
 	 */
 	public DenseBlock set(int rl, int ru, int cl, int cu, DenseBlock db) {
-		// TODO: Optimize if dense block types match
-		// TODO: Performance
 		boolean allColumns = cl == 0 && cu == _odims[0];
+		boolean FP64 = isNumeric(ValueType.FP64) && db.isNumeric(ValueType.FP64);
 		if (db.isNumeric()) {
 			int rowOther = 0;
-			int colOther = 0;
 			for (int bi = index(rl); bi <= index(ru-1); bi++) {
-				int rpos = bi*blockSize();
-				int rposl = Math.max(rl-rpos, 0);
-				if (allColumns) {
-					int offset = rposl * _odims[0] + cl;
-					int rlen = Math.min(ru-Math.max(rpos,rl), blockSize(bi)-rposl);
-					for (int i = 0; i < rlen * _odims[0]; i++) {
-						setInternal(bi, offset + i, db.get(rowOther, colOther));
-						colOther++;
-						if (colOther == db.getCumODims(0)) {
-							rowOther++;
-							colOther = 0;
-						}
-					}
+				int brl = Math.max(rl-bi*blockSize(), 0);
+				int bru = Math.min(ru-bi*blockSize(), blockSize());
+				int offset = brl * _odims[0] + cl;
+				int clen = cu - cl;
+				for(int r = brl; r < bru; r++, offset+=_odims[0], rowOther++) {
+					if( !FP64 )
+						for(int c = 0; c < clen; c++)
+							setInternal(bi, offset + c, db.get(rowOther, c));
+					else
+						System.arraycopy(db.values(rowOther),
+							db.pos(rowOther), valuesAt(bi), offset, clen);
 				}
-				else {
-					int len = cu - cl;
-					for (int i = rl, ix1 = rl * _odims[0] + cl; i < ru; i++, ix1 += _odims[0]) {
-						for (int ix = 0; ix < len; ix++) {
-							setInternal(bi, ix1 + ix, db.get(rowOther, colOther));
-							colOther++;
-							if (colOther == db.getCumODims(0)) {
-								rowOther++;
-								colOther = 0;
-							}
-						}
-					}
-				}
-				rl = 0;
 			}
 		}
 		else {

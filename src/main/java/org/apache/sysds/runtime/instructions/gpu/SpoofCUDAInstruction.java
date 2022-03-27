@@ -39,8 +39,6 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.utils.GPUStatistics;
 
-import jcuda.Sizeof;
-
 public class SpoofCUDAInstruction extends GPUInstruction {
 	private static final Log LOG = LogFactory.getLog(SpoofCUDAInstruction.class.getName());
 	

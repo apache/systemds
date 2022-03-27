@@ -227,6 +227,7 @@ public abstract class DenseBlock implements Serializable
 	
 	/**
 	 * Indicates if the dense block is a specific numeric value type.
+	 * @param vt value type to check
 	 * @return true if numeric and of value type vt
 	 */
 	public abstract boolean isNumeric(ValueType vt);

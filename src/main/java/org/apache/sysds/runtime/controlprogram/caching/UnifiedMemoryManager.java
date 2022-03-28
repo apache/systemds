@@ -121,9 +121,7 @@ public class UnifiedMemoryManager
 	// This increases if the input is available in the cache.
 	private static long _pinnedVirtualMemSize = 0;
 
-	/**
-	 * Pins a cache block into operation memory.
-	 */
+	// Pins a cache block into operation memory.
 	public static void pin(CacheableData<?> cd) {
 		if (probe(cd)) {
 			cd.acquire(false, true); //read from cache
@@ -139,9 +137,7 @@ public class UnifiedMemoryManager
 		}
 	}
 
-	/*
-	 * Reserve space for output in the operation memory
-	 */
+	// Reserve space for output in the operation memory
 	public static void reserveOutputMem() {
 		if (!CacheableData.UMM)
 			return;
@@ -162,12 +158,10 @@ public class UnifiedMemoryManager
 		//_pinnedVirtualMemSize += maxOutSize;
 	}
 	
-	/**
-	 * Unpins (releases) a cache block from operation memory. If the size of
-	 * the provided cache block differs from the UMM meta data, the UMM meta
-	 * data is updated. Use cases include update-in-place operations and
-	 * size reservations via worst-case upper bound estimates.
-	 */
+	 // Unpins (releases) a cache block from operation memory. If the size of
+	 // the provided cache block differs from the UMM meta data, the UMM meta
+	 // data is updated. Use cases include update-in-place operations and
+	 // size reservations via worst-case upper bound estimates.
 	public static void unpin(CacheableData<?> cd, boolean isOutput) {
 		// TODO: Track preserved output memory to protect from other threads
 		if (isOutput)

@@ -404,9 +404,6 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 * @return true if federated instructions related to hop supports FOUT/LOUT processing
 	 */
 	private boolean isFedInstSupportedHop(Hop hop) {
-		//TODO: This is to prevent PART input to TSMM, so this check can be removed when this case is supported
-		if ( hop instanceof AggBinaryOp && ((AggBinaryOp)hop).checkTransposeSelf() != null)
-			return false;
 		// The following operations are supported given that the above conditions have not returned already
 		return (hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
 			|| hop instanceof AggUnaryOp || hop instanceof TernaryOp || hop instanceof DataOp);

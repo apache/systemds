@@ -31,7 +31,9 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -68,27 +70,20 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
-
 		if((_type.isLeft() && mo1.isFederated(FType.ROW)) || (mo1.isFederated(FType.COL) && _type.isRight())) {
-			//construct commands: fed tsmm, retrieve results
-			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
-				new CPOperand[]{input1}, new long[]{mo1.getFedMapping().getID()}, true);
+			processRowCol(ec, mo1);
+		} else if ( mo1.isFederated(FType.PART) ){
+			FederationMap mo1FedMap = mo1.getFedMapping();
+			mo1.acquireReadAndRelease();
 			if (_fedOut.isForcedFederated()){
-				mo1.getFedMapping().execute(getTID(), fr1);
-				MatrixObject out = ec.getMatrixObject(output);
-				out.getDataCharacteristics()
-					.set(mo1.getNumColumns(), mo1.getNumColumns(), (int) mo1.getBlocksize());
-				FederationMap outputFedMap = mo1.getFedMapping()
-					.copyWithNewIDAndRange(mo1.getNumColumns(), mo1.getNumColumns(), fr1.getID());
-				out.setFedMapping(outputFedMap);
+				FederatedRequest fr1 = mo1FedMap.broadcast(mo1);
+				FederatedRequest fr2 = mo1.getFedMapping().cleanup(getTID(), mo1.getUniqueID());
+				mo1.getFedMapping().execute(getTID(), fr1, fr2);
+				instString= InstructionUtils.replaceOperand(instString, 1,Long.toString(fr1.getID()));
+				processRowCol(ec, mo1);
 			} else {
-				FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
-				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
-
-				//execute federated operations and aggregate
-				Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
-				MatrixBlock ret = FederationUtils.aggAdd(tmp);
-				ec.setMatrixOutput(output.getName(), ret);
+				CPInstruction tsmmCPInst = CPInstructionParser.parseSingleInstruction(instString);
+				tsmmCPInst.processInstruction(ec);
 			}
 		}
 		else { //other combinations
@@ -96,6 +91,37 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 				"Federated Tsmm does not support non-federated input" :
 				"Federated Tsmm does not support federated map type " + mo1.getFedMapping().getType();
 			throw new DMLRuntimeException(exMessage);
+		}
+	}
+
+	private void processRowCol(ExecutionContext ec, MatrixObject mo1){
+		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
+			new CPOperand[]{input1}, new long[]{mo1.getFedMapping().getID()}, true);
+		if (_fedOut.isForcedFederated()){
+			FederatedRequest fr2 = mo1.getFedMapping().cleanup(getTID(), mo1.getUniqueID());
+			mo1.getFedMapping().execute(getTID(), fr1, fr2);
+			MatrixObject out = ec.getMatrixObject(output);
+			out.getDataCharacteristics()
+				.set(mo1.getNumColumns(), mo1.getNumColumns(), (int) mo1.getBlocksize());
+			FederationMap outputFedMap = mo1.getFedMapping()
+				.copyWithNewIDAndRange(mo1.getNumColumns(), mo1.getNumColumns(), fr1.getID(), FType.BROADCAST);
+			out.setFedMapping(outputFedMap);
+		}
+		else if (mo1.isFederated(FType.BROADCAST)){
+			FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
+			FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
+			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
+			MatrixBlock[] outBlocks = FederationUtils.getResults(tmp);
+			ec.setMatrixOutput(output.getName(), outBlocks[0]);
+		}
+		else {
+			FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
+			FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
+
+			//execute federated operations and aggregate
+			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
+			MatrixBlock ret = FederationUtils.aggAdd(tmp);
+			ec.setMatrixOutput(output.getName(), ret);
 		}
 	}
 }

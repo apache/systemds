@@ -131,14 +131,6 @@ public class HopRel {
 	 */
 	private void setInputDependency(MemoTable hopRelMemo){
 		if (inputHops != null && inputHops.size() > 0) {
-			if ( hopRef instanceof AggBinaryOp && ((AggBinaryOp)hopRef).checkTransposeSelf() != null){
-				//TODO: This case is to prevent PART input to TSMM.
-				// A check for PART input would mean that other TSMM could still run
-				inputDependency.addAll(
-					inputHops.stream()
-						.map(hopRelMemo::getLOUTOrNONEAlternative)
-						.collect(Collectors.toList()));
-			}
 			if ( fedOut == FederatedOutput.FOUT && !hopRef.isFederatedDataOp() ) {
 				int lowestFOUTIndex = 0;
 				HopRel lowestFOUTHopRel = getFOUTHopRel(inputHops.get(0), hopRelMemo);

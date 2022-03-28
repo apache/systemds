@@ -70,27 +70,29 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
-		if((_type.isLeft() && mo1.isFederated(FType.ROW)) || (mo1.isFederated(FType.COL) && _type.isRight())) {
+		if((_type.isLeft() && mo1.isFederated(FType.ROW)) || (mo1.isFederated(FType.COL) && _type.isRight()))
 			processRowCol(ec, mo1);
-		} else if ( mo1.isFederated(FType.PART) ){
-			FederationMap mo1FedMap = mo1.getFedMapping();
-			mo1.acquireReadAndRelease();
-			if (_fedOut.isForcedFederated()){
-				FederatedRequest fr1 = mo1FedMap.broadcast(mo1);
-				FederatedRequest fr2 = mo1.getFedMapping().cleanup(getTID(), mo1.getUniqueID());
-				mo1.getFedMapping().execute(getTID(), fr1, fr2);
-				instString= InstructionUtils.replaceOperand(instString, 1,Long.toString(fr1.getID()));
-				processRowCol(ec, mo1);
-			} else {
-				CPInstruction tsmmCPInst = CPInstructionParser.parseSingleInstruction(instString);
-				tsmmCPInst.processInstruction(ec);
-			}
-		}
+		else if ( mo1.isFederated(FType.PART) )
+			processPart(ec, mo1);
 		else { //other combinations
 			String exMessage = (!mo1.isFederated() || mo1.getFedMapping() == null) ?
 				"Federated Tsmm does not support non-federated input" :
 				"Federated Tsmm does not support federated map type " + mo1.getFedMapping().getType();
 			throw new DMLRuntimeException(exMessage);
+		}
+	}
+
+	private void processPart(ExecutionContext ec, MatrixObject mo1){
+		if (_fedOut.isForcedFederated()){
+			FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo1);
+			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
+				new CPOperand[]{input1}, new long[]{mo1.getFedMapping().getID()}, true);
+			mo1.getFedMapping().execute(getTID(), fr1, fr2);
+			setOutputFederated(ec, mo1, fr1);
+		} else {
+			mo1.acquireReadAndRelease();
+			CPInstruction tsmmCPInst = CPInstructionParser.parseSingleInstruction(instString);
+			tsmmCPInst.processInstruction(ec);
 		}
 	}
 
@@ -100,17 +102,11 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 		if (_fedOut.isForcedFederated()){
 			FederatedRequest fr2 = mo1.getFedMapping().cleanup(getTID(), mo1.getUniqueID());
 			mo1.getFedMapping().execute(getTID(), fr1, fr2);
-			MatrixObject out = ec.getMatrixObject(output);
-			out.getDataCharacteristics()
-				.set(mo1.getNumColumns(), mo1.getNumColumns(), (int) mo1.getBlocksize());
-			FederationMap outputFedMap = mo1.getFedMapping()
-				.copyWithNewIDAndRange(mo1.getNumColumns(), mo1.getNumColumns(), fr1.getID(), FType.BROADCAST);
-			out.setFedMapping(outputFedMap);
+			setOutputFederated(ec, mo1, fr1);
 		}
 		else if (mo1.isFederated(FType.BROADCAST)){
 			FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
-			FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
-			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
+			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2);
 			MatrixBlock[] outBlocks = FederationUtils.getResults(tmp);
 			ec.setMatrixOutput(output.getName(), outBlocks[0]);
 		}
@@ -123,5 +119,14 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 			MatrixBlock ret = FederationUtils.aggAdd(tmp);
 			ec.setMatrixOutput(output.getName(), ret);
 		}
+	}
+
+	private void setOutputFederated(ExecutionContext ec, MatrixObject mo1, FederatedRequest fr1){
+		MatrixObject out = ec.getMatrixObject(output);
+		out.getDataCharacteristics()
+			.set(mo1.getNumColumns(), mo1.getNumColumns(), (int) mo1.getBlocksize());
+		FederationMap outputFedMap = mo1.getFedMapping()
+			.copyWithNewIDAndRange(mo1.getNumColumns(), mo1.getNumColumns(), fr1.getID(), FType.BROADCAST);
+		out.setFedMapping(outputFedMap);
 	}
 }

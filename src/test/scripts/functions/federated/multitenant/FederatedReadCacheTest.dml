@@ -19,9 +19,7 @@
 #
 #-------------------------------------------------------------
 
-rowPart = $rP;
-
-if (rowPart) {
+if ($rP) {
   X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
         ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
     		  list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
@@ -33,37 +31,15 @@ if (rowPart) {
 
 testnum = $testnum;
 
-Y = rand(rows=$rows, cols=$cols, seed=1234);
-
-for(counter in 1:50) {
+if(testnum == 0) { # PLUS_SCALAR
+  X = X + 1;
   while(FALSE) { }
-  Y = Y + 0.1;
+  S = as.matrix(sum(X));
 }
-
-while(FALSE) { }
-
-if(testnum == 0) { # EW_PLUS
-  Z = X + Y;
+else if(testnum == 1) { # MODIFIED_VAL
+  X[nrow(X)/2, ncol(X)/2] = (X[nrow(X)/2, ncol(X)/2] + 1) * 10;
   while(FALSE) { }
-  S = as.matrix(sum(Z));
-}
-else if(testnum == 1) { # MM
-  Z = t(X) %*% Y;
-  while(FALSE) { }
-  S = as.matrix(sum(Z));
-}
-else if(testnum == 2) { # PARFOR_ADD
-  numiter = 3;
-  Z = matrix(0, rows=numiter, cols=1);
-  parfor(i in 1:numiter) {
-    X_tmp = X - i;
-    Y_vec = rowSums(Y + i);
-    while(FALSE) { }
-    Z_tmp = X_tmp + Y_vec;
-    while(FALSE) { }
-    Z[i, 1] = sum(Z_tmp);
-  }
-  S = as.matrix(sum(Z));
+  S = as.matrix(sum(X));
 }
 
 write(S, $out_S);

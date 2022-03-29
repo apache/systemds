@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -27,8 +29,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
-import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -65,12 +66,12 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 		QuaternaryOperator qop = (QuaternaryOperator) _optr;
 
 		MatrixObject X = ec.getMatrixObject(input1);
-		MatrixObject U = ec.getMatrixObject(input2);
-		MatrixObject V = ec.getMatrixObject(input3);
+		MatrixLineagePair U = ec.getMatrixLineagePair(input2);
+		MatrixLineagePair V = ec.getMatrixLineagePair(input3);
 
-		MatrixObject W = null;
+		MatrixLineagePair W = null;
 		if(qop.hasFourInputs()) {
-			W = ec.getMatrixObject(_input4);
+			W = ec.getMatrixLineagePair(_input4);
 		}
 
 		if(X.isFederated()) {

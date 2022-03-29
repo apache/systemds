@@ -32,7 +32,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -114,15 +113,20 @@ public class FederationMap {
 	}
 
 	public FederatedRequest broadcast(CacheableData<?> data) {
+		return broadcast(data, null);
+	}
+
+	public FederatedRequest broadcast(MatrixLineagePair moLin) {
+		return broadcast(moLin.getMO(), Lineage.serializeSingleTrace(moLin.getLI()));
+	}
+
+	private FederatedRequest broadcast(CacheableData<?> data, final String lineageTrace) {
 		// reuse existing broadcast variable
 		if( data.isFederated(FType.BROADCAST) )
 			return new FederatedRequest(RequestType.NOOP, data.getFedMapping().getID());
 		// prepare single request for all federated data
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
-
-		final String lineageTrace = (DMLScript.LINEAGE && data.getCacheLineage() != null) ?
-			Lineage.serializeSingleTrace(data.getCacheLineage()) : null;
 
 		// create new fed mapping for broadcast (a potential overwrite
 		// is fine, because with broadcast all data on all workers)
@@ -137,15 +141,27 @@ public class FederationMap {
 		return new FederatedRequest(RequestType.PUT_VAR, id, scalar);
 	}
 
+	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
+		return broadcastSliced(data, null, transposed);
+	}
+
+	public FederatedRequest[] broadcastSliced(MatrixLineagePair moLin,
+		boolean transposed) {
+		return broadcastSliced(moLin.getMO(), Lineage.serializeSingleTrace(moLin.getLI()),
+			transposed);
+	}
+
 	/**
 	 * Creates separate slices of an input data object according to the index ranges of federated data. These slices
 	 * are then wrapped in separate federated requests for broadcasting.
 	 *
-	 * @param data       input data object (matrix, tensor, frame)
-	 * @param transposed false: slice according to federated data, true: slice according to transposed federated data
+	 * @param data         input data object (matrix, tensor, frame)
+	 * @param lineageTrace the serialized lineage trace of the data
+	 * @param transposed   false: slice according to federated data, true: slice according to transposed federated data
 	 * @return array of federated requests corresponding to federated data
 	 */
-	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
+	private FederatedRequest[] broadcastSliced(CacheableData<?> data, String lineageTrace,
+		boolean transposed) {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data)};
 
@@ -181,26 +197,31 @@ public class FederationMap {
 		}
 		// multi-threaded block slicing and federation request creation
 		else {
-			final String lineageTrace = (DMLScript.LINEAGE && data.getCacheLineage() != null) ?
-				Lineage.serializeSingleTrace(data.getCacheLineage()) : null;
-
 			Arrays.parallelSetAll(ret,
 				i -> new FederatedRequest(RequestType.PUT_VAR, lineageTrace, id,
-				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
+					cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
 		}
 		return ret;
 	}
 
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean isFrame, int[][] ix) {
+		return broadcastSliced(data, null, isFrame, ix);
+	}
+
+	public FederatedRequest[] broadcastSliced(MatrixLineagePair moLin,
+		boolean isFrame, int[][] ix) {
+		return broadcastSliced(moLin.getMO(), Lineage.serializeSingleTrace(moLin.getLI()),
+			isFrame, ix);
+	}
+
+	public FederatedRequest[] broadcastSliced(CacheableData<?> data, String lineageTrace,
+		boolean isFrame, int[][] ix) {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data)};
 
 		// prepare broadcast id and pin input
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
-
-		final String lineageTrace = (DMLScript.LINEAGE && data.getCacheLineage() != null) ?
-			Lineage.serializeSingleTrace(data.getCacheLineage()) : null;
 
 		// multi-threaded block slicing and federation request creation
 		FederatedRequest[] ret = new FederatedRequest[ix.length];

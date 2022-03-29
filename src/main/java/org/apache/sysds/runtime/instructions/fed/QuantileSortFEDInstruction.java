@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -116,7 +117,7 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction {
 
 		// TODO make sure that qsort result is used by qpick only where the main operation happens
 		if(input2 != null) {
-			MatrixObject weights = ec.getMatrixObject(input2);
+			MatrixLineagePair weights = ec.getMatrixLineagePair(input2);
 			String newInst = _numThreads > 1 ? InstructionUtils.stripThreadCount(instString) : instString;
 			newInst = InstructionUtils.replaceOperand(newInst, 1, "append");
 			newInst = InstructionUtils.concatOperands(newInst, "true");

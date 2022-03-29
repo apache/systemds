@@ -40,11 +40,11 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
-	private final static String TEST_NAME = "FederatedLineageTraceReuseTest";
+public class FederatedReadCacheTest extends MultiTenantTestBase {
+	private final static String TEST_NAME = "FederatedReadCacheTest";
 
 	private final static String TEST_DIR = "functions/federated/multitenant/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedLineageTraceReuseTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedReadCacheTest.class.getSimpleName() + "/";
 
 	private final static double TOLERANCE = 0;
 
@@ -62,17 +62,16 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	public static Collection<Object[]> data() {
 		return Arrays.asList(
 			new Object[][] {
-				// {100, 200, 0.9, false},
-				{200, 100, 0.9, true},
+				{100, 1000, 0.9, false},
+				// {1000, 100, 0.9, true},
 				// {100, 1000, 0.01, false},
 				// {1000, 100, 0.01, true},
 		});
 	}
 
 	private enum OpType {
-		EW_PLUS,
-		MM,
-		PARFOR_ADD,
+		PLUS_SCALAR,
+		MODIFIED_VAL,
 	}
 
 	@Override
@@ -82,39 +81,27 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	}
 
 	@Test
-	public void testElementWisePlusCP() {
-		runLineageTraceReuseTest(OpType.EW_PLUS, 4, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
 	@Ignore
-	public void testElementWisePlusSP() {
-		runLineageTraceReuseTest(OpType.EW_PLUS, 4, ExecMode.SPARK);
+	public void testPlusScalarCP() {
+		runReadCacheTest(OpType.PLUS_SCALAR, 3, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testMatrixMultCP() {
-		runLineageTraceReuseTest(OpType.MM, 4, ExecMode.SINGLE_NODE);
+	public void testPlusScalarSP() {
+		runReadCacheTest(OpType.PLUS_SCALAR, 3, ExecMode.SPARK);
 	}
 
 	@Test
-	@Ignore // TODO: allow for reuse of respective spark instructions
-	public void testMatrixMultSP() {
-		runLineageTraceReuseTest(OpType.MM, 4, ExecMode.SPARK);
+	public void testModifiedValCP() {
+		runReadCacheTest(OpType.MODIFIED_VAL, 4, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testParforAddCP() {
-		runLineageTraceReuseTest(OpType.PARFOR_ADD, 3, ExecMode.SINGLE_NODE);
+	public void testModifiedValSP() {
+		runReadCacheTest(OpType.MODIFIED_VAL, 4, ExecMode.SPARK);
 	}
 
-	@Test
-	@Ignore
-	public void testParforAddSP() {
-		runLineageTraceReuseTest(OpType.PARFOR_ADD, 3, ExecMode.SPARK);
-	}
-
-	private void runLineageTraceReuseTest(OpType opType, int numCoordinators, ExecMode execMode) {
+	private void runReadCacheTest(OpType opType, int numCoordinators, ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -146,7 +133,7 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
 
-		int[] workerPorts = startFedWorkers(4, new String[]{"-lineage", "reuse"});
+		int[] workerPorts = startFedWorkers(4);
 
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {
@@ -157,8 +144,7 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 
 		// start the coordinator processes
 		String scriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-config", CONFIG_DIR + "SystemDS-MultiTenant-config.xml",
-			"-lineage", "reuse", "-stats", "100", "-fedStats", "100", "-nvargs",
+		programArgs = new String[] {"-stats", "100", "-fedStats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(workerPorts[0], input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(workerPorts[1], input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(workerPorts[2], input("X3")),
@@ -171,6 +157,7 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 
 		// wait for the coordinator processes to end and verify the results
 		String coordinatorOutput = waitForCoordinators();
+		System.out.println(coordinatorOutput);
 		verifyResults(opType, coordinatorOutput, execMode);
 
 		// check that federated input files are still existing
@@ -188,7 +175,8 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	private void verifyResults(OpType opType, String outputLog, ExecMode execMode) {
 		Assert.assertTrue(checkForHeavyHitter(opType, outputLog, execMode));
 		// verify that the matrix object has been taken from cache
-		Assert.assertTrue(checkForReuses(opType, outputLog, execMode));
+		Assert.assertTrue(outputLog.contains("Fed ReadCache (Hits, Bytes):\t"
+			+ Integer.toString((coordinatorProcesses.size()-1) * workerProcesses.size()) + "/"));
 
 		// compare the results via files
 		HashMap<CellIndex, Double> refResults	= readDMLMatrixFromOutputDir("S" + 0);
@@ -201,58 +189,17 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	}
 
 	private boolean checkForHeavyHitter(OpType opType, String outputLog, ExecMode execMode) {
-		boolean retVal = false;
 		switch(opType) {
-			case EW_PLUS:
-				retVal = checkForHeavyHitter(outputLog, "fed_+");
-				if(execMode == ExecMode.SINGLE_NODE)
-					retVal &= checkForHeavyHitter(outputLog, "fed_uak+");
-				break;
-			case MM:
-				retVal = checkForHeavyHitter(outputLog, (execMode == ExecMode.SPARK) ? "fed_mapmm" : "fed_ba+*");
-				retVal &= checkForHeavyHitter(outputLog, "fed_r'");
-				if(!rowPartitioned)
-					retVal &= checkForHeavyHitter(outputLog, (execMode == ExecMode.SPARK) ? "fed_rblk" : "fed_uak+");
-				break;
-			case PARFOR_ADD:
-				retVal = checkForHeavyHitter(outputLog, "fed_-");
-				retVal &= checkForHeavyHitter(outputLog, "fed_+");
-				retVal &= checkForHeavyHitter(outputLog, (execMode == ExecMode.SPARK) ? "fed_rblk" : "fed_uak+");
-				break;
+			case PLUS_SCALAR:
+				return checkForHeavyHitter(outputLog, "fed_+");
+			case MODIFIED_VAL:
+				return checkForHeavyHitter(outputLog, "fed_*") && checkForHeavyHitter(outputLog, "fed_+");
 		}
-		return retVal;
+		return false;
 	}
 
 	private boolean checkForHeavyHitter(String outputLog, String hhString) {
 		int occurrences = StringUtils.countMatches(outputLog, hhString);
 		return (occurrences == coordinatorProcesses.size());
-	}
-
-	private boolean checkForReuses(OpType opType, String outputLog, ExecMode execMode) {
-		final String LINCACHE_MULTILVL = "LinCache MultiLvl (Ins/SB/Fn):\t";
-		final String LINCACHE_WRITES = "LinCache writes (Mem/FS/Del):\t";
-		final String FED_LINEAGEPUT = "Fed PutLineage (Count, Items):\t";
-		boolean retVal = false;
-		int multiplier = 1;
-		int numInst = -1;
-		switch(opType) {
-			case EW_PLUS:
-				numInst = (execMode == ExecMode.SPARK) ? 1 : 2;
-				break;
-			case MM:
-				numInst = rowPartitioned ? 2 : 3;
-				break;
-			case PARFOR_ADD: // number of instructions times number of iterations of the parfor loop
-				multiplier = 3;
-				numInst = ((execMode == ExecMode.SPARK) ? 2 : 3) * multiplier;
-				break;
-		}
-		retVal = outputLog.contains(LINCACHE_MULTILVL
-			+ Integer.toString(numInst * (coordinatorProcesses.size()-1) * workerProcesses.size()) + "/");
-		retVal &= outputLog.contains(LINCACHE_WRITES
-			+ Integer.toString((1 + numInst) * workerProcesses.size()) + "/"); // read + instructions
-		retVal &= outputLog.contains(FED_LINEAGEPUT
-			+ Integer.toString(coordinatorProcesses.size() * workerProcesses.size() * multiplier) + "/");
-		return retVal;
 	}
 }

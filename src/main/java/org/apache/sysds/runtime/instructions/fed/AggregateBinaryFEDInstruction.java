@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -68,8 +69,8 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		MatrixObject mo1 = ec.getMatrixObject(input1);
-		MatrixObject mo2 = ec.getMatrixObject(input2);
+		MatrixLineagePair mo1 = ec.getMatrixLineagePair(input1);
+		MatrixLineagePair mo2 = ec.getMatrixLineagePair(input2);
 
 		//TODO cleanup unnecessary redundancy
 		//#1 federated matrix-vector multiplication
@@ -157,7 +158,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	 * @param outputID ID of the output
 	 * @param ec execution context
 	 */
-	private void setPartialOutput(FederationMap federationMap, MatrixObject mo1, MatrixObject mo2,
+	private void setPartialOutput(FederationMap federationMap, MatrixLineagePair mo1, MatrixLineagePair mo2,
 		long outputID, ExecutionContext ec){
 		MatrixObject out = ec.getMatrixObject(output);
 		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
@@ -174,7 +175,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	 * @param outputID ID of the output
 	 * @param ec execution context
 	 */
-	private void setOutputFedMapping(FederationMap federationMap, MatrixObject mo1, MatrixObject mo2,
+	private void setOutputFedMapping(FederationMap federationMap, MatrixLineagePair mo1, MatrixLineagePair mo2,
 		long outputID, ExecutionContext ec){
 		MatrixObject out = ec.getMatrixObject(output);
 		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());

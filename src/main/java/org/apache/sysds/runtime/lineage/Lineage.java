@@ -170,9 +170,16 @@ public class Lineage {
 		return ret;
 	}
 
+	public String serializeSingleTrace(CPOperand cpo) {
+		LineageItem li = get(cpo);
+		if(li == null)
+			return null;
+		return serializeSingleTrace(li);
+	}
+
 	public static String serializeSingleTrace(LineageItem linItem) {
 		if(linItem == null)
-			throw new DMLRuntimeException("Cannot serialize null lineage object.");
+			return null;
 
 		return explain(linItem);
 	}

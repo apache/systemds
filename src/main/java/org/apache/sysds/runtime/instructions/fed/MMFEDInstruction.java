@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -70,8 +71,8 @@ public class MMFEDInstruction extends BinaryFEDInstruction
 	}
 
 	public void processInstruction(ExecutionContext ec) {
-		MatrixObject mo1 = ec.getMatrixObject(input1);
-		MatrixObject mo2 = ec.getMatrixObject(input2);
+		MatrixLineagePair mo1 = ec.getMatrixLineagePair(input1);
+		MatrixLineagePair mo2 = ec.getMatrixLineagePair(input2);
 
 		long id = FederationUtils.getNextFedDataID();
 		FederatedRequest frEmpty = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR,
@@ -87,7 +88,7 @@ public class MMFEDInstruction extends BinaryFEDInstruction
 
 			if ( _fedOut.isForcedFederated() ){
 				mo1.getFedMapping().execute(getTID(), frEmpty, fr1);
-				setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr1.getID(), ec);
+				setPartialOutput(mo1.getFedMapping(), mo1.getMO(), mo2.getMO(), fr1.getID(), ec);
 			}
 			else {
 				aggregateLocally(mo1.getFedMapping(), true, ec, frEmpty, fr1);
@@ -105,12 +106,12 @@ public class MMFEDInstruction extends BinaryFEDInstruction
 				(!isVector && mo2.isFederated(FType.PART)); // only MM
 			if(isPartOut && _fedOut.isForcedFederated()) {
 				mo1.getFedMapping().execute(getTID(), true, frEmpty, fr1, fr2);
-				setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
+				setPartialOutput(mo1.getFedMapping(), mo1.getMO(), mo2.getMO(), fr2.getID(), ec);
 			}
 			else if((_fedOut.isForcedFederated() || (!isVector && !_fedOut.isForcedLocal()))
 				&& !isPartOut) { // not creating federated output in the MV case for reasons of performance
 				mo1.getFedMapping().execute(getTID(), true, frEmpty, fr1, fr2);
-				setOutputFedMapping(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
+				setOutputFedMapping(mo1.getFedMapping(), mo1.getMO(), mo2.getMO(), fr2.getID(), ec);
 			}
 			else {
 				aggregateLocally(mo1.getFedMapping(), mo1.isFederated(FType.PART), ec, frEmpty, fr1, fr2);
@@ -126,7 +127,7 @@ public class MMFEDInstruction extends BinaryFEDInstruction
 			if ( _fedOut.isForcedFederated() ){
 				// Partial aggregates (set fedmapping to the partial aggs)
 				mo2.getFedMapping().execute(getTID(), true, fr1, frEmpty, fr2);
-				setPartialOutput(mo2.getFedMapping(), mo1, mo2, fr2.getID(), ec);
+				setPartialOutput(mo2.getFedMapping(), mo1.getMO(), mo2.getMO(), fr2.getID(), ec);
 			}
 			else {
 				aggregateLocally(mo2.getFedMapping(), true, ec, fr1, frEmpty, fr2);
@@ -142,7 +143,7 @@ public class MMFEDInstruction extends BinaryFEDInstruction
 			if ( _fedOut.isForcedFederated() ){
 				// Partial aggregates (set fedmapping to the partial aggs)
 				mo1.getFedMapping().execute(getTID(), true, fr1, frEmpty, fr2);
-				setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
+				setPartialOutput(mo1.getFedMapping(), mo1.getMO(), mo2.getMO(), fr2.getID(), ec);
 			}
 			else {
 				aggregateLocally(mo1.getFedMapping(), true, ec, fr1, frEmpty, fr2);

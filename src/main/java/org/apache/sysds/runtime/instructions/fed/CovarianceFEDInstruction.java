@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
@@ -69,14 +70,14 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
-		MatrixObject weights = input3 != null ? ec.getMatrixObject(input3) : null;
+		MatrixLineagePair weights = (input3 != null) ? ec.getMatrixLineagePair(input3) : null;
 
 		if(mo1.isFederated() && mo2.isFederated() && !mo1.getFedMapping().isAligned(mo2.getFedMapping(), false))
 			throw new DMLRuntimeException("Not supported matrix-matrix binary operation: covariance.");
 
 		boolean moAligned = mo1.isFederated() && mo2.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false);
-		boolean weightsAligned = weights == null || (weights.isFederated() && mo2.isFederated() && weights.getFedMapping()
-			.isAligned(mo2.getFedMapping(), false));
+		boolean weightsAligned = weights == null || (weights.isFederated() && mo2.isFederated()
+			&& weights.getFedMapping().isAligned(mo2.getFedMapping(), false));
 
 		// all aligned
 		if(moAligned && weightsAligned)
@@ -88,14 +89,16 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			processCov(ec, mo1, mo2);
 	}
 
-	private void processAlignedFedCov(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3) {
+	private void processAlignedFedCov(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2,
+		MatrixLineagePair moLin3) {
 		FederatedRequest fr1;
-		if(mo3 == null)
+		if(moLin3 == null)
 			fr1 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()});
 		else
 			fr1 = FederationUtils.callInstruction(instString, output,
-				new CPOperand[]{input1, input2, input3}, new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), mo3.getFedMapping().getID()});
+				new CPOperand[]{input1, input2, input3}, new long[]{mo1.getFedMapping().getID(),
+					mo2.getFedMapping().getID(), moLin3.getFedMapping().getID()});
 
 		FederatedRequest fr2 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
 		FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
@@ -111,9 +114,10 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		ec.setVariable(output.getName(), new DoubleObject(result));
 	}
 
-	private void processFedCovWeights(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3) {
+	private void processFedCovWeights(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2,
+		MatrixLineagePair moLin3) {
 
-		FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo3, false);
+		FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(moLin3, false);
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()});
 		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());

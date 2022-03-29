@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;
@@ -37,8 +39,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
-import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -117,7 +118,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 		for(CPOperand cpo : _inputs) {
 			Data tmpData = ec.getVariable(cpo);
 			if(tmpData instanceof MatrixObject) {
-				MatrixObject mo = (MatrixObject) tmpData;
+				MatrixLineagePair mo = new MatrixLineagePair((MatrixObject) tmpData, ec.getLineageItem(cpo));
 				if(mo.isFederatedExcept(FType.BROADCAST)) {
 					frIds[index++] = mo.getFedMapping().getID();
 				}
@@ -184,11 +185,11 @@ public class SpoofFEDInstruction extends FEDInstruction
 		/**
 		 * performs the sliced broadcast of the given matrix object
 		 *
-		 * @param mo the matrix object to broadcast sliced
+		 * @param mo the matrix object to broadcast sliced with the respective lineage item
 		 * @param fedMap the federated mapping
 		 * @return FederatedRequest[] the resulting federated request array of the broadcast
 		 */
-		protected FederatedRequest[] broadcastSliced(MatrixObject mo, FederationMap fedMap) {
+		protected FederatedRequest[] broadcastSliced(MatrixLineagePair mo, FederationMap fedMap) {
 			return fedMap.broadcastSliced(mo, false);
 		}
 
@@ -399,7 +400,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 			_inputs = inputs;
 		}
 
-		protected FederatedRequest[] broadcastSliced(MatrixObject mo, FederationMap fedMap) {
+		@Override
+		protected FederatedRequest[] broadcastSliced(MatrixLineagePair mo, FederationMap fedMap) {
 			return fedMap.broadcastSliced(mo, (_fedType == FType.COL));
 		}
 

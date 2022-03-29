@@ -24,12 +24,12 @@ import java.util.concurrent.Future;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
@@ -72,9 +72,9 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		MatrixObject mo1 = ec.getMatrixObject(input1);
-		MatrixObject mo2 = ec.getMatrixObject(input2);
-		MatrixObject mo3 = input3.isLiteral() ? null : ec.getMatrixObject(input3);
+		MatrixLineagePair mo1 = ec.getMatrixLineagePair(input1);
+		MatrixLineagePair mo2 = ec.getMatrixLineagePair(input2);
+		MatrixLineagePair mo3 = input3.isLiteral() ? null : ec.getMatrixLineagePair(input3);
 		if(mo3 != null && mo1.isFederated() && mo2.isFederated() && mo3.isFederated()
 				&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)
 				&& mo2.getFedMapping().isAligned(mo3.getFedMapping(), mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)) {

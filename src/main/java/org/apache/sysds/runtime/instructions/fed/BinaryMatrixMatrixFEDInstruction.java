@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -40,15 +41,15 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		MatrixObject mo1 = ec.getMatrixObject(input1);
-		MatrixObject mo2 = ec.getMatrixObject(input2);
+		MatrixLineagePair mo1 = ec.getMatrixLineagePair(input1);
+		MatrixLineagePair mo2 = ec.getMatrixLineagePair(input2);
 		
 		//canonicalization for federated lhs
 		if( !mo1.isFederated() && mo2.isFederated()
 			&& mo1.getDataCharacteristics().equalDims(mo2.getDataCharacteristics())
 			&& ((BinaryOperator)_optr).isCommutative() ) {
-			mo1 = ec.getMatrixObject(input2);
-			mo2 = ec.getMatrixObject(input1);
+			mo1 = ec.getMatrixLineagePair(input2);
+			mo2 = ec.getMatrixLineagePair(input1);
 		}
 
 		MatrixObject fedMo; // store the matrix object where the fed requests are executed
@@ -70,7 +71,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					new long[]{fr1[0].getID(), mo2.getFedMapping().getID()}, true);
 				mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
-			fedMo = mo2; // for setting the output federated mapping afterwards
+			fedMo = mo2.getMO(); // for setting the output federated mapping afterwards
 		}
 		else { // matrix-matrix binary operations -> lhs fed input -> fed output
 			if(mo1.isFederated(FType.FULL) ) {
@@ -111,11 +112,11 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			else {
 				throw new DMLRuntimeException("Matrix-matrix binary operations are only supported with a row partitioned or column partitioned federated input yet.");
 			}
-			fedMo = mo1; // for setting the output federated mapping afterwards
+			fedMo = mo1.getMO(); // for setting the output federated mapping afterwards
 		}
 
 		if ( mo1.isFederated(FType.PART) && !mo2.isFederated() )
-			setOutputFedMappingPart(mo1, mo2, fr2.getID(), ec);
+			setOutputFedMappingPart(mo1.getMO(), mo2.getMO(), fr2.getID(), ec);
 		else if ( fedMo.isFederated() )
 			setOutputFedMapping(fedMo, Math.max(mo1.getNumRows(), mo2.getNumRows()),
 				Math.max(mo1.getNumColumns(), mo2.getNumColumns()), fr2.getID(), ec);

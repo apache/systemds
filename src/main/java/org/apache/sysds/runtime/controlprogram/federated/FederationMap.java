@@ -237,7 +237,7 @@ public class FederationMap {
 		if(objLi != null) {
 			final String scalarCPOSuffix = InstructionUtils.concatOperands(
 				DataType.SCALAR.name(), ValueType.INT64.name(), String.valueOf(true));
-			// manually creating a lineage item for indexing to complete the lineage trace for slicing
+			// manually create a lineage item for indexing to complete the lineage trace for slicing
 			li = new LineageItem(RightIndex.OPCODE, new LineageItem[]{objLi,
 				new LineageItem(InstructionUtils.concatOperandParts(String.valueOf(ix[0] + 1), scalarCPOSuffix)),
 				new LineageItem(InstructionUtils.concatOperandParts(String.valueOf(ix[1] + 1), scalarCPOSuffix)),

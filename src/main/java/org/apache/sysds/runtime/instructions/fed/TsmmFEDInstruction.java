@@ -88,7 +88,7 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1}, new long[]{mo1.getFedMapping().getID()}, true);
 			mo1.getFedMapping().execute(getTID(), fr1, fr2);
-			setOutputFederated(ec, mo1, fr1);
+			setOutputFederated(ec, mo1, fr2, FType.BROADCAST);
 		} else {
 			mo1.acquireReadAndRelease();
 			CPInstruction tsmmCPInst = CPInstructionParser.parseSingleInstruction(instString);
@@ -100,9 +100,11 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1}, new long[]{mo1.getFedMapping().getID()}, true);
 		if (_fedOut.isForcedFederated()){
-			FederatedRequest fr2 = mo1.getFedMapping().cleanup(getTID(), mo1.getUniqueID());
+			fr1 = mo1.getFedMapping().broadcast(mo1);
+			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
+				new CPOperand[]{input1}, new long[]{fr1.getID()}, true);
 			mo1.getFedMapping().execute(getTID(), fr1, fr2);
-			setOutputFederated(ec, mo1, fr1);
+			setOutputFederated(ec, mo1, fr2, FType.BROADCAST);
 		}
 		else if (mo1.isFederated(FType.BROADCAST)){
 			FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
@@ -121,12 +123,12 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 		}
 	}
 
-	private void setOutputFederated(ExecutionContext ec, MatrixObject mo1, FederatedRequest fr1){
+	private void setOutputFederated(ExecutionContext ec, MatrixObject mo1, FederatedRequest fr1, FType outFType){
 		MatrixObject out = ec.getMatrixObject(output);
 		out.getDataCharacteristics()
 			.set(mo1.getNumColumns(), mo1.getNumColumns(), (int) mo1.getBlocksize());
 		FederationMap outputFedMap = mo1.getFedMapping()
-			.copyWithNewIDAndRange(mo1.getNumColumns(), mo1.getNumColumns(), fr1.getID(), FType.BROADCAST);
+			.copyWithNewIDAndRange(mo1.getNumColumns(), mo1.getNumColumns(), fr1.getID(), outFType);
 		out.setFedMapping(outputFedMap);
 	}
 }

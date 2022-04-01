@@ -216,23 +216,13 @@ public class RemoteParForUtils
 	/**
 	 * Cleanup all temporary files created by this SystemDS process.
 	 */
-	public static void cleanupWorkingDirectories()
-	{
-		//use the given job configuration for infrastructure analysis (see configure);
-		//this is important for robustness w/ misconfigured classpath which also contains
-		//core-default.xml and hence hides the actual cluster configuration; otherwise
-		//there is missing cleanup of working directories 
-		JobConf job = ConfigurationManager.getCachedJobConf();
-		
-		if( !InfrastructureAnalyzer.isLocalMode(job) )
-		{
-			//delete cache files
-			CacheableData.cleanupCacheDir();
-			//disable caching (prevent dynamic eviction)
-			CacheableData.disableCaching();
-			//cleanup working dir (e.g., of CP_FILE instructions)
-			LocalFileUtils.cleanupWorkingDirectory();
-		}
+	public static void cleanupWorkingDirectories() {
+		//delete cache files
+		CacheableData.cleanupCacheDir();
+		//disable caching (prevent dynamic eviction)
+		CacheableData.disableCaching();
+		//cleanup working dir (e.g., of CP_FILE instructions)
+		LocalFileUtils.cleanupWorkingDirectory();
 	}
 
 	/**
@@ -294,13 +284,13 @@ public class RemoteParForUtils
 	 * @param workerID worker id
 	 * @throws IOException exception
 	 */
-	public static void setupBufferPool(long workerID) throws IOException {
+	public static void setupBufferPool(long workerID, boolean isLocal) throws IOException {
 		//init and register-cleanup of buffer pool (in spark, multiple tasks might
 		//share the process-local, i.e., per executor, buffer pool; hence we synchronize
 		//the initialization and immediately register the created directory for cleanup
 		//on process exit, i.e., executor exit, including any files created in the future.
 		synchronized(CacheableData.class) {
-			if (!CacheableData.isCachingActive() && !InfrastructureAnalyzer.isLocalMode()) {
+			if (!CacheableData.isCachingActive() && !isLocal) {
 				//create id, executor working dir, and cache dir
 				String uuid = IDHandler.createDistributedUniqueID();
 				LocalFileUtils.createWorkingDirectoryWithUUID(uuid);

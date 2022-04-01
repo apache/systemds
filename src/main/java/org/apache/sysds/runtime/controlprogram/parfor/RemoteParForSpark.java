@@ -38,7 +38,6 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -74,6 +73,7 @@ public class RemoteParForSpark
 		
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaSparkContext sc = sec.getSparkContext();
+		boolean isLocal = sc.isLocal();
 		
 		//initialize accumulators for tasks/iterations
 		LongAccumulator aTasks = sc.sc().longAccumulator("tasks");
@@ -81,7 +81,7 @@ public class RemoteParForSpark
 		
 		//reset cached shared inputs for correctness in local mode
 		long jobid = _jobID.getNextID();
-		if( InfrastructureAnalyzer.isLocalMode() )
+		if( isLocal )
 			RemoteParForSparkWorker.cleanupCachedVariables(jobid);
 
 		// broadcast the inputs except the result variables
@@ -95,7 +95,7 @@ public class RemoteParForSpark
 		//run remote_spark parfor job 
 		//(w/o lazy evaluation to fit existing parfor framework, e.g., result merge)
 		List<Tuple2<Long, String>> out = sc.parallelize(tasks, tasks.size()) //create rdd of parfor tasks
-			.flatMapToPair(new RemoteParForSparkWorker(jobid, prog,
+			.flatMapToPair(new RemoteParForSparkWorker(jobid, prog, isLocal,
 				clsMap, cpCaching, aTasks, aIters, brInputs, topLevelPF, serialLineage))
 			.collect(); //execute and get output handles
 		

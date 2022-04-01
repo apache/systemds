@@ -614,7 +614,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				{
 					fdict = prog.createNamespace(DMLProgram.BUILTIN_NAMESPACE);
 					Map<String,FunctionStatementBlock> fsbs = DmlSyntacticValidator
-						.loadAndParseBuiltinFunction(fexpr.getName(), DMLProgram.BUILTIN_NAMESPACE);
+						.loadAndParseBuiltinFunction(fexpr.getName(), DMLProgram.BUILTIN_NAMESPACE, false);
 					for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
 						if( !fdict.containsFunction(fsb.getKey()) )
 							fdict.addFunction(fsb.getKey(), fsb.getValue());

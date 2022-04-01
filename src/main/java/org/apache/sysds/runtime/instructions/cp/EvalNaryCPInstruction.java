@@ -210,7 +210,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		//load builtin file and parse function statement block
 		String nsName = DMLProgram.BUILTIN_NAMESPACE;
 		Map<String,FunctionStatementBlock> fsbs = DmlSyntacticValidator
-			.loadAndParseBuiltinFunction(name, nsName);
+			.loadAndParseBuiltinFunction(name, nsName, true); //forced for remote parfor
 		if( fsbs.isEmpty() )
 			throw new DMLRuntimeException("Failed to compile function '"+name+"'.");
 		

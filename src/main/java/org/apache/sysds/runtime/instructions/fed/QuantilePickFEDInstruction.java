@@ -453,13 +453,19 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			return (T) medianSum;
 		}
 
-		if(average && distinctValues.size() == 2)
+		if((average && distinctValues.size() == 2) || (!average && distinctValues.size() == 1))
 			return (T) distinctValues.stream().reduce(0.0, Double::sum);
 
 		ImmutablePair<Double, Double> finalBucketWithQ = bucketWithIndex.right;
 		List<Double> distinctInNewBucket = distinctValues.stream().filter( e -> e >= finalBucketWithQ.left && e <= finalBucketWithQ.right).collect(Collectors.toList());
 		if((distinctInNewBucket.size() == 1 && !average) || (average && distinctInNewBucket.size() == 2))
 			return (T) distinctInNewBucket.stream().reduce(0.0, Double::sum);
+
+		if(!average) {
+			Set<Double> distinctsSet = new HashSet<>(distinctInNewBucket);
+			if(distinctsSet.size() == 1)
+				return (T) distinctsSet.toArray()[0];
+		}
 
 		if(distinctValues.size() == 1 || (bucketWithIndex.middle == 1 && !average) || (bucketWithIndex.middle == 2 && isEvenNumRows && average) ||
 			globalMin == globalMax)

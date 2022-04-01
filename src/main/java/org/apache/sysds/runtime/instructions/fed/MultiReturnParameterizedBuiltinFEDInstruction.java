@@ -204,7 +204,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			for(Encoder enc : multiColumnEncoder.getColumnEncoders()) {
 				if(enc instanceof ColumnEncoderBin && ((ColumnEncoderBin) enc).getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
 					double range = (double) fin.getNumRows() / ((ColumnEncoderBin) enc).getNumBin();
-					double[] quantiles = new double[((ColumnEncoderBin) enc).getNumBin()-1];
+					double[] quantiles = new double[((ColumnEncoderBin) enc).getNumBin()];
 					for(int i = 0; i < quantiles.length; i++) {
 						quantiles[i] = range * (i + 1);
 					}
@@ -213,7 +213,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 					for(Encoder compositeEncoder : ((ColumnEncoderComposite) enc).getEncoders()) {
 						if(compositeEncoder instanceof ColumnEncoderBin && ((ColumnEncoderBin) compositeEncoder).getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
 							double range = (double) fin.getNumRows() / ((ColumnEncoderBin) compositeEncoder).getNumBin();
-							double[] quantiles = new double[((ColumnEncoderBin) compositeEncoder).getNumBin()-1];
+							double[] quantiles = new double[((ColumnEncoderBin) compositeEncoder).getNumBin()];
 							for(int i = 0; i < quantiles.length; i++) {
 								quantiles[i] = range * (i + 1);
 							}
@@ -227,8 +227,9 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		// calculate all quantiles
 		Map<Integer, double[]> equiHeightBinsPerColumn = new HashMap<>();
 		for(Map.Entry<Integer, double[]> colQuantiles : quantilesPerColumn.entrySet()) {
-			// FIXME
 			QuantilePickFEDInstruction quantileInstr = new QuantilePickFEDInstruction(null, input1, output, PickByCount.OperationTypes.VALUEPICK, true, "qpick", "");
+
+			// FIXME quantiles are computed incorrectly
 			MatrixBlock quantiles = quantileInstr.getEquiHeightBins(ec, colQuantiles.getKey(), colQuantiles.getValue());
 			equiHeightBinsPerColumn.put(colQuantiles.getKey(), quantiles.getDenseBlockValues());
 		}

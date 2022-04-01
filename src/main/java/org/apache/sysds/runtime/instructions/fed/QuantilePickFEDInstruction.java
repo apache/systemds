@@ -39,6 +39,8 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
@@ -126,12 +128,24 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		long varID = FederationUtils.getNextFedDataID();
 		ec.setVariable(String.valueOf(varID), in);
 
-		FederationMap fedMap = frameFedMap.mapParallel(varID, (range, data) -> {
+		// modify map here
+		List<FederatedRange> ranges = new ArrayList<>();
+		FederationMap oldFedMap = frameFedMap.mapParallel(varID, (range, data) -> {
 			try {
-				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-					-1, new QuantilePickFEDInstruction.CreateMatrixFromFrame(data.getVarID(), varID, colID))).get();
-				if(!response.isSuccessful())
-					response.throwExceptionFromResponse();
+				int colIDWorker = colID;
+				if(colID >= range.getBeginDims()[1] && colID < range.getEndDims()[1]) {
+					if(range.getBeginDims()[1] > 1) {
+						colIDWorker = colID - (int) range.getBeginDims()[1];
+					}
+					FederatedResponse response = data
+						.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1, new QuantilePickFEDInstruction.CreateMatrixFromFrame(data.getVarID(), varID, colIDWorker))).get();
+
+					synchronized(ranges) {
+						ranges.add(range);
+					}
+					if(!response.isSuccessful())
+						response.throwExceptionFromResponse();
+				}
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);
@@ -139,14 +153,26 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			return null;
 		});
 
+		//create one column federated object
+		List<Pair<FederatedRange, FederatedData>> newFedMapPairs = new ArrayList<>();
+		for(Pair<FederatedRange, FederatedData> mapPair : oldFedMap.getMap()) {
+			for(FederatedRange r : ranges) {
+				if(mapPair.getLeft().equals(r)) {
+					newFedMapPairs.add(mapPair);
+				}
+			}
+		}
+
+		FederationMap newFedMap = new FederationMap(varID, newFedMapPairs, FType.COL);
+
 		// construct a federated matrix with the encoded data
 		in.getDataCharacteristics().setDimension(in.getNumRows(),1);
-		in.setFedMapping(fedMap);
+		in.setFedMapping(newFedMap);
 
 
 		// Find min and max
 		List<double[]> minMax = new ArrayList<>();
-		fedMap.mapParallel(varID, (range, data) -> {
+		newFedMap.mapParallel(varID, (range, data) -> {
 			try {
 				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
 					FederatedRequest.RequestType.EXEC_UDF, -1,

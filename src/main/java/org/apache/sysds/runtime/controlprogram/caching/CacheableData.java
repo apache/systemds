@@ -598,11 +598,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			CacheStatistics.incrementMemHits();
 		}
 
-		if (UMM && _data == null)
+		if (UMM)
 			// Restore and pin this blob into memory
 			UnifiedMemoryManager.pin(this);
-
-		if (!UMM)
+		else
 			//cache status maintenance
 			acquire( false, _data==null );
 
@@ -708,7 +707,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 		if (UMM)
 			// pass output as true if not empty and not read/modify (i.e output) FIXME
-			UnifiedMemoryManager.unpin(this, write);
+			UnifiedMemoryManager.unpin(this);
 
 		//cache status maintenance (pass cacheNoWrite flag)
 		release(_isAcquireFromEmpty && !_requiresLocalWrite);

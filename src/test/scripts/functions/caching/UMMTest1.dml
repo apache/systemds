@@ -19,7 +19,6 @@
 #
 #-------------------------------------------------------------
 
-#nrows = 20000;
 ummsize = $1;
 nrows = ceil(sqrt(ummsize*0.40/8));
 nrows = 4858;
@@ -29,6 +28,8 @@ Y = rand(rows=nrows, cols=nrows, seed=43);
 R1 = X + Y;
 R2 = X * Y;
 
-R = R2 - R1;
+R3 = R2 - R1;
+while(FALSE) {}
+R = sum(R3);
 write(R, $2, format="text");
 

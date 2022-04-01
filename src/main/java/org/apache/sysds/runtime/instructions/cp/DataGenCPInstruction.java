@@ -304,10 +304,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		ScalarObject soresScalar = null;
 
 		// process specific datagen operator
-		if(method == OpOpDG.RAND) {
-			UnifiedMemoryManager.reserveOutputMem();
+		if(method == OpOpDG.RAND)
 			out = processRandInstruction(ec);
-		}
 		else if(method == OpOpDG.SEQ) {
 			double lfrom = ec.getScalarInput(seq_from).getDoubleValue();
 			double lto = ec.getScalarInput(seq_to).getDoubleValue();

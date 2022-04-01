@@ -49,7 +49,6 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 		boolean compressedRight = inBlock2 instanceof CompressedMatrixBlock;
 
 		MatrixBlock retBlock;
-		UnifiedMemoryManager.reserveOutputMem();
 
 		if(LibCommonsMath.isSupportedMatrixMatrixOperation(getOpcode()) && !compressedLeft && !compressedRight)
 			retBlock = LibCommonsMath.matrixMatrixOperations(inBlock1, inBlock2, getOpcode());

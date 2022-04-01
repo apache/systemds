@@ -20,13 +20,12 @@
 
 package org.apache.sysds.test.functions.caching;
 
-	import java.io.File;
 	import java.util.ArrayList;
 	import java.util.HashMap;
 	import java.util.List;
 
-	import org.apache.sysds.hops.OptimizerUtils;
 	import org.apache.sysds.hops.recompile.Recompiler;
+	import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 	import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 	import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 	import org.apache.sysds.runtime.controlprogram.caching.UnifiedMemoryManager;
@@ -35,7 +34,7 @@ package org.apache.sysds.test.functions.caching;
 	import org.apache.sysds.test.AutomatedTestBase;
 	import org.apache.sysds.test.TestConfiguration;
 	import org.apache.sysds.test.TestUtils;
-	import org.junit.Ignore;
+	import org.junit.Assert;
 	import org.junit.Test;
 
 public class UMMTest extends AutomatedTestBase {
@@ -52,7 +51,7 @@ public class UMMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
+	//@Ignore
 	public void testEvictionOrder() {
 		runTest(TEST_NAME1);
 	}
@@ -72,7 +71,9 @@ public class UMMTest extends AutomatedTestBase {
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> R_lru = readDMLMatrixFromOutputDir("R");
+			//HashMap<MatrixValue.CellIndex, Double> R_static = readDMLMatrixFromOutputDir("R");
+			HashMap<MatrixValue.CellIndex, Double> R_static = readDMLScalarFromOutputDir("R");
+			long FSwrites_static = CacheStatistics.getFSWrites();
 
 			// Unified memory management (cache size = 85% of heap)
 			UnifiedMemoryManager.setUMMLimit((long)(0.85 * InfrastructureAnalyzer.getLocalMaxMemory()));
@@ -87,9 +88,15 @@ public class UMMTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			UnifiedMemoryManager.cleanup();
-			HashMap<MatrixValue.CellIndex, Double> R_costnsize= readDMLMatrixFromOutputDir("R");
+			//HashMap<MatrixValue.CellIndex, Double> R_unified = readDMLMatrixFromOutputDir("R");
+			HashMap<MatrixValue.CellIndex, Double> R_unified= readDMLScalarFromOutputDir("R");
+			long FSwrites_unified = CacheStatistics.getFSWrites();
 
-			// TODO: Compare results and statistics, fix OOM.
+			// Compare results
+			TestUtils.compareMatrices(R_static, R_unified, 1e-6, "static", "unified");
+			// Compare FS write counts (#unified FS writes always smaller than #static FS writes)
+			Assert.assertTrue("Violated buffer pool eviction counts: "+FSwrites_unified+" <= "+FSwrites_static,
+				FSwrites_unified <= FSwrites_static);
 		}
 		finally {
 			Recompiler.reinitRecompiler();

@@ -20,8 +20,9 @@
 package org.apache.sysds.hops.cost;
 
 import org.apache.sysds.api.DMLException;
-import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.fedplanner.FTypes;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.hops.fedplanner.MemoTable;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
 public class HopRel {
 	protected final Hop hopRef;
 	protected final FEDInstruction.FederatedOutput fedOut;
+	protected final FTypes.FType fType;
 	protected final FederatedCost cost;
 	protected final Set<Long> costPointerSet = new HashSet<>();
 	protected List<Hop> inputHops;
@@ -54,7 +56,7 @@ public class HopRel {
 	 * @param hopRelMemo memo table storing other HopRels including the inputs of associatedHop
 	 */
 	public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, MemoTable hopRelMemo){
-		this(associatedHop, fedOut, hopRelMemo,associatedHop.getInput());
+		this(associatedHop, fedOut, null, hopRelMemo,associatedHop.getInput());
 	}
 
 	/**
@@ -65,8 +67,21 @@ public class HopRel {
 	 * @param inputs hop inputs which input dependencies and cost is based on
 	 */
 	public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, MemoTable hopRelMemo, ArrayList<Hop> inputs){
+		this(associatedHop, fedOut, null, hopRelMemo, inputs);
+	}
+
+	/**
+	 * Constructs a HopRel with input dependency and cost estimate based on entries in hopRelMemo.
+	 * @param associatedHop hop associated with this HopRel
+	 * @param fedOut FederatedOutput value assigned to this HopRel
+	 * @param fType Federated Type of the output of this hopRel
+	 * @param hopRelMemo memo table storing other HopRels including the inputs of associatedHop
+	 * @param inputs hop inputs which input dependencies and cost is based on
+	 */
+	public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, FType fType, MemoTable hopRelMemo, ArrayList<Hop> inputs){
 		hopRef = associatedHop;
 		this.fedOut = fedOut;
+		this.fType = fType;
 		this.inputHops = inputs;
 		setInputDependency(hopRelMemo);
 		cost = FederatedCostEstimator.costEstimate(this, hopRelMemo);
@@ -115,6 +130,10 @@ public class HopRel {
 		return hopRef;
 	}
 
+	public FType getFType(){
+		return fType;
+	}
+
 	/**
 	 * Returns FOUT HopRel for given hop found in hopRelMemo or returns null if HopRel not found.
 	 * @param hop to look for in hopRelMemo
@@ -130,6 +149,12 @@ public class HopRel {
 	 * @param hopRelMemo memo table storing input HopRels
 	 */
 	private void setInputDependency(MemoTable hopRelMemo){
+		//TODO: Replace this to include the FType check.
+		// 1) Get min cost inputs (also among different FTypes)
+		// 2) Check if inputs valid for given FedOut (for instance FOUT and FType.ROW).
+		//    If it is not valid, try the next lowest cost input until valid input is found.
+		//    If no valid input found for FOUT and FType combination, mark HopRel as invalid and don't add to HopRelMemo
+		// 3)  Do the same for all FedOut and FType output combinations.
 		if (inputHops != null && inputHops.size() > 0) {
 			if ( fedOut == FederatedOutput.FOUT && !hopRef.isFederatedDataOp() ) {
 				int lowestFOUTIndex = 0;

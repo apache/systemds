@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Memoization of federated execution alternatives.
@@ -122,6 +123,13 @@ public class MemoTable {
 		return containsHop(root.getHopRef())
 			&& hopRelMemo.get(root.getHopRef().getHopID()).stream()
 			.anyMatch(h -> h.getFederatedOutput() == root.getFederatedOutput());
+	}
+
+	public List<FTypes.FType> getFTypes(Hop root){
+		return hopRelMemo.get(root).stream()
+			//.filter(HopRel::hasFederatedOutput)
+			.map(HopRel::getFType)
+			.collect(Collectors.toList());
 	}
 
 	@Override

@@ -30,6 +30,7 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -343,11 +344,78 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 				inputHops = new ArrayList<>(Collections.singletonList(tWriteHop));
 			}
 			if ( isFOUTSupported(currentHop, inputHops) )
+				//generateFOUTHopRels(currentHop, inputHops);
 				hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.FOUT, hopRelMemo, inputHops));
 			if ( isLOUTSupported(currentHop) )
 				hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.LOUT, hopRelMemo, inputHops));
 		}
 		return hopRels;
+	}
+
+	private void generateFOUTHopRels(Hop currentHop, ArrayList<Hop> inputHops){
+		//Collect possible FTypes input combinations
+		// 1) Find FType for each inputhop in inputHops
+		List<List<FType>> validFTypes = new ArrayList<>();
+		for ( Hop inputHop : inputHops )
+			validFTypes.add(hopRelMemo.getFTypes(inputHop));
+
+		// 2) Combine the FTypes according to currentHop type (make separate method for mapping hop type to valid input-output combinations
+		Map<FType,List<List<FType>>> inOutFTypeMapping = getInOutFTypeMapping(currentHop,validFTypes);
+		//Determine from this collection of combinations the possible FType outputs
+		// 1) Take the FType combinations and determine which FType each would produce
+		// 2) Add mapping from output FTypes to list of valid input FType combinations for each output FType
+		//For each of the possible FType outputs, generate a HopRel (with FType output) and set the input which is feasible for that FType output
+	}
+
+	private Map<FType,List<List<FType>>> getInOutFTypeMapping(Hop currentHop, List<List<FType>> validFTypes){
+		Map<FType,List<List<FType>>> ret = new HashMap<>();
+		if ( currentHop instanceof AggBinaryOp ){
+			List<List<FType>> combinations = new ArrayList<>();
+
+			for ( int i = 0; i < validFTypes.size(); i++ ){
+				List<FType> singleInputValidFTypes = validFTypes.get(i);
+				for ( int j = 0; j < singleInputValidFTypes.size(); j++){
+					List<FType> singleCombination = new ArrayList<>();
+					for ( int k = 0; k < validFTypes.size(); k++ ){
+						if ( i != k ){
+							//singleCombination.add(validFTypes.get(k));
+						} else {
+							singleCombination.add(singleInputValidFTypes.get(j));
+						}
+					}
+				}
+			}
+
+
+			if ( validFTypes.get(0).contains(FType.ROW) ){
+				ArrayList<FType> inTypes = new ArrayList<>();
+				inTypes.add(FType.ROW);
+				inTypes.add(null);
+				combinations.add(inTypes);
+				ret.put(FType.ROW, combinations);
+			}
+		}
+		return ret;
+	}
+
+	private FType getAggBinaryOut(List<FType> inputFTypes, FEDInstruction.FederatedOutput fedOut){
+		if ( fedOut.isForcedFederated() && inputFTypes.get(0) == FType.ROW ){
+			return FType.ROW;
+		}
+		return null;
+
+
+		/*if ( inputFTypes.get(0) == FType.ROW ){
+			if ( fedOut.isForcedFederated() )
+				return FType.ROW;
+			else
+				return null;
+		}
+		else if (inputFTypes.get(1) == FType.ROW)
+			return null;
+		else if (inputFTypes.get(0) == FType.COL)
+			return null;
+		else return null;*/
 	}
 
 	/**

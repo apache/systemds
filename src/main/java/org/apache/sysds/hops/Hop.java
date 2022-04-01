@@ -1026,7 +1026,7 @@ public abstract class Hop implements ParseInfo {
 	public abstract Lop constructLops();
 
 	protected final ExecType optFindExecType() {
-		return optFindExecType(OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE ? true : false);
+		return optFindExecType(OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE);
 	}
 	
 	protected abstract ExecType optFindExecType(boolean transitive);

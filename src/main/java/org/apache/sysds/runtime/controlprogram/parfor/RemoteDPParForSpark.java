@@ -75,6 +75,7 @@ public class RemoteDPParForSpark
 		
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaSparkContext sc = sec.getSparkContext();
+		boolean isLocal = sc.isLocal();
 		
 		//prepare input parameters
 		MatrixObject mo = sec.getMatrixObject(matrixvar);
@@ -90,7 +91,7 @@ public class RemoteDPParForSpark
 		int numReducers2 = Math.max(numReducers, Math.min(numParts, (int)dpf.getNumParts(mc)));
 		
 		//core parfor datapartition-execute (w/ or w/o shuffle, depending on data characteristics)
-		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, clsMap, 
+		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, isLocal, clsMap, 
 				matrixvar, itervar, enableCPCaching, mc, tSparseCol, dpf, fmt, aTasks, aIters);
 		JavaPairRDD<Long,Writable> tmp = getPartitionedInput(sec, matrixvar, fmt, dpf);
 		List<Tuple2<Long,String>> out = (requiresGrouping(dpf, mo) ?

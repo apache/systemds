@@ -638,7 +638,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		}
 	}
 
-	public static Map<String,FunctionStatementBlock> loadAndParseBuiltinFunction(String name, String namespace) {
+	public static Map<String,FunctionStatementBlock> loadAndParseBuiltinFunction(String name, String namespace, boolean forced) {
 		if( !Builtins.contains(name, true, false) ) {
 			throw new DMLRuntimeException("Function "
 				+ DMLProgram.constructFunctionKey(namespace, name)+" is not a builtin function.");
@@ -649,10 +649,12 @@ public class DmlSyntacticValidator implements DmlListener {
 			new CustomErrorListener(), new HashMap<>(), namespace, new HashSet<>());
 		String filePath = Builtins.getFilePath(name);
 		FunctionDictionary<FunctionStatementBlock> dict = tmp
-			.parseAndAddImportedFunctions(namespace, filePath, null)
+			.parseAndAddImportedFunctions(namespace, filePath, null, forced)
 			.getBuiltinFunctionDictionary();
 		
 		//construct output map of all functions
+		if(dict == null)
+			throw new RuntimeException("Failed function load: "+name+" "+namespace);
 		return dict.getFunctions();
 	}
 
@@ -1741,13 +1743,17 @@ public class DmlSyntacticValidator implements DmlListener {
 	}
 	
 	private DMLProgram parseAndAddImportedFunctions(String namespace, String filePath, ParserRuleContext ctx) {
+		return parseAndAddImportedFunctions(namespace, filePath, ctx, false);
+	}
+	
+	private DMLProgram parseAndAddImportedFunctions(String namespace, String filePath, ParserRuleContext ctx, boolean forced) {
 		//validate namespace w/ awareness of dml-bodied builtin functions
 		validateNamespace(namespace, filePath, ctx);
 		
 		//read and parse namespace files
 		String scriptID = DMLProgram.constructFunctionKey(namespace, filePath);
 		DMLProgram prog = null;
-		if (!_f2NS.get().containsKey(scriptID)) {
+		if (forced || !_f2NS.get().containsKey(scriptID) ) {
 			_f2NS.get().put(scriptID, namespace);
 			try {
 				prog = new DMLParserWrapper().doParse(filePath,

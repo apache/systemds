@@ -168,19 +168,17 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 		for (Entry<String, Integer> cur : _paramIndexMap.entrySet())
 			inputlops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
 
+		ExecType et = optFindExecType();
 		switch( _op ) {
 			case GROUPEDAGG: { 
-				ExecType et = optFindExecType();
 				constructLopsGroupedAggregate(inputlops, et);
 				break;
 			}
 			case RMEMPTY: {
-				ExecType et = optFindExecType();
 				constructLopsRemoveEmpty(inputlops, et);
 				break;
 			} 
 			case REXPAND: {
-				ExecType et = optFindExecType();
 				constructLopsRExpand(inputlops, et);
 				break;
 			} 
@@ -198,7 +196,6 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			case PARAMSERV:
 			case LIST:
 			case AUTODIFF:{
-				ExecType et = optFindExecType();
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
 					inputlops, _op, getDataType(), getValueType(), et);
 				setOutputDimensions(pbilop);

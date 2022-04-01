@@ -23,6 +23,8 @@ import org.apache.hadoop.io.Writable;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.util.LongAccumulator;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
@@ -31,7 +33,6 @@ import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionForma
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.parfor.Task.TaskType;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.util.PairWritableCell;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
@@ -51,6 +52,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private static final long serialVersionUID = 30223759283155139L;
 	
 	private final String  _prog;
+	private final boolean _isLocal;
 	private final HashMap<String, byte[]> _clsMap;
 	private final boolean _caching;
 	private final String _inputVar;
@@ -66,11 +68,12 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private final LongAccumulator _aTasks;
 	private final LongAccumulator _aIters;
 	
-	public RemoteDPParForSparkWorker(String program, HashMap<String, byte[]> clsMap, String inputVar, String iterVar,
-		boolean cpCaching, DataCharacteristics mc, boolean tSparseCol, PartitionFormat dpf, FileFormat fmt,
-		LongAccumulator atasks, LongAccumulator aiters)
+	public RemoteDPParForSparkWorker(String program, boolean isLocal, HashMap<String, byte[]> clsMap,
+		String inputVar, String iterVar, boolean cpCaching, DataCharacteristics mc, boolean tSparseCol,
+		PartitionFormat dpf, FileFormat fmt, LongAccumulator atasks, LongAccumulator aiters)
 	{
 		_prog = program;
+		_isLocal = isLocal;
 		_clsMap = clsMap;
 		_caching = cpCaching;
 		_inputVar = inputVar;
@@ -148,14 +151,18 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_numIters    = 0;
 
 		//setup the buffer pool
-		RemoteParForUtils.setupBufferPool(_workerID);
+		RemoteParForUtils.setupBufferPool(_workerID, _isLocal);
 
 		//ensure that resultvar files are not removed
 		super.pinResultVariables();
 		
 		//enable/disable caching (if required and not in CP process)
-		if( !_caching && !InfrastructureAnalyzer.isLocalMode() )
+		if( !_caching && !_isLocal )
 			CacheableData.disableCaching();
+		
+		//ensure local mode for eval function loading on demand
+		if( !_isLocal )
+			DMLScript.setGlobalExecMode(ExecMode.SINGLE_NODE);
 	}
 	
 	/**

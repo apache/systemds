@@ -41,6 +41,7 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 	private static final long serialVersionUID = -8674739573419648732L;
 
 	private final String _program;
+	private final boolean _isLocal;
 	private final HashMap<String, byte[]> _clsMap;
 	private final SparkConf _conf;
 	private final int _port; // rpc port
@@ -54,13 +55,14 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 	private final LongAccumulator _nBatches; //number of executed batches
 	private final LongAccumulator _nEpochs; //number of executed epoches
 
-	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, SparkConf conf, int port, LongAccumulator aSetup, LongAccumulator aWorker, LongAccumulator aUpdate, LongAccumulator aIndex, LongAccumulator aGrad, LongAccumulator aRPC, LongAccumulator aBatches, LongAccumulator aEpochs, int nbatches, boolean modelAvg) {
+	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, boolean isLocal, HashMap<String, byte[]> clsMap, SparkConf conf, int port, LongAccumulator aSetup, LongAccumulator aWorker, LongAccumulator aUpdate, LongAccumulator aIndex, LongAccumulator aGrad, LongAccumulator aRPC, LongAccumulator aBatches, LongAccumulator aEpochs, int nbatches, boolean modelAvg) {
 		_updFunc = updFunc;
 		_aggFunc = aggFunc;
 		_freq = freq;
 		_epochs = epochs;
 		_batchSize = batchSize;
 		_program = program;
+		_isLocal = isLocal;
 		_clsMap = clsMap;
 		_conf = conf;
 		_port = port;
@@ -105,7 +107,7 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		_ec = body.getEc();
 
 		// Initialize the buffer pool and register it in the jvm shutdown hook in order to be cleanuped at the end
-		RemoteParForUtils.setupBufferPool(_workerID);
+		RemoteParForUtils.setupBufferPool(_workerID, _isLocal);
 
 		// Create the ps proxy
 		_ps = PSRpcFactory.createSparkPSProxy(_conf, _port, _aRPC);

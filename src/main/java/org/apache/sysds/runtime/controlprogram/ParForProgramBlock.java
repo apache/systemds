@@ -290,6 +290,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean USE_RANGE_TASKS_IF_USEFUL   = true; // use range tasks whenever size>3, false, otherwise wrong split order in remote 
 	public static final boolean USE_STREAMING_TASK_CREATION = true; // start working while still creating tasks, prevents blocking due to too small task queue
 	public static final boolean ALLOW_NESTED_PARALLELISM    = true; // if not, transparently change parfor to for on program conversions (local,remote)
+	public static final boolean CONVERT_NESTED_REMOTE_PARFOR = true; //convert parfor to for in remote parfor
 	public static final boolean USE_PARALLEL_RESULT_MERGE   = false; // if result merge is run in parallel or serial 
 	public static final boolean USE_PARALLEL_RESULT_MERGE_REMOTE = true; // if remote result merge should be run in parallel for multiple result vars
 	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
@@ -1141,7 +1142,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			.map(v -> v._name).collect(Collectors.toSet());
 		Set<String> brVars = inputs.keySet().stream()
 			.filter(v -> !retVars.contains(v))
-			.filter(v -> ec.getVariable(v).getDataType().isMatrix())
+			.filter(v -> ec.getVariable(v).getDataType().isMatrixOrFrame())
 			.filter(v -> OptimizerUtils.estimateSize(ec.getDataCharacteristics(v))< 2.14e9)
 			.collect(Collectors.toSet());
 		return brVars;

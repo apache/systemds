@@ -485,8 +485,10 @@ return (Double accuracy, Matrix[Double] evalFunHp, Matrix[Double] hpForPruning, 
       [trainX, trainy, testX, testy, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=as.frame(pipList['ph']),
         Xtrain=trainX, Ytrain=trainy, Xtest= testX, Ytest=testy, metaList=metaList, hyperParameters=as.matrix(pipList['hp']), hpForPruning=hpForPruning,
         changesByOp=changesByOp, flagsCount=as.scalar(pipList['flags']), test=TRUE, verbose=FALSE)
-      cvChanges[cvk] = changesByOp
-      allChanges[i] =  changesByPip
+      #TODO double check why this is necessary
+      mincol = min(ncol(cvChanges),ncol(changesByOp))
+      cvChanges[cvk,1:mincol] = changesByOp[,1:mincol];
+      allChanges[i] = changesByPip
     }
     if(changesByPip < ref)
       print("prunning alert 2: no training the model due to minimum changes")

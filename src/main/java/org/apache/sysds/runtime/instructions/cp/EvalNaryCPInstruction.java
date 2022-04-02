@@ -218,6 +218,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			fsbs.get(Builtins.getInternalFName(name, dt)).getDMLProg();
 		
 		//filter already existing functions (e.g., already loaded internally-called functions)
+		//note: in remote parfor the runtime program might contain more functions than the DML program
 		fsbs = (dmlp.getBuiltinFunctionDictionary() == null) ? fsbs : fsbs.entrySet().stream()
 			.filter(e -> !dmlp.getBuiltinFunctionDictionary().containsFunction(e.getKey()))
 			.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
@@ -237,7 +238,9 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		// validate functions, in two passes for cross references
 		for( FunctionStatementBlock fsb : fsbs.values() ) {
 			dmlt.liveVariableAnalysisFunction(dmlp, fsb);
-			dmlt.validateFunction(dmlp, fsb);
+			//mark as conditional (warnings instead of errors) because internally
+			//called functions might not be available in dmlp but prog in remote parfor
+			dmlt.validateFunction(dmlp, fsb, true);
 		}
 		
 		// compile hop dags, rewrite hop dags and compile lop dags
@@ -260,8 +263,10 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
 			FunctionProgramBlock fpb = (FunctionProgramBlock) dmlt
 				.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
-			prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, true);  // optimized
-			prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, false); // unoptimized -> eval
+			if(!prog.containsFunctionProgramBlock(nsName, fsb.getKey(), true))
+				prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, true);  // optimized
+			if(!prog.containsFunctionProgramBlock(nsName, fsb.getKey(), false))
+				prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, false); // unoptimized -> eval
 		}
 	}
 	

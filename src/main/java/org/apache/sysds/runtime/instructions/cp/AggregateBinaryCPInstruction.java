@@ -82,10 +82,10 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		else if(transposeLeft || transposeRight)
 			processTransposedFusedAggregateBinary(ec);
 		else
-			precessNormal(ec);
+			processNormal(ec);
 	}
 
-	private void precessNormal(ExecutionContext ec) {
+	private void processNormal(ExecutionContext ec) {
 		// get inputs
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());

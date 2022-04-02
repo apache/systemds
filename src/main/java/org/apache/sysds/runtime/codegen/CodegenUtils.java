@@ -194,7 +194,6 @@ public class CodegenUtils
 	private synchronized static Class<?> compileClassJanino(String name, String src) {
 		try {
 			// compile source code
-			// (in recent spark versions )
 			SimpleCompiler compiler = new SimpleCompiler();
 			if( _mainClassLoader != null )
 				compiler.setParentClassLoader(_mainClassLoader);

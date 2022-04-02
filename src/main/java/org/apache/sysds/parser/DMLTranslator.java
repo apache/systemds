@@ -152,6 +152,10 @@ public class DMLTranslator
 	}
 	
 	public void validateFunction(DMLProgram dmlp, FunctionStatementBlock fsb) {
+		validateFunction(dmlp, fsb, false);
+	}
+	
+	public void validateFunction(DMLProgram dmlp, FunctionStatementBlock fsb, boolean conditional) {
 		HashMap<String, ConstIdentifier> constVars = new HashMap<>();
 		VariableSet vs = new VariableSet();
 	
@@ -162,7 +166,7 @@ public class DMLTranslator
 				currVar.setDimensions(0, 0);
 			vs.addVariable(currVar.getName(), currVar);
 		}
-		fsb.validate(dmlp, vs, constVars, false);
+		fsb.validate(dmlp, vs, constVars, conditional);
 	}
 
 	public void liveVariableAnalysis(DMLProgram dmlp) {

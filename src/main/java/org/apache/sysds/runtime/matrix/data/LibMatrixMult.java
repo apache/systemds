@@ -181,7 +181,7 @@ public class LibMatrixMult
 			k = 1;
 
 		if(k <= 1)
-			singleThreadMatrixMult(m1, m2, ret, ultraSparse, sparse, tm2, m1Perm, fixedRet);
+			singleThreadedMatrixMult(m1, m2, ret, ultraSparse, sparse, tm2, m1Perm, fixedRet);
 		else
 			parallelMatrixMult(m1, m2, ret, k, ultraSparse, sparse, tm2, m1Perm);
 
@@ -191,7 +191,7 @@ public class LibMatrixMult
 		return ret;
 	}
 
-	private static void singleThreadMatrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,  
+	private static void singleThreadedMatrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,  
 		boolean ultraSparse, boolean sparse, boolean tm2, boolean m1Perm, boolean fixedRet){
 		// prepare row-upper for special cases of vector-matrix
 		final boolean pm2 = !ultraSparse && checkParMatrixMultRightInputRows(m1, m2, Integer.MAX_VALUE);
@@ -3967,7 +3967,8 @@ public class LibMatrixMult
 			|| (m1Perm && OptimizerUtils.getSparsity(m2.rlen, m2.clen, m2.nonZeros)<1.0)
 			|| ((m1.isUltraSparse(false) || m2.isUltraSparse(false)) 
 				&& outSp < MatrixBlock.ULTRA_SPARSITY_TURN_POINT2)
-			|| (m1.getSparsity() < MatrixBlock.ULTRA_SPARSITY_TURN_POINT2
+			|| (m1.isInSparseFormat() // otherwise no matching branch
+				&& m1.getSparsity() < MatrixBlock.ULTRA_SPARSITY_TURN_POINT2
 				&& m1.getNonZeros() < MatrixBlock.ULTRA_SPARSE_BLOCK_NNZ
 				&& m1.getLength()+m2.getLength() < (long)m1.rlen*m2.clen
 				&& outSp < MatrixBlock.SPARSITY_TURN_POINT);
@@ -3994,8 +3995,7 @@ public class LibMatrixMult
 		//transpose if dense-dense, skinny rhs matrix (not vector), and memory guarded by output 
 		if( tm2 ) {
 			MatrixBlock tmpBlock = new MatrixBlock(m2.clen, m2.rlen, m2.sparse);
-			LibMatrixReorg.reorg(m2, tmpBlock, new ReorgOperator(SwapIndex.getSwapIndexFnObject()));
-			ret = tmpBlock;
+			ret = LibMatrixReorg.reorg(m2, tmpBlock, new ReorgOperator(SwapIndex.getSwapIndexFnObject()));
 		}
 		
 		return ret;

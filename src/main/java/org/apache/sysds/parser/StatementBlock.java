@@ -1057,12 +1057,13 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				DataIdentifier target = targetList.get(j);
 				// set target properties (based on type info in function call statement return params)
 				FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
-				FunctionStatement fstmt = (FunctionStatement)_dmlProg
-					.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
-				if (fstmt == null){
+				FunctionStatementBlock fblock = _dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName());
+				if (fblock == null){
 					fci.raiseValidateError(" function " + fci.getName() 
 						+ " is undefined in namespace " + fci.getNamespace(), conditional);
+					return;
 				}
+				FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
 				if (!(target instanceof IndexedIdentifier)){
 					target.setProperties(fstmt.getOutputParams().get(j));
 				}

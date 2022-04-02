@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -235,14 +236,13 @@ public class FederationMap {
 	private FederatedRequest sliceBroadcastBlock(int[] ix, long id, CacheBlock cb, LineageItem objLi, boolean isFrame) {
 		LineageItem li = null;
 		if(objLi != null) {
-			final String scalarCPOSuffix = InstructionUtils.concatOperands(
-				DataType.SCALAR.name(), ValueType.INT64.name(), String.valueOf(true));
 			// manually create a lineage item for indexing to complete the lineage trace for slicing
-			li = new LineageItem(RightIndex.OPCODE, new LineageItem[]{objLi,
-				new LineageItem(InstructionUtils.concatOperandParts(String.valueOf(ix[0] + 1), scalarCPOSuffix)),
-				new LineageItem(InstructionUtils.concatOperandParts(String.valueOf(ix[1] + 1), scalarCPOSuffix)),
-				new LineageItem(InstructionUtils.concatOperandParts(String.valueOf(ix[2] + 1), scalarCPOSuffix)),
-				new LineageItem(InstructionUtils.concatOperandParts(String.valueOf(ix[3] + 1), scalarCPOSuffix))});
+			CPOperand rl = new CPOperand(String.valueOf(ix[0] + 1), ValueType.INT64, DataType.SCALAR, true);
+			CPOperand ru = new CPOperand(String.valueOf(ix[1] + 1), ValueType.INT64, DataType.SCALAR, true);
+			CPOperand cl = new CPOperand(String.valueOf(ix[2] + 1), ValueType.INT64, DataType.SCALAR, true);
+			CPOperand cu = new CPOperand(String.valueOf(ix[3] + 1), ValueType.INT64, DataType.SCALAR, true);
+			li = new LineageItem(RightIndex.OPCODE, new LineageItem[]{objLi, rl.getLiteralLineageItem(),
+				ru.getLiteralLineageItem(), cl.getLiteralLineageItem(), cu.getLiteralLineageItem()});
 		}
 		FederatedRequest fr = new FederatedRequest(RequestType.PUT_VAR, li, id,
 			cb.slice(ix[0], ix[1], ix[2], ix[3], isFrame ? new FrameBlock() : new MatrixBlock()));

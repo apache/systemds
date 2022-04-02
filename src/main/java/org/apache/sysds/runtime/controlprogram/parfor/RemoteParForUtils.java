@@ -282,6 +282,7 @@ public class RemoteParForUtils
 	/**
 	 * Init and register-cleanup of buffer pool
 	 * @param workerID worker id
+	 * @param isLocal in local spark mode (single JVM)
 	 * @throws IOException exception
 	 */
 	public static void setupBufferPool(long workerID, boolean isLocal) throws IOException {

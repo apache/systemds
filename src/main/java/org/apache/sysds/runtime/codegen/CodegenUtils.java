@@ -42,6 +42,7 @@ import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,7 +70,15 @@ public class CodegenUtils
 
 	//javac-specific working directory for src/class files
 	private static String _workingDir = null;
-
+	
+	//access to spark's MutableURLClassLoader of the driver's main thread
+	//(otherwise Thread.currentThread().getContextClassLoader() as default)
+	public static ClassLoader _mainClassLoader = null;
+	
+	public static synchronized void setClassLoader(ClassLoader clsLoader) {
+		_mainClassLoader = clsLoader;
+	}
+	
 	public static Class<?> compileClass(String name, String src) {
 		//reuse existing compiled class
 		Class<?> ret = _cache.get(name);
@@ -182,10 +191,13 @@ public class CodegenUtils
 	////////////////////////////
 	//JANINO-specific methods (used for spark environments)
 
-	private static Class<?> compileClassJanino(String name, String src) {
+	private synchronized static Class<?> compileClassJanino(String name, String src) {
 		try {
-			//compile source code
+			// compile source code
+			// (in recent spark versions )
 			SimpleCompiler compiler = new SimpleCompiler();
+			if( _mainClassLoader != null )
+				compiler.setParentClassLoader(_mainClassLoader);
 			compiler.cook(src);
 
 			//keep source code for later re-construction

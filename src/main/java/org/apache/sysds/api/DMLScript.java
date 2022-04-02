@@ -57,6 +57,7 @@ import org.apache.sysds.parser.ParserFactory;
 import org.apache.sysds.parser.ParserWrapper;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -651,5 +652,8 @@ public class DMLScript
 				LOG.error("Failed to load native cuda codegen library\n" + e);
 			}
 		}
+		// set the global class loader to make Spark's MutableURLClassLoader
+		// available for all parfor worker threads without pass-through
+		CodegenUtils.setClassLoader(Thread.currentThread().getContextClassLoader());
 	}
 }

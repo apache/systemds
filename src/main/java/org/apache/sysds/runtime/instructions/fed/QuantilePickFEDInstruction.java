@@ -202,9 +202,14 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		T ret = createHistogram(in, (int) vectorLength, globalMin, globalMax, numBuckets, -1, false);
 
 		// Compute and set results
-		MatrixBlock res =  computeMultipleQuantiles(ec, in, (int[]) ret, quantiles, (int) vectorLength, varID, (globalMax-globalMin) / numBuckets, globalMin, _type, true);
+		MatrixBlock quantileValues =  computeMultipleQuantiles(ec, in, (int[]) ret, quantiles, (int) vectorLength, varID, (globalMax-globalMin) / numBuckets, globalMin, _type, true);
 
 		ec.removeVariable(String.valueOf(varID));
+
+		// Add min to the result
+		MatrixBlock res = new MatrixBlock(quantileValues.getNumRows() + 1, 1, false);
+		res.setValue(0,0, globalMin);
+		res.copy(1, quantileValues.getNumRows(), 0, 0,  quantileValues,false);
 
 		return res;
 	}

@@ -275,7 +275,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			_binMins = new double[_numBin];
 			_binMaxs = new double[_numBin];
 		}
-		System.arraycopy(binMaxs, 1, _binMaxs, 0, _numBin - 1);
+		System.arraycopy(binMaxs, 1, _binMaxs, 0, _numBin);
 		_binMins[0] = binMaxs[0];
 		System.arraycopy(_binMaxs, 0, _binMins, 1, _numBin - 1);
 	}

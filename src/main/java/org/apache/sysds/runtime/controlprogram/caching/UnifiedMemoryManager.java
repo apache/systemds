@@ -100,7 +100,7 @@ public class UnifiedMemoryManager
 	// Current size in bytes
 	private static long _size;
 	// Operational memory limit in bytes
-	private static final long _opMemLimit;
+	private static long _opMemLimit;
 	// List of pinned entries
 	private static final List<String> _pinnedEntries = new ArrayList<String>();
 	// List of entries available from the soft references
@@ -113,12 +113,6 @@ public class UnifiedMemoryManager
 	// Maintenance service for synchronous or asynchronous delete of evicted files
 	private static CacheMaintenanceService _fClean;
 
-	static {
-		//obtain the logical buffer size in bytes
-		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
-		_limit = (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
-		_opMemLimit = (long)(OptimizerUtils.getLocalMemBudget()); //70% of heap
-	}
 	// Pinned size of physical memory. Starts from 0 for an operation. Max is 70% of heap
 	// This increases only if the input is not present in the cache and read from FS
 	private static long _pinnedPhysicalMemSize = 0;
@@ -165,7 +159,7 @@ public class UnifiedMemoryManager
 
 	// Reserve space for output in the operation memory
 	public static void reserveOutputMem() {
-		if (!CacheableData.UMM)
+		if (!OptimizerUtils.isUMMEnabled())
 			return;
 		// Worst case upper bound for output = 70% - size(inputs)
 		// FIXME: Parfor splits this 70% into smaller limits
@@ -211,6 +205,8 @@ public class UnifiedMemoryManager
 	public static void init() {
 		_mQueue = new CacheEvictionQueue();
 		_fClean = new CacheMaintenanceService();
+		_limit = OptimizerUtils.getBufferPoolLimit();
+		_opMemLimit = (long)(OptimizerUtils.getLocalMemBudget()); //70% of heap
 		_size = 0;
 		_pinnedPhysicalMemSize = 0;
 		_pinnedVirtualMemSize = 0;

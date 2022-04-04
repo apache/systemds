@@ -363,7 +363,10 @@ public class ParForStatementBlock extends ForStatementBlock
 			_fncache.clear();
 		
 		LOG.debug("INFO: PARFOR("+_PID+"): validate successful (no dependencies) in "+time.stop()+"ms.");
-		
+
+		if (OptimizerUtils.isUMMEnabled())
+			OptimizerUtils.disableUMM();
+
 		return vs;
 	}
 	

@@ -24,10 +24,9 @@ package org.apache.sysds.test.functions.caching;
 	import java.util.HashMap;
 	import java.util.List;
 
+	import org.apache.sysds.hops.OptimizerUtils;
 	import org.apache.sysds.hops.recompile.Recompiler;
 	import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
-	import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
-	import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 	import org.apache.sysds.runtime.controlprogram.caching.UnifiedMemoryManager;
 	import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 	import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -76,10 +75,11 @@ public class UMMTest extends AutomatedTestBase {
 			long FSwrites_static = CacheStatistics.getFSWrites();
 
 			// Unified memory management (cache size = 85% of heap)
-			UnifiedMemoryManager.setUMMLimit((long)(0.85 * InfrastructureAnalyzer.getLocalMaxMemory()));
-			CacheableData.UMM = true;
-			UnifiedMemoryManager.cleanup();
-			LazyWriteBuffer.cleanup();
+			//UnifiedMemoryManager.setUMMLimit((long)(0.85 * InfrastructureAnalyzer.getLocalMaxMemory()));
+			//CacheableData.UMM = true;
+			//UnifiedMemoryManager.cleanup();
+			//LazyWriteBuffer.cleanup();
+			OptimizerUtils.enableUMM();
 			proArgs.clear();
 			proArgs.add("-stats");
 			proArgs.add("-args");

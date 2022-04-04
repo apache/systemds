@@ -20,15 +20,11 @@
 package org.apache.sysds.runtime.controlprogram.caching;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 public class LazyWriteBuffer 
@@ -39,7 +35,7 @@ public class LazyWriteBuffer
 	}
 	
 	//global size limit in bytes
-	private static final long _limit;
+	private static long _limit;
 	
 	//current size in bytes
 	private static long _size;
@@ -50,12 +46,6 @@ public class LazyWriteBuffer
 	
 	//maintenance service for synchronous or asynchronous delete of evicted files
 	private static CacheMaintenanceService _fClean;
-	
-	static {
-		//obtain the logical buffer size in bytes
-		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
-		_limit = (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
-	}
 	
 	public static int writeBlock(String fname, CacheBlock cb)
 		throws IOException
@@ -182,6 +172,7 @@ public class LazyWriteBuffer
 	public static void init() {
 		_mQueue = new CacheEvictionQueue();
 		_fClean = new CacheMaintenanceService();
+		_limit = OptimizerUtils.getBufferPoolLimit();
 		_size = 0;
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.init();
@@ -200,6 +191,10 @@ public class LazyWriteBuffer
 		//return constant limit because InfrastructureAnalyzer.getLocalMaxMemory() is
 		//dynamically adjusted in a parfor context, which wouldn't reflect the actual size
 		return _limit;
+	}
+
+	public static void setWriteBufferLimit(long limit) {
+		_limit = limit;
 	}
 	
 	public static long getWriteBufferSize() {

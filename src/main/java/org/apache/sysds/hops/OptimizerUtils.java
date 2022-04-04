@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
+import org.apache.sysds.runtime.controlprogram.caching.UnifiedMemoryManager;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -74,7 +75,17 @@ public class OptimizerUtils
 	 * NOTE: it is important that MEM_UTIL_FACTOR+CacheableData.CACHING_BUFFER_SIZE &lt; 1.0
 	 */
 	public static double MEM_UTIL_FACTOR = 0.7d;
-	
+	public static double DEFAULT_MEM_UTIL_FACTOR = 0.15d;
+	public static double DEFAULT_UMM_UTIL_FACTOR = 0.85d;
+
+	public enum MemoryManager {
+		STATIC_MEMORY_MANAGER,
+		UNIFIED_MEMORY_MANAGER
+	}
+
+	public static MemoryManager MEMORY_MANAGER = null;
+	public static long BUFFER_POOL_SIZE = 0;
+
 	/** Default blocksize if unspecified or for testing purposes */
 	public static final int DEFAULT_BLOCKSIZE = 1000;
 	
@@ -467,6 +478,43 @@ public class OptimizerUtils
 	public static double getLocalMemBudget() {
 		double ret = InfrastructureAnalyzer.getLocalMaxMemory();
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
+	}
+
+	public static long getBufferPoolLimit() {
+		if (BUFFER_POOL_SIZE != 0)
+			return BUFFER_POOL_SIZE;
+		DMLConfig conf = ConfigurationManager.getDMLConfig();
+		double bufferPoolFactor = (double)(conf.getIntValue(DMLConfig.BUFFERPOOL_LIMIT))/100;
+		bufferPoolFactor = Math.max(bufferPoolFactor, DEFAULT_MEM_UTIL_FACTOR);
+		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		return (long)(bufferPoolFactor * maxMem);
+	}
+
+	public static boolean isUMMEnabled() {
+		if (MEMORY_MANAGER == null) {
+			DMLConfig conf = ConfigurationManager.getDMLConfig();
+			boolean isUMM = conf.getTextValue(DMLConfig.MEMORY_MANAGER).equalsIgnoreCase("unified");
+			MEMORY_MANAGER = isUMM ? MemoryManager.UNIFIED_MEMORY_MANAGER : MemoryManager.STATIC_MEMORY_MANAGER;
+		}
+		return MEMORY_MANAGER == MemoryManager.UNIFIED_MEMORY_MANAGER;
+	}
+
+	public static void disableUMM() {
+		MEMORY_MANAGER = MemoryManager.STATIC_MEMORY_MANAGER;
+		LazyWriteBuffer.cleanup();
+		LazyWriteBuffer.init();
+		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		BUFFER_POOL_SIZE = (long) (DEFAULT_MEM_UTIL_FACTOR * maxMem);
+		LazyWriteBuffer.setWriteBufferLimit(BUFFER_POOL_SIZE);
+	}
+
+	public static void enableUMM() {
+		MEMORY_MANAGER = MemoryManager.UNIFIED_MEMORY_MANAGER;
+		UnifiedMemoryManager.cleanup();
+		UnifiedMemoryManager.init();
+		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		BUFFER_POOL_SIZE = (long) (DEFAULT_UMM_UTIL_FACTOR * maxMem);
+		UnifiedMemoryManager.setUMMLimit(BUFFER_POOL_SIZE);
 	}
 	
 	public static boolean isMaxLocalParallelism(int k) {

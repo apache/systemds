@@ -121,6 +121,17 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
 	}
 
+	public void buildEquiHeight(double[] equiHeightMaxs) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		if(!isApplicable())
+			return;
+		if(_binMethod == BinMethod.EQUI_WIDTH) {
+			computeFedEqualHeightBins(equiHeightMaxs);
+		}
+		if(DMLScript.STATISTICS)
+			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
+	}
+
 	public void build(CacheBlock in, double[] equiHeightMaxs) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(!isApplicable())

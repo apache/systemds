@@ -98,7 +98,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 //	public void testHomesRecodeIDsCSV() {
 //		runTransformTest(TransformType.RECODE, false, false);
 //	}
-//
+
 //	@Test
 //	public void testHomesDummycodeIDsCSV() {
 //		runTransformTest(TransformType.DUMMY, false, false);
@@ -200,11 +200,13 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testHomesHeightBinningDummyIDsSingleNodeCSV() {
 		runTransformTest(TransformType.BIN_HEIGHT_DUMMY, false, false);
 	}
 
 	@Test
+	@Ignore
 	public void  testHomesHeightBinningDummyColnamesSingleNodeCSV() {
 		runTransformTest(TransformType.BIN_HEIGHT_DUMMY, true, false);
 	}
@@ -280,7 +282,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			String[] lineageArgs = new String[] {"-lineage", "reuse_full", "-stats"};
-			programArgs = new String[] {"-nvargs", "in_AH=" + TestUtils.federatedAddress(port1, input("AH")),
+			programArgs = new String[] {"-explain", "-nvargs", "in_AH=" + TestUtils.federatedAddress(port1, input("AH")),
 				"in_AL=" + TestUtils.federatedAddress(port2, input("AL")),
 				"in_BH=" + TestUtils.federatedAddress(port3, input("BH")),
 				"in_BL=" + TestUtils.federatedAddress(port4, input("BL")), "rows=" + dataset.getNumRows(),
@@ -307,8 +309,12 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 					Assert.assertEquals(BIN_col3[i], R1[i][2], 1e-8);
 					Assert.assertEquals(BIN_col8[i], R1[i][7], 1e-8);
 				}
-			}
-			else if(type == TransformType.BIN_DUMMY) {
+			} else if (type == TransformType.BIN_HEIGHT) {
+				for(int i=0; i<7; i++) {
+					Assert.assertEquals(BIN_HEIGHT_col3[i], R1[i][2], 1e-8);
+					Assert.assertEquals(BIN_HEIGHT_col8[i], R1[i][7], 1e-8);
+				}
+			} else if(type == TransformType.BIN_DUMMY) {
 				Assert.assertEquals(14, R1[0].length);
 				for(int i = 0; i < 7; i++) {
 					for(int j = 0; j < 4; j++) { // check dummy coded
@@ -317,11 +323,6 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 					for(int j = 0; j < 3; j++) { // check dummy coded
 						Assert.assertEquals((j == BIN_col8[i] - 1) ? 1 : 0, R1[i][10 + j], 1e-8);
 					}
-				}
-			} else if (type == TransformType.BIN_HEIGHT) {
-				for(int i=0; i<7; i++) {
-					Assert.assertEquals(BIN_HEIGHT_col3[i], R1[i][2], 1e-8);
-					Assert.assertEquals(BIN_HEIGHT_col8[i], R1[i][7], 1e-8);
 				}
 			} else if (type == TransformType.BIN_HEIGHT_DUMMY) {
 				Assert.assertEquals(14, R1[0].length);

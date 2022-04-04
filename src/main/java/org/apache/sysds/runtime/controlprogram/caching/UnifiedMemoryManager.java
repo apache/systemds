@@ -108,10 +108,10 @@ public class UnifiedMemoryManager
 
 	// Eviction queue of <filename,buffer> pairs (implemented via linked hash map
 	// for (1) queue semantics and (2) constant time get/insert/delete operations)
-	private static UnifiedMemoryManager.EvictionQueue _mQueue;
+	private static CacheEvictionQueue _mQueue;
 
 	// Maintenance service for synchronous or asynchronous delete of evicted files
-	private static UnifiedMemoryManager.MaintenanceService _fClean;
+	private static CacheMaintenanceService _fClean;
 
 	static {
 		//obtain the logical buffer size in bytes
@@ -209,8 +209,8 @@ public class UnifiedMemoryManager
 	}
 
 	public static void init() {
-		_mQueue = new UnifiedMemoryManager.EvictionQueue();
-		_fClean = new UnifiedMemoryManager.MaintenanceService();
+		_mQueue = new CacheEvictionQueue();
+		_fClean = new CacheMaintenanceService();
 		_size = 0;
 		_pinnedPhysicalMemSize = 0;
 		_pinnedVirtualMemSize = 0;
@@ -416,127 +416,4 @@ public class UnifiedMemoryManager
 			_fClean.deleteFile(fname);
 	}
 
-	/**
-	 * Extended LinkedHashMap with convenience methods for adding and removing
-	 * last/first entries.
-	 *
-	 */
-	private static class EvictionQueue extends LinkedHashMap<String, ByteBuffer>
-	{
-		private static final long serialVersionUID = -5208333402581364859L;
-
-		public void addLast( String fname, ByteBuffer bbuff ) {
-			//put entry into eviction queue w/ 'addLast' semantics
-			put(fname, bbuff);
-		}
-
-		public Map.Entry<String, ByteBuffer> removeFirst()
-		{
-			//move iterator to first entry
-			Iterator<Map.Entry<String, ByteBuffer>> iter = entrySet().iterator();
-			Map.Entry<String, ByteBuffer> entry = iter.next();
-
-			//remove current iterator entry
-			iter.remove();
-
-			return entry;
-		}
-
-		public Map.Entry<String, ByteBuffer> removeFirstUnpinned(List<String> pinnedList) {
-			//move iterator to first entry
-			Iterator<Map.Entry<String, ByteBuffer>> iter = entrySet().iterator();
-			var entry = iter.next();
-			while (pinnedList.contains(entry.getKey()))
-				entry = iter.next();
-
-			//remove current iterator entry
-			iter.remove();
-			return entry;
-		}
-	}
-
-	/**
-	 * Maintenance service for abstraction of synchronous and asynchronous
-	 * file cleanup on rmvar/cpvar as well as serialization of matrices and
-	 * frames. The thread pool for asynchronous cleanup may increase the
-	 * number of threads temporarily to the number of concurrent delete tasks
-	 * (which is bounded to the parfor degree of parallelism).
-	 */
-	private static class MaintenanceService
-	{
-		private ExecutorService _pool = null;
-
-		public MaintenanceService() {
-			//create new threadpool for async cleanup
-			if( isAsync() )
-				_pool = Executors.newCachedThreadPool();
-		}
-
-		public void deleteFile(String fname) {
-			//sync or async file delete
-			if( CacheableData.CACHING_ASYNC_FILECLEANUP )
-				_pool.submit(new UnifiedMemoryManager.MaintenanceService.FileCleanerTask(fname));
-			else
-				LocalFileUtils.deleteFileIfExists(fname, true);
-		}
-
-		public void serializeData(ByteBuffer bbuff, CacheBlock cb) {
-			//sync or async file delete
-			if( CacheableData.CACHING_ASYNC_SERIALIZE )
-				_pool.submit(new UnifiedMemoryManager.MaintenanceService.DataSerializerTask(bbuff, cb));
-			else {
-				try {
-					bbuff.serializeBlock(cb);
-				}
-				catch(IOException ex) {
-					throw new DMLRuntimeException(ex);
-				}
-			}
-		}
-
-		public void close() {
-			//execute pending tasks and shutdown pool
-			if( isAsync() )
-				_pool.shutdown();
-		}
-
-		@SuppressWarnings("unused")
-		public boolean isAsync() {
-			return CacheableData.CACHING_ASYNC_FILECLEANUP
-				|| CacheableData.CACHING_ASYNC_SERIALIZE;
-		}
-
-		private static class FileCleanerTask implements Runnable {
-			private String _fname = null;
-
-			public FileCleanerTask( String fname ) {
-				_fname = fname;
-			}
-
-			@Override
-			public void run() {
-				LocalFileUtils.deleteFileIfExists(_fname, true);
-			}
-		}
-
-		private static class DataSerializerTask implements Runnable {
-			private ByteBuffer _bbuff = null;
-			private CacheBlock _cb = null;
-
-			public DataSerializerTask(ByteBuffer bbuff, CacheBlock cb) {
-				_bbuff = bbuff;
-				_cb = cb;
-			}
-
-			@Override
-			public void run() {
-				try {
-					_bbuff.serializeBlock(_cb);
-				}
-				catch(IOException ex) {
-					throw new DMLRuntimeException(ex);
-				}
-			}
-		}
-	}
 }

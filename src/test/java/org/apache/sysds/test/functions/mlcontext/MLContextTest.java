@@ -114,21 +114,59 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testExecuteEvalBuiltinTest() {
-		LOG.debug("MLContextTest - eval builtin test");
-		Script script = dmlFromFile(baseDirectory + File.separator + "eval3-builtin-test.dml");
-		ml.setExplain(true);
-		String out = executeAndCaptureStdOut( script).getRight();
-		assertTrue(out.contains("TRUE"));
-		ml.setExplain(false);
+		runEvalTest("eval3-builtin-test.dml", "TRUE");
 	}
 
 	@Test
 	public void testExecuteEvalNestedBuiltinTest() {
-		LOG.debug("MLContextTest - eval builtin test");
-		Script script = dmlFromFile(baseDirectory + File.separator + "eval4-nested_builtin-test.dml");
+		runEvalTest("eval4-nested_builtin-test.dml", "TRUE");
+	}
+
+	@Test
+	public void testExecuteEvalBooleanArgument_01(){
+		runEvalTest("eval5-bool-not-true.dml", "FALSE");
+	}
+
+	@Test
+	public void testExecuteEvalBooleanArgument_02(){
+		runEvalTest("eval5-bool-not-false.dml", "TRUE");
+	}
+
+	@Test
+	public void testExecuteEvalBooleanArgument_03(){
+		runEvalTest("eval5-bool-allFalse-list.dml", "FALSE");
+	}
+
+	@Test
+	public void testExecuteEvalBooleanArgument_04(){
+		runEvalTest("eval5-bool-allFalse-list-2.dml", "TRUE");
+	}
+
+	@Test
+	public void testExecuteEvalGridSearchNoDefault(){
+		// grid search where all parameters are defined in parameter ranges
+		runEvalTest("eval6-gridSearch-1.dml", "You Found Me! TRUE");
+	}
+
+	@Test
+	public void testExecuteEvalGridSearchWithDefault(){
+		// grid search where all but one boolean parameter is defined in parameter ranges
+		runEvalTest("eval6-gridSearch-2.dml", "You Found Me Also! TRUE");
+	}
+
+	@Test
+	public void testExecuteEvalGridSearchWithTwoDefault(){
+		// grid search where two boolean parameters are not defined in parameter ranges.
+		runEvalTest("eval6-gridSearch-3.dml", "Find Me! TRUE");
+	}
+
+	private void runEvalTest(String name, String outputContains){
+		LOG.debug("MLContextTest - eval builtin test " + name);
+		final Script script = dmlFromFile(baseDirectory + File.separator + name);
 		ml.setExplain(true);
-		String out = executeAndCaptureStdOut( script).getRight();
-		assertTrue(out.contains("TRUE"));
+		final String out = executeAndCaptureStdOut( script).getRight();
+		// LOG.error(out);
+		assertTrue(out, out.contains(outputContains));
 		ml.setExplain(false);
 	}
 

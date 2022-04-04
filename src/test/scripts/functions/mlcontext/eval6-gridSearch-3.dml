@@ -1,0 +1,52 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+m = function(
+  Boolean a,
+  Boolean b,
+  Boolean c,
+  Boolean d, 
+  Boolean e)
+  return (Matrix[Double] m) {
+  f = !a & b & !c & !d & e
+  if (f)
+    print("Find Me! " + e)
+  m = matrix(1,1,1)
+}
+
+p = function(boolean a, Matrix[Double] b) return(Matrix[double] loss){
+ loss = rand(rows=1,cols=1,min=0,max=1)
+}
+
+X = matrix(1,1,1)
+Y = matrix(1,1,1)
+
+params = list("a", "b", "c")
+paramRanges=list(seq(0,1), seq(0,1), seq(0,1))
+# D and E have default values of False and True
+trainArgs = list(a=TRUE, b=TRUE, c=TRUE, d=FALSE, e=TRUE)
+predictArgs= list(TRUE)
+
+[b, opt] = gridSearch(X=X, y=Y, train="m", predict="p", numB = 1, params = params, 
+  paramValues = paramRanges, trainArgs=trainArgs, predictArgs=predictArgs,
+  verbose=FALSE)
+
+print(toString(b))

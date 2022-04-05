@@ -123,6 +123,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			if( !ec.getProgram().containsFunctionProgramBlock(nsName, funcNameParfor, false) ) { //copy on demand
 				fpb = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<>(), new HashSet<>(), _threadID);
 				ec.getProgram().addFunctionProgramBlock(nsName, funcNameParfor, fpb, false);
+				ec.addTmpParforFunction(DMLProgram.constructFunctionKey(nsName, funcNameParfor));
 			}
 			fpb = ec.getProgram().getFunctionProgramBlock(nsName, funcNameParfor, false);
 			funcName = funcNameParfor;

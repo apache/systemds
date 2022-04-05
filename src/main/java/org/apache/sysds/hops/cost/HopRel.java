@@ -43,11 +43,11 @@ import java.util.stream.Collectors;
 public class HopRel {
 	protected final Hop hopRef;
 	protected final FEDInstruction.FederatedOutput fedOut;
-	protected final FTypes.FType fType;
+	protected FTypes.FType fType;
 	protected final FederatedCost cost;
 	protected final Set<Long> costPointerSet = new HashSet<>();
 	protected List<Hop> inputHops;
-	protected final List<HopRel> inputDependency = new ArrayList<>();
+	protected List<HopRel> inputDependency = new ArrayList<>();
 
 	/**
 	 * Constructs a HopRel with input dependency and cost estimate based on entries in hopRelMemo.
@@ -85,6 +85,22 @@ public class HopRel {
 		this.inputHops = inputs;
 		setInputDependency(hopRelMemo);
 		cost = FederatedCostEstimator.costEstimate(this, hopRelMemo);
+	}
+
+	public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, FType fType, MemoTable hopRelMemo, List<Hop> inputs, List<FType> inputDependency){
+		hopRef = associatedHop;
+		this.fedOut = fedOut;
+		this.inputHops = inputs;
+		this.fType = fType;
+		setInputFTypeDependency(inputs, inputDependency, hopRelMemo);
+		cost = FederatedCostEstimator.costEstimate(this, hopRelMemo);
+	}
+
+	private void setInputFTypeDependency(List<Hop> inputs, List<FType> inputDependency, MemoTable hopRelMemo){
+		for ( int i = 0; i < inputs.size(); i++ ){
+			this.inputDependency.add(hopRelMemo.getHopRel(inputs.get(i), inputDependency.get(i)));
+		}
+		validateInputDependency();
 	}
 
 	/**
@@ -149,12 +165,6 @@ public class HopRel {
 	 * @param hopRelMemo memo table storing input HopRels
 	 */
 	private void setInputDependency(MemoTable hopRelMemo){
-		//TODO: Replace this to include the FType check.
-		// 1) Get min cost inputs (also among different FTypes)
-		// 2) Check if inputs valid for given FedOut (for instance FOUT and FType.ROW).
-		//    If it is not valid, try the next lowest cost input until valid input is found.
-		//    If no valid input found for FOUT and FType combination, mark HopRel as invalid and don't add to HopRelMemo
-		// 3)  Do the same for all FedOut and FType output combinations.
 		if (inputHops != null && inputHops.size() > 0) {
 			if ( fedOut == FederatedOutput.FOUT && !hopRef.isFederatedDataOp() ) {
 				int lowestFOUTIndex = 0;

@@ -22,6 +22,7 @@ package org.apache.sysds.hops.fedplanner;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.cost.HopRel;
+import org.apache.sysds.runtime.DMLRuntimeException;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -125,11 +126,22 @@ public class MemoTable {
 			.anyMatch(h -> h.getFederatedOutput() == root.getFederatedOutput());
 	}
 
+	/**
+	 * Get all output FTypes of given root from HopRels stored in memo.
+	 * @param root for which output FTypes are found
+	 * @return list of output FTypes
+	 */
 	public List<FTypes.FType> getFTypes(Hop root){
 		return hopRelMemo.get(root).stream()
-			//.filter(HopRel::hasFederatedOutput)
 			.map(HopRel::getFType)
 			.collect(Collectors.toList());
+	}
+
+	public HopRel getHopRel(Hop root, FTypes.FType fType){
+		return hopRelMemo.get(root).stream()
+			.filter(in -> in.getFType() == fType)
+			.findFirst()
+			.orElseThrow(() -> new DMLRuntimeException("FType not found in memo"));
 	}
 
 	@Override

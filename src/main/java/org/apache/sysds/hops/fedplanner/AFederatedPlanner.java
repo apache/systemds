@@ -76,7 +76,14 @@ public abstract class AFederatedPlanner {
 		
 		return false;
 	}
-	
+
+	/**
+	 * Get federated output type of given hop.
+	 * LOUT is represented with null.
+	 * @param hop current operation
+	 * @param fedHops map of hop ID mapped to FType
+	 * @return federated output FType of hop
+	 */
 	protected FType getFederatedOut(Hop hop, Map<Long, FType> fedHops) {
 		//generically obtain the input FTypes
 		FType[] ft = new FType[hop.getInput().size()];
@@ -84,19 +91,29 @@ public abstract class AFederatedPlanner {
 			ft[i] = fedHops.get(hop.getInput(i).getHopID());
 		
 		//handle specific operators
+		return getFederatedOut(hop, ft);
+	}
+
+	/**
+	 * Get FType output of given hop with ft input types.
+	 * @param hop given operation for which FType output is returned
+	 * @param ft array of input FTypes
+	 * @return output FType of hop
+	 */
+	protected FType getFederatedOut(Hop hop, FType[] ft){
 		if( hop instanceof AggBinaryOp ) {
 			if( ft[0] != null )
 				return ft[0] == FType.ROW ? FType.ROW : null;
 			else if( ft[0] != null )
 				return ft[0] == FType.COL ? FType.COL : null;
 		}
-		else if( hop instanceof BinaryOp ) 
+		else if( hop instanceof BinaryOp )
 			return ft[0] != null ? ft[0] : ft[1];
 		else if( hop instanceof TernaryOp )
 			return ft[0] != null ? ft[0] : ft[1] != null ? ft[1] : ft[2];
 		else if( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) )
 			return ft[0] == FType.ROW ? FType.COL : FType.COL;
-		
+
 		return null;
 	}
 	

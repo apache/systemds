@@ -819,14 +819,18 @@ public class ParForProgramBlock extends ForProgramBlock
 				numExecutedIterations, numExecutedTasks, localVariables );
 			
 			// Step 5) cleanup local parworkers (e.g., remove created functions)
-			for( int i=0; i<_numThreads; i++ )
-			{
+			for( int i=0; i<_numThreads; i++ ) {
 				Collection<String> fnNames = workers[i].getFunctionNames();
-				if( fnNames!=null && !fnNames.isEmpty() )
-					for( String fn : fnNames ) {
-						String[] parts = DMLProgram.splitFunctionKey(fn);
-						_prog.removeFunctionProgramBlock(parts[0], parts[1]);
-					}
+				if( fnNames!=null ) 
+					fnNames.stream().map(fn -> DMLProgram.splitFunctionKey(fn))
+						.forEach(p -> _prog.removeFunctionProgramBlock(p[0], p[1]));
+				// also cleanup worker-specific functions created via eval on-demand loading
+				workers[i].getExecutionContext().getTmpParforFunctions().stream()
+					.map(fn -> DMLProgram.splitFunctionKey(fn))
+					.forEach(p -> {
+						_prog.getDMLProg().removeFunctionStatementBlock(p[0], p[1]);
+						_prog.removeFunctionProgramBlock(p[0], p[1]);
+					});
 			}
 
 			// Frees up the GPUContexts used in the threaded Parfor and sets
@@ -835,8 +839,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				ec.getGPUContext(0).initializeThread();
 			}
 		}
-		finally 
-		{
+		finally {
 			//remove thread-local memory budget (reset to original budget)
 			//(in finally to prevent error side effects for multiple scripts in one jvm)
 			resetMemoryBudget();

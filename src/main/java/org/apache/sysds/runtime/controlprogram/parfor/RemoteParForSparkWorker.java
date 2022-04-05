@@ -35,6 +35,7 @@ import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.parser.dml.DmlSyntacticValidator;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -150,9 +151,11 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		if( !_caching && !_isLocal )
 			CacheableData.disableCaching();
 		
-		//ensure local mode for eval function loading on demand
+		//ensure local mode for eval function loading on demand,
+		//and reset thread-local memory of loaded functions (new dictionary)
 		if( !_isLocal )
 			DMLScript.setGlobalExecMode(ExecMode.SINGLE_NODE);
+		DmlSyntacticValidator.init();
 
 		//enable and setup lineage
 		if( _lineage != null ) {

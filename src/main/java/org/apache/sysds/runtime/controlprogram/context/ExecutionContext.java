@@ -63,7 +63,9 @@ import org.apache.sysds.utils.Statistics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ExecutionContext {
@@ -80,6 +82,9 @@ public class ExecutionContext {
 	//lineage map, cache, prepared dedup blocks
 	protected Lineage _lineage;
 
+	//parfor temporary functions (created by eval)
+	protected Set<String> _fnNames;
+	
 	/**
 	 * List of {@link GPUContext}s owned by this {@link ExecutionContext}
 	 */
@@ -96,6 +101,7 @@ public class ExecutionContext {
 		_autoCreateVars = false;
 		_lineage = allocateLineage ? new Lineage() : null;
 		_prog = prog;
+		_fnNames = new HashSet<>();
 	}
 
 	public ExecutionContext(LocalVariableMap vars) {
@@ -103,6 +109,7 @@ public class ExecutionContext {
 		_autoCreateVars = false;
 		_lineage = null;
 		_prog = null;
+		_fnNames = new HashSet<>();
 	}
 
 	public Program getProgram(){
@@ -871,6 +878,14 @@ public class ExecutionContext {
 	
 	private static String getNonExistingVarError(String varname) {
 		return "Variable '" + varname + "' does not exist in the symbol table.";
+	}
+	
+	public void addTmpParforFunction(String fname) {
+		_fnNames.add(fname);
+	}
+	
+	public Set<String> getTmpParforFunctions() {
+		return _fnNames;
 	}
 
 	@Override

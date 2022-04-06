@@ -104,6 +104,7 @@ public class TensorObject extends CacheableData<TensorBlock> {
 
 	@Override
 	protected TensorBlock readBlobFromCache(String fname) throws IOException {
+		TensorBlock tb = null;
 		return (TensorBlock) LazyWriteBuffer.readBlock(fname, false);
 	}
 

@@ -122,6 +122,11 @@ public class UnifiedMemoryManager
 
 	// Pins a cache block into operation memory.
 	public static void pin(CacheableData<?> cd) {
+		if (!CacheableData.isCachingActive()) {
+			cd.acquire(false, !cd.isBlobPresent());
+			return;
+		}
+
 		long estimatedSize = OptimizerUtils.estimateSize(cd.getDataCharacteristics());
 		// Even if the blob is present via the soft reference, we still need
 		// to reserve sufficient output memory.
@@ -159,7 +164,7 @@ public class UnifiedMemoryManager
 
 	// Reserve space for output in the operation memory
 	public static void reserveOutputMem() {
-		if (!OptimizerUtils.isUMMEnabled())
+		if (!OptimizerUtils.isUMMEnabled() || !CacheableData.isCachingActive())
 			return;
 		// Worst case upper bound for output = 70% - size(inputs)
 		// FIXME: Parfor splits this 70% into smaller limits
@@ -177,6 +182,9 @@ public class UnifiedMemoryManager
 	 // data is updated. Use cases include update-in-place operations and
 	 // size reservations via worst-case upper bound estimates.
 	public static void unpin(CacheableData<?> cd) {
+		if (CacheableData.isCachingActive())
+			return;
+
 		// TODO: Track preserved output memory to protect from other threads
 		if (!_pinnedEntries.contains(cd.getCacheFilePathAndName()))
 			return; //unpinned. output of an instruction

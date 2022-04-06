@@ -106,14 +106,18 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 		// the encoder in which the complete encoding information will be aggregated
 		MultiColumnEncoder globalEncoder = new MultiColumnEncoder(new ArrayList<>());
+		FederationMap fedMapping = fin.getFedMapping();
 
 		boolean containsEquiWidthEncoder = !fin.isFederated(FTypes.FType.ROW) && spec.toLowerCase().contains("equi-height");
 		if(containsEquiWidthEncoder) {
-			createGlobalEncoderWithEquiHeight(ec);
+			EncoderColnames ret = createGlobalEncoderWithEquiHeight(ec, fin, spec);
+			globalEncoder = ret._encoder;
+			colNames = ret._colnames;
 		} else {
 			// first create encoders at the federated workers, then collect them and aggregate them to a single large
 			// encoder
-			FederationMap fedMapping = fin.getFedMapping();
+			MultiColumnEncoder finalGlobalEncoder = globalEncoder;
+			String[] finalColNames = colNames;
 			fedMapping.forEachParallel((range, data) -> {
 				int columnOffset = (int) range.getBeginDims()[1];
 
@@ -128,51 +132,55 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 					FederatedResponse response = responseFuture.get();
 					MultiColumnEncoder encoder = (MultiColumnEncoder) response.getData()[0];
 					// merge this encoder into a composite encoder
-					synchronized(globalEncoder) {
-						globalEncoder.mergeAt(encoder, columnOffset, (int) (range.getBeginDims()[0] + 1));
+					synchronized(finalGlobalEncoder) {
+						finalGlobalEncoder.mergeAt(encoder, columnOffset, (int) (range.getBeginDims()[0] + 1));
 					}
 					// no synchronization necessary since names should anyway match
 					String[] subRangeColNames = (String[]) response.getData()[1];
-					System.arraycopy(subRangeColNames, 0, colNames, (int) range.getBeginDims()[1], subRangeColNames.length);
+					System.arraycopy(subRangeColNames, 0, finalColNames, (int) range.getBeginDims()[1], subRangeColNames.length);
 				}
 				catch(Exception e) {
 					throw new DMLRuntimeException("Federated encoder creation failed: ", e);
 				}
 				return null;
 			});
+			globalEncoder = finalGlobalEncoder;
+			colNames = finalColNames;
+		}
 
-			// sort for consistent encoding in local and federated
-			if(ColumnEncoderRecode.SORT_RECODE_MAP) {
-				globalEncoder.applyToAll(ColumnEncoderRecode.class, ColumnEncoderRecode::sortCPRecodeMaps);
-			}
+		// sort for consistent encoding in local and federated
+		if(ColumnEncoderRecode.SORT_RECODE_MAP) {
+			globalEncoder.applyToAll(ColumnEncoderRecode.class, ColumnEncoderRecode::sortCPRecodeMaps);
+		}
 
-			FrameBlock meta = new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING);
-			meta.setColumnNames(colNames);
-			globalEncoder.getMetaData(meta);
-			globalEncoder.initMetaData(meta);
+		FrameBlock meta = new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING);
+		meta.setColumnNames(colNames);
+		globalEncoder.getMetaData(meta);
+		globalEncoder.initMetaData(meta);
 
-			encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutput(0)));
+		encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutput(0)));
 
-			// release input and outputs
-			ec.setFrameOutput(getOutput(1).getName(), meta);
+		// release input and outputs
+		ec.setFrameOutput(getOutput(1).getName(), meta);
+
+	}
+
+	private class EncoderColnames {
+		public final MultiColumnEncoder _encoder;
+		public final String[] _colnames;
+
+		public EncoderColnames(MultiColumnEncoder encoder, String[] colnames) {
+			_encoder = encoder;
+			_colnames = colnames;
 		}
 	}
 
-
-	public void createGlobalEncoderWithEquiHeight(ExecutionContext ec) {
-		// obtain and pin input frame
-		FrameObject fin = ec.getFrameObject(input1.getName());
-		String spec = ec.getScalarInput(input2).getStringValue();
-
-		String[] colNames = new String[(int) fin.getNumColumns()];
-		Arrays.fill(colNames, "");
-
+	public EncoderColnames createGlobalEncoderWithEquiHeight(ExecutionContext ec, FrameObject fin, String spec) {
 		// the encoder in which the complete encoding information will be aggregated
 		MultiColumnEncoder globalEncoder = new MultiColumnEncoder(new ArrayList<>());
-		Map<Integer, double[]> quantilesPerColumn = new HashMap<>();
+		String[] colNames = new String[(int) fin.getNumColumns()];
 
-		// first create encoders at the federated workers, then collect them and aggregate them to a single large
-		// encoder
+		Map<Integer, double[]> quantilesPerColumn = new HashMap<>();
 		FederationMap fedMapping = fin.getFedMapping();
 		fedMapping.forEachParallel((range, data) -> {
 			int columnOffset = (int) range.getBeginDims()[1];
@@ -238,21 +246,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				((ColumnEncoderComposite) enc).updateAllDCEncoders();
 			}
 		}
-
-		// sort for consistent encoding in local and federated
-		if(ColumnEncoderRecode.SORT_RECODE_MAP) {
-			globalEncoder.applyToAll(ColumnEncoderRecode.class, ColumnEncoderRecode::sortCPRecodeMaps);
-		}
-
-		FrameBlock meta = new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING);
-		meta.setColumnNames(colNames);
-		globalEncoder.getMetaData(meta);
-		globalEncoder.initMetaData(meta);
-
-		encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutput(0)));
-
-		// release input and outputs
-		ec.setFrameOutput(getOutput(1).getName(), meta);
+		return new EncoderColnames(globalEncoder, colNames);
 	}
 
 	public static void encodeFederatedFrames(FederationMap fedMapping, MultiColumnEncoder globalencoder,

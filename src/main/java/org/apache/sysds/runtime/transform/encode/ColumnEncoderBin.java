@@ -19,17 +19,15 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
@@ -125,9 +123,9 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(!isApplicable())
 			return;
-		if(_binMethod == BinMethod.EQUI_WIDTH) {
+		if(_binMethod == BinMethod.EQUI_HEIGHT)
 			computeFedEqualHeightBins(equiHeightMaxs);
-		}
+
 		if(DMLScript.STATISTICS)
 			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
 	}

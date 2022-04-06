@@ -94,105 +94,105 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"y"}));
 	}
 
-//	@Test
-//	public void testHomesRecodeIDsCSV() {
-//		runTransformTest(TransformType.RECODE, false, false);
-//	}
+	@Test
+	public void testHomesRecodeIDsCSV() {
+		runTransformTest(TransformType.RECODE, false, false);
+	}
 
-//	@Test
-//	public void testHomesDummycodeIDsCSV() {
-//		runTransformTest(TransformType.DUMMY, false, false);
-//	}
-//
-//	@Test
-//	public void testHomesRecodeDummycodeIDsCSV() {
-//		runTransformTest(TransformType.RECODE_DUMMY, false, false);
-//	}
-//
-//	@Test
-//	public void testHomesBinningIDsCSV() {
-//		runTransformTest(TransformType.BIN, false, false);
-//	}
-//
-//	@Test
-//	public void testHomesBinningDummyIDsCSV() {
-//		runTransformTest(TransformType.BIN_DUMMY, false, false);
-//	}
-//
-//	@Test
-//	public void testHomesOmitIDsCSV() {
-//		runTransformTest(TransformType.OMIT, false, false);
-//	}
-//
-//	@Test
-//	public void testHomesImputeIDsCSV() {
-//		runTransformTest(TransformType.IMPUTE, false, false);
-//	}
-//
-//	@Test
-//	public void testHomesRecodeColnamesCSV() {
-//		runTransformTest(TransformType.RECODE, true, false);
-//	}
-//
-//	@Test
-//	public void testHomesDummycodeColnamesCSV() {
-//		runTransformTest(TransformType.DUMMY, true, false);
-//	}
-//
-//	@Test
-//	public void testHomesRecodeDummycodeColnamesCSV() {
-//		runTransformTest(TransformType.RECODE_DUMMY, true, false);
-//	}
-//
-//	@Test
-//	public void testHomesBinningColnamesCSV() {
-//		runTransformTest(TransformType.BIN, true, false);
-//	}
-//
-//	@Test
-//	public void testHomesBinningDummyColnamesCSV() {
-//		runTransformTest(TransformType.BIN_DUMMY, true, false);
-//	}
-//
-//	@Test
-//	public void testHomesOmitColnamesCSV() { runTransformTest(TransformType.OMIT, true, false); }
-//
-//	@Test
-//	public void testHomesImputeColnamesCSV() {
-//		runTransformTest(TransformType.IMPUTE, true, false);
-//	}
-//
-//	@Test
-//	public void testHomesHashColnamesCSV() {
-//		runTransformTest(TransformType.HASH, true, false);
-//	}
-//
-//	@Test
-//	public void testHomesHashIDsCSV() {
-//		runTransformTest(TransformType.HASH, false, false);
-//	}
-//
-//	@Test
-//	public void testHomesHashRecodeColnamesCSV() {
-//		runTransformTest(TransformType.HASH_RECODE, true, false);
-//	}
-//
-//	@Test
-//	public void testHomesHashRecodeIDsCSV() {
-//		runTransformTest(TransformType.HASH_RECODE, false, false);
-//	}
-//
-//	@Ignore //FIXME
-//	@Test
-//	public void testHomesDummycodeIDsCSVLineage() {
-//		runTransformTest(TransformType.DUMMY, false, true);
-//	}
-//
-//	@Ignore //FIXME
-//	@Test
-//	public void testHomesRecodeDummycodeIDsCSVLineage() {
-//		runTransformTest(TransformType.RECODE_DUMMY, false, true);
-//	}
+	@Test
+	public void testHomesDummycodeIDsCSV() {
+		runTransformTest(TransformType.DUMMY, false, false);
+	}
+
+	@Test
+	public void testHomesRecodeDummycodeIDsCSV() {
+		runTransformTest(TransformType.RECODE_DUMMY, false, false);
+	}
+
+	@Test
+	public void testHomesBinningIDsCSV() {
+		runTransformTest(TransformType.BIN, false, false);
+	}
+
+	@Test
+	public void testHomesBinningDummyIDsCSV() {
+		runTransformTest(TransformType.BIN_DUMMY, false, false);
+	}
+
+	@Test
+	public void testHomesOmitIDsCSV() {
+		runTransformTest(TransformType.OMIT, false, false);
+	}
+
+	@Test
+	public void testHomesImputeIDsCSV() {
+		runTransformTest(TransformType.IMPUTE, false, false);
+	}
+
+	@Test
+	public void testHomesRecodeColnamesCSV() {
+		runTransformTest(TransformType.RECODE, true, false);
+	}
+
+	@Test
+	public void testHomesDummycodeColnamesCSV() {
+		runTransformTest(TransformType.DUMMY, true, false);
+	}
+
+	@Test
+	public void testHomesRecodeDummycodeColnamesCSV() {
+		runTransformTest(TransformType.RECODE_DUMMY, true, false);
+	}
+
+	@Test
+	public void testHomesBinningColnamesCSV() {
+		runTransformTest(TransformType.BIN, true, false);
+	}
+
+	@Test
+	public void testHomesBinningDummyColnamesCSV() {
+		runTransformTest(TransformType.BIN_DUMMY, true, false);
+	}
+
+	@Test
+	public void testHomesOmitColnamesCSV() { runTransformTest(TransformType.OMIT, true, false); }
+
+	@Test
+	public void testHomesImputeColnamesCSV() {
+		runTransformTest(TransformType.IMPUTE, true, false);
+	}
+
+	@Test
+	public void testHomesHashColnamesCSV() {
+		runTransformTest(TransformType.HASH, true, false);
+	}
+
+	@Test
+	public void testHomesHashIDsCSV() {
+		runTransformTest(TransformType.HASH, false, false);
+	}
+
+	@Test
+	public void testHomesHashRecodeColnamesCSV() {
+		runTransformTest(TransformType.HASH_RECODE, true, false);
+	}
+
+	@Test
+	public void testHomesHashRecodeIDsCSV() {
+		runTransformTest(TransformType.HASH_RECODE, false, false);
+	}
+
+	@Ignore //FIXME
+	@Test
+	public void testHomesDummycodeIDsCSVLineage() {
+		runTransformTest(TransformType.DUMMY, false, true);
+	}
+
+	@Ignore //FIXME
+	@Test
+	public void testHomesRecodeDummycodeIDsCSVLineage() {
+		runTransformTest(TransformType.RECODE_DUMMY, false, true);
+	}
 
 	@Test
 	public void testHomesEqualHeightBinningIDsSingleNodeCSV() {
@@ -200,13 +200,11 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void testHomesHeightBinningDummyIDsSingleNodeCSV() {
 		runTransformTest(TransformType.BIN_HEIGHT_DUMMY, false, false);
 	}
 
 	@Test
-	@Ignore
 	public void  testHomesHeightBinningDummyColnamesSingleNodeCSV() {
 		runTransformTest(TransformType.BIN_HEIGHT_DUMMY, true, false);
 	}
@@ -361,3 +359,24 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			FileFormat.CSV, ffpCSV);
 	}
 }
+
+
+//	1,000 1,000 1,000 7,000 1,000 3,000 2,000 1,000 698,000
+//	2,000 2,000 4,000 6,000 2,000 2,000 2,000 2,000 906,000
+//	3,000 3,000 2,000 3,000 3,000 3,000 1,000 2,000 892,000
+//	1,000 4,000 3,000 6,000 2,500 2,000 1,000 2,000 932,000
+//	4,000 2,000 3,000 6,000 2,500 2,000 2,000 2,000 876,000
+//	4,000 3,000 2,000 5,000 2,500 2,000 2,000 2,000 803,000
+//	5,000 3,000 4,000 7,000 2,500 2,000 2,000 3,000 963,000
+//	4,000 1,000 1,000 7,000 1,500 2,000 1,000 2,000 760,000
+//	1,000 1,000 2,000 4,000 3,000 3,000 2,000 2,000 899,000
+//	2,000 1,000 1,000 4,000 1,000 1,000 2,000 1,000 549,000
+
+
+//Expected
+//	1,000 1,000 1,000 0,000 0,000 0,000 7,000 1,000 3,000 1,000 1,000 0,000 0,000 698,000
+//	2,000 2,000 0,000 0,000 1,000 0,000 6,000 2,000 2,000 1,000 0,000 1,000 0,000 906,000
+//	3,000 3,000 1,000 0,000 0,000 0,000 3,000 3,000 3,000 2,000 0,000 1,000 0,000 892,000
+//	1,000 4,000 0,000 0,000 1,000 0,000 6,000 2,500 2,000 2,000 0,000 0,000 1,000 932,000
+//	4,000 2,000 0,000 0,000 1,000 0,000 6,000 2,500 2,000 1,000 0,000 1,000 0,000 876,000
+//	4,000 3,000 0,000 1,000 0,000 0,000 5,000 2,500 2,000 1,000 0,000 1,000 0,000 803,000

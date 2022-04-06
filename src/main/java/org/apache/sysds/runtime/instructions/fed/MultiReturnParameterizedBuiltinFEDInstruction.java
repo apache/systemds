@@ -40,7 +40,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
@@ -199,7 +198,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 								for(int i = 0; i < quantiles.length; i++) {
 									quantiles[i] = quantilrRange * (i + 1);
 								}
-								quantilesPerColumn.put(((ColumnEncoderBin) compositeEncoder).getColID()-1, quantiles);
+								quantilesPerColumn.put(((ColumnEncoderBin) compositeEncoder).getColID() + columnOffset - 1, quantiles);
 							}
 						}
 					}
@@ -234,8 +233,8 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				for(Encoder compositeEncoder : ((ColumnEncoderComposite) enc).getEncoders())
 					if(compositeEncoder instanceof ColumnEncoderBin && ((ColumnEncoderBin) compositeEncoder)
 						.getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT)
-						((ColumnEncoderBin) compositeEncoder)
-							.buildEquiHeight(quantilesPerColumn.get(((ColumnEncoderBin) compositeEncoder).getColID()-1));
+						((ColumnEncoderBin) compositeEncoder).buildEquiHeight(equiHeightBinsPerColumn
+							.get(((ColumnEncoderBin) compositeEncoder).getColID() - 1));
 				((ColumnEncoderComposite) enc).updateAllDCEncoders();
 			}
 		}
@@ -312,7 +311,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				.createEncoder(_spec, colNames, fb.getNumColumns(), null, _offset, _offset + fb.getNumColumns());
 
 			// build necessary structures for encoding
-			encoder.build(fb); // FIXME skip equi-height to avoid sorting
+			encoder.build(fb); // FIXME skip equi-height sorting
 			fo.release();
 
 			// create federated response

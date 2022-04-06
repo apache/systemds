@@ -450,7 +450,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		Set<Double> distinctValues = distincts.stream().flatMap(Set::stream).collect(Collectors.toSet());
 
 		if(distinctValues.size() > quantileIndex-1 && !average)
-			return (T) distinctValues.stream().sorted().toArray()[quantileIndex-1];
+			return (T) distinctValues.stream().sorted().toArray()[quantileIndex > 0 ? quantileIndex-1 : 0];
 
 		if(average && distinctValues.size() > quantileIndex) {
 			Double[] distinctsSorted = distinctValues.stream().flatMap(Stream::of).sorted().toArray(Double[]::new);

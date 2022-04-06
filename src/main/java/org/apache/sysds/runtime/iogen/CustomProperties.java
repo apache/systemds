@@ -29,13 +29,17 @@ import java.util.HashSet;
 public class CustomProperties extends FileFormatProperties implements Serializable {
 
 	public enum IndexProperties {
+		IDENTITY, EXIST,SEQSCATTER,ARRAY,
 		IDENTIFY, PREFIX, KEY;
-
 		@Override
 		public String toString() {
 			return this.name().toUpperCase();
 		}
 	}
+
+	private IndexProperties rowIndexProperties;
+	private IndexProperties colIndexProperties;
+
 
 	private KeyTrie[] colKeyPattern;
 	private Types.ValueType[] schema;

@@ -30,11 +30,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-
 public class FormatIdentifying {
 
 	private int[][] mapRow;
-	private int[]   mapRowPrevious;
+	private int[] mapRowPrevious;
 	private int[][] mapCol;
 	private int[][] mapLen;
 	private int NaN;
@@ -47,7 +46,6 @@ public class FormatIdentifying {
 	private int suffixStringLength = 50;
 	private ReaderMapping mappingValues;
 	private CustomProperties properties;
-
 
 	public FormatIdentifying(String raw, MatrixBlock matrix) throws Exception {
 		this.mappingValues = new ReaderMapping(raw, matrix);
@@ -67,7 +65,7 @@ public class FormatIdentifying {
 		sampleRawIndexes = mappingValues.getSampleRawIndexes();
 		mapRowPrevious = new int[ncols];
 
-		for(int c=0; c< ncols; c++)
+		for(int c = 0; c < ncols; c++)
 			mapRowPrevious[c] = 0;
 
 		nrows = mappingValues.getNrows();
@@ -75,23 +73,57 @@ public class FormatIdentifying {
 		nlines = mappingValues.getNlines();
 		NaN = (ncols * nrows) - mappingValues.getNaN();
 
+		// Index properties:
+		// 1. Identity:
+		// 2. Exist:
+		// 3. Sequential Scattered:
+		// 4. Array:
+
+		/* supported formats by row and column indexes:
+		#  |  row      |  col     | Value |  example
+		--------------------------------------
+		1  | Identity  | Identity | Exist                   | csv, JSON/XML L
+		2  | Identity  | Exist    | Exist                   | LibSVm
+		3  | Identity  | Exist    | Not-Exist               | LibSVM+Pattern
+		4  | Exist     | Exist    | Exist                   | MM Coordinate General
+		5  | Array     | Array    | Exist                   | MM Array
+		6  | Exist     | Exist    | Partially-Exist         | MM Coordinate Symmetric
+		7  | Exist     | Exist    | Partially-Exist+Pattern | MM Coordinate Skew-Symmetric
+		8  | Exist     | Exist    | Not-Exist               | MM Coordinate Pattern
+		9  | Exist     | Exist    | Not-Exist+Pattern       | MM Coordinate Symmetric Pattern
+		10 | SEQSCATTER| Identity | Exist                   | JSON/XML Multi Line, AMiner
+		 */
+
+		// First, check the properties of row-index
+		boolean identity = isRowIndexIdentity();
+		if(identity){
+			KeyTrie[] colKeyPattern;
+
+			// TODO: change method name from buildColsKeyPatternSingleRow to buildColPatternRowIdentity
+			colKeyPattern = buildColsKeyPatternSingleRow();
+
+
+			properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.IDENTIFY);
+		}
+
 		// Check the map row:
 		// If all cells of a row mapped to a single line of sample raw, it is a single row mapping
 		// If all cells of a row mapped to multiple lines of sample raw, it is a multi row mapping
 
 		boolean isSingleRow = false;
 		int missedCount = 0;
-		for(int r=0; r<nrows; r++)
+		for(int r = 0; r < nrows; r++)
 			missedCount += ncols - mostCommonScore(mapRow[r]);
-		if ((float)missedCount/ NaN <0.07)
+		if((float) missedCount / NaN < 0.07)
 			isSingleRow = true;
 
 		KeyTrie[] colKeyPattern;
 
-		if(isSingleRow){
+		if(isSingleRow) {
 			colKeyPattern = buildColsKeyPatternSingleRow();
 			properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.IDENTIFY);
-		}else {
+		}
+		else {
 
 			// Check the row index is a prefix string in sample raw
 			// if the row indexes are in the prefix of values, so we need to build a key pattern
@@ -109,17 +141,17 @@ public class FormatIdentifying {
 			// Select two none zero row as a row index candidate
 
 			int index = 0;
-			for(int r=1; r<nrows;r++) {
+			for(int r = 1; r < nrows; r++) {
 				for(int c = 0; c < ncols; c++)
-					if(mapRow[r][c]!=-1){
+					if(mapRow[r][c] != -1) {
 						selectedRowIndex[index++] = r;
 						break;
 					}
-				if(index >1)
+				if(index > 1)
 					break;
 			}
 
-			for(int c=0; c< Math.min(numberOfSelectedCols, ncols); c++){
+			for(int c = 0; c < Math.min(numberOfSelectedCols, ncols); c++) {
 				Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
 				ArrayList<String> prefixStrings = colPrefixString.getKey();
 				ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
@@ -127,19 +159,20 @@ public class FormatIdentifying {
 
 				MappingTrie trie = new MappingTrie();
 				int ri = 0;
-				for(String ps: prefixStrings )
+				for(String ps : prefixStrings)
 					trie.reverseInsert(ps, prefixStringRowIndexes.get(ri++));
 
 				do {
 					flag = trie.reConstruct();
-				}while(flag);
+				}
+				while(flag);
 
 				ArrayList<ArrayList<String>> keyPatterns = trie.getAllSequentialKeys();
-				for(ArrayList<String> kp: keyPatterns){
-					for(String ps: prefixStrings){
+				for(ArrayList<String> kp : keyPatterns) {
+					for(String ps : prefixStrings) {
 						StringBuilder sb = new StringBuilder();
 						int currPos = 0;
-						for(String k: kp){
+						for(String k : kp) {
 							sb.append(ps.substring(currPos, ps.indexOf(k, currPos)));
 							currPos += sb.length() + k.length();
 						}
@@ -147,7 +180,7 @@ public class FormatIdentifying {
 					}
 				}
 
-				 flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
+				flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
 				if(!flag) {
 					begin = 1;
 					flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
@@ -158,11 +191,11 @@ public class FormatIdentifying {
 				}
 				else
 					beginPos.add(begin);
-				if(c== numberOfSelectedCols -1){
+				if(c == numberOfSelectedCols - 1) {
 					ArrayList<String> rowPrefixStrings = new ArrayList<>();
 					MappingTrie rowTrie = new MappingTrie();
 					rowKeyPattern = new KeyTrie();
-					for(int si: selectedRowIndex) {
+					for(int si : selectedRowIndex) {
 						for(int ci = 0; ci < ncols; ci++) {
 							int cri = mapRow[si][ci];
 							if(cri != -1) {
@@ -198,9 +231,10 @@ public class FormatIdentifying {
 							if(!flagReconstruct)
 								break;
 						}
-					}while(!check);
+					}
+					while(!check);
 
-					if(keyPatterns.size() == 0){
+					if(keyPatterns.size() == 0) {
 						ArrayList<ArrayList<String>> kpl = new ArrayList<>();
 						ArrayList<String> kpli = new ArrayList<>();
 						kpli.add("");
@@ -211,12 +245,12 @@ public class FormatIdentifying {
 				}
 			}
 
-			if(beginPos.size() == 1){
+			if(beginPos.size() == 1) {
 				colKeyPattern = buildColsKeyPatternSingleRow();
 				properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.PREFIX, rowKeyPattern);
 				Integer bpos = beginPos.iterator().next();
-				if(bpos>0)
-					properties.setRowIndexBegin("-"+bpos);
+				if(bpos > 0)
+					properties.setRowIndexBegin("-" + bpos);
 				else
 					properties.setRowIndexBegin("");
 			}
@@ -227,6 +261,25 @@ public class FormatIdentifying {
 			}
 		}
 	}
+
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// check row-index Identity
+	private boolean isRowIndexIdentity() {
+		boolean identity = false;
+		int missedCount = 0;
+		for(int r = 0; r < nrows; r++)
+			missedCount += ncols - mostCommonScore(mapRow[r]);
+		if((float) missedCount / NaN < 0.07)
+			identity = true;
+		return identity;
+	}
+	// check col-index Identity
+	private boolean isColIndexIdentity(){
+		return false;
+	}
+
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
 	private boolean checkPrefixRowIndex(int colIndex, int beginPos, ArrayList<RawIndex> prefixRawIndex){
 		for(int r=0;r<nrows; r++){

@@ -74,6 +74,9 @@ public abstract class AFederatedPlanner {
 		else if( hop instanceof TernaryOp && !hop.getDataType().isScalar() ) {
 			return (ft[0] != null || ft[1] != null || ft[2] != null);
 		}
+		else if ( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) ){
+			return ft[0] == FType.COL || ft[0] == FType.ROW;
+		}
 		else if(ft.length==1 && ft[0] != null) {
 			return HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS)
 				|| HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM, AggOp.MIN, AggOp.MAX);
@@ -117,7 +120,10 @@ public abstract class AFederatedPlanner {
 		else if( hop instanceof TernaryOp )
 			return ft[0] != null ? ft[0] : ft[1] != null ? ft[1] : ft[2];
 		else if( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) )
-			return ft[0] == FType.ROW ? FType.COL : FType.COL;
+			if (ft[0] == FType.ROW)
+				return FType.COL;
+			else if (ft[0] == FType.COL)
+				return FType.ROW;
 		else if ( HopRewriteUtils.isData(hop, Types.OpOpData.FEDERATED) )
 			return deriveFType((DataOp)hop);
 		return null;

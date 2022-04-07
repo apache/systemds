@@ -52,7 +52,7 @@ import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 
 public class FederatedPlannerCostbased extends AFederatedPlanner {
 	private static final Log LOG = LogFactory.getLog(FederatedPlannerCostbased.class.getName());
@@ -249,7 +249,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 */
 	private void forceFixedFedOut(Hop root){
 		if ( OptimizerUtils.FEDERATED_SPECS.containsKey(root.getBeginLine()) ){
-			FEDInstruction.FederatedOutput fedOutSpec = OptimizerUtils.FEDERATED_SPECS.get(root.getBeginLine());
+			FederatedOutput fedOutSpec = OptimizerUtils.FEDERATED_SPECS.get(root.getBeginLine());
 			root.setFederatedOutput(fedOutSpec);
 			if ( fedOutSpec.isForcedFederated() )
 				root.deactivatePrefetch();
@@ -294,8 +294,9 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		// If the currentHop has input, then the input should be visited depth-first
 		for(Hop input : currentHop.getInput())
 			visitFedPlanHop(input);
-		// Put FOUT, LOUT, and None HopRels into the memo table
+		// Put FOUT and LOUT HopRels into the memo table
 		ArrayList<HopRel> hopRels = getFedPlans(currentHop);
+		// Put NONE HopRel into memo table if no FOUT or LOUT HopRels were added
 		if(hopRels.isEmpty())
 			hopRels.add(getNONEHopRel(currentHop));
 		addTrace(hopRels);
@@ -303,7 +304,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	}
 
 	private HopRel getNONEHopRel(Hop currentHop){
-		HopRel noneHopRel = new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE, hopRelMemo);
+		HopRel noneHopRel = new HopRel(currentHop, FederatedOutput.NONE, hopRelMemo);
 		FType[] inputFType = noneHopRel.getInputDependency().stream().map(HopRel::getFType).toArray(FType[]::new);
 		FType outputFType = getFederatedOut(currentHop, inputFType);
 		noneHopRel.setFType(outputFType);
@@ -328,11 +329,11 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 			transientWrites.put(currentHop.getName(), currentHop);
 		else {
 			if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.FEDERATED) )
-				hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.FOUT, deriveFType((DataOp)currentHop), hopRelMemo, inputHops));
+				hopRels.add(new HopRel(currentHop, FederatedOutput.FOUT, deriveFType((DataOp)currentHop), hopRelMemo, inputHops));
 			else
 				hopRels.addAll(generateHopRels(currentHop, inputHops));
 			if ( isLOUTSupported(currentHop) )
-				hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.LOUT, hopRelMemo, inputHops));
+				hopRels.add(new HopRel(currentHop, FederatedOutput.LOUT, hopRelMemo, inputHops));
 		}
 		return hopRels;
 	}
@@ -348,19 +349,16 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		List<List<FType>> validFTypes = getValidFTypes(inputHops);
 		List<List<FType>> inputFTypeCombinations = getAllCombinations(validFTypes);
 		Map<FType,HopRel> foutHopRelMap = new HashMap<>();
-		for ( List<FType> inputCombination : inputFTypeCombinations){
+		for ( List<FType> inputCombination : inputFTypeCombinations ){
 			if ( allowsFederated(currentHop, inputCombination.toArray(FType[]::new)) ){
 				FType outputFType = getFederatedOut(currentHop, inputCombination.toArray(new FType[0]));
 				if ( outputFType != null ){
-					HopRel alt = new HopRel(currentHop, FEDInstruction.FederatedOutput.FOUT, outputFType, hopRelMemo, inputHops, inputCombination);
-					if (alt.getFType() != null){
-						//FType shows that the output is actually FOUT
-						if ( foutHopRelMap.containsKey(alt.getFType()) ){
-							foutHopRelMap.computeIfPresent(alt.getFType(),
-								(key,currentVal) -> (currentVal.getCost() < alt.getCost()) ? currentVal : alt);
-						} else {
-							foutHopRelMap.put(outputFType, alt);
-						}
+					HopRel alt = new HopRel(currentHop, FederatedOutput.FOUT, outputFType, hopRelMemo, inputHops, inputCombination);
+					if ( foutHopRelMap.containsKey(alt.getFType()) ){
+						foutHopRelMap.computeIfPresent(alt.getFType(),
+							(key,currentVal) -> (currentVal.getCost() < alt.getCost()) ? currentVal : alt);
+					} else {
+						foutHopRelMap.put(outputFType, alt);
 					}
 				}
 			} else {

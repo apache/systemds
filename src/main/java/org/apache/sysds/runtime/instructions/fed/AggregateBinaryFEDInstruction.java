@@ -84,7 +84,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				writeInfoLog(mo1, mo2);
 			aggregateLocally(mo1.getFedMapping(), true, ec, fr1);
 		}
-		else if(mo1.isFederated(FType.ROW) || mo1.isFederated(FType.PART)) { // MV + MM
+		else if(mo1.isFederated(FType.ROW)) { // MV + MM
 			//construct commands: broadcast rhs, fed mv, retrieve results
 			FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,

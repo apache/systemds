@@ -112,8 +112,6 @@ public abstract class AFederatedPlanner {
 		if( hop instanceof AggBinaryOp ) {
 			if( ft[0] != null )
 				return ft[0] == FType.ROW ? FType.ROW : null;
-			else if( ft[0] != null )
-				return ft[0] == FType.COL ? FType.COL : null;
 		}
 		else if( hop instanceof BinaryOp )
 			return ft[0] != null ? ft[0] : ft[1];

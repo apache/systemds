@@ -21,6 +21,7 @@ package org.apache.sysds.hops.fedplanner;
 
 import java.util.Map;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.hops.AggBinaryOp;
@@ -54,8 +55,12 @@ public abstract class AFederatedPlanner {
 		FType[] ft = new FType[hop.getInput().size()];
 		for( int i=0; i<hop.getInput().size(); i++ )
 			ft[i] = fedHops.get(hop.getInput(i).getHopID());
-		
+
 		//handle specific operators
+		return allowsFederated(hop, ft);
+	}
+
+	protected boolean allowsFederated(Hop hop, FType[] ft){
 		if( hop instanceof AggBinaryOp ) {
 			return (ft[0] != null && ft[1] == null)
 				|| (ft[0] == null && ft[1] != null)
@@ -73,7 +78,7 @@ public abstract class AFederatedPlanner {
 			return HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS)
 				|| HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM, AggOp.MIN, AggOp.MAX);
 		}
-		
+
 		return false;
 	}
 
@@ -113,7 +118,8 @@ public abstract class AFederatedPlanner {
 			return ft[0] != null ? ft[0] : ft[1] != null ? ft[1] : ft[2];
 		else if( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) )
 			return ft[0] == FType.ROW ? FType.COL : FType.COL;
-
+		else if ( HopRewriteUtils.isData(hop, Types.OpOpData.FEDERATED) )
+			return deriveFType((DataOp)hop);
 		return null;
 	}
 	

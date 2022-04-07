@@ -150,6 +150,10 @@ public class HopRel {
 		return fType;
 	}
 
+	public void setFType(FType fType){
+		this.fType = fType;
+	}
+
 	/**
 	 * Returns FOUT HopRel for given hop found in hopRelMemo or returns null if HopRel not found.
 	 * @param hop to look for in hopRelMemo

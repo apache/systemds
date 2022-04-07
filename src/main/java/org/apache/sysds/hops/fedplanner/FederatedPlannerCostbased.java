@@ -307,9 +307,17 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		// Put FOUT, LOUT, and None HopRels into the memo table
 		ArrayList<HopRel> hopRels = getFedPlans(currentHop);
 		if(hopRels.isEmpty())
-			hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE, hopRelMemo));
+			hopRels.add(getNONEHopRel(currentHop));
 		addTrace(hopRels);
 		hopRelMemo.put(currentHop, hopRels);
+	}
+
+	private HopRel getNONEHopRel(Hop currentHop){
+		HopRel noneHopRel = new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE, hopRelMemo);
+		FType[] inputFType = noneHopRel.getInputDependency().stream().map(HopRel::getFType).toArray(FType[]::new);
+		FType outputFType = getFederatedOut(currentHop, inputFType);
+		noneHopRel.setFType(outputFType);
+		return noneHopRel;
 	}
 
 	private void updateMemo(Hop currentHop){
@@ -344,10 +352,16 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 					throw new DMLRuntimeException("Transient write not found for " + currentHop);
 				inputHops = new ArrayList<>(Collections.singletonList(tWriteHop));
 			}
-			if ( isFOUTSupported(currentHop, inputHops) )
-				hopRels.addAll(generateHopRels(currentHop, inputHops));
-			if ( isLOUTSupported(currentHop) )
-				hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.LOUT, hopRelMemo, inputHops));
+			if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) )
+				transientWrites.put(currentHop.getName(), currentHop);
+			else {
+				if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.FEDERATED) )
+					hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.FOUT, deriveFType((DataOp)currentHop), hopRelMemo, inputHops));
+				else
+					hopRels.addAll(generateHopRels(currentHop, inputHops));
+				if ( isLOUTSupported(currentHop) )
+					hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.LOUT, hopRelMemo, inputHops));
+			}
 		}
 		return hopRels;
 	}
@@ -364,13 +378,22 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		List<List<FType>> inputFTypeCombinations = getAllCombinations(validFTypes);
 		Map<FType,HopRel> foutHopRelMap = new HashMap<>();
 		for ( List<FType> inputCombination : inputFTypeCombinations){
-			FType outputFType = getFederatedOut(currentHop, inputCombination.toArray(new FType[0]));
-			HopRel alt = new HopRel(currentHop, FEDInstruction.FederatedOutput.FOUT, outputFType, hopRelMemo, inputHops, inputCombination);
-			if ( foutHopRelMap.containsKey(alt.getFType()) ){
-				foutHopRelMap.computeIfPresent(alt.getFType(),
-					(key,currentVal) -> (currentVal.getCost() < alt.getCost()) ? currentVal : alt);
+			if ( allowsFederated(currentHop, inputCombination.toArray(FType[]::new)) ){
+				FType outputFType = getFederatedOut(currentHop, inputCombination.toArray(new FType[0]));
+				if ( outputFType != null ){
+					HopRel alt = new HopRel(currentHop, FEDInstruction.FederatedOutput.FOUT, outputFType, hopRelMemo, inputHops, inputCombination);
+					if (alt.getFType() != null){
+						//FType shows that the output is actually FOUT
+						if ( foutHopRelMap.containsKey(alt.getFType()) ){
+							foutHopRelMap.computeIfPresent(alt.getFType(),
+								(key,currentVal) -> (currentVal.getCost() < alt.getCost()) ? currentVal : alt);
+						} else {
+							foutHopRelMap.put(outputFType, alt);
+						}
+					}
+				}
 			} else {
-				foutHopRelMap.put(outputFType, alt);
+				LOG.trace("Does not allow federated: " + currentHop + " input FTypes: " + inputCombination);
 			}
 		}
 		return foutHopRelMap.values();
@@ -443,7 +466,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	private void addTrace(ArrayList<HopRel> hopRels){
 		if (LOG.isTraceEnabled()){
 			for(HopRel hr : hopRels){
-				LOG.trace(hr);
+				LOG.trace("Adding to memo: " + hr);
 			}
 		}
 	}

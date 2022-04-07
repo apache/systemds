@@ -132,13 +132,15 @@ public class MemoTable {
 	 * @return list of output FTypes
 	 */
 	public List<FTypes.FType> getFTypes(Hop root){
-		return hopRelMemo.get(root).stream()
+		if ( !hopRelMemo.containsKey(root.getHopID()) )
+			throw new DMLRuntimeException("HopRels not found in memo: " + root.getHopID() + " " + root);
+		return hopRelMemo.get(root.getHopID()).stream()
 			.map(HopRel::getFType)
 			.collect(Collectors.toList());
 	}
 
 	public HopRel getHopRel(Hop root, FTypes.FType fType){
-		return hopRelMemo.get(root).stream()
+		return hopRelMemo.get(root.getHopID()).stream()
 			.filter(in -> in.getFType() == fType)
 			.findFirst()
 			.orElseThrow(() -> new DMLRuntimeException("FType not found in memo"));

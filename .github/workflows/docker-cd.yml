@@ -28,6 +28,7 @@ on:
   
 jobs:
   build-nightly:
+    if: github.repository == 'apache/systemds'
     runs-on: ubuntu-latest
     strategy:
       matrix:

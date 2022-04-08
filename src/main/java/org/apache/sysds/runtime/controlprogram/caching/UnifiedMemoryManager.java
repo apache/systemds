@@ -163,7 +163,6 @@ public class UnifiedMemoryManager
 
 	public static void pin(CacheableData<?> cd) {
 		if (!CacheableData.isCachingActive()) {
-			cd.acquire(false, !cd.isBlobPresent());
 			return;
 		}
 

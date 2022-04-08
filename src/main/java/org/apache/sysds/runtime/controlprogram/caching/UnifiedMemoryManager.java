@@ -103,8 +103,8 @@ public class UnifiedMemoryManager
 	private static long _opMemLimit;
 	// List of pinned entries
 	private static final List<String> _pinnedEntries = new ArrayList<String>();
-	// List of entries available from the soft references
-	private static final List<String> _softRefReadEntries = new ArrayList<String>();
+	// List of entries read from soft references/rdd/fed/gpu
+	private static final List<String> _readEntries = new ArrayList<String>();
 
 	// Eviction queue of <filename,buffer> pairs (implemented via linked hash map
 	// for (1) queue semantics and (2) constant time get/insert/delete operations)
@@ -121,22 +121,21 @@ public class UnifiedMemoryManager
 	private static long _pinnedVirtualMemSize = 0;
 
 	// Pins a cache block into operation memory.
-	public static void pin(CacheableData<?> cd) {
+	/*public static void pin(CacheableData<?> cd) {
 		if (!CacheableData.isCachingActive()) {
 			cd.acquire(false, !cd.isBlobPresent());
 			return;
 		}
 
 		long estimatedSize = OptimizerUtils.estimateSize(cd.getDataCharacteristics());
-		// Even if the blob is present via the soft reference, we still need
-		// to reserve sufficient output memory.
-		// TODO: What if the blob is read from fed/gpu/rdd? Maintain _pinnedPhysicalMemory?
+		// Entries read from soft reference/rdd/fed/gpu take physical space in the operation memory
 		if (cd.isBlobPresent()) {
 			// Maintain cache status
 			cd.acquire(false, false);
 			long toPinSize = cd.getDataSize();
-			_pinnedVirtualMemSize += toPinSize;
-			_softRefReadEntries.add(cd.getCacheFilePathAndName());
+			makeSpace(toPinSize); //TODO: make space before reading from rdd/fed/gpu
+			_pinnedPhysicalMemSize += toPinSize;
+			_readEntries.add(cd.getCacheFilePathAndName());
 		}
 		else if (probe(cd)) {
 			// Read from cache to operation memory and pin
@@ -160,6 +159,23 @@ public class UnifiedMemoryManager
 		// each instruction. Ideally, every instruction first pins all the inputs, followed
 		// by reserving space for output.
 		reserveOutputMem();
+	}*/
+
+	public static void pin(CacheableData<?> cd) {
+		if (!CacheableData.isCachingActive()) {
+			cd.acquire(false, !cd.isBlobPresent());
+			return;
+		}
+
+		long estimatedSize = OptimizerUtils.estimateSize(cd.getDataCharacteristics());
+		if (probe(cd))
+			_pinnedVirtualMemSize += estimatedSize;
+		else {
+			makeSpace(estimatedSize);
+			_pinnedPhysicalMemSize += estimatedSize;
+		}
+		_pinnedEntries.add(cd.getCacheFilePathAndName());
+		reserveOutputMem();
 	}
 
 	// Reserve space for output in the operation memory
@@ -181,7 +197,7 @@ public class UnifiedMemoryManager
 	 // the provided cache block differs from the UMM meta data, the UMM meta
 	 // data is updated. Use cases include update-in-place operations and
 	 // size reservations via worst-case upper bound estimates.
-	public static void unpin(CacheableData<?> cd) {
+	/*public static void unpin(CacheableData<?> cd) {
 		if (CacheableData.isCachingActive())
 			return;
 
@@ -190,14 +206,32 @@ public class UnifiedMemoryManager
 			return; //unpinned. output of an instruction
 		long toUnpinSize = cd.getDataSize();
 		// Update total pinned memory size
-		if (probe(cd) || _softRefReadEntries.contains(cd.getCacheFilePathAndName()))
-			// FIXME: goes negative if called from exportdata (write operation)
+		if (_readEntries.contains(cd.getCacheFilePathAndName())) {
+			_pinnedPhysicalMemSize -= toUnpinSize;
+			_readEntries.remove(cd.getCacheFilePathAndName());
+			return;
+		}
+		if (probe(cd))
 			_pinnedVirtualMemSize -= toUnpinSize;
 		else
 			_pinnedPhysicalMemSize -= toUnpinSize;
 
 		_pinnedEntries.remove(cd.getCacheFilePathAndName());
-		_softRefReadEntries.remove(cd.getCacheFilePathAndName());
+	}*/
+
+	public static void unpin(CacheableData<?> cd) {
+		if (!CacheableData.isCachingActive())
+			return;
+
+		if (!_pinnedEntries.contains(cd.getCacheFilePathAndName()))
+			return; //unpinned. output of an instruction
+		long estimatedSize = OptimizerUtils.estimateSize(cd.getDataCharacteristics());
+		if (probe(cd))
+			_pinnedVirtualMemSize -= estimatedSize;
+		else
+			_pinnedPhysicalMemSize -= estimatedSize;
+
+		_pinnedEntries.remove(cd.getCacheFilePathAndName());
 	}
 	
 	/**

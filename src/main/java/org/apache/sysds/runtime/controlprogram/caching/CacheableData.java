@@ -526,6 +526,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		//get object from cache
 		if( _data == null )
 			getCache();
+
+		if (OptimizerUtils.isUMMEnabled())
+			UnifiedMemoryManager.pin(this);
 		
 		//call acquireHostRead if gpuHandle is set as well as is allocated
 		if( DMLScript.USE_ACCELERATOR && _gpuObjects != null ) {
@@ -595,10 +598,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			CacheStatistics.incrementMemHits();
 		}
 
-		if (OptimizerUtils.isUMMEnabled())
+		/*if (OptimizerUtils.isUMMEnabled())
 			// Restore and pin this blob into memory
 			UnifiedMemoryManager.pin(this);
-		else
+		else*/
 			//cache status maintenance
 			acquire( false, _data==null );
 

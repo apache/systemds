@@ -25,6 +25,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
@@ -109,6 +110,8 @@ public abstract class AFederatedPlanner {
 	 * @return output FType of hop
 	 */
 	protected FType getFederatedOut(Hop hop, FType[] ft){
+		if ( hop.isScalar() )
+			return null;
 		if( hop instanceof AggBinaryOp ) {
 			if( ft[0] != null )
 				return ft[0] == FType.ROW ? FType.ROW : null;
@@ -117,11 +120,19 @@ public abstract class AFederatedPlanner {
 			return ft[0] != null ? ft[0] : ft[1];
 		else if( hop instanceof TernaryOp )
 			return ft[0] != null ? ft[0] : ft[1] != null ? ft[1] : ft[2];
-		else if( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) )
+		else if( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) ){
 			if (ft[0] == FType.ROW)
 				return FType.COL;
 			else if (ft[0] == FType.COL)
 				return FType.ROW;
+		}
+		else if ( hop instanceof AggUnaryOp ){
+			boolean isColAgg = ((AggUnaryOp) hop).getDirection().isCol();
+			if ( (ft[0] == FType.ROW && isColAgg) || (ft[0] == FType.COL && !isColAgg) )
+				return null;
+			else if (ft[0] == FType.ROW || ft[0] == FType.COL)
+				return ft[0];
+		}
 		else if ( HopRewriteUtils.isData(hop, Types.OpOpData.FEDERATED) )
 			return deriveFType((DataOp)hop);
 		return null;

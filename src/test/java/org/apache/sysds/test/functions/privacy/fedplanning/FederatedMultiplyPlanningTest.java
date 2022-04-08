@@ -108,7 +108,10 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	@Test
 	public void federatedAggregateBinaryColFedSequence(){
 		cols = rows;
-		String[] expectedHeavyHitters = new String[]{"fed_ba+*","fed_*","fed_fedinit"};
+		//TODO: When alignment checks have been added to getFederatedOut in AFederatedPlanner,
+		// the following expectedHeavyHitters can be added. Until then, fed_* will not be generated.
+		//String[] expectedHeavyHitters = new String[]{"fed_ba+*","fed_*","fed_fedinit"};
+		String[] expectedHeavyHitters = new String[]{"fed_ba+*","fed_fedinit"};
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_5, expectedHeavyHitters);
 	}
 

@@ -412,7 +412,12 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 
 	@Override
 	protected MatrixBlock readBlobFromCache(String fname) throws IOException {
-		return (MatrixBlock) LazyWriteBuffer.readBlock(fname, true);
+		MatrixBlock mb = null;
+		if (OptimizerUtils.isUMMEnabled())
+			mb = (MatrixBlock) UnifiedMemoryManager.readBlock(fname, true);
+		else
+			mb = (MatrixBlock) LazyWriteBuffer.readBlock(fname, true);
+		return mb;
 	}
 
 	@Override

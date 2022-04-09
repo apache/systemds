@@ -59,7 +59,7 @@ public class CacheStatistics
 	private static final LongAdder _numHitsLin      = new LongAdder();
 
 	//write statistics caching
-	private static final LongAdder _numWritesFSBuff = new LongAdder();
+	private static final LongAdder _numWritesBPool = new LongAdder();
 	private static final LongAdder _numWritesFS     = new LongAdder();
 	private static final LongAdder _numWritesHDFS   = new LongAdder();
 	private static final LongAdder _numWritesLin    = new LongAdder();
@@ -77,7 +77,7 @@ public class CacheStatistics
 		_numHitsFS.reset();
 		_numHitsHDFS.reset();
 		
-		_numWritesFSBuff.reset();
+		_numWritesBPool.reset();
 		_numWritesFS.reset();
 		_numWritesHDFS.reset();
 		_numWritesLin.reset();
@@ -148,16 +148,16 @@ public class CacheStatistics
 		return _numHitsLin.longValue();
 	}
 
-	public static void incrementFSBuffWrites() {
-		_numWritesFSBuff.increment();
+	public static void incrementBPoolWrites() {
+		_numWritesBPool.increment();
 	}
 	
 	public static void incrementFSBuffWrites(int delta) {
-		_numWritesFSBuff.add(delta);
+		_numWritesBPool.add(delta);
 	}
 	
 	public static long getFSBuffWrites() {
-		return _numWritesFSBuff.longValue();
+		return _numWritesBPool.longValue();
 	}
 	
 	public static void incrementFSWrites() {
@@ -247,7 +247,7 @@ public class CacheStatistics
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numWritesLin.longValue());
 		sb.append("/");
-		sb.append(_numWritesFSBuff.longValue());
+		sb.append(_numWritesBPool.longValue());
 		sb.append("/");
 		sb.append(_numWritesFS.longValue());
 		sb.append("/");

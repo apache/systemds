@@ -26,6 +26,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -171,7 +172,12 @@ public class FrameObject extends CacheableData<FrameBlock>
 	
 	@Override
 	protected FrameBlock readBlobFromCache(String fname) throws IOException {
-		return (FrameBlock)LazyWriteBuffer.readBlock(fname, false);
+		FrameBlock fb = null;
+		if (OptimizerUtils.isUMMEnabled())
+			fb = (FrameBlock) UnifiedMemoryManager.readBlock(fname, false);
+		else
+			fb = (FrameBlock)LazyWriteBuffer.readBlock(fname, false);
+		return fb;
 	}
 
 	@Override

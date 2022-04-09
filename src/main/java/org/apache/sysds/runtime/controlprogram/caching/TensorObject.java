@@ -26,6 +26,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
@@ -104,7 +105,12 @@ public class TensorObject extends CacheableData<TensorBlock> {
 
 	@Override
 	protected TensorBlock readBlobFromCache(String fname) throws IOException {
-		return (TensorBlock) LazyWriteBuffer.readBlock(fname, false);
+		TensorBlock tb = null;
+		if (OptimizerUtils.isUMMEnabled())
+			tb = (TensorBlock) UnifiedMemoryManager.readBlock(fname, false);
+		else
+			tb = (TensorBlock) LazyWriteBuffer.readBlock(fname, false);
+		return tb;
 	}
 
 	@Override

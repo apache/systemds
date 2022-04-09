@@ -20,15 +20,11 @@
 package org.apache.sysds.runtime.controlprogram.caching;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 public class LazyWriteBuffer 
@@ -39,23 +35,17 @@ public class LazyWriteBuffer
 	}
 	
 	//global size limit in bytes
-	private static final long _limit;
+	private static long _limit;
 	
 	//current size in bytes
 	private static long _size;
 	
 	//eviction queue of <filename,buffer> pairs (implemented via linked hash map
 	//for (1) queue semantics and (2) constant time get/insert/delete operations)
-	private static EvictionQueue _mQueue;
+	private static CacheEvictionQueue _mQueue;
 	
 	//maintenance service for synchronous or asynchronous delete of evicted files
-	private static MaintenanceService _fClean;
-	
-	static {
-		//obtain the logical buffer size in bytes
-		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
-		_limit = (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
-	}
+	private static CacheMaintenanceService _fClean;
 	
 	public static int writeBlock(String fname, CacheBlock cb)
 		throws IOException
@@ -104,7 +94,7 @@ public class LazyWriteBuffer
 			_fClean.serializeData(bbuff, cb);
 			
 			if( DMLScript.STATISTICS ) {
-				CacheStatistics.incrementFSBuffWrites();
+				CacheStatistics.incrementBPoolWrites();
 				CacheStatistics.incrementFSWrites(numEvicted);
 			}
 		}
@@ -120,7 +110,7 @@ public class LazyWriteBuffer
 		
 		return numEvicted;
 	}
-	
+
 	public static void deleteBlock(String fname)
 	{
 		boolean requiresDelete = true;
@@ -180,8 +170,9 @@ public class LazyWriteBuffer
 	}
 
 	public static void init() {
-		_mQueue = new EvictionQueue();
-		_fClean = new MaintenanceService();
+		_mQueue = new CacheEvictionQueue();
+		_fClean = new CacheMaintenanceService();
+		_limit = OptimizerUtils.getBufferPoolLimit();
 		_size = 0;
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.init();
@@ -200,6 +191,10 @@ public class LazyWriteBuffer
 		//return constant limit because InfrastructureAnalyzer.getLocalMaxMemory() is
 		//dynamically adjusted in a parfor context, which wouldn't reflect the actual size
 		return _limit;
+	}
+
+	public static void setWriteBufferLimit(long limit) {
+		_limit = limit;
 	}
 	
 	public static long getWriteBufferSize() {
@@ -280,117 +275,5 @@ public class LazyWriteBuffer
 	
 	public static ExecutorService getUtilThreadPool() {
 		return _fClean != null ? _fClean._pool : null;
-	}
-	
-	/**
-	 * Extended LinkedHashMap with convenience methods for adding and removing
-	 * last/first entries.
-	 * 
-	 */
-	private static class EvictionQueue extends LinkedHashMap<String, ByteBuffer>
-	{
-		private static final long serialVersionUID = -5208333402581364859L;
-		
-		public void addLast( String fname, ByteBuffer bbuff ) {
-			//put entry into eviction queue w/ 'addLast' semantics
-			put(fname, bbuff);
-		}
-		
-		public Entry<String, ByteBuffer> removeFirst()
-		{
-			//move iterator to first entry
-			Iterator<Entry<String, ByteBuffer>> iter = entrySet().iterator();
-			Entry<String, ByteBuffer> entry = iter.next();
-			
-			//remove current iterator entry
-			iter.remove();
-			
-			return entry;
-		}
-	}
-	
-	/**
-	 * Maintenance service for abstraction of synchronous and asynchronous
-	 * file cleanup on rmvar/cpvar as well as serialization of matrices and
-	 * frames. The thread pool for asynchronous cleanup may increase the 
-	 * number of threads temporarily to the number of concurrent delete tasks
-	 * (which is bounded to the parfor degree of parallelism).
-	 */
-	private static class MaintenanceService
-	{
-		private ExecutorService _pool = null;
-		
-		public MaintenanceService() {
-			//create new threadpool for async cleanup
-			if( isAsync() )
-				_pool = Executors.newCachedThreadPool();
-		}
-		
-		public void deleteFile(String fname) {
-			//sync or async file delete
-			if( CacheableData.CACHING_ASYNC_FILECLEANUP )
-				_pool.submit(new FileCleanerTask(fname));
-			else
-				LocalFileUtils.deleteFileIfExists(fname, true);
-		}
-		
-		public void serializeData(ByteBuffer bbuff, CacheBlock cb) {
-			//sync or async file delete
-			if( CacheableData.CACHING_ASYNC_SERIALIZE )
-				_pool.submit(new DataSerializerTask(bbuff, cb));
-			else {
-				try {
-					bbuff.serializeBlock(cb);
-				}
-				catch(IOException ex) {
-					throw new DMLRuntimeException(ex);
-				}
-			}
-		}
-		
-		public void close() {
-			//execute pending tasks and shutdown pool
-			if( isAsync() )
-				_pool.shutdown();
-		}
-		
-		@SuppressWarnings("unused")
-		public boolean isAsync() {
-			return CacheableData.CACHING_ASYNC_FILECLEANUP 
-				|| CacheableData.CACHING_ASYNC_SERIALIZE;
-		}
-		
-		private static class FileCleanerTask implements Runnable {
-			private String _fname = null;
-			
-			public FileCleanerTask( String fname ) {
-				_fname = fname;
-			}
-			
-			@Override
-			public void run() {
-				LocalFileUtils.deleteFileIfExists(_fname, true);
-			}
-		}
-		
-		private static class DataSerializerTask implements Runnable {
-			private ByteBuffer _bbuff = null;
-			private CacheBlock _cb = null;
-			
-			public DataSerializerTask(ByteBuffer bbuff, CacheBlock cb) {
-				_bbuff = bbuff;
-				_cb = cb;
-			}
-			
-			@Override
-			public void run() {
-				try {
-					_bbuff.serializeBlock(_cb);
-				}
-				catch(IOException ex) {
-					throw new DMLRuntimeException(ex);
-				}
-			}
-		}
 	}
 }

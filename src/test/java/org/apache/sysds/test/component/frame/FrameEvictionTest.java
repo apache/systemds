@@ -21,6 +21,8 @@ package org.apache.sysds.test.component.frame;
 
 import java.lang.reflect.Method;
 
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.controlprogram.caching.UnifiedMemoryManager;
 import org.junit.Test;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -208,8 +210,12 @@ public class FrameEvictionTest extends AutomatedTestBase
 			fo.release();
 			
 			//evict frame and clear in-memory reference
-			if( force )
-				LazyWriteBuffer.forceEviction();
+			if( force ) {
+				if (OptimizerUtils.isUMMEnabled())
+					UnifiedMemoryManager.forceEviction();
+				else
+					LazyWriteBuffer.forceEviction();
+			}
 			Method clearfo = CacheableData.class
 					.getDeclaredMethod("clearCache", new Class[]{});
 			clearfo.setAccessible(true); //make method public

@@ -50,13 +50,12 @@ public class UMMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	//@Ignore
 	public void testEvictionOrder() {
 		runTest(TEST_NAME1);
 	}
 
-	public void runTest(String testname) {
-
+	public void runTest(String testname)
+	{
 		try {
 			getAndLoadTestConfiguration(testname);
 			fullDMLScriptName = getScript();
@@ -75,10 +74,6 @@ public class UMMTest extends AutomatedTestBase {
 			long FSwrites_static = CacheStatistics.getFSWrites();
 
 			// Unified memory management (cache size = 85% of heap)
-			//UnifiedMemoryManager.setUMMLimit((long)(0.85 * InfrastructureAnalyzer.getLocalMaxMemory()));
-			//CacheableData.UMM = true;
-			//UnifiedMemoryManager.cleanup();
-			//LazyWriteBuffer.cleanup();
 			OptimizerUtils.enableUMM();
 			proArgs.clear();
 			proArgs.add("-stats");
@@ -88,7 +83,6 @@ public class UMMTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			UnifiedMemoryManager.cleanup();
-			//HashMap<MatrixValue.CellIndex, Double> R_unified = readDMLMatrixFromOutputDir("R");
 			HashMap<MatrixValue.CellIndex, Double> R_unified= readDMLScalarFromOutputDir("R");
 			long FSwrites_unified = CacheStatistics.getFSWrites();
 

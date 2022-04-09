@@ -23,17 +23,12 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Unified Memory Manager - Initial Design
@@ -58,7 +53,7 @@ import java.util.concurrent.Executors;
  * they can occupy, meaning that the boundary for the areas can shift dynamically depending
  * on the current load. Most importantly, though, dirty objects must not be counted twice
  * when pinning such an object for an operation. The min/max constraints are not exposed but
- * configured internally. An good starting point are the following constraints (relative to
+ * configured internally. A good starting point are the following constraints (relative to
  * JVM max heap size):
  * ___________________________
  * | operations  | 0%  | 70% | (pin requests always accepted)
@@ -83,7 +78,7 @@ import java.util.concurrent.Executors;
  *  (3) Inputs are available in the UMM, not enough space left for the output.
  *  	Evict cached objects to reserve worst-case output memory.
  *  (4) Some inputs are pre-evicted and not enough space left for the inputs
- *  	and output. Evict cache objects to make space for the inputs.
+ *  	and output. Evict cached objects to make space for the inputs.
  *  	Evict cached objects to reserve worst-case output memory.
  *
  * Thread-safeness:
@@ -95,16 +90,14 @@ import java.util.concurrent.Executors;
 
 public class UnifiedMemoryManager
 {
-	// Maximum size of UMM in bytes (85%)
+	// Maximum size of UMM in bytes (default 85%)
 	private static long _limit;
-	// Current size in bytes
-	private static long _size;
-	// Operational memory limit in bytes
+	// Current total size of the cached objects
+	private static long _totCachedSize;
+	// Operational memory limit in bytes (70%)
 	private static long _opMemLimit;
 	// List of pinned entries
 	private static final List<String> _pinnedEntries = new ArrayList<String>();
-	// List of entries read from soft references/rdd/fed/gpu
-	private static final List<String> _readEntries = new ArrayList<String>();
 
 	// Eviction queue of <filename,buffer> pairs (implemented via linked hash map
 	// for (1) queue semantics and (2) constant time get/insert/delete operations)
@@ -113,67 +106,40 @@ public class UnifiedMemoryManager
 	// Maintenance service for synchronous or asynchronous delete of evicted files
 	private static CacheMaintenanceService _fClean;
 
-	// Pinned size of physical memory. Starts from 0 for an operation. Max is 70% of heap
-	// This increases only if the input is not present in the cache and read from FS
+	// Pinned size of physical memory. Starts from 0 for each operation. Max is 70% of heap
+	// This increases only if the input is not present in the cache and read from FS/rdd/fed/gpu
 	private static long _pinnedPhysicalMemSize = 0;
 	// Size of pinned virtual memory. This tracks the total input size
 	// This increases if the input is available in the cache.
 	private static long _pinnedVirtualMemSize = 0;
 
-	// Pins a cache block into operation memory.
-	/*public static void pin(CacheableData<?> cd) {
-		if (!CacheableData.isCachingActive()) {
-			cd.acquire(false, !cd.isBlobPresent());
-			return;
-		}
+	//---------------- OPERATION MEMORY MAINTENANCE -------------------//
 
-		long estimatedSize = OptimizerUtils.estimateSize(cd.getDataCharacteristics());
-		// Entries read from soft reference/rdd/fed/gpu take physical space in the operation memory
-		if (cd.isBlobPresent()) {
-			// Maintain cache status
-			cd.acquire(false, false);
-			long toPinSize = cd.getDataSize();
-			makeSpace(toPinSize); //TODO: make space before reading from rdd/fed/gpu
-			_pinnedPhysicalMemSize += toPinSize;
-			_readEntries.add(cd.getCacheFilePathAndName());
-		}
-		else if (probe(cd)) {
-			// Read from cache to operation memory and pin
-			cd.acquire(false, true);
-			long toPinSize = cd.getDataSize();
-			// TODO: Consider deserialization overhead for sparse matrices
-			_pinnedVirtualMemSize += toPinSize;
-		}
-		else {
-			// Make space for the estimated size after pinning
-			makeSpace(estimatedSize);
-			// Restore from FS to operation memory and pin
-			cd.acquire(false, true);
-			long toPinSize = cd.getDataSize(); //actual size
-			_pinnedPhysicalMemSize += toPinSize;
-		}
-		_pinnedEntries.add(cd.getCacheFilePathAndName());
-
-		// Reserve space for output after pinning every input.
-		// This overly conservative approach removes the need to call reserveOutputMem() from
-		// each instruction. Ideally, every instruction first pins all the inputs, followed
-		// by reserving space for output.
-		reserveOutputMem();
-	}*/
-
+	// Make space for and track a cache block to be pinned in operation memory
 	public static void pin(CacheableData<?> cd) {
 		if (!CacheableData.isCachingActive()) {
 			return;
 		}
 
+		// Space accounting based on an estimated size and before reading the blob
 		long estimatedSize = OptimizerUtils.estimateSize(cd.getDataCharacteristics());
 		if (probe(cd))
+			// Availability in the cache means no memory overhead.
+			// We still need to track to derive the worst-case output memory
 			_pinnedVirtualMemSize += estimatedSize;
 		else {
+			// The blob will be restored from local FS, or will be read
+			// from other backends. Make space if not available.
 			makeSpace(estimatedSize);
 			_pinnedPhysicalMemSize += estimatedSize;
 		}
+		// Track the pinned entries to protect from evictions
 		_pinnedEntries.add(cd.getCacheFilePathAndName());
+
+		// Reserve space for output after pinning every input.
+		// This overly conservative approach removes the need to call reserveOutputMem() from
+		// each instruction. Ideally, every instruction first pins all the inputs, followed
+		// by reserving space for the output.
 		reserveOutputMem();
 	}
 
@@ -181,49 +147,25 @@ public class UnifiedMemoryManager
 	public static void reserveOutputMem() {
 		if (!OptimizerUtils.isUMMEnabled() || !CacheableData.isCachingActive())
 			return;
+
 		// Worst case upper bound for output = 70% - size(inputs)
 		// FIXME: Parfor splits this 70% into smaller limits
-		// TODO: Estimate output size from the input sizes. Reserve only that much.
 		long maxOutputSize = _opMemLimit - (_pinnedVirtualMemSize + _pinnedPhysicalMemSize);
 		// Evict cached entries to make space in operation memory if needed
 		makeSpace(maxOutputSize);
-
-		// Reserve max output memory
-		//_pinnedVirtualMemSize += maxOutSize;
 	}
 	
-	 // Unpins (releases) a cache block from operation memory. If the size of
-	 // the provided cache block differs from the UMM meta data, the UMM meta
-	 // data is updated. Use cases include update-in-place operations and
-	 // size reservations via worst-case upper bound estimates.
-	/*public static void unpin(CacheableData<?> cd) {
-		if (CacheableData.isCachingActive())
-			return;
-
-		// TODO: Track preserved output memory to protect from other threads
-		if (!_pinnedEntries.contains(cd.getCacheFilePathAndName()))
-			return; //unpinned. output of an instruction
-		long toUnpinSize = cd.getDataSize();
-		// Update total pinned memory size
-		if (_readEntries.contains(cd.getCacheFilePathAndName())) {
-			_pinnedPhysicalMemSize -= toUnpinSize;
-			_readEntries.remove(cd.getCacheFilePathAndName());
-			return;
-		}
-		if (probe(cd))
-			_pinnedVirtualMemSize -= toUnpinSize;
-		else
-			_pinnedPhysicalMemSize -= toUnpinSize;
-
-		_pinnedEntries.remove(cd.getCacheFilePathAndName());
-	}*/
-
+	// Unpins (releases) a cache block from operation memory
 	public static void unpin(CacheableData<?> cd) {
 		if (!CacheableData.isCachingActive())
 			return;
 
+		// TODO: Track preserved output memory to protect from concurrent threads
 		if (!_pinnedEntries.contains(cd.getCacheFilePathAndName()))
 			return; //unpinned. output of an instruction
+
+		// We still use the estimated size even though we have the blobs available.
+		// This makes sure we are subtracting exactly what we added during pinning.
 		long estimatedSize = OptimizerUtils.estimateSize(cd.getDataCharacteristics());
 		if (probe(cd))
 			_pinnedVirtualMemSize -= estimatedSize;
@@ -232,29 +174,23 @@ public class UnifiedMemoryManager
 
 		_pinnedEntries.remove(cd.getCacheFilePathAndName());
 	}
-	
-	/**
-	 * Removes all cache blocks from all memory areas and deletes all evicted
-	 * representations (files in local FS). All internally thread pools must be
-	 * shut down in a gracefully manner (e.g., wait for pending deletes).
-	 */
-	public void deleteAll() {
-		//TODO implement
-		throw new NotImplementedException();
-	}
 
+	//---------------- UMM MAINTENANCE & LOOKUP -------------------//
+
+	// Initialize the unified memory manager
 	public static void init() {
 		_mQueue = new CacheEvictionQueue();
 		_fClean = new CacheMaintenanceService();
 		_limit = OptimizerUtils.getBufferPoolLimit();
 		_opMemLimit = (long)(OptimizerUtils.getLocalMemBudget()); //70% of heap
-		_size = 0;
+		_totCachedSize = 0;
 		_pinnedPhysicalMemSize = 0;
 		_pinnedVirtualMemSize = 0;
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.init();
 	}
 
+	// Cleanup the unified memory manager
 	public static void cleanup() {
 		if( _mQueue != null )
 			_mQueue.clear();
@@ -262,7 +198,7 @@ public class UnifiedMemoryManager
 			_fClean.close();
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.clear();
-		_size = 0;
+		_totCachedSize = 0;
 		_pinnedPhysicalMemSize = 0;
 		_pinnedVirtualMemSize = 0;
 	}
@@ -271,18 +207,20 @@ public class UnifiedMemoryManager
 		_limit = val;
 	}
 
-	public static long getUMMFree() {
-		synchronized(_mQueue) {
-			return _limit - (_size + _pinnedPhysicalMemSize);
-		}
-	}
-
 	public static long getUMMSize() {
 		synchronized(_mQueue) {
 			return _limit;
 		}
 	}
 
+	// Get the available memory in UMM
+	public static long getUMMFree() {
+		synchronized(_mQueue) {
+			return _limit - (_totCachedSize + _pinnedPhysicalMemSize);
+		}
+	}
+
+	// Reads a cached object. This is called from cacheabledata implementations
 	public static CacheBlock readBlock(String fname, boolean matrix)
 		throws IOException
 	{
@@ -326,13 +264,14 @@ public class UnifiedMemoryManager
 		return _mQueue.containsKey(filePath);
 	}
 
-	public static void makeSpace(long reqSpace) {
+	// Make required space. Evict if needed.
+	public static int makeSpace(long reqSpace) {
+		int numEvicted = 0;
 		// Check if sufficient space is already available
 		if (getUMMFree() > reqSpace)
-			return;
+			return numEvicted;
 
 		// Evict cached objects to make space
-		int numEvicted = 0;
 		try {
 			synchronized(_mQueue) {
 				// Evict blobs to make room (by default FIFO)
@@ -340,15 +279,15 @@ public class UnifiedMemoryManager
 					//remove first unpinned entry from eviction queue
 					var entry = _mQueue.removeFirstUnpinned(_pinnedEntries);
 					String ftmp = entry.getKey();
-					ByteBuffer tmp = entry.getValue();
+					ByteBuffer bb = entry.getValue();
 
-					if(tmp != null) {
-						//wait for pending serialization
-						tmp.checkSerialized();
-						//evict matrix
-						tmp.evictBuffer(ftmp);
-						tmp.freeMemory();
-						_size -= tmp.getSize();
+					if(bb != null) {
+						// Wait for pending serialization
+						bb.checkSerialized();
+						// Evict object
+						bb.evictBuffer(ftmp);
+						bb.freeMemory();
+						_totCachedSize -= bb.getSize();
 						numEvicted++;
 					}
 				}
@@ -358,66 +297,47 @@ public class UnifiedMemoryManager
 			throw new DMLRuntimeException("Eviction request of size "+(reqSpace-getUMMFree())+ " in the UMM failed.", e);
 		}
 
-		if( DMLScript.STATISTICS ) {
-			CacheStatistics.incrementFSBuffWrites();
+		if( DMLScript.STATISTICS )
 			CacheStatistics.incrementFSWrites(numEvicted);
-		}
+
+		return numEvicted;
 	}
 
+	// Write an object to the cache
 	public static int writeBlock(String fname, CacheBlock cb)
 		throws IOException
 	{
-		//obtain basic meta data of cache block
+		//obtain basic metadata of the cache block
 		long lSize = getCacheBlockSize(cb);
 		boolean requiresWrite = (lSize > _limit        //global buffer limit
 			|| !ByteBuffer.isValidCapacity(lSize, cb)); //local buffer limit
 		int numEvicted = 0;
 
-		//handle caching/eviction if it fits in writebuffer
+		// Handle caching/eviction if it fits in UMM
 		if( !requiresWrite )
 		{
-			//create byte buffer handle (no block allocation yet)
+			// Create byte buffer handle (no block allocation yet)
 			ByteBuffer bbuff = new ByteBuffer( lSize );
 
-			//modify buffer pool
+			// Modify buffer pool
 			synchronized( _mQueue )
 			{
-				//evict matrices to make room (by default FIFO)
-				while( _size+lSize > _limit && !_mQueue.isEmpty() )
-				{
-					//remove first entry from eviction queue
-					Map.Entry<String, ByteBuffer> entry = _mQueue.removeFirst();
-					String ftmp = entry.getKey();
-					ByteBuffer tmp = entry.getValue();
-
-					if( tmp != null ) {
-						//wait for pending serialization
-						tmp.checkSerialized();
-
-						//evict matrix
-						tmp.evictBuffer(ftmp);
-						tmp.freeMemory();
-						_size -= tmp.getSize();
-						numEvicted++;
-					}
-				}
-
-				//put placeholder into buffer pool (reserve mem)
+				// Evict blocks to make room if required
+				numEvicted += makeSpace(lSize);
+				// Put placeholder into buffer pool (reserve mem)
 				_mQueue.addLast(fname, bbuff);
-				_size += lSize;
+				_totCachedSize += lSize;
 			}
 
-			//serialize matrix (outside synchronized critical path)
+			// Serialize matrix (outside synchronized critical path)
 			_fClean.serializeData(bbuff, cb);
 
-			if( DMLScript.STATISTICS ) {
-				CacheStatistics.incrementFSBuffWrites();
-				CacheStatistics.incrementFSWrites(numEvicted);
-			}
+			if( DMLScript.STATISTICS )
+				CacheStatistics.incrementBPoolWrites();
 		}
 		else
 		{
-			//write directly to local FS (bypass buffer if too large)
+			// Write directly to local FS (bypass buffer if too large)
 			LocalFileUtils.writeCacheBlockToLocal(fname, cb);
 			if( DMLScript.STATISTICS ) {
 				CacheStatistics.incrementFSWrites();
@@ -442,7 +362,7 @@ public class UnifiedMemoryManager
 			//remove queue entry
 			ByteBuffer ldata = _mQueue.remove(fname);
 			if( ldata != null ) {
-				_size -= ldata.getSize();
+				_totCachedSize -= ldata.getSize();
 				requiresDelete = false;
 				ldata.freeMemory(); //cleanup
 			}
@@ -451,6 +371,16 @@ public class UnifiedMemoryManager
 		//delete from FS if required
 		if( requiresDelete )
 			_fClean.deleteFile(fname);
+	}
+
+	/**
+	 * Removes all cache blocks from all memory areas and deletes all evicted
+	 * representations (files in local FS). All internally thread pools must be
+	 * shut down in a graceful manner (e.g., wait for pending deletes).
+	 */
+	public void deleteAll() {
+		//TODO implement
+		throw new NotImplementedException();
 	}
 
 	/**

@@ -94,7 +94,7 @@ public class LazyWriteBuffer
 			_fClean.serializeData(bbuff, cb);
 			
 			if( DMLScript.STATISTICS ) {
-				CacheStatistics.incrementFSBuffWrites();
+				CacheStatistics.incrementBPoolWrites();
 				CacheStatistics.incrementFSWrites(numEvicted);
 			}
 		}

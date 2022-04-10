@@ -732,7 +732,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				CacheStatistics.incrementLinWrites();
 			
 			//create cache
-			//createCache();
+			createCache();
 			_data = null;
 		}
 	}

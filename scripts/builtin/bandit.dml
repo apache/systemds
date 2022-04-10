@@ -52,10 +52,10 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Double] X_test, Matrix[Double] Y_test, List[Unknown] metaList,
-  String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] lp, Frame[Unknown] primitives, Frame[Unknown] param, Integer k = 3,
+  String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] lp, Matrix[Double] lpHp, Frame[Unknown] primitives, Frame[Unknown] param, Integer k = 3,
   Integer R=50, Double baseLineScore, Boolean cv,  Integer cvk = 2, Double ref = 0, Integer seed = -1, Boolean enablePruning = FALSE, Boolean verbose = TRUE, String output="")
-  return(Boolean perf)
-  # return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams, Matrix[Double] bestAccuracy, Frame[String] feaFrameOuter) 
+  # return(Boolean perf)
+  return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams, Matrix[Double] bestAccuracy, Frame[String] applyFunc) 
 {
   print("Starting optimizer")
   totalPruneCount = 0
@@ -81,7 +81,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
   endIdx = matrix(k, rows=(s_max), cols=1)
   endIdx = cumsum(endIdx)
   startIdx = (endIdx - k) + 1
-
+  logicalBest = lp
   n = ifelse(s_max >= nrow(lp), nrow(lp), n = ceil(nrow(lp)/s_max);)
   pipelineId = as.frame(seq(1, nrow(lp)))
   lp = cbind(pipelineId, lp)
@@ -98,7 +98,6 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
     # # compute the number of initial pipelines n
     r = max(R * as.scalar(weight[((s_max - s) + 1)]) * eta^(-s), 1);
     configurations = lp[1:(min(n, nrow(lp)))]
-
     # append configuration keys for extracting the pipeline later on
     id = seq(1, nrow(configurations))
     configurations = cbind(as.frame(id), configurations)
@@ -150,9 +149,8 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
     pipeline[startOut:endOut, ] = bracket_bestPipeline
     hparam[startOut:endOut, 1:ncol(bracket_bestHyperparams)] = bracket_bestHyperparams
     idx = idx + 1
-    # print("bracket best: \n"+toString(bracket_bestPipeline))
   }
-  [bestPipeline, bestHyperparams, bestAccuracy] = extractTopK(pipeline, hparam, baseLineScore, k, mainLookup)
+  [bestPipeline, bestHyperparams, bestAccuracy] = extractTopK(pipeline, hparam, baseLineScore, k, mainLookup, lp, lpHp)
 
   imp = as.double(as.scalar(bestAccuracy[1, 1])) - as.double(baseLineScore)
   perf = imp > 0
@@ -174,12 +172,6 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
     print("prune count: "+totalPruneCount)
     print("actual executed pipelines: "+(pipelines_executed - totalPruneCount))
   }
-  write(bestPipeline, output+"/pip.csv", format="csv")
-  write(bestHyperparams, output+"/hp.csv", format="csv")
-  write(bestAccuracy, output+"/bestAcc.csv", format="csv")
-  write(baseLineScore, output+"/dirtyScore.csv", format="csv")
-  write(evalFunHp, output+"/evalHp.csv", format="csv")
-  write(applyFunc, output+"/applyFunc.csv", format="csv")
 }
 
 # this method will extract the physical pipelines for a given logical pipelines
@@ -223,7 +215,7 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] numCon
   physical = operator 
 }
 
-# this method will call the execute pipelines with their hyper-parameters
+# # this method will call the execute pipelines with their hyper-parameters
 run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Double] X, Matrix[Double] Y,
   Matrix[Double] Xtest, Matrix[Double] Ytest, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
   Frame[Unknown] param, Boolean cv = FALSE,  Integer cvk = 2, Double ref = 0, Integer seed = -1, Boolean enablePruning = FALSE, Boolean default = FALSE)
@@ -236,83 +228,125 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Do
   output_accuracy = matrix(0, nrow(ph_pip)*r_i, 1)
   output_pipelines = matrix(0, nrow(ph_pip)*r_i, 3)
   # rows in validation set
-  clone_X = X
-  clone_Y = Y
-  clone_Xtest = Xtest
-  clone_Ytest = Ytest
-  index = 1
   ids = as.matrix(ph_pip[, 1:2])
   ph_pip = ph_pip[, 3:ncol(ph_pip)]
-
-  parfor(i in 1:nrow(ph_pip), check = 0)
+  inputHpMatrix = matrix(0, nrow(ph_pip)*r_i, (ncol(ph_pip)) * 5 * 3 + 1)
+  # prepare the pipelines and resources
+  allPipelines = frame(0, rows = nrow(ph_pip) * r_i, cols=ncol(ph_pip))
+  allApplyFunctions = frame(0, rows = nrow(ph_pip) * r_i, cols=ncol(ph_pip))
+  allIds = matrix(0, rows = nrow(ph_pip) * r_i, cols=2)
+  start = 1
+  end = 0
+  i = 1
+  while(i <= nrow(ph_pip))
   {
-    # execute configurations with r resources
     op = removeEmpty(target=ph_pip[i], margin="cols")
-    # print("PIPELINE EXECUTION START ... "+toString(op))
     [hp, applyFunctions, no_of_res, no_of_flag_vars] = getHyperparam(op, param, r_i, default, seed, enablePruning)
+    tmpFrameApply = frame(0, rows=no_of_res, cols=ncol(applyFunctions))
+    tmpFrameApply = freplicate(tmpFrameApply, applyFunctions)
+    tmpFramePip = frame(0, rows=no_of_res, cols=ncol(op))
+    tmpFramePip = freplicate(tmpFramePip, op)
+    tmpIds = matrix(1, rows=no_of_res, cols=2) * ids[i]
+    end = start + (no_of_res - 1)
+    allPipelines[start:end, 1:ncol(op)] = tmpFramePip
+    allApplyFunctions[start:end, 1:ncol(op)] = tmpFrameApply
+    allIds[start:end,] = tmpIds
+    if(no_of_res == 1) {
+      hp = matrix(hp, rows=no_of_res, cols = ncol(hp) * ncol(op))
+      inputHpMatrix[i, 1:ncol(hp)+1] = cbind(as.matrix(ncol(hp)), hp) 
+      i = i + 1
+    }
+    else
+    {
+      for(r in 1:no_of_res)
+      {
+        indexes = matrix(no_of_res, rows=ncol(op), cols=1)
+        indexes[1, 1] = r
+        indexes = cumsum(indexes)
+        indexes = table(indexes, 1, 1, nrow(hp), 1)
+        hp_matrix = removeEmpty(target = hp, margin="rows", select = indexes)
+        tmp = matrix(hp_matrix, rows=1, cols=nrow(hp_matrix) * ncol(hp_matrix))
+        tmp = cbind(as.matrix(ncol(tmp)), tmp)
+        inputHpMatrix[i, 1:ncol(tmp)] = tmp
+        i = i + 1
+      }
+    }
+    start = end + 1
+  }
+  allPipelines = removeEmpty(target = allPipelines, margin="rows")
+  inputHpMatrix = removeEmpty(target = inputHpMatrix, margin="rows")
+  opPre = allIds[1]
+  accuracy = 0
+  changesByPip = 0
+
+  parfor(i in 1:nrow(allPipelines), check = 0) # opt=CONSTRAINED, mode=REMOTE_SPARK
+  {
+    evalFunOutput = as.matrix(0)
+    # execute configurations with r resources
+    op = removeEmpty(target=allPipelines[i], margin="cols")
+    opNew = allIds[i]
+    hp = inputHpMatrix[i]
+    totalVals = as.scalar(hp[1, 1]) + 1
+    hp = hp[, 2:totalVals]
+    applyFunctions = allApplyFunctions[i]
+    no_of_res = nrow(hp)
+    # print("PIPELINE EXECUTION START ... "+toString(op))
     hpForPruning = matrix(0, rows=1, cols=ncol(op))
     changesByOp = matrix(0, rows=1, cols=ncol(op))
     metaList2 = metaList; #ensure metaList is no result var
     metaList2["applyFunc"] = applyFunctions
-    for(r in 1:no_of_res)
+    hp_matrix = matrix(hp, rows=ncol(op), cols=ncol(hp)/ncol(op)) #removeEmpty(target = hp, margin="rows", select = indexes)
+    # # check if the pruning could be applied to avoid unnecessary executions
+    pruneSignal = pruningSignal(opPre, opNew, hp_matrix, hpForPruning, changesByOp)
+    opPre = opNew
+    executionSingnal = TRUE #ifelse(enablePruning, pruneSignal, TRUE)
+    ref = ifelse(enablePruning, ref, 0)
+    if(executionSingnal)
     {
-      # as the matrix first block of r rows belongs to first operator and r+1 block of rows to second operator 
-      # we need to extract a row from each block
-      indexes = matrix(no_of_res, rows=ncol(op), cols=1)
-      indexes[1, 1] = r
-      indexes = cumsum(indexes)
-      indexes = table(indexes, 1, 1, nrow(hp), 1)
-      hp_matrix = removeEmpty(target = hp, margin="rows", select = indexes)
-      # # check if the pruning could be applied to avoid unnecessary executions
-      pruneSignal = pruningSignal(op, hp_matrix, hpForPruning, changesByOp)
-      executionSingnal = ifelse(enablePruning, pruneSignal, TRUE)
-      ref = ifelse(enablePruning, ref, 0)
-      if(executionSingnal)
+      t1 = time()
+      if(cv)
       {
-        t1 = time()
-        if(cv)
-        {
-          pipList = list(ph = op, hp = hp_matrix, flags = no_of_flag_vars)
-          [accuracy, evalHp, hpForPruning, changesByOp, changesByPip] = crossV(X=X, y=Y, cvk=cvk, evalFunHp=evalFunHp,
-            pipList=pipList, metaList=metaList2, hpForPruning=hpForPruning, 
-          changesByOp=changesByOp, evalFunc=evaluationFunc, ref=ref)
-        }
+        pipList = list(ph = op, hp = hp_matrix, flags = no_of_flag_vars)
+        [accuracy, evalHp, hpForPruning, changesByOp, changesByPip] = crossV(X=X, y=Y, cvk=cvk, evalFunHp=evalFunHp,
+          pipList=pipList, metaList=metaList2, hpForPruning=hpForPruning, 
+        changesByOp=changesByOp, evalFunc=evaluationFunc, ref=ref)
+      }
+      else 
+      {
+        [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=op, 
+          Xtrain=X, Ytrain=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList2,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
+          changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
+        if(max(eYtrain) == min(eYtrain)) 
+          print("Y contains only one class")
+        else if(changesByPip < ref)
+          print("prunningAlert 2: not training the model due to minimum changes")
         else 
-        {
-          [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=op, 
-            Xtrain=X, Ytrain=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList2,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
-            changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
-          if(max(eYtrain) == min(eYtrain)) 
-            print("Y contains only one class")
-          else if(changesByPip < ref)
-            print("prunning alert 2: no training the model due to minimum changes")
-          else 
-            evalFunOutput = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
-            accuracy = as.scalar(evalFunOutput[1, 1])
-        }
+          evalFunOutput = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
+          accuracy = as.scalar(evalFunOutput[1, 1])
+      }
 
-        # evalFunOutput = eval(evaluationFunc, argList)  
-        matrix_width = as.matrix(nrow(hp_matrix) * ncol(hp_matrix))
-        hp_vec = cbind(matrix_width, matrix(hp_matrix, rows=1, cols=nrow(hp_matrix)*ncol(hp_matrix), byrow=TRUE))
-        index = (i - 1) * no_of_res + r
-        output_accuracy[index, 1] = accuracy
-        output_hp[index, 1:ncol(hp_vec)] = hp_vec
-        output_pipelines[index, ] = cbind(as.matrix(index), ids[i,1:2])
-      }
-      else
-      {
-        pruneCount = pruneCount + 1
-        print("prunningAlert: not executing instance : "+r+" pruneCount"+pruneCount)
-      }
-      changesByPipMatrix[index] = changesByPip
-      index = index + 1
+      # evalFunOutput = eval(evaluationFunc, argList)  
+      matrix_width = as.matrix(nrow(hp_matrix) * ncol(hp_matrix))
+      hp_vec = inputHpMatrix[i]
+      output_accuracy[i, 1] = accuracy
+      output_hp[i, 1:ncol(hp_vec)] = hp_vec
+      output_pipelines[i, ] = cbind(as.matrix(i), allIds[i,1:2])
     }
+    else
+    {
+      pruneCount = pruneCount + 1
+      print("prunningAlert 1: not executing instance : "+i+" pruneCount"+pruneCount)
+    }
+    changesByPipMatrix[i] = changesByPip
   }
   sel = rowSums(output_hp) > 0
   output_hyperparam = removeEmpty(target=cbind(output_accuracy, output_hp), margin="rows", select = sel)
   output_operator = removeEmpty(target=cbind(output_accuracy, output_pipelines), margin="rows", select = sel)
   changesByPipMatrix = removeEmpty(target=changesByPipMatrix, margin="rows", select = sel)
 }
+
+
+
 
 # extract the hyper-parameters for pipelines
 getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Integer no_of_res, Boolean default, Integer seed = -1, Boolean enablePruning)
@@ -355,7 +389,7 @@ getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Intege
       paramIdx = START_INDEX
       typeIdx = START_INDEX
       OpParam = matrix(0, rows=no_of_res, cols=max(paramCount))
-      if(default) {
+      if(default | no_of_res == 1) {
         OpParam[1, 1:no_of_param] = as.matrix(hpList[index, DEFAULT_INDEX:DEFAULT_INDEX+(no_of_param - 1)])
       }
       else {
@@ -412,13 +446,18 @@ getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Intege
 
 # extract the top k pipelines as a final result after deduplication and sorting
 extractTopK = function(Matrix[Double] pipeline, Matrix[Double] hyperparam, 
-  Double baseLineScore, Integer k, Frame[Unknown] mainLookup)
+  Double baseLineScore, Integer k, Frame[Unknown] mainLookup, Frame[Unknown] bestLogical, Matrix[Double] lpHp)
   return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams, Matrix[Double] bestAccuracy)
 {
-  IX = order(target = hyperparam, by = 1, decreasing=TRUE, index.return=TRUE)
-  P = table(seq(1,nrow(IX)), IX, nrow(IX), nrow(hyperparam));
-  hyperparam = P %*% hyperparam
-  pipeline = P %*% pipeline
+
+  bestLogical = as.matrix(bestLogical[, 1])
+  pipeline = pipeline[, ncol(pipeline)]
+  blN = nrow(bestLogical)
+  lpHp = lpHp[nrow(lpHp)-blN+1:nrow(lpHp),]
+  IX = order(target = rbind(lpHp, hyperparam), by = 1, decreasing=TRUE, index.return=TRUE)
+  P = table(seq(1,nrow(IX)), IX, nrow(IX), nrow(rbind(lpHp, hyperparam)));
+  hyperparam = P %*% rbind(lpHp, hyperparam)
+  pipeline = P %*% rbind(bestLogical, pipeline)
 
   # remove the row with accuracy less than test accuracy 
   mask = (hyperparam[, 1] < baseLineScore) == 0
@@ -429,18 +468,18 @@ extractTopK = function(Matrix[Double] pipeline, Matrix[Double] hyperparam,
  
   rowIndex = min(nrow(hyperparam), k)
   # select the top k
-  bestAccuracy = pipeline[1:rowIndex, 1]
+  bestAccuracy = hyperparam[1:rowIndex, 1]
   bestHyperparams = hyperparam[1:rowIndex, 2:ncol(hyperparam)] 
   pipeline = pipeline[1:rowIndex]
   # # # lookup for the pipelines
-  pipCode = pipeline[, ncol(pipeline)]
+  pipCode = pipeline[, 1]
   
   bestPipeline = frame(data="0", rows=nrow(pipeline), cols=ncol(mainLookup))
   parfor(i in 1: nrow(pipeline)) {
     index = as.scalar(pipCode[i])
     bestPipeline[i] = mainLookup[index]
   }
-  
+
   bestPipeline = bestPipeline[, 2:ncol(bestPipeline)]
 
 }
@@ -528,14 +567,17 @@ return (Double accuracy, Matrix[Double] evalFunHp, Matrix[Double] hpForPruning, 
   print("cv accuracy: "+toString(accuracy))
 }
 
-pruningSignal = function(Frame[Unknown] ph_pip, Matrix[Double] hp_matrix, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
+pruningSignal = function(Matrix[Double] pipPre, Matrix[Double] pipNew, Matrix[Double] hp_matrix, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
 return(Boolean execute)
 {
   execute = TRUE
   prune = (hpForPruning > 0) & (changesByOp == 0)
   changeCount = 0
   # # if there exist a case where the changes done by an operation are zeros
-  if(sum(prune) > 0)
+  # check if pipelines are same
+  samePip = FALSE
+  samePip = sum(pipPre == pipNew) == ncol(pipPre)
+  if(sum(prune) > 0 & samePip )
   {
     # get the non-zero index of hpForPruning
     idx = (hpForPruning > 0) * t(seq(1, ncol(hpForPruning)))
@@ -551,11 +593,11 @@ return(Boolean execute)
   execute = !(changeCount > 0)
 }
 
+
+
 getParamMeta = function(Frame[Unknown] pipeline, Frame[Unknown] hpList)
 return(Frame[Unknown] applyFunc, Matrix[Double] indexes, Matrix[Double] paramCount)
 {
-  # print("pipeline in meta "+toString(pipeline))
-  # while(FALSE){}
   indexes = matrix(0, rows= ncol(pipeline), cols=1)
   paramCount = matrix(0, rows= ncol(pipeline), cols=1)
   applyList = hpList[, 1]
@@ -574,4 +616,123 @@ return(Frame[Unknown] applyFunc, Matrix[Double] indexes, Matrix[Double] paramCou
     paramCount[k] = as.integer(as.scalar(hpList[index, 3]))
     applyFunc[1, k] = as.scalar(hpList[index, 1])
   }
+}
+
+
+
+# # this method will call the execute pipelines with their hyper-parameters
+run_with_hyperparamNested = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Double] X, Matrix[Double] Y,
+  Matrix[Double] Xtest, Matrix[Double] Ytest, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
+  Frame[Unknown] param, Boolean cv = FALSE,  Integer cvk = 2, Double ref = 0, Integer seed = -1, Boolean enablePruning = FALSE, Boolean default = FALSE)
+  return (Matrix[Double] output_operator, Matrix[Double] output_hyperparam, Integer pruneCount, Matrix[Double] changesByPipMatrix)
+{
+  # # # TODO there is a partial overlap but it is negligible so we will not rewrite the scripts but lineage based reuse will get rid of it
+  changesByPipMatrix = matrix(0, rows=nrow(ph_pip) * r_i, cols=1)
+  pruneCount = 0
+  output_hp = matrix(0, nrow(ph_pip)*r_i, (ncol(ph_pip)) * 5 * 3)
+  output_accuracy = matrix(0, nrow(ph_pip)*r_i, 1)
+  output_pipelines = matrix(0, nrow(ph_pip)*r_i, 3)
+  # rows in validation set
+  clone_X = X
+  clone_Y = Y
+  clone_Xtest = Xtest
+  clone_Ytest = Ytest
+  index = 1
+  ids = as.matrix(ph_pip[, 1:2])
+  ph_pip = ph_pip[, 3:ncol(ph_pip)]
+
+  parfor(i in 1:nrow(ph_pip), check = 0) # , opt=CONSTRAINED, mode=REMOTE_SPARK
+  {
+    # execute configurations with r resources
+    op = removeEmpty(target=ph_pip[i], margin="cols")
+    # print("PIPELINE EXECUTION START ... "+toString(op))
+    [hp, applyFunctions, no_of_res, no_of_flag_vars] = getHyperparam(op, param, r_i, default, seed, enablePruning)
+    hpForPruning = matrix(0, rows=1, cols=ncol(op))
+    changesByOp = matrix(0, rows=1, cols=ncol(op))
+    metaList2 = metaList; #ensure metaList is no result var
+    metaList2["applyFunc"] = applyFunctions
+    for(r in 1:no_of_res)
+    {
+      # as the matrix first block of r rows belongs to first operator and r+1 block of rows to second operator 
+      # we need to extract a row from each block
+      indexes = matrix(no_of_res, rows=ncol(op), cols=1)
+      indexes[1, 1] = r
+      indexes = cumsum(indexes)
+      indexes = table(indexes, 1, 1, nrow(hp), 1)
+      hp_matrix = removeEmpty(target = hp, margin="rows", select = indexes)
+      # # check if the pruning could be applied to avoid unnecessary executions
+      pruneSignal = pruningSignalNested(op, hp_matrix, hpForPruning, changesByOp)
+      executionSingnal = ifelse(enablePruning, pruneSignal, TRUE)
+      ref = ifelse(enablePruning, ref, 0)
+      if(executionSingnal)
+      {
+        t1 = time()
+        if(cv)
+        {
+          pipList = list(ph = op, hp = hp_matrix, flags = no_of_flag_vars)
+          [accuracy, evalHp, hpForPruning, changesByOp, changesByPip] = crossV(X=X, y=Y, cvk=cvk, evalFunHp=evalFunHp,
+            pipList=pipList, metaList=metaList2, hpForPruning=hpForPruning, 
+          changesByOp=changesByOp, evalFunc=evaluationFunc, ref=ref)
+        }
+        else 
+        {
+          [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=op, 
+            Xtrain=X, Ytrain=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList2,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
+            changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
+          if(max(eYtrain) == min(eYtrain)) 
+            print("Y contains only one class")
+          else if(changesByPip < ref)
+            print("prunning alert 2: no training the model due to minimum changes")
+          else 
+            evalFunOutput = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
+            accuracy = as.scalar(evalFunOutput[1, 1])
+        }
+
+        # evalFunOutput = eval(evaluationFunc, argList)  
+        matrix_width = as.matrix(nrow(hp_matrix) * ncol(hp_matrix))
+        hp_vec = cbind(matrix_width, matrix(hp_matrix, rows=1, cols=nrow(hp_matrix)*ncol(hp_matrix), byrow=TRUE))
+        index = (i - 1) * no_of_res + r
+        output_accuracy[index, 1] = accuracy
+        output_hp[index, 1:ncol(hp_vec)] = hp_vec
+        output_pipelines[index, ] = cbind(as.matrix(index), ids[i,1:2])
+      }
+      else
+      {
+        pruneCount = pruneCount + 1
+        print("prunningAlert: not executing instance : "+r+" pruneCount"+pruneCount)
+      }
+      changesByPipMatrix[index] = changesByPip
+      index = index + 1
+    }
+  }
+  sel = rowSums(output_hp) > 0
+  output_hyperparam = removeEmpty(target=cbind(output_accuracy, output_hp), margin="rows", select = sel)
+  output_operator = removeEmpty(target=cbind(output_accuracy, output_pipelines), margin="rows", select = sel)
+  changesByPipMatrix = removeEmpty(target=changesByPipMatrix, margin="rows", select = sel)
+}
+
+pruningSignalNested = function(Frame[String] op, Matrix[Double] hp_matrix, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
+return(Boolean execute)
+{
+  execute = TRUE
+  prune = (hpForPruning > 0) & (changesByOp == 0)
+  changeCount = 0
+  # # if there exist a case where the changes done by an operation are zeros
+  # check if pipelines are same
+  samePip = FALSE
+
+  if(sum(prune) > 0)
+  {
+    # get the non-zero index of hpForPruning
+    idx = (hpForPruning > 0) * t(seq(1, ncol(hpForPruning)))
+    idx = removeEmpty(target=idx, margin="cols")
+    for(i in 1:ncol(idx)) {
+      index = as.scalar(idx[1, i])
+      inProcessHp = as.scalar(hp_matrix[index, 2])
+      prvHp = as.scalar(hpForPruning[1, index])
+      if(inProcessHp > prvHp)
+        changeCount = changeCount + 1
+    }
+  }
+  execute = !(changeCount > 0)
 }

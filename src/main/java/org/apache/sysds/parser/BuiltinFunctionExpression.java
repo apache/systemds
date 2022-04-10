@@ -1543,6 +1543,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 		case DROP_INVALID_TYPE:
 		case VALUE_SWAP:
+		case FRAME_ROW_REPLICATE:
 			checkNumParameters(2);
 			checkMatrixFrameParam(getFirstExpr());
 			checkMatrixFrameParam(getSecondExpr());

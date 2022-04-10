@@ -2344,6 +2344,17 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		return map(getCompiledFunction(lambdaExpr, margin), margin);
 	}
 
+	public FrameBlock frameRowReplication(FrameBlock rowToreplicate) {
+		FrameBlock out = new FrameBlock(this);
+		if(this.getNumColumns() != rowToreplicate.getNumColumns())
+			throw new DMLRuntimeException("Mismatch number of columns");
+		if(rowToreplicate.getNumRows() > 1)
+			throw  new DMLRuntimeException("only supported single rows frames to replicate");
+		for(int i=0; i<this.getNumRows(); i++)
+			for(int j=0; j<this.getNumColumns(); j++)
+				out.set(i, j, rowToreplicate.get(0, j));
+		return out;
+	}
 	public FrameBlock valueSwap(FrameBlock schema) {
 		String[] schemaString = schema.getStringRowIterator().next();
 		String dataValue2 = null;

@@ -1,3 +1,3 @@
-winsorizeApply,NA,imputeByMedianApply,dummycodingApply,0
-imputeByFdApply,winsorizeApply,imputeByMedianApply,NA,dummycodingApply
-NA,imputeByMedianApply,dummycodingApply,0,0
+scaleApply,dummycodingApply,0,0,0
+NA,scaleApply,dummycodingApply,0,0
+NA,scaleApply,dummycodingApply,0,0

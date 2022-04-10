@@ -91,6 +91,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public static final String  CACHING_EVICTION_FILEEXTENSION = ".dat";
 	public static final boolean CACHING_ASYNC_FILECLEANUP = true;
 	public static final boolean CACHING_ASYNC_SERIALIZE = false;
+	public static boolean CONCURRENT_FS_WRITE = true;
 	
 	//NOTE CACHING_ASYNC_SERIALIZE:
 	// The serialization of matrices and frames (ultra-sparse matrices or 

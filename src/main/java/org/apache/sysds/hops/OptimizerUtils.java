@@ -494,7 +494,7 @@ public class OptimizerUtils
 			return BUFFER_POOL_SIZE;
 		DMLConfig conf = ConfigurationManager.getDMLConfig();
 		double bufferPoolFactor = (double)(conf.getIntValue(DMLConfig.BUFFERPOOL_LIMIT))/100;
-		bufferPoolFactor = Math.max(bufferPoolFactor, DEFAULT_MEM_UTIL_FACTOR);
+		//bufferPoolFactor = Math.max(bufferPoolFactor, DEFAULT_MEM_UTIL_FACTOR);
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		return (long)(bufferPoolFactor * maxMem);
 	}

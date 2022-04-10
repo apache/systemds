@@ -84,6 +84,7 @@ public class LazyWriteBuffer
 						numEvicted++;
 					}
 				}
+				//System.out.println("#Evicted entries = "+numEvicted);
 				evictBlocks(evictionList);
 
 				//put placeholder into buffer pool (reserve mem)

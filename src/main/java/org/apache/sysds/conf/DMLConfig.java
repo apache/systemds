@@ -165,7 +165,7 @@ public class DMLConfig
 		_defaultVals.put(NATIVE_BLAS_DIR,        "none" );
 		_defaultVals.put(LINEAGECACHESPILL,      "true" );
 		_defaultVals.put(COMPILERASSISTED_RW,    "true" );
-		_defaultVals.put(BUFFERPOOL_LIMIT,       "15"); // % of total heap
+		_defaultVals.put(BUFFERPOOL_LIMIT,       "10"); // % of total heap
 		_defaultVals.put(MEMORY_MANAGER,         "static"); // static/unified partitioning of heap
 		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false" );
 		_defaultVals.put(EVICTION_SHADOW_BUFFERSIZE,  "0.0" );

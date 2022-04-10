@@ -574,7 +574,7 @@ public class ExecutionContext {
 			setVariable(varName, createMatrixObject(outputData));
 		MatrixObject mo = getMatrixObject(varName);
 		mo.acquireModify(outputData);
-		mo.setCacheLineage(li);
+		//mo.setCacheLineage(li);
 		mo.release();
 	}
 

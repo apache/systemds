@@ -19,3 +19,9 @@
 #
 #-------------------------------------------------------------
 
+# 1. Create "calculate_score" function, for the beginning without additional parameters -> calculate with dot product.
+
+forward = function(matrix[double] query, matrix[double] key)
+    return (matrix[double] W, matrix[double] b) {
+  # TODO Implement
+}

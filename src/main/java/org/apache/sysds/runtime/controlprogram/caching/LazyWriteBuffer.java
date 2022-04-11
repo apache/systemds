@@ -20,14 +20,15 @@
 package org.apache.sysds.runtime.controlprogram.caching;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
@@ -63,7 +64,8 @@ public class LazyWriteBuffer
 		//handle caching/eviction if it fits in writebuffer
 		if( !requiresWrite ) 
 		{
-			HashMap<String, ByteBuffer> evictionList = new HashMap<>();
+			//HashMap<String, ByteBuffer> evictionList = new HashMap<>();
+			List<Pair<String, ByteBuffer>> evictionList = new ArrayList<>();
 			//create byte buffer handle (no block allocation yet)
 			ByteBuffer bbuff = new ByteBuffer( lSize );
 			
@@ -79,12 +81,12 @@ public class LazyWriteBuffer
 					ByteBuffer tmp = entry.getValue();
 					
 					if( tmp != null ) {
-						evictionList.put(ftmp, tmp);
+						//add to the list of entries to be evicted
+						evictionList.add(new Pair<>(ftmp, tmp));
 						_size -= tmp.getSize();
 						numEvicted++;
 					}
 				}
-				//System.out.println("#Evicted entries = "+numEvicted);
 				evictBlocks(evictionList);
 
 				//put placeholder into buffer pool (reserve mem)
@@ -113,28 +115,28 @@ public class LazyWriteBuffer
 		return numEvicted;
 	}
 
-	private static void evictBlocks(HashMap<String, ByteBuffer> objects)
+	// Evict a list of cached objects to the local FS
+	private static void evictBlocks(List<Pair<String, ByteBuffer>> objects)
 	{
 		if (CacheableData.CONCURRENT_FS_WRITE && objects.size() > 1) {
+			//concurrently serialize and write the entries
 			int k = OptimizerUtils.getConstrainedNumThreads(-1);
 			ExecutorService myPool = CommonThreadPool.get(k);
 			try {
 				myPool.submit(() -> {
-					objects.entrySet().stream().parallel().forEach(LazyWriteBuffer::evictBlock);
+					objects.stream().parallel().forEach(LazyWriteBuffer::evictBlock);
 				}).get();
 			}
 			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
+				throw new DMLRuntimeException("Concurrent bufferpool eviction of "+objects.size()+" failed.", ex);
 			}
 		}
-		else {
-			for(Map.Entry<String, ByteBuffer> entry : objects.entrySet())
-				evictBlock(entry);
-			//objects.entrySet().forEach(LazyWriteBuffer::evictBlock);
-		}
+		else
+			objects.forEach(LazyWriteBuffer::evictBlock);
 	}
 
-	private static void evictBlock(Map.Entry<String, ByteBuffer> entry) {
+	// Evict a single object to local FS
+	private static void evictBlock(Pair<String, ByteBuffer> entry) {
 		String fname = entry.getKey();
 		ByteBuffer bb = entry.getValue();
 		try {
@@ -145,7 +147,7 @@ public class LazyWriteBuffer
 			bb.freeMemory();
 		}
 		catch(Exception e) {
-			throw new DMLRuntimeException("Eviction of " + fname + " failed");
+			throw new DMLRuntimeException("Bufferpool eviction to " + fname + " failed.");
 		}
 	}
 

@@ -59,6 +59,7 @@ source("src/test/scripts/applications/nn/max_pool2d_simple.dml") as max_pool2d_s
 source("src/test/scripts/applications/nn/util.dml") as test_util
 source("scripts/nn/util.dml") as util
 source("scripts/nn/layers/elu.dml") as elu
+source("scripts/nn/layers/attention.dml") as attention
 
 affine = function() {
   /*
@@ -2536,4 +2537,93 @@ elu = function() {
        rel_error = test_util::check_rel_grad_error(as.scalar(dX[i,j]), dX_num, lossph, lossmh)
      }
    }
+}
+
+attention = function() {
+  /*
+  * Gradient check for Attention layer
+  */
+  print("Grad checking Attention layer with L2 loss.")
+  # initialize random Query, Key and Value
+  N = 5 # number of samples
+  J = 2 # queries
+  K = 4 # keys,values
+  D = 3 # key,query,value dimension
+
+  query = rand(rows=N, cols=J*D, min=-5, max=5)
+  key = rand(rows=N, cols=K*D, min=-5, max=5)
+  value = rand(rows=N, cols=K*D, min=-5, max=5)
+
+  # initialize random target
+  y = rand(rows=N, cols=J*D, min=-5, max=5)
+
+  # cycle 1: using key
+  # cycle 2: using value as key
+  for (cycle in 1:2)
+  {
+    print("Cycle " + cycle)
+    if (cycle == 2){
+      key = matrix("", rows=0, cols=0)
+    }
+    # compute gradient analytically
+    att = matrix(0, rows=N, cols=J*D)
+    att = attention::forward(query, value, key, D, att)
+    datt = l2_loss::backward(att, y)
+    dQ = matrix(0, rows=N, cols=J*D)
+    dV = matrix(0, rows=N, cols=K*D)
+    dK = matrix(0, rows=N, cols=K*D)
+    [dQ, dV, dK] = attention::backward(datt, query, value, key, D, dQ, dV, dK)
+
+
+    # check gradient numerically
+    h = 1e-4
+
+    print(" - Grad checking query.")
+    for (i in 1:nrow(query)){
+      for (j in 1:ncol(query)){
+      old = as.scalar(query[i,j])
+      query[i,j] = old - h
+      outmh = attention::forward(query, value, key, D, att)
+      lossmh = l2_loss::forward(outmh, y)
+      query[i,j] = old + h
+      outph = attention::forward(query, value, key, D, att)
+      lossph = l2_loss::forward(outph, y)
+      query[i,j] = old  # reset
+      dQ_num = (lossph-lossmh) / (2*h)
+      rel_error = test_util::check_rel_grad_error(as.scalar(dQ[i,j]), dQ_num, lossph, lossmh)
+      }
+    }
+    if (cycle == 1){
+      print(" - Grad checking key.")
+      for (i in 1:nrow(key)){
+        for (j in 1:ncol(key)){
+          old = as.scalar(key[i,j])
+          key[i,j] = old - h
+          outmh = attention::forward(query, value, key, D, att)
+          lossmh = l2_loss::forward(outmh, y)
+          key[i,j] = old + h
+          outph = attention::forward(query, value, key, D, att)
+          lossph = l2_loss::forward(outph, y)
+          key[i,j] = old  # reset
+          dK_num = (lossph-lossmh) / (2*h)
+          rel_error = test_util::check_rel_grad_error(as.scalar(dK[i,j]), dK_num, lossph, lossmh)
+        }
+      }
+    }
+    print(" - Grad checking value.")
+    for (i in 1:nrow(value)){
+      for (j in 1:ncol(value)){
+        old = as.scalar(value[i,j])
+        value[i,j] = old - h
+        outmh = attention::forward(query, value, key, D, att)
+        lossmh = l2_loss::forward(outmh, y)
+        value[i,j] = old + h
+        outph = attention::forward(query, value, key, D, att)
+        lossph = l2_loss::forward(outph, y)
+        value[i,j] = old  # reset
+        dV_num = (lossph-lossmh) / (2*h)
+        rel_error = test_util::check_rel_grad_error(as.scalar(dV[i,j]), dV_num, lossph, lossmh)
+      }
+    }
+  }
 }

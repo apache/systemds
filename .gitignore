@@ -43,6 +43,7 @@ _site/
 
 # Tutorial data mnist
 src/main/python/systemds/examples/tutorials/*/
+scripts/nn/examples/data/*
 
 # User configuration files
 conf/SystemDS-config.xml

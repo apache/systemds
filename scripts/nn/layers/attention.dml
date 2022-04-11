@@ -1,0 +1,142 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("nn/layers/softmax.dml") as softmax
+source("scripts/nn/util.dml") as util
+
+
+forward = function(matrix[double] query, matrix[double] value,
+       matrix[double] key = matrix("",rows=0, cols=0), integer D,
+       matrix[double] attention)
+    return (matrix[double] attention) {
+  /*
+   * Computes the forward pass for the attention layer.
+   *
+   * Inputs:
+   * - query: Input querys of shape (N,J*D).
+   * - value: Values for keys of shape (N,K*D).
+   * - key: *optional* Keys for values of shape (N,K*D).
+   * -      If key is a matrix of length 0 value will be used as key.
+   * - D: Dimensionality of single query, value, key,
+   * - attention: Matrix of shape (N,J*D) on which to put the output.
+   * -
+   * Outputs:
+   * - attention: Attention on value(s) for given query(s), of shape (N,J*D).
+   */
+  N = nrow(value)
+  K = ncol(value) / D
+  J = ncol(query) / D
+
+  norm = 1/D^0.5
+  if (!length(key))
+  {
+    key = value
+  }
+  key_norm = key * norm
+  attention = matrix(0, rows=N, cols=J*D)
+  query_n = matrix(0, rows=J, cols=D)
+  key_norm_n = matrix(0, rows=K, cols=D)
+  value_n = matrix(0, rows=K, cols=D)
+  probs = matrix(0, rows=J, cols=K)
+  scores = matrix(0, rows=J, cols=K)
+  for (n in 1:N)
+  {
+    #reshape
+    query_n = matrix(query[n], rows=J, cols=D)
+    key_norm_n = matrix(key_norm[n],rows=K, cols=D)
+    value_n = matrix(value[n], rows=K, cols=D)
+
+    scores = query_n %*% t(key_norm_n)
+    #column wise softmax
+    probs = t(softmax::forward(t(scores)))
+    attention[n] = matrix(probs %*% value_n, rows=1, cols=J*D)
+  }
+}
+
+backward = function(matrix[double] dattention,
+                  matrix[double] query, matrix[double] value, matrix[double] key=matrix("",rows=0,cols=0),
+                  integer D, matrix[double] dquery, matrix[double] dvalue, matrix[double] dkey)
+    return (matrix[double] dquery, matrix[double] dvalue, matrix[double] dkey)
+{
+  /*
+   * Computes the backward pass for the attention layer.
+   *
+   * Inputs:
+   * - dattention: Gradient wrt `attention` of shape (N,J*D).
+   * - query: *optional* Query input of shape (N,J*D).
+   * - key: Keys for values of shape (N,K*D).
+   * -      If key is of length 0, the gradient dkey will be added to dvalue and dkey is 0.
+   * - value: Values for given key of shape (N,K*D).
+   * - D: Dimensionality of single query, key, value.
+   * - dquery: Matrix of shape (N,J*D) for output allocation.
+   * - dvalue: Matrix of shape (N,K*D) for output allocation.
+   * - dkey: Matrix of shape (N,K*D) for output allocation
+   * -
+   * Outputs:
+   * - dquery: Gradient wrt `query`, of shape (N, J*D).
+   * - dkey: Gradient wrt `key`, of shape (N,K*D).
+   * - dvalue: Gradient wrt `value` of shape (N,K*D).
+   */
+
+  N = nrow(value)
+  K = ncol(value) / D
+  J = ncol(query) / D
+
+  norm = 1 / D^0.5
+  use_key = length(key) > 0
+  if (!use_key){
+    key = value
+  }
+  key_norm = key * norm
+
+  dquery = matrix(0, rows=N, cols=J*D)
+  dkey = matrix(0, rows=N, cols=K*D)
+  dvalue = matrix(0, rows=N, cols=K*D)
+
+  query_n = matrix(0, rows=J, cols=D)
+  key_norm_n = matrix(0, rows=K, cols=D)
+  value_n = matrix(0, rows=K, cols=D)
+  dvalue_n = matrix(0, rows=K, cols=D)
+  probs = matrix(0, rows=J, cols=K)
+  scores = matrix(0, rows=J, cols=K)
+  for (n in 1:N)
+  {
+    #reshape
+    query_n = matrix(query[n], rows=J, cols=D)
+    key_norm_n = matrix(key_norm[n], rows=K, cols=D)
+    value_n = matrix(value[n], rows=K, cols=D)
+    dattention_n = matrix(dattention[n], rows=J, cols=D)
+
+    scores = query_n %*% t(key_norm_n)
+    probs = t(softmax::forward(t(scores)))
+
+    dscore = t(softmax::backward(value_n %*% t(dattention_n), t(scores)))
+    dquery[n] = matrix(dscore %*% key_norm_n, rows=1, cols=J*D)
+    if (use_key){
+      dkey[n] = matrix(t(dscore) %*% query_n * norm, rows=1, cols=K*D)
+      dvalue[n] = matrix(t(probs) %*% dattention_n, rows=1, cols=K*D)
+    }
+    else{
+      dvalue[n] = matrix(t(probs) %*% dattention_n + t(dscore) %*% query_n * norm, rows=1, cols=K*D)
+    }
+
+  }
+}

@@ -1,0 +1,11 @@
+source("nn/layers/attention.dml") as attention
+
+# Create training data
+q = array[1.1] with shape [1, 1, 1]
+k = array[1.6] with shape [1, 1, 1]
+
+score = attention::forward(q, k)
+
+# 1.76 = q * k = 1.1 * 1.6
+expected = array[1.76] with shape [1, 1, 1]
+assert(score == expected)

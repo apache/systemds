@@ -23,5 +23,6 @@
 
 forward = function(matrix[double] query, matrix[double] key)
     return (matrix[double] W, matrix[double] b) {
-  # TODO Implement
+#       scores = tf.matmul(query, key, transpose_b=True)
+  scores = query %*% key
 }

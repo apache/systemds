@@ -25,18 +25,50 @@ source("nn/layers/softmax.dml") as softmax
 
 calculate_scores = function(matrix[double] query, matrix[double] key)
     return (matrix[double] scores) {
+    #dim(query) = AxB
+    #dim(key) = CxB
+    #dim(scores) = AxC
   scores = query %*% t(key)
 }
 
 apply_scores = function(matrix[double] scores, matrix[double] value)
     return (matrix[double] attention) {
+    #dim(scores) = AxC
+    #dim(value) = CxD
+    #dim(weights) = AxC
+    #dim(attention) = AxD
   weights = softmax(scores / ncol(value) ^ 0.5) # TODO discuss, can we assume that dim V == dim K?
+  print(weights)
   attention = weights %*% value
 }
 
 forward = function(matrix[double] query, matrix[double] key, matrix[double] value)
     return (matrix[double] attention) {
+    #dim(query) = AxB
+    #dim(key) = CxB
+    #dim(value) = CxD
+    #dim(scores) = AxC
+    #dim(attention) = AxD
     scores = calculate_scores(query, key)
     print("scores: \n" + toString(scores))
     attention = apply_scores(scores, value)
+}
+
+backward = function(matrix[double] dattention, matrix[double] query, matrix[double] key, matrix[double] value)
+    return (matrix[double] dquery, matrix[double] dkey, matrix[double]dvalue)
+{
+    # attention = weights * value
+    # weights = softmax(v)
+    # v= scores/ncol(value) ^ 0.5
+    # scores = query * t(key)
+
+    scores = calculate_scores(query, key)
+    norm = 1/ncol(value)^0.5
+    x = scores * norm
+    dx = softmax::backward(1,x)
+    norm_dx = dx * norm
+    dquery = norm_dx * v %*% t(k)
+    dvalue = softmax(x)
+    dkey =  norm_dx * v %*% q
+
 }

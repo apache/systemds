@@ -1,0 +1,82 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+source("nn/layers/attention.dml") as attention
+
+# Create training data
+q = matrix("2 0 2 2 0 0 4 0 2 2 1 2", rows=4, cols=3)
+k = matrix("2 2 2 0 2 1 2 4 3 0 1 1", rows=4, cols=3)
+v = matrix("1 1 0 0 1 1 1 2 1 0 0 0", rows=4, cols=3)
+
+print(toString(q))
+print(toString(k))
+print(toString(v))
+print("Before attention calculation")
+attention = attention::forward(q, k, v)
+
+
+# ============== Simple test case =============================
+# Create training data
+q = matrix(1.1, rows=1, cols=1)
+k = matrix(1.6, rows=1, cols=1)
+v = matrix(1, rows=1, cols=1)
+
+calculated = attention::forward(q, k, v)
+print(toString(calculated))
+
+# expected = q * k = 1.1 * 1.6 = 1.76
+expected = matrix(1.76, rows=1, cols=1)
+assert(toString(calculated) == toString(expected))
+
+# ============== Example ======================================
+# 1. input eg text data
+# 2. embedding layer
+# 3. lstm layer
+# 4. attention layer
+# 5. dense layer
+
+
+# ============== Trying out syntax etc. ====================
+# q = matrix(1, rows=2, cols=2)
+# print(toString(q))
+#
+# A = matrix(0, rows=10, cols=10)
+# B = 10
+# C = B + sum(A)
+# print( "B:" + B + ", C:" + C + ", A[1,1]:" + as.scalar(A[1,1]))
+#
+#
+# # ------ Example of function definition -------
+# minMax = function( matrix[double] M) return (double minVal, double maxVal) {
+#   minVal = min(M);
+#   maxVal = max(M);
+# }
+#
+# # ------ Setting values in matrix -----
+# d = matrix("2 3 4 5", 2, 2);
+# print(toString(d, decimal=1))
+#
+# # ----- Function call with multiple return values ------
+# [a, b] = minMax(d)
+# print(a + " b: " + b)
+
+

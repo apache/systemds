@@ -8,6 +8,47 @@ v = matrix("1 1 0 0 1 1 1 2 1 0 0 0", rows=4, cols=3)
 print(toString(q))
 print(toString(k))
 print(toString(v))
+print("Before attention calculation")
 attention = attention::forward(q, k, v)
 
 print(toString(attention))
+
+
+# ============== Simple test case =============================
+# # Create training data
+# q = matrix(1.1, rows=1, cols=1)
+# k = matrix(1.6, rows=1, cols=1)
+# v = matrix(1, rows=1, cols=1)
+#
+# calculated = attention::forward(q, k, v)
+# print(toString(calculated))
+#
+# # expected = q * k = 1.1 * 1.6 = 1.76
+# expected = matrix(1.76, rows=1, cols=1)
+# assert(toString(calculated) == toString(expected))
+
+# ========================= Tutorials stuff ====================
+# q = matrix(1, rows=2, cols=2)
+# print(toString(q))
+#
+# A = matrix(0, rows=10, cols=10)
+# B = 10
+# C = B + sum(A)
+# print( "B:" + B + ", C:" + C + ", A[1,1]:" + as.scalar(A[1,1]))
+#
+#
+# # ------ Example of function definition -------
+# minMax = function( matrix[double] M) return (double minVal, double maxVal) {
+#   minVal = min(M);
+#   maxVal = max(M);
+# }
+#
+# # ------ Setting values in matrix -----
+# d = matrix("2 3 4 5", 2, 2);
+# print(toString(d, decimal=1))
+#
+# # ----- Function call with multiple return values ------
+# [a, b] = minMax(d)
+# print(a + " b: " + b)
+
+

@@ -30,12 +30,13 @@ calculate_scores = function(matrix[double] query, matrix[double] key)
 
 apply_scores = function(matrix[double] scores, matrix[double] value)
     return (matrix[double] attention) {
-  weights = softmax(scores)
+  weights = softmax(scores / ncol(value) ^ 0.5) # TODO discuss, can we assume that dim V == dim K?
   attention = weights %*% value
 }
 
 forward = function(matrix[double] query, matrix[double] key, matrix[double] value)
     return (matrix[double] attention) {
     scores = calculate_scores(query, key)
+    print("scores: \n" + toString(scores))
     attention = apply_scores(scores, value)
 }

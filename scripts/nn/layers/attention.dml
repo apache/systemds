@@ -19,10 +19,23 @@
 #
 #-------------------------------------------------------------
 
+source("nn/layers/softmax.dml") as softmax
+
 # 1. Create "calculate_score" function, for the beginning without additional parameters -> calculate with dot product.
 
-forward = function(matrix[double] query, matrix[double] key)
+calculate_scores = function(matrix[double] query, matrix[double] key)
     return (matrix[double] W, matrix[double] b) {
-#       scores = tf.matmul(query, key, transpose_b=True)
   scores = query %*% key
+}
+
+apply_scores = function(matrix[double] scores, matrix[double] value)
+    return (matrix[double] attention) {
+  weights = softmax(scores)
+  attention = weights %*% value
+}
+
+forward = function(matrix[double] query, matrix[double] key, matrix[double] value)
+    return (matrix[double] attention) {
+    scores = calculate_scores(query, key)
+    attention = apply_scores(scores, value)
 }

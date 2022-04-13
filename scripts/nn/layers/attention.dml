@@ -24,8 +24,8 @@ source("nn/layers/softmax.dml") as softmax
 # 1. Create "calculate_score" function, for the beginning without additional parameters -> calculate with dot product.
 
 calculate_scores = function(matrix[double] query, matrix[double] key)
-    return (matrix[double] W, matrix[double] b) {
-  scores = query %*% key
+    return (matrix[double] scores) {
+  scores = query %*% t(key)
 }
 
 apply_scores = function(matrix[double] scores, matrix[double] value)

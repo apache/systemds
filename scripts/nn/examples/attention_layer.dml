@@ -1,11 +1,13 @@
 source("nn/layers/attention.dml") as attention
 
 # Create training data
-q = array[1.1] with shape [1, 1, 1]
-k = array[1.6] with shape [1, 1, 1]
+q = matrix("2 0 2 2 0 0 4 0 2 2 1 2", rows=4, cols=3)
+k = matrix("2 2 2 0 2 1 2 4 3 0 1 1", rows=4, cols=3)
+v = matrix("1 1 0 0 1 1 1 2 1 0 0 0", rows=4, cols=3)
 
-score = attention::forward(q, k)
+print(toString(q))
+print(toString(k))
+print(toString(v))
+attention = attention::forward(q, k, v)
 
-# 1.76 = q * k = 1.1 * 1.6
-expected = array[1.76] with shape [1, 1, 1]
-assert(score == expected)
+print(toString(attention))

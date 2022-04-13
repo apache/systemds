@@ -38,7 +38,7 @@ apply_scores = function(matrix[double] scores, matrix[double] value)
     #dim(weights) = AxC
     #dim(attention) = AxD
   weights = softmax(scores / ncol(value) ^ 0.5) # TODO discuss, can we assume that dim V == dim K?
-  print(weights)
+  print(toString(weights))
   attention = weights %*% value
 }
 
@@ -67,8 +67,8 @@ backward = function(matrix[double] dattention, matrix[double] query, matrix[doub
     x = scores * norm
     dx = softmax::backward(1,x)
     norm_dx = dx * norm
-    dquery = norm_dx * v %*% t(k)
+    dquery = norm_dx * value %*% t(key)
     dvalue = softmax(x)
-    dkey =  norm_dx * v %*% q
+    dkey =  norm_dx * value %*% query
 
 }

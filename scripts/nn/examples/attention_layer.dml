@@ -12,6 +12,13 @@ print("Before attention calculation")
 attention = attention::forward(q, k, v)
 
 print(toString(attention))
+[a,b,c] = attention::backward(1,q,k,v)
+print("da/dq")
+print(toString(a))
+print("da/dk")
+print(toString(b))
+print("da/dv")
+print(toString(c))
 
 
 # ============== Simple test case =============================

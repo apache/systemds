@@ -97,41 +97,6 @@ cat <<EOF >../tmp-settings.xml
 </settings>
 EOF
 
-if [[ "$1" == "publish-snapshot" ]]; then
-  
-  CMD="mvn --settings ../tmp-settings.xml deploy -DskipTests -Dmaven.deploy.skip=${dry_run} \
-    -Daether.checksums.algorithms=SHA-512 \
-    ${GPG_OPTS}"
-  # -DaltSnapshotDeploymentRepository=github::default::https://maven.pkg.github.com/j143/systemds \
-  printf "\n #### Executing command: #### \n"
-  printf "\n $(bold $(greencolor $CMD)) \n\n"
-
-  $CMD
-
-fi
-
-
-
-if [[ "$1" == "publish-staging" ]]; then
-
-  mvn versions:set -DnewVersion=${PACKAGE_VERSION}
-
-  CMD="mvn --settings ../tmp-settings.xml clean -Pdistribution deploy \
-    -DskiptTests -Dmaven.deploy.skip=${dry_run} \
-    -Daether.checksums.algorithms=SHA-512 \
-    ${GPG_OPTS}"
-
-  printf "\n #### Executing command: #### \n"
-  printf "\n $(bold $(greencolor $CMD)) \n\n"
-
-  $CMD  
-fi
-
-# if [[ -z "$GPG_KEY" ]]; then
-#   echo "The environment variable $GPG_KEY is not set."
-# fi
-
-# GPG="gpg -u $GPG_KEY --no-tty --batch --pinentry-mode loopback"
 
 # Publishing to Sonatype repo, details:
 NEXUS_ROOT=https://repository.apache.org/service/local/staging

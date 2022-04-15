@@ -1,0 +1,44 @@
+@software{Apache SystemDS
+  author    = {Apache SystemDS Development Team},
+  title     = {{Apache SystemDS: An open source ML system for the end-to-end data science lifecycle}},
+  url       = {https://hadoop.apache.org},
+  date      = {2015-11-02},
+}
+
+@inproceedings{BoehmADGIKLPR20,
+  author    = {Matthias Boehm and
+               Iulian Antonov and
+               Sebastian Baunsgaard and
+               Mark Dokter and
+               Robert Ginth{\"{o}}r and
+               Kevin Innerebner and
+               Florijan Klezin and
+               Stefanie N. Lindstaedt and
+               Arnab Phani and
+               Benjamin Rath and
+               Berthold Reinwald and
+               Shafaq Siddiqui and
+               Sebastian Benjamin Wrede},
+  title     = {{SystemDS: A Declarative Machine Learning System for the End-to-End Data Science Lifecycle}},
+  booktitle = {{CIDR}},
+  year      = {2020},
+}
+
+@article{BoehmDEEMPRRSST16,
+  author    = {Matthias Boehm and
+               Michael Dusenberry and
+               Deron Eriksson and
+               Alexandre V. Evfimievski and
+               Faraz Makari Manshadi and
+               Niketan Pansare and
+               Berthold Reinwald and
+               Frederick Reiss and
+               Prithviraj Sen and
+               Arvind Surve and
+               Shirish Tatikonda},
+  title     = {{SystemML: Declarative Machine Learning on Spark}},
+  journal   = {{PVLDB}},
+  volume    = {9},
+  number    = {13},
+  year      = {2016},
+}

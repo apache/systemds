@@ -586,6 +586,7 @@
 								<exclude>.settings</exclude>
 								<exclude>.classpath</exclude>
 								<exclude>.project</exclude>
+								<exclude>CITATION</exclude>
 								<exclude>src/main/python/docs/build/**/*</exclude>
 								<exclude>src/main/python/docs/source/_build/**</exclude>
 								<exclude>src/main/python/generator/resources/**</exclude>

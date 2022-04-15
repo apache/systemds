@@ -132,7 +132,7 @@ public class SquaredProductChainTest extends AutomatedTestBase
 		MatrixBlock m3 = MatrixBlock.randOperations(n, n2, sp[2], 1, 1, "uniform", 3);
 		MatrixBlock m4 = m1.aggregateBinaryOperations(m1, m2, 
 			new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
-		MatrixBlock m5 = m1.aggregateBinaryOperations(m4, m3, 
+		MatrixBlock m5 = m4.aggregateBinaryOperations(m4, m3, 
 			new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
 		
 		//compare estimated and real sparsity

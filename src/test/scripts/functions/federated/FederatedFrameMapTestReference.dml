@@ -28,7 +28,7 @@ else {
 
 A = as.frame(A)
 
-S = map(A, "x -> x.replace(\"1\", \"2\")");
+S = map(A, "x -> x.replace(\"1\", \"2\")", 0);
 write(S, $6);
 
 print(toString(A[1,1]))

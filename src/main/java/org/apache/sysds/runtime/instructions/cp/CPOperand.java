@@ -26,6 +26,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 public class CPOperand
@@ -179,10 +180,18 @@ public class CPOperand
 			getName(), getDataType().name(),
 			getValueType().name(), String.valueOf(isLiteral()));
 	}
-	
+
+	public LineageItem getLiteralLineageItem() {
+		return new LineageItem(getLineageLiteral());
+	}
+
 	public String getLineageLiteral(ScalarObject so) {
+		return getLineageLiteral(so, isLiteral());
+	}
+
+	public static String getLineageLiteral(ScalarObject so, boolean isLiteral) {
 		return InstructionUtils.concatOperandParts(
-			so.toString(), getDataType().name(),
-			getValueType().name(), String.valueOf(isLiteral()));
+			so.toString(), so.getDataType().name(),
+			so.getValueType().name(), String.valueOf(isLiteral));
 	}
 }

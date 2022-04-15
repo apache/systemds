@@ -19,15 +19,14 @@
 #
 #-------------------------------------------------------------
 
-#  
-# THIS SCRIPT FITS A COX PROPORTIONAL HAZARD REGRESSION MODEL.
+# This script fits a cox Proportional hazard regression model.
 # The Breslow method is used for handling ties and the regression parameters 
 # are computed using trust region newton method with conjugate gradient 
 # 
 # INPUT   PARAMETERS:
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # NAME    TYPE     DEFAULT    MEANING
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # X       Matrix   ---        Location to read the input matrix X containing the survival data 
 #                             containing the following information
 #                             1: timestamps 
@@ -50,36 +49,39 @@
 # tol     Double   0.000001   Tolerance ("epsilon")
 # moi     Int      100        Max. number of outer (Newton) iterations
 # mii     Int      0          Max. number of inner (conjugate gradient) iterations, 0 = no max   
-# ---------------------------------------------------------------------------------------------
-# OUTPUT:
-# 1- A D x 7 matrix M, where D denotes the number of covariates, with the following schema:
-#   M[,1]: betas
-#   M[,2]: exp(betas)
-#   M[,3]: standard error of betas
-#   M[,4]: Z 
-#   M[,5]: P-value
-#   M[,6]: lower 100*(1-alpha)% confidence interval of betas
-#   M[,7]: upper 100*(1-alpha)% confidence interval of betas
 #
-# Two matrices containing a summary of some statistics of the fitted model:
-# 1 - File S with the following format 
-#   - row 1: no. of observations
-#   - row 2: no. of events
-#   - row 3: log-likelihood 
-#   - row 4: AIC
-#   - row 5: Rsquare (Cox & Snell)
-#   - row 6: max possible Rsquare
-# 2 - File T with the following format
-#   - row 1: Likelihood ratio test statistic, degree of freedom, P-value
-#   - row 2: Wald test statistic, degree of freedom, P-value
-#   - row 3: Score (log-rank) test statistic, degree of freedom, P-value
-# 
-# Additionally, the following matrices are stored (needed for prediction)
-# 1- A column matrix RT that contains the order-preserving recoded timestamps from X
-# 2- Matrix XO which is matrix X with sorted timestamps
-# 3- Variance-covariance matrix of the betas COV
-# 4- A column matrix MF that contains the column indices of X with the baseline factors removed (if available)
-# -------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# M         Matrix[Double]   A D x 7 matrix M, where D denotes the number of covariates, with the following schema:
+#                            M[,1]: betas
+#                            M[,2]: exp(betas)
+#                            M[,3]: standard error of betas
+#                            M[,4]: Z
+#                            M[,5]: P-value
+#                            M[,6]: lower 100*(1-alpha)% confidence interval of betas
+#                            M[,7]: upper 100*(1-alpha)% confidence interval of betas
+# S,T       Matrix[Double]    Two matrices containing a summary of some statistics of the fitted model:
+#                            1 - File S with the following format
+#                            - row 1: no. of observations
+#                            - row 2: no. of events
+#                            - row 3: log-likelihood
+#                            - row 4: AIC
+#                            - row 5: Rsquare (Cox & Snell)
+#                            - row 6: max possible Rsquare
+#                            2 - File T with the following format
+#                            - row 1: Likelihood ratio test statistic, degree of freedom, P-value
+#                            - row 2: Wald test statistic, degree of freedom, P-value
+#                            - row 3: Score (log-rank) test statistic, degree of freedom, P-value
+# RT,XO,COV Matrix[Double]   Additionally, the following matrices are stored (needed for prediction)
+#                            1- A column matrix RT that contains the order-preserving recoded timestamps from X
+#                            2- Matrix XO which is matrix X with sorted timestamps
+#                            3- Variance-covariance matrix of the betas COV
+#                            4- A column matrix MF that contains the column indices of X with the baseline factors removed (if available)
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_cox = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] F, Matrix[Double] R,
     Double alpha = 0.05, Double tol = 0.000001, Int moi = 100, Int mii = 0)

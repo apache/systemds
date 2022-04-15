@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -77,7 +78,7 @@ public abstract class DataPartitionFederatedScheme {
 	 * @param fedMatrix the federated input matrix
 	 */
 	static List<MatrixObject> sliceFederatedMatrix(MatrixObject fedMatrix) {
-		if (fedMatrix.isFederated(FederationMap.FType.ROW)) {
+		if (fedMatrix.isFederated(FType.ROW)) {
 			List<MatrixObject> slices = Collections.synchronizedList(new ArrayList<>());
 			fedMatrix.getFedMapping().forEachParallel((range, data) -> {
 				// Create sliced matrix object
@@ -91,7 +92,7 @@ public abstract class DataPartitionFederatedScheme {
 				List<Pair<FederatedRange, FederatedData>> newFedHashMap = new ArrayList<>();
 				newFedHashMap.add(Pair.of(range, data));
 				slice.setFedMapping(new FederationMap(fedMatrix.getFedMapping().getID(), newFedHashMap));
-				slice.getFedMapping().setType(FederationMap.FType.ROW);
+				slice.getFedMapping().setType(FType.ROW);
 
 				slices.add(slice);
 				return null;

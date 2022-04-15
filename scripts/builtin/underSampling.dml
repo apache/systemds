@@ -18,24 +18,40 @@
 # under the License.
 #
 #-------------------------------------------------------------
-# # # following built-in performs random under sampling on data
 
-underSampling = function(Matrix[Double] data, Double ratio)
-return(Matrix[Double] data)
+# Builtin to perform random under sampling on data.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME    TYPE            DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X       Matrix[Double]  ---       X data to sample from
+# Y       Matrix[Double]  ---       Y data to sample from it will sample the same rows from x.
+# ratio   Double          ---       The ratio to sample
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]             The undersample data X
+# Y         Matrix[Double]             
+# ----------------------------------------------------------------------------------------------------------------------
+
+m_underSampling = function(Matrix[Double] X, Matrix[Double] Y, Double ratio)
+return(Matrix[Double] X, Matrix[Double] Y)
 {
   if(ratio < 0 | ratio > 0.5) {
     ratio = 0.1
     print("ratio should be greater than 0 and less than 0.5 setting ratio = 0.1")
   }
-  # # separate Y
-  Y = data[, ncol(data)]
   # # get the minority class
   classes = table(Y, 1)
   # # # get the minority class
   minority = as.scalar(rowIndexMin(t(classes)))
   # # # separate the minority class
   notMin = (Y != matrix(minority, rows=nrow(Y), cols=1))
-  dX = cbind(seq(1, nrow(data)), data)
+  dX = cbind(seq(1, nrow(X)), X)
   majority = removeEmpty(target=dX, margin="rows", select=notMin)
   # # # formulate the undersampling ratio
   u_ratio = floor(nrow(majority) * ratio)
@@ -44,6 +60,7 @@ return(Matrix[Double] data)
   u_select = table(u_sample, 1, 1, nrow(majority), 1)
   u_select = u_select * majority[, 1]
   u_select = removeEmpty(target = u_select, margin = "rows")
-  u_select1 = table(u_select, 1, 1, nrow(data), 1)
-  data = removeEmpty(target=data, margin="rows", select = (u_select1 == 0))
+  u_select1 = table(u_select, 1, 1, nrow(X), 1)
+  X = removeEmpty(target=X, margin="rows", select = (u_select1 == 0))
+  Y = removeEmpty(target=Y, margin="rows", select = (u_select1 == 0))
 }

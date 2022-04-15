@@ -39,8 +39,7 @@ public class ReaderColumnSelectionDenseMultiBlockTransposed extends ReaderColumn
 		boolean empty = true;
 		for(int i = 0; i < _colIndexes.length; i++) {
 			double v = _data.get(_colIndexes[i], _rl);
-			if(v != 0)
-				empty = false;
+			empty &= v == 0;
 			reusableArr[i] = v;
 		}
 		return empty ? emptyReturn : reusableReturn;

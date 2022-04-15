@@ -109,11 +109,11 @@ public class SampleEstimatorTest {
 
 		cs_estimate.transposed = true;
 
-		final CompressedSizeEstimator estimate = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs_estimate, 1);
-		final int estimate_1 = estimate.estimateCompressedColGroupSize(new int[] {0}).getNumVals() + 1;
-		final int estimate_2 = estimate.estimateCompressedColGroupSize(new int[] {1}).getNumVals() + 1;
+		final CompressedSizeEstimator estimate = CompressedSizeEstimatorFactory.createEstimator(mbt, cs_estimate, 1);
+		final int estimate_1 = estimate.getColGroupInfo(new int[] {0}).getNumVals() + 1;
+		final int estimate_2 = estimate.getColGroupInfo(new int[] {1}).getNumVals() + 1;
 
-		final int estimate_full = estimate.estimateCompressedColGroupSize(new int[] {0, 1}, estimate_1,  estimate_1 * estimate_2)
+		final int estimate_full = estimate.getColGroupInfo(new int[] {0, 1}, estimate_1,  estimate_1 * estimate_2)
 			.getNumVals();
 		assertTrue(
 			"Estimate of all columns should be upper bounded by distinct of each column multiplied: " + estimate_full

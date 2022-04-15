@@ -48,7 +48,7 @@ public class ExecutionContextFactory
 	public static ExecutionContext createContext(boolean allocateVars, boolean allocateLineage, Program prog)
 	{
 		ExecutionContext ec = null;
-		
+
 		switch( DMLScript.getGlobalExecMode() )
 		{
 			case SINGLE_NODE:
@@ -60,7 +60,7 @@ public class ExecutionContextFactory
 				else
 					ec = new SparkExecutionContext(allocateVars, allocateLineage, prog);
 				break;
-				
+
 			case SPARK:
 			case HYBRID:
 				ec = new SparkExecutionContext(allocateVars, allocateLineage, prog);

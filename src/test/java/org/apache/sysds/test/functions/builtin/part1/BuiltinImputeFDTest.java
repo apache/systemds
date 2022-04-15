@@ -70,6 +70,9 @@ public class BuiltinImputeFDTest extends AutomatedTestBase {
 	public void test4() throws IOException {
 		runImpute_RFDTests(2,3, 0.4, 2, ExecType.SPARK);
 	}
+	
+	//TODO negative tests
+	
 	private void runImpute_RFDTests(int source, int target, double threshold, int test, ExecType instType)
 			throws IOException
 	{
@@ -113,7 +116,7 @@ public class BuiltinImputeFDTest extends AutomatedTestBase {
 				break;
 			case 2:
 				s1 = new String[]  {"TU-Graz", "TU-Graz", "TU-Graz", "IIT", "IIT", "IIT", "IIT", "SIBA", "SIBA", "SIBA", "TU-Wien"};
-				s2 = new String[]  {"Austria", "Austria", "Austria", "India", "IIT", "In","India", "Pakistan", "Pakistan", null,"Austria"};
+				s2 = new String[]  {"Austria", "Austria", "Austria", "India", "IIT", "In","India", "Pakistan", null, null,"Austria"};
 				break;
 		}
 

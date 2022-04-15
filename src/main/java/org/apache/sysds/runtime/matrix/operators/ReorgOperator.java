@@ -22,11 +22,10 @@ package org.apache.sysds.runtime.matrix.operators;
 
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
 
-public class ReorgOperator extends Operator{
+public class ReorgOperator extends MultiThreadedOperator {
 	private static final long serialVersionUID = -5322516429026298404L;
 
 	public final IndexFunction fn;
-	private final int k; //num threads
 	
 	public ReorgOperator(IndexFunction p) {
 		//default degree of parallelism is 1 
@@ -37,14 +36,10 @@ public class ReorgOperator extends Operator{
 	public ReorgOperator(IndexFunction p, int numThreads) {
 		super(true);
 		fn = p;
-		k = numThreads;
-	}
-
-	public int getNumThreads() {
-		return k;
+		_numThreads = numThreads;
 	}
 
 	public ReorgOperator setFn(IndexFunction fn) {
-		return new ReorgOperator(fn, k);
+		return new ReorgOperator(fn, _numThreads);
 	}
 }

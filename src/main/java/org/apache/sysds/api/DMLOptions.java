@@ -31,6 +31,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.FEDInstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.utils.Explain;
@@ -73,7 +75,9 @@ public class DMLOptions {
 	public int                  fedWorkerPort = -1;
 	public int                  pythonPort    = -1; 
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
-	public boolean				federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
+	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
+	public boolean              noFedRuntimeConversion = false;   // If activated, no runtime conversion of CP instructions to FED instructions will be performed.
+	public int                  seed          = -1;               // The general seed for the execution, if -1 random (system time).
 
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
@@ -103,6 +107,8 @@ public class DMLOptions {
 			", lineage=" + lineage +
 			", w=" + fedWorker +
 			", federatedCompilation=" + federatedCompilation +
+			", noFedRuntimeConversion=" + noFedRuntimeConversion +
+			", seed=" + seed + 
 			'}';
 	}
 	
@@ -266,9 +272,31 @@ public class DMLOptions {
 		}
 
 		dmlOptions.checkPrivacy = line.hasOption("checkPrivacy");
+
 		if (line.hasOption("federatedCompilation")){
 			OptimizerUtils.FEDERATED_COMPILATION = true;
 			dmlOptions.federatedCompilation = true;
+			String[] fedCompSpecs = line.getOptionValues("federatedCompilation");
+			if ( fedCompSpecs != null && fedCompSpecs.length > 0 ){
+				for ( String spec : fedCompSpecs ){
+					String[] specPair = spec.split("=");
+					if (specPair.length != 2){
+						throw new org.apache.commons.cli.ParseException("Invalid argument specified for -federatedCompilation option, must be a list of space separated K=V pairs, where K is a line number of the DML script and V is a federated output value");
+					}
+					int dmlLineNum = Integer.parseInt(specPair[0]);
+					FEDInstruction.FederatedOutput fedOutSpec = FEDInstruction.FederatedOutput.valueOf(specPair[1]);
+					OptimizerUtils.FEDERATED_SPECS.put(dmlLineNum,fedOutSpec);
+				}
+			}
+		}
+
+		if ( line.hasOption("noFedRuntimeConversion") ){
+			FEDInstructionUtils.noFedRuntimeConversion = true;
+			dmlOptions.noFedRuntimeConversion = true;
+		}
+
+		if(line.hasOption("seed")){
+			dmlOptions.seed = Integer.parseInt(line.getOptionValue("seed"));
 		}
 
 		return dmlOptions;
@@ -325,8 +353,16 @@ public class DMLOptions {
 			.withDescription("Check which privacy constraints are loaded and checked during federated execution")
 			.create("checkPrivacy");
 		Option federatedCompilation = OptionBuilder
+			.withArgName("key=value")
 			.withDescription("Compile federated instructions based on input federation state and privacy constraints.")
+			.hasOptionalArgs()
 			.create("federatedCompilation");
+		Option noFedRuntimeConversion = OptionBuilder
+			.withDescription("If activated, no runtime conversion of CP instructions to FED instructions will be performed.")
+			.create("noFedRuntimeConversion");
+		Option commandlineSeed = OptionBuilder
+			.withDescription("A general seed for the execution through the commandline")
+			.hasArg().create("seed");
 		
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
@@ -341,6 +377,8 @@ public class DMLOptions {
 		options.addOption(fedOpt);
 		options.addOption(checkPrivacy);
 		options.addOption(federatedCompilation);
+		options.addOption(noFedRuntimeConversion);
+		options.addOption(commandlineSeed);
 
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()

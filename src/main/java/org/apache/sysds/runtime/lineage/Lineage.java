@@ -24,8 +24,8 @@ import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 
 import java.util.ArrayList;
@@ -168,6 +168,24 @@ public class Lineage {
 			ret.set(e.getKey(), LineageParser.parseLineageTrace(e.getValue()));
 		}
 		return ret;
+	}
+
+	public String serializeSingleTrace(CPOperand cpo) {
+		LineageItem li = get(cpo);
+		if(li == null)
+			return null;
+		return serializeSingleTrace(li);
+	}
+
+	public static String serializeSingleTrace(LineageItem linItem) {
+		if(linItem == null)
+			return null;
+
+		return explain(linItem);
+	}
+
+	public static LineageItem deserializeSingleTrace(String serialLinTrace) {
+		return LineageParser.parseLineageTrace(serialLinTrace);
 	}
 	
 	public static void resetInternalState() {

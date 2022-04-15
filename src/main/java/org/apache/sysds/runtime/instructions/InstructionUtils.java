@@ -225,7 +225,15 @@ public class InstructionUtils
 		
 		return ret;
 	}
-	
+
+	public static String stripThreadCount(String str) {
+		String[] parts = str.split(Instruction.OPERAND_DELIM, -1);
+		String[] ret = new String[parts.length-1];
+		for (int i=0; i<parts.length-1; i++) //strip-off the thread count
+			ret[i] = parts[i];
+		return concatOperands(ret);
+	}
+
 	public static ExecType getExecType( String str ) {
 		try{
 			int ix = str.indexOf(Instruction.OPERAND_DELIM);
@@ -1000,19 +1008,23 @@ public class InstructionUtils
 			op = CMOperator.getAggOpType(fn, null);
 	
 		switch(op) {
-		case SUM:
-			return new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
+			case SUM:
+				return new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
+				
+			case COUNT:
+			case MEAN:
+			case VARIANCE:
+			case CM2:
+			case CM3:
+			case CM4:
 			
-		case COUNT:
-		case MEAN:
-		case VARIANCE:
-		case CM2:
-		case CM3:
-		case CM4:
-			return new CMOperator(CM.getCMFnObject(op), op);
-		case INVALID:
-		default:
-			throw new DMLRuntimeException("Invalid Aggregate Operation in GroupedAggregateInstruction: " + op);
+			//TODO use appropriate function objects for min/max (see sum)
+			case MIN:
+			case MAX:
+				return new CMOperator(CM.getCMFnObject(op), op);
+			case INVALID:
+			default:
+				throw new DMLRuntimeException("Invalid Aggregate Operation in GroupedAggregateInstruction: " + op);
 		}
 	}
 	
@@ -1063,8 +1075,7 @@ public class InstructionUtils
 	 * @return the instruction string with the given inputs concatenated
 	 */
 	public static String concatOperands(String... inputs) {
-		concatBaseOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
-		return _strBuilders.get().toString();
+		return concatBaseOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
 	}
 
 	/**
@@ -1073,11 +1084,10 @@ public class InstructionUtils
 	 * @return concatenated input parts
 	 */
 	public static String concatOperandParts(String... inputs) {
-		concatBaseOperandsWithDelim(Instruction.VALUETYPE_PREFIX, inputs);
-		return _strBuilders.get().toString();
+		return concatBaseOperandsWithDelim(Instruction.VALUETYPE_PREFIX, inputs);
 	}
 
-	private static void concatBaseOperandsWithDelim(String delim, String... inputs){
+	private static String concatBaseOperandsWithDelim(String delim, String... inputs){
 		StringBuilder sb = _strBuilders.get();
 		sb.setLength(0); //reuse allocated space
 		for( int i=0; i<inputs.length-1; i++ ) {
@@ -1085,6 +1095,7 @@ public class InstructionUtils
 			sb.append(delim);
 		}
 		sb.append(inputs[inputs.length-1]);
+		return sb.toString();
 	}
 	
 	public static String concatStrings(String... inputs) {

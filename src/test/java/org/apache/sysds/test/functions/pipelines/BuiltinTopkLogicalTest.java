@@ -25,6 +25,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class BuiltinTopkLogicalTest extends AutomatedTestBase {
@@ -42,7 +43,7 @@ public class BuiltinTopkLogicalTest extends AutomatedTestBase {
 	private final static String PRIMITIVES = PARAM_DIR + "testPrimitives.csv";
 	private final static String OUTPUT = RESOURCE+"intermediates/logical.csv";
 
-	private final static double dirtyScore = 0.7;
+	private final static double dirtyScore = 70;
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"R"}));
@@ -50,7 +51,7 @@ public class BuiltinTopkLogicalTest extends AutomatedTestBase {
 
 	@Test
 	public void testLogical1() {
-		runTestLogical(4, 5, 2, ExecMode.SINGLE_NODE);
+		runTestLogical(5, 1, 5, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
@@ -58,12 +59,16 @@ public class BuiltinTopkLogicalTest extends AutomatedTestBase {
 		runTestLogical(2, 2, 2, ExecMode.SINGLE_NODE);
 	}
 
-	@Test
+//	TODO support removeEmpty spark instruction
+	@Ignore
 	public void testLogicalHybrid() {
 		runTestLogical(3, 3, 2, ExecMode.HYBRID);
 	}
 
-	private void runTestLogical(int max_iter,  int num_inst, int num_exec,  Types.ExecMode et) {
+	private void runTestLogical(int max_iter,  int num_inst, double ei,  Types.ExecMode et) {
+
+		setOutputBuffering(true);
+
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {
@@ -71,7 +76,7 @@ public class BuiltinTopkLogicalTest extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
 				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "max_iter="+ max_iter,
-				 "num_inst="+ num_inst, "num_exec="+ num_exec,
+				 "num_inst="+ num_inst, "expectedIncrease="+ ei,
 				"dirtyScore="+dirtyScore, "output="+OUTPUT, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);

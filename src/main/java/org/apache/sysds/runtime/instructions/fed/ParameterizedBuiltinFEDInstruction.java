@@ -40,6 +40,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
@@ -55,6 +56,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.Respo
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -196,11 +198,11 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		long cols = 0;
 		for(int i = 0; i < ffr.length; i++) {
 			try {
-				if(in.isFederated(FederationMap.FType.COL)) {
+				if(in.isFederated(FType.COL)) {
 					out.getFedMapping().getFederatedRanges()[i + 1].setBeginDim(1, cols);
 					cols += ((ScalarObject) ffr[i].get().getData()[0]).getLongValue();
 				}
-				else if(in.isFederated(FederationMap.FType.ROW))
+				else if(in.isFederated(FType.ROW))
 					cols = ((ScalarObject) ffr[i].get().getData()[0]).getLongValue();
 				out.getFedMapping().getFederatedRanges()[i].setEndDim(1, cols);
 			}
@@ -223,7 +225,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		MatrixObject mo = (MatrixObject) getTarget(ec);
 
 		FederationMap fedMap = mo.getFedMapping();
-		boolean rowFed = mo.isFederated(FederationMap.FType.ROW);
+		boolean rowFed = mo.isFederated(FType.ROW);
 
 		long varID = FederationUtils.getNextFedDataID();
 		FederationMap diagFedMap;
@@ -341,7 +343,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			throw new DMLRuntimeException("Unsupported margin identifier '" + margin + "'.");
 
 		FrameObject mo = (FrameObject) getTarget(ec);
-		MatrixObject select = params.containsKey("select") ? ec.getMatrixObject(params.get("select")) : null;
+		MatrixLineagePair select = params.containsKey("select") ? ec.getMatrixLineagePair(params.get("select")) : null;
 		FrameObject out = ec.getFrameObject(output);
 
 		boolean marginRow = params.get("margin").equals("rows");
@@ -377,10 +379,10 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			for(int i = 1; i < colSums.size(); i++)
 				s = s.binaryOperationsInPlace(plus, colSums.get(i));
 			s = s.binaryOperationsInPlace(greater, new MatrixBlock(s.getNumRows(), s.getNumColumns(), 0.0));
-			select = ExecutionContext.createMatrixObject(s);
+			select = MatrixLineagePair.of(ExecutionContext.createMatrixObject(s), null);
 
 			long varID = FederationUtils.getNextFedDataID();
-			ec.setVariable(String.valueOf(varID), select);
+			ec.setVariable(String.valueOf(varID), select.getMO());
 			params.put("select", String.valueOf(varID));
 			// construct new string
 			String[] oldString = InstructionUtils.getInstructionParts(instString);
@@ -458,7 +460,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		dcs = finalDcs1;
 		out.getDataCharacteristics().set(mo.getDataCharacteristics());
-		int len = marginRow ? mo.getSchema().length : (int) (mo.isFederated(FederationMap.FType.ROW) ? s
+		int len = marginRow ? mo.getSchema().length : (int) (mo.isFederated(FType.ROW) ? s
 			.getNonZeros() : finalSchema.values().stream().mapToInt(e -> e.length).sum());
 		ValueType[] schema = new ValueType[len];
 		int pos = 0;
@@ -467,7 +469,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 			if(marginRow) {
 				schema = mo.getSchema();
-			} else if(mo.isFederated(FederationMap.FType.ROW)) {
+			} else if(mo.isFederated(FType.ROW)) {
 				schema = finalSchema.get(federatedRange);
 			} else  {
 				ValueType[] tmp = finalSchema.get(federatedRange);
@@ -504,7 +506,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			throw new DMLRuntimeException("Unsupported margin identifier '" + margin + "'.");
 
 		MatrixObject mo = (MatrixObject) getTarget(ec);
-		MatrixObject select = params.containsKey("select") ? ec.getMatrixObject(params.get("select")) : null;
+		MatrixLineagePair select = params.containsKey("select") ? ec.getMatrixLineagePair(params.get("select")) : null;
 		MatrixObject out = ec.getMatrixObject(output);
 
 		boolean marginRow = params.get("margin").equals("rows");
@@ -540,10 +542,10 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			for(int i = 1; i < colSums.size(); i++)
 				s = s.binaryOperationsInPlace(plus, colSums.get(i));
 			s = s.binaryOperationsInPlace(greater, new MatrixBlock(s.getNumRows(), s.getNumColumns(), 0.0));
-			select = ExecutionContext.createMatrixObject(s);
+			select = MatrixLineagePair.of(ExecutionContext.createMatrixObject(s), null);
 
 			long varID = FederationUtils.getNextFedDataID();
-			ec.setVariable(String.valueOf(varID), select);
+			ec.setVariable(String.valueOf(varID), select.getMO());
 			params.put("select", String.valueOf(varID));
 			// construct new string
 			String[] oldString = InstructionUtils.getInstructionParts(instString);

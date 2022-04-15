@@ -35,6 +35,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.SparkStatistics;
 
 public class CSVReadInFunctionTest extends AutomatedTestBase {
 
@@ -109,7 +110,7 @@ public class CSVReadInFunctionTest extends AutomatedTestBase {
 			
 			//check no executed spark instructions
 			Assert.assertEquals(Statistics.getNoOfExecutedSPInst(), 0);
-			Assert.assertTrue(!Statistics.createdSparkContext());
+			Assert.assertTrue(!SparkStatistics.createdSparkContext());
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

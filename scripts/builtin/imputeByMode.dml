@@ -19,42 +19,39 @@
 #
 #-------------------------------------------------------------
 
+# This function impute the data by mode value
 # Related to [SYSTEMDS-2902] dependency function for cleaning pipelines
-
-# impute the data by mode value 
-
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double    ---        Data Matrix (Recoded Matrix for categorical features)
-# ---------------------------------------------------------------------------------------------
- 
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME                  TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double   ---        imputed dataset
-
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE             DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X          Matrix[Double]   ---         Data Matrix (Recoded Matrix for categorical features)
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X          Matrix[Double]             imputed dataset
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_imputeByMode = function(Matrix[Double] X)
-return(Matrix[Double] X)
+return(Matrix[Double] X, Matrix[Double] imputedVec)
 {
 
-  Mask = is.na(X)
-  X = replace(target=X, pattern=NaN, replacement=0)
-  colMode = matrix(0, 1, ncol(X))
-  for(i in 1: ncol(X)) {
-    X_c = removeEmpty(target=X[, i], margin = "rows", select=(X[, i] < 1)==0)
+  Xt = replace(target=X, pattern=NaN, replacement=0)
+  colMode = matrix(0, 1, ncol(Xt))
+  for(i in 1: ncol(Xt)) {
+    X_c = removeEmpty(target=Xt[, i], margin = "rows", select=(X[, i] < 1)==0)
     if(sum(X_c) == 0)
-      colMode[1, i] = 1
+      colMode[1, i] = 0
     else {
       cat_counts = table(X_c, 1, nrow(X_c), 1);  # counts for each category
       colMode[1,i] = as.scalar(rowIndexMax(t(cat_counts))) # mode
     }
   }
-  Mask = Mask * colMode
-  X = X + Mask
+  imputedVec = colMode
+  X = imputeByModeApply(X, imputedVec)
 }
 

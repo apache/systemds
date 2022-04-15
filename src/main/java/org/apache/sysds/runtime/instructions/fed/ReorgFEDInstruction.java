@@ -31,6 +31,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -103,7 +104,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		if( !mo1.isFederated() )
 			throw new DMLRuntimeException("Federated Reorg: "
 				+ "Federated input expected, but invoked w/ "+mo1.isFederated());
-		if ( !( mo1.isFederated(FederationMap.FType.COL) || mo1.isFederated(FederationMap.FType.ROW)) )
+		if ( !( mo1.isFederated(FType.COL) || mo1.isFederated(FType.ROW)) )
 			throw new DMLRuntimeException("Federation type " + mo1.getFedMapping().getType()
 				+ " is not supported for Reorg processing");
 
@@ -125,7 +126,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				FederatedRequest getRequest = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
 				Future<FederatedResponse>[] execResponse = mo1.getFedMapping().execute(getTID(), true, fr1, getRequest);
 				ec.setMatrixOutput(output.getName(),
-					FederationUtils.bind(execResponse, mo1.isFederated(FederationMap.FType.COL)));
+					FederationUtils.bind(execResponse, mo1.isFederated(FType.COL)));
 			}
 		}
 		else if(instOpcode.equalsIgnoreCase("rev")) {
@@ -137,7 +138,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				new long[] {mo1.getFedMapping().getID()}, isSpark ? Types.ExecType.SPARK : Types.ExecType.CP, true);
 			mo1.getFedMapping().execute(getTID(), true, fr, fr1);
 
-			if(mo1.isFederated(FederationMap.FType.ROW))
+			if(mo1.isFederated(FType.ROW))
 				mo1.getFedMapping().reverseFedMap();
 
 			//derive output federated mapping
@@ -225,7 +226,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 
 	private RdiagResult rdiagV2M (MatrixObject mo1, ReorgOperator r_op) {
 		FederationMap fedMap = mo1.getFedMapping();
-		boolean rowFed = mo1.isFederated(FederationMap.FType.ROW);
+		boolean rowFed = mo1.isFederated(FType.ROW);
 
 		long varID = FederationUtils.getNextFedDataID();
 		Map<FederatedRange, int[]> dcs = new HashMap<>();
@@ -257,7 +258,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 
 	private RdiagResult rdiagM2V (MatrixObject mo1, ReorgOperator r_op) {
 		FederationMap fedMap = mo1.getFedMapping();
-		boolean rowFed = mo1.isFederated(FederationMap.FType.ROW);
+		boolean rowFed = mo1.isFederated(FType.ROW);
 
 		long varID = FederationUtils.getNextFedDataID();
 		Map<FederatedRange, int[]> dcs = new HashMap<>();

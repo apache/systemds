@@ -22,6 +22,7 @@
 #define REDUCTION_CUH
 
 using uint = unsigned int;
+
 #include <cuda_runtime.h>
 
 #include "utils.cuh"
@@ -51,7 +52,9 @@ using uint = unsigned int;
  * @param SpoofCellwiseOp		initial value for the reduction variable
  */
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
-__device__ void FULL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t N, T VT, ReductionOp reduction_op, SpoofCellwiseOp spoof_op) {
+__device__ void FULL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t N, T VT, ReductionOp reduction_op,
+	SpoofCellwiseOp spoof_op)
+{
 	auto sdata = shared_memory_proxy<T>();
 
 	// perform first level of reduction,
@@ -66,12 +69,9 @@ __device__ void FULL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t
 	// number of active thread blocks (via gridDim).  More blocks will result
 	// in a larger gridSize and therefore fewer elements per thread
 	while (i < N) {
-//		printf("tid=%d i=%d N=%d, in->cols()=%d rix=%d\n", threadIdx.x, i, N, in->cols(), i/in->cols());
 		v = reduction_op(v, spoof_op(*(in->vals(i)), i, i / in->cols(), i % in->cols()));
 
 		if (i + blockDim.x < N)	{
-			//__syncthreads();
-			//printf("loop fetch i(%d)+blockDim.x(%d)=%d, in=%f\n",i, blockDim.x, i + blockDim.x, g_idata[i + blockDim.x]);
 			v = reduction_op(v, spoof_op(*(in->vals(i+blockDim.x)), blockDim.x + i, (i+blockDim.x) / in->cols(), (i+blockDim.x) % in->cols()));
 		}
 
@@ -116,40 +116,25 @@ __device__ void FULL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t
 		if (blockDim.x >= 64) {
 			smem[tid] = v = reduction_op(v, smem[tid + 32]);
 		}
-//		if(tid<12)
-//			printf("bid=%d tid=%d reduction result: %3.1f\n", blockIdx.x, tid, sdata[tid]);
-		
 		if (blockDim.x >= 32) {
 			smem[tid] = v = reduction_op(v, smem[tid + 16]);
 		}
-//		if(tid==0)
-//			printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 		if (blockDim.x >= 16) {
 			smem[tid] = v = reduction_op(v, smem[tid + 8]);
 		}
-//		if(tid==0)
-//			printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 		if (blockDim.x >= 8) {
 			smem[tid] = v = reduction_op(v, smem[tid + 4]);
 		}
-//		if(tid==0)
-//			printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 		if (blockDim.x >= 4) {
 			smem[tid] = v = reduction_op(v, smem[tid + 2]);
 		}
-//		if(tid==0)
-//			printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 		if (blockDim.x >= 2) {
 			smem[tid] = v = reduction_op(v, smem[tid + 1]);
 		}
-//		if(tid==0)
-//			printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 	}
 
 	 // write result for this block to global mem
 	 if (tid == 0) {
-//	 	if(gridDim.x < 10)
-//	 		printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 	 	out->val(0, blockIdx.x) = sdata[0];
 	 }
 }
@@ -174,19 +159,10 @@ __device__ void FULL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t
  * the value before writing it to its final location in global memory for each
  * row
  */
-//template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
-//__device__ void ROW_AGG(
-//		T *g_idata, ///< input data stored in device memory (of size rows*cols)
-//		T *g_odata,  ///< output/temporary array store in device memory (of size
-//		/// rows*cols)
-//		uint rows,  ///< rows in input and temporary/output arrays
-//		uint cols,  ///< columns in input and temporary/output arrays
-//		T initialValue,  ///< initial value for the reduction variable
-//		ReductionOp reduction_op, ///< Reduction operation to perform (functor object)
-//		SpoofCellwiseOp spoof_op) ///< Operation to perform before assigning this
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
 __device__ void ROW_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t N, T VT,  ReductionOp reduction_op,
-					   SpoofCellwiseOp spoof_op) {
+	SpoofCellwiseOp spoof_op)
+{
 	auto sdata = shared_memory_proxy<T>();
 
 	// one block per row
@@ -199,7 +175,6 @@ __device__ void ROW_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t 
 	uint32_t i = tid;
 	uint block_offset = block * in->cols();
 
-//	T v = initialValue;
 	T v = reduction_op.init();
 	while (i < in->cols()) {
 		v = reduction_op(v, spoof_op(in->val(block_offset + i), i, i / in->cols(), i % in->cols()));
@@ -283,16 +258,8 @@ __device__ void ROW_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t 
  */
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
 __device__ void COL_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t N, T VT,  ReductionOp reduction_op,
-						SpoofCellwiseOp spoof_op) {
-//__device__ void COL_AGG(T *g_idata, ///< input data stored in device memory (of size rows*cols)
-//		T *g_odata,  ///< output/temporary array store in device memory (of size rows*cols)
-//		uint rows,  ///< rows in input and temporary/output arrays
-//		uint cols,  ///< columns in input and temporary/output arrays
-//		T initialValue,  ///< initial value for the reduction variable
-//		ReductionOp reduction_op, ///< Reduction operation to perform (functor object)
-//		SpoofCellwiseOp spoof_op) ///< Operation to perform before aggregation
-//
-//{
+	SpoofCellwiseOp spoof_op)
+{
 	uint global_tid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (global_tid >= in->cols()) {
 		return;
@@ -315,13 +282,12 @@ __device__ void NO_AGG(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uint32_t N
 	uint32_t gtid = blockIdx.x * blockDim.x + threadIdx.x;
 	uint32_t first_idx = gtid * static_cast<uint32_t>(VT);
 	uint32_t last_idx = min(first_idx + static_cast<uint32_t>(VT), N);
+
 	#pragma unroll
 	for(auto i = first_idx; i < last_idx; i++) {
 		T a = in->hasData() ? in->vals(0)[i] : 0;
 		T result = spoof_op(a, i, i / in->cols(), i % in->cols());
 		out->vals(0)[i] = result;
-		//if(i < 4)
-		//	printf("tid=%d in=%4.3f res=%4.3f out=%4.3f r=%d\n", i, in->vals(0)[i], result, out->vals(0)[i], i/in->cols());
 	}
 }
 

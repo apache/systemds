@@ -36,12 +36,13 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -79,11 +80,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	/** Global logging instance for all subclasses of CacheableData */
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
-	
+
 	// global constant configuration parameters
-	public static final long    CACHING_THRESHOLD = (long)Math.max(4*1024, //obj not s.t. caching
+	public static final long CACHING_THRESHOLD = (long)Math.max(4*1024, //obj not s.t. caching
 		1e-5 * InfrastructureAnalyzer.getLocalMaxMemory());       //if below threshold [in bytes]
-	public static final double CACHING_BUFFER_SIZE = 0.15;
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO;
 	public static final boolean CACHING_BUFFER_PAGECACHE = false;
 	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;
@@ -355,6 +355,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _metaData.getDataCharacteristics();
 	}
 
+	public long getDim(int dim) {
+		return getDataCharacteristics().getDim(dim);
+	}
+
 	public long getNumRows() {
 		return getDataCharacteristics().getRows();
 	}
@@ -521,6 +525,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		//get object from cache
 		if( _data == null )
 			getCache();
+
+		if (OptimizerUtils.isUMMEnabled())
+			//track and make space in the UMM
+			UnifiedMemoryManager.pin(this);
 		
 		//call acquireHostRead if gpuHandle is set as well as is allocated
 		if( DMLScript.USE_ACCELERATOR && _gpuObjects != null ) {
@@ -547,7 +555,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 					if( DMLScript.STATISTICS )
 						CacheStatistics.incrementLinHits();
 				}
-				else if( isFederatedExcept(FType.BROADCAST) ) {
+				else if( isFederatedExcept(FType.BROADCAST)
+					|| (isFederated(FType.BROADCAST) && !HDFSTool.existsFileOnHDFS(_hdfsFileName)
+						&& getRDDHandle() == null) ) {
 					_data = readBlobFromFederated(_fedMapping);
 
 					//mark for initial local write despite read operation
@@ -587,9 +597,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		else if( _data!=null && DMLScript.STATISTICS ) {
 			CacheStatistics.incrementMemHits();
 		}
-		
+
 		//cache status maintenance
 		acquire( false, _data==null );
+
 		return _data;
 	}
 	
@@ -689,7 +700,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			//compact empty in-memory block 
 			_data.compactEmptyBlock();
 		}
-		
+
+		if (OptimizerUtils.isUMMEnabled())
+			//give the memory back to UMM
+			UnifiedMemoryManager.unpin(this);
+
 		//cache status maintenance (pass cacheNoWrite flag)
 		release(_isAcquireFromEmpty && !_requiresLocalWrite);
 		
@@ -700,7 +715,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			if( ( write && !hasValidLineage() ) || _requiresLocalWrite ) {
 				String filePath = getCacheFilePathAndName();
 				try {
-					LazyWriteBuffer.writeBlock(filePath, _data);
+					//write into the buffer pool
+					if (OptimizerUtils.isUMMEnabled())
+						UnifiedMemoryManager.writeBlock(filePath, _data);
+					else
+						LazyWriteBuffer.writeBlock(filePath, _data);
 				}
 				catch (Exception e) {
 					throw new DMLRuntimeException("Eviction to local path " + filePath + " ("+hashCode()+") failed.", e);
@@ -1010,8 +1029,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			LOG.trace("CACHE: Freeing evicted matrix...  " + hashCode() + "  HDFS path: " + 
 				(_hdfsFileName == null ? "null" : _hdfsFileName) + " Eviction path: " + cacheFilePathAndName);
 		
-		if(isCachingActive())
-			LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
+		if(isCachingActive()) {
+			if (OptimizerUtils.isUMMEnabled())
+				UnifiedMemoryManager.deleteBlock(cacheFilePathAndName);
+			else
+				LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
+		}
 		
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Freeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
@@ -1022,7 +1045,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 	
 	public static boolean isBelowCachingThreshold(CacheBlock data) {
-		return LazyWriteBuffer.getCacheBlockSize(data) <= CACHING_THRESHOLD;
+		boolean ret;
+		if (OptimizerUtils.isUMMEnabled())
+			ret = UnifiedMemoryManager.getCacheBlockSize(data) <= CACHING_THRESHOLD;
+		else
+			ret = LazyWriteBuffer.getCacheBlockSize(data) <= CACHING_THRESHOLD;
+		return ret;
 	}
 	
 	public long getDataSize() {
@@ -1346,6 +1374,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public synchronized static void cleanupCacheDir() {
 		//cleanup remaining cached writes
 		LazyWriteBuffer.cleanup();
+		UnifiedMemoryManager.cleanup();
 		
 		//delete cache dir and files
 		cleanupCacheDir(true);
@@ -1411,13 +1440,17 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			throw new IOException(e);
 		}
 	
-		//init write-ahead buffer
-		LazyWriteBuffer.init();
+		if (OptimizerUtils.isUMMEnabled())
+			//init unified memory manager
+			UnifiedMemoryManager.init();
+		else
+			//init write-ahead buffer
+			LazyWriteBuffer.init();
+
 		_refBCs.set(0);
-		
 		_activeFlag = true; //turn on caching
 	}
-	
+
 	public static boolean isCachingActive() {
 		return _activeFlag;
 	}

@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysds.parser.Statement;
@@ -243,12 +244,16 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				ec.setFrameOutput(output.getName(), ret);
 				ec.releaseFrameInput(params.get("target"));
 			} else{
-				MatrixBlock target = ec.getMatrixInput(params.get("target"));
+				MatrixObject targetObj = ec.getMatrixObject(params.get("target"));
+				MatrixBlock target = targetObj.acquireRead();
 				double pattern = Double.parseDouble(params.get("pattern"));
 				double replacement = Double.parseDouble(params.get("replacement"));
 				MatrixBlock ret = target.replaceOperations(new MatrixBlock(), pattern, replacement);
-				ec.setMatrixOutput(output.getName(), ret);
-				ec.releaseMatrixInput(params.get("target"));
+				if( ret == target ) //shallow copy (avoid bufferpool pollution)
+					ec.setVariable(output.getName(), targetObj);
+				else
+					ec.setMatrixOutput(output.getName(), ret);
+				targetObj.release();
 			}
 			
 		}
@@ -299,7 +304,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			// compute transformapply
 			MultiColumnEncoder encoder = EncoderFactory
 				.createEncoder(params.get("spec"), colNames, data.getNumColumns(), meta);
-			MatrixBlock mbout = encoder.apply(data);
+			MatrixBlock mbout = encoder.apply(data, OptimizerUtils.getTransformNumThreads());
 
 			// release locks
 			ec.setMatrixOutput(output.getName(), mbout);

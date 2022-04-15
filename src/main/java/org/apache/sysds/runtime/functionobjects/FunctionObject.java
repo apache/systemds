@@ -81,6 +81,10 @@ public abstract class FunctionObject implements Serializable
 		throw new DMLRuntimeException("execute(): should not be invoked from base class.");
 	}
 	
+	public Data execute(Data in1, double in2, double in3, double in4) {
+		throw new DMLRuntimeException("execute(): should not be invoked from base class.");
+	}
+	
 	public Data execute(Data in1, Data in2) {
 		throw new DMLRuntimeException("execute(): should not be invoked from base class.");
 	}

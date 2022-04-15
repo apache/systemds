@@ -19,8 +19,26 @@
 
 package org.apache.sysds.runtime.util;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -32,20 +50,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class UtilFunctions {
 	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
@@ -489,6 +493,8 @@ public class UtilFunctions {
 	}
 
 	public static double objectToDoubleSafe(ValueType vt, Object in) {
+		if(vt == ValueType.STRING && in == null)
+			return 0.0;
 		if(vt == ValueType.STRING && !NumberUtils.isCreatable((String) in)) {
 			return 1.0;
 		} else return objectToDouble(vt, in);
@@ -863,9 +869,157 @@ public class UtilFunctions {
 		return value ;
 	}
 
+	public static String[] copyAsStringToArray(String[] input, Object value) {
+		String[] output = new String[input.length];
+		Arrays.fill(output, String.valueOf(value));
+		return output;
+	}
+
 	private static String getDateFormat (String dateString) {
 		return DATE_FORMATS.keySet().parallelStream().filter(e -> dateString.toLowerCase().matches(e)).findFirst()
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
+	}
+
+	@SuppressWarnings("unused")
+	private static int findDateCol (FrameBlock block) {
+		int cols = block.getNumColumns();
+		int[] match_counter = new int[cols];
+		int dateCol = -1;
+
+		for (int i = 0; i < cols; i++) {
+			String[] values = (String[]) block.getColumnData(i);
+			int matchCount = 0;
+			for (int j = 0; j < values.length; j++) {
+				//skip null/blank entries
+				if (values[j] == null || values[j].trim().isEmpty() || values[j].toUpperCase().equals("NULL") ||
+					values[j].equals("0")) continue;
+				String tmp = values[j];
+				//check if value matches any date pattern
+				if(DATE_FORMATS.keySet().parallelStream().anyMatch(e -> tmp.toLowerCase().matches(e))) matchCount++;
+			}
+			match_counter[i] = matchCount;
+		}
+
+		int maxMatches = Integer.MIN_VALUE;
+		//get column with most matches -> date column
+		for (int i = 0; i < match_counter.length; i++) {
+			if (match_counter[i] > maxMatches) {
+				maxMatches = match_counter[i];
+				dateCol = i;
+			}
+		}
+
+		if (maxMatches <= 0 || dateCol < 0){
+			//ERROR - no date column found
+			System.out.println("No date column in the dataset");
+		}
+		return dateCol;
+	}
+	public static String isDateColumn (String values) {
+		return DATE_FORMATS.keySet().parallelStream().anyMatch(e -> values.toLowerCase().matches(e))?"1":"0";
+	}
+	public static String[] getDominantDateFormat (String[] values) {
+		String[] output = new String[values.length];
+		Map<String, String> date_formats = DATE_FORMATS;
+
+		Map<String, Integer> format_matches = new HashMap<String, Integer>();
+		for (Map.Entry<String,String> entry : date_formats.entrySet()) {
+			format_matches.put(entry.getValue(), 0);
+		}
+
+		for (int i = 0; i < values.length; i++) {
+			//skip null/blank entries
+			if (values[i] == null || values[i].trim().isEmpty() || values[i].equalsIgnoreCase("NULL")
+				|| values[i].equals("0")) continue;
+			String tmp = values[i];
+			System.out.println("tmp "+tmp);
+			String dateFormat = getDateFormat(tmp);
+			//find pattern which matches values[i] -> increase count for this pattern
+			format_matches.put(dateFormat, format_matches.get(dateFormat) + 1);
+		}
+		//find format with the most occurences in values -> dominant format
+		String dominantFormat = format_matches.entrySet().stream().max((entry1, entry2) -> entry1.getValue() > entry2.getValue() ? 1 : -1).get().getKey();
+		for (int i = 0; i< values.length; i++){
+			//skip null/blank entries
+			if (values[i] == null || values[i].trim().isEmpty() ||
+				values[i].equalsIgnoreCase("NULL") || values[i].equals("0")) continue;
+			String currentFormat = getDateFormat(values[i]);
+			//Locale.US needs to be used as otherwise dateformat like "dd MMM yyyy HH:mm" are not parsable
+			SimpleDateFormat curr = new SimpleDateFormat(currentFormat, Locale.US);
+			try {
+				Date date = curr.parse(values[i]); //parse date string
+				if (!currentFormat.equals(dominantFormat)){
+					curr.applyPattern(dominantFormat);
+				}
+				//FIME: unused newDate
+				//String newDate = curr.format(date); //convert date to dominant date format
+				output[i] =  curr.format(date); //convert back to datestring
+			} catch (ParseException e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
+
+		return output;
+	}
+
+	public static String addTimeToDate (String dateString, int amountToAdd, String timeformat)  {
+		String currentFormat = getDateFormat(dateString);
+		Date date = null;
+		SimpleDateFormat curr = new SimpleDateFormat(currentFormat, Locale.US);
+		try {
+			date = curr.parse(dateString);
+		}
+		catch(Exception e) { e.getMessage();}
+
+		Date newDate;
+		switch (timeformat) {
+			case "ms": //milliseconds
+				newDate = DateUtils.addMilliseconds(date, amountToAdd);
+				break;
+			case "m": //minutes
+				newDate = DateUtils.addMinutes(date, amountToAdd);
+				break;
+			case "H": //hours
+				newDate = DateUtils.addHours(date, amountToAdd);
+				break;
+			case "d": //days
+				newDate = DateUtils.addDays(date, amountToAdd);
+				break;
+			case "w": //weeks
+				newDate = DateUtils.addWeeks(date, amountToAdd);
+				break;
+			case "M": //months
+				newDate = DateUtils.addMonths(date, amountToAdd);
+				break;
+			case "y": //years
+				newDate = DateUtils.addYears(date, amountToAdd);
+				break;
+			default: //seconds
+				newDate = DateUtils.addSeconds(date, amountToAdd);
+				break;
+		}
+		return curr.format(newDate);
+	}
+
+	public static String[] getTimestamp(String[] values)
+	{
+		String output[] = new String[values.length];
+		for (int i = 0; i< values.length; i++){
+			//skip null/blank entries
+			if (values[i] == null || values[i].trim().isEmpty() || values[i].toUpperCase().equals("NULL")
+				|| values[i].equals("0")) continue;
+			String currentFormat = getDateFormat(values[i]);
+			//Locale.US needs to be used as otherwise dateformat like "dd MMM yyyy HH:mm" are not parsable
+			SimpleDateFormat curr = new SimpleDateFormat(currentFormat, Locale.US);
+			curr.setTimeZone(TimeZone.getTimeZone("UTC"));
+			try {
+				Date date = curr.parse(values[i]); //parse date string
+				output[i] = String.valueOf(date.getTime()); //get timestamp in milliseconds
+			} catch (ParseException e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
+		return output;
 	}
 
 	public static String[] getSplittedStringAsArray (String input) {
@@ -1012,5 +1166,27 @@ public class UtilFunctions {
 	public static String[] splitRecodeEntry(String s) {
 		//forward to column encoder, as UtilFunctions available in map context
 		return ColumnEncoderRecode.splitRecodeMapEntry(s);
+	}
+
+	public static String[] toStringArray(Object[] original) {
+		String[] result = new String[original.length];
+		for (int i = 0; i < result.length; i++)
+			result[i] = String.valueOf(original[i]);
+		return result;
+	}
+
+	public static double[] convertStringToDoubleArray(String[] original) {
+//		double[] ret = new double[original.length];
+//		for (int i = 0; i < original.length; i++) {
+//			try {
+//				ret[i] = NumberFormat.getInstance().parse(original[i]).doubleValue();
+//			}
+//			catch(Exception e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		return ret;
+
+		return Arrays.stream(original).mapToDouble(Double::parseDouble).toArray();
 	}
 }

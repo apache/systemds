@@ -83,6 +83,7 @@ public class DecoderComposite extends Decoder
 	public void writeExternal(ObjectOutput out) throws IOException {
 		super.writeExternal(out);
 		out.writeInt(_decoders.size());
+		out.writeInt(_schema == null ? 0:_schema.length); //write #columns
 		for(Decoder decoder : _decoders) {
 			out.writeByte(DecoderFactory.getDecoderType(decoder));
 			decoder.writeExternal(out);
@@ -93,6 +94,9 @@ public class DecoderComposite extends Decoder
 	public void readExternal(ObjectInput in) throws IOException {
 		super.readExternal(in);
 		int decodersSize = in.readInt();
+		int nCols = in.readInt();
+		if (nCols > 0 && decodersSize > nCols*2)
+			throw new IOException("Too many decoders");
 		_decoders = new ArrayList<>();
 		for(int i = 0; i < decodersSize; i++) {
 			Decoder decoder = DecoderFactory.createInstance(in.readByte());

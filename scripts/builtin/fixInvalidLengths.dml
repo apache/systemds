@@ -19,21 +19,43 @@
 #
 #-------------------------------------------------------------
 
-s_fixInvalidLengths = function(Frame[Unknown] F1, Double ql = 0.05, Double qu = 0.99)
-return (Frame[Unknown] out, Matrix[Double] M)
-{
+# Fix invalid lenghts
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE              DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# F1       Frame[Unknown]    ---
+# mask     Matrix[Double]    ---
+# ql       Double            0.05
+# qu       Double            0.99
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME  TYPE              MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# out   Frame[Unknown]    ---
+# M     Matrix[Double]    ---
+# ----------------------------------------------------------------------------------------------------------------------
 
+s_fixInvalidLengths = function(Frame[Unknown] F1, Matrix[Double] mask, Double ql = 0.05, Double qu = 0.99)
+return (Frame[Unknown] X, Matrix[Double] mask, Matrix[Double] qLow, Matrix[Double] qUp)
+{
   length = map(F1, "x -> x.length()")
   length = as.matrix(length)
-  M = getInvalidsMask(length, ql, qu)
+  length = replace(target = (length * mask), pattern = NaN, replacement = 0)
+  [M, qLow, qUp] = getInvalidsMask(length, ql, qu)
   # # # check if mask vector has 1 in more than one column
   # # # this indicates that two values are being swapped and can be fixed
-  rowCount = rowSums(M) > 1
-  if(sum(rowCount) > 0)
+  rowCountSwap = rowSums(M)  >= 2 
+  rowCountDangling = rowSums(M) > 0 & rowSums(M) < 2
+
+  if(sum(rowCountSwap) > 0)
   {
-    countTotalSwaps = sum(rowCount)
+    countTotalSwaps = sum(rowCountSwap)
     # # get the row index for swapping
-    rowIds = rowCount * seq(1, nrow(rowCount))
+    rowIds = rowCountSwap * seq(1, nrow(rowCountSwap))
     rowIds = removeEmpty(target=rowIds, margin="rows")
     colIds = M * t(seq(1, ncol(M)))
     for(i in 1:countTotalSwaps)
@@ -50,17 +72,39 @@ return (Frame[Unknown] out, Matrix[Double] M)
       M[rowIdx, id2] = 0
     }
   }
+  if(sum(rowCountDangling) > 0) # no swaps just  invalid lengths
+  {
+    countTotalInvalids = sum(rowCountDangling)
+    # # get the row index for swapping
+    rowIds = rowCountDangling * seq(1, nrow(rowCountDangling))
+    rowIds = removeEmpty(target=rowIds, margin="rows")
+    colIds = M * t(seq(1, ncol(M)))
+    for(i in 1:countTotalInvalids)
+    {
+      rowIdx = as.scalar(rowIds[i, 1])
+      colIdx = removeEmpty(target = colIds[rowIdx], margin="cols")
+      id1 = as.scalar(colIdx[1, 1])
+      F1[rowIdx, id1] = ""
+      # # remove the mask for fixed entries
+      M[rowIdx, id1] = 0
+    }
+  }
+  
   M = replace(target = M, pattern = 1, replacement = NaN)
-  out = F1
+  X = F1
 }
 
 getInvalidsMask = function(Matrix[Double] X, Double ql = 0.05, Double qu = 0.99) 
-return (Matrix[Double] Y) {
+return (Matrix[Double] Y, Matrix[Double] qLow, Matrix[Double] qUp) {
 
   Y = matrix(0, nrow(X), ncol(X))
-  parfor(i in 1:ncol(X), check=0) {
+  qLow = matrix(0, rows=1, cols=ncol(X))
+  qUp = matrix(0, rows=1, cols=ncol(X))
+  for(i in 1:ncol(X), check=0) {
     q1 = quantile(X[,i], ql)
     q2 = quantile(X[,i], qu)
+    qLow[1, i] = q1
+    qUp[1, i] = q2
     Y[, i] = ( X[, i] < q1  | X[, i] > q2)
   }
 }

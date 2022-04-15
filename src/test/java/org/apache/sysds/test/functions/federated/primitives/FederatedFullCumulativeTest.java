@@ -200,6 +200,9 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 				break;
 		}
 
+		if(instType != ExecType.SPARK) // verify output is federated
+			Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
+
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));

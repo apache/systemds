@@ -19,14 +19,22 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.util.Arrays;
+
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class ColGroupEmpty extends AColGroupCompressed {
 	private static final long serialVersionUID = -2307677253622099958L;
@@ -45,17 +53,13 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		super(colIndices);
 	}
 
-	public static ColGroupEmpty generate(int nCol) {
-		int[] cols = new int[nCol];
-		for(int i = 0; i < nCol; i++) {
-			cols[i] = i;
-		}
-		return new ColGroupEmpty(cols);
+	public static ColGroupEmpty create(int nCol) {
+		return new ColGroupEmpty(Util.genColsIndices(nCol));
 	}
 
 	@Override
 	public CompressionType getCompType() {
-		return CompressionType.CONST;
+		return CompressionType.EMPTY;
 	}
 
 	@Override
@@ -69,7 +73,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	public void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC){
+	public void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC) {
 		// do nothing.
 	}
 
@@ -80,10 +84,22 @@ public class ColGroupEmpty extends AColGroupCompressed {
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
-		double val0 = op.executeScalar(0);
-		if(val0 == 0)
+		final double v = op.executeScalar(0);
+		if(v == 0)
 			return this;
-		return new ColGroupConst(_colIndexes, new Dictionary(new double[_colIndexes.length]).inplaceScalarOp(op));
+		double[] retV = new double[_colIndexes.length];
+		Arrays.fill(retV, v);
+		return ColGroupConst.create(_colIndexes, new Dictionary(retV));
+	}
+
+	@Override
+	public AColGroup unaryOperation(UnaryOperator op) {
+		final double v = op.fn.execute(0);
+		if(v == 0)
+			return this;
+		double[] retV = new double[_colIndexes.length];
+		Arrays.fill(retV, v);
+		return ColGroupConst.create(_colIndexes, new Dictionary(retV));
 	}
 
 	@Override
@@ -99,7 +115,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 
 		if(allZero)
 			return this;
-		return new ColGroupConst(_colIndexes, new Dictionary(retVals));
+		return ColGroupConst.create(_colIndexes, new Dictionary(retVals));
 	}
 
 	@Override
@@ -111,20 +127,15 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		final int lenV = _colIndexes.length;
 		boolean allZero = true;
 		for(int i = 0; i < lenV; i++)
-			allZero = 0 == (retVals[i] = fn.execute(0, v[_colIndexes[i]])) && allZero ;
+			allZero = 0 == (retVals[i] = fn.execute(0, v[_colIndexes[i]])) && allZero;
 		if(allZero)
 			return this;
-		return new ColGroupConst(_colIndexes, new Dictionary(retVals));
+		return ColGroupConst.create(_colIndexes, new Dictionary(retVals));
 	}
 
 	@Override
 	public int getNumValues() {
 		return 0;
-	}
-
-	@Override
-	public void leftMultByMatrix(MatrixBlock a, MatrixBlock c, int rl, int ru) {
-		// do nothing
 	}
 
 	@Override
@@ -135,6 +146,12 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	@Override
 	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
 		// do nothing
+	}
+
+	@Override
+	public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
+		// do nothing
+		// but should never be called
 	}
 
 	@Override
@@ -170,7 +187,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	@Override
 	public AColGroup replace(double pattern, double replace) {
 		if(pattern == 0)
-			return ColGroupFactory.genColGroupConst(_colIndexes, replace);
+			return ColGroupConst.create(_colIndexes, replace);
 		else
 			return new ColGroupEmpty(_colIndexes);
 	}
@@ -186,11 +203,6 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	public void computeColSums(double[] c, int nRows) {
-		// do nothing
-	}
-
-	@Override
 	protected double computeMxx(double c, Builtin builtin) {
 		return builtin.execute(c, 0);
 	}
@@ -202,22 +214,32 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	protected void computeSum(double[] c, int nRows, boolean square) {
+	protected void computeSum(double[] c, int nRows) {
 		// do nothing
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
 		// do nothing
 	}
 
 	@Override
-	protected void computeColSums(double[] c, int nRows, boolean square) {
+	public void computeColSums(double[] c, int nRows) {
 		// do nothing
 	}
 
 	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
+	protected void computeSumSq(double[] c, int nRows) {
+		// do nothing
+	}
+
+	@Override
+	protected void computeColSumsSq(double[] c, int nRows) {
+		// do nothing
+	}
+
+	@Override
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
 		for(int r = rl; r < ru; r++)
 			c[r] = builtin.execute(c[r], 0);
 	}
@@ -229,16 +251,60 @@ public class ColGroupEmpty extends AColGroupCompressed {
 
 	@Override
 	protected void computeProduct(double[] c, int nRows) {
-		// do nothing
+		c[0] = 0;
 	}
 
 	@Override
-	protected void computeRowProduct(double[] c, int rl, int ru) {
-		// do nothing
+	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
+		for(int i = 0; i < c.length; i++)
+			c[i] = 0;
 	}
 
 	@Override
 	protected void computeColProduct(double[] c, int nRows) {
-		// do nothing
+		for(int i = 0; i < c.length; i++)
+			c[i] = 0;
+	}
+
+	@Override
+	protected double[] preAggSumRows() {
+		return null;
+	}
+
+	@Override
+	protected double[] preAggSumSqRows() {
+		return null;
+	}
+
+	@Override
+	protected double[] preAggProductRows() {
+		return null;
+	}
+
+	@Override
+	protected double[] preAggBuiltinRows(Builtin builtin) {
+		return null;
+	}
+
+	@Override
+	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+		CM_COV_Object ret = new CM_COV_Object();
+		op.fn.execute(ret, 0.0, nRows);
+		return ret;
+	}
+
+	@Override
+	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
+		if(!ignore)
+			throw new DMLRuntimeException(
+				"Invalid input to rexpand since it contains zero use ignore flag to encode anyway");
+		else
+			return create(max);
+	}
+
+	@Override
+	public double getCost(ComputationCostEstimator e, int nRows) {
+		final int nCols = getNumCols();
+		return e.getCost(nRows, 1, nCols, 1, 0.00001);
 	}
 }

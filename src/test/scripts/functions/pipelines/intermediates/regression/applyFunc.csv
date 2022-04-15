@@ -1,0 +1,5 @@
+outlierBySdApply,fillDefaultApply,outlierByIQRApply,scaleApply,0,0,0
+normalizeApply,outlierByIQRApply,winsorizeApply,forward_fill,imputeByMeanApply,scaleApply,0
+miceApply,normalizeApply,outlierByIQRApply,winsorizeApply,forward_fill,imputeByMeanApply,scaleApply
+normalizeApply,outlierByIQRApply,winsorizeApply,forward_fill,imputeByMeanApply,scaleApply,0
+normalizeApply,outlierByIQRApply,winsorizeApply,forward_fill,imputeByMeanApply,scaleApply,0

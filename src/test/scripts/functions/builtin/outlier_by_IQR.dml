@@ -21,5 +21,9 @@
 
 
 X = read($1);
-Y = outlierByIQR(X, $2, $3, $4, FALSE);
+[Y, Q1, Q3, IQR, k, r] = outlierByIQR(X, $2, $3, $4, FALSE);
+Yapply = outlierByIQRApply(X, Q1, Q3, IQR, k, r);
+Y = replace(target=Y, pattern=NaN, replacement=0)
+Yapply = replace(target=Yapply, pattern=NaN, replacement=0)
+print(sum(Y != Yapply) == 0)
 write(Y, $5)

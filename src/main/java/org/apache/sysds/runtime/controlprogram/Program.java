@@ -90,6 +90,10 @@ public class Program
 		return getFunctionProgramBlocks(true);
 	}
 	
+	public FunctionDictionary<FunctionProgramBlock> getFunctionProgramBlocks(String nsName) {
+		return _namespaces.get(nsName);
+	}
+	
 	public synchronized HashMap<String,FunctionProgramBlock> getFunctionProgramBlocks(boolean opt){
 		HashMap<String,FunctionProgramBlock> retVal = new HashMap<>();
 		for (Entry<String,FunctionDictionary<FunctionProgramBlock>> namespace : _namespaces.entrySet()){

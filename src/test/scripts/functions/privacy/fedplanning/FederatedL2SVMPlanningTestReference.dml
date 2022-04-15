@@ -1,0 +1,131 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+  maxii = 20
+  verbose = FALSE
+  columnId = -1
+  Y = read($Y)
+  X = rbind(read($X1), read($X2))
+  intercept = FALSE
+  epsilon = 1e-12
+  lambda = 1
+  maxIterations = 100
+
+  #check input parameter assertions
+  if(nrow(X) < 2)
+    stop("L2SVM: Stopping due to invalid inputs: Not possible to learn a binary class classifier without at least 2 rows")
+  if(epsilon < 0)
+    stop("L2SVM: Stopping due to invalid argument: Tolerance (tol) must be non-negative")
+  if(lambda < 0)
+    stop("L2SVM: Stopping due to invalid argument: Regularization constant (reg) must be non-negative")
+  if(maxIterations < 1)
+    stop("L2SVM: Stopping due to invalid argument: Maximum iterations should be a positive integer")
+  if(ncol(Y) < 1)
+    stop("L2SVM: Stopping due to invalid multiple label columns, maybe use MSVM instead?")
+
+  #check input lables and transform into -1/1
+  check_min = min(Y)
+  check_max = max(Y)
+
+  num_min = sum(Y == check_min)
+  num_max = sum(Y == check_max)
+
+  # TODO make this a stop condition for l2svm instead of just printing.
+  if(num_min + num_max != nrow(Y))
+    print("L2SVM: WARNING invalid number of labels in Y: "+num_min+" "+num_max)
+
+  # Scale inputs to -1 for negative, and 1 for positive classification
+  if(check_min != -1 | check_max != +1)
+    Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
+
+  # If column_id is -1 then we assume that the fundamental algorithm is MSVM,
+  # Therefore don't print message.
+  if(verbose & columnId == -1)
+    print('Running L2-SVM ')
+
+  num_samples = nrow(X)
+  num_classes = ncol(Y)
+
+  # Add Bias
+  num_rows_in_w = ncol(X)
+  if (intercept) {
+    ones  = matrix(1, rows=num_samples, cols=1)
+    X = cbind(X, ones);
+    num_rows_in_w += 1
+  }
+
+  w = matrix(0, rows=num_rows_in_w, cols=1)
+
+  g_old = t(X) %*% Y
+  s = g_old
+
+  Xw = matrix(0, rows=nrow(X), cols=1)
+
+  iter = 0
+  continue = TRUE
+  while(continue & iter < maxIterations)  {
+    # minimizing primal obj along direction s
+    step_sz = 0
+    Xd = X %*% s
+    wd = lambda * sum(w * s)
+    dd = lambda * sum(s * s)
+    continue1 = TRUE
+    iiter = 0
+    while(continue1 & iiter < maxii){
+      tmp_Xw = Xw + step_sz*Xd
+      out = 1 - Y * (tmp_Xw)
+      sv = (out > 0)
+      out = out * sv
+      g = wd + step_sz*dd - sum(out * Y * Xd)
+      h = dd + sum(Xd * sv * Xd)
+      step_sz = step_sz - g/h
+      continue1 = (g*g/h >= epsilon)
+      iiter = iiter + 1
+    }
+
+    #update weights
+    w = w + step_sz*s
+    Xw = Xw + step_sz*Xd
+
+    out = 1 - Y * Xw
+    sv = (out > 0)
+    out = sv * out
+    obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
+    g_new = t(X) %*% (out * Y) - lambda * w
+
+    if(verbose) {
+      colstr = ifelse(columnId!=-1, ", Col:"+columnId + " ,", " ,")
+      print("Iter: " + toString(iter) + " InnerIter: " + toString(iiter) +" --- "+ colstr + " Obj:" + obj)
+    }
+
+    tmp = sum(s * g_old)
+    continue = (step_sz*tmp >= epsilon*obj & sum(s^2) != 0);
+
+    #non-linear CG step
+    be = sum(g_new * g_new)/sum(g_old * g_old)
+    s = be * s + g_new
+    g_old = g_new
+
+    iter = iter + 1
+  }
+  model = w
+  write(model, $Z)

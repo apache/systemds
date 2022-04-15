@@ -33,10 +33,11 @@ class TestPrint(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
-        sleep(1.0)
+        sleep(2.0)
         # Clear stdout ...
         cls.sds.get_stdout()
         cls.sds.get_stdout()
+        sleep(1.0)
 
     @classmethod
     def tearDownClass(cls):
@@ -44,10 +45,12 @@ class TestPrint(unittest.TestCase):
 
     def test_print_01(self):
         self.sds.from_numpy(np.array([1])).to_string().print().compute()
+        sleep(0.2)
         self.assertEqual(1,float(self.sds.get_stdout()[0]))
 
     def test_print_02(self):
         self.sds.scalar(1).print().compute()
+        sleep(0.2)
         self.assertEqual(1,float(self.sds.get_stdout()[0]))
 
 if __name__ == "__main__":

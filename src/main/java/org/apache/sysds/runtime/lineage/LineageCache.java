@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -162,14 +163,14 @@ public class LineageCache
 						if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 							return false;  //the executing thread removed this entry from cache
 						else
-							ec.setMatrixOutput(outName, e.getMBValue());
+							ec.setMatrixOutput(outName, mb);
 					}
 					else if (e.isScalarValue()) {
 						ScalarObject so = e.getSOValue(); //wait if another thread is executing the same inst.
 						if (so == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
 							return false;  //the executing thread removed this entry from cache
 						else
-							ec.setScalarOutput(outName, e.getSOValue());
+							ec.setScalarOutput(outName, so);
 					}
 					else { //TODO handle locks on gpu objects
 						//shallow copy the cached GPUObj to the output MatrixObject
@@ -364,7 +365,39 @@ public class LineageCache
 		}
 		return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
 	}
-	
+
+	public static boolean reuseFedRead(String outName, DataType dataType, LineageItem li, ExecutionContext ec) {
+		if (ReuseCacheType.isNone() || dataType != DataType.MATRIX)
+			return false;
+
+		LineageCacheEntry e = null;
+		synchronized(_cache) {
+			if(LineageCache.probe(li)) {
+				e = LineageCache.getIntern(li);
+			}
+			else {
+				putIntern(li, dataType, null, null, 0);
+				return false; // direct return after placing the placeholder
+			}
+		}
+
+		if(e != null && e.isMatrixValue()) {
+			MatrixBlock mb = e.getMBValue(); // waiting if the value is not set yet
+			if (mb == null || e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+				return false;  // the executing thread removed this entry from cache
+			ec.setMatrixOutput(outName, e.getMBValue());
+
+			if (DMLScript.STATISTICS) { //increment saved time
+				FederatedStatistics.incFedReuseReadHitCount();
+				FederatedStatistics.incFedReuseReadBytesCount(mb);
+				LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
+			}
+
+			return true;
+		}
+		return false;
+	}
+
 	public static boolean probe(LineageItem key) {
 		//TODO problematic as after probe the matrix might be kicked out of cache
 		boolean p = _cache.containsKey(key);  // in cache or in disk
@@ -542,7 +575,7 @@ public class LineageCache
 			LineageGPUCacheEviction.addEntry(centry);
 		}
 	}
-	
+
 	public static void putValue(List<DataIdentifier> outputs,
 		LineageItem[] liInputs, String name, ExecutionContext ec, long computetime)
 	{
@@ -629,7 +662,39 @@ public class LineageCache
 			LineageCacheEviction.addEntry(entry);
 		}
 	}
-	
+
+	public static void putFedReadObject(Data data, LineageItem li, ExecutionContext ec) {
+		if(ReuseCacheType.isNone())
+			return;
+
+		LineageCacheEntry entry = _cache.get(li);
+		if(entry != null && data instanceof MatrixObject) {
+			long t0 = System.nanoTime();
+			MatrixBlock mb = ((MatrixObject)data).acquireRead();
+			long t1 = System.nanoTime();
+			synchronized(_cache) {
+				long size = mb != null ? mb.getInMemorySize() : 0;
+
+				//remove the placeholder if the entry is bigger than the cache.
+				if (size > LineageCacheEviction.getCacheLimit()) {
+					removePlaceholder(li);
+				}
+
+				//make space for the data
+				if (!LineageCacheEviction.isBelowThreshold(size))
+					LineageCacheEviction.makeSpace(_cache, size);
+				LineageCacheEviction.updateSize(size, true);
+
+				entry.setValue(mb, t1 - t0);
+			}
+		}
+		else {
+			synchronized(_cache) {
+				removePlaceholder(li);
+			}
+		}
+	}
+
 	public static void resetCache() {
 		synchronized (_cache) {
 			_cache.clear();
@@ -658,7 +723,7 @@ public class LineageCache
 			long size = newItem.getSize();
 			if( size > LineageCacheEviction.getCacheLimit())
 				return; //not applicable
-			if( !LineageCacheEviction.isBelowThreshold(size) ) 
+			if( !LineageCacheEviction.isBelowThreshold(size) )
 				LineageCacheEviction.makeSpace(_cache, size);
 			LineageCacheEviction.updateSize(size, true);
 		}
@@ -697,7 +762,7 @@ public class LineageCache
 			LineageCacheEntry e = _cache.get(item);
 			boolean exists = !e.isNullVal();
 			if (oe.isMatrixValue())
-				e.setValue(oe.getMBValue(), computetime); 
+				e.setValue(oe.getMBValue(), computetime);
 			else
 				e.setValue(oe.getSOValue(), computetime);
 			e._origItem = probeItem; 

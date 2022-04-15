@@ -22,14 +22,15 @@
 ratio = as.double($1)
 X = rand(rows=20, cols=4, min=1, max =100)
 Y = rbind(matrix(1, rows=15, cols=1), matrix(2, rows=5, cols=1))
-data = cbind(X, Y)
 classesUnBalanced = table(Y[, ncol(Y)], 1)
 # # # randomize the data
-IX = sample(nrow(data), nrow(data))
-P = table(seq(1,nrow(IX)), IX, nrow(IX), nrow(data));
-data = P %*% data
-balanced = underSampling(data, ratio)
-classesBalanced = table(balanced[, ncol(balanced)], 1)
+IX = sample(nrow(X), nrow(X))
+P = table(seq(1,nrow(IX)), IX, nrow(IX), nrow(X));
+X = P %*% X
+Y = P %*% Y
+
+[balancedX, balancedY] = underSampling(X, Y, ratio)
+classesBalanced = table(balancedY, 1)
 out = as.scalar(classesUnBalanced[1] - classesBalanced[1]) == floor(15.0*ratio)
 print(out)
 

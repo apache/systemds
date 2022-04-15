@@ -550,11 +550,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		
 		switch (getOpCode()) {
 		case EVAL:
+		case EVALLIST:
 			if (_args.length == 0)
 				raiseValidateError("Function eval should provide at least one argument, i.e., the function name.", false);
 			checkValueTypeParam(_args[0], ValueType.STRING);
-			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.FP64);
+			boolean listReturn = (getOpCode()==Builtins.EVALLIST);
+			output.setDataType(listReturn ? DataType.LIST : DataType.MATRIX);
+			output.setValueType(listReturn ? ValueType.UNKNOWN : ValueType.FP64);
 			output.setDimensions(-1, -1);
 			output.setBlocksize(ConfigurationManager.getBlocksize());
 			break;
@@ -621,10 +623,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case MEAN:
 			//checkNumParameters(2, false); // mean(Y) or mean(Y,W)
 			if (getSecondExpr() != null) {
-				checkNumParameters (2);
+				checkNumParameters(2);
 			}
 			else {
-				checkNumParameters (1);
+				checkNumParameters(1);
 			}
 			
 			checkMatrixParam(getFirstExpr());
@@ -931,7 +933,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(ValueType.INT64);
 			break;
 		case COUNT_DISTINCT:
-		case COUNT_DISTINCT_APPROX:
 			checkNumParameters(1);
 			checkDataTypeParam(getFirstExpr(), DataType.MATRIX);
 			output.setDataType(DataType.SCALAR);
@@ -939,7 +940,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlocksize(0);
 			output.setValueType(ValueType.INT64);
 			break;
-		
 		case LINEAGE:
 			checkNumParameters(1);
 			checkDataTypeParam(getFirstExpr(),
@@ -949,14 +949,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlocksize(0);
 			output.setValueType(ValueType.STRING);
 			break;
-			
 		case LIST:
 			output.setDataType(DataType.LIST);
 			output.setValueType(ValueType.UNKNOWN);
 			output.setDimensions(getAllExpr().length, 1);
 			output.setBlocksize(-1);
 			break;
-		
 		case EXISTS:
 			checkNumParameters(1);
 			checkStringOrDataIdentifier(getFirstExpr());
@@ -1565,20 +1563,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 
 		case MAP:
-			checkNumParameters(2);
+			checkNumParameters(getThirdExpr() != null ? 3 : 2);
 			checkMatrixFrameParam(getFirstExpr());
 			checkScalarParam(getSecondExpr());
+			if(getThirdExpr() != null)
+				checkScalarParam(getThirdExpr()); // margin
 			output.setDataType(DataType.FRAME);
 			if(_args[1].getText().contains("jaccardSim")) {
 				output.setDimensions(id.getDim1(), id.getDim1());
 				output.setValueType(ValueType.FP64);
 			}
 			else {
-				output.setDimensions(id.getDim1(), 1);
+				output.setDimensions(id.getDim1(), id.getDim2());
 				output.setValueType(ValueType.STRING);
 			}
-			output.setBlocksize (id.getBlocksize());
-
 			break;
 		case LOCAL:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_LOCAL_COMMAND){
@@ -1823,9 +1821,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	protected void checkNumParameters(int count) { //always unconditional
 		if (getFirstExpr() == null && _args.length > 0) {
 			raiseValidateError("Missing argument for function " + this.getOpCode(), false,
-				LanguageErrorCodes.INVALID_PARAMETERS);
+					LanguageErrorCodes.INVALID_PARAMETERS);
 		}
-		
+
 		// Not sure the rationale for the first two if loops, but will keep them for backward compatibility
 		if (((count == 1) && (getSecondExpr() != null || getThirdExpr() != null))
 				|| ((count == 2) && (getThirdExpr() != null))) {
@@ -1841,7 +1839,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		} else if (count == 0 && (_args.length > 0
 				|| getSecondExpr() != null || getThirdExpr() != null)) {
 			raiseValidateError("Missing argument for function " + this.getOpCode()
-				+ "(). This function doesn't take any arguments.", false);
+					+ "(). This function doesn't take any arguments.", false);
 		}
 	}
 
@@ -1868,7 +1866,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		if( !ArrayUtils.contains(dt, e.getOutput().getDataType()) )
 			raiseValidateError("Non-matching expected data type for function "+ getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 	}
-	
+
 	protected void checkMatrixFrameParam(Expression e) { //always unconditional
 		if (e.getOutput().getDataType() != DataType.MATRIX && e.getOutput().getDataType() != DataType.FRAME) {
 			raiseValidateError("Expecting matrix or frame parameter for function "+ getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);

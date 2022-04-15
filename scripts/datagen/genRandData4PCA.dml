@@ -37,11 +37,11 @@
 # Example:
 # hadoop jar SystemDS.jar -f genRandData4PCA.dml -nvargs R=1000000 C=1000 OUT=/user/biuser/pcaData.mtx FMT=csv
 
-R =   ifdef ($R, 10000)
+R   = ifdef ($R, 10000)
 C   = ifdef ($C, 1000)
 FMT = ifdef ($FMT, "csv");
 
-# Modofied version of the procedure from Zou et.al., "Sparse Principal Component Analysis", 2006.
+# Modified version of the procedure from Zou et.al., "Sparse Principal Component Analysis", 2006.
 
 # V1 ~ N(0,290); V2~N(0,300); V3 = -0.3V1+0.925V2 + e, e ~ N(0,1)
 V1 = 0 + 290*rand(rows=R, cols=1, pdf="normal");

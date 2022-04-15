@@ -1,0 +1,41 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+X = read($INPUT);
+K = ifdef($K, ncol(X));
+ofmt = ifdef($OFMT, "CSV");
+projectData = ifdef($PROJDATA,0);
+center = ifdef($CENTER,0);
+scale = ifdef($SCALE,0);
+output = ifdef($OUTPUT,"/");
+
+[Xout, Mout, Centering, ScaleFactor] = pca(X = X, K = K, center = center, scale = scale)
+
+# These files can not be created, as the built-in PCA function does not return the eigenvalues.
+# write(eval_stdev_dominant, output+"/dominant.eigen.standard.deviations", format=ofmt);
+# write(eval_dominant, output+"/dominant.eigen.values", format=ofmt);
+
+write(Mout, output+"/dominant.eigen.vectors", format=ofmt);
+
+if (projectData == 1){
+	# Construct new data set by treating computed dominant eigenvectors as the basis vectors
+	write(Xout, output+"/projected.data", format=ofmt);
+}

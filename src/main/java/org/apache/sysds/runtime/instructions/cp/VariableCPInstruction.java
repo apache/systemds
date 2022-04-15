@@ -26,9 +26,6 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
@@ -52,7 +49,6 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
 import org.apache.sysds.runtime.io.FileFormatPropertiesHDF5;
-import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.ListReader;
 import org.apache.sysds.runtime.io.ListWriter;
 import org.apache.sysds.runtime.io.WriterMatrixMarket;
@@ -740,7 +736,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 			if ( srcData == null ) {
 				throw new DMLRuntimeException("Unexpected error: could not find a data object "
-					+ "for variable name:" + getInput1().getName() + ", while processing instruction ");
+					+ "for variable name: " + getInput1().getName() + ", while processing instruction ");
 			}
 
 			// remove existing variable bound to target name and
@@ -990,7 +986,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 
 		if( getInput1().getDataType() == DataType.SCALAR ) {
-			writeScalarToHDFS(ec, fname);
+			HDFSTool.writeScalarToHDFS(ec.getScalarInput(getInput1()), fname);
 		}
 		else if( getInput1().getDataType() == DataType.MATRIX ) {
 			if( fmt == FileFormat.MM )
@@ -1191,29 +1187,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			catch (IOException e) {
 				throw new DMLRuntimeException(e);
 			}
-		}
-	}
-
-	/**
-	 * Helper function to write scalars to HDFS based on its value type.
-	 *
-	 * @param ec execution context
-	 * @param fname file name
-	 */
-	private void writeScalarToHDFS(ExecutionContext ec, String fname) {
-		try {
-			ScalarObject scalar = ec.getScalarInput(getInput1());
-			HDFSTool.writeObjectToHDFS(scalar.getValue(), fname);
-			HDFSTool.writeScalarMetaDataFile(fname +".mtd", getInput1().getValueType(), scalar.getPrivacyConstraint());
-
-			FileSystem fs = IOUtilFunctions.getFileSystem(fname);
-			if (fs instanceof LocalFileSystem) {
-				Path path = new Path(fname);
-				IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
-			}
-		}
-		catch ( IOException e ) {
-			throw new DMLRuntimeException(e);
 		}
 	}
 

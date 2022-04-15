@@ -23,6 +23,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.WeightedDivMM.WDivMMType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -30,9 +32,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
@@ -41,7 +42,6 @@ import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 
 import java.util.ArrayList;
 import java.util.concurrent.Future;
-import java.util.stream.IntStream;
 
 public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 {
@@ -76,14 +76,14 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 	{
 		final WDivMMType wdivmm_type = _qop.wtype3;
 		MatrixObject X = ec.getMatrixObject(input1);
-		MatrixObject U = ec.getMatrixObject(input2);
-		MatrixObject V = ec.getMatrixObject(input3);
+		MatrixLineagePair U = ec.getMatrixLineagePair(input2);
+		MatrixLineagePair V = ec.getMatrixLineagePair(input3);
 		ScalarObject eps = null;
-		MatrixObject MX = null;
+		MatrixLineagePair MX = null;
 
 		if(_qop.hasFourInputs()) {
 			if(wdivmm_type == WDivMMType.MULT_MINUS_4_LEFT || wdivmm_type == WDivMMType.MULT_MINUS_4_RIGHT) {
-				MX = ec.getMatrixObject(_input4);
+				MX = ec.getMatrixLineagePair(_input4);
 			}
 			else {
 				eps = (_input4.getDataType() == DataType.SCALAR) ?
@@ -184,7 +184,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 				ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 			}
 			else if(wdivmm_type.isLeft() || wdivmm_type.isRight() || wdivmm_type.isBasic()) {
-				setFederatedOutput(X, U, V, ec, frComp.getID());
+				setFederatedOutput(X, U.getMO(), V.getMO(), ec, frComp.getID());
 			}
 			else {
 				throw new DMLRuntimeException("Federated WDivMM only supported for BASIC, LEFT or RIGHT variants.");
@@ -216,32 +216,15 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			// LEFT: nrows of transposed X, ncols of U
 			rows = X.getNumColumns();
 			cols = U.getNumColumns();
-			outFedMap = modifyFedRanges(outFedMap.transpose(), cols, 1);
+			outFedMap.transpose().modifyFedRanges(cols, 1);
 		}
 		else if(wdivmm_type.isRight()) {
 			// RIGHT: nrows of X, ncols of V
 			rows = X.getNumRows();
 			cols = V.getNumColumns();
-			outFedMap = modifyFedRanges(outFedMap, cols, 1);
+			outFedMap.modifyFedRanges(cols, 1);
 		}
 		out.setFedMapping(outFedMap);
 		out.getDataCharacteristics().set(rows, cols, (int) X.getBlocksize());
-	}
-
-	/**
-	 * Takes the federated mapping and sets one dimension of all federated ranges
-	 * to the specified value.
-	 *
-	 * @param fedMap     the original federated mapping
-	 * @param value      long value for setting the dimension
-	 * @param dim        indicates if the row (0) or column (1) dimension should be set to value
-	 * @return FederationMap with the modified federated ranges
-	 */
-	private static FederationMap modifyFedRanges(FederationMap fedMap, long value, int dim) {
-		IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
-			fedMap.getFederatedRanges()[i].setBeginDim(dim, 0);
-			fedMap.getFederatedRanges()[i].setEndDim(dim, value);
-		});
-		return fedMap;
 	}
 }

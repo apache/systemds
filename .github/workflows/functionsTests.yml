@@ -60,21 +60,21 @@ jobs:
           "**.functions.builtin.part2.**",
           "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.iogen.**,**.functions.jmlc.**,**.functions.lineage.**",
           "**.functions.dnn.**,**.functions.paramserv.**",
-          "**.functions.misc.**,**.functions.mlcontext.**",
+          "**.functions.recompile.**,**.functions.misc.**,**.functions.mlcontext.**",
           "**.functions.nary.**,**.functions.quaternary.**",
           "**.functions.parfor.**,**.functions.pipelines.**,**.functions.privacy.**",
           "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
-          "**.functions.unary.matrix.**"
+          "**.functions.unary.matrix.**,**.functions.linearization.**"
           ]
         os: [ubuntu-latest]
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Cache Maven Dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}

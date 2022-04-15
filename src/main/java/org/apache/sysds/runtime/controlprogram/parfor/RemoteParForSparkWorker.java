@@ -34,10 +34,11 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.parser.dml.DmlSyntacticValidator;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.ProgramConverter;
@@ -52,6 +53,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	
 	private final long _jobid;
 	private final String _prog;
+	private final boolean _isLocal;
 	private final HashMap<String, byte[]> _clsMap;
 	private boolean _initialized = false;
 	private boolean _caching = true;
@@ -63,12 +65,13 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 
 	private final Map<String, Broadcast<CacheBlock>> _brInputs;
 	
-	public RemoteParForSparkWorker(long jobid, String program, HashMap<String, byte[]> clsMap, boolean cpCaching,
-			LongAccumulator atasks, LongAccumulator aiters, Map<String, Broadcast<CacheBlock>> brInputs, 
-			boolean cleanCache, Map<String,String> lineage) 
+	public RemoteParForSparkWorker(long jobid, String program, boolean isLocal,
+		HashMap<String, byte[]> clsMap, boolean cpCaching, LongAccumulator atasks, LongAccumulator aiters,
+		Map<String, Broadcast<CacheBlock>> brInputs, boolean cleanCache, Map<String,String> lineage) 
 	{
 		_jobid = jobid;
 		_prog = program;
+		_isLocal = isLocal;
 		_clsMap = clsMap;
 		_initialized = false;
 		_caching = cpCaching;
@@ -139,15 +142,21 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		reuseVars.reuseVariables(_jobid, _ec.getVariables(), excludeList, _brInputs, _cleanCache);
 		
 		//setup the buffer pool
-		RemoteParForUtils.setupBufferPool(_workerID);
+		RemoteParForUtils.setupBufferPool(_workerID, _isLocal);
 
 		//ensure that resultvar files are not removed
 		super.pinResultVariables();
 		
 		//enable/disable caching (if required and not in CP process)
-		if( !_caching && !InfrastructureAnalyzer.isLocalMode() )
+		if( !_caching && !_isLocal )
 			CacheableData.disableCaching();
 		
+		//ensure local mode for eval function loading on demand,
+		//and reset thread-local memory of loaded functions (new dictionary)
+		if( !_isLocal )
+			DMLScript.setGlobalExecMode(ExecMode.SINGLE_NODE);
+		DmlSyntacticValidator.init();
+
 		//enable and setup lineage
 		if( _lineage != null ) {
 			DMLScript.LINEAGE = true;

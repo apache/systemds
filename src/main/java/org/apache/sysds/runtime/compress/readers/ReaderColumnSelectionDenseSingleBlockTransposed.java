@@ -43,8 +43,7 @@ public class ReaderColumnSelectionDenseSingleBlockTransposed extends ReaderColum
 		boolean empty = true;
 		for(int i = 0; i < _colIndexes.length; i++) {
 			final double v = _data[_colIndexes[i] + _rl];
-			if(v != 0)
-				empty = false;
+			empty &= v == 0;
 			reusableArr[i] = v;
 		}
 

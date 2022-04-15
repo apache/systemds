@@ -41,6 +41,8 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(value = Parameterized.class)
 public class TestInsertionSorters {
 
+	private static final int materializeSizeDef = MaterializeSort.CACHE_BLOCK;
+
 	public final int[][] data;
 	public final SORT_TYPE st;
 	public final int numRows;
@@ -50,6 +52,20 @@ public class TestInsertionSorters {
 
 	private final IntArrayList[] offsets;
 	private final int negativeIndex;
+
+	public TestInsertionSorters(int numRows, int[][] data, SORT_TYPE st, int negativeIndex, int[] expectedIndexes,
+		int[] expectedData) {
+		this.data = data;
+		this.st = st;
+		this.expectedIndexes = expectedIndexes;
+		this.expectedData = expectedData;
+		this.numRows = numRows;
+		this.negativeIndex = negativeIndex;
+
+		offsets = new IntArrayList[data.length];
+		for(int i = 0; i < data.length; i++)
+			offsets[i] = new IntArrayList(data[i]);
+	}
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -97,8 +113,8 @@ public class TestInsertionSorters {
 			tests.add(new Object[] {10, new int[][] {new int[] {0, 1, 3, 4, 7}, new int[] {5, 8}, new int[] {2, 9}}, t, 0,
 				new int[] {2, 5, 6, 8, 9}, new int[] {1, 0, 2, 0, 1}});
 
-				tests.add(gen(240, 10, t));
-				tests.add(gen2(20, 10, t));
+			tests.add(gen(240, 10, t));
+			tests.add(gen2(20, 10, t));
 		}
 
 		return tests;
@@ -123,7 +139,7 @@ public class TestInsertionSorters {
 
 	private static Object[] gen2(int size, int offsets, SORT_TYPE t) {
 		final int offsetsSize = size / offsets;
-		final int[] expectedIndexes = new int[size  - offsetsSize];
+		final int[] expectedIndexes = new int[size - offsetsSize];
 		final int[] expectedData = new int[size - offsetsSize];
 		final int[][] ar = new int[offsets][];
 		for(int i = 0; i < offsets; i++)
@@ -132,28 +148,13 @@ public class TestInsertionSorters {
 			final int bucket = i / offsetsSize;
 			final int index = i % offsetsSize;
 			ar[bucket][index] = i;
-			if(i >= offsetsSize){
-				expectedIndexes[i- offsetsSize] = i;
-				expectedData[i- offsetsSize] = bucket-1;
+			if(i >= offsetsSize) {
+				expectedIndexes[i - offsetsSize] = i;
+				expectedData[i - offsetsSize] = bucket - 1;
 			}
 		}
 
 		return new Object[] {size, ar, t, 0, expectedIndexes, expectedData};
-	}
-
-	public TestInsertionSorters(int numRows, int[][] data, SORT_TYPE st, int negativeIndex, int[] expectedIndexes,
-		int[] expectedData) {
-		this.data = data;
-		this.st = st;
-		this.expectedIndexes = expectedIndexes;
-		this.expectedData = expectedData;
-		this.numRows = numRows;
-		this.negativeIndex = negativeIndex;
-
-		offsets = new IntArrayList[data.length];
-		for(int i = 0; i < data.length; i++)
-			offsets[i] = new IntArrayList(data[i]);
-
 	}
 
 	@Test
@@ -175,8 +176,8 @@ public class TestInsertionSorters {
 	private void compareData(AMapToData m) {
 		for(int i = 0; i < expectedData.length; i++)
 			if(expectedData[i] != m.getIndex(i))
-				fail("compare data failed with technique: " + st.toString() + "\n\t" + Arrays.toString(expectedData) + "\n\t" + m.toString() + "\n"
-					+ "differed at index " + i);
+				fail("compare data failed with technique: " + st.toString() + "\n\t" + Arrays.toString(expectedData)
+					+ "\n\t" + m.toString() + "\n" + "differed at index " + i);
 	}
 
 	@BeforeClass
@@ -186,6 +187,6 @@ public class TestInsertionSorters {
 
 	@AfterClass
 	public static void setCacheAfter() {
-		MaterializeSort.CACHE_BLOCK = 1000;
+		MaterializeSort.CACHE_BLOCK = materializeSizeDef;
 	}
 }

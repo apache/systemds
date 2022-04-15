@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.SortKeys;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -30,21 +31,43 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
+public class QuantileSortFEDInstruction extends UnaryFEDInstruction {
+	int _numThreads;
 
-	private QuantileSortFEDInstruction(CPOperand in, CPOperand out, String opcode, String istr) {
-		this(in, null, out, opcode, istr);
+	private QuantileSortFEDInstruction(CPOperand in, CPOperand out, String opcode, String istr, int k) {
+		this(in, null, out, opcode, istr, k);
 	}
 
 	private QuantileSortFEDInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-		String istr) {
+		String istr, int k) {
 		super(FEDInstruction.FEDType.QSort, null, in1, in2, out, opcode, istr);
+		_numThreads = k;
+	}
+
+	private static void parseInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+
+		out.split(parts[parts.length-2]);
+
+		switch(parts.length) {
+			case 4:
+				in1.split(parts[1]);
+				in2 = null;
+				break;
+			case 5:
+				in1.split(parts[1]);
+				in2.split(parts[2]);
+				break;
+			default:
+				throw new DMLRuntimeException("Unexpected number of operands in the instruction: " + instr);
+		}
 	}
 
 	public static QuantileSortFEDInstruction parseInstruction ( String str ) {
@@ -54,18 +77,23 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
+		boolean isSpark = str.startsWith("SPARK");
+		int k = isSpark ? 1 : Integer.parseInt(parts[parts.length-1]);
 
 		if ( opcode.equalsIgnoreCase(SortKeys.OPCODE) ) {
-			if ( parts.length == 3 ) {
+			int oneInputLength = isSpark ? 3 : 4;
+			int twoInputLength = isSpark ? 4 : 5;
+			if ( parts.length == oneInputLength ) {
 				// Example: sort:mVar1:mVar2 (input=mVar1, output=mVar2)
 				parseUnaryInstruction(str, in1, out);
-				return new QuantileSortFEDInstruction(in1, out, opcode, str);
+				return new QuantileSortFEDInstruction(in1, out, opcode, str, k);
 			}
-			else if ( parts.length == 4 ) {
+			else if ( parts.length == twoInputLength ) {
 				// Example: sort:mVar1:mVar2:mVar3 (input=mVar1, weights=mVar2, output=mVar3)
 				in2 = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
-				parseUnaryInstruction(str, in1, in2, out);
-				return new QuantileSortFEDInstruction(in1, in2, out, opcode, str);
+				InstructionUtils.checkNumFields(str, twoInputLength-1);
+				parseInstruction(str, in1, in2, out);
+				return new QuantileSortFEDInstruction(in1, in2, out, opcode, str, k);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
@@ -75,9 +103,41 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
 			throw new DMLRuntimeException("Unknown opcode while parsing a QuantileSortFEDInstruction: " + str);
 		}
 	}
-
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		if(ec.getMatrixObject(input1).isFederated(FType.COL) || ec.getMatrixObject(input1).isFederated(FType.FULL))
+			processColumnQSort(ec);
+		else
+			processRowQSort(ec);
+	}
+
+	public void processRowQSort(ExecutionContext ec) {
+		MatrixObject in = ec.getMatrixObject(input1);
+		MatrixObject out = ec.getMatrixObject(output);
+
+		// TODO make sure that qsort result is used by qpick only where the main operation happens
+		if(input2 != null) {
+			MatrixLineagePair weights = ec.getMatrixLineagePair(input2);
+			String newInst = _numThreads > 1 ? InstructionUtils.stripThreadCount(instString) : instString;
+			newInst = InstructionUtils.replaceOperand(newInst, 1, "append");
+			newInst = InstructionUtils.concatOperands(newInst, "true");
+			FederatedRequest[] fr1 = in.getFedMapping().broadcastSliced(weights, false);
+			FederatedRequest fr2 = FederationUtils.callInstruction(newInst, output,
+				new CPOperand[]{input1, input2}, new long[]{ in.getFedMapping().getID(), fr1[0].getID()});
+			in.getFedMapping().execute(getTID(), true, fr1, fr2);
+			out.getDataCharacteristics().set(in.getDataCharacteristics());
+			out.getDataCharacteristics().setCols(2);
+			out.setFedMapping(in.getFedMapping().copyWithNewID(fr2.getID(), 2));
+		}
+		else {
+			// make a copy without sorting
+			long id = FederationUtils.getNextFedDataID();
+			out.getDataCharacteristics().set(in.getDataCharacteristics());
+			out.setFedMapping(in.getFedMapping().identCopy(getTID(), id));
+		}
+	}
+
+	public void processColumnQSort(ExecutionContext ec) {
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap fedMapping = in.getFedMapping();
 
@@ -91,7 +151,7 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
 
 				FederatedResponse response = data
 					.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-						new GetSorted(data.getVarID(), varID, wtBlock))).get();
+						new GetSorted(data.getVarID(), varID, wtBlock, _numThreads))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 			}
@@ -100,7 +160,6 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
 			}
 			return null;
 		});
-
 
 		MatrixObject sorted = ec.getMatrixObject(output);
 		sorted.getDataCharacteristics().set(in.getDataCharacteristics());
@@ -114,17 +173,19 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
 		private static final long serialVersionUID = -1969015577260167645L;
 		private final long _outputID;
 		private final MatrixBlock _weights;
+		private final int _numThreads;
 
-		protected GetSorted(long input, long outputID, MatrixBlock weights) {
+		protected GetSorted(long input, long outputID, MatrixBlock weights, int k) {
 			super(new long[] {input});
 			_outputID = outputID;
 			_weights = weights;
+			_numThreads = k;
 		}
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
 
-			MatrixBlock res = mb.sortOperations(_weights, new MatrixBlock());
+			MatrixBlock res = mb.sortOperations(_weights, new MatrixBlock(), _numThreads);
 
 			MatrixObject mout = ExecutionContext.createMatrixObject(res);
 

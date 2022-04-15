@@ -27,8 +27,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -106,17 +106,17 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol) {
+	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int nParition, int outputCol) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<Integer> sizes = new ArrayList<>();
 		for(int i = 0; i < _columnEncoders.size(); i++) {
 			List<DependencyTask<?>> t;
 			if(i == 0) {
 				// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
-				t = _columnEncoders.get(i).getApplyTasks(in, out, outputCol);
+				t = _columnEncoders.get(i).getApplyTasks(in, out, nParition, outputCol);
 			}
 			else {
-				t = _columnEncoders.get(i).getApplyTasks(out, out, outputCol);
+				t = _columnEncoders.get(i).getApplyTasks(out, out, nParition, outputCol);
 			}
 			if(t == null)
 				continue;
@@ -143,11 +143,11 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock in, int nPartition) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		Map<Integer[], Integer[]> depMap = null;
 		for(ColumnEncoder columnEncoder : _columnEncoders) {
-			List<DependencyTask<?>> t = columnEncoder.getBuildTasks(in);
+			List<DependencyTask<?>> t = columnEncoder.getBuildTasks(in, nPartition);
 			if(t == null)
 				continue;
 			// Linear execution between encoders so they can't be built in parallel
@@ -161,13 +161,19 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			}
 			tasks.addAll(t);
 		}
+
 		List<List<? extends Callable<?>>> dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
 		DependencyThreadPool.createDependencyList(tasks, depMap, dep);
+		// If DC is required, add an UpdateDC task to update the domainsize as the last task
+		// Only for RC build, UpdateDC must depends on the Build task, other can be independent.
 		if(hasEncoder(ColumnEncoderDummycode.class)) {
 			tasks.add(DependencyThreadPool.createDependencyTask(new ColumnCompositeUpdateDCTask(this)));
-			dep.add(tasks.subList(tasks.size() - 2, tasks.size() - 1));
+			if (_columnEncoders.get(0) instanceof ColumnEncoderRecode) {
+				dep.add(tasks.subList(tasks.size() - 2, tasks.size() - 1));
+				return DependencyThreadPool.createDependencyTasks(tasks, dep);
+			}
 		}
-		return DependencyThreadPool.createDependencyTasks(tasks, dep);
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
 	}
 
 	@Override
@@ -204,6 +210,11 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	@Override
 	protected double getCode(CacheBlock in, int row) {
+		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
+	}
+
+	@Override
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
 		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
 	}
 
@@ -338,6 +349,15 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	public <T extends ColumnEncoder> boolean hasEncoder(Class<T> type) {
 		return _columnEncoders.stream().anyMatch(encoder -> encoder.getClass().equals(type));
+	}
+
+	public <T extends ColumnEncoder> boolean hasBuild() {
+		for (ColumnEncoder e : _columnEncoders)
+			if (e.getClass().equals(ColumnEncoderRecode.class)
+				|| e.getClass().equals(ColumnEncoderDummycode.class)
+				|| e.getClass().equals(ColumnEncoderBin.class))
+				return true;
+		return false;
 	}
 
 	@Override

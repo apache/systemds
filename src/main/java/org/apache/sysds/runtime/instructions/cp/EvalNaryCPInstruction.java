@@ -59,7 +59,9 @@ import org.apache.sysds.runtime.util.ProgramConverter;
  */
 public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 
-	private int _threadID = -1;
+	// default: not in parfor context; otherwise updated via 
+	// updateInstructionThreadID during parfor worker setup and/or recompilation
+	private int _threadID = 0;
 	
 	public EvalNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand... inputs) {
 		super(op, opcode, istr, output, inputs);
@@ -67,7 +69,14 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		//1. get the namespace and func
+		// There are two main types of eval function calls, which share most of the
+		// code for lazy function loading and execution:
+		// a) a single-return eval fcall returns a matrix which is bound to the output
+		//    (if the function returns multiple objects, the first one is used as output)
+		// b) a multi-return eval fcall gets all returns of the function call and
+		//    creates a named list used the names of the function signature
+		
+		//1. get the namespace and function names
 		String funcName = ec.getScalarInput(inputs[0]).getStringValue();
 		String nsName = null; //default namespace
 		if( funcName.contains(Program.KEY_DELIM) ) {
@@ -76,14 +85,13 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			nsName = parts[0];
 		}
 		
-		// bound the inputs to avoiding being deleted after the function call
+		// bind the inputs to avoiding being deleted after the function call
 		CPOperand[] boundInputs = Arrays.copyOfRange(inputs, 1, inputs.length);
-		List<String> boundOutputNames = new ArrayList<>();
-		boundOutputNames.add(output.getName());
-
+		
 		//2. copy the created output matrix
-		MatrixObject outputMO = new MatrixObject(ec.getMatrixObject(output.getName()));
-
+		MatrixObject outputMO = !output.isMatrix() ? null :
+			new MatrixObject(ec.getMatrixObject(output.getName()));
+		
 		//3. lazy loading of dml-bodied builtin functions (incl. rename 
 		// of function name to dml-bodied builtin scheme (data-type-specific)
 		DataType dt1 = boundInputs[0].getDataType().isList() ? 
@@ -115,6 +123,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			if( !ec.getProgram().containsFunctionProgramBlock(nsName, funcNameParfor, false) ) { //copy on demand
 				fpb = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<>(), new HashSet<>(), _threadID);
 				ec.getProgram().addFunctionProgramBlock(nsName, funcNameParfor, fpb, false);
+				ec.addTmpParforFunction(DMLProgram.constructFunctionKey(nsName, funcNameParfor));
 			}
 			fpb = ec.getProgram().getFunctionProgramBlock(nsName, funcNameParfor, false);
 			funcName = funcNameParfor;
@@ -138,34 +147,51 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 				boundInputs2[i] = new CPOperand(varName, in);
 			}
 			boundInputs = boundInputs2;
-			lineageInputs = DMLScript.LINEAGE 
-					? lo.getLineageItems().toArray(new LineageItem[lo.getLength()]) : null;
+			lineageInputs = !DMLScript.LINEAGE ? null : 
+				lo.getLineageItems().toArray(new LineageItem[lo.getLength()]);
 		}
+		
+		// bind the outputs
+		List<String> boundOutputNames = new ArrayList<>();
+		if( output.getDataType().isMatrix() )
+			boundOutputNames.add(output.getName());
+		else //list
+			boundOutputNames.addAll(fpb.getOutputParamNames());
 		
 		//5. call the function (to unoptimized function)
 		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(nsName, funcName,
 			false, boundInputs, lineageInputs, fpb.getInputParamNames(), boundOutputNames, "eval func");
 		fcpi.processInstruction(ec);
 		
-		//6. convert the result to matrix
-		Data newOutput = ec.getVariable(output);
-		if (!(newOutput instanceof MatrixObject)) {
-			MatrixBlock mb = null;
-			if (newOutput instanceof ScalarObject) {
-				//convert scalar to matrix
-				mb = new MatrixBlock(((ScalarObject) newOutput).getDoubleValue());
-			} else if (newOutput instanceof FrameObject) {
-				//convert frame to matrix
-				mb = DataConverter.convertToMatrixBlock(((FrameObject) newOutput).acquireRead());
-				ec.cleanupCacheableData((FrameObject) newOutput);
+		//6a. convert the result to matrix
+		if( output.getDataType().isMatrix() ) {
+			Data newOutput = ec.getVariable(output);
+			if (!(newOutput instanceof MatrixObject)) {
+				MatrixBlock mb = null;
+				if (newOutput instanceof ScalarObject) {
+					//convert scalar to matrix
+					mb = new MatrixBlock(((ScalarObject) newOutput).getDoubleValue());
+				} else if (newOutput instanceof FrameObject) {
+					//convert frame to matrix
+					mb = DataConverter.convertToMatrixBlock(((FrameObject) newOutput).acquireRead());
+					ec.cleanupCacheableData((FrameObject) newOutput);
+				}
+				else {
+					throw new DMLRuntimeException("Invalid eval return type: "+newOutput.getDataType().name()
+						+ " (valid: matrix/frame/scalar; where frames or scalars are converted to output matrices)");
+				}
+				outputMO.acquireModify(mb);
+				outputMO.release();
+				ec.setVariable(output.getName(), outputMO);
 			}
-			else {
-				throw new DMLRuntimeException("Invalid eval return type: "+newOutput.getDataType().name()
-					+ " (valid: matrix/frame/scalar; where frames or scalars are converted to output matrices)");
-			}
-			outputMO.acquireModify(mb);
-			outputMO.release();
-			ec.setVariable(output.getName(), outputMO);
+		}
+		//6a. wrap outputs in named list (evalList)
+		else {
+			Data[] ldata = boundOutputNames.stream()
+				.map(n -> ec.getVariable(n)).toArray(Data[]::new);
+			String[] lnames = boundOutputNames.toArray(new String[0]);
+			ListObject listOutput = new ListObject(ldata, lnames);
+			ec.setVariable(output.getName(), listOutput);
 		}
 		
 		//7. cleanup of variable expanded from list
@@ -185,7 +211,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		//load builtin file and parse function statement block
 		String nsName = DMLProgram.BUILTIN_NAMESPACE;
 		Map<String,FunctionStatementBlock> fsbs = DmlSyntacticValidator
-			.loadAndParseBuiltinFunction(name, nsName);
+			.loadAndParseBuiltinFunction(name, nsName, true); //forced for remote parfor
 		if( fsbs.isEmpty() )
 			throw new DMLRuntimeException("Failed to compile function '"+name+"'.");
 		
@@ -193,6 +219,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			fsbs.get(Builtins.getInternalFName(name, dt)).getDMLProg();
 		
 		//filter already existing functions (e.g., already loaded internally-called functions)
+		//note: in remote parfor the runtime program might contain more functions than the DML program
 		fsbs = (dmlp.getBuiltinFunctionDictionary() == null) ? fsbs : fsbs.entrySet().stream()
 			.filter(e -> !dmlp.getBuiltinFunctionDictionary().containsFunction(e.getKey()))
 			.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
@@ -212,7 +239,9 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		// validate functions, in two passes for cross references
 		for( FunctionStatementBlock fsb : fsbs.values() ) {
 			dmlt.liveVariableAnalysisFunction(dmlp, fsb);
-			dmlt.validateFunction(dmlp, fsb);
+			//mark as conditional (warnings instead of errors) because internally
+			//called functions might not be available in dmlp but prog in remote parfor
+			dmlt.validateFunction(dmlp, fsb, true);
 		}
 		
 		// compile hop dags, rewrite hop dags and compile lop dags
@@ -235,8 +264,10 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
 			FunctionProgramBlock fpb = (FunctionProgramBlock) dmlt
 				.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
-			prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, true);  // optimized
-			prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, false); // unoptimized -> eval
+			if(!prog.containsFunctionProgramBlock(nsName, fsb.getKey(), true))
+				prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, true);  // optimized
+			if(!prog.containsFunctionProgramBlock(nsName, fsb.getKey(), false))
+				prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, false); // unoptimized -> eval
 		}
 	}
 	

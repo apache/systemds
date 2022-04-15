@@ -65,38 +65,15 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Boolean 
   
   if(sampled > MIN_SAMPLE & ratio != 1.0)
   {
-    dist = max(eY) # num classes (one-hot encoded eY) 
-    
-    if((nrow(eY) > 1) & (dist < 10))  # for classification
+    sampleVec = sample(nrow(eX), sampled, FALSE, 23)
+    P = table(seq(1, nrow(sampleVec)), sampleVec, nrow(sampleVec), nrow(eX))
+    if((nrow(eY) > 1))  # for classification
     {
-      XY = order(target = cbind(eY, eX),  by = 1, decreasing=FALSE, index.return=FALSE)
-      # get the class count
-      classes = table(eY, 1)
-      # TODO vectorize extraction compute extraction vector
-      start_class = 1
-      out_s = 1 
-      out_e = 0
-      end_class = 0
-      out = matrix(0, sampled, ncol(XY))
-      classes_ratio = floor(classes*ratio)
-      for(i in 1:nrow(classes)) {
-        end_class = end_class + as.scalar(classes[i])
-        class_t = XY[start_class:end_class, ]
-        out_e = out_e + as.scalar(classes_ratio[i]) 
-        out[out_s:out_e, ] = class_t[1:as.scalar(classes_ratio[i]), ] 
-        out_s = out_e + 1
-        start_class = end_class + 1
-      }
-      out = removeEmpty(target = out, margin = "rows")
-      sampledY = out[, 1]
-      sampledX = out[, 2:ncol(out)]
+      sampledX = P %*% eX
+      sampledY = P %*% eY
     }
-    else if(nrow(eY) > 1 & (dist > 10)) { # regression
-      sampledX = eX[1:sampled, ]
-      sampledY = eY[1:sampled, ]
-    }
-    else if(nrow(eY) == 1) { # TODO ?
-      sampledX =  eX[1:sampled, ]
+    else if(nrow(eY) == 1) { # for clustering
+      sampledX = P %*% eX
       sampledY = eY 
     }
   }
@@ -144,218 +121,117 @@ return(Boolean validForResources)
 }
 
 
+
 #####################################
 # The function will apply a pipeline of string processing primitives on dirty data
 ######################################
 stringProcessing = function(Frame[Unknown] data, Matrix[Double] mask, 
   Frame[String] schema, Boolean CorrectTypos, List[Unknown] ctx = list(prefix="--"))
-return(Frame[Unknown] processedData, Matrix[Double] M)
+return(Frame[Unknown] data, List[Unknown] distanceMatrix, List[Unknown] dictionary, Matrix[Double] dateColIdx)
 { 
-  M = mask
+
   prefix = as.scalar(ctx["prefix"]);
-  # step 1 fix swap values
-  print(prefix+" value swap fixing");
-  data = valueSwap(data, schema)
-  
+  distanceMatrix = list()
+  dictionary = list()
+  # step 1 do the case transformations
+  print(prefix+" convert strings to lower case");
+  data = map(data, "x -> x.toLowerCase()")
   # step 2 fix invalid lengths
-  print(prefix+" fixing invalid lengths between 5th and 95th quantile");
-  q0 = 0.05
-  q1 = 0.95
-  [data, M] = fixInvalidLengths(data, q0, q1)
+  # q0 = 0.05
+  # q1 = 0.95
+  # print(prefix+" fixing invalid lengths between "+q0+" and "+q1+" quantile");
+
+  # [data, mask, qlow, qup] = fixInvalidLengths(data, mask, q0, q1)
+
   
+  # step 3 fix swap values
+  # print(prefix+" value swap fixing");
+  # data = valueSwap(data, schema)
+
   # step 3 drop invalid types
   print(prefix+" drop values with type mismatch");
   data = dropInvalidType(data, schema)
-  
-  # step 4 do the case transformations
-  print(prefix+" convert strings to lower case");
-  for(i in 1:ncol(mask))
-    if(as.scalar(schema[1,i]) == "STRING")
-      data[, i] = map(data[, i], "x -> x.toLowerCase()")
-  
-  # step 5 typo correction
+
+
+  # step 5 porter stemming on all features
+  print(prefix+" porter-stemming on all features");
+  data = map(data, "x -> PorterStemmer.stem(x)", 0)
+
+ 
+  # step 6 typo correction  
   if(CorrectTypos)
   {
-    # recode data to get null mask
-    if(sum(mask) > 0) {
-      # always recode the label
-      index = vectorToCsv(mask)
-      jspecR = "{ids:true, recode:["+index+"]}"
-      [eX, X_meta] = transformencode(target=data, spec=jspecR);
-    } 
-    # if no categorical value exist then just cast the frame into matrix
-    else
-      eX = as.matrix(data)
-    nullMask = is.na(eX)
     print(prefix+" correct typos in strings");
     # fix the typos
     for(i in 1:ncol(schema))
-      if(as.scalar(schema[1,i]) == "STRING")
-        data[, i] = correctTypos(data[, i], nullMask[, i], 0.2, 0.9, FALSE, TRUE, FALSE);
+      if(as.scalar(schema[1,i]) == "STRING") {
+        [data[, i], ft, dt, dm, fr] = correctTypos(data[, i], 0.2, 0.9, FALSE);
+        distanceMatrix = append(distanceMatrix, dm)
+        dictionary = append(distanceMatrix, fr)
+      }
   }
-  # step 6 porter stemming on all features
-  print(prefix+" porter-stemming on all features");
-  data = map(data, "x -> PorterStemmer.stem(x)")
-  
+  # # step 7 convert date to decimal
+  dateColIdx = as.matrix(0)
+  isDate = map(data[1:10], "x -> UtilFunctions.isDateColumn(x)")
+  isDate = replace(target = as.matrix(isDate), pattern = NaN, replacement = 0)
+  isDate = (colMaxs(isDate)) & as.matrix(schema == frame("STRING", rows=1, cols=ncol(schema)))
+  if(sum(isDate) > 0) {
+    print(prefix+" changing date to timestamp")
+    dateColIdx = removeEmpty(target = isDate * t(seq(1, ncol(isDate))), margin="cols")
+    for(i in 1:ncol(dateColIdx))
+    {
+      idx = as.scalar(dateColIdx[i])
+      data[, idx] = map(data[, idx], "x -> UtilFunctions.getTimestamp(x)", margin=2)
+    }
+  }
   # TODO add deduplication
   print(prefix+" deduplication via entity resolution");
   
-  processedData = data
 }
 
 #####################################
-# Customized grid search for cleaning pipelines 
+# The function will apply a pipeline of string processing primitives on dirty data
 ######################################
-topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest=as.matrix(0), Matrix[Double] ytest=as.matrix(0), String train, String predict,
-    Integer numB=ncol(X), List[String] params, List[Unknown] paramValues,
-    List[Unknown] trainArgs = list(), List[Unknown] predictArgs = list(),
-    Boolean cv = FALSE, Integer cvk = 5, Boolean verbose = TRUE)
-  return (Matrix[Double] B, Frame[Unknown] opt)
-{
-  # Step 0) handling default arguments, which require access to passed data
-  if( length(trainArgs) == 0 )
-    trainArgs = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
-  if( length(predictArgs) == 0 )
-    predictArgs = list(Xtest, ytest);
-  if( cv & cvk <= 1 ) {
-    print("gridSearch: called with cv=TRUE but cvk="+cvk+", set to default cvk=5.")
-    cvk = 5;
-  }
+stringProcessingApply = function(Frame[Unknown] data, Matrix[Double] mask, Frame[String] schema, 
+  Boolean CorrectTypos, List[Unknown] distanceMatrix, List[Unknown] dictionary, Matrix[Double] dateColIdx)
+return(Frame[Unknown] data)
+{ 
 
-  # Step 1) preparation of parameters, lengths, and values in convenient form
-  numParams = length(params);
-  paramLens = matrix(0, numParams, 1);
-  for( j in 1:numParams ) {
-    vect = as.matrix(paramValues[j,1]);
-    paramLens[j,1] = nrow(vect);
-  }
-  paramVals = matrix(0, numParams, max(paramLens));
-  for( j in 1:numParams ) {
-    vect = as.matrix(paramValues[j,1]);
-    paramVals[j,1:nrow(vect)] = t(vect);
-  }
-  cumLens = rev(cumprod(rev(paramLens))/rev(paramLens));
-  numConfigs = prod(paramLens);
+  # step 1 do the case transformations
+  data = map(data, "x -> x.toLowerCase()")
+  # step 2 fix invalid lengths
+  # q0 = 0.05
+  # q1 = 0.95
 
-  # Step 2) materialize hyper-parameter combinations
-  # (simplify debugging and compared to compute negligible)
-  HP = matrix(0, numConfigs, numParams);
-  parfor( i in 1:nrow(HP) ) {
-    for( j in 1:numParams )
-      HP[i,j] = paramVals[j,as.scalar(((i-1)/cumLens[j,1])%%paramLens[j,1]+1)];
-  }
+  # [data, mask, qlow, qup] = fixInvalidLengths(data, mask, q0, q1)
 
-  if( verbose ) {
-    print("GridSeach: Number of hyper-parameters: \n"+toString(paramLens));
-    print("GridSeach: Hyper-parameter combinations: \n"+toString(HP));
-  }
+  
+  # step 3 fix swap values
+  # data = valueSwap(data, schema)
 
-  # Step 3) training/scoring of parameter combinations
-  Rbeta = matrix(0, nrow(HP), numB);
-  Rloss = matrix(0, nrow(HP), 1);
+  # step 3 drop invalid types
+  data = dropInvalidType(data, schema)
 
-  # with cross-validation
-  if( cv & train == "lm") {
-    # a) create folds
-    foldsX = list(); foldsY = list();
-    fs = ceil(nrow(X)/cvk);
-    for( k in 0:(cvk-1) ) {
-      foldsX = append(foldsX, X[(k*fs+1):min((cvk+1)*fs,nrow(X)),]);
-      foldsY = append(foldsY, y[(k*fs+1):min((cvk+1)*fs,nrow(y)),]);
-    }
-    parfor( i in 1:nrow(HP) ) {
-      # a) replace training arguments
-      ltrainArgs = trainArgs; 
-      lpredictArgs = predictArgs;
-      for( j in 1:numParams )
-        ltrainArgs[as.scalar(params[j])] = as.scalar(HP[i,j]);
-      # b) cross-validated training/scoring and write-back
-      cvbeta = matrix(0,1,numB);
-      cvloss = matrix(0,1,1);
-      for( k in 1:cvk ) {
-        [tmpX, testX] = remove(foldsX, k);
-        [tmpy, testy] = remove(foldsY, k);
-        ltrainArgs['X'] = rbind(tmpX);
-        ltrainArgs['y'] = rbind(tmpy);
-        lbeta = t(eval(train, ltrainArgs));
-        cvbeta[,1:ncol(lbeta)] = cvbeta[,1:ncol(lbeta)] + lbeta;
-        lpredict = list(as.matrix(testX), as.matrix(testy), t(lbeta), as.scalar(ltrainArgs['icpt']))
-        cvloss += eval(predict, lpredict);
-      }
-      Rbeta[i,] = cvbeta / cvk; # model averaging
-      Rloss[i,] = cvloss / cvk;
-    }
-  }
-  else if(cv & train == "multiLogReg")
+
+  # step 5 porter stemming on all features
+  data = map(data, "x -> PorterStemmer.stem(x)", 0)
+
+  
+  # step 6 typo correction  
+  if(CorrectTypos)
   {
-    parfor( i in 1:nrow(HP) ) {
-      # a) replace training arguments
-      # acc = utils::crossVML(X, y, cvk, HP[i]);
-      k = cvk
-      dataList = list()
-      testL = list()
-      data = order(target = cbind(y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
-      classes = table(data[, 1], 1)
-      ins_per_fold = classes/k
-      start_fold = matrix(1, rows=nrow(ins_per_fold), cols=1)
-      fold_idxes = cbind(start_fold, ins_per_fold)
-
-      start_i = 0; end_i = 0; idx_fold = 1;;
-      for(i in 1:k)
-      {
-        fold_i = matrix(0, 0, ncol(data))
-        start=0; end=0; 
-        for(j in 1:nrow(classes))
-        {
-          idx = as.scalar(classes[j, 1])
-          start = end + 1;
-          end = end + idx
-          class_j =  data[start:end, ]
-          start_i = as.scalar(fold_idxes[j, 1]);
-          end_i = as.scalar(fold_idxes[j, 2])
-          fold_i = rbind(fold_i, class_j[start_i:end_i, ])
-        }
-        dataList = append(dataList, fold_i)
-        fold_idxes[, 1] = fold_idxes[, 2] + 1
-        fold_idxes[, 2] += ins_per_fold
+    # fix the typos
+    for(i in 1:ncol(schema))
+      if(as.scalar(schema[1,i]) == "STRING") {
+          data[, i] = correctTyposApply(data[, i], 0.2, 0.9, as.matrix(distanceMatrix[i]), as.frame(dictionary[i]));
       }
-
-      cvbeta = matrix(0,1,numB);
-      cvloss = matrix(0,1,1);
-      for(i in seq(1,k)) {
-        [trainList, hold_out] = remove(dataList, i)
-        trainset = rbind(trainList)
-        testset = as.matrix(hold_out)
-        trainX = trainset[, 2:ncol(trainset)]
-        trainy = trainset[, 1]
-        testsetX = testset[, 2:ncol(testset)]
-        testsety = testset[, 1]
-        lbeta = multiLogReg(X=trainX, Y=trainy, icpt=as.scalar(HP[1,1]), reg=as.scalar(HP[1,2]), tol=as.scalar(HP[1,3]), 
-          maxi=as.scalar(HP[1,4]), maxii=50, verbose=FALSE);
-        [prob, yhat, accuracy] = multiLogRegPredict(testsetX, lbeta, testsety, FALSE)
-        cvbeta += lbeta;
-        cvloss += as.matrix(accuracy);
-      }
-      # Rbeta[i,] = cvbeta / k;
-      Rloss[i,] = cvloss / k;
+  }
+  # # step 7 convert date to decimal
+  if(sum(dateColIdx) > 0) {
+    for(i in 1:ncol(dateColIdx))
+    {
+      idx = as.scalar(dateColIdx[i])
+      data[, idx] = map(data[, idx], "x -> UtilFunctions.getTimestamp(x)", margin=2)
     }
   }
-  # without cross-validation
-  else {
-    parfor( i in 1:nrow(HP) ) {
-      # a) replace training arguments
-      ltrainArgs = trainArgs;
-      for( j in 1:numParams )
-        ltrainArgs[as.scalar(params[j])] = as.scalar(HP[i,j]);
-      # b) core training/scoring and write-back
-      lbeta = t(eval(train, ltrainArgs))
-      # Rbeta[i,1:ncol(lbeta)] = lbeta;
-      Rloss[i,] = eval(predict, append(predictArgs,t(lbeta)));
-    }
-  }
-
-  # Step 4) select best parameter combination
-  ix = as.scalar(rowIndexMin(t(Rloss)));
-  B = t(Rbeta[ix,]);       # optimal model
-  opt = as.frame(HP[ix,]); # optimal hyper-parameters
 }

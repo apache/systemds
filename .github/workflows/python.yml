@@ -56,23 +56,23 @@ jobs:
     name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
-      uses: actions/setup-java@v2
+      uses: actions/setup-java@v3
       with:
         distribution: ${{ matrix.javadist }}
         java-version: ${{ matrix.java }}
         cache: 'maven'
     
     - name: Cache Pip Dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}
 
     - name: Cache Datasets
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           src/main/python/systemds/examples/tutorials/mnist
@@ -80,7 +80,7 @@ jobs:
         key: ${{ runner.os }}-mnist-${{ hashFiles('src/main/python/systemds/examples/tutorials/mnist.py') }}-${{ hashFiles('src/main/python/systemds/examples/tutorials/adult.py') }}
 
     - name: Cache Deb Dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: /var/cache/apt/archives
         key: ${{ runner.os }}-${{ hashFiles('.github/workflows/python.yml') }}
@@ -89,7 +89,7 @@ jobs:
       run: mvn -ntp clean package -P distribution
 
     - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'

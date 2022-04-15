@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;
@@ -36,9 +38,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -50,7 +51,6 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.Future;
-import java.util.stream.IntStream;
 
 public class SpoofFEDInstruction extends FEDInstruction
 {
@@ -118,7 +118,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 		for(CPOperand cpo : _inputs) {
 			Data tmpData = ec.getVariable(cpo);
 			if(tmpData instanceof MatrixObject) {
-				MatrixObject mo = (MatrixObject) tmpData;
+				MatrixLineagePair mo = MatrixLineagePair.of((MatrixObject) tmpData, ec.getLineageItem(cpo));
 				if(mo.isFederatedExcept(FType.BROADCAST)) {
 					frIds[index++] = mo.getFedMapping().getID();
 				}
@@ -185,11 +185,11 @@ public class SpoofFEDInstruction extends FEDInstruction
 		/**
 		 * performs the sliced broadcast of the given matrix object
 		 *
-		 * @param mo the matrix object to broadcast sliced
+		 * @param mo the matrix object to broadcast sliced with the respective lineage item
 		 * @param fedMap the federated mapping
 		 * @return FederatedRequest[] the resulting federated request array of the broadcast
 		 */
-		protected FederatedRequest[] broadcastSliced(MatrixObject mo, FederationMap fedMap) {
+		protected FederatedRequest[] broadcastSliced(MatrixLineagePair mo, FederationMap fedMap) {
 			return fedMap.broadcastSliced(mo, false);
 		}
 
@@ -269,10 +269,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 			if(_cellType == CellType.ROW_AGG || _cellType == CellType.COL_AGG) {
 				int dim = (_cellType == CellType.COL_AGG ? 0 : 1);
 				// crop federation map to a vector
-				IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
-					fedMap.getFederatedRanges()[i].setBeginDim(dim, 0);
-					fedMap.getFederatedRanges()[i].setEndDim(dim, 1);
-				});
+				fedMap.modifyFedRanges(1, dim);
 			}
 			return fedMap;
 		}
@@ -333,16 +330,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 		protected void setFedOutput(ExecutionContext ec, FederationMap fedMap, long frComputeID) {
 			// derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(_output);
-			FederationMap newFedMap = modifyFedRanges(fedMap.copyWithNewID(frComputeID), out.getNumColumns());
+			FederationMap newFedMap = fedMap.copyWithNewID(frComputeID).modifyFedRanges(out.getNumColumns(), 1);
 			out.setFedMapping(newFedMap);
-		}
-
-		private static FederationMap modifyFedRanges(FederationMap fedMap, long cols) {
-			IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
-				fedMap.getFederatedRanges()[i].setBeginDim(1, 0);
-				fedMap.getFederatedRanges()[i].setEndDim(1, cols);
-			});
-			return fedMap;
 		}
 
 		protected void aggResult(ExecutionContext ec, Future<FederatedResponse>[] response,
@@ -411,7 +400,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 			_inputs = inputs;
 		}
 
-		protected FederatedRequest[] broadcastSliced(MatrixObject mo, FederationMap fedMap) {
+		@Override
+		protected FederatedRequest[] broadcastSliced(MatrixLineagePair mo, FederationMap fedMap) {
 			return fedMap.broadcastSliced(mo, (_fedType == FType.COL));
 		}
 
@@ -466,16 +456,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 			// derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(_output);
 			int dim = (newFedMap.getType() == FType.ROW ? 1 : 0);
-			newFedMap = modifyFedRanges(newFedMap, dim, outDims[dim]);
+			newFedMap.modifyFedRanges(outDims[dim], dim);
 			out.setFedMapping(newFedMap);
-		}
-
-		private static FederationMap modifyFedRanges(FederationMap fedMap, int dim, long value) {
-			IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
-				fedMap.getFederatedRanges()[i].setBeginDim(dim, 0);
-				fedMap.getFederatedRanges()[i].setEndDim(dim, value);
-			});
-			return fedMap;
 		}
 
 		protected void aggResult(ExecutionContext ec, Future<FederatedResponse>[] response,

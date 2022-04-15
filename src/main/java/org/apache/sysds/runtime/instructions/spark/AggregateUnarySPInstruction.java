@@ -289,7 +289,6 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		public RDDUAggValueFunction( AggregateUnaryOperator op, int blen ) {
 			_op = op;
 			_blen = blen;
-			_blen = blen;
 			
 			_ix = new MatrixIndexes(1,1);
 		}

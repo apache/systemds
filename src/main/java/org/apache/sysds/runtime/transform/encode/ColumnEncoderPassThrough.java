@@ -21,17 +21,18 @@ package org.apache.sysds.runtime.transform.encode;
 
 import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 public class ColumnEncoderPassThrough extends ColumnEncoder {
 	private static final long serialVersionUID = -8473768154646831882L;
@@ -50,7 +51,7 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock in, int nParition) {
 		return null;
 	}
 
@@ -65,20 +66,48 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 		return in.getDoubleNaN(row, _colID - 1);
 	}
 
+	@Override
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
+		double[] codes = new double[endInd-startInd];
+		for (int i=startInd; i<endInd; i++) {
+			codes[i-startInd] = in.getDoubleNaN(i, _colID-1);
+		}
+		return codes;
+	}
 
 	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
-		Set<Integer> sparseRowsWZeros = null;
+		//Set<Integer> sparseRowsWZeros = null;
+		ArrayList<Integer> sparseRowsWZeros = null;
+		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+		mcsr = false; //force CSR for transformencode
 		int index = _colID - 1;
-		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
-			double v = getCode(in, r);
-			SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(r);
-			if(v == 0) {
-				if(sparseRowsWZeros == null)
-					sparseRowsWZeros = new HashSet<>();
-				sparseRowsWZeros.add(r);
+		// Apply loop tiling to exploit CPU caches
+		double[] codes = getCodeCol(in, rowStart, blk);
+		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
+		int B = 32; //tile size
+		for(int i = rowStart; i < rowEnd; i+=B) {
+			int lim = Math.min(i+B, rowEnd);
+			for (int ii=i; ii<lim; ii++) {
+				double v = codes[ii-rowStart];
+				if(v == 0) {
+					if(sparseRowsWZeros == null)
+						sparseRowsWZeros = new ArrayList<>();
+					sparseRowsWZeros.add(ii);
+				}
+				if (mcsr) {
+					SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(ii);
+					row.values()[index] = v;
+					row.indexes()[index] = outputCol;
+				}
+				else { //csr
+					// Manually fill the column-indexes and values array
+					SparseBlockCSR csrblock = (SparseBlockCSR)out.getSparseBlock();
+					int rptr[] = csrblock.rowPointers();
+					csrblock.indexes()[rptr[ii]+index] = outputCol;
+					csrblock.values()[rptr[ii]+index] = codes[ii-rowStart];
+				}
 			}
-			row.values()[index] = v;
-			row.indexes()[index] = outputCol;
 		}
 		if(sparseRowsWZeros != null){
 			addSparseRowsWZeros(sparseRowsWZeros);
@@ -136,7 +165,7 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS)
-				Statistics.incTransformPassThroughApplyTime(System.nanoTime()-t0);
+				TransformStatistics.incPassThroughApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 

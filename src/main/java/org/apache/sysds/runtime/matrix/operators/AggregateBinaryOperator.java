@@ -23,12 +23,11 @@ import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 
-public class AggregateBinaryOperator extends Operator {
+public class AggregateBinaryOperator extends MultiThreadedOperator {
 	private static final long serialVersionUID = 1666421325090925726L;
 
 	public final ValueFunction binaryFn;
 	public final AggregateOperator aggOp;
-	private final int k; // num threads
 
 	public AggregateBinaryOperator(ValueFunction inner, AggregateOperator outer) {
 		// default degree of parallelism is 1
@@ -41,10 +40,6 @@ public class AggregateBinaryOperator extends Operator {
 		super(inner instanceof Multiply && outer.increOp.fn instanceof Plus);
 		binaryFn = inner;
 		aggOp = outer;
-		k = numThreads;
-	}
-
-	public int getNumThreads() {
-		return k;
+		_numThreads = numThreads;
 	}
 }

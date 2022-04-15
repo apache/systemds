@@ -19,23 +19,16 @@
 
 package org.apache.sysds.test.component.compress.offset;
 
+import static org.junit.Assert.assertTrue;
+
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.junit.Test;
 
 public class OffsetSingleTests {
 
-	@Test(expected = RuntimeException.class)
-	public void testInvalidSize_01() {
-		OffsetFactory.estimateInMemorySize(-1, 100);
+	@Test
+	public void testEmptyEstimateMemory() {
+		assertTrue(OffsetFactory.estimateInMemorySize(0, 10000) < 10);
 	}
 
-	@Test(expected = RuntimeException.class)
-	public void testInvalidSize_02() {
-		OffsetFactory.estimateInMemorySize(10, -1);
-	}
-
-	@Test(expected = RuntimeException.class)
-	public void testInvalidCreation() {
-		OffsetFactory.create(new int[] {1, 2, 3, -1});
-	}
 }

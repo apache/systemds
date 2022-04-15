@@ -50,7 +50,7 @@ class TestSource_01(unittest.TestCase):
         [a, b, c] = scale(m, True, True)
         arr = self.sds.array(a, b, c)
         c = self.sds.source(self.source_path, "test").func(arr)
-        res = c.sum().compute(verbose=True)
+        res = c.sum().compute()
         self.assertTrue(res == 0)
 
     # [SYSTEMDS-3224] https://issues.apache.org/jira/browse/SYSTEMDS-3224

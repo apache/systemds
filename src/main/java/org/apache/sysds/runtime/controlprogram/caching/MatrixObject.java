@@ -32,6 +32,7 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -54,6 +55,7 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.IndexRange;
+import org.apache.sysds.utils.Explain;
 
 /**
  * Represents a matrix in control program. This class contains method to read matrices from HDFS and convert them to a
@@ -410,7 +412,12 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 
 	@Override
 	protected MatrixBlock readBlobFromCache(String fname) throws IOException {
-		return (MatrixBlock) LazyWriteBuffer.readBlock(fname, true);
+		MatrixBlock mb = null;
+		if (OptimizerUtils.isUMMEnabled())
+			mb = (MatrixBlock) UnifiedMemoryManager.readBlock(fname, true);
+		else
+			mb = (MatrixBlock) LazyWriteBuffer.readBlock(fname, true);
+		return mb;
 	}
 
 	@Override
@@ -517,7 +524,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		// TODO sparse optimization
 		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = fedMap.requestFederatedData();
 		try {
-			if(fedMap.getType() == FederationMap.FType.PART)
+			if(fedMap.getType() == FType.PART)
 				return FederationUtils.aggregateResponses(readResponses);
 			else
 				return FederationUtils.bindResponses(readResponses, dims);
@@ -580,7 +587,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 
 	@Override
 	protected MatrixBlock reconstructByLineage(LineageItem li) throws IOException {
-		return ((MatrixObject) LineageRecomputeUtils.parseNComputeLineageTrace(li.getData(), null))
+		return ((MatrixObject) LineageRecomputeUtils.parseNComputeLineageTrace(Explain.explain(li), null))
 			.acquireReadAndRelease();
 	}
 }

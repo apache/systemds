@@ -37,7 +37,7 @@ import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 public class ColumnEncoderRecode extends ColumnEncoder {
 	private static final long serialVersionUID = 8213163881283341874L;
@@ -140,7 +140,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
 		if(DMLScript.STATISTICS){
-			Statistics.incTransformRecodeBuildTime(System.nanoTime() - t0);
+			TransformStatistics.incRecodeBuildTime(System.nanoTime() - t0);
 		}
 	}
 
@@ -171,6 +171,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	protected double getCode(CacheBlock in, int r){
+		// lookup for a single row
 		Object okey = in.getString(r, _colID - 1);
 		String key = (okey != null) ? okey.toString() : null;
 		if(key == null || key.isEmpty())
@@ -179,16 +180,19 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		return (code < 0) ? Double.NaN : code;
 	}
 	
-	protected double[] getCodeCol(CacheBlock in) {
-		Object[] coldata = (Object[]) ((FrameBlock)in).getColumnData(_colID-1);
-		double codes[] = new double[in.getNumRows()];
-		for (int i=0; i<coldata.length; i++) {
-			Object okey = coldata[i]; 
-			String key = (okey != null) ? okey.toString() : null;
-			if(key == null || key.isEmpty())
-				codes[i] = Double.NaN;
+	@Override
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+		// lookup for a block of rows
+		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
+		double codes[] = new double[endInd-startInd];
+		for (int i=startInd; i<endInd; i++) {
+			String key = in.getString(i, _colID-1);
+			if(key == null || key.isEmpty()) {
+				codes[i-startInd] = Double.NaN;
+				continue;
+			}
 			long code = lookupRCDMap(key);
-			codes[i] = code;
+			codes[i-startInd] = (code < 0) ? Double.NaN : code;
 		}
 		return codes;
 	}
@@ -343,7 +347,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 				return null;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS){
-				Statistics.incTransformRecodeApplyTime(System.nanoTime() - t0);
+				TransformStatistics.incRecodeApplyTime(System.nanoTime() - t0);
 			}
 			return null;
 		}
@@ -384,7 +388,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 				_partialMaps.put(_startRow, partialMap);
 			}
 			if(DMLScript.STATISTICS){
-				Statistics.incTransformRecodeBuildTime(System.nanoTime() - t0);
+				TransformStatistics.incRecodeBuildTime(System.nanoTime() - t0);
 			}
 			return null;
 		}
@@ -417,7 +421,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			});
 			_encoder._rcdMap = rcdMap;
 			if(DMLScript.STATISTICS){
-				Statistics.incTransformRecodeBuildTime(System.nanoTime() - t0);
+				TransformStatistics.incRecodeBuildTime(System.nanoTime() - t0);
 			}
 			return null;
 		}

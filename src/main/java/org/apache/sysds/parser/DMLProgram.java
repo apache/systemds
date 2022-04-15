@@ -201,6 +201,12 @@ public class DMLProgram
 			throw new RuntimeException(ex);
 		}
 	}
+
+	public void updateRepetitionEstimates(){
+		for ( StatementBlock stmBlock : getStatementBlocks() ){
+			stmBlock.updateRepetitionEstimates(1);
+		}
+	}
 	
 	@Override
 	public String toString(){
@@ -232,7 +238,9 @@ public class DMLProgram
 	}
 	
 	public static String constructFunctionKey(String fnamespace, String fname) {
-		return fnamespace + Program.KEY_DELIM + fname;
+		String sfnamespace = fnamespace == null ?
+			DMLProgram.DEFAULT_NAMESPACE : fnamespace;
+		return sfnamespace + Program.KEY_DELIM + fname;
 	}
 	
 	public static String[] splitFunctionKey(String fkey) {

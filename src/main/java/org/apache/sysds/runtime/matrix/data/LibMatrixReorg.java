@@ -232,13 +232,7 @@ public class LibMatrixReorg {
 			// null if the number of columns is larger than threshold
 			if(in.sparse && out.sparse && in.clen <= 4096) {
 				
-				ArrayList<CountNnzTask> tasks = new ArrayList<>();
-				int blklen = (int) (Math.ceil((double) in.rlen / k));
-				for(int i = 0; i < k & i * blklen < in.rlen; i++)
-					tasks.add(new CountNnzTask(in, i * blklen, Math.min((i + 1) * blklen, in.rlen)));
-				List<Future<int[]>> rtasks = pool.invokeAll(tasks);
-				for(Future<int[]> rtask : rtasks)
-					cnt = mergeNnzCounts(cnt, rtask.get());
+				cnt = countNNZColumns(in, k, pool);
 
 				if(allowCSR) {
 					int[] outPtr = ((SparseBlockCSR) out.sparseBlock).rowPointers();
@@ -272,6 +266,27 @@ public class LibMatrixReorg {
 		// System.out.println("r' k="+k+" ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
 		
 		return out;
+	}
+
+	public static int[] countNNZColumns(MatrixBlock in, int k, ExecutorService pool) {
+		try {
+			int[] cnt = null;
+			List<Future<int[]>> rtasks = countNNZColumnsFuture(in,k,pool);
+			for(Future<int[]> rtask : rtasks)
+				cnt = mergeNnzCounts(cnt, rtask.get());
+			return cnt;
+		}
+		catch(InterruptedException | ExecutionException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	public static List<Future<int[]>> countNNZColumnsFuture(MatrixBlock in, int k, ExecutorService pool) throws InterruptedException {
+		ArrayList<CountNnzTask> tasks = new ArrayList<>();
+		int blklen = (int) (Math.ceil((double) in.rlen / k));
+		for(int i = 0; i < k & i * blklen < in.rlen; i++)
+			tasks.add(new CountNnzTask(in, i * blklen, Math.min((i + 1) * blklen, in.rlen)));
+		return pool.invokeAll(tasks);
 	}
 
 	public static MatrixBlock transposeInPlace(MatrixBlock in, int k){
@@ -719,52 +734,77 @@ public class LibMatrixReorg {
 	}
 
 	/**
-	 * CP rexpand operation (single input, single output)
+	 * CP rexpand operation (single input, single output), the classic example of this operation is one hot encoding of a
+	 * column to multiple columns.
 	 * 
-	 * @param in input matrix
-	 * @param ret output matrix
-	 * @param max ?
-	 * @param rows ?
-	 * @param cast ?
-	 * @param ignore ?
-	 * @param k degree of parallelism
-	 * @return output matrix
+	 * @param in     Input matrix
+	 * @param ret    Output matrix
+	 * @param max    Number of rows/cols of the output
+	 * @param rows   If the expansion is in rows direction
+	 * @param cast   If the values contained should be cast to double (rounded up and down)
+	 * @param ignore Ignore if the input contain values below zero that technically is incorrect input.
+	 * @param k      Degree of parallelism
+	 * @return Output matrix rexpanded
 	 */
 	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore, int k) {
-		//prepare parameters
-		int lmax = (int)UtilFunctions.toLong(max);
-		
+		return rexpand(in, ret, UtilFunctions.toInt(max), rows, cast, ignore, k);
+	}
+
+	/**
+	 * CP rexpand operation (single input, single output), the classic example of this operation is one hot encoding of a
+	 * column to multiple columns.
+	 * 
+	 * @param in     Input matrix
+	 * @param ret    Output matrix
+	 * @param max    Number of rows/cols of the output
+	 * @param rows   If the expansion is in rows direction
+	 * @param cast   If the values contained should be cast to double (rounded up and down)
+	 * @param ignore Ignore if the input contain values below zero that technically is incorrect input.
+	 * @param k      Degree of parallelism
+	 * @return Output matrix rexpanded
+	 */
+	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, int max, boolean rows, boolean cast, boolean ignore, int k){
 		//sanity check for input nnz (incl implicit handling of empty blocks)
-		if( !ignore && in.getNonZeros()<in.getNumRows() )
-			throw new DMLRuntimeException("Invalid input w/ zeros for rexpand ignore=false "
-					+ "(rlen="+in.getNumRows()+", nnz="+in.getNonZeros()+").");
-		
+		checkRexpand(in, ignore);
+
 		//check for empty inputs (for ignore=true)
 		if( in.isEmptyBlock(false) ) {
 			if( rows )
-				ret.reset(lmax, in.rlen, true);
+				ret.reset(max, in.rlen, true);
 			else //cols
-				ret.reset(in.rlen, lmax, true);
+				ret.reset(in.rlen, max, true);
 			return ret;
 		}
-		
+
 		//execute rexpand operations
 		if( rows )
-			return rexpandRows(in, ret, lmax, cast, ignore);
+			return rexpandRows(in, ret, max, cast, ignore);
 		else //cols
-			return rexpandColumns(in, ret, lmax, cast, ignore, k);
+			return rexpandColumns(in, ret, max, cast, ignore, k);
+	}
+
+	/**
+	 * Quick check if the input is valid for rexpand, this check does not guarantee that the input is valid for rexpand
+	 * 
+	 * @param in     Input matrix block
+	 * @param ignore If zero valued cells should be ignored
+	 */
+	public static void checkRexpand(MatrixBlock in, boolean ignore){
+		if( !ignore && in.getNonZeros() < in.getNumRows() )
+			throw new DMLRuntimeException("Invalid input w/ zeros for rexpand ignore=false "
+					+ "(rlen="+in.getNumRows()+", nnz="+in.getNonZeros()+").");
 	}
 
 	/**
 	 * MR/Spark rexpand operation (single input, multiple outputs incl empty blocks)
 	 * 
-	 * @param data indexed matrix value
-	 * @param max ?
-	 * @param rows ?
-	 * @param cast ?
-	 * @param ignore ?
-	 * @param blen block length
-	 * @param outList list of indexed matrix values
+	 * @param data    Input indexed matrix block
+	 * @param max     Total nrows/cols of the output
+	 * @param rows    If the expansion is in rows direction
+	 * @param cast    If the values contained should be cast to double (rounded up and down)
+	 * @param ignore  Ignore if the input contain values below zero that technically is incorrect input.
+	 * @param blen    The block size to slice the output up into
+	 * @param outList The output indexedMatrixValues (a list to add all the output blocks to / modify)
 	 */
 	public static void rexpand(IndexedMatrixValue data, double max, boolean rows, boolean cast, boolean ignore, long blen, ArrayList<IndexedMatrixValue> outList) {
 		//prepare parameters
@@ -1793,7 +1833,7 @@ public class LibMatrixReorg {
 		return cnt;
 	}
 
-	private static int[] mergeNnzCounts(int[] cnt, int[] cnt2) {
+	public static int[] mergeNnzCounts(int[] cnt, int[] cnt2) {
 		if( cnt == null )
 			return cnt2;
 		for( int i=0; i<cnt.length; i++ )
@@ -2036,25 +2076,46 @@ public class LibMatrixReorg {
 			}
 			else if( cols%clen==0 //SPECIAL CSR N:1 MATRIX->MATRIX
 				&& SHALLOW_COPY_REORG && SPARSE_OUTPUTS_IN_CSR
-				&& a instanceof SparseBlockCSR ) { //int nnz
-				int[] aix = ((SparseBlockCSR)a).indexes();
+				&& in.nonZeros < Integer.MAX_VALUE ) { //int nnz
 				int n = cols/clen, pos = 0;
 				int[] rptr = new int[rows+1];
 				int[] indexes = new int[(int)a.size()];
+				double[] values = null;
 				rptr[0] = 0;
-				for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) {
-					for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) {
-						if(a.isEmpty(i)) continue;
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						for( int j=apos; j<apos+alen; j++ )
-							indexes[pos++] = cix+aix[j];
+				
+				if(a instanceof SparseBlockCSR) {
+					int[] aix = ((SparseBlockCSR)a).indexes();
+					for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) {
+						for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) {
+							if(a.isEmpty(i)) continue;
+							int apos = a.pos(i);
+							int alen = a.size(i);
+							for( int j=apos; j<apos+alen; j++ )
+								indexes[pos++] = cix+aix[j];
+						}
+						rptr[ci+1] = pos;
 					}
-					rptr[ci+1] = pos;
+					//shallow copy of CSR values
+					values = ((SparseBlockCSR)a).values();
 				}
-				//create CSR block with shallow copy of values
-				out.sparseBlock = new SparseBlockCSR(rptr, indexes,
-					((SparseBlockCSR)a).values(), pos);
+				else {
+					values = new double[indexes.length];
+					for(int bi=0, ci=0; bi<rlen; bi+=n, ci++) { //output rows
+						for( int i=bi, cix=0; i<bi+n; i++, cix+=clen ) { // N input rows
+							if(a.isEmpty(i)) continue;
+							int apos = a.pos(i);
+							int alen = a.size(i);
+							int[] aix = a.indexes(i);
+							System.arraycopy(a.values(i), apos, values, pos, alen);
+							for( int j=apos; j<apos+alen; j++ )
+								indexes[pos++] = cix+aix[j];
+						}
+						rptr[ci+1] = pos;
+					}
+				}
+				
+				//create CSR block from constructed or shallow-copy arrays
+				out.sparseBlock = new SparseBlockCSR(rptr, indexes, values, pos);
 			}
 			else if( cols%clen==0 ) { //SPECIAL N:1 MATRIX->MATRIX
 				int n = cols/clen;

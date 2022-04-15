@@ -54,7 +54,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.ParForStatistics;
 
 
 /**
@@ -124,7 +124,7 @@ public class OptimizationWrapper
 		
 		//maintain statistics
 		if( DMLScript.STATISTICS )
-			Statistics.incrementParForOptimCount();
+			ParForStatistics.incrementOptimCount();
 		
 		//create specified optimizer
 		Optimizer opt = createOptimizer( otype );
@@ -242,7 +242,7 @@ public class OptimizationWrapper
 		long ltime = (long) time.stop();
 		LOG.trace("ParFOR Opt: Optimized plan in "+ltime+"ms.");
 		if( DMLScript.STATISTICS )
-			Statistics.incrementParForOptimTime(ltime);
+			ParForStatistics.incrementOptimTime(ltime);
 		
 		//monitor stats
 		if( monitor ) {

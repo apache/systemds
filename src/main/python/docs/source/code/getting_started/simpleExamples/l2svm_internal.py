@@ -18,22 +18,18 @@
 # under the License.
 #
 # -------------------------------------------------------------
+# Python
+# Import SystemDS
+from systemds.context import SystemDSContext
+from systemds.operator.algorithm import l2svm
 
-import shutil
-import unittest
+with SystemDSContext() as sds:
+    # Generate 10 by 10 matrix with values in range 0 to 100.
+    features = sds.rand(10, 10, 0, 100)
+    # Add value to all cells in features
+    features += 1.1
+    # Generate labels of all ones and zeros
+    labels = sds.rand(10, 1, 1, 1, sparsity = 0.5)
 
-
-class TestFederatedAggFn(unittest.TestCase):
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree("temp")
-
-    def test_part1(self):
-        import docs.source.code.guide.federated.federatedTutorial_part1
-
-    def test_part2(self):
-        import docs.source.code.guide.federated.federatedTutorial_part2
-
-    def test_part3(self):
-        import docs.source.code.guide.federated.federatedTutorial_part3
+    model = l2svm(features, labels).compute()
+    print(model)

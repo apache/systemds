@@ -18,22 +18,3 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
-import shutil
-import unittest
-
-
-class TestFederatedAggFn(unittest.TestCase):
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree("temp")
-
-    def test_part1(self):
-        import docs.source.code.guide.federated.federatedTutorial_part1
-
-    def test_part2(self):
-        import docs.source.code.guide.federated.federatedTutorial_part2
-
-    def test_part3(self):
-        import docs.source.code.guide.federated.federatedTutorial_part3

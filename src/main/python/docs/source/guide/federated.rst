@@ -53,14 +53,14 @@ Currently we also require a metadata file for the federated worker.
 This should be located next to the ``test.csv`` file called ``test.csv.mtd``.
 To make both the data and metadata simply execute the following
 
-.. include:: ../code/federatedTutorial_part1.py
+.. include:: ../code/guide/federated/federatedTutorial_part1.py
   :start-line: 20
   :code: python
 
 After creating our data the federated worker becomes able to execute federated instructions.
 The aggregated sum using federated instructions in python SystemDS is done as follows
 
-.. include:: ../code/federatedTutorial_part2.py
+.. include:: ../code/guide/federated/federatedTutorial_part2.py
   :start-line: 20
   :code: python
 
@@ -81,7 +81,7 @@ Start with 3 different terminals, and run one federated environment in each.
 
 Once all three workers are up and running we can leverage all three in the following example
 
-.. include:: ../code/federatedTutorial_part3.py
+.. include:: ../code/guide/federated/federatedTutorial_part3.py
   :start-line: 20
   :code: python
 

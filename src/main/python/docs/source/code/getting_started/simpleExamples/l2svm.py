@@ -19,37 +19,27 @@
 #
 # -------------------------------------------------------------
 # Python
+# Import numpy and SystemDS
 import numpy as np
 from systemds.context import SystemDSContext
+from systemds.operator.algorithm import l2svm
 
-addr1 = "localhost:8001/temp/test.csv"
-addr2 = "localhost:8002/temp/test.csv"
-addr3 = "localhost:8003/temp/test.csv"
+# Set a seed
+np.random.seed(0)
+# Generate random features and labels in numpy
+# This can easily be exchanged with a data set.
+features = np.array(np.random.randint(
+    100, size=10 * 10) + 1.01, dtype=np.double)
+features.shape = (10, 10)
+labels = np.zeros((10, 1))
 
-# Create a federated matrix using two federated environments
-# Note that the two federated matrices are stacked on top of each other
+# l2svm labels can only be 0 or 1
+for i in range(10):
+    if np.random.random() > 0.5:
+        labels[i][0] = 1
 
+# compute our model
 with SystemDSContext() as sds:
-
-    fed_a = sds.federated([addr1],[([0, 0], [3, 3])])
-    fed_b = sds.federated([addr2],[([0, 0], [3, 3])])
-    # fed_c = sds.federated([addr3],[([0, 0], [3, 3])])
-
-    np_array = np.array([[1,2,3],[4,5,6],[7,8,9]])
-
-    loc_a = sds.from_numpy(np_array)
-    loc_b = sds.from_numpy(np_array)
-
-    fed_res = fed_a @ fed_b
-    loc_res = loc_a @ loc_b
-
-    hybrid_res_1 = fed_a @ loc_b
-    hybrid_res_2 = loc_a @ fed_b
-
-    # compute and print
-    print(fed_a.compute())
-    print(fed_b.compute())
-    print(fed_res.compute(verbose=True))
-    print(loc_res.compute(verbose=True))
-    print(hybrid_res_1.compute())
-    print(hybrid_res_1.compute())
+    model = l2svm(sds.from_numpy(features),
+                  sds.from_numpy(labels)).compute()
+    print(model)

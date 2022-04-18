@@ -29,58 +29,27 @@ Matrix Operations
 
 Making use of SystemDS, let us multiply an Matrix with an scalar:
 
-.. code-block:: python
-
-  # Import SystemDSContext
-  from systemds.context import SystemDSContext
-  # Create a context and if necessary (no SystemDS py4j instance running)
-  # it starts a subprocess which does the execution in SystemDS
-  with SystemDSContext() as sds:
-      # Full generates a matrix completely filled with one number.
-      # Generate a 5x10 matrix filled with 4.2
-      m = sds.full((5, 10), 4.20)
-      # multiply with scalar. Nothing is executed yet!
-      m_res = m * 3.1
-      # Do the calculation in SystemDS by calling compute().
-      # The returned value is an numpy array that can be directly printed.
-      print(m_res.compute())
-  # context will automatically be closed and process stopped
+.. include:: ../code/getting_started/simpleExamples/multiply.py
+  :start-line: 20
+  :code: python
 
 As output we get
 
-.. code-block:: python
+.. code-block::
 
-  [[ 13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02]
-   [ 13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02]
-   [ 13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02]
-   [ 13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02]
-   [ 13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02]]
+  [[13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02]
+   [13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02]
+   [13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02]
+   [13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02]
+   [13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02 13.02]]
 
 The Python SystemDS package is compatible with numpy arrays.
 Let us do a quick element-wise matrix multiplication of numpy arrays with SystemDS.
 Remember to first start up a new terminal:
 
-.. code-block:: python
-
-  import numpy as np  # import numpy
-
-  # Import SystemDSContext
-  from systemds.context import SystemDSContext
-
-  # create a random array
-  m1 = np.array(np.random.randint(100, size=5 * 5) + 1.01, dtype=np.double)
-  m1.shape = (5, 5)
-  # create another random array
-  m2 = np.array(np.random.randint(5, size=5 * 5) + 1, dtype=np.double)
-  m2.shape = (5, 5)
-
-  # Create a context
-  with SystemDSContext() as sds:
-      # element-wise matrix multiplication, note that nothing is executed yet!
-      m_res = sds.from_numpy(m1) * sds.from_numpy(m2)
-      # lets do the actual computation in SystemDS! The result is an numpy array
-      m_res_np = m_res.compute()
-      print(m_res_np)
+.. include:: ../code/getting_started/simpleExamples/multiplyMatrix.py
+  :start-line: 20
+  :code: python
 
 More complex operations
 -----------------------
@@ -88,34 +57,13 @@ More complex operations
 SystemDS provides algorithm level functions as built-in functions to simplify development.
 One example of this is l2SVM, a high level functions for Data-Scientists. Let's take a look at l2svm:
 
-.. code-block:: python
-
-  # Import numpy and SystemDS
-  import numpy as np
-  from systemds.context import SystemDSContext
-  from systemds.operator.algorithm import l2svm
-
-  # Set a seed
-  np.random.seed(0)
-  # Generate random features and labels in numpy
-  # This can easily be exchanged with a data set.
-  features = np.array(np.random.randint(100, size=10 * 10) + 1.01, dtype=np.double)
-  features.shape = (10, 10)
-  labels = np.zeros((10, 1))
-
-  # l2svm labels can only be 0 or 1
-  for i in range(10):
-      if np.random.random() > 0.5:
-          labels[i][0] = 1
-
-  # compute our model
-  with SystemDSContext() as sds:
-      model = l2svm(sds.from_numpy(features), sds.from_numpy(labels)).compute()
-      print(model)
+.. include:: ../code/getting_started/simpleExamples/l2svm.py
+  :start-line: 20
+  :code: python
 
 The output should be similar to
 
-.. code-block:: python
+.. code-block::
 
   [[ 0.02033445]
    [-0.00324092]
@@ -128,3 +76,13 @@ The output should be similar to
    [-0.01686351]
    [-0.03839821]]
 
+To get the full performance of SystemDS one can modify the script to only use internal functionality,
+instead of using numpy arrays that have to be transfered into systemDS.
+The above script transformed goes like this:
+
+.. include:: ../code/getting_started/simpleExamples/l2svm_internal.py
+  :start-line: 20
+  :code: python
+
+When reading in datasets for processing it is highly recommended that you read from inside systemds using 
+sds.read("file"), since this avoid the transferring of numpy arrays.

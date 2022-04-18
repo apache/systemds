@@ -18,22 +18,23 @@
 # under the License.
 #
 # -------------------------------------------------------------
+# Python
+import numpy as np  # import numpy
 
-import shutil
-import unittest
+# Import SystemDSContext
+from systemds.context import SystemDSContext
 
+# create a random array
+m1 = np.array(np.random.randint(100, size=5 * 5) + 1.01, dtype=np.double)
+m1.shape = (5, 5)
+# create another random array
+m2 = np.array(np.random.randint(5, size=5 * 5) + 1, dtype=np.double)
+m2.shape = (5, 5)
 
-class TestFederatedAggFn(unittest.TestCase):
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree("temp")
-
-    def test_part1(self):
-        import docs.source.code.guide.federated.federatedTutorial_part1
-
-    def test_part2(self):
-        import docs.source.code.guide.federated.federatedTutorial_part2
-
-    def test_part3(self):
-        import docs.source.code.guide.federated.federatedTutorial_part3
+# Create a context
+with SystemDSContext() as sds:
+    # element-wise matrix multiplication, note that nothing is executed yet!
+    m_res = sds.from_numpy(m1) * sds.from_numpy(m2)
+    # lets do the actual computation in SystemDS! The result is an numpy array
+    m_res_np = m_res.compute()
+    print(m_res_np)

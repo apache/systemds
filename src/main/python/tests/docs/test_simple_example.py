@@ -18,27 +18,19 @@
 # under the License.
 #
 # -------------------------------------------------------------
-# Python
-import numpy as np
-from systemds.context import SystemDSContext
 
-addr1 = "localhost:8001/temp/test.csv"
-addr2 = "localhost:8002/temp/test.csv"
-addr3 = "localhost:8003/temp/test.csv"
+import unittest
 
-# Create a federated matrix using two federated environments
-# Note that the two federated matrices are stacked on top of each other
 
-with SystemDSContext() as sds:
-    fed_a = sds.federated(
-        [addr1, addr2],
-        [([0, 0], [3, 3]), ([0, 3], [3, 6])])
+class TestSimpleExample(unittest.TestCase):
+    def test_multiply(self):
+        import docs.source.code.getting_started.simpleExamples.multiply
 
-    fed_b = sds.federated(
-        [addr1, addr3],
-        [([0, 0], [3, 3]), ([0, 3], [3, 6])])
+    def test_multiplyMatrix(self):
+        import docs.source.code.getting_started.simpleExamples.multiplyMatrix
 
-    # Multiply, compute and print.
-    res = (fed_a * fed_b).compute()
+    def test_l2svm(self):
+        import docs.source.code.getting_started.simpleExamples.l2svm
 
-print(res)
+    def test_l2svm_internal(self):
+        import docs.source.code.getting_started.simpleExamples.l2svm_internal

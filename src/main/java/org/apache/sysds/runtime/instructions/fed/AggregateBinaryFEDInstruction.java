@@ -153,6 +153,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	 * @param outputID ID of the output
 	 * @param ec execution context
 	 */
+	@SuppressWarnings("unused")
 	private void setPartialOutput(FederationMap federationMap, MatrixLineagePair mo1, MatrixLineagePair mo2,
 		long outputID, ExecutionContext ec){
 		MatrixObject out = ec.getMatrixObject(output);

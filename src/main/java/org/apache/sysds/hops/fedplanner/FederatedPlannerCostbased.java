@@ -327,14 +327,12 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		}
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) )
 			transientWrites.put(currentHop.getName(), currentHop);
-		else {
-			if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.FEDERATED) )
-				hopRels.add(new HopRel(currentHop, FederatedOutput.FOUT, deriveFType((DataOp)currentHop), hopRelMemo, inputHops));
-			else
-				hopRels.addAll(generateHopRels(currentHop, inputHops));
-			if ( isLOUTSupported(currentHop) )
-				hopRels.add(new HopRel(currentHop, FederatedOutput.LOUT, hopRelMemo, inputHops));
-		}
+		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.FEDERATED) )
+			hopRels.add(new HopRel(currentHop, FederatedOutput.FOUT, deriveFType((DataOp)currentHop), hopRelMemo, inputHops));
+		else
+			hopRels.addAll(generateHopRels(currentHop, inputHops));
+		if ( isLOUTSupported(currentHop) )
+			hopRels.add(new HopRel(currentHop, FederatedOutput.LOUT, hopRelMemo, inputHops));
 		return hopRels;
 	}
 

@@ -74,7 +74,8 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	public void runL2SVMCostBasedTest(){
 		//String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
 		//	"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
-		String[] expectedHeavyHitters = new String[]{ "fed_fedinit"};
+		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
+			"fed_max", "fed_1-*", "fed_>"};
 		setTestConf("SystemDS-config-cost-based.xml");
 		loadAndRunTest(expectedHeavyHitters);
 	}

@@ -18,7 +18,6 @@
 # under the License.
 #
 # -------------------------------------------------------------
-# Python
 # Import numpy and SystemDS
 import numpy as np
 from systemds.context import SystemDSContext

@@ -38,12 +38,10 @@ Step 1: Get Dataset
 SystemDS provides builtin for downloading and setup of the MNIST dataset.
 To setup this simply use
 
-.. code-block:: python
-
-    from systemds.examples.tutorials.mnist import DataManager
-    d = DataManager()
-    X = d.get_train_data()
-    Y = d.get_train_labels()
+.. include:: ../code/guide/algorithms/FullScript.py
+  :code: python
+  :start-line: 22
+  :end-line: 30
 
 Here the DataManager contains the code for downloading and setting up numpy arrays containing the data.
 
@@ -85,19 +83,12 @@ With these steps we are now ready to train a simple model.
 Step 3: Training
 ----------------
 
-To start with, we setup a SystemDS context
+To start with, we setup a SystemDS context and setup the data:
 
-.. code-block:: python
-
-    from systemds.context import SystemDSContext
-    sds = SystemDSContext()
-
-Then setup the data
-
-.. code-block:: python
-
-    X_ds = sds.from_numpy(X)
-    Y_ds = sds.from_numpy( Y)
+.. include:: ../code/guide/algorithms/FullScript.py
+  :start-line: 31
+  :end-line: 35
+  :code: python
 
 to reduce the training time and verify everything works, it is usually good to reduce the amount of data,
 to train on a smaller sample to start with
@@ -177,18 +168,12 @@ To improve further we have to increase the training data, here for example we in
 from our sample of 1k to the full training dataset of 60k, in this example the maxi is set to reduce the number of iterations the algorithm takes,
 to again reduce training time
 
-.. code-block:: python
+.. include:: ../code/guide/algorithms/FullScript.py
+  :start-line: 31
+  :end-line: 43
+  :code: python
 
-    X_ds = sds.from_numpy(X)
-    Y_ds = sds.from_numpy(Y)
-
-    bias = multiLogReg(X_ds, Y_ds, maxi=30)
-
-    [_, _, train_acc] = multiLogRegPredict(X_ds, bias, Y_ds).compute()
-    [_, _, test_acc] = multiLogRegPredict(Xt, bias, Yt).compute()
-    print(train_acc, "  ", test_acc)
-
-With this change the accuracy achieved changes from the previous value to 92%. This is still low on this dataset as can be seen on `MNIST <http://yann.lecun.com/exdb/mnist/>`_.
+With this change the accuracy achieved changes from the previous value to 92%.
 But this is a basic implementation that can be replaced by a variety of algorithms and techniques.
 
 
@@ -199,23 +184,7 @@ The full script, some steps are combined to reduce the overall script.
 One noteworthy change is the + 1 is done on the matrix ready for SystemDS,
 this makes SystemDS responsible for adding the 1 to each value.
 
-.. code-block:: python
-
-    from systemds.context import SystemDSContext
-    from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
-    from systemds.examples.tutorials.mnist import DataManager
-
-    d = DataManager()
-
-    with SystemDSContext() as sds:
-        # Train Data
-        X = sds.from_numpy(d.get_train_data().reshape((60000, 28*28)))
-        Y = sds.from_numpy(d.get_train_labels()) + 1.0
-        bias = multiLogReg(X, Y, maxi=30)
-        # Test data
-        Xt = sds.from_numpy(d.get_test_data().reshape((10000, 28*28)))
-        Yt = sds.from_numpy(d.get_test_labels()) + 1.0
-        [m, y_pred, acc] = multiLogRegPredict(Xt, bias, Yt).compute()
-
-    print(acc)
+.. include:: ../code/guide/algorithms/FullScript.py
+  :start-line: 20
+  :code: python
 

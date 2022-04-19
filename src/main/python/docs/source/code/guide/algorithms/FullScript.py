@@ -18,17 +18,25 @@
 # under the License.
 #
 # -------------------------------------------------------------
-# Import SystemDSContext
 from systemds.context import SystemDSContext
-# Create a context and if necessary (no SystemDS py4j instance running)
-# it starts a subprocess which does the execution in SystemDS
+from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
+from systemds.examples.tutorials.mnist import DataManager
+
+d = DataManager()
+
+X = d.get_train_data().reshape((60000, 28*28))
+Y = d.get_train_labels()
+Xt = d.get_test_data().reshape((10000, 28*28))
+Yt = d.get_test_labels()
+
 with SystemDSContext() as sds:
-    # Full generates a matrix completely filled with one number.
-    # Generate a 5x10 matrix filled with 4.2
-    m = sds.full((5, 10), 4.20)
-    # multiply with scalar. Nothing is executed yet!
-    m_res = m * 3.1
-    # Do the calculation in SystemDS by calling compute().
-    # The returned value is an numpy array that can be directly printed.
-    print(m_res.compute())
-    # context will automatically be closed and process stopped
+    # Train Data
+    X_ds = sds.from_numpy(X)
+    Y_ds = sds.from_numpy(Y) + 1.0
+    bias = multiLogReg(X_ds, Y_ds, maxi=30)
+    # Test data
+    Xt_ds = sds.from_numpy(Xt)
+    Yt_ds = sds.from_numpy(Yt) + 1.0
+    [m, y_pred, acc] = multiLogRegPredict(Xt_ds, bias, Yt_ds).compute()
+
+print(acc)

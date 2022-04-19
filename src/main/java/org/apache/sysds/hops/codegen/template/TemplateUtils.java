@@ -49,6 +49,7 @@ import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
 import org.apache.sysds.hops.codegen.cplan.CNodeNary;
+import org.apache.sysds.hops.codegen.cplan.CNodeRow;
 import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
@@ -279,7 +280,11 @@ public class TemplateUtils
 		return node instanceof CNodeUnary
 			&& ArrayUtils.contains(types, ((CNodeUnary)node).getType());
 	}
-	
+
+	public static boolean isUnaryRowAgg(CNode node) {
+		return isUnary(node, UnaryType.ROW_MAXS, UnaryType.ROW_SUMS);
+	}
+
 	public static boolean isBinary(CNode node, BinType...types) {
 		return node instanceof CNodeBinary
 			&& ArrayUtils.contains(types, ((CNodeBinary)node).getType());
@@ -391,7 +396,8 @@ public class TemplateUtils
 				&& !TemplateUtils.isUnary(output, 
 					UnaryType.EXP, UnaryType.LOG, UnaryType.ROW_COUNTNNZS)) 
 			|| (output instanceof CNodeBinary
-				&& !TemplateUtils.isBinary(output, BinType.VECT_OUTERMULT_ADD))
+				&& (!(TemplateUtils.isBinary(output, BinType.VECT_OUTERMULT_ADD) ||
+					!TemplateUtils.isBinary(output, BinType.ROWMAXS_VECTMULT))))
 			|| output instanceof CNodeTernary 
 				&& ((CNodeTernary)output).getType() == TernaryType.IFELSE)
 			&& hasOnlyDataNodeOrLookupInputs(output);
@@ -686,5 +692,19 @@ public class TemplateUtils
 		//recursively process children
 		for( CNode input : current.getInput() )
 			rFlipVectorLookups(input);
+	}
+
+	public static boolean containsFusedRowVecAgg(CNodeTpl tpl) {
+		if(!(tpl instanceof CNodeRow))
+			return false;
+
+		if(TemplateUtils.isBinary(tpl.getOutput(), BinType.ROWMAXS_VECTMULT))
+			return true;
+
+		for (CNode n : tpl.getOutput().getInput()) {
+			if(TemplateUtils.isBinary(n, BinType.ROWMAXS_VECTMULT))
+				return true;
+		}
+		return false;
 	}
 }

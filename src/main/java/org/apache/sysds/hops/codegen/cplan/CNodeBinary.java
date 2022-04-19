@@ -30,6 +30,8 @@ import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 public class CNodeBinary extends CNode {
 
 	public enum BinType {
+		// Fused vect_op + aggregation
+		ROWMAXS_VECTMULT,
 		//matrix multiplication operations
 		DOT_PRODUCT, VECT_MATRIXMULT, VECT_OUTERMULT_ADD,
 		//vector-scalar-add operations
@@ -373,7 +375,8 @@ public class CNodeBinary extends CNode {
 				_cols = _inputs.get(1)._cols;
 				_dataType = DataType.MATRIX;
 				break;
-			
+
+			case ROWMAXS_VECTMULT:
 			case DOT_PRODUCT:
 			
 			//SCALAR Arithmetic
@@ -407,6 +410,8 @@ public class CNodeBinary extends CNode {
 				_cols = 0;
 				_dataType= DataType.SCALAR;
 				break;
+			default:
+					throw new RuntimeException("Unknown CNodeBinary type: " + _type);
 		}
 	}
 	

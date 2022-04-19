@@ -21,11 +21,14 @@ package org.apache.sysds.hops.codegen.template;
 
 import java.util.ArrayList;
 
+import org.apache.spark.sql.types.BinaryType;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
 import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysds.hops.codegen.cplan.CNodeOuterProduct;
+import org.apache.sysds.hops.codegen.cplan.CNodeRow;
 import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
@@ -56,6 +59,9 @@ public class CPlanOpRewriter
 		}
 		else {
 			tpl.setOutput(rSimplifyCNode(tpl.getOutput()));
+			if(TemplateUtils.containsFusedRowVecAgg(tpl)) {
+				((CNodeRow) tpl).setNumVectorIntermediates(((CNodeRow) tpl).getNumVectorIntermediates()-2);
+			}
 		}
 		
 		return tpl;
@@ -73,10 +79,19 @@ public class CPlanOpRewriter
 		node = rewriteBinaryPow2Vect(node);  //X^2 -> X*X
 		node = rewriteBinaryMult2(node);     //x*2 -> x+x;
 		node = rewriteBinaryMult2Vect(node); //X*2 -> X+X;
-		
+		node = rewriteRowMaxsVectMult(node); // rowMaxs(G * t(c)); see components.dml
 		return node;
 	}
-	
+
+	private static CNode rewriteRowMaxsVectMult(CNode node) {
+		if(TemplateUtils.isUnary(node, UnaryType.ROW_MAXS)) {
+			CNode input = node.getInput().get(0);
+			if(TemplateUtils.isBinary(input, BinType.VECT_MULT))
+				return new CNodeBinary(input.getInput().get(0), input.getInput().get(1), BinType.ROWMAXS_VECTMULT);
+		}
+		return node;
+	}
+
 	private static CNode rewriteRowCountNnz(CNode node) {
 		return (TemplateUtils.isUnary(node, UnaryType.ROW_SUMS)
 			&& TemplateUtils.isBinary(node.getInput().get(0), BinType.VECT_NOTEQUAL_SCALAR)

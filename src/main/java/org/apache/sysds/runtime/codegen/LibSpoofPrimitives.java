@@ -50,9 +50,23 @@ public class LibSpoofPrimitives
 	private static ThreadLocal<VectorBuffer> memPool = new ThreadLocal<VectorBuffer>() {
 		@Override protected VectorBuffer initialValue() { return new VectorBuffer(0,0,0); }
 	};
-	
+
+	public static double rowMaxsVectMult(double[] a, double[] b, int ai, int bi, int len) {
+		double val = Double.NEGATIVE_INFINITY;
+		int j=0;
+		for( int i = ai; i < ai+len; i++ )
+			val = Math.max(a[i]*b[j++], val);
+		return val;
+	}
+
+	public static double rowMaxsVectMult(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+		double val = Double.NEGATIVE_INFINITY;
+		for( int i = ai; i < ai+len; i++ )
+			val = Math.max(a[i]*b[aix[i]], val);
+		return val;
+	}
+
 	// forwarded calls to LibMatrixMult
-	
 	public static double dotProduct(double[] a, double[] b, int ai, int bi, int len) {
 		if( a == null || b == null ) return 0;
 		return LibMatrixMult.dotProduct(a, b, ai, bi, len);

@@ -36,4 +36,3 @@ X2 = transformapply(target=F1, spec=jspec, meta=M);
 
 write(X, $TFDATA1, format="csv");
 write(X2, $TFDATA2, format="csv");
-

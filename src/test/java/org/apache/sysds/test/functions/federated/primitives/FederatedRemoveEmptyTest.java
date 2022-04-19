@@ -45,18 +45,30 @@ public class FederatedRemoveEmptyTest extends AutomatedTestBase {
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedRemoveEmptyTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
+
 	@Parameterized.Parameter()
 	public int rows;
 	@Parameterized.Parameter(1)
 	public int cols;
 	@Parameterized.Parameter(2)
 	public boolean rowPartitioned;
+	@Parameterized.Parameter(3)
+	public double sparsity;
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			{20, 12, true},
-			{20, 12, false}
+			// dense
+			{20, 12, true, 1.0},
+			{20, 12, false, 1.0},
+			// sparse
+			{20, 12, true, 0.1},
+			{20, 12, false, 0.1},
+			{1000, 12, true, 0.1},
+			{1000, 12, false, 0.1},
+			{20, 1000, true, 0.1},
+			{20, 1000, false, 0.1},
+			{40, 40, true, 0} //  empty
 		});
 	}
 
@@ -94,10 +106,10 @@ public class FederatedRemoveEmptyTest extends AutomatedTestBase {
 			c = cols;
 		}
 
-		double[][] X1 = getRandomMatrix(r, c, 1, 5, 1, 3);
-		double[][] X2 = getRandomMatrix(r, c, 1, 5, 1, 7);
-		double[][] X3 = getRandomMatrix(r, c, 1, 5, 1, 8);
-		double[][] X4 = getRandomMatrix(r, c, 1, 5, 1, 9);
+		double[][] X1 = getRandomMatrix(r, c, 1, 5, sparsity, 3);
+		double[][] X2 = getRandomMatrix(r, c, 1, 5, sparsity, 7);
+		double[][] X3 = getRandomMatrix(r, c, 1, 5, sparsity, 8);
+		double[][] X4 = getRandomMatrix(r, c, 1, 5, sparsity, 9);
 
 		for(int k : new int[] {1, 2, 3}) {
 			Arrays.fill(X3[k], 0);
@@ -121,10 +133,9 @@ public class FederatedRemoveEmptyTest extends AutomatedTestBase {
 		Thread t4 = startLocalFedWorkerThread(port4);
 
 		rtplatform = execMode;
-		if(rtplatform == ExecMode.SPARK) {
-			System.out.println(7);
+		if(rtplatform == ExecMode.SPARK) 
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		}
+		
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 

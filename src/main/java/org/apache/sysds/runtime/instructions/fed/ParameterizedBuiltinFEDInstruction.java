@@ -906,9 +906,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
-			int r = mb.getDenseBlockValues() != null ? mb.getNumRows() : 0;
-			int c = mb.getDenseBlockValues() != null ? mb.getNumColumns() : 0;
-			return new FederatedResponse(ResponseType.SUCCESS, new int[] {r, c});
+			final int[] dims = mb.isEmpty() ? new int[] {0, 0} : new int[] {mb.getNumRows(), mb.getNumColumns()};
+			return new FederatedResponse(ResponseType.SUCCESS, dims);
 		}
 
 		@Override

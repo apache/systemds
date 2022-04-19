@@ -753,6 +753,11 @@ public class TestUtils
 
 	public static void compareMatrices(double[][] expectedMatrix, double[][] actualMatrix, int rows, int cols,
 			double epsilon, String message) {
+		if(expectedMatrix.length != rows && expectedMatrix[0].length != cols)
+			fail("Invalid number of rows and cols in expected");
+		if(actualMatrix.length != rows && actualMatrix[0].length != cols)
+			fail("Invalid number of rows and cols in actual");
+		
 		int countErrors = 0;
 		for (int i = 0; i < rows && countErrors < 50; i++) {
 			for (int j = 0; j < cols && countErrors < 50; j++) {
@@ -1278,6 +1283,15 @@ public class TestUtils
 		compareMatrices(ret1, ret2, m2.getNumRows(), m2.getNumColumns(), tolerance, message);
 	}
 
+	public static void compareMatrices(MatrixBlock m1, double[][] m2, double tolerance, String message) {
+		double[][] ret1 = DataConverter.convertToDoubleMatrix(m1);
+		compareMatrices(ret1, m2, m1.getNumRows(), m1.getNumColumns(), tolerance, message);
+	}
+
+	public static void compareMatrices(double[][] m1, MatrixBlock m2, double tolerance, String message) {
+		double[][] ret2 = DataConverter.convertToDoubleMatrix(m2);
+		compareMatrices(m1, ret2, m2.getNumRows(), m2.getNumColumns(), tolerance, message);
+	}
 
 	/**
 	 * Compares two matrices given as HashMaps. The matrix containing more nnz

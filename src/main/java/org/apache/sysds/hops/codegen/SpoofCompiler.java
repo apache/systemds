@@ -38,6 +38,7 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeCell;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
 import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
@@ -941,13 +942,15 @@ public class SpoofCompiler {
 			}
 			
 			//remove cplan w/ single op and w/o agg
-			if( (tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
-					&& TemplateUtils.hasSingleOperation(tpl) )
-				|| (tpl instanceof CNodeRow && (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
-					|| ((CNodeRow)tpl).getRowType()==RowType.NO_AGG_B1
-					|| ((CNodeRow)tpl).getRowType()==RowType.ROW_AGG )
+			if((tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
 					&& TemplateUtils.hasSingleOperation(tpl))
-				|| TemplateUtils.hasNoOperation(tpl) ) 
+				|| (tpl instanceof CNodeRow
+					&& (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
+						|| ((CNodeRow)tpl).getRowType()==RowType.NO_AGG_B1
+						|| (((CNodeRow)tpl).getRowType()==RowType.ROW_AGG  && !TemplateUtils.isBinary(tpl.getOutput(),
+							CNodeBinary.BinType.ROWMAXS_VECTMULT)))
+					&& TemplateUtils.hasSingleOperation(tpl))
+				|| TemplateUtils.hasNoOperation(tpl))
 			{
 				cplans2.remove(e.getKey());
 				if( LOG.isTraceEnabled() )

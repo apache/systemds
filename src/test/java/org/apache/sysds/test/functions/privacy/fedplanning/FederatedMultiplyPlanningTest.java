@@ -19,7 +19,8 @@
 
 package org.apache.sysds.test.functions.privacy.fedplanning;
 
-import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.junit.Ignore;
@@ -33,6 +34,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -41,6 +43,8 @@ import static org.junit.Assert.fail;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedMultiplyPlanningTest.class.getName());
+
 	private final static String TEST_DIR = "functions/privacy/fedplanning/";
 	private final static String TEST_NAME = "FederatedMultiplyPlanningTest";
 	private final static String TEST_NAME_2 = "FederatedMultiplyPlanningTest2";
@@ -52,6 +56,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	private final static String TEST_NAME_8 = "FederatedMultiplyPlanningTest8";
 	private final static String TEST_NAME_9 = "FederatedMultiplyPlanningTest9";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedMultiplyPlanningTest.class.getSimpleName() + "/";
+	private final static File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, "SystemDS-config-cost-based.xml");
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -223,8 +228,6 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		Thread t1 = null, t2 = null;
 
 		try{
-			OptimizerUtils.FEDERATED_COMPILATION = true;
-
 			getAndLoadTestConfiguration(testName);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
@@ -244,8 +247,6 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 			rewriteRealProgramArgs(testName, port1, port2);
 			runTest(true, false, null, -1);
 
-			OptimizerUtils.FEDERATED_COMPILATION = false;
-
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = HOME + testName + "Reference.dml";
 			programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
@@ -259,7 +260,6 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 				fail("The following expected heavy hitters are missing: "
 					+ Arrays.toString(missingHeavyHitters(expectedHeavyHitters)));
 		} finally {
-			OptimizerUtils.FEDERATED_COMPILATION = false;
 			TestUtils.shutdownThreads(t1, t2);
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
@@ -288,6 +288,17 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 			programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
 				"Y2=" + input("Y2"), "W1=" + input("W1"), "W2=" + input("W2"), "Z=" + expected("Z")};
 		}
+	}
+
+	/**
+	 * Override default configuration with custom test configuration to ensure
+	 * scratch space and local temporary directory locations are also updated.
+	 */
+	@Override
+	protected File getConfigTemplateFile() {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		LOG.info("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		return TEST_CONF_FILE;
 	}
 }
 

@@ -78,6 +78,10 @@ public abstract class AFederatedPlanner {
 		else if ( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) ){
 			return ft[0] == FType.COL || ft[0] == FType.ROW;
 		}
+		else if (HopRewriteUtils.isData(hop, Types.OpOpData.FEDERATED)
+			|| HopRewriteUtils.isData(hop, Types.OpOpData.TRANSIENTWRITE)
+			|| HopRewriteUtils.isData(hop, Types.OpOpData.TRANSIENTREAD))
+			return true;
 		else if(ft.length==1 && ft[0] != null) {
 			return HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS)
 				|| HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM, AggOp.MIN, AggOp.MAX);
@@ -135,6 +139,9 @@ public abstract class AFederatedPlanner {
 		}
 		else if ( HopRewriteUtils.isData(hop, Types.OpOpData.FEDERATED) )
 			return deriveFType((DataOp)hop);
+		else if ( HopRewriteUtils.isData(hop, Types.OpOpData.TRANSIENTWRITE)
+			|| HopRewriteUtils.isData(hop, Types.OpOpData.TRANSIENTREAD) )
+			return ft[0];
 		return null;
 	}
 	

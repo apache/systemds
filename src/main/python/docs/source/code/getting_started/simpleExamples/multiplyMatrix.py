@@ -18,10 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-# Python
-import numpy as np  # import numpy
-
-# Import SystemDSContext
+import numpy as np
 from systemds.context import SystemDSContext
 
 # create a random array

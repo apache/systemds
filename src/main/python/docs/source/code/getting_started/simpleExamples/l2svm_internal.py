@@ -18,7 +18,6 @@
 # under the License.
 #
 # -------------------------------------------------------------
-# Python
 # Import SystemDS
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import l2svm

@@ -23,7 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -127,8 +126,6 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 		Thread t1 = null, t2 = null;
 
 		try {
-			OptimizerUtils.FEDERATED_COMPILATION = true;
-
 			getAndLoadTestConfiguration(TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
@@ -146,8 +143,6 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 				"Y=" + input("Y"), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
 			runTest(true, false, null, -1);
 
-			OptimizerUtils.FEDERATED_COMPILATION = false;
-
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 			programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"),
@@ -161,7 +156,6 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 					+ Arrays.toString(missingHeavyHitters(expectedHeavyHitters)));
 		}
 		finally {
-			OptimizerUtils.FEDERATED_COMPILATION = false;
 			TestUtils.shutdownThreads(t1, t2);
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

@@ -18,10 +18,9 @@
  */
 
 #pragma once
-#ifndef SYSTEMDS_VECTOR_WRITE_CUH
-#define SYSTEMDS_VECTOR_WRITE_CUH
 
-__device__ bool debug_row() { return blockIdx.x == 1; };
+#define DEBUG_ROW 2
+__device__ bool debug_row() { return blockIdx.x == DEBUG_ROW; };
 __device__ bool debug_thread() { return threadIdx.x == 0; }
 
 // unary transform vector by OP and write to intermediate vector
@@ -143,6 +142,19 @@ __device__ Vector<T>& vectWriteBinary(T* a, T* b, uint32_t ai, uint32_t bi, uint
 	return c;
 }
 
+// sparse binary vect-vect to intermediate vector
+template<typename T, typename OP>
+__device__ Vector<T>& vectWriteBinary(T* a, T* b, uint32_t* aix, uint32_t ai, uint32_t bi, uint32_t alen, uint32_t len,
+        TempStorage<T>* fop, const char* name = nullptr) {
+    uint32_t i = threadIdx.x;
+    Vector<T>& c = fop->getTempStorage(len);
+    while (i < alen) {
+        c[aix[ai+i]] = OP::exec(a[ai + i], b[aix[ai+i]]);
+        i += blockDim.x;
+    }
+    return c;
+}
+
 // binary vector-scalar to output vector c
 template<typename T, typename OP>
 __device__ void vectWriteBinary(T* a, T b, T* c, uint32_t ai, uint32_t ci, uint32_t len) {
@@ -168,5 +180,3 @@ __device__ void vectWriteBinary(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint
 		i += blockDim.x;
 	}
 }
-
-#endif //SYSTEMDS_VECTOR_WRITE_CUH

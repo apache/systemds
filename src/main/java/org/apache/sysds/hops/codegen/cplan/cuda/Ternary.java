@@ -28,81 +28,41 @@ public class Ternary extends CodeTemplate {
 
 	@Override
 	public String getTemplate(CNodeTernary.TernaryType type, boolean sparse) {
-		if(isSinglePrecision()) {
-			switch (type) {
-				case PLUS_MULT:
-					return "	T %TMP% = %IN1% + %IN2% * %IN3%;\n";
+		switch (type) {
+			case PLUS_MULT:
+				return "	T %TMP% = %IN1% + %IN2% * %IN3%;\n";
 
-				case MINUS_MULT:
-					return "	T %TMP% = %IN1% - %IN2% * %IN3%;\n";
+			case MINUS_MULT:
+				return "	T %TMP% = %IN1% - %IN2% * %IN3%;\n";
 
-				case BIASADD:
-					return "	T %TMP% = %IN1% + getValue(%IN2%, cix/%IN3%);\n";
+			case BIASADD:
+				return "	T %TMP% = %IN1% + getValue(%IN2%, cix/%IN3%);\n";
 
-				case BIASMULT:
-					return "	T %TMP% = %IN1% * getValue(%IN2%, cix/%IN3%);\n";
+			case BIASMULT:
+				return "	T %TMP% = %IN1% * getValue(%IN2%, cix/%IN3%);\n";
 
-				case REPLACE:
-					return "	T %TMP% = (%IN1% == %IN2% || (isnan(%IN1%) "
-							+ "&& isnan(%IN2%))) ? %IN3% : %IN1%;\n";
+			case REPLACE:
+				return "	T %TMP% = (%IN1% == %IN2% || (isnan(%IN1%) "
+						+ "&& isnan(%IN2%))) ? %IN3% : %IN1%;\n";
 
-				case REPLACE_NAN:
-					return "	T %TMP% = isnan(%IN1%) ? %IN3% : %IN1%;\n";
+			case REPLACE_NAN:
+				return "	T %TMP% = isnan(%IN1%) ? %IN3% : %IN1%;\n";
 
-				case IFELSE:
-					return "	T %TMP% = (%IN1% != 0) ? %IN2% : %IN3%;\n";
+			case IFELSE:
+				return "	T %TMP% = (%IN1% != 0) ? %IN2% : %IN3%;\n";
 
-				case LOOKUP_RC1:
-					return sparse ?
-							"	T %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, %IN3%-1);\n" :
+			case LOOKUP_RC1:
+				return sparse ?
+						"	T %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, %IN3%-1);\n" :
 //							"	T %TMP% = getValue(%IN1%, %IN2%, rix, %IN3%-1);\n";
-							"		T %TMP% = %IN1%.val(rix, %IN3%-1);\n";
+						"		T %TMP% = %IN1%.val(rix, %IN3%-1);\n";
 
-				case LOOKUP_RVECT1:
-					return "\t\tVector<T>& %TMP% = getVector(%IN1%, %IN2%, rix, %IN3%-1);\n";
 
-				default:
-					throw new RuntimeException("Invalid ternary type: " + this.toString());
-			}
-		}
-		else {
-			switch (type) {
-				case PLUS_MULT:
-					return "	T %TMP% = %IN1% + %IN2% * %IN3%;\n";
+			case LOOKUP_RVECT1:
+				return "\t\tVector<T>& %TMP% = getVector(%IN1%, %IN2%, rix, %IN3%-1, this);\n";
 
-				case MINUS_MULT:
-					return "	T %TMP% = %IN1% - %IN2% * %IN3%;\n";
-
-				case BIASADD:
-					return "	T %TMP% = %IN1% + getValue(%IN2%, cix/%IN3%);\n";
-
-				case BIASMULT:
-					return "	T %TMP% = %IN1% * getValue(%IN2%, cix/%IN3%);\n";
-
-				case REPLACE:
-					return "	T %TMP% = (%IN1% == %IN2% || (isnan(%IN1%) "
-							+ "&& isnan(%IN2%))) ? %IN3% : %IN1%;\n";
-
-				case REPLACE_NAN:
-					return "	T %TMP% = isnan(%IN1%) ? %IN3% : %IN1%;\n";
-
-				case IFELSE:
-					return "	T %TMP% = (%IN1% != 0) ? %IN2% : %IN3%;\n";
-
-				case LOOKUP_RC1:
-					return sparse ?
-							"	T %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, %IN3%-1);\n" :
-//							"	T %TMP% = getValue(%IN1%, %IN2%, rix, %IN3%-1);\n";
-							"		T %TMP% = %IN1%.val(rix, %IN3%-1);\n";
-				
-				
-				case LOOKUP_RVECT1:
-					return "\t\tVector<T>& %TMP% = getVector(%IN1%, %IN2%, rix, %IN3%-1, this);\n";
-
-				default:
-					throw new RuntimeException("Invalid ternary type: "+this.toString());
-			}
-
+			default:
+				throw new RuntimeException("Invalid ternary type: "+this.toString());
 		}
 	}
 }

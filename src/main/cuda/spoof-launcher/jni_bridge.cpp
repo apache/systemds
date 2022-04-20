@@ -165,7 +165,7 @@ int launch_spoof_operator([[maybe_unused]] JNIEnv *jenv, [[maybe_unused]] jclass
 
 [[maybe_unused]] JNIEXPORT jint JNICALL Java_org_apache_sysds_runtime_codegen_SpoofCUDACellwise_execute_1f
 	(JNIEnv *jenv, jclass jobj, jlong ctx) {
-	return launch_spoof_operator<double, SpoofCellwise<double>>(jenv, jobj, ctx);
+	return launch_spoof_operator<float, SpoofCellwise<float>>(jenv, jobj, ctx);
 }
 
 
@@ -177,5 +177,5 @@ int launch_spoof_operator([[maybe_unused]] JNIEnv *jenv, [[maybe_unused]] jclass
 
 [[maybe_unused]] JNIEXPORT jint JNICALL Java_org_apache_sysds_runtime_codegen_SpoofCUDARowwise_execute_1f
 	(JNIEnv *jenv, jclass jobj, jlong ctx) {
-	return launch_spoof_operator<double, SpoofRowwise<double>>(jenv, jobj, ctx);
+	return launch_spoof_operator<float, SpoofRowwise<float>>(jenv, jobj, ctx);
 }

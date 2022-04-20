@@ -870,7 +870,7 @@ public class TestUtils
 		}
 		else if(actualMatrix.isEmpty()) {
 			if(expectedMatrix.getNumRows() < 10)
-				fail(message + "\nThe expected output is empty while the actual matrix is not\n" + expectedMatrix + "\n\n"
+				fail(message + "\nThe actual output is empty while the expected matrix is not\nexpected:" + expectedMatrix + "\n\n"
 					+ "actual:" + actualMatrix);
 			fail(message + "\nThe actual output is empty while the expected matrix is not");
 		}

@@ -2043,9 +2043,15 @@ public class LibMatrixMult
 					int alen = a.size(r);
 					double[] avals = a.values(r);
 					if( alen == n ) { //dense row
-						for( int i=rl; i<ru; i++ ) {
-							vectMultiplyAdd(avals[i], avals,
-								c.values(i), i, c.pos(i) + i, n-i);
+						final int apos = a.pos(r);
+						for (int i = rl; i < ru; i++){
+							double[] cvals = c.values(i);
+							int cix = c.pos(i);
+							double val = avals[i + apos];
+							for(int j = i ; j < ru; j++){
+								double d = val * avals[j + apos];
+								cvals[cix + j] +=d;
+							}
 						}
 					}
 					else { //non-full sparse row

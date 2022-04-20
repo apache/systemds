@@ -447,6 +447,8 @@ public abstract class SparseBlock implements Serializable
 	 * returned by indexes(r) and values(r). If no such value exists, 
 	 * this call returns -1.
 	 * 
+	 * Note if CSR the pos(r) is subtracted from the result.
+	 * 
 	 * @param r row index starting at 0
 	 * @param c column index starting at 0
 	 * @return position of the first column index greater than or equal to column c in row r

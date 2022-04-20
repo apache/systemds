@@ -1279,6 +1279,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				rptr, indexes, values, lnnz);
 		}
 		else {
+			// remember number non zeros.
+			long nnzTemp = getNonZeros();
 			//fallback to less-memory efficient MCSR format,
 			//which however allows much larger sparse matrices
 			if( !allocateSparseRowsBlock() )
@@ -1295,6 +1297,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				for( int j=0; j<n; j++ )
 					sblock.append(i, j, avals[aix+j]);
 			}
+			nonZeros = nnzTemp;
 		}
 		
 		//update nnz and cleanup dense block

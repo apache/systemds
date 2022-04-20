@@ -1638,6 +1638,8 @@ public class LibMatrixBincell {
 		if( op.fn instanceof Multiply ) { //skip empty
 			//skip empty: merge-join (with inner join semantics)
 			//similar to sorted list intersection
+			if(result.getSparseBlock() == null)
+				result.allocateSparseRowsBlock();
 			SparseBlock sblock = result.getSparseBlock();
 			sblock.allocate(resultRow, Math.min(size1, size2), result.clen);
 			while( p1 < size1 && p2 < size2 ) {

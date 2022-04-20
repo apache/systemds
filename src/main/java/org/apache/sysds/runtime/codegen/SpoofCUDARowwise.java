@@ -96,9 +96,9 @@ public class SpoofCUDARowwise extends SpoofRowwise implements SpoofCUDAOperator 
 		int ci, int alen, int n, long grix, int rix) { }
 
 	public int execute_dp(long ctx) { return execute_d(ctx); }
-	public int execute_sp(long ctx) { return execute_d(ctx); }
+	public int execute_sp(long ctx) { return execute_f(ctx); }
 	public long getContext() { return ctx; }
 
 	public static native int execute_d(long ctx);
-	public static native int execute_s(long ctx);
+	public static native int execute_f(long ctx);
 }

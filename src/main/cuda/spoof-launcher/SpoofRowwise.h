@@ -18,15 +18,13 @@
  */
 
 #pragma once
-#ifndef SYSTEMDS_SPOOFROWWISE_H
-#define SYSTEMDS_SPOOFROWWISE_H
 
 #include "SpoofCUDAContext.h"
 #include <algorithm>
 
 template <typename T>
 struct SpoofRowwise {
-	
+
 	static void exec([[maybe_unused]] SpoofCUDAContext* ctx, SpoofOperator* _op, DataBufferWrapper* dbw)  {
 		uint32_t NT=256;
 		T value_type;
@@ -56,7 +54,7 @@ struct SpoofRowwise {
 			CHECK_CUDART(cudaMalloc(reinterpret_cast<void**>(&d_temp), temp_buf_size));
 			CHECK_CUDART(cudaMemsetAsync(d_temp, 0, temp_buf_size, op->stream));
 		}
-		
+
 		std::string op_name(op->name + "_DENSE");
 		if(sparse_input)
 			op_name = std::string(op->name + "_SPARSE");
@@ -77,5 +75,3 @@ struct SpoofRowwise {
 			CHECK_CUDART(cudaFree(d_temp));
 	}
 };
-
-#endif //SYSTEMDS_SPOOFROWWISE_H

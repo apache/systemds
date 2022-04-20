@@ -27,8 +27,10 @@ import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.fedplanner.FTypes;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
@@ -139,7 +141,9 @@ public class ProgramRewriter
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: cse
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: cse
 			}
-			if ( OptimizerUtils.FEDERATED_COMPILATION ) {
+			String planner = ConfigurationManager.getDMLConfig()
+				.getTextValue(DMLConfig.FEDERATED_PLANNER);
+			if ( OptimizerUtils.FEDERATED_COMPILATION || FTypes.FederatedPlanner.isCompiled(planner) ) {
 				_dagRuleSet.add( new RewriteFederatedExecution() );
 			}
 		}

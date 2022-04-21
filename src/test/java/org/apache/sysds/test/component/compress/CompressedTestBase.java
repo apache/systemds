@@ -646,7 +646,6 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	@Test
-	@Ignore
 	public void testLeftMatrixMatrixMultDoubleCompressedTransposedBothSides() {
 		// This test does not currently work, since the intension is that the "transposed" input matrix is compressed and
 		// not transposed.
@@ -766,6 +765,7 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testTransposeSelfMatrixMultLeft() {
 		// TSMM tsmm
 		try {

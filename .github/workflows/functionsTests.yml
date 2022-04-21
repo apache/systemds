@@ -55,6 +55,7 @@ jobs:
           "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
           "**.functions.federated.algorithms.**,**.functions.federated.io.**,**.functions.federated.paramserv.**",
           "**.functions.federated.primitives.**,**.functions.federated.transform.**",
+          "**.functions.federated.codegen.**",
           "**.functions.codegenalg.partone.**",
           "**.functions.builtin.part1.**",
           "**.functions.builtin.part2.**",

@@ -164,11 +164,11 @@ public class CompressibleInputGenerator {
 		final List<Double> values = getNRandomValues(nrUnique, r, max, min);
 		if(transpose && output.isInSparseFormat() && output.getNumRows() == 1) {
 			int nV = (int) Math.round((double) output.getNumColumns() * sparsity);
+			int skip = (output.getNumColumns() * 2) / nV;
 
-			for(int i = 0; i < nV; i++) {
-				double d = values.get(r.nextInt(nrUnique));
-				output.appendValue(0, r.nextInt(output.getNumColumns()), d);
-			}
+			for(int i = 0, n = 0; n < nV && i < output.getNumColumns(); i += r.nextInt(skip) + 1, n++)
+				output.appendValue(0, i, values.get(r.nextInt(nrUnique)));
+
 			output.getSparseBlock().sort();
 			return;
 		}
@@ -215,8 +215,8 @@ public class CompressibleInputGenerator {
 		if(transpose && output.isInSparseFormat()) {
 			SparseBlock sb = output.getSparseBlock();
 			double[] r0 = sb.values(0);
-			for(int i = 0; i < r0.length; i++) 
-				if(r.nextDouble() > sparsity) 
+			for(int i = 0; i < r0.length; i++)
+				if(r.nextDouble() > sparsity)
 					r0[i] = 0;
 			sb.get(0).compact();
 		}

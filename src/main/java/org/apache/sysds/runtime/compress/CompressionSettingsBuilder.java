@@ -206,7 +206,7 @@ public class CompressionSettingsBuilder {
 	 * @return The CompressionSettingsBuilder
 	 */
 	public CompressionSettingsBuilder clearValidCompression() {
-		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED);
+		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED, CompressionType.EMPTY, CompressionType.CONST);
 		return this;
 	}
 

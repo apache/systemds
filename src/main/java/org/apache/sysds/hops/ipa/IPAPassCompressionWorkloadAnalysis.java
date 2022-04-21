@@ -22,6 +22,8 @@ package org.apache.sysds.hops.ipa;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -36,6 +38,7 @@ import org.apache.sysds.runtime.compress.workload.WorkloadAnalyzer;
  * workload-aware compression planning.
  */
 public class IPAPassCompressionWorkloadAnalysis extends IPAPass {
+	private static final Log LOG = LogFactory.getLog(IPAPassCompressionWorkloadAnalysis.class.getName());
 
 	@Override
 	public boolean isApplicable(FunctionCallGraph fgraph) {
@@ -57,13 +60,13 @@ public class IPAPassCompressionWorkloadAnalysis extends IPAPass {
 			final WTreeRoot tree = e.getValue();
 			final CostEstimatorBuilder b = new CostEstimatorBuilder(tree);
 			final boolean shouldCompress = b.shouldTryToCompress();
-			if(LOG.isTraceEnabled())
-				LOG.trace("IPAPass Should Compress:\n" + tree + "\n" + b + "\n Should Compress: " + shouldCompress);
-
 			// Filter out compression plans that is known to be bad
 			if(shouldCompress) 
 				tree.getRoot().setRequiresCompression(tree);
-
+			else if(LOG.isTraceEnabled())
+				LOG.trace("IPAPass Says no Compress:\n" + tree + "\n" + b);
+			else if(LOG.isDebugEnabled())
+				LOG.debug("IPApass Says no Compress:\n" + tree.getRoot() + "\n" + b);
 		}
 
 		return map != null;

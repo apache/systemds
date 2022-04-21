@@ -20,7 +20,6 @@
 package org.apache.sysds.test.component.compress.estim.encoding;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.apache.commons.logging.Log;
@@ -65,7 +64,7 @@ public abstract class EncodeSampleTest {
 	}
 
 	@Test
-	public void testJoinSelfEqualsSameNumberUnique() {
+	public void testCombineSelfEqualsSameNumberUnique() {
 		try {
 			// not that you should or would ever do this.
 			// but it is a nice and simple test.
@@ -90,7 +89,7 @@ public abstract class EncodeSampleTest {
 	}
 
 	@Test
-	public void testJoinEmptyLeft() {
+	public void testCombineEmptyLeft() {
 		try {
 			final MatrixBlock empty = new MatrixBlock(m.getNumRows(), m.getNumColumns(), true);
 			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(empty, t, 0);
@@ -103,7 +102,7 @@ public abstract class EncodeSampleTest {
 	}
 
 	@Test
-	public void testJoinEmptyRight() {
+	public void testCombineEmptyRight() {
 		try {
 			final MatrixBlock empty = new MatrixBlock(m.getNumRows(), m.getNumColumns(), true);
 			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(empty, t, 0);
@@ -116,7 +115,7 @@ public abstract class EncodeSampleTest {
 	}
 
 	@Test
-	public void testJoinConstLeft() {
+	public void testCombineConstLeft() {
 		try {
 			final MatrixBlock c = new MatrixBlock(m.getNumRows(), m.getNumColumns(), 1.0);
 			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(c, t, 0);
@@ -129,34 +128,12 @@ public abstract class EncodeSampleTest {
 	}
 
 	@Test
-	public void testJoinConstRight() {
+	public void testCombineConstRight() {
 		try {
 			final MatrixBlock c = new MatrixBlock(m.getNumRows(), m.getNumColumns(), 1.0);
-
 			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(c, t, 0);
-			assertEquals(u, e.combine(emptyEncoding).getUnique());
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void testGetSize() {
-		try {
-			assertTrue(e.size() <= (t ? m.getNumColumns() : m.getNumRows()));
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void testGetSizeAfterJoinSelf() {
-		try {
-			assertTrue(e.combine(e).size() <= (t ? m.getNumColumns() : m.getNumRows()));
+			final IEncode comp = e.combine(emptyEncoding);
+			assertEquals(u, comp.getUnique());
 		}
 		catch(Exception e) {
 			e.printStackTrace();

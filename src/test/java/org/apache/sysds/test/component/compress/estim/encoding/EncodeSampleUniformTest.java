@@ -84,7 +84,7 @@ public class EncodeSampleUniformTest extends EncodeSampleMultiColTest {
 			MatrixBlock m = sparsity == 0.0 ? new MatrixBlock(nRow, nCol, true) : TestUtils
 				.round(TestUtils.generateTestMatrixBlock(nRow, nCol, min, nUnique, sparsity, seed));
 
-			return create(m,t);
+			return create(m, t);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -93,7 +93,7 @@ public class EncodeSampleUniformTest extends EncodeSampleMultiColTest {
 		}
 	}
 
-	public static Object[] create(MatrixBlock m, boolean t){
+	public static Object[] create(MatrixBlock m, boolean t) {
 		try {
 			// Make sure that nUnique always is correct if we have a large enough matrix.
 

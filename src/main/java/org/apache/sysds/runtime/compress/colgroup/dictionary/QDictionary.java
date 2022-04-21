@@ -105,7 +105,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public double aggregateWithReference(double init, Builtin fn, double[] reference) {
+	public double aggregateWithReference(double init, Builtin fn, double[] reference, boolean def) {
 		throw new NotImplementedException();
 	}
 
@@ -424,7 +424,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference) {
+	public void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference, boolean def) {
 		throw new NotImplementedException();
 	}
 
@@ -471,6 +471,11 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary binOpRight(BinaryOperator op, double[] v) {
 		throw new NotImplementedException();
 	}
 

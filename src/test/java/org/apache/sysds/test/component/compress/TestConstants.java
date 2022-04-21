@@ -25,7 +25,7 @@ package org.apache.sysds.test.component.compress;
 public class TestConstants {
 
 	public enum SparsityType {
-		DENSE, SPARSE, ULTRA_SPARSE, EMPTY, FULL
+		DENSE, SPARSE, ULTRA_SPARSE, EMPTY, FULL,THIRTY
 	}
 
 	public enum ValueType {
@@ -47,6 +47,7 @@ public class TestConstants {
 		L_ROWS, // Many Rows
 		XL_ROWS, // A LOT of rows.
 		SINGLE_COL_L, // Single Column large.
+		COL_16,
 	}
 
 	public enum ValueRange {
@@ -84,6 +85,8 @@ public class TestConstants {
 				return 0.0;
 			case FULL:
 				return 1.0;
+			case THIRTY:
+				return 0.3;
 			default:
 				throw new RuntimeException("Invalid Sparsity type");
 		}
@@ -137,6 +140,8 @@ public class TestConstants {
 				return 5000;
 			case XL_ROWS:
 				return 3000;
+			case COL_16:
+				return 3000;
 			default:
 				throw new RuntimeException("Invalid matrix enum type");
 		}
@@ -150,6 +155,8 @@ public class TestConstants {
 				return 10;
 			case SINGLE_COL:
 				return 1;
+			case COL_16:
+				return 16;
 			case XL_ROWS:
 				return 100;
 			default:

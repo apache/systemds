@@ -47,8 +47,8 @@ public class EncodeSampleDenseNonUniform extends EncodeSampleMultiColTest {
 		tests.add(create(10, 100, 0.1, 231, true));
 		tests.add(create(100, 10, 0.1, 231, true));
 
-		tests.add(create(10,10, 1.0, 12341, true));
-		tests.add(create(10,10, 0.1, 12341, true));
+		tests.add(create(10, 10, 1.0, 12341, true));
+		tests.add(create(10, 10, 0.1, 12341, true));
 		tests.add(create(10, 10, 0.7, 12341, true));
 
 		tests.add(create(10, 10, 0.9, 3, true));

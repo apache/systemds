@@ -50,7 +50,7 @@ public class EstimationFactors {
 	/** The sparsity of the tuples them selves in isolation */
 	protected final double tupleSparsity;
 
-	protected EstimationFactors(int nCols, int numVals, int numRows) {
+	public EstimationFactors(int nCols, int numVals, int numRows) {
 		this.numVals = numVals;
 		this.numRows = numRows;
 		this.frequencies = null;
@@ -88,6 +88,14 @@ public class EstimationFactors {
 			throw new DMLCompressionException(
 				"Invalid number of instance of most common element should be lower than number of rows. " + largestOff
 					+ " > numRows: " + numRows);
+		if(numVals <= 0)
+			throw new DMLCompressionException("Should not use this constructor if empty");
+		if(numOffs <= 0)
+			throw new DMLCompressionException("Num offs are to low for this constructor");
+		if(numVals > numOffs)
+			throw new DMLCompressionException("Num vals cannot be greater than num offs");
+		if(largestOff < 0)
+			throw new DMLCompressionException("Invalid number of offset, should be greater than one");
 	}
 
 	@Override

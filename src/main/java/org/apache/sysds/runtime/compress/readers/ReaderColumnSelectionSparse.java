@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.readers;
 
+import java.util.Arrays;
+
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -31,40 +33,42 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  */
 public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 
-	private SparseBlock a;
+	private final SparseBlock a;
 
 	protected ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes, int rl, int ru) {
-		super(colIndexes, rl, Math.min(ru, data.getNumRows()));
+		super(colIndexes, rl, Math.min(ru, data.getNumRows()) - 1);
 		a = data.getSparseBlock();
 	}
 
 	protected final DblArray getNextRow() {
-		if(_rl == _ru - 1) {
-			return null;
+		boolean empty = true;
+		while(empty && _rl < _ru) {
+			_rl++;
+			if(a.isEmpty(_rl))
+				continue; // if empty easy skip
+
+			final boolean zeroResult = processInRange(_rl);
+
+			if(zeroResult)
+				continue; // skip if no values found were in my cols
+
+			return reusableReturn;
 		}
+		return null;
 
-		_rl++;
-
-		if(a.isEmpty(_rl))
-			return emptyReturn;
-
-		final int apos = a.pos(_rl);
-		final int alen = a.size(_rl) + apos;
-		final int[] aix = a.indexes(_rl);
-
-		if(aix[alen - 1] < _colIndexes[0] || aix[apos] > _colIndexes[_colIndexes.length - 1])
-			return emptyReturn;
-
-		return nextRow(apos, alen, aix, a.values(_rl));
 	}
 
-	private final DblArray nextRow(final int apos, final int alen, final int[] aix, final double[] avals) {
+	final boolean processInRange(final int r) {
 		boolean zeroResult = true;
-
+		final int apos = a.pos(r);
+		final int alen = a.size(r) + apos;
+		final int[] aix = a.indexes(r);
+		final double[] avals = a.values(r);
 		int skip = 0;
-		int j = apos;
-		while(aix[j] < _colIndexes[0])
-			j++;
+		int j = Arrays.binarySearch(aix, apos, alen, _colIndexes[0]);
+		if(j < 0)
+			j = Math.abs(j+1);
+
 		while(skip < _colIndexes.length && j < alen) {
 			if(_colIndexes[skip] == aix[j]) {
 				reusableArr[skip] = avals[j];
@@ -77,9 +81,12 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 			else
 				reusableArr[skip++] = 0;
 		}
+		if(zeroResult)
+			return true; // skip if no values found were in my cols
+
 		while(skip < _colIndexes.length)
 			reusableArr[skip++] = 0;
 
-		return zeroResult ? emptyReturn : reusableReturn;
+		return false;
 	}
 }

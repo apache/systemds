@@ -57,7 +57,17 @@ public class MappingPreAggregateTests {
 	@Parameters
 	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
-		for(MAP_TYPE t : MAP_TYPE.values()) {
+		for(MAP_TYPE t : new MAP_TYPE[] {MAP_TYPE.ZERO, MAP_TYPE.BIT, MAP_TYPE.UBYTE}) {
+			tests.add(new Object[] {1, 1, t, 13});
+			tests.add(new Object[] {3, 1, t, 13});
+			tests.add(new Object[] {3, 1, t, 63});
+			tests.add(new Object[] {3, 1, t, 64});
+			tests.add(new Object[] {3, 1, t, 65});
+			tests.add(new Object[] {5, 1, t, 1234});
+			tests.add(new Object[] {5, 1, t, 13});
+			tests.add(new Object[] {51, 1, t, 3241});
+		}
+		for(MAP_TYPE t : new MAP_TYPE[] {MAP_TYPE.BIT, MAP_TYPE.BYTE, MAP_TYPE.UBYTE, MAP_TYPE.CHAR, MAP_TYPE.INT}) {
 			tests.add(new Object[] {1, 2, t, 13});
 			tests.add(new Object[] {3, 2, t, 13});
 			tests.add(new Object[] {3, 2, t, 63});
@@ -80,7 +90,7 @@ public class MappingPreAggregateTests {
 			tests.add(new Object[] {5, 180, t, 1000});
 		}
 
-		for(MAP_TYPE t : new MAP_TYPE[] {MAP_TYPE.CHAR, MAP_TYPE.INT}) {
+		for(MAP_TYPE t : new MAP_TYPE[] {MAP_TYPE.CHAR, MAP_TYPE.CHAR_BYTE, MAP_TYPE.INT}) {
 			tests.add(new Object[] {5, 300, t, 400});
 			tests.add(new Object[] {5, 300, t, 1234});
 			tests.add(new Object[] {51, 300, t, 3241});

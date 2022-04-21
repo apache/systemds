@@ -61,6 +61,7 @@ public class CLALibTSMM {
 		}
 		else
 			tsmmColGroups(groups, ret, numRows, overlapping, k);
+
 		ret.setNonZeros(LibMatrixMult.copyUpperToLowerTriangle(ret));
 		ret.examSparsity();
 	}
@@ -111,11 +112,12 @@ public class CLALibTSMM {
 		try {
 			for(Future<MatrixBlock> future : pool.invokeAll(tasks))
 				future.get();
-			pool.shutdown();
 		}
 		catch(InterruptedException | ExecutionException e) {
+			pool.shutdown();
 			throw new DMLRuntimeException(e);
 		}
+		pool.shutdown();
 	}
 
 	private static void outerProductUpperTriangle(final double[] leftRowSum, final double[] rightColumnSum,

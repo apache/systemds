@@ -29,6 +29,8 @@ import java.io.DataOutputStream;
 import java.util.Collection;
 import java.util.Random;
 
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -36,6 +38,8 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Minus1Multiply;
@@ -45,6 +49,7 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -72,8 +77,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	public CompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov,
-		Collection<CompressionType> ct) {
-		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1, ct);
+		Collection<CompressionType> ct, CostEstimatorBuilder csb) {
+		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1, ct, csb);
 	}
 
 	@Test
@@ -140,6 +145,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		if(!(cmb instanceof CompressedMatrixBlock))
 			return; // Input was not compressed then just pass test
 		if(!(cmb.getNonZeros() >= mb.getNonZeros())) { // guarantee that the nnz is at least the nnz
+			LOG.error(cmb);
 			fail(bufferedToString + "\nIncorrect number of non Zeros should guarantee greater than or equals but are "
 				+ cmb.getNonZeros() + " and should be: " + mb.getNonZeros());
 		}
@@ -678,5 +684,14 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			jolEstimate += cg.estimateInMemorySize();
 		}
 		return jolEstimate;
+	}
+
+	@Test
+	public void toRDDAndBack() {
+		JavaSparkContext sc = SparkExecutionContext.getSparkContextStatic();
+		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = SparkExecutionContext.toMatrixJavaPairRDD(sc, cmb, 200);
+		MatrixBlock back = SparkExecutionContext.toMatrixBlock(rdd, mb.getNumRows(), mb.getNumColumns(), 200,
+			mb.getNonZeros());
+		compareResultMatrices(back, mb, 1);
 	}
 }

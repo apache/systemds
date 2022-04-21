@@ -45,40 +45,60 @@ public class EncodeSampleSingleColTest extends EncodeSampleTest {
 	@Parameters
 	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
-		
+
 		tests.add(create(1, 10, 1.0, true, 2, 2));
-		tests.add(create(1, 10, 0.5, true, 2, 131241));
+		tests.add(create(1, 30, 0.5, true, 2, 131241));
 		tests.add(create(1, 100, 1.0, true, 2, 1312));
 		tests.add(create(1, 500, 0.5, true, 2, 132));
 		tests.add(create(1, 500, 0.5, true, 10, 12));
 		tests.add(create(10, 1, 1.0, false, 2, 32141));
-		tests.add(create(10, 1, 0.5, false, 2, 132));
+		tests.add(create(30, 1, 0.5, false, 2, 132));
+
 		tests.add(create(100, 1, 0.5, false, 2, 21));
 		tests.add(create(100, 2, 0.5, false, 2, 3131));
 		tests.add(create(100, 4, 0.5, false, 2, 32141));
 		tests.add(create(100, 4, 0.5, false, 10, 11));
-		
+
+		tests.add(create(1, 100, 0.1, true, 2, 131241));
+		tests.add(create(1, 5000, 0.1, true, 2, 132));
+		tests.add(create(1, 5000, 0.1, true, 10, 12));
+		tests.add(create(10, 5000, 0.1, true, 4, 11232));
+		tests.add(create(1000, 1, 0.1, false, 2, 22331));
+		tests.add(create(1000, 2, 0.1, false, 4, 22311));
+		tests.add(create(1000, 3, 0.1, false, 6, 23331));
+
+		tests.add(create(1000, 1, 0.15, false, 2, 22331));
+		tests.add(create(1000, 1, 0.25, false, 2, 22331));
+		tests.add(create(1000, 1, 0.30, false, 2, 22331));
+		tests.add(create(1000, 1, 0.39, false, 2, 22331));
+
+		tests.add(create(1, 10000, 0.39, true, 2, 3));
+		tests.add(create(1, 1000, 0.39, true, 2, 22331));
+		tests.add(create(1, 1000, 0.30, true, 2, 22331));
+		tests.add(create(1, 1000, 0.25, true, 2, 22331));
+		tests.add(create(1, 1000, 0.15, true, 2, 22331));
+
 		tests.add(create(1, 100, 0.2, true, 2, 13));
 		tests.add(create(1, 1000, 0.2, true, 10, 2));
 		tests.add(create(1, 10000, 0.02, true, 10, 3145));
 		tests.add(create(1, 100000, 0.002, true, 10, 3214));
 		tests.add(create(1, 1000000, 0.0002, true, 10, 3232));
-		
+
 		tests.add(create(100, 100, 0.02, false, 2, 32));
 		tests.add(create(1000, 100, 0.06, false, 2, 33412));
-		
+
 		// const
 		tests.add(create(1, 10, 1.0, true, 1, 1341));
 		tests.add(create(10, 1, 1.0, true, 1, 13));
 		// tests.add(create(1, 10, 1.0, true, 1, 2));
-		
+
 		// empty
 		tests.add(create(1, 10, 0.0, true, 1, 2));
 		tests.add(create(10, 1, 0.0, false, 1, 2));
 
-		tests.add(createEmptyAllocatedSparse(1, 10 ,true));
-		tests.add(createEmptyAllocatedSparse(10, 1 ,false));
-		
+		tests.add(createEmptyAllocatedSparse(1, 10, true));
+		tests.add(createEmptyAllocatedSparse(10, 1, false));
+
 		return tests;
 	}
 
@@ -86,10 +106,8 @@ public class EncodeSampleSingleColTest extends EncodeSampleTest {
 		try {
 			int u = nUnique;
 			// Make sure that nUnique always is correct if we have a large enough matrix.
-			nUnique -= sparsity < 1.0 ? 1 : 0;
-			MatrixBlock m = TestUtils
-				.round(TestUtils.generateTestMatrixBlock(nRow, nCol, sparsity < 1.0 ? 0 : 1, nUnique, sparsity, seed));
-
+			MatrixBlock m = TestUtils.round(TestUtils.generateTestMatrixBlock(nRow, nCol, 0.5, nUnique, sparsity, seed));
+			u += sparsity < 1.0 && sparsity != 0 ? 1 : 0;
 			boolean t = transposed;
 
 			IEncode e = IEncode.createFromMatrixBlock(m, t, 0);
@@ -101,7 +119,6 @@ public class EncodeSampleSingleColTest extends EncodeSampleTest {
 			return null; // this is never executed but java require it.
 		}
 	}
-
 
 	public static Object[] createEmptyAllocatedSparse(int nRow, int nCol, boolean transposed) {
 		try {

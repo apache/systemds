@@ -24,6 +24,7 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
@@ -31,7 +32,7 @@ public interface MapToFactory {
 	static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
 
 	public enum MAP_TYPE {
-		BIT, UBYTE, BYTE, CHAR, INT;
+		ZERO, BIT, UBYTE, BYTE, CHAR, CHAR_BYTE, INT;
 	}
 
 	public static AMapToData create(int size, ABitmap ubm) {
@@ -41,7 +42,7 @@ public interface MapToFactory {
 	}
 
 	public static AMapToData create(int size, boolean zeros, IntArrayList[] values) {
-		AMapToData _data = MapToFactory.create(size, values.length + (zeros ? 1 : 0));
+		AMapToData _data = create(size, values.length + (zeros ? 1 : 0));
 
 		if(zeros)
 			_data.fill(values.length);
@@ -56,9 +57,8 @@ public interface MapToFactory {
 	}
 
 	public static AMapToData create(int size, int[] values, int nUnique) {
-		AMapToData _data = MapToFactory.create(size, nUnique);
-		for(int i = 0; i < size; i++)
-			_data.set(i, values[i]);
+		AMapToData _data = create(size, nUnique);
+		_data.copyInt(values);
 		return _data;
 	}
 
@@ -69,8 +69,10 @@ public interface MapToFactory {
 	 * @param numTuples The maximum value to be able to represent inside the map.
 	 * @return A new map
 	 */
-	public static AMapToData create(int size, int numTuples) {
-		if(numTuples <= 2 && size > 32)
+	public static AMapToData create(final int size, final int numTuples) {
+		if(numTuples <= 1)
+			return new MapToZero(size);
+		else if(numTuples == 2 && size > 32)
 			return new MapToBit(numTuples, size);
 		else if(numTuples <= 127)
 			return new MapToUByte(numTuples, size);
@@ -78,12 +80,16 @@ public interface MapToFactory {
 			return new MapToByte(numTuples, size);
 		else if(numTuples <= ((int) Character.MAX_VALUE) + 1)
 			return new MapToChar(numTuples, size);
+		else if(numTuples <= MapToCharPByte.max)
+			return new MapToCharPByte(numTuples, size);
 		else
 			return new MapToInt(numTuples, size);
 	}
 
 	public static AMapToData create(int size, MAP_TYPE t) {
 		switch(t) {
+			case ZERO:
+				return new MapToZero(size);
 			case BIT:
 				return new MapToBit(size);
 			case UBYTE:
@@ -92,9 +98,12 @@ public interface MapToFactory {
 				return new MapToByte(size);
 			case CHAR:
 				return new MapToChar(size);
+			case CHAR_BYTE:
+				return new MapToCharPByte(size);
 			case INT:
-			default:
 				return new MapToInt(size);
+			default:
+				throw new DMLCompressionException("Unsupported type " + t);
 		}
 	}
 
@@ -109,42 +118,7 @@ public interface MapToFactory {
 	 * @return The returned hopefully reduced map.
 	 */
 	public static AMapToData resize(AMapToData d, int numTuples) {
-		final int size = d.size();
-		AMapToData ret;
-		if(d instanceof MapToBit) {
-			d.setUnique(numTuples);
-			return d;
-		}
-		else if(numTuples <= 2 && size > 32)
-			ret = new MapToBit(numTuples, size);
-		else if(d instanceof MapToUByte) {
-			d.setUnique(numTuples);
-			return d;
-		}
-		else if(numTuples <= 127) {
-			if(d instanceof MapToByte)
-				return ((MapToByte) d).toUByte();
-			ret = new MapToUByte(numTuples, size);
-		}
-		else if(d instanceof MapToByte) {
-			d.setUnique(numTuples);
-			return d;
-		}
-		else if(numTuples <= 256)
-			ret = new MapToByte(numTuples, size);
-		else if(d instanceof MapToChar) {
-			d.setUnique(numTuples);
-			return d;
-		}
-		else if(numTuples <= (int) Character.MAX_VALUE + 1)
-			ret = new MapToChar(numTuples, size);
-		else {// then the input was int and reshapes to int
-			d.setUnique(numTuples);
-			return d;
-		}
-
-		ret.copy(d);
-		return ret;
+		return d.resize(numTuples);
 	}
 
 	/**
@@ -160,6 +134,8 @@ public interface MapToFactory {
 		final int numTuples = d.getUnique();
 		AMapToData ret;
 		switch(t) {
+			case ZERO:
+				return new MapToZero(size);
 			case BIT:
 				ret = new MapToBit(numTuples, size);
 				break;
@@ -172,24 +148,30 @@ public interface MapToFactory {
 			case CHAR:
 				ret = new MapToChar(numTuples, size);
 				break;
+			case CHAR_BYTE:
+				ret = new MapToCharPByte(numTuples, size);
+				break;
 			case INT:
-			default:
 				ret = new MapToInt(numTuples, size);
 				break;
+			default:
+				throw new DMLCompressionException("Unsupported type of map " + t);
 		}
 		ret.copy(d);
 		return ret;
 	}
 
 	public static long estimateInMemorySize(int size, int numTuples) {
-		if(numTuples <= 2 && size > 32)
+		if(numTuples <= 1)
+			return MapToZero.getInMemorySize(size);
+		else if(numTuples == 2 && size > 32)
 			return MapToBit.getInMemorySize(size);
-		else if(numTuples <= 127)
-			return MapToByte.getInMemorySize(size);
 		else if(numTuples <= 256)
 			return MapToByte.getInMemorySize(size);
 		else if(numTuples <= ((int) Character.MAX_VALUE) + 1)
 			return MapToChar.getInMemorySize(size);
+		else if(numTuples <= MapToCharPByte.max)
+			return MapToCharPByte.getInMemorySize(size);
 		else
 			return MapToInt.getInMemorySize(size);
 	}
@@ -197,6 +179,8 @@ public interface MapToFactory {
 	public static AMapToData readIn(DataInput in) throws IOException {
 		MAP_TYPE t = MAP_TYPE.values()[in.readByte()];
 		switch(t) {
+			case ZERO:
+				return MapToZero.readFields(in);
 			case BIT:
 				return MapToBit.readFields(in);
 			case UBYTE:
@@ -205,25 +189,12 @@ public interface MapToFactory {
 				return MapToByte.readFields(in);
 			case CHAR:
 				return MapToChar.readFields(in);
+			case CHAR_BYTE:
+				return MapToCharPByte.readFields(in);
 			case INT:
-			default:
 				return MapToInt.readFields(in);
-		}
-	}
-
-	public static int getUpperBoundValue(MAP_TYPE t) {
-		switch(t) {
-			case BIT:
-				return 1;
-			case UBYTE:
-				return 127;
-			case BYTE:
-				return 255;
-			case CHAR:
-				return Character.MAX_VALUE;
-			case INT:
 			default:
-				return Integer.MAX_VALUE;
+				throw new DMLCompressionException("unsupported type " + t);
 		}
 	}
 }

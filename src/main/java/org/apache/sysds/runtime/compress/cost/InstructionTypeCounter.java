@@ -38,6 +38,19 @@ public final class InstructionTypeCounter implements Serializable {
 	protected InstructionTypeCounter() {
 	}
 
+	public InstructionTypeCounter(int scans, int decompressions, int overlappingDecompressions, int leftMultiplications,
+		int rightMultiplications, int compressedMultiplications, int dictionaryOps, int indexing, boolean isDensifying) {
+		this.scans = scans;
+		this.decompressions = decompressions;
+		this.overlappingDecompressions = overlappingDecompressions;
+		this.leftMultiplications = leftMultiplications;
+		this.rightMultiplications = rightMultiplications;
+		this.compressedMultiplications = compressedMultiplications;
+		this.dictionaryOps = dictionaryOps;
+		this.indexing = indexing;
+		this.isDensifying = isDensifying;
+	}
+
 	public int getScans() {
 		return scans;
 	}

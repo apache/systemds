@@ -50,6 +50,8 @@ public class OffsetByte extends AOffset {
 			endSize += 1 + (nv - ov - 1) / maxV;
 			ov = nv;
 		}
+
+		this.noZero = endSize == alen - apos - 1;
 		offsets = new byte[endSize];
 		ov = offsetToFirst;
 		int p = 0;
@@ -73,7 +75,7 @@ public class OffsetByte extends AOffset {
 		}
 
 		this.noOverHalf = getNoOverHalf();
-		this.noZero = getNoZero();
+
 	}
 
 	protected OffsetByte(byte[] offsets, int offsetToFirst, int offsetToLast) {
@@ -306,14 +308,14 @@ public class OffsetByte extends AOffset {
 		}
 
 		@Override
-		public int next() {
+		public final int next() {
 			offset += offsets[index];
 			index++;
 			return offset;
 		}
 
 		@Override
-		public int skipTo(int idx) {
+		public final int skipTo(int idx) {
 			while(offset < idx && index < offsets.length) {
 				offset += offsets[index];
 				index++;
@@ -323,7 +325,7 @@ public class OffsetByte extends AOffset {
 		}
 
 		@Override
-		public IterateByteOffsetNoOverHalf clone() {
+		public final IterateByteOffsetNoOverHalf clone() {
 			return new IterateByteOffsetNoOverHalf(index, offset);
 		}
 	}

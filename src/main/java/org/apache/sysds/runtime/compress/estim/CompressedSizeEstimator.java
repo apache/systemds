@@ -20,11 +20,11 @@
 package org.apache.sysds.runtime.compress.estim;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -71,12 +71,12 @@ public abstract class CompressedSizeEstimator {
 	}
 
 	/**
-	 * Multi threaded version of extracting Compression Size info
+	 * Multi threaded version of extracting compression size info
 	 * 
 	 * @param k The concurrency degree.
 	 * @return The Compression Size info of each Column compressed isolated.
 	 */
-	public CompressedSizeInfo computeCompressedSizeInfos(int k) {
+	public final CompressedSizeInfo computeCompressedSizeInfos(int k) {
 		final int _numCols = getNumColumns();
 		if(LOG.isDebugEnabled()) {
 			Timing time = new Timing(true);
@@ -94,7 +94,7 @@ public abstract class CompressedSizeEstimator {
 	 * @param colIndexes The columns to group together inside a ColGroup
 	 * @return The CompressedSizeInformation associated with the selected ColGroups.
 	 */
-	public CompressedSizeInfoColGroup getColGroupInfo(int[] colIndexes) {
+	public final CompressedSizeInfoColGroup getColGroupInfo(int[] colIndexes) {
 		return getColGroupInfo(colIndexes, 8, worstCaseUpperBound(colIndexes));
 	}
 
@@ -120,7 +120,7 @@ public abstract class CompressedSizeEstimator {
 	 * @param colIndexes The columns to group together inside a ColGroup
 	 * @return The CompressedSizeInformation assuming delta encoding of the column.
 	 */
-	public CompressedSizeInfoColGroup getDeltaColGroupInfo(int[] colIndexes) {
+	public final CompressedSizeInfoColGroup getDeltaColGroupInfo(int[] colIndexes) {
 		return getDeltaColGroupInfo(colIndexes, 8, worstCaseUpperBound(colIndexes));
 	}
 
@@ -192,6 +192,11 @@ public abstract class CompressedSizeEstimator {
 			return combine(combinedColumns, g1, g2, (int) max);
 	}
 
+	/** Clear the pointer to the materialized list of nnz in columns */
+	public void clearNNZ() {
+		nnzCols = null;
+	}
+
 	/**
 	 * Extract the worst case upper bound of unique tuples in specified columns.
 	 * 
@@ -215,61 +220,75 @@ public abstract class CompressedSizeEstimator {
 	protected abstract CompressedSizeInfoColGroup combine(int[] combinedColumns, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int maxDistinct);
 
-	protected List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroup(int clen) {
-		List<CompressedSizeInfoColGroup> ret = new ArrayList<CompressedSizeInfoColGroup>(clen);
+	private List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroup(int clen, int k) {
+		if(k <= 1)
+			return CompressedSizeInfoColGroupSingleThread(clen);
+		else
+			return CompressedSizeInfoColGroupParallel(clen, k);
+	}
+
+	private List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroupSingleThread(int clen) {
+		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(clen);
+		if(!_cs.transposed && !_data.isEmpty() && _data.isInSparseFormat())
+			nnzCols = LibMatrixReorg.countNnzPerColumn(_data);
 		for(int col = 0; col < clen; col++)
 			ret.add(getColGroupInfo(new int[] {col}));
 		return ret;
 	}
 
-	protected List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroup(int clen, int k) {
-		if(k <= 1)
-			return CompressedSizeInfoColGroup(clen);
+	private List<CompressedSizeInfoColGroup> CompressedSizeInfoColGroupParallel(int clen, int k) {
 		try {
 			final ExecutorService pool = CommonThreadPool.get(k);
-			final ArrayList<SizeEstimationTask> tasks = new ArrayList<>(clen);
-			for(int col = 0; col < clen; col++)
-				tasks.add(new SizeEstimationTask(col));
-
-			if(!_cs.transposed && _data.isInSparseFormat() && getNumColumns() < 1000) {
+			if(!_cs.transposed && !_data.isEmpty() && _data.isInSparseFormat()) {
 				LOG.debug("Extracting number of nonzeros in each column");
-				nnzCols = null;
 				List<Future<int[]>> nnzFutures = LibMatrixReorg.countNNZColumnsFuture(_data, k, pool);
-				List<Future<CompressedSizeInfoColGroup>> analysisFutures = pool.invokeAll(tasks);
 				for(Future<int[]> t : nnzFutures)
 					nnzCols = LibMatrixReorg.mergeNnzCounts(nnzCols, t.get());
-				return analysisFutures.stream().map(x -> getT(x)).collect(Collectors.toList());
 			}
-			else
-				return pool.invokeAll(tasks).stream().map(x -> getT(x)).collect(Collectors.toList());
+
+			CompressedSizeInfoColGroup[] res = new CompressedSizeInfoColGroup[clen];
+			final int blkz = Math.max(1, clen / (k * 10));
+			final ArrayList<SizeEstimationTask> tasks = new ArrayList<>(clen / blkz + 1);
+
+			if(blkz != 1)
+				LOG.debug("Extracting column samples in blocks of " + blkz);
+
+			for(int col = 0; col < clen; col += blkz)
+				tasks.add(new SizeEstimationTask(res, col, Math.min(clen, col + blkz)));
+
+			for(Future<Object> f : pool.invokeAll(tasks))
+				f.get();
+
+			pool.shutdown();
+			return Arrays.asList(res);
 
 		}
 		catch(Exception e) {
-			LOG.error("Fallback to single threaded column info extraction", e);
-			return CompressedSizeInfoColGroup(clen);
+			throw new DMLCompressionException("Multithreaded first extraction failed", e);
 		}
 	}
 
-	private <T> T getT(Future<T> x) {
-		try {
-			return x.get();
-		}
-		catch(Exception e) {
-			throw new DMLCompressionException("failed getting future colgroup info extraction", e);
-		}
-	}
+	private class SizeEstimationTask implements Callable<Object> {
+		final CompressedSizeInfoColGroup[] _res;
+		final int _cs;
+		final int _ce;
 
-	private class SizeEstimationTask implements Callable<CompressedSizeInfoColGroup> {
-
-		private final int[] _cols;
-
-		private SizeEstimationTask(int col) {
-			_cols = new int[] {col};
+		private SizeEstimationTask(CompressedSizeInfoColGroup[] res, int cs, int ce) {
+			_res = res;
+			_cs = cs;
+			_ce = ce;
 		}
 
 		@Override
-		public CompressedSizeInfoColGroup call() {
-			return getColGroupInfo(_cols);
+		public Object call() {
+			try {
+				for(int c = _cs; c < _ce; c++)
+					_res[c] = getColGroupInfo(new int[] {c});
+				return null;
+			}
+			catch(Exception e) {
+				throw new DMLCompressionException("ColGroup extraction failed", e);
+			}
 		}
 	}
 }

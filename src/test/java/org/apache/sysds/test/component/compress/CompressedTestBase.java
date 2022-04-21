@@ -42,11 +42,17 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.cost.ACostEstimate;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
+import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -124,28 +130,34 @@ public abstract class CompressedTestBase extends TestBase {
 
 	public CompressedTestBase(SparsityType sparType, ValueType valType, ValueRange valueRange,
 		CompressionSettingsBuilder compSettings, MatrixTypology MatrixTypology, OverLapping ov, int parallelism,
-		Collection<CompressionType> ct) {
+		Collection<CompressionType> ct, CostEstimatorBuilder ceb) {
 		super(sparType, valType, valueRange, compSettings, MatrixTypology, ov, ct);
 
 		_k = parallelism;
-
-		CompressionSettings.PAR_DDC_THRESHOLD = 1;
+		mb.examSparsity();
+		// CompressionSettings.PAR_DDC_THRESHOLD = 1;
 
 		try {
 			if(_cs == null && ct == null) {
-				Pair<MatrixBlock, CompressionStatistics> pair = (_k == 1) ? CompressedMatrixBlockFactory
-					.compress(mb) : CompressedMatrixBlockFactory.compress(mb, _k);
+				Pair<MatrixBlock, CompressionStatistics> pair = (_k == 1) ? CompressedMatrixBlockFactory.compress(mb,
+					ceb) : CompressedMatrixBlockFactory.compress(mb, _k, ceb);
 				cmb = pair.getLeft();
 				cmbStats = pair.getRight();
+				if(cmb == null)
+					throw new DMLCompressionException("Matrix block gone");
+
 			}
-			else if(_cs == null) {
+			else if(ct != null) {
 
 				cmb = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
 				List<AColGroup> colGroups = new ArrayList<>();
 				int index = 0;
 				final int groupSize = (int) Math.ceil((double) mb.getNumColumns() / ct.size());
 				for(CompressionType c : ct) {
-					final CompressionSettings cs = csb().clearValidCompression().addValidCompression(c).create();
+					final CompressionSettingsBuilder csb = csb().clearValidCompression().addValidCompression(c);
+					if(ceb != null)
+						csb.setCostType(CostType.W_TREE);
+					final CompressionSettings cs = csb.create();
 					final int size = Math.min(groupSize, mb.getNumColumns() - (groupSize * index));
 					if(size == 0)
 						continue;
@@ -158,36 +170,47 @@ public abstract class CompressedTestBase extends TestBase {
 					CompressedSizeInfoColGroup cgi = CompressedSizeEstimatorFactory.createEstimator(mb, cs, _k)
 						.getColGroupInfo(colIndexes);
 					CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
-					for(AColGroup cg : ColGroupFactory.compressColGroups(mb, csi, cs, 1))
+
+					ACostEstimate ce = CostEstimatorFactory.create(cs, ceb, mb.getNumRows(), mb.getNumColumns(),
+						mb.getSparsity());
+					for(AColGroup cg : ColGroupFactory.compressColGroups(mb, csi, cs, ce, 1))
 						colGroups.add(cg);
+
 					index++;
 				}
 				((CompressedMatrixBlock) cmb).allocateColGroupList(colGroups);
 				cmb.recomputeNonZeros();
+				if(cmb == null)
+					throw new DMLCompressionException("Matrix block gone");
+
 			}
 			else {
 				if(_cs != null && (_cs.lossy || ov == OverLapping.SQUASH))
 					setLossyTolerance(valueRange);
 
-				if(_cs.validCompressions.size() == 2) {
+				if(_cs.validCompressions.size() == 2 && rows < 10000) {
 					/**
 					 * In case only Uncompressed and Const colgroups are available. filter the big tests from uncompressed
 					 * colgroup tests since the functionality should be verified even with smaller matrices
 					 */
-					if(rows < 10000) {
-						int[] colIndexes = new int[mb.getNumColumns()];
-						for(int i = 0; i < colIndexes.length; i++)
-							colIndexes[i] = i;
-						cmb = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
-						((CompressedMatrixBlock) cmb).allocateColGroup(ColGroupUncompressed.create(colIndexes, mb, false));
-					}
+					int[] colIndexes = new int[mb.getNumColumns()];
+					for(int i = 0; i < colIndexes.length; i++)
+						colIndexes[i] = i;
+					cmb = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
+					((CompressedMatrixBlock) cmb).allocateColGroup(ColGroupUncompressed.create(colIndexes, mb, false));
+
 				}
 				else {
-					Pair<MatrixBlock, CompressionStatistics> pair = CompressedMatrixBlockFactory.compress(mb, _k, _csb);
+					Pair<MatrixBlock, CompressionStatistics> pair = CompressedMatrixBlockFactory.compress(mb, _k, _csb, ceb);
 					cmb = pair.getLeft();
 					cmbStats = pair.getRight();
+					if(cmb == null)
+						throw new DMLCompressionException("Matrix block gone");
 				}
 			}
+			if(cmb == null)
+				throw new DMLCompressionException("Matrix block gone");
+
 			MatrixBlock tmp = null;
 			switch(ov) {
 				case COL:
@@ -213,7 +236,7 @@ public abstract class CompressedTestBase extends TestBase {
 				case C_BIND_SELF:
 					if(cmb instanceof CompressedMatrixBlock) {
 						CompressedMatrixBlock cmbc = (CompressedMatrixBlock) cmb;
-						cmb = CLALibAppend.append(cmbc, cmbc, false);
+						cmb = CLALibAppend.append(cmbc, cmbc, _k);
 						mb = mb.append(mb, new MatrixBlock());
 						cols *= 2;
 					}
@@ -221,6 +244,9 @@ public abstract class CompressedTestBase extends TestBase {
 				default:
 					break;
 			}
+			if(cmb == null)
+				throw new DMLCompressionException("Matrix block gone");
+
 			if(cmb instanceof CompressedMatrixBlock) {
 				if(tmp != null && ov == OverLapping.APPEND_EMPTY || ov == OverLapping.APPEND_CONST) {
 					mb = mb.append(tmp, new MatrixBlock());
@@ -249,6 +275,8 @@ public abstract class CompressedTestBase extends TestBase {
 							cmb = ((CompressedMatrixBlock) cmb).squash(_k);
 					}
 				}
+				if(cmb == null)
+					throw new DMLCompressionException("Matrix block gone");
 				if(cmb instanceof CompressedMatrixBlock) {
 
 					if(ov == OverLapping.PLUS || ov == OverLapping.PLUS_LARGE) {
@@ -268,11 +296,13 @@ public abstract class CompressedTestBase extends TestBase {
 					if(!(cmb instanceof CompressedMatrixBlock))
 						fail("Invalid construction, should result in compressed MatrixBlock");
 				}
+				if(cmb == null)
+					throw new DMLCompressionException("Matrix block gone");
 			}
-
 			bufferedToString = this.toString();
+			if(mb == null || cmb == null)
+				throw new DMLCompressionException("Failed construction  " + (mb == null) + "  " + (cmb == null));
 			TestUtils.assertEqualColsAndRows(mb, cmb, bufferedToString);
-
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -282,7 +312,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 	/**
 	 * Tolerance for encoding values is the maximum value in dataset divided by number distinct values available in a
-	 * single Byte (since we encode our quntization in Byte)
+	 * single Byte (since we encode our quantization in Byte)
 	 * 
 	 * @param valueRange The value range used as input
 	 */
@@ -303,17 +333,17 @@ public abstract class CompressedTestBase extends TestBase {
 							for(OverLapping ov : overLapping)
 								if((ov == OverLapping.APPEND_CONST || ov == OverLapping.APPEND_EMPTY)) {
 									if(vr == ValueRange.BOOLEAN)
-										tests.add(new Object[] {st, vt, vr, cs, mt, ov, null});
+										tests.add(new Object[] {st, vt, vr, cs, mt, ov, null, null});
 								}
 								else
-									tests.add(new Object[] {st, vt, vr, cs, mt, ov, null});
+									tests.add(new Object[] {st, vt, vr, cs, mt, ov, null, null});
 
 		final MatrixTypology mt = MatrixTypology.SMALL;
 		for(CompressionSettingsBuilder cs : usedCompressionSettings) {
 			for(OverLapping ov : overLapping) {
-				tests.add(new Object[] {SparsityType.EMPTY, ValueType.RAND, ValueRange.BOOLEAN, cs, mt, ov, null});
-				tests.add(new Object[] {SparsityType.FULL, ValueType.CONST, ValueRange.LARGE, cs, mt, ov, null});
-				tests.add(new Object[] {SparsityType.FULL, ValueType.ONE_HOT, ValueRange.BOOLEAN, cs, mt, ov, null});
+				tests.add(new Object[] {SparsityType.EMPTY, ValueType.RAND, ValueRange.BOOLEAN, cs, mt, ov, null, null});
+				tests.add(new Object[] {SparsityType.FULL, ValueType.CONST, ValueRange.LARGE, cs, mt, ov, null, null});
+				tests.add(new Object[] {SparsityType.FULL, ValueType.ONE_HOT, ValueRange.BOOLEAN, cs, mt, ov, null, null});
 			}
 		}
 		final CompressionSettingsBuilder cs = csb().setColumnPartitioner(PartitionerType.STATIC)
@@ -325,9 +355,9 @@ public abstract class CompressedTestBase extends TestBase {
 		for(ValueType vt : forcedCompressionValueTypes) {
 			SparsityType st = SparsityType.SPARSE;
 			for(OverLapping ov : overLapping) {
-				tests.add(new Object[] {st, vt, ValueRange.BOOLEAN, null, mt, ov, null});
+				tests.add(new Object[] {st, vt, ValueRange.BOOLEAN, null, mt, ov, null, null});
 				List<CompressionType> ctl = Arrays.asList(forcedColGroups);
-				tests.add(new Object[] {st, vt, ValueRange.SMALL, null, mt, ov, ctl});
+				tests.add(new Object[] {st, vt, ValueRange.SMALL, null, mt, ov, ctl, null});
 			}
 		}
 
@@ -337,26 +367,56 @@ public abstract class CompressedTestBase extends TestBase {
 		final SparsityType sp = SparsityType.ULTRA_SPARSE;
 		final ValueType ubs = ValueType.UNBALANCED_SPARSE;
 
-		tests.add(new Object[] {sp, ValueType.OLE_COMPRESSIBLE, ValueRange.CONST, cs, mt, ov, null});
-		tests.add(new Object[] {sp, ValueType.OLE_COMPRESSIBLE, ValueRange.SMALL, cs, mt, ov, null});
-		tests.add(new Object[] {sp, ubs, ValueRange.CONST, cs, mt, ov, null});
-		tests.add(new Object[] {sp, ubs, ValueRange.SMALL, cs, mt, ov, null});
+		tests.add(new Object[] {sp, ValueType.OLE_COMPRESSIBLE, ValueRange.CONST, cs, mt, ov, null, null});
+		tests.add(new Object[] {sp, ValueType.OLE_COMPRESSIBLE, ValueRange.SMALL, cs, mt, ov, null, null});
+		tests.add(new Object[] {sp, ubs, ValueRange.CONST, cs, mt, ov, null, null});
+		tests.add(new Object[] {sp, ubs, ValueRange.SMALL, cs, mt, ov, null, null});
 
 		final ValueType rd = ValueType.RAND;
 
 		final CompressionType uc = CompressionType.UNCOMPRESSED;
 		List<CompressionType> forceUncompressed = Arrays.asList(new CompressionType[] {uc, uc});
 		// forced two uncompressed
-		tests.add(new Object[] {sp, rd, ValueRange.SMALL, null, mt, ov, forceUncompressed});
-		tests.add(new Object[] {sp, rd, ValueRange.SMALL, null, mt, cBindSelf, forceUncompressed});
+		tests.add(new Object[] {sp, rd, ValueRange.SMALL, null, mt, ov, forceUncompressed, null});
+		tests.add(new Object[] {sp, rd, ValueRange.SMALL, null, mt, cBindSelf, forceUncompressed, null});
 		// Ubs to ensure that one of the compressed matrices is empty.
-		tests.add(new Object[] {sp, ubs, ValueRange.SMALL, null, mt, cBindSelf, forceUncompressed});
+		tests.add(new Object[] {sp, ubs, ValueRange.SMALL, null, mt, cBindSelf, forceUncompressed, null});
 		// forced two uncompressed empty colGroups.
-		tests.add(new Object[] {SparsityType.EMPTY, rd, ValueRange.CONST, null, mt, ov, forceUncompressed});
+		tests.add(new Object[] {SparsityType.EMPTY, rd, ValueRange.CONST, null, mt, ov, forceUncompressed, null});
 
 		// add tests of larger compressions
 		tests.add(new Object[] {SparsityType.SPARSE, ValueType.RAND_ROUND, ValueRange.SMALL, null, MatrixTypology.XL_ROWS,
-			ov, null});
+			ov, null, null});
+
+		CompressionSettingsBuilder sb = csb().setCostType(CostType.W_TREE);
+		InstructionTypeCounter itc = new InstructionTypeCounter(10, 10, 0, 100, 10, 0, 0, 10, false);
+		CostEstimatorBuilder csb = new CostEstimatorBuilder(itc);
+		SparsityType st = SparsityType.THIRTY;
+		ValueType vt = ValueType.ONE_HOT;
+		ValueRange vr = ValueRange.BOOLEAN;
+		MatrixTypology mtn = MatrixTypology.COL_16;
+		OverLapping ovn = OverLapping.NONE;
+
+		tests.add(new Object[] {st, vt, vr, sb, mtn, ovn, null, csb});
+		ovn = OverLapping.PLUS_ROW_VECTOR;
+		tests.add(new Object[] {st, vt, vr, sb, mtn, ovn, null, csb});
+
+		sb = csb().setCostType(CostType.W_TREE).clearValidCompression().addValidCompression(CompressionType.DDC);
+
+		tests.add(new Object[] {st, vt, vr, sb, mtn, ovn, null, csb});
+		ovn = OverLapping.PLUS_ROW_VECTOR;
+		tests.add(new Object[] {st, vt, vr, sb, mtn, ovn, null, csb});
+
+		final List<CompressionType> forceDDC2 = Arrays
+			.asList(new CompressionType[] {CompressionType.DDC, CompressionType.DDC});
+		tests.add(new Object[] {st, vt, vr, sb, mtn, ovn, forceDDC2, csb});
+		ovn = OverLapping.PLUS_ROW_VECTOR;
+		tests.add(new Object[] {st, vt, vr, sb, mtn, ovn, forceDDC2, csb});
+
+		final List<CompressionType> forceDDC1 = Arrays.asList(new CompressionType[] {CompressionType.DDC});
+		tests.add(new Object[] {st, vt, vr, sb, mtn, ovn, forceDDC1, csb});
+		ovn = OverLapping.PLUS_ROW_VECTOR;
+		tests.add(new Object[] {st, vt, vr, sb, mtn, ovn, forceDDC1, csb});
 
 		return tests;
 
@@ -369,6 +429,7 @@ public abstract class CompressedTestBase extends TestBase {
 				return; // Input was not compressed then just pass test
 			((CompressedMatrixBlock) cmb).clearSoftReferenceToDecompressed();
 			MatrixBlock decompressedMatrixBlock = ((CompressedMatrixBlock) cmb).decompress(_k);
+			// LOG.error(cmb);
 			compareResultMatrices(mb, decompressedMatrixBlock, 1);
 			if(mb.getNonZeros() != decompressedMatrixBlock.getNonZeros())
 				fail(bufferedToString + "\n NonZeros not equivalent: expected:" + mb.getNonZeros() + " was: "
@@ -696,7 +757,7 @@ public abstract class CompressedTestBase extends TestBase {
 			ucRet = mb.aggregateBinaryOperations(mbMt, mb, ucRet, abop);
 
 			// compare result with input
-			compareResultMatrices(ucRet, ret2, 2);
+			compareResultMatrices(ucRet, ret2, overlappingType != OverLapping.NONE ? 256 : 2);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -739,7 +800,7 @@ public abstract class CompressedTestBase extends TestBase {
 			// matrix-vector uncompressed
 			ucRet = mb.transposeSelfMatrixMultOperations(ucRet, mType, _k);
 			// compare result with input
-			compareResultMatrices(ucRet, ret2, 4);
+			compareResultMatrices(ucRet, ret2, overlappingType != OverLapping.NONE ? 256 : 2);
 		}
 		else {
 			// matrix-vector compressed
@@ -747,7 +808,7 @@ public abstract class CompressedTestBase extends TestBase {
 			// matrix-vector uncompressed
 			ucRet = mb.transposeSelfMatrixMultOperations(ucRet, mType);
 			// compare result with input
-			compareResultMatrices(ucRet, ret2, 4);
+			compareResultMatrices(ucRet, ret2, overlappingType != OverLapping.NONE ? 256 : 2);
 		}
 	}
 
@@ -800,7 +861,6 @@ public abstract class CompressedTestBase extends TestBase {
 			ucRet = mb.scalarOperations(sop, ucRet);
 			// matrix-scalar compressed
 			MatrixBlock ret2 = cmb.scalarOperations(sop, new MatrixBlock());
-
 			// compare result with input
 			compareResultMatrices(ucRet, ret2, tolerance);
 
@@ -1066,6 +1126,9 @@ public abstract class CompressedTestBase extends TestBase {
 		if(result instanceof CompressedMatrixBlock)
 			result = ((CompressedMatrixBlock) result).decompress();
 
+		if(result.getNonZeros() < expected.getNonZeros())
+			fail("Nonzero is to low guarantee at least equal or higher" + result.getNonZeros() + " vs " +  expected.getNonZeros());
+
 		if(_cs != null && _cs.lossy)
 			TestUtils.compareMatricesPercentageDistance(expected, result, 0.25, 0.83, bufferedToString);
 		else if(overlappingType == OverLapping.SQUASH)
@@ -1094,4 +1157,5 @@ public abstract class CompressedTestBase extends TestBase {
 	protected static CompressionSettingsBuilder csb() {
 		return new CompressionSettingsBuilder().setSeed(compressionSeed).setMinimumSampleSize(100);
 	}
+
 }

@@ -24,7 +24,6 @@ import java.util.Collection;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -35,13 +34,13 @@ public class JolEstimateDeltaDDCTest extends JolEstimateTest {
 	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
 
-		MatrixBlock mb;
+		// MatrixBlock mb;
 
-		mb = DataConverter.convertToMatrixBlock(new double[][] {{0}});
-		tests.add(new Object[] {mb});
+		// mb = DataConverter.convertToMatrixBlock(new double[][] {{0}});
+		// tests.add(new Object[] {mb});
 
-		mb = DataConverter.convertToMatrixBlock(new double[][] {{1}});
-		tests.add(new Object[] {mb});
+		// mb = DataConverter.convertToMatrixBlock(new double[][] {{1}});
+		// tests.add(new Object[] {mb});
 
 		// TODO add reader that reads as if Delta encoded.
 		// then afterwards use this test.

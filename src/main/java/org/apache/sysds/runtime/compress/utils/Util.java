@@ -56,10 +56,17 @@ public interface Util {
 		return Math.max(v, 4);
 	}
 
-	public static int[] genColsIndices(int numCols) {
-		int[] colIndices = new int[numCols];
+	public static int[] genColsIndices(final int numCols) {
+		final int[] colIndices = new int[numCols];
 		for(int i = 0; i < numCols; i++)
 			colIndices[i] = i;
+		return colIndices;
+	}
+
+	public static int[] genColsIndicesOffset(final int numCols, final int start) {
+		final int[] colIndices = new int[numCols];
+		for(int i = 0, j = start; i < numCols; i++, j++)
+			colIndices[i] = j;
 		return colIndices;
 	}
 

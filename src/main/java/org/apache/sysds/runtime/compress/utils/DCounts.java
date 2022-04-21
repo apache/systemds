@@ -19,11 +19,13 @@
 package org.apache.sysds.runtime.compress.utils;
 
 public class DCounts {
-	public double key = Double.MAX_VALUE;
+	final public double key;
 	public int count;
+	public int id;
 
-	public DCounts(double key) {
+	public DCounts(double key, int id) {
 		this.key = key;
+		this.id = id;
 		count = 1;
 	}
 

@@ -34,16 +34,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetChar;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetSingle;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetTwo;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -72,6 +74,8 @@ public class OffsetTests {
 			tests.add(new Object[] {new int[] {1023}, t});
 			tests.add(new Object[] {new int[] {0, 1, 2, 3, 4, 5}, t});
 			tests.add(new Object[] {new int[] {0}, t});
+			tests.add(new Object[] {new int[] {500}, t});
+			tests.add(new Object[] {new int[] {1442}, t});
 			tests.add(new Object[] {new int[] {Character.MAX_VALUE, ((int) Character.MAX_VALUE) + 1}, t});
 			tests.add(new Object[] {new int[] {Character.MAX_VALUE, ((int) Character.MAX_VALUE) * 2}, t});
 			tests.add(new Object[] {new int[] {0, 256}, t});
@@ -107,22 +111,24 @@ public class OffsetTests {
 	public OffsetTests(int[] data, OFF_TYPE type) {
 		this.data = data;
 		this.type = type;
-		switch(type) {
-			case BYTE:
-				this.o = new OffsetByte(data);
-				break;
-			case CHAR:
-				this.o = new OffsetChar(data);
-				break;
-			default:
-				throw new NotImplementedException("not implemented");
-		}
+		this.o = OffsetTestUtil.getOffset(data, type);
 	}
 
 	@Test
 	public void testConstruction() {
 		try {
 			compare(o, data);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
+	@Test
+	public void testConstructionOffsetIteratorOnly() {
+		try {
+			compareOffsetIterator(o, data);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -210,6 +216,16 @@ public class OffsetTests {
 			long estimatedSize;
 
 			switch(type) {
+				case SINGLE_OFFSET:
+					if(data.length == 1) {
+						estimatedSize = OffsetSingle.estimateInMemorySize();
+						break;
+					}
+				case TWO_OFFSET:
+					if(data.length == 2) {
+						estimatedSize = OffsetTwo.estimateInMemorySize();
+						break;
+					}
 				case BYTE:
 					final int correctionByte = OffsetFactory.correctionByte(data[data.length - 1] - data[0], data.length);
 					estimatedSize = OffsetByte.estimateInMemorySize(data.length + correctionByte);
@@ -400,6 +416,36 @@ public class OffsetTests {
 		o.cacheIterator(null, 21415);
 	}
 
+	@Test
+	public void testCloneIterator() {
+		assertTrue(o.getIterator().clone().equals(o.getIterator()));
+	}
+
+	@Test
+	public void testCloneIteratorNext() {
+		if(data.length > 1 || type == OFF_TYPE.SINGLE_OFFSET) {
+
+			AIterator a = o.getIterator().clone();
+			AIterator b = o.getIterator();
+			a.next();
+			b.next();
+			b = b.clone();
+			assertTrue(a.equals(b));
+		}
+	}
+
+	@Test
+	public void testCloneIteratorOffsetNext() {
+		if(data.length > 1 || type == OFF_TYPE.SINGLE_OFFSET) {
+
+			AOffsetIterator a = o.getOffsetIterator();
+			AOffsetIterator b = o.getOffsetIterator();
+			a.next();
+			b.next();
+			assertTrue(a.value() == b.value());
+		}
+	}
+
 	protected static void compare(AOffset o, int[] v) {
 		AIterator i = o.getIterator();
 		if(v[0] != i.value())
@@ -414,5 +460,18 @@ public class OffsetTests {
 		if(i.getOffsetsIndex() != o.getOffsetsLength())
 			fail("The allocated offsets are longer than needed: idx " + i.getOffsetsIndex() + " vs len "
 				+ o.getOffsetsLength() + "\n" + Arrays.toString(v));
+	}
+
+	protected static void compareOffsetIterator(AOffset o, int[] v) {
+		AOffsetIterator i = o.getOffsetIterator();
+		if(v[0] != i.value())
+			fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
+				+ " but was :" + o.toString());
+		for(int j = 1; j < v.length; j++) {
+			i.next();
+			if(v[j] != i.value())
+				fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
+					+ " but was :" + o.toString());
+		}
 	}
 }

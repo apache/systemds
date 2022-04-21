@@ -115,4 +115,22 @@ public class ReadersTest {
 		}
 		assertEquals(i, 3);
 	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void testEmpty() {
+		ReaderColumnSelection.createReader(new MatrixBlock(), new int[] {0, 1}, false);
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void testInvalidRange() {
+
+		ReaderColumnSelection.createReader(new MatrixBlock(), new int[] {0, 1}, false, 10, 9);
+	}
+
+	@Test(expected = DMLCompressionException.class)
+	public void testInvalidRange_02() {
+		MatrixBlock mb = new MatrixBlock(10, 32, true);
+		mb.allocateDenseBlock();
+		ReaderColumnSelection.createReader(mb, new int[] {0, 1}, false, 10, 9);
+	}
 }

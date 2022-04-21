@@ -127,11 +127,11 @@ public class JolEstimateSDCTest extends JolEstimateTest {
 		// mb = CompressibleInputGenerator.getInput(100000, 1, CompressionType.OLE, 4, 0.006, 5, true);
 		// tests.add(new Object[] {mb});
 
-		mb = CompressibleInputGenerator.getInput(1000000, 1, CompressionType.OLE, 4, 0.0001, 5, true);
-		tests.add(new Object[] {mb});
+		// mb = CompressibleInputGenerator.getInput(1000000, 1, CompressionType.OLE, 4, 0.0001, 5, true);
+		// tests.add(new Object[] {mb});
 
-		mb = CompressibleInputGenerator.getInput(1000000, 1, CompressionType.OLE, 4, 0.00001, 5, true);
-		tests.add(new Object[] {mb});
+		// mb = CompressibleInputGenerator.getInput(1000000, 1, CompressionType.OLE, 4, 0.00001, 5, true);
+		// tests.add(new Object[] {mb});
 
 		// Multi Columns
 		// mb = CompressibleInputGenerator.getInput(412, 5, CompressionType.OLE, 20, 0.4, 5);

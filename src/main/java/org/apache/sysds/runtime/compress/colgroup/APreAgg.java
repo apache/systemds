@@ -37,6 +37,8 @@ public abstract class APreAgg extends AColGroupValue {
 
 	private static final long serialVersionUID = 3250955207277128281L;
 
+	private static boolean loggedWarningForDirect = false;
+
 	/**
 	 * Constructor for serialization
 	 * 
@@ -79,7 +81,6 @@ public abstract class APreAgg extends AColGroupValue {
 		else if(lhs instanceof APreAgg)
 			leftMultByColGroupValue((APreAgg) lhs, result);
 		else if(lhs instanceof ColGroupUncompressed)
-			// throw new NotImplementedException();
 			leftMultByUncompressedColGroup((ColGroupUncompressed) lhs, result);
 		else
 			throw new DMLCompressionException(
@@ -110,7 +111,7 @@ public abstract class APreAgg extends AColGroupValue {
 	 * @param that the other column group whose indexes are used for aggregation.
 	 * @return A aggregate dictionary
 	 */
-	public final Dictionary preAggregateThatIndexStructure(APreAgg that) {
+	public final ADictionary preAggregateThatIndexStructure(APreAgg that) {
 		int outputLength = that._colIndexes.length * this.getNumValues();
 		Dictionary ret = new Dictionary(new double[outputLength]);
 
@@ -126,7 +127,7 @@ public abstract class APreAgg extends AColGroupValue {
 			throw new NotImplementedException(
 				"Not supported pre aggregate using index structure of :" + cThat + " in " + cThis);
 		}
-		return ret;
+		return ret.getMBDict(that._colIndexes.length);
 	}
 
 	/**
@@ -176,14 +177,54 @@ public abstract class APreAgg extends AColGroupValue {
 
 		if(sameIndexStructure(lg))
 			DictLibMatrixMult.TSMMToUpperTriangleScaling(lg._dict, _dict, leftIdx, rightIdx, getCounts(), result);
-		else if(shouldPreAggregateLeft(lg)) {
-			final ADictionary lpa = this.preAggregateThatIndexStructure(lg);
-			DictLibMatrixMult.TSMMToUpperTriangle(lpa, _dict, leftIdx, rightIdx, result);
+		else {
+			final boolean left = shouldPreAggregateLeft(lg);
+			if(!loggedWarningForDirect && shouldDirectMultiply(lg, leftIdx.length, rightIdx.length, left)) {
+				loggedWarningForDirect = true;
+				LOG.warn("Not implemented direct tsmm colgroup");
+			}
+
+			if(left) {
+				final ADictionary lpa = this.preAggregateThatIndexStructure(lg);
+				if(lpa != null)
+					DictLibMatrixMult.TSMMToUpperTriangle(lpa, _dict, leftIdx, rightIdx, result);
+			}
+			else {
+				final ADictionary rpa = lg.preAggregateThatIndexStructure(this);
+				if(rpa != null)
+					DictLibMatrixMult.TSMMToUpperTriangle(lg._dict, rpa, leftIdx, rightIdx, result);
+			}
+		}
+	}
+
+	private boolean shouldDirectMultiply(APreAgg lg, int nColL, int nColR, boolean leftPreAgg) {
+		int lMRows = lg.numRowsToMultiply();
+		int rMRows = this.numRowsToMultiply();
+		long commonDim = (long) Math.min(lMRows, rMRows);
+		long directFLOPS = commonDim * nColL * nColR * 2; // times 2 for first add then multiply
+
+		long preAggFLOPS = 0;
+
+		if(leftPreAgg) {
+			final int nVal = this.getNumValues();
+			// allocation
+			preAggFLOPS += nColL * nVal;
+			// preAgg
+			preAggFLOPS += nColL * commonDim; // worst case but okay
+			// multiply
+			preAggFLOPS += nColR * nColL * nVal;
 		}
 		else {
-			final ADictionary rpa = lg.preAggregateThatIndexStructure(this);
-			DictLibMatrixMult.TSMMToUpperTriangle(lg._dict, rpa, leftIdx, rightIdx, result);
+			final int nVal = lg.getNumValues();
+			// allocation
+			preAggFLOPS += nColR * nVal;
+			// preAgg
+			preAggFLOPS += nColR * commonDim; // worst case but okay
+			// multiply
+			preAggFLOPS += nColR * nColL * nVal;
 		}
+
+		return directFLOPS < preAggFLOPS;
 	}
 
 	private void leftMultByColGroupValue(APreAgg lhs, MatrixBlock result) {
@@ -196,17 +237,23 @@ public abstract class APreAgg extends AColGroupValue {
 			DictLibMatrixMult.TSMMDictionaryWithScaling(rDict, getCounts(), leftIdx, rightIdx, result);
 		else if(sameIdx)
 			DictLibMatrixMult.MMDictsWithScaling(lDict, rDict, leftIdx, rightIdx, result, getCounts());
-		else if(shouldPreAggregateLeft(lhs)) // left preAgg
-			DictLibMatrixMult.MMDicts(lDict, lhs.preAggregateThatIndexStructure(this), leftIdx, rightIdx, result);
-		else // right preAgg
-			DictLibMatrixMult.MMDicts(this.preAggregateThatIndexStructure(lhs), rDict, leftIdx, rightIdx, result);
+		else if(shouldPreAggregateLeft(lhs)) {// left preAgg
+			final ADictionary lhsPA = lhs.preAggregateThatIndexStructure(this);
+			if(lhsPA != null)
+				DictLibMatrixMult.MMDicts(lDict, lhsPA, leftIdx, rightIdx, result);
+		}
+		else {// right preAgg
+			final ADictionary rhsPA = preAggregateThatIndexStructure(lhs);
+			if(rhsPA != null)
+				DictLibMatrixMult.MMDicts(rhsPA, rDict, leftIdx, rightIdx, result);
+		}
 
 	}
 
 	private void leftMultByUncompressedColGroup(ColGroupUncompressed lhs, MatrixBlock result) {
 		if(lhs.getData().isEmpty())
 			return;
-		LOG.warn("Transpose of uncompressed to fit to template need t(a) %*% b support");
+		LOG.warn("Transpose of uncompressed to fit to template need t(a) %*% b");
 		final MatrixBlock tmp = LibMatrixReorg.transpose(lhs.getData(), InfrastructureAnalyzer.getLocalParallelism());
 		final int numVals = getNumValues();
 		final MatrixBlock preAgg = new MatrixBlock(tmp.getNumRows(), numVals, false);
@@ -328,4 +375,6 @@ public abstract class APreAgg extends AColGroupValue {
 			}
 		}
 	}
+
+	protected abstract int numRowsToMultiply();
 }

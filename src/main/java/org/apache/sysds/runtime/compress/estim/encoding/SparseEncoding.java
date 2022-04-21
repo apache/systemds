@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
-import java.util.Arrays;
-
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -45,39 +43,34 @@ public class SparseEncoding implements IEncode {
 	/** Count of Zero tuples in this encoding */
 	protected final int zeroCount;
 
-	/** Count of non zero tuples in this encoding */
-	protected final int[] counts;
-
-	protected SparseEncoding(AMapToData map, AOffset off, int zeroCount, int[] counts, int nRows) {
+	protected SparseEncoding(AMapToData map, AOffset off, int zeroCount, int nRows) {
 		this.map = map;
 		this.off = off;
 		this.zeroCount = zeroCount;
-		this.counts = counts;
 		this.nRows = nRows;
+		if(off.getOffsetToLast() > nRows)
+			throw new DMLCompressionException("Invalid Sparse Encoding because offsets are calculated incorrectly");
 	}
 
 	@Override
 	public IEncode combine(IEncode e) {
-		if((long) (getUnique()) * e.getUnique() > Integer.MAX_VALUE)
-			throw new DMLCompressionException("Invalid input to combine.");
-		else if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
+		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
 			return this;
-		else if(e instanceof SparseEncoding)
+		else if(e instanceof SparseEncoding) {
+			SparseEncoding es = (SparseEncoding) e;
+			if(es.off == off && es.map == map)
+				return this;
 			return combineSparse((SparseEncoding) e);
+		}
 		else
 			return e.combine(this);
 	}
 
 	protected IEncode combineSparse(SparseEncoding e) {
-		if(e.map == map && e.off == off)
-			return this; // unlikely to happen but cheap to compute therefore this skip is included.
-
+		if(e.nRows != nRows)
+			throw new DMLCompressionException("invalid number of rows");
 		final int maxUnique = e.getUnique() * getUnique();
 		final int[] d = new int[maxUnique - 1];
-
-		// We need at least this size of offsets, but i don't know if i need more.
-		final IntArrayList retOff = new IntArrayList(Math.max(e.size(), this.size()));
-		final IntArrayList tmpVals = new IntArrayList(Math.max(e.size(), this.size()));
 
 		final int fl = off.getOffsetToLast();
 		final int fr = e.off.getOffsetToLast();
@@ -87,19 +80,33 @@ public class SparseEncoding implements IEncode {
 		final int nVl = getUnique();
 		final int nVr = e.getUnique();
 
+		final int sl = map.size();
+		final int sr = e.map.size();
+
+		if(sl + sr > nRows / 2)
+			return combineSparseToDense(map, e.map, itl, itr, fl, fr, nVl, nVr, d, nRows, maxUnique);
+
+		final IntArrayList retOff = new IntArrayList(Math.max(sr, sl));
+		final IntArrayList tmpVals = new IntArrayList(Math.max(sr, sl));
+
 		final int unique = combineSparse(map, e.map, itl, itr, retOff, tmpVals, fl, fr, nVl, nVr, d);
 
-		if(retOff.size() < nRows * 0.2) {
-			final AOffset o = OffsetFactory.createOffset(retOff);
-			final AMapToData retMap = MapToFactory.create(tmpVals.size(), tmpVals.extractValues(), unique);
-			return new SparseEncoding(retMap, o, nRows - retOff.size(), retMap.getCounts(new int[unique - 1]), nRows);
+		if(retOff.size() < nRows / 4) {
+			try {
+				final AOffset o = OffsetFactory.createOffset(retOff);
+				final AMapToData retMap = MapToFactory.create(tmpVals.size(), tmpVals.extractValues(), unique - 1);
+				return new SparseEncoding(retMap, o, nRows - retOff.size(), nRows);
+			}
+			catch(Exception ex) {
+				throw new DMLCompressionException("Failed combining sparse " + retOff + " " +this + "  " + e, ex);
+			}
 		}
 		else {
+			// there will always be a zero therefore unique is not subtracted one.
+			// if there is no zeros this will not be valid and crash.
 			final AMapToData retMap = MapToFactory.create(nRows, unique);
-			retMap.fill(unique - 1);
 			for(int i = 0; i < retOff.size(); i++)
-				retMap.set(retOff.get(i), tmpVals.get(i));
-
+				retMap.set(retOff.get(i), tmpVals.get(i) + 1);
 			return new DenseEncoding(retMap);
 		}
 	}
@@ -109,84 +116,104 @@ public class SparseEncoding implements IEncode {
 
 		final int defR = (nVr - 1) * nVl;
 		final int defL = nVl - 1;
-
-		boolean doneL = false;
-		boolean doneR = false;
 		int newUID = 1;
-		while(true) {
-			final int il = itl.value();
-			final int ir = itr.value();
-			if(il == ir) {
-				// Both sides have a value.
+		int il = itl.value();
+		int ir = itr.value();
+
+		if(il == fl && ir == fr) { // easy both only have one value
+			if(fl == fr) {// both on same row
+				final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
+				return addVal(nv, il, d, newUID, tmpVals, retOff);
+			}
+			else if(fl < fr) {// fl is first
+				newUID = addVal(lMap.getIndex(itl.getDataIndex()) + defR, il, d, newUID, tmpVals, retOff);
+				return addVal(rMap.getIndex(itr.getDataIndex()) * nVl + defL, ir, d, newUID, tmpVals, retOff);
+			}
+			else {// fl is last
+				newUID = addVal(rMap.getIndex(itr.getDataIndex()) * nVl + defL, ir, d, newUID, tmpVals, retOff);
+				return addVal(lMap.getIndex(itl.getDataIndex()) + defR, il, d, newUID, tmpVals, retOff);
+			}
+		}
+
+		while(il < fl && ir < fr) {
+			if(il == ir) {// Both sides have a value same row.
 				final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
 				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
-				if(il >= fl || ir >= fr) {
-					if(il < fl)
-						itl.next();
-					else
-						doneL = true;
-					if(ir < fr)
-						itr.next();
-					else
-						doneR = true;
-					break;
-				}
-				// both sides.
-				itl.next();
-				itr.next();
+				il = itl.next();
+				ir = itr.next();
 			}
-			else if(il < ir) {
-				// left side have a value before right
+			else if(il < ir) { // left side have a value before right
 				final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
 				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
-				if(il >= fl) {
-					doneL = true;
-					break;
-				}
-				itl.next();
+				il = itl.next();
 			}
-			else {
-				// right side have a value before left
+			else {// right side have a value before left
 				final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
 				newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
-				if(ir >= fr) {
-					doneR = true;
-					break;
-				}
-				itr.next();
+				ir = itr.next();
 			}
 		}
 
-		// process stragglers
-		if(!doneL) { // If there is stragglers in the left side
-			while(true) {
-				final int il = itl.value();
-				final int ir = itr.value();
-				int nv;
-				if(ir == il)
-					nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
-				else
-					nv = lMap.getIndex(itl.getDataIndex()) + defR;
+		newUID = combineSparseTail(lMap, rMap, itl, itr, retOff, tmpVals, fl, fr, nVl, nVr, d, newUID);
+
+		return newUID;
+	}
+
+	private static int combineSparseTail(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr,
+		IntArrayList retOff, IntArrayList tmpVals, int fl, int fr, int nVl, int nVr, int[] d, int newUID) {
+		final int defR = (nVr - 1) * nVl;
+		final int defL = nVl - 1;
+		int il = itl.value();
+		int ir = itr.value();
+
+		if(il < fl) {
+			while(il < fr && il < fl) {
+				final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
 				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
-				if(il >= fl)
-					break;
-				itl.next();
+				il = itl.next();
+			}
+			if(fl == fr) {
+				final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
+				return addVal(nv, il, d, newUID, tmpVals, retOff);
+			}
+			else if(il == fr) {
+				final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
+				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
+				il = itl.next();
+			}
+			else {
+				final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
+				newUID = addVal(nv, fr, d, newUID, tmpVals, retOff);
+			}
+			while(il < fl) {
+				final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
+				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
+				il = itl.next();
 			}
 		}
-		else if(!doneR) {// If there is stragglers in the right side
-			while(true) {
-				final int il = itl.value();
-				final int ir = itr.value();
-				int nv;
-				if(ir == il)
-					nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
-				else
-					nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
-
+		else if(ir < fr) {
+			while(ir < fl && ir < fr) {
+				final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
 				newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
-				if(ir >= fr)
-					break;
-				itr.next();
+				ir = itr.next();
+			}
+			if(fr == fl) {
+				final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
+				return addVal(nv, ir, d, newUID, tmpVals, retOff);
+			}
+			else if(ir == fl) {
+				final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
+				newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
+				ir = itr.next();
+			}
+			else {
+				final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
+				newUID = addVal(nv, fl, d, newUID, tmpVals, retOff);
+			}
+			while(ir < fr) {
+				final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
+				newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
+				ir = itr.next();
 			}
 		}
 
@@ -202,22 +229,62 @@ public class SparseEncoding implements IEncode {
 		return newUID;
 	}
 
-	@Override
-	public int getUnique() {
-		return counts.length + 1;
+	private static DenseEncoding combineSparseToDense(AMapToData lMap, AMapToData rMap, AIterator itl, AIterator itr,
+		int fl, int fr, int nVl, int nVr, int[] d, int nRows, int maxUnique) {
+
+		final AMapToData retMap = MapToFactory.create(nRows, (nVl + 1) * (nVr + 1));
+		int il = itl.value();
+		// parse through one side set all values into the dense.
+		while(il < fl) {
+			retMap.set(il, lMap.getIndex(itl.getDataIndex()) + 1);
+			il = itl.next();
+		}
+		retMap.set(fl, lMap.getIndex(itl.getDataIndex()) + 1);
+
+		int ir = itr.value();
+		// parse through other side set all values with offset based on what already is there.
+		while(ir < fr) {
+			final int vl = retMap.getIndex(ir); // probably 0
+			final int vr = rMap.getIndex(itr.getDataIndex()) + 1;
+			retMap.set(ir, vl + vr * nVl);
+			ir = itr.next();
+		}
+		retMap.set(fr, retMap.getIndex(fr) + (rMap.getIndex(itr.getDataIndex()) + 1) * nVl);
+
+		// parse through entire output reducing number of unique.
+		final AMapToData tmpMap = MapToFactory.create(maxUnique, maxUnique + 1);
+		int newUID = 1;
+		for(int r = 0; r < retMap.size(); r++) {
+			int nv = retMap.getIndex(r);
+			int mv = tmpMap.getIndex(nv);
+			if(mv == 0)
+				mv = tmpMap.setAndGet(nv, newUID++);
+			retMap.set(r, mv - 1);
+		}
+		// parse though other side and use all ret to set correctly.
+		retMap.setUnique(newUID - 1);
+
+		return new DenseEncoding(retMap);
 	}
 
 	@Override
-	public int size() {
-		return map.size();
+	public int getUnique() {
+		return map.getUnique() + 1;
 	}
 
 	@Override
 	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
 		final int largestOffs = nRows - map.size(); // known largest off is zero tuples
 		tupleSparsity = Math.min((double) map.size() / (double) nRows, tupleSparsity);
-		return new EstimationFactors(cols.length, counts.length, map.size(), largestOffs, counts, 0, nRows, false, true,
+		final int[] counts = map.getCounts(new int[map.getUnique()]);
+		return new EstimationFactors(cols.length, map.getUnique(), map.size(), largestOffs, counts, 0, nRows, false, true,
 			matrixSparsity, tupleSparsity);
+	}
+
+	
+	@Override
+	public  boolean isDense(){
+		return false;
 	}
 
 	@Override
@@ -230,9 +297,6 @@ public class SparseEncoding implements IEncode {
 		sb.append("\n");
 		sb.append("offsets: ");
 		sb.append(off);
-		sb.append("\n");
-		sb.append("counts:  ");
-		sb.append(Arrays.toString(counts));
 		return sb.toString();
 	}
 }

@@ -112,4 +112,26 @@ public class MapToUByte extends MapToByte {
 	public int getUpperBoundValue() {
 		return 127;
 	}
+
+	@Override
+	public void count(int[] ret) {
+		for(int i = 0; i < _data.length; i++)
+			ret[_data[i]]++;
+	}
+
+	@Override
+	public AMapToData resize(int unique) {
+		final int size = _data.length;
+		if(unique <= 1)
+			return new MapToZero(size);
+		else if(unique == 2 && size > 32) {
+			AMapToData ret = new MapToBit(unique, size);
+			ret.copy(this);
+			return ret;
+		}
+		else {
+			setUnique(unique);
+			return this;
+		}
+	}
 }

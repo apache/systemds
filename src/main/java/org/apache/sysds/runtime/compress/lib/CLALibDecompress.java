@@ -77,6 +77,9 @@ public class CLALibDecompress {
 			if(LOG.isTraceEnabled())
 				LOG.trace("decompressed block w/ k=" + k + " in " + t + "ms.");
 		}
+
+		if(ret.getNonZeros() <= 0)
+			ret.setNonZeros(cmb.getNonZeros());
 	}
 
 	private static void decompressToSparseBlock(CompressedMatrixBlock cmb, MatrixBlock ret, int rowOffset,
@@ -247,8 +250,8 @@ public class CLALibDecompress {
 
 	private static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen, int blklen,
 		double[] constV, double eps, int k) {
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			final ExecutorService pool = CommonThreadPool.get(k);
 			final ArrayList<DecompressDenseTask> tasks = new ArrayList<>();
 			for(int i = 0; i < rlen; i += blklen)
 				tasks.add(new DecompressDenseTask(filteredGroups, ret, eps, i, Math.min(i + blklen, rlen), constV));
@@ -256,29 +259,30 @@ public class CLALibDecompress {
 			long nnz = 0;
 			for(Future<Long> rt : pool.invokeAll(tasks))
 				nnz += rt.get();
-			pool.shutdown();
 			ret.setNonZeros(nnz);
 		}
 		catch(InterruptedException | ExecutionException ex) {
 			throw new DMLCompressionException("Parallel decompression failed", ex);
 		}
+		pool.shutdown();
 	}
 
 	private static void decompressSparseMultiThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen,
 		int blklen, int k) {
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			final ExecutorService pool = CommonThreadPool.get(k);
 			final ArrayList<DecompressSparseTask> tasks = new ArrayList<>();
 			for(int i = 0; i < rlen; i += blklen)
 				tasks.add(new DecompressSparseTask(filteredGroups, ret, i, Math.min(i + blklen, rlen)));
 
 			for(Future<Object> rt : pool.invokeAll(tasks))
 				rt.get();
-			pool.shutdown();
 		}
 		catch(InterruptedException | ExecutionException ex) {
+			pool.shutdown();
 			throw new DMLCompressionException("Parallel decompression failed", ex);
 		}
+		pool.shutdown();
 	}
 
 	/**
@@ -326,22 +330,22 @@ public class CLALibDecompress {
 
 		@Override
 		public Long call() {
-			try{
+			try {
 
 				long nnz = 0;
 				for(int b = _rl; b < _ru; b += _blklen) {
 					final int e = Math.min(b + _blklen, _ru);
 					for(AColGroup grp : _colGroups)
 						grp.decompressToDenseBlock(_ret.getDenseBlock(), b, e);
-	
+
 					if(_constV != null)
 						addVector(_ret, _constV, _eps, b, e);
 					nnz += _ret.recomputeNonZeros(b, e - 1);
 				}
-	
+
 				return nnz;
 			}
-			catch(Exception e){
+			catch(Exception e) {
 				e.printStackTrace();
 				throw new DMLCompressionException("Failed dense decompression", e);
 			}

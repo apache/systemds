@@ -24,13 +24,10 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.util.Precision;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
-import org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte;
-import org.apache.sysds.runtime.compress.colgroup.offset.OffsetChar;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -68,6 +65,8 @@ public abstract class OffsetTestPreAggregate {
 			tests.add(new Object[] {new int[] {1023}, t});
 			tests.add(new Object[] {new int[] {0, 1, 2, 3, 4, 5}, t});
 			tests.add(new Object[] {new int[] {0}, t});
+			tests.add(new Object[] {new int[] {500}, t});
+			tests.add(new Object[] {new int[] {1442}, t});
 			tests.add(new Object[] {new int[] {0, 256}, t});
 			tests.add(new Object[] {new int[] {0, 254}, t});
 			tests.add(new Object[] {new int[] {0, 256 * 2}, t});
@@ -99,17 +98,7 @@ public abstract class OffsetTestPreAggregate {
 
 	public OffsetTestPreAggregate(int[] data, OFF_TYPE type) {
 		this.data = data;
-		switch(type) {
-			case BYTE:
-				this.a = new OffsetByte(data);
-				break;
-			case CHAR:
-				this.a = new OffsetChar(data);
-				break;
-			default:
-				throw new NotImplementedException("not implemented");
-		}
-
+		this.a = OffsetTestUtil.getOffset(data, type);
 		this.leftM = TestUtils.generateTestMatrixBlock(4, data[data.length - 1] + 100, -1, 100, 1.0, 1342);
 		this.s = sumIndexes();
 	}

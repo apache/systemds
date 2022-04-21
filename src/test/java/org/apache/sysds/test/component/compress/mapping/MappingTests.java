@@ -35,6 +35,7 @@ import java.util.Random;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToCharPByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.junit.Test;
@@ -47,11 +48,15 @@ public class MappingTests {
 
 	protected static final Log LOG = LogFactory.getLog(MappingTests.class.getName());
 
+	protected static final int fictiveMax = MapToCharPByte.max + 3;
+
 	public final int seed;
 	public final MAP_TYPE type;
 	public final int size;
 	private final AMapToData m;
 	private final int[] expected;
+
+	final int max;
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -75,22 +80,24 @@ public class MappingTests {
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
-		final int max = Math.min(MapToFactory.getUpperBoundValue(type), ((int) Character.MAX_VALUE) + 3);
+		this.max = Math.min(MappingTestUtil.getUpperBoundValue(type), fictiveMax) + 1;
 		expected = new int[size];
-		m = genMap(MapToFactory.create(size, max + 1), expected, max, fill, seed);
+		m = genMap(MapToFactory.create(size, max), expected, max, fill, seed);
 	}
 
 	protected static AMapToData genMap(AMapToData m, int[] expected, int max, boolean fill, int seed) {
+		if(max <= 1)
+			return m;
 		Random vals = new Random(seed);
 		int size = m.size();
 		if(fill) {
-			int v = max == 1 ? vals.nextInt(2) : vals.nextInt(max);
+			int v = vals.nextInt(max);
 			m.fill(v);
 			Arrays.fill(expected, v);
 		}
 
 		for(int i = 0; i < size; i++) {
-			int v = max == 1 ? vals.nextInt(2) : vals.nextInt(max);
+			int v = vals.nextInt(max);
 			if(fill) {
 				if(v > max / 2)
 					continue;
@@ -106,9 +113,8 @@ public class MappingTests {
 		}
 
 		// to make sure that the bit set is actually filled.
-		m.set(size - 1, max);
-
-		expected[size - 1] = max;
+		m.set(size - 1, max - 1);
+		expected[size - 1] = max - 1;
 		return m;
 	}
 
@@ -155,7 +161,8 @@ public class MappingTests {
 			byte[] arr = bos.toByteArray();
 			int size = arr.length;
 			if(size != m.getExactSizeOnDisk())
-				fail(m.getClass().getSimpleName() + "\n" + m.toString() + "\n");
+				fail(m.toString() + "\n The size is not the same on disk as promised: " + size + "  "
+					+ m.getExactSizeOnDisk() + " " + type + " " + m.getType());
 		}
 		catch(IOException e) {
 			throw new RuntimeException("Error in io", e);
@@ -170,16 +177,21 @@ public class MappingTests {
 	public void resize() {
 		switch(type) {
 			// intensionally not containing breaks.
+			case ZERO:
+				compare(m.resize(-13), m);
+				compare(m.resize(1), m);
 			case BIT:
-				compare(MapToFactory.resize(m, 5), m);
+				compare(m.resize(5), m);
 			case UBYTE:
-				compare(MapToFactory.resize(m, 200), m);
+				compare(m.resize(200), m);
 			case BYTE:
-				compare(MapToFactory.resize(m, 526), m);
+				compare(m.resize(526), m);
 			case CHAR:
-				compare(MapToFactory.resize(m, 612451), m);
+				compare(m.resize(612451), m);
+			case CHAR_BYTE:
+				compare(m.resize(10000000), m);
 			case INT:
-				compare(MapToFactory.resize(m, 4215215), m);
+				compare(m.resize(10000001), m);
 		}
 	}
 
@@ -199,11 +211,10 @@ public class MappingTests {
 
 	@Test
 	public void replaceMax() {
-		int max = Math.min(MapToFactory.getUpperBoundValue(type), ((int) Character.MAX_VALUE) + 3);
-		m.replace(max, 0);
+		m.replace(max-1, 0);
 
 		for(int i = 0; i < size; i++) {
-			expected[i] = expected[i] == max ? 0 : expected[i];
+			expected[i] = expected[i] == max - 1 ? 0 : expected[i];
 			if(expected[i] != m.getIndex(i))
 				fail("Expected equals " + Arrays.toString(expected) + "\nbut got: " + m);
 		}
@@ -211,13 +222,21 @@ public class MappingTests {
 
 	@Test
 	public void getCountsNoDefault() {
-		int nVal = m.getUnique();
-		int[] counts = m.getCounts(new int[nVal]);
-		int sum = 0;
-		for(int v : counts)
-			sum += v;
-		if(sum != size)
-			fail("Incorrect number of unique values.");
+		try {
+
+			int nVal = m.getUnique();
+			int[] counts = m.getCounts(new int[nVal]);
+			int sum = 0;
+			for(int v : counts)
+				sum += v;
+			if(sum != size)
+				fail("Incorrect count of values. : " + Arrays.toString(counts) + " " + sum
+					+ "  sum is incorrect should be equal to number of rows: " + m.size());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("Failed because of exception");
+		}
 	}
 
 	@Test
@@ -235,15 +254,18 @@ public class MappingTests {
 	@Test
 	public void getUnique() {
 		int u = m.getUnique();
-		final int max = Math.min(MapToFactory.getUpperBoundValue(type), ((int) Character.MAX_VALUE) + 3);
-		assertEquals(max + 1, u);
+		if(max != u)
+			fail("incorrect number of unique " + m + "\n expected" + max + " got" + u);
 	}
 
 	@Test
 	public void testInMemorySize() {
 		long inMemorySize = m.getInMemorySize();
-		long estimatedSize = MapToFactory.estimateInMemorySize(size, MapToFactory.getUpperBoundValue(type));
-		assertEquals(inMemorySize, estimatedSize);
+		long estimatedSize = MapToFactory.estimateInMemorySize(size, max);
+
+		if(estimatedSize != inMemorySize)
+			fail(" estimated size is not actual size: \nest: " + estimatedSize + " act: " + inMemorySize + "\n"
+				+ m.getType() + "  " + type + " " + max + " " + m);
 	}
 
 }

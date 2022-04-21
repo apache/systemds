@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
@@ -148,6 +150,8 @@ public class LibMatrixReorg {
 	}
 
 	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out ) {
+		if(in instanceof CompressedMatrixBlock)
+			throw new DMLCompressionException("Invalid call to transposed with a compressed matrix block");
 		//sparse-safe operation
 		if( in.isEmptyBlock(false) )
 			return out;
@@ -180,7 +184,7 @@ public class LibMatrixReorg {
 			transposeUltraSparse(in, out);
 		else if( in.sparse && out.sparse )
 			transposeSparseToSparse(in, out, 0, in.rlen, 0, in.clen, 
-				countNnzPerColumn(in, 0, in.rlen));
+				countNnzPerColumn(in, 4096));
 		else if( in.sparse )
 			transposeSparseToDense(in, out, 0, in.rlen, 0, in.clen);
 		else
@@ -1818,11 +1822,15 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static int[] countNnzPerColumn(MatrixBlock in, int rl, int ru) {
+	private static int[] countNnzPerColumn(MatrixBlock in, int maxCol) {
+		return countNnzPerColumn(in, 0, in.getNumRows(), maxCol);
+	}
+
+	private static int[] countNnzPerColumn(MatrixBlock in, int rl, int ru, int maxCol) {
 		//initial pass to determine capacity (this helps to prevent
 		//sparse row reallocations and mem inefficiency w/ skew
 		int[] cnt = null;
-		if( in.sparse && in.clen <= 4096 ) { //16KB
+		if(in.clen <= maxCol) {
 			SparseBlock a = in.sparseBlock;
 			cnt = new int[in.clen];
 			for( int i=rl; i<ru; i++ ) {
@@ -1830,6 +1838,40 @@ public class LibMatrixReorg {
 					countAgg(cnt, a.indexes(i), a.pos(i), a.size(i));
 			}
 		}
+		return cnt;
+	}
+
+	public static int[] countNnzPerColumn(MatrixBlock in) {
+		return countNnzPerColumn(in, 0, in.getNumRows());
+	}
+
+	public static int[] countNnzPerColumn(MatrixBlock in, int rl, int ru) {
+		if(in.isInSparseFormat())
+			return countNnzPerColumnSparse(in, rl, ru);
+		else
+			return countNnzPerColumnDense(in, rl, ru);
+	}
+
+	private static int[] countNnzPerColumnSparse(MatrixBlock in, int rl, int ru) {
+		final int[] cnt = new int[in.clen];
+		final SparseBlock a = in.sparseBlock;
+		for(int i = rl; i < ru; i++) {
+			if(!a.isEmpty(i))
+				countAgg(cnt, a.indexes(i), a.pos(i), a.size(i));
+		}
+		return cnt;
+	}
+
+
+	private static int[] countNnzPerColumnDense(MatrixBlock in, int rl, int ru) {
+		final int[] cnt = new int[in.clen];
+		final double[] dV = in.getDenseBlockValues();
+		int off = rl * in.clen;
+		for(int i = rl; i < ru; i++)
+			for(int j = 0; j < in.clen; j++)
+				if(dV[off++] != 0)
+					cnt[j]++;
+			
 		return cnt;
 	}
 

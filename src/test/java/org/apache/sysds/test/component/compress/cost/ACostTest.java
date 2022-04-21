@@ -22,12 +22,15 @@ package org.apache.sysds.test.component.compress.cost;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.cocode.CoCoderFactory;
 import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
@@ -65,13 +68,14 @@ public abstract class ACostTest {
 			CompressedSizeInfo individualGroups = ie.computeCompressedSizeInfos(k);
 			double costUncompressed = ce.getCost(mb);
 			double estimatedCostIndividual = ce.getCost(individualGroups);
-			double actualCostIndividual = ce.getCost(ColGroupFactory.compressColGroups(mb, individualGroups, cs, k),
-				nRows);
+			List<AColGroup> individualCols = ColGroupFactory.compressColGroups(mb, individualGroups, cs, k);
+			double actualCostIndividual = ce.getCost(individualCols, nRows);
 
 			// cocode
 			CompressedSizeInfo cocodeGroups = CoCoderFactory.findCoCodesByPartitioning(ie, individualGroups, k, ce, cs);
 			double estimatedCostCoCode = ce.getCost(cocodeGroups);
-			double actualCostCoCode = ce.getCost(ColGroupFactory.compressColGroups(mb, cocodeGroups, cs, k), nRows);
+			List<AColGroup> cocodeCols = ColGroupFactory.compressColGroups(mb, cocodeGroups, cs, k);
+			double actualCostCoCode = ce.getCost(cocodeCols, nRows);
 
 			if(debug) {
 				StringBuilder sb = new StringBuilder();
@@ -84,11 +88,12 @@ public abstract class ACostTest {
 
 				LOG.error(sb);
 			}
+
 			// not really sure what to test for and assert, currently this test just verify that there is a cost
-			assertTrue(estimatedCostIndividual > 0);
-			assertTrue(actualCostIndividual > 0);
-			assertTrue(estimatedCostCoCode > 0);
-			assertTrue(actualCostCoCode > 0);
+			assertTrue("estimated individual cost is negative", estimatedCostIndividual > 0);
+			assertTrue("actual individual cost is negative", actualCostIndividual > 0);
+			assertTrue("estimated cocode cost is negative", estimatedCostCoCode > 0);
+			assertTrue("actual cocode cost is negative", actualCostCoCode > 0);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

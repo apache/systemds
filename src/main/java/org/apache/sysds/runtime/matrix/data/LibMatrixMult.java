@@ -84,6 +84,35 @@ public class LibMatrixMult
 	////////////////////////////////
 	
 	/**
+	 * Performs a matrix multiplication
+	 * 
+	 * All variants use a IKJ access pattern, and internally use dense output. After the
+	 * actual computation, we recompute nnz and check for sparse/dense representation.
+	 * 
+	 * @param m1 first matrix
+	 * @param m2 second matrix
+	 * @return ret Matrix Block
+	 */
+	public static MatrixBlock matrixMult(MatrixBlock m1, MatrixBlock m2) {
+		return matrixMult(m1, m2, null, false, 1);
+	}
+
+	/**
+	 * Performs a matrix multiplication
+	 * 
+	 * All variants use a IKJ access pattern, and internally use dense output. After the
+	 * actual computation, we recompute nnz and check for sparse/dense representation.
+	 * 
+	 * @param m1 first matrix
+	 * @param m2 second matrix
+	 * @param k maximum parallelism
+	 * @return ret Matrix Block
+	 */
+	public static MatrixBlock matrixMult(MatrixBlock m1, MatrixBlock m2, int k) {
+		return matrixMult(m1, m2, null, false, k);
+	}
+
+	/**
 	 * Performs a matrix multiplication and stores the result in the output matrix.
 	 * 
 	 * All variants use a IKJ access pattern, and internally use dense output. After the

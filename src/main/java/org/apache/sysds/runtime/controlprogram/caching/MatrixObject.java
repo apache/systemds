@@ -590,4 +590,18 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		return ((MatrixObject) LineageRecomputeUtils.parseNComputeLineageTrace(Explain.explain(li), null))
 			.acquireReadAndRelease();
 	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder(super.toString());
+		if(_partitioned){
+			sb.append("\n");
+			sb.append("partitioned:" + _partitionFormat );
+			sb.append(", partitionSize: " + _partitionSize);
+			sb.append(", partitionCacheName:" + _partitionCacheName);
+			sb.append(_partitionInMemory);
+			sb.append("\n");
+		}
+		return sb.toString();
+	}
 }

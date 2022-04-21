@@ -25,10 +25,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Arrays;
 
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -38,8 +34,10 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.lops.Compression.CompressConfig;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -65,13 +63,18 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
-import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.utils.Statistics;
+
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 
 /**
  * Note: federated worker handler created for every command; and concurrent parfor threads at coordinator need separate
@@ -148,6 +151,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse createResponse(FederatedRequest[] requests, String remoteHost)
 		throws DMLPrivacyException, FederatedWorkerHandlerException, Exception {
+			
 		FederatedResponse response = null; // last response
 		boolean containsCLEAR = false;
 		for(int i = 0; i < requests.length; i++) {
@@ -251,9 +255,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			// early throwing of exception to avoid infinitely waiting threads for data
 			throw new FederatedWorkerHandlerException("Could not recognize datatype");
 
-		ExecutionContext ec = ecm.get(tid);
+		final ExecutionContext ec = ecm.get(tid);
 		LineageItem linItem = new LineageItem(filename);
 		CacheableData<?> cd = null;
+		final String sId =String.valueOf(id);
 
 		boolean linReuse = (!ReuseCacheType.isNone() && dataType == DataType.MATRIX);
 		if(!linReuse || !LineageCache.reuseFedRead(Long.toString(id), dataType, linItem, ec)) {
@@ -269,7 +274,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					else
 						_frc.setData(filename, cd); // set the data into the read cache entry
 				}
-				ec.setVariable(String.valueOf(id), cd);
+				ec.setVariable(sId, cd);
 
 			} catch(Exception ex) {
 				if(linReuse)
@@ -280,9 +285,12 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			}
 		}
 
+		if(shouldTryAsyncCompress())
+			CompressedMatrixBlockFactory.compressAsync(ec, sId);
+
 		if(DMLScript.LINEAGE)
 			// create a literal type lineage item with the file name
-			ec.getLineage().set(String.valueOf(id), linItem);
+			ec.getLineage().set(sId, linItem);
 
 		if(dataType == Types.DataType.FRAME) {
 			FrameObject frameObject = (FrameObject) cd;
@@ -360,30 +368,38 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		ExecutionContext ec = ecm.get(request.getTID());
 
 		if(ec.containsVariable(varName)) {
-			Data tgtData = ec.removeVariable(varName);
+			final Data tgtData = ec.removeVariable(varName);
 			if(tgtData != null)
 				ec.cleanupDataObject(tgtData);
 			LOG.warn("Variable" + request.getID() + " already existing, fallback to overwritten.");
 		}
 
+		final Object v = request.getParam(0);
 		// wrap transferred cache block into cacheable data
 		Data data;
-		if(request.getParam(0) instanceof CacheBlock)
-			data = ExecutionContext.createCacheableData((CacheBlock) request.getParam(0));
-		else if(request.getParam(0) instanceof ScalarObject)
-			data = (ScalarObject) request.getParam(0);
-		else if(request.getParam(0) instanceof ListObject)
-			data = (ListObject) request.getParam(0);
-		else if(request.getNumParams() == 2)
-			data = request.getParam(1) == DataType.MATRIX ? ExecutionContext
-				.createMatrixObject((MatrixCharacteristics) request.getParam(0)) : ExecutionContext
-					.createFrameObject((MatrixCharacteristics) request.getParam(0));
+		if(v instanceof CacheBlock)
+			data = ExecutionContext.createCacheableData((CacheBlock) v);
+		else if(v instanceof ScalarObject)
+			data = (ScalarObject) v;
+		else if(v instanceof ListObject)
+			data = (ListObject) v;
+		else if(request.getNumParams() == 2){
+			final Object v1= request.getParam(1);
+			if(v1 == DataType.MATRIX)
+				data = ExecutionContext.createMatrixObject((MatrixCharacteristics) v);
+			else
+				data = ExecutionContext.createFrameObject((MatrixCharacteristics) v);
+		}
 		else
 			throw new FederatedWorkerHandlerException(
 				"Unsupported object type, has to be of type CacheBlock or ScalarObject");
 
+				
 		// set variable and construct empty response
 		ec.setVariable(varName, data);
+
+		if(shouldTryAsyncCompress())
+			CompressedMatrixBlockFactory.compressAsync(ec, varName);
 
 		if(DMLScript.LINEAGE) {
 			if(request.getParam(0) instanceof CacheBlock && request.getLineageTrace() != null) {
@@ -530,6 +546,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 		cause.printStackTrace();
 		ctx.close();
+	}
+
+	private boolean shouldTryAsyncCompress(){
+		final DMLConfig conf = ConfigurationManager.getDMLConfig();
+		return CompressConfig.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase()) == CompressConfig.TRUE;
 	}
 
 	private static class CloseListener implements ChannelFutureListener {

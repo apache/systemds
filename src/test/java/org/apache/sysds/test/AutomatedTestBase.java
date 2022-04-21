@@ -19,6 +19,11 @@
 
 package org.apache.sysds.test;
 
+import static java.lang.Math.ceil;
+import static java.lang.Thread.sleep;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -33,12 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static java.lang.Math.ceil;
-import static java.lang.Thread.sleep;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -1532,29 +1532,56 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
+	/**
+	 * Find a random available port, if none is found, retry up to 10 times. Note that there is a race condition to find
+	 * a port if many processes are looking for ports.
+	 * 
+	 * @return A random port that hopefully is available when you actually use it.
+	 */
 	public static int getRandomAvailablePort() {
 		try(ServerSocket availableSocket = new ServerSocket(0)) {
 			return availableSocket.getLocalPort();
 		}
 		catch(IOException e) {
-			// If no port was found just use 9999
-			return 9990;
+			return getRandomAvailablePortRetry(1);
 		}
 	}
 
-	@Deprecated
-	protected Process startLocalFedWorker(int port) {
-		return startLocalFedWorker(port, null);
+	private static int getRandomAvailablePortRetry(int retry) {
+		try(ServerSocket availableSocket = new ServerSocket(0)) {
+			return availableSocket.getLocalPort();
+		}
+		catch(IOException e) {
+			if(retry == 10)
+				throw new RuntimeException("Failed to find free port");
+			else
+				return getRandomAvailablePortRetry(retry++);
+		}
+	}
+
+	/**
+	 * Method to check if a port is in use. Intended use is to verify that federated workers correctly started up. This
+	 * returning true does not guarantee that it is a federated worker that is using the port. But it is likely.
+	 * 
+	 * @param port The port to check
+	 * @return True if the port is in use otherwise false.
+	 */
+	public static boolean isPortInUse(int port) {
+		try{
+			new ServerSocket(port).close();
+			return false;
+		}
+		catch(IOException e ){
+			return true;
+		}
 	}
 
 	/**
 	 * Start new JVM for a federated worker at the port.
 	 * 
-	 * 
 	 * @param port Port to use for the JVM
 	 * @return the process associated with the worker.
 	 */
-	@Deprecated
 	protected Process startLocalFedWorker(int port, String[] addArgs) {
 		Process process = null;
 		String separator = System.getProperty("file.separator");
@@ -1583,11 +1610,21 @@ public abstract class AutomatedTestBase {
 	 * @param port Port to use
 	 * @return the thread associated with the worker.
 	 */
-	protected Thread startLocalFedWorkerThread(int port) {
+	public static Thread startLocalFedWorkerThread(int port) {
 		return startLocalFedWorkerThread(port, null, FED_WORKER_WAIT);
 	}
 
-	protected Thread startLocalFedWorkerThread(int port, String[] otherArgs) {
+	/**
+	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.
+	 * 
+	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
+	 *   
+	 * 
+	 * @param port      Port to use
+	 * @param otherArgs The commandline arguments to start the worker with
+	 * @return The thread associated with the worker.
+	 */
+	public static Thread startLocalFedWorkerThread(int port, String[] otherArgs) {
 		return startLocalFedWorkerThread(port, otherArgs, FED_WORKER_WAIT);
 	}
 
@@ -1596,45 +1633,57 @@ public abstract class AutomatedTestBase {
 	 * 
 	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
 	 * 
-	 * @param port Port to use
-	 * @param sleep  The amount of time to wait for the worker startup. in Milliseconds
-	 * @return the thread associated with the worker.
+	 * @param port  Port to use
+	 * @param sleep The amount of time to wait for the worker startup. in Milliseconds
+	 * @return The thread associated with the worker.
 	 */
-	protected Thread startLocalFedWorkerThread(int port, int sleep) {
+	public static Thread startLocalFedWorkerThread(int port, int sleep) {
 		return startLocalFedWorkerThread(port, null, sleep);
 	}
-	protected Thread startLocalFedWorkerThread(int port, String[] otherArgs, int sleep) {
-		Thread t = null;
-		String[] fedWorkArgs = {"-w", Integer.toString(port)};
+
+	/**
+	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.!
+	 * 
+	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
+	 * 
+	 * @param port      Port to use
+	 * @param otherArgs The commandline arguments to start the worker with
+	 * @param sleep     The amount of time to wait for the worker startup. in Milliseconds
+	 * @return The thread associated with the worker.
+	 */
+	public static Thread startLocalFedWorkerThread(int port, String[] otherArgs, int sleep) {
+
 		ArrayList<String> args = new ArrayList<>();
-
-		addProgramIndependentArguments(args, otherArgs);
 		
-		if (otherArgs != null)
-			args.addAll(Arrays.stream(otherArgs).collect(Collectors.toList()));
+		args.add("-w");
+		args.add(Integer.toString(port));
 
-		for(int i = 0; i < fedWorkArgs.length; i++)
-			args.add(fedWorkArgs[i]);
+		if(otherArgs != null)
+			for( String s : otherArgs)
+				args.add(s);
 
 		String[] finalArguments = args.toArray(new String[args.size()]);
-
 		Statistics.allowWorkerStatistics = false;
 
 		try {
-			t = new Thread(() -> {
+			Thread t = new Thread(() -> {
 				try {
 					main(finalArguments);
 				}
-				catch(IOException e) {
+				catch(Exception e) {
+					LOG.error("Exception in startup of federated worker", e);
 				}
 			});
 			t.start();
 			java.util.concurrent.TimeUnit.MILLISECONDS.sleep(sleep);
+			return t;
 		}
 		catch(InterruptedException e) {
 			e.printStackTrace();
+			fail("Failed to start federated worker : " + e);
+			// should never happen
+			return null;
 		}
-		return t;
 	}
 
 	/**

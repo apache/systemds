@@ -64,7 +64,6 @@ public abstract class MultiTenantTestBase extends AutomatedTestBase {
 		int[] ports = new int[numFedWorkers];
 		for(int counter = 0; counter < numFedWorkers; counter++) {
 			ports[counter] = getRandomAvailablePort();
-			@SuppressWarnings("deprecation")
 			Process tmpProcess = startLocalFedWorker(ports[counter], addArgs);
 			workerProcesses.add(tmpProcess);
 		}

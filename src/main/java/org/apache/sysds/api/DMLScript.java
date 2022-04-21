@@ -463,6 +463,7 @@ public class DMLScript
 		finally {
 			//cleanup scratch_space and all working dirs
 			cleanupHadoopExecution(ConfigurationManager.getDMLConfig());
+			FederatedData.clearWorkGroup();
 			//stop spark context (after cleanup of federated workers and other pools,
 			//otherwise federated spark cleanups in local tests throw errors in same JVM)
 			if(ec != null && ec instanceof SparkExecutionContext)

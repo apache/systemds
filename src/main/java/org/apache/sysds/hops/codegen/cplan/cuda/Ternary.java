@@ -22,8 +22,6 @@ package org.apache.sysds.hops.codegen.cplan.cuda;
 import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
 
-import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
-
 public class Ternary extends CodeTemplate {
 
 	@Override

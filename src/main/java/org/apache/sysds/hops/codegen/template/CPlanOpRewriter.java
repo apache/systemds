@@ -21,7 +21,6 @@ package org.apache.sysds.hops.codegen.template;
 
 import java.util.ArrayList;
 
-import org.apache.spark.sql.types.BinaryType;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;

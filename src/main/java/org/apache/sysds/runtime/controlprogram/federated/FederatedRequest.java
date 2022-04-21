@@ -199,10 +199,10 @@ public class FederatedRequest implements Serializable {
 	public String toString() {
 		StringBuilder sb = new StringBuilder("FederatedRequest[");
 		sb.append(_method); sb.append(";");
+		sb.append(_pid); sb.append(";");
 		sb.append(_id); sb.append(";");
 		sb.append("t"); sb.append(_tid); sb.append(";");
-		if( _method != RequestType.PUT_VAR )
-			sb.append(Arrays.toString(_data.toArray()));
+		sb.append(_data.toString());
 		sb.append("]");
 		return sb.toString();
 	}

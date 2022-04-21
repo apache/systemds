@@ -119,7 +119,7 @@ public class DMLConfig
 	public static final String FEDERATED_PAR_INST = "sysds.federated.par_inst";
 	public static final String FEDERATED_PAR_CONN = "sysds.federated.par_conn";
 	public static final int DEFAULT_FEDERATED_PORT = 4040; // borrowed default Spark Port
-	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 2;
+	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 8;
 	
 	//internal config
 	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and DFS

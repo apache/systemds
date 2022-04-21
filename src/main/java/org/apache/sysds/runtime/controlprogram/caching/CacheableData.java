@@ -1498,31 +1498,31 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public String toString() {
 		StringBuilder str = new StringBuilder();
 		str.append(getClass().getSimpleName());
-		str.append(": ");
+		str.append(": file:");
 		str.append(_hdfsFileName + ", ");
-		try {
-			MetaDataFormat md = (MetaDataFormat) _metaData;
-			if (md != null) {
-				DataCharacteristics dc = _metaData.getDataCharacteristics();
-				str.append(dc.toString());
-				if (md.getFileFormat() == null)
-					str.append("null");
-				else {
-					str.append(", ");
-					str.append(md.getFileFormat().toString());
-				}
-			} else {
-				str.append("null, null");
-			}
-		} catch (Exception ex) {
-			throw new DMLRuntimeException(ex);
+
+		if (_metaData != null) {
+			DataCharacteristics dc = _metaData.getDataCharacteristics();
+			str.append(dc.toString());
 		}
-		str.append(", ");
-		str.append(isDirty() ? "dirty" : "not-dirty");
+
+		if(_metaData instanceof MetaDataFormat){
+			MetaDataFormat md = (MetaDataFormat) _metaData;
+			if (md.getFileFormat() == null)
+				str.append(", null");
+			else {
+				str.append(", ");
+				str.append(md.getFileFormat().toString());
+			}
+		}
+
+		str.append(isDirty() ? ", dirty" : ", not-dirty");
 
 		if(isCompressed())
 			str.append( ", Compressed " + _compressedSize );
 
+		if(_data != null)
+			str.append(";\nData:" + _data);
 		return str.toString();
 	}
 }

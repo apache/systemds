@@ -20,6 +20,10 @@
 package org.apache.sysds.test.functions.federated.codegen;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -30,18 +34,14 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedRowwiseTmplTest extends AutomatedTestBase
-{
+public class FederatedRowwiseTmplTest extends AutomatedTestBase {
+	// private static final Log LOG = LogFactory.getLog(FederatedRowwiseTmplTest.class.getName());
 	private final static String TEST_NAME = "FederatedRowwiseTmplTest";
 
 	private final static String TEST_DIR = "functions/federated/codegen/";
@@ -50,7 +50,7 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 	private final static String TEST_CONF = "SystemDS-config-codegen.xml";
 
 	private final static String OUTPUT_NAME = "Z";
-	private final static double TOLERANCE = 1e-13;
+	private final static double TOLERANCE = 1e-9;
 	private final static int BLOCKSIZE = 1024;
 
 	@Parameterized.Parameter()
@@ -137,8 +137,8 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 
 		// generate dataset
 		// matrix handled by two federated workers
-		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 0.1, 3);
-		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 0.1, 11);
+		double[][] X1 = TestUtils.generateTestMatrix(fed_rows, fed_cols, 1, 10, 1.0, 3);
+		double[][] X2 = TestUtils.generateTestMatrix(fed_rows, fed_cols, 1, 10, 1.0, 11);
 
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
@@ -159,7 +159,7 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 			"in_rp=" + Boolean.toString(row_partitioned).toUpperCase(),
 			"in_test_num=" + Integer.toString(test_num),
 			"out_Z=" + expected(OUTPUT_NAME)};
-		runTest(true, false, null, -1);
+		runTest(null);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -170,11 +170,14 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 			"in_test_num=" + Integer.toString(test_num),
 			"rows=" + rows, "cols=" + cols,
 			"out_Z=" + output(OUTPUT_NAME)};
-		runTest(true, false, null, -1);
+		runTest(null);
 
 		// compare the results via files
-		HashMap<CellIndex, Double> refResults  = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
+		HashMap<CellIndex, Double> refResults = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
 		HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
+
+		// LOG.error(refResults);
+		// LOG.error(fedResults);
 		TestUtils.compareMatrices(fedResults, refResults, TOLERANCE, "Fed", "Ref");
 
 		TestUtils.shutdownThreads(thread1, thread2);

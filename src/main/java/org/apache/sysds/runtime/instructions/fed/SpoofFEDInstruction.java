@@ -19,9 +19,15 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.concurrent.Future;
+
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;
@@ -40,17 +46,12 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
-import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.concurrent.Future;
 
 public class SpoofFEDInstruction extends FEDInstruction
 {
@@ -118,7 +119,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 		for(CPOperand cpo : _inputs) {
 			Data tmpData = ec.getVariable(cpo);
 			if(tmpData instanceof MatrixObject) {
-				MatrixLineagePair mo = MatrixLineagePair.of((MatrixObject) tmpData, ec.getLineageItem(cpo));
+				MatrixLineagePair mo = MatrixLineagePair.of((MatrixObject) tmpData,
+					DMLScript.LINEAGE ? ec.getLineageItem(cpo) : null);
 				if(mo.isFederatedExcept(FType.BROADCAST)) {
 					frIds[index++] = mo.getFedMapping().getID();
 				}

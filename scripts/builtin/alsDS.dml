@@ -36,6 +36,8 @@
 # thr     Double           0.0001     Assuming check is set to TRUE, the algorithm stops and convergence is declared
 #                                     if the decrease in loss in any two consecutive iterations falls below this threshold;
 #                                     if check is FALSE thr is ignored
+# seed    Integer          1324521    The seed to random parts of the algorithm
+# verbose Boolean          TRUE       If the algorithm should run verbosely
 # ----------------------------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -47,7 +49,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_alsDS = function(Matrix[Double] X, Integer rank = 10, Double reg = 0.000001, 
-  Integer maxi = 50, Boolean check = FALSE, Double thr = 0.0001, Boolean verbose = TRUE)
+  Integer maxi = 50, Boolean check = FALSE, Double thr = 0.0001, Integer seed = 321452, Boolean verbose = TRUE)
   return (Matrix[Double] U, Matrix[Double] V)
 {
   r = rank;
@@ -84,8 +86,8 @@ m_alsDS = function(Matrix[Double] X, Integer rank = 10, Double reg = 0.000001,
   n = ncol (X);
 
   # initializing factor matrices
-  U = rand (rows = m, cols = r, min = -0.5, max = 0.5);
-  V = rand (rows = n, cols = r, min = -0.5, max = 0.5);
+  U = rand (rows = m, cols = r, min = -0.5, max = 0.5, seed=seed);
+  V = rand (rows = n, cols = r, min = -0.5, max = 0.5, seed=seed+1);
 
   # initializing transformed matrices
   Xt = t(X);

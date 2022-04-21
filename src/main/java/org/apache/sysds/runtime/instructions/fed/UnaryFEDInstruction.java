@@ -57,11 +57,16 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 	
 	static String parseUnaryInstruction(String instr, CPOperand in, CPOperand out) {
 		//TODO: simplify once all fed instructions have consistent flags
-		int num = InstructionUtils.checkNumFields(instr, 2, 3);
+		int num = InstructionUtils.checkNumFields(instr, 2, 3, 4);
 		if(num == 2)
-			return parse(instr, in, null, null, out);
-		else 
-			return parseWithFedOutFlag(instr, in, out);
+			return parse(instr, in, null, null, out); 
+		else {
+			String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+			String opcode = parts[0];
+			in.split(parts[1]);
+			out.split(parts[2]);
+			return opcode;
+		}
 	}
 	
 	static String parseUnaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
@@ -103,14 +108,6 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 		return opcode;
 	}
 	
-	private static String parseWithFedOutFlag(String instr, CPOperand in1, CPOperand out) {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
-		String opcode = parts[0];
-		in1.split(parts[1]);
-		out.split(parts[parts.length - 2]);
-		return opcode;
-	}
-
 	/**
 	 * Parse and return federated output flag from given instr string at given position.
 	 * If the position given is greater than the length of the instruction, FederatedOutput.NONE is returned.

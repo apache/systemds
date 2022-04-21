@@ -20,16 +20,17 @@
 package org.apache.sysds.runtime.compress.cocode;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.utils.Util;
 
 public class Memorizer {
 	private final CompressedSizeEstimator _sEst;
 	private final Map<ColIndexes, CompressedSizeInfoColGroup> mem;
-	private int st1 = 0, st2 = 0, st3 = 0;
+	private int st1 = 0, st2 = 0, st3 = 0, st4 = 0;
 
 	public Memorizer(CompressedSizeEstimator sEst) {
 		_sEst = sEst;
@@ -40,6 +41,10 @@ public class Memorizer {
 		mem.put(new ColIndexes(g.getColumns()), g);
 	}
 
+	public void put(ColIndexes key, CompressedSizeInfoColGroup val) {
+		mem.put(key, val);
+	}
+
 	public CompressedSizeInfoColGroup get(ColIndexes c) {
 		return mem.get(c);
 	}
@@ -47,20 +52,23 @@ public class Memorizer {
 	public void remove(ColIndexes c1, ColIndexes c2) {
 		mem.remove(c1);
 		mem.remove(c2);
+		Iterator<Entry<ColIndexes, CompressedSizeInfoColGroup>> i = mem.entrySet().iterator();
+		while(i.hasNext()) {
+			final ColIndexes eci = i.next().getKey();
+			if(eci.contains(c1, c2))
+				i.remove();
+		}
 	}
 
-	public CompressedSizeInfoColGroup getOrCreate(ColIndexes c1, ColIndexes c2) {
-		final int[] c = Util.combine(c1._indexes, c2._indexes);
-		final ColIndexes cI = new ColIndexes(c);
+	public CompressedSizeInfoColGroup getOrCreate(ColIndexes cI, ColIndexes c1, ColIndexes c2){
 		CompressedSizeInfoColGroup g = mem.get(cI);
 		st2++;
 		if(g == null) {
 			final CompressedSizeInfoColGroup left = mem.get(c1);
 			final CompressedSizeInfoColGroup right = mem.get(c2);
 			if(left != null && right != null) {
-
 				st3++;
-				g = _sEst.combine(c, left, right);
+				g = _sEst.combine(cI._indexes, left, right);
 
 				synchronized(this) {
 					mem.put(cI, g);
@@ -75,14 +83,19 @@ public class Memorizer {
 		st1++;
 	}
 
+	public void incst4() {
+		st4++;
+	}
+
 	public String stats() {
-		return " possible: " + st1 + " requests: " + st2 + " joined: " + st3;
+		return " possible: " + st1 + " requests: " + st2 + " combined: " + st3  + " outSecond: "+ st4;
 	}
 
 	public void resetStats() {
 		st1 = 0;
 		st2 = 0;
 		st3 = 0;
+		st4 = 0;
 	}
 
 	@Override

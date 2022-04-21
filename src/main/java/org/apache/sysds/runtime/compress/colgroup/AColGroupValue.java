@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -82,8 +83,9 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		super(colIndices);
 		_numRows = numRows;
 		_dict = dict;
+		if(dict == null)
+			throw new NullPointerException("null dict is invalid");
 		if(cachedCounts != null)
-
 			counts = new SoftReference<>(cachedCounts);
 	}
 
@@ -403,21 +405,37 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 
 	@Override
 	protected AColGroup sliceSingleColumn(int idx) {
-		final AColGroupValue ret = (AColGroupValue) this.clone();
-		ret._colIndexes = new int[] {0};
-		if(_colIndexes.length == 1)
+		final int[] retIndexes = new int[] {0};
+		if(_colIndexes.length == 1) {
+			final AColGroupValue ret = (AColGroupValue) this.clone();
+			ret._colIndexes = retIndexes;
 			ret._dict = ret._dict.clone();
-		else
-			ret._dict = ret._dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
-
-		return ret;
+			ret._dict.getNumberOfValues(1);
+			return ret;
+		}
+		else {
+			final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
+			if(retDict == null)
+				return new ColGroupEmpty(retIndexes);
+			else {
+				final AColGroupValue ret = (AColGroupValue) this.clone();
+				ret._colIndexes = retIndexes;
+				ret._dict = retDict;
+				ret._dict.getNumberOfValues(1);
+				return ret;
+			}
+		}
 	}
 
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
+		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
+		if(retDict == null)
+			return new ColGroupEmpty(_colIndexes);
 		final AColGroupValue ret = (AColGroupValue) this.clone();
-		ret._dict = ret._dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
+		ret._dict = retDict;
 		ret._colIndexes = outputCols;
+		ret._dict.getNumberOfValues(outputCols.length);
 		return ret;
 	}
 
@@ -502,7 +520,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		if(d == null)
 			return ColGroupEmpty.create(max);
 		else
-			return copyAndSet(d);
+			return copyAndSet(Util.genColsIndices(max), d);
 	}
 
 	@Override

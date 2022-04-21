@@ -70,19 +70,24 @@ public class ColGroupSDCSingle extends AMorphingMMColGroup {
 		_indexes = offsets;
 		_zeros = false;
 		_defaultTuple = defaultTuple;
+
+		if(_indexes == null)
+			throw new NullPointerException("null indexes is invalid for SDCSingle");
 	}
 
-	protected static AColGroup create(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple,
+	protected static AColGroup create(int[] colIndexes, int numRows, ADictionary dict, double[] defaultTuple,
 		AOffset offsets, int[] cachedCounts) {
-		boolean allZero = true;
-		for(double d : defaultTuple)
-			allZero &= d == 0;
+		final boolean allZero = FORUtil.allZero(defaultTuple);
 		if(dict == null && allZero)
-			return new ColGroupEmpty(colIndices);
+			return new ColGroupEmpty(colIndexes);
+		else if(dict == null) {
+			ADictionary ADict = new Dictionary(new double[colIndexes.length]);
+			return new ColGroupSDCSingle(colIndexes, numRows, ADict, defaultTuple, offsets, cachedCounts);
+		}
 		else if(allZero)
-			return ColGroupSDCSingleZeros.create(colIndices, numRows, dict, offsets, cachedCounts);
+			return ColGroupSDCSingleZeros.create(colIndexes, numRows, dict, offsets, cachedCounts);
 		else
-			return new ColGroupSDCSingle(colIndices, numRows, dict, defaultTuple, offsets, cachedCounts);
+			return new ColGroupSDCSingle(colIndexes, numRows, dict, defaultTuple, offsets, cachedCounts);
 	}
 
 	@Override

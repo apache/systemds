@@ -69,7 +69,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 	public CompressedVectorTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov,
 		Collection<CompressionType> ct) {
-		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1, ct);
+		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1, ct, null);
 	}
 
 	@Test

@@ -3090,10 +3090,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 
 			if(m2 instanceof CompressedMatrixBlock)
 				m2 = ((CompressedMatrixBlock) m2)
-					.getUncompressed("Ternary Operator arg2 " + op.fn.getClass().getSimpleName());
+					.getUncompressed("Ternary Operator arg2 " + op.fn.getClass().getSimpleName(), op.getNumThreads());
 			if(m3 instanceof CompressedMatrixBlock)
 				m3 = ((CompressedMatrixBlock) m3)
-					.getUncompressed("Ternary Operator arg3 " + op.fn.getClass().getSimpleName());
+					.getUncompressed("Ternary Operator arg3 " + op.fn.getClass().getSimpleName(), op.getNumThreads());
 
 			ret.reset(m, n, sparseOutput);
 
@@ -3766,6 +3766,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		boolean plus = fn instanceof Plus;
 		Builtin bfn = !plus ? (Builtin)((SimpleOperator)op).fn : null;
 		
+		for(int i = 0; i < matrices.length; i++)
+			if(matrices[i] instanceof CompressedMatrixBlock)
+				matrices[i] = CompressedMatrixBlock.getUncompressed(matrices[i], "Nary operation process add row");
+
 		//process all scalars
 		double init = plus ? 0 :(bfn.getBuiltinCode() == BuiltinCode.MIN) ?
 			Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
@@ -3834,8 +3838,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		for( MatrixBlock in : inputs ) {
 			if( in.isEmptyBlock(false) )
 				continue;
-			if(in instanceof CompressedMatrixBlock)
-				in = CompressedMatrixBlock.getUncompressed(in, "ProcessAddRow");
 			
 			if( in.isInSparseFormat() ) {
 				SparseBlock a = in.getSparseBlock();
@@ -5058,11 +5060,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
 			AggregateTernaryOperator op, boolean inCP) {
 		if(m1 instanceof CompressedMatrixBlock)
-			m1 = ((CompressedMatrixBlock) m1).getUncompressed("Aggregate Ternary Operator arg1 " + op.getClass().getSimpleName());
+			m1 = ((CompressedMatrixBlock) m1).getUncompressed("Aggregate Ternary Operator arg1 " + op.getClass().getSimpleName(), op.getNumThreads());
 		if(m2 instanceof CompressedMatrixBlock)
-			m2 = ((CompressedMatrixBlock) m2).getUncompressed("Aggregate Ternary Operator arg2 " + op.getClass().getSimpleName());
+			m2 = ((CompressedMatrixBlock) m2).getUncompressed("Aggregate Ternary Operator arg2 " + op.getClass().getSimpleName(), op.getNumThreads());
 		if(m3 instanceof CompressedMatrixBlock)
-			m3 = ((CompressedMatrixBlock) m3).getUncompressed("Aggregate Ternary Operator arg3 " + op.getClass().getSimpleName());
+			m3 = ((CompressedMatrixBlock) m3).getUncompressed("Aggregate Ternary Operator arg3 " + op.getClass().getSimpleName(), op.getNumThreads());
 
 		//create output matrix block w/ corrections
 		int rl = (op.indexFn instanceof ReduceRow) ? 2 : 1;

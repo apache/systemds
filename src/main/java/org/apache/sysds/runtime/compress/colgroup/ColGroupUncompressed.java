@@ -415,7 +415,7 @@ public class ColGroupUncompressed extends AColGroup {
 			return; // product
 		}
 
-		LOG.warn("Inefficient Unary Aggregate because of Uncompressed ColumnGroup");
+		// LOG.warn("Inefficient Unary Aggregate because of Uncompressed ColumnGroup");
 		// Since usually Uncompressed column groups are used in case of extreme sparsity, it is fine
 		// using a slice, since we dont allocate extra just extract the pointers to the sparse rows.
 		MatrixBlock tmpData = _data.slice(rl, ru - 1, false);
@@ -775,7 +775,7 @@ public class ColGroupUncompressed extends AColGroup {
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		MatrixBlock nd = LibMatrixReorg.rexpand(_data, new MatrixBlock(), max, false, cast, ignore, 1);
-		return create(nd, _colIndexes);
+		return create(nd, Util.genColsIndices(max));
 	}
 
 	@Override

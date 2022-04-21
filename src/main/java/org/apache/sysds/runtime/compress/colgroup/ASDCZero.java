@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -29,7 +30,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public abstract class ASDCZero extends APreAgg {
 	private static final long serialVersionUID = -69266306137398807L;
-	
+
 	/** Sparse row indexes for the data */
 	protected AOffset _indexes;
 
@@ -127,9 +128,7 @@ public abstract class ASDCZero extends APreAgg {
 
 			if(last == aix[apos])
 				multiplyScalar(aval[apos], resV, offRet, it);
-
 		}
-
 	}
 
 	protected final void leftMultByMatrixNoPreAggRows(MatrixBlock mb, MatrixBlock result, int rl, int ru, int cl, int cu,
@@ -153,7 +152,6 @@ public abstract class ASDCZero extends APreAgg {
 			final int offRet = nCols * r;
 			leftMultByMatrixNoPreAggSingleRowSparse(sb, resV, offRet, r, it.clone());
 		}
-
 	}
 
 	protected final void leftMultByMatrixNoPreAggRowsDense(MatrixBlock mb, double[] resV, int nCols, int rl, int ru,
@@ -177,14 +175,31 @@ public abstract class ASDCZero extends APreAgg {
 	 */
 	protected abstract void multiplyScalar(double v, double[] resV, int offRet, AIterator it);
 
-	public void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC, AIterator it) {
-		decompressToDenseBlockDenseDictionary(db, rl, ru, offR, offC, _dict.getValues(), it);
+	public void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC, AIterator it) {
+		if(_dict instanceof MatrixBlockDictionary) {
+			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
+			final MatrixBlock mb = md.getMatrixBlock();
+			// The dictionary is never empty.
+			if(mb.isInSparseFormat())
+				// TODO make one where the iterator is known in argument
+				decompressToDenseBlockSparseDictionary(db, rl, ru, offR, offC, mb.getSparseBlock());
+			else
+				decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, mb.getDenseBlockValues(), it);
+		}
+		else
+			decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, _dict.getValues(), it);
 	}
 
-	public abstract void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+	public void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC, AIterator it) {
+		decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, _dict.getValues(), it);
+	}
+
+	public abstract void decompressToDenseBlockDenseDictionaryWithProvidedIterator(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values, AIterator it);
 
 	public AIterator getIterator(int row) {
 		return _indexes.getIterator(row);
 	}
+
+	protected abstract int getIndexesSize();
 }

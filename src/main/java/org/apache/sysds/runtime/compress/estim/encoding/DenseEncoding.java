@@ -19,7 +19,8 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -30,23 +31,14 @@ import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 public class DenseEncoding implements IEncode {
 
 	private final AMapToData map;
-	private final int[] counts;
-
-	protected DenseEncoding(AMapToData map, int[] counts) {
-		this.map = map;
-		this.counts = counts;
-	}
 
 	public DenseEncoding(AMapToData map) {
 		this.map = map;
-		this.counts = map.getCounts(new int[map.getUnique()]);
 	}
 
 	@Override
 	public DenseEncoding combine(IEncode e) {
-		if((long) (getUnique()) * e.getUnique() > Integer.MAX_VALUE)
-			throw new DMLCompressionException("Invalid input to combine.");
-		else if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
+		if(e instanceof EmptyEncoding || e instanceof ConstEncoding)
 			return this;
 		else if(e instanceof SparseEncoding)
 			return combineSparse((SparseEncoding) e);
@@ -56,47 +48,110 @@ public class DenseEncoding implements IEncode {
 
 	protected DenseEncoding combineSparse(SparseEncoding e) {
 		final int maxUnique = e.getUnique() * getUnique();
-		final int nRows = size();
+		final int size = map.size();
 		final int nVl = getUnique();
-		final int defR = (e.getUnique() - 1) * nVl;
-		final AMapToData m = MapToFactory.create(maxUnique, maxUnique + 1);
-		final AMapToData d = MapToFactory.create(nRows, maxUnique);
 
-		// iterate through indexes that are in the sparse encoding
+		// temp result
+		final AMapToData ret = MapToFactory.create(size, maxUnique);
+
+		// Iteration 1 copy dense data.
+		ret.copy(map);
+
+		// Iterate through indexes that are in the sparse encoding
 		final AIterator itr = e.off.getIterator();
 		final int fr = e.off.getOffsetToLast();
 
-		int newUID = 1;
-		int r = 0;
-		for(; r <= fr; r++) {
-			final int ir = itr.value();
-			if(ir == r) {
-				final int nv = map.getIndex(ir) + e.map.getIndex(itr.getDataIndex()) * nVl;
-				newUID = addVal(nv, r, m, newUID, d);
-				if(ir >= fr) {
-					r++;
-					break;
-				}
-				else
-					itr.next();
-			}
-			else {
-				final int nv = map.getIndex(r) + defR;
-				newUID = addVal(nv, r, m, newUID, d);
-			}
+		int ir = itr.value();
+		while(ir < fr) {
+			ret.set(ir, ret.getIndex(ir) + ((e.map.getIndex(itr.getDataIndex()) + 1) * nVl));
+			ir = itr.next();
 		}
+		ret.set(fr, ret.getIndex(fr) + ((e.map.getIndex(itr.getDataIndex()) + 1) * nVl));
 
-		for(; r < nRows; r++) {
-			final int nv = map.getIndex(r) + defR;
-			newUID = addVal(nv, r, m, newUID, d);
-		}
-
-		// set unique.
-		d.setUnique(newUID - 1);
-		return new DenseEncoding(d);
+		// Iteration 2 reassign indexes.
+		if(maxUnique + nVl > size)
+			return combineSparseHashMap(ret);
+		else
+			return combineSparseMapToData(ret, maxUnique, nVl);
 	}
 
-	private static int addVal(int nv, int r, AMapToData map, int newId, AMapToData d) {
+	private final DenseEncoding combineSparseHashMap(final AMapToData ret) {
+		final int size = ret.size();
+		final Map<Integer, Integer> m = new HashMap<>(size);
+		for(int r = 0; r < size; r++) {
+			final int prev = ret.getIndex(r);
+			final int v = m.size();
+			final Integer mv = m.putIfAbsent(prev, v);
+			if(mv == null)
+				ret.set(r, v);
+			else
+				ret.set(r, mv);
+		}
+		return new DenseEncoding(MapToFactory.resize(ret, m.size()));
+	}
+
+	private final DenseEncoding combineSparseMapToData(final AMapToData ret, final int maxUnique, final int nVl) {
+		final int size = ret.size();
+		final AMapToData m = MapToFactory.create(maxUnique, maxUnique + nVl);
+		int newUID = 1;
+		for(int r = 0; r < size; r++) {
+			final int prev = ret.getIndex(r);
+			int mv = m.getIndex(prev);
+			if(mv == 0)
+				mv = m.setAndGet(prev, newUID++);
+			ret.set(r, mv - 1);
+		}
+		// Potential iteration 3 of resize
+		return new DenseEncoding(MapToFactory.resize(ret, newUID - 1));
+	}
+
+	protected DenseEncoding combineDense(final DenseEncoding other) {
+		try {
+
+			if(map == other.map) // same object
+				return this; // unlikely to happen but cheap to compute
+
+			final AMapToData lm = map;
+			final AMapToData rm = other.map;
+
+			final int nVL = lm.getUnique();
+			final int nVR = rm.getUnique();
+			final int size = map.size();
+			final int maxUnique = nVL * nVR;
+
+			final AMapToData ret = MapToFactory.create(size, maxUnique);
+
+			if(maxUnique > size)
+				return combineDenseWithHashMap(lm, rm, size, nVL, ret);
+			else
+				return combineDenseWithMapToData(lm, rm, size, nVL, ret, maxUnique);
+		}
+		catch(Exception e) {
+			throw new DMLCompressionException("Failed to combine two dense\n" + this + "\n" + other, e);
+		}
+	}
+
+	protected final DenseEncoding combineDenseWithHashMap(final AMapToData lm, final AMapToData rm, final int size,
+		final int nVL, final AMapToData ret) {
+		final Map<Integer, Integer> m = new HashMap<>(size);
+
+		for(int r = 0; r < size; r++)
+			addValHashMap(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
+		return new DenseEncoding(MapToFactory.resize(ret, m.size()));
+
+	}
+
+	protected final DenseEncoding combineDenseWithMapToData(final AMapToData lm, final AMapToData rm, final int size,
+		final int nVL, final AMapToData ret, final int maxUnique) {
+		final AMapToData m = MapToFactory.create(maxUnique, maxUnique + 1);
+		int newUID = 1;
+		for(int r = 0; r < size; r++)
+			newUID = addValMapToData(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, newUID, ret);
+		return new DenseEncoding(MapToFactory.resize(ret, newUID - 1));
+	}
+
+	protected static int addValMapToData(final int nv, final int r, final AMapToData map, int newId,
+		final AMapToData d) {
 		int mv = map.getIndex(nv);
 		if(mv == 0)
 			mv = map.setAndGet(nv, newId++);
@@ -104,57 +159,36 @@ public class DenseEncoding implements IEncode {
 		return newId;
 	}
 
-	protected DenseEncoding combineDense(DenseEncoding other) {
-		if(map == other.map)
-			return this; // unlikely to happen but cheap to compute
-		final AMapToData d = combine(map, other.map);
-		return new DenseEncoding(d);
-	}
-
-	public static AMapToData combine(AMapToData left, AMapToData right) {
-		if(left == null)
-			return right;
-		else if(right == null)
-			return left;
-
-		final int nVL = left.getUnique();
-		final int nVR = right.getUnique();
-		final int size = left.size();
-		final int maxUnique = nVL * nVR;
-
-		final AMapToData ret = MapToFactory.create(size, maxUnique);
-		final AMapToData map = MapToFactory.create(maxUnique, maxUnique + 1);
-
-		int newUID = 1;
-		for(int i = 0; i < size; i++) {
-			final int nv = left.getIndex(i) + right.getIndex(i) * nVL;
-			newUID = addVal(nv, i, map, newUID, ret);
-		}
-
-		ret.setUnique(newUID - 1);
-		return ret;
+	protected static void addValHashMap(final int nv, final int r, final Map<Integer, Integer> map, final AMapToData d) {
+		final int v = map.size();
+		final Integer mv = map.putIfAbsent(nv, v);
+		if(mv == null)
+			d.set(r, v);
+		else
+			d.set(r, mv);
 	}
 
 	@Override
 	public int getUnique() {
-		return counts.length;
-	}
-
-	@Override
-	public int size() {
-		return map.size();
+		return map.getUnique();
 	}
 
 	@Override
 	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
 		int largestOffs = 0;
 
+		int[] counts = map.getCounts(new int[map.getUnique()]);
 		for(int i = 0; i < counts.length; i++)
 			if(counts[i] > largestOffs)
 				largestOffs = counts[i];
 
-		return new EstimationFactors(cols.length, counts.length, nRows, largestOffs, counts, 0, nRows, false, false,
+		return new EstimationFactors(cols.length, map.getUnique(), nRows, largestOffs, counts, 0, nRows, false, false,
 			matrixSparsity, tupleSparsity);
+	}
+
+	@Override
+	public boolean isDense() {
+		return true;
 	}
 
 	@Override
@@ -164,9 +198,6 @@ public class DenseEncoding implements IEncode {
 		sb.append("\n");
 		sb.append("mapping: ");
 		sb.append(map);
-		sb.append("\n");
-		sb.append("counts:  ");
-		sb.append(Arrays.toString(counts));
 		return sb.toString();
 	}
 }

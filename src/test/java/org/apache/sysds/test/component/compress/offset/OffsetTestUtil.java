@@ -19,32 +19,30 @@
 
 package org.apache.sysds.test.component.compress.offset;
 
-import java.util.BitSet;
-
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetChar;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetSingle;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetTwo;
 
-@RunWith(value = Parameterized.class)
-public class OffsetTestPreAggregateSparseBit extends OffsetTestPreAggregateSparse {
+public class OffsetTestUtil {
 
-	public OffsetTestPreAggregateSparseBit(int[] data, OFF_TYPE type) {
-		super(data, type);
+	public static AOffset getOffset(int[] data, OFF_TYPE type) {
+		switch(type) {
+			case SINGLE_OFFSET:
+				if(data.length == 1)
+					return new OffsetSingle(data[0]);
+			case TWO_OFFSET:
+				if(data.length == 2)
+					return new OffsetTwo(data[0], data[1]);
+			case BYTE:
+				return new OffsetByte(data);
+			case CHAR:
+				return new OffsetChar(data);
+			default:
+				throw new NotImplementedException("not implemented");
+		}
 	}
-
-	protected void preAggMapRow(int row) {
-		double[] preAV = new double[1];
-		BitSet m = new BitSet(data.length);
-		a.preAggregateSparseMap(this.leftM.getSparseBlock(), preAV, row, 1 + row, 0, m);
-		verifyPreAggMapRow(preAV, row);
-	}
-
-	@Override
-	public void preAggMapAllRows() {
-		double[] preAV = new double[4];
-		BitSet m = new BitSet(data.length);
-		a.preAggregateSparseMap(this.leftM.getSparseBlock(), preAV, 0, 2, 0, m);
-		verifyPreAggMapAllRow(preAV);
-	}
-
 }

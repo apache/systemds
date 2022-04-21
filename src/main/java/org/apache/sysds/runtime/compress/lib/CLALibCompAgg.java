@@ -71,13 +71,11 @@ public class CLALibCompAgg {
 	private static final Log LOG = LogFactory.getLog(CLALibCompAgg.class.getName());
 	private static final long MIN_PAR_AGG_THRESHOLD = 8 * 1024;
 
-	// private static ThreadLocal<MatrixBlock> memPool = new ThreadLocal<MatrixBlock>();
-
 	public static MatrixBlock aggregateUnary(CompressedMatrixBlock inputMatrix, MatrixBlock result,
 		AggregateUnaryOperator op, int blen, MatrixIndexes indexesIn, boolean inCP) {
 
 		if(!supported(op) || inputMatrix.isEmpty()) {
-			return inputMatrix.getUncompressed("Unary aggregate " + op + " not supported yet.")
+			return inputMatrix.getUncompressed("Unary aggregate " + op + " not supported yet.", op.getNumThreads())
 				.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
 		}
 
@@ -93,9 +91,9 @@ public class CLALibCompAgg {
 			// final double denseSize = MatrixBlock.estimateSizeDenseInMemory(r, c);
 			// final double localMaxMemory = InfrastructureAnalyzer.getLocalMaxMemory();
 
-			if(inputMatrix.getCachedDecompressed() != null) {
+			if(inputMatrix.getCachedDecompressed() != null)
 				return inputMatrix.getCachedDecompressed().aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
-			}
+
 			// else if(colGroups.size() > 5 && denseSize <= localMaxMemory / 2) {
 			// MatrixBlock uc = inputMatrix.getUncompressed(
 			// op.indexFn.getClass().getSimpleName() + " " + op.aggOp.increOp.fn.getClass().getSimpleName()
@@ -270,13 +268,14 @@ public class CLALibCompAgg {
 					tasks.add(new UnaryAggregateTask(grp, ret, r, 0, r, op, c, m1.isOverlapping(), null));
 
 			List<Future<MatrixBlock>> futures = pool.invokeAll(tasks);
-			pool.shutdown();
 
 			reduceFutures(futures, ret, op, m1.isOverlapping());
 		}
 		catch(InterruptedException | ExecutionException e) {
+			pool.shutdown();
 			throw new DMLRuntimeException("Aggregate In parallel failed.", e);
 		}
+		pool.shutdown();
 	}
 
 	private static double[][] getPreAgg(AggregateUnaryOperator opm, List<AColGroup> groups) {
@@ -565,7 +564,7 @@ public class CLALibCompAgg {
 			_op = op;
 			_rl = rl;
 			_ru = ru;
-			_blklen = 32768 / ret.getNumColumns();
+			_blklen = Math.max(65536 * 2 / ret.getNumColumns() / filteredGroups.size(), 64);
 			_ret = ret;
 			_nCol = nCol;
 		}
@@ -583,7 +582,7 @@ public class CLALibCompAgg {
 			for(int i = 0; i < _groups.size(); i++) {
 				AColGroup g = _groups.get(i);
 				if(g instanceof ASDCZero)
-					((ASDCZero) g).decompressToDenseBlockDenseDictionary(db, rl, ru, -rl, 0, its[i]);
+					((ASDCZero) g).decompressToDenseBlock(db, rl, ru, -rl, 0, its[i]);
 				else
 					g.decompressToDenseBlock(db, rl, ru, -rl, 0);
 
@@ -621,10 +620,11 @@ public class CLALibCompAgg {
 					final int rbu = Math.min(r + _blklen, _ru);
 					tmp.reset(rbu - r, tmp.getNumColumns(), false);
 					decompressToTemp(tmp, r, rbu, its);
-					MatrixBlock outputBlock = tmp.prepareAggregateUnaryOutput(_op, null, 1000);
-					LibMatrixAgg.aggregateUnaryMatrix(tmp, outputBlock, _op);
-					outputBlock.dropLastRowsOrColumns(_op.aggOp.correction);
-					if(outputBlock.isEmpty()) {
+					final MatrixBlock tmpR = tmp.prepareAggregateUnaryOutput(_op, null, 1000);
+					LibMatrixAgg.aggregateUnaryMatrix(tmp, tmpR, _op);
+
+					tmpR.dropLastRowsOrColumns(_op.aggOp.correction);
+					if(tmpR.isEmpty()) {
 						if(isBinaryOp) {
 							final double[] retValues = _ret.getDenseBlockValues();
 							final int s = r * _ret.getNumColumns();
@@ -632,14 +632,17 @@ public class CLALibCompAgg {
 							Arrays.fill(retValues, s, e, 0);
 						}
 					}
-					else if(outputBlock.isInSparseFormat())
-						throw new DMLCompressionException("Output block should never be sparse");
+					else if(tmpR.isInSparseFormat()) {
+						throw new NotImplementedException(
+							"Not supported Sparse yet and it should be extremely unlikely/not happen. because we work with a single column here");
+					}
 					else {
+						// tmpR.sparseToDense();
 						final double[] retValues = _ret.getDenseBlockValues();
-						final double[] outputBlockValues = outputBlock.getDenseBlockValues();
+						final double[] tmpRValues = tmpR.getDenseBlockValues();
 						final int currentIndex = r * _ret.getNumColumns();
-						final int length = Math.min(outputBlockValues.length, retValues.length - currentIndex);
-						System.arraycopy(outputBlockValues, 0, retValues, currentIndex, length);
+						final int length = rbu - r;
+						System.arraycopy(tmpRValues, 0, retValues, currentIndex, length);
 					}
 				}
 				return null;

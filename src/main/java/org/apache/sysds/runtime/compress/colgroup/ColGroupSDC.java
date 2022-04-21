@@ -73,9 +73,13 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 	private ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 		AMapToData data, int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
-		if(data.getUnique() != dict.getNumberOfValues(colIndices.length))
+		if(data.getUnique() != dict.getNumberOfValues(colIndices.length)) {
+			if(data.getUnique() != data.getMax())
+				throw new DMLCompressionException(
+					"Invalid unique count compared to actual: " + data.getUnique() + " " + data.getMax());
 			throw new DMLCompressionException("Invalid construction of SDC group: number uniques: " + data.getUnique()
 				+ " vs." + dict.getNumberOfValues(colIndices.length));
+		}
 
 		_indexes = offsets;
 		_data = data;
@@ -88,17 +92,15 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 
 	protected static AColGroup create(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple,
 		AOffset offsets, AMapToData data, int[] cachedCounts) {
-		if(dict == null)
-			throw new NotImplementedException("Not implemented case where SDC ends up with empty dict");
-		else {
-			boolean allZero = true;
-			for(double d : defaultTuple)
-				allZero &= d == 0;
-			if(allZero)
-				return ColGroupSDCZeros.create(colIndices, numRows, dict, offsets, data, cachedCounts);
-			else
-				return new ColGroupSDC(colIndices, numRows, dict, defaultTuple, offsets, data, cachedCounts);
-		}
+		final boolean allZero = FORUtil.allZero(defaultTuple);
+		if(dict == null && allZero)
+			return new ColGroupEmpty(colIndices);
+		else if(dict == null)
+			return ColGroupSDCSingle.create(colIndices, numRows, null, defaultTuple, offsets, null);
+		else if(allZero)
+			return ColGroupSDCZeros.create(colIndices, numRows, dict, offsets, data, cachedCounts);
+		else
+			return new ColGroupSDC(colIndices, numRows, dict, defaultTuple, offsets, data, cachedCounts);
 	}
 
 	@Override
@@ -412,6 +414,11 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 		for(int i = 0; i < _colIndexes.length; i++)
 			constV[_colIndexes[i]] += _defaultTuple[i];
 
+		ADictionary subtractedDict = _dict.subtractTuple(_defaultTuple);
+		return ColGroupSDCZeros.create(_colIndexes, _numRows, subtractedDict, _indexes, _data, getCounts());
+	}
+
+	public AColGroup subtractDefaultTuple() {
 		ADictionary subtractedDict = _dict.subtractTuple(_defaultTuple);
 		return ColGroupSDCZeros.create(_colIndexes, _numRows, subtractedDict, _indexes, _data, getCounts());
 	}

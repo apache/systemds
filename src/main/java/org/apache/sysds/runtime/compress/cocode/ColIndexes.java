@@ -40,4 +40,14 @@ public class ColIndexes {
 		ColIndexes thatGrp = (ColIndexes) that;
 		return Arrays.equals(_indexes, thatGrp._indexes);
 	}
+
+	public boolean contains(ColIndexes a, ColIndexes b) {
+		if(a == null || b == null)
+			return false;
+		int id = Arrays.binarySearch(_indexes, a._indexes[0]);
+		if(id >= 0)
+			return true;
+		id = Arrays.binarySearch(_indexes, b._indexes[0]);
+		return id >= 0;
+	}
 }

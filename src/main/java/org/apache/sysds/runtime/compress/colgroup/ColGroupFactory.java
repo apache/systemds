@@ -44,6 +44,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.functional.LinearRegression;
 import org.apache.sysds.runtime.compress.colgroup.insertionsort.AInsertionSorter;
 import org.apache.sysds.runtime.compress.colgroup.insertionsort.InsertionSorterFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -231,6 +232,9 @@ public class ColGroupFactory {
 				return directCompressDeltaDDC(colIndexes, in, cs, cg, k);
 			else
 				return compressDeltaDDC(colIndexes, in, cs, cg);
+		}
+		else if(ct == CompressionType.LinearFunctional) {
+			return compressLinearFunctional(colIndexes, in, cs);
 		}
 		else {
 			final int numRows = cs.transposed ? in.getNumColumns() : in.getNumRows();
@@ -492,6 +496,11 @@ public class ColGroupFactory {
 		AOffset off = OffsetFactory.createOffset(indexes);
 
 		return ColGroupSDCSingle.create(colIndexes, rlen, dict, defaultTuple, off, null);
+	}
+
+	private static AColGroup compressLinearFunctional(int[] colIndexes, MatrixBlock in, CompressionSettings cs) {
+		double[][] coefficients = LinearRegression.regressMatrixBlock(in, colIndexes, cs.transposed);
+		return ColGroupLinearFunctional.create(colIndexes, coefficients);
 	}
 
 	private static AColGroup compressDDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,

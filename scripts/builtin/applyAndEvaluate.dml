@@ -54,7 +54,7 @@ source("scripts/builtin/bandit.dml") as bandit;
 s_applyAndEvaluate = function(Frame[Unknown] trainData, Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"),
   Frame[Unknown] pip, Frame[Unknown] applyFunc, Matrix[Double] hp, String evaluationFunc, Matrix[Double] evalFunHp,
   Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE)
-return (Matrix[Double] result)
+return (Matrix[Double] result, Matrix[Double] cleanTrain, Matrix[Double] cleanTest)
 {
   no_of_flag_vars = 5
   [schema, mask, fdMask, maskY] = topk::prepareMeta(trainData, metaData)
@@ -116,4 +116,6 @@ return (Matrix[Double] result)
   result[1, 1] = dirtyScore
   result[1, 2] = trainAccuracy
   result[1, 3] = testAccuracy  
+  cleanTrain = cbind(eXtrain, eYtrain)
+  cleanTest = cbind(eXtest, eYtest)
 }

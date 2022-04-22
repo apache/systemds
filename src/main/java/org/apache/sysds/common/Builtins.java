@@ -132,6 +132,7 @@ public enum Builtins {
 	FF_PREDICT("ffPredict", true),
 	FLOOR("floor", false),
 	FRAME_SORT("frameSort", true),
+	FRAME_ROW_REPLICATE("freplicate", false),
 	FREQUENCYENCODE("frequencyEncode", true),
 	FREQUENCYENCODEAPPLY("frequencyEncodeApply", true),
 	GARCH("garch", true),

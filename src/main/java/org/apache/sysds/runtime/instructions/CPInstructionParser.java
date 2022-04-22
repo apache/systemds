@@ -163,6 +163,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "min"  , CPType.Binary);
 		String2CPInstructionType.put( "dropInvalidType"  , CPType.Binary);
 		String2CPInstructionType.put( "dropInvalidLength"  , CPType.Binary);
+		String2CPInstructionType.put( "freplicate"  , CPType.Binary);
 		String2CPInstructionType.put( "valueSwap"  , CPType.Binary);
 		String2CPInstructionType.put( "_map"  , CPType.Ternary); // _map represents the operation map
 

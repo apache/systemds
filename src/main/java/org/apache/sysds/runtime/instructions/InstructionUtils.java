@@ -615,6 +615,8 @@ public class InstructionUtils
 			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidLength"));
 		else if( opcode.equalsIgnoreCase("valueSwap"))
 			return new BinaryOperator(Builtin.getBuiltinFnObject("valueSwap"));
+		else if( opcode.equalsIgnoreCase("freplicate"))
+			return new BinaryOperator(Builtin.getBuiltinFnObject("freplicate"));
 
 		throw new RuntimeException("Unknown binary opcode " + opcode);
 	}

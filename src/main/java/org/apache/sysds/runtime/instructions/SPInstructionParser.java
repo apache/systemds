@@ -189,6 +189,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "map+*",    SPType.Binary);
 		String2SPInstructionType.put( "map-*",    SPType.Binary);
 		String2SPInstructionType.put( "dropInvalidType", SPType.Binary);
+		String2SPInstructionType.put( "freplicate", SPType.Binary);
 		String2SPInstructionType.put( "mapdropInvalidLength", SPType.Binary);
 		String2SPInstructionType.put( "valueSwap", SPType.Binary);
 		String2SPInstructionType.put( "_map", SPType.Ternary); // _map refers to the operation map

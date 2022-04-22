@@ -55,14 +55,16 @@ enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X
   Frame[Unknown] initial_population, Frame[String] refSol = as.frame("NaN"), Integer seed = -1, Integer max_iter=10, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
   Frame[Unknown] primitives, Frame[Unknown] param, Double dirtyScore = 79, Boolean cv=FALSE, Boolean cvk=3,
   Boolean verbose, List[Unknown] ctx=list(prefix="----"))
-return (Frame[Unknown] output, boolean converged, Double refChanges, Frame[Unknown] acc)
+return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Double refChanges, Frame[Unknown] acc)
 {
 
   finalOutput = list()
+  finalOutputHp = list()
   mask = as.matrix(metaList['mask'])
   prefix = as.scalar(ctx["prefix"]);  
   iter = 1
   populationLength = 0
+  hpLength = 0
   converged = FALSE
   start = 1; 
   end = 0;
@@ -87,7 +89,7 @@ return (Frame[Unknown] output, boolean converged, Double refChanges, Frame[Unkno
   populationSize = nrow(pipelines)
   transitions = sample(3, (populationSize * max_iter), TRUE, seed)
   opToAdd = sample(nrow(allOps), (populationSize * max_iter), TRUE, seed)
-  opToRemove = sample(max_iter, (populationSize * max_iter), TRUE, seed)
+  # opToRemove = sample(max_iter, (populationSize * max_iter), TRUE, seed)
   refChangesInternal = 0
   while(!converged & iter <= max_iter)
   {
@@ -102,13 +104,18 @@ return (Frame[Unknown] output, boolean converged, Double refChanges, Frame[Unkno
     actPip = cbind(actPip, population)
     sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(population)))
     sortedPipelines = frameSort(actPip, sort_mask, TRUE)
+    sortedHp = order(target = outHp, by = 1, decreasing=TRUE)
     converged = as.double(as.scalar(sortedPipelines[1, 1])) > dirtyScore
+    hpLength = max(hpLength, ncol(outHp))
     if(converged)
       print(prefix+" EnumLP  converged after "+iter+" / "+max_iter+" iterations")  
     diR = round(nrow(sortedPipelines)/2)
-    if(nrow(sortedPipelines) > 1)
+    if(nrow(sortedPipelines) > 1) {
       sortedPipelines = sortedPipelines[1:diR]
+      sortedHp = sortedHp[1:diR]
+    }
     finalOutput = append(finalOutput, sortedPipelines)
+    finalOutputHp = append(finalOutputHp, sortedHp)
     # # # if converged then stop otherwise generate new population
     children = frame(0, rows=populationSize, cols=ncol(sortedPipelines))
     sortedPipelines = sortedPipelines[, 3:ncol(sortedPipelines)]
@@ -129,7 +136,7 @@ return (Frame[Unknown] output, boolean converged, Double refChanges, Frame[Unkno
         else if(random == 2)
           c1 = mutation(top, seed) 
         else if(random == 3)
-          c1 = removal(top, as.scalar(opToRemove[idxR])) 
+          c1 = removal(top, seed) 
         
         if(sum(mask) > 0)
           c1 = cbind(c1, tail)
@@ -142,27 +149,33 @@ return (Frame[Unknown] output, boolean converged, Double refChanges, Frame[Unkno
   if(!converged) {
     print(prefix+" EnumLP did not converge after "+(iter - 1)+" / "+max_iter+" iterations")  
   }
-  # # # prepare the final frame output
-  output = frame(0, rows=round((populationSize/2)) * length(finalOutput) , cols=populationLength + 2) 
+  # # # prepare the final frame outputPip
+  outputPip = frame(0, rows=round((populationSize/2)) * length(finalOutput) , cols=populationLength + 2) 
+  outputHp = matrix(0, rows=round((populationSize/2)) * length(finalOutput) , cols=hpLength) 
   start = 1; 
   end = 0;
   for(i in 1:length(finalOutput))
   {
     pipFrame = as.frame(finalOutput[i])
+    pipHp = as.matrix(finalOutputHp[i])
     end = end + nrow(pipFrame)
-    output[start:end, 1:ncol(pipFrame)] = pipFrame
+    outputPip[start:end, 1:ncol(pipFrame)] = pipFrame
+    outputHp[start:end, 1:ncol(pipHp)] = pipHp
     start = end + 1
   }
-  sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(output) - 2))
-  output = removeEmpty(target=output, margin="rows")
-  output = frameSort(output, sort_mask, FALSE)
-  refChanges = as.double(as.scalar(output[nrow(output), 2]))
-  # halfing = max(floor(nrow(output)/2), 1)
-  acc = output[, 1]
-  # print("# of logical pipelines: "+nrow(output))
-  # print("max accuracy: "+toString(acc))
-  output = output[,3:ncol(output)]
-  # print("logical pipelines: "+toString(output))
+  finalOutputHp = rbind(finalOutputHp)
+  outputHp = order(target = outputHp, by = 1, decreasing=FALSE)
+  sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(outputPip) - 2))
+  outputPip = removeEmpty(target=outputPip, margin="rows")
+  outputPip = frameSort(outputPip, sort_mask, FALSE)
+  
+  refChanges = as.double(as.scalar(outputPip[nrow(outputPip), 2]))
+  acc = outputPip[, 1]
+  outputPip = outputPip[,3:ncol(outputPip)]
+
+  print(toString(outputHp))
+
+
 }
 
 addition = function(Frame[Unknown] top, Frame[Unknown] opToAdd)
@@ -190,12 +203,12 @@ return (Frame [Unknown] mChild)
   mChild = child
 }
 
-removal = function(Frame[Unknown] child, Integer pos)
+removal = function(Frame[Unknown] child, Integer seed)
 return (Frame[Unknown] child)
 {
   if(ncol(child) >= 2)
   {
-    pos = min(ncol(child), pos)
+    pos = as.scalar(sample(ncol(child), 1, FALSE, seed))
     child[1, pos] = as.frame(0)
     child = removeEmpty(target=child, margin="cols")
   }

@@ -91,7 +91,7 @@ testX = eX[split+1:nrow(eX),]
 testY = eY[split+1:nrow(eX),]
 
 
-[bestLogical, converged] = lg::enumerateLogical(X=trainX, y=trainY, Xtest=testX, ytest=testY,
+[bestLogical, bestHp, converged] = lg::enumerateLogical(X=trainX, y=trainY, Xtest=testX, ytest=testY,
   initial_population=logical, seed = 42, max_iter=max_iter, metaList = metaList, evaluationFunc="evalML", dirtyScore = dirtyScore + expectedIncrease,
   evalFunHp=matrix("1 1e-3 1e-9 100", rows=1, cols=4), primitives=primitives, param=param,
   cv=FALSE, verbose=TRUE)

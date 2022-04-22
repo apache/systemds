@@ -48,11 +48,17 @@ else {
 
 # # # split in train/test 70/30
 #matrix("1 1e-6 1e-9 1000", rows=1, cols=4)
-result = topk_cleaning(dataTrain=trainData, dataTest=testData, 
+[topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData, 
   primitives=primitives, parameters=param, evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),
   topK=topK, resource_val=resources, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output)
-  
-     
+
+write(topKPipelines, output+"/pip.csv", format="csv")
+write(topKHyperParams, output+"/hp.csv", format="csv")
+write(topKScores, output+"/bestAcc.csv", format="csv")
+write(baseLineScore, output+"/dirtyScore.csv", format="csv")
+write(evalFunHp, output+"/evalHp.csv", format="csv")
+write(applyFunc, output+"/applyFunc.csv", format="csv")
+result = baseLineScore < as.scalar(topKScores[1, 1])     
 write(result, $O)
 
 

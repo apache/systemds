@@ -42,6 +42,8 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	protected double[][] _coefficents;
 
+	protected int _numRows;
+
 	/** Constructor for serialization */
 	protected ColGroupLinearFunctional() {
 		super();
@@ -53,30 +55,29 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	 * @param colIndices  The Colum indexes for the column group.
 	 * @param coefficents The dictionary containing one tuple for the entire compression.
 	 */
-	private ColGroupLinearFunctional(int[] colIndices, double[][] coefficents) {
+	private ColGroupLinearFunctional(int[] colIndices, double[][] coefficents, int numRows) {
 		super(colIndices);
 		this._coefficents = coefficents;
+		this._numRows = numRows;
 	}
 
 	/**
 	 * Generate a constant column group.
 	 *
-	 * @param colIndices   The specific column indexes that is contained in this constant group.
-	 * @param coefficents The coefficents vector
-	 * @return A Constant column group.
+	 * @param colIndices   The specific column indexes that is contained in this column group.
+	 * @param coefficents  The coefficents vector
+	 * @return A LinearFunctional column group.
 	 */
-	public static AColGroup create(int[] colIndices, double[][] coefficents) {
+	public static AColGroup create(int[] colIndices, double[][] coefficents, int numRows) {
 		if(coefficents.length != 2 || colIndices.length != coefficents[0].length)
 			throw new DMLCompressionException("Invalid size of values compared to columns");
-		return new ColGroupLinearFunctional(colIndices, coefficents);
+		return new ColGroupLinearFunctional(colIndices, coefficents, numRows);
 	}
 
 
 	@Override
 	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
-		double v = preAgg[0];
-		for(int i = rl; i < ru; i++)
-			c[i] = builtin.execute(c[i], v);
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -87,6 +88,42 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	@Override
 	public ColGroupType getColGroupType() {
 		return ColGroupType.LinearFunctional;
+	}
+
+	@Override
+	public double getMin() {
+		double min = Double.POSITIVE_INFINITY;
+
+		for(int colIndex : _colIndexes) {
+			double intercept = _coefficents[0][colIndex];
+			double slope = _coefficents[1][colIndex];
+			if(slope >= 0 && (intercept + slope) < min) {
+				min = intercept + slope;
+			}
+			else if(slope < 0 && (intercept + _numRows * slope) < min) {
+				min = intercept + _numRows * slope;
+			}
+		}
+
+		return min;
+	}
+
+	@Override
+	public double getMax() {
+		double max = Double.NEGATIVE_INFINITY;
+
+		for(int colIndex : _colIndexes) {
+			double intercept = _coefficents[0][colIndex];
+			double slope = _coefficents[1][colIndex];
+			if(slope >= 0 && (intercept + _numRows * slope) > max) {
+				max = intercept + _numRows * slope;
+			}
+			else if(slope < 0 && (intercept + slope) > max) {
+				max = intercept + slope;
+			}
+		}
+
+		return max;
 	}
 
 	@Override

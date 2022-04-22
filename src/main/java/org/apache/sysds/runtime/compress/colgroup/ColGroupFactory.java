@@ -500,7 +500,7 @@ public class ColGroupFactory {
 
 	private static AColGroup compressLinearFunctional(int[] colIndexes, MatrixBlock in, CompressionSettings cs) {
 		double[][] coefficients = LinearRegression.regressMatrixBlock(in, colIndexes, cs.transposed);
-		return ColGroupLinearFunctional.create(colIndexes, coefficients);
+		return ColGroupLinearFunctional.create(colIndexes, coefficients, in.getNumRows());
 	}
 
 	private static AColGroup compressDDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,

@@ -74,7 +74,7 @@ public class ColGroupLinearFunctionalTest {
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceRow.getReduceRowFnObject());
 		unaryAggregate(data, isTransposed, auop, colSums);
 
-		Assert.assertArrayEquals(colSums, colSumsExpected, 0.001);
+		Assert.assertArrayEquals(colSumsExpected, colSums, 0.001);
 	}
 
 	@Test
@@ -94,7 +94,61 @@ public class ColGroupLinearFunctionalTest {
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceAll.getReduceAllFnObject());
 		unaryAggregate(data, isTransposed, auop, product);
 
-		Assert.assertEquals(product[0], productExpected, 0.001);
+		Assert.assertEquals(productExpected, product[0], 0.001);
+	}
+
+	@Test
+	public void testMax() {
+		boolean isTransposed = false;
+		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 5.3, -100}};
+
+		double maxExpected = Double.NEGATIVE_INFINITY;
+		for(int j = 0; j < data[0].length; j++) {
+			for(int i = 0; i < data.length; i++) {
+				if(data[i][j] > maxExpected) {
+					maxExpected = data[i][j];
+				}
+			}
+		}
+
+		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+
+		final int numCols = isTransposed ? mbt.getNumRows() : mbt.getNumColumns();
+		final int numRows = isTransposed ? mbt.getNumColumns() : mbt.getNumRows();
+		int[] colIndexes = new int[numCols];
+		for(int x = 0; x < numCols; x++)
+			colIndexes[x] = x;
+
+		AColGroup cg = createCompressedColGroup(mbt, colIndexes, isTransposed);
+
+		Assert.assertEquals(maxExpected, cg.getMax(), 0.001);
+	}
+
+	@Test
+	public void testMin() {
+		boolean isTransposed = false;
+		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 5.3, -100}};
+
+		double minExpected = Double.POSITIVE_INFINITY;
+		for(int j = 0; j < data[0].length; j++) {
+			for(int i = 0; i < data.length; i++) {
+				if(data[i][j] < minExpected) {
+					minExpected = data[i][j];
+				}
+			}
+		}
+
+		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+
+		final int numCols = isTransposed ? mbt.getNumRows() : mbt.getNumColumns();
+		final int numRows = isTransposed ? mbt.getNumColumns() : mbt.getNumRows();
+		int[] colIndexes = new int[numCols];
+		for(int x = 0; x < numCols; x++)
+			colIndexes[x] = x;
+
+		AColGroup cg = createCompressedColGroup(mbt, colIndexes, isTransposed);
+
+		Assert.assertEquals(minExpected, cg.getMin(), 0.001);
 	}
 
 	@Test
@@ -136,7 +190,7 @@ public class ColGroupLinearFunctionalTest {
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceAll.getReduceAllFnObject());
 		unaryAggregate(data, isTransposed, auop, sumSq);
 
-		Assert.assertEquals(sumSq[0], sumSqExpected, 0.001);
+		Assert.assertEquals(sumSqExpected, sumSq[0], 0.001);
 	}
 
 	@Test
@@ -156,7 +210,7 @@ public class ColGroupLinearFunctionalTest {
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceAll.getReduceAllFnObject());
 		unaryAggregate(data, isTransposed, auop, sumSq);
 
-		Assert.assertEquals(sumSq[0], sumExpected, 0.001);
+		Assert.assertEquals(sumExpected, sumSq[0], 0.001);
 	}
 
 	@Test
@@ -178,7 +232,7 @@ public class ColGroupLinearFunctionalTest {
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceCol.getReduceColFnObject());
 		unaryAggregate(data, isTransposed, auop, rowSums);
 
-		Assert.assertArrayEquals(rowSums, rowSumExpected, 0.001);
+		Assert.assertArrayEquals(rowSumExpected, rowSums, 0.001);
 	}
 
 	public void unaryAggregate(double[][] data, boolean isTransposed, AggregateUnaryOperator auop, double[] res) {
@@ -213,7 +267,7 @@ public class ColGroupLinearFunctionalTest {
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceRow.getReduceRowFnObject());
 		unaryAggregate(data, isTransposed, auop, colSums);
 
-		Assert.assertArrayEquals(colSums, colSumsExpected, 0.001);
+		Assert.assertArrayEquals(colSumsExpected, colSums, 0.001);
 	}
 
 	public AColGroup createCompressedColGroup(MatrixBlock mbt, int[] colIndexes, boolean isTransposed) {

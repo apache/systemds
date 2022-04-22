@@ -29,26 +29,219 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.functionobjects.*;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.EnumSet;
+import java.util.Random;
 
 public class ColGroupLinearFunctionalTest {
 
 	protected static final Log LOG = LogFactory.getLog(ColGroupLinearFunctionalTest.class.getName());
+	private final static Random random = new Random();
+
+	public double[][] generatePointsOnLine(double intercept, double slope, int length) {
+		double[] result = new double[length];
+		for(int i = 0; i < length; i++) {
+			result[i] = intercept + slope * i;
+		}
+
+		return new double[][] {result};
+	}
+
+	@Test
+	public void testColSumsSq() {
+		boolean isTransposed = false;
+		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 53, -100}};
+
+		double[] colSumsExpected = new double[data[0].length];
+		for(int j = 0; j < data[0].length; j++) {
+			double colSum = 0;
+			for(int i = 0; i < data.length; i++) {
+				colSum += Math.pow(data[i][j], 2);
+			}
+			colSumsExpected[j] = colSum;
+		}
+
+		double[] colSums = new double[data[0].length];
+		AggregateOperator aop = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject());
+		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceRow.getReduceRowFnObject());
+		unaryAggregate(data, isTransposed, auop, colSums);
+
+		Assert.assertArrayEquals(colSums, colSumsExpected, 0.001);
+	}
+
+	@Test
+	public void testProduct() {
+		boolean isTransposed = false;
+		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 5.3, -100}};
+
+		double productExpected = 1;
+		for(int j = 0; j < data[0].length; j++) {
+			for(int i = 0; i < data.length; i++) {
+				productExpected *= data[i][j];
+			}
+		}
+
+		double[] product = new double[data[0].length];
+		AggregateOperator aop = new AggregateOperator(0, Multiply.getMultiplyFnObject());
+		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceAll.getReduceAllFnObject());
+		unaryAggregate(data, isTransposed, auop, product);
+
+		Assert.assertEquals(product[0], productExpected, 0.001);
+	}
+
+	@Test
+	public void testColProduct() {
+		boolean isTransposed = false;
+		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 5.3, -100}};
+
+		double[] productExpected = new double[data[0].length];
+		for(int j = 0; j < data[0].length; j++) {
+			double colProduct = 1;
+			for(int i = 0; i < data.length; i++) {
+				colProduct *= data[i][j];
+			}
+			productExpected[j] = colProduct;
+		}
+
+		double[] product = new double[data[0].length];
+		AggregateOperator aop = new AggregateOperator(0, Multiply.getMultiplyFnObject());
+		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceRow.getReduceRowFnObject());
+		unaryAggregate(data, isTransposed, auop, product);
+
+		Assert.assertArrayEquals(productExpected, product, 0.001);
+	}
+
+	@Test
+	public void testSumSq() {
+		boolean isTransposed = false;
+		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 53, -100}};
+
+		double sumSqExpected = 0;
+		for(int j = 0; j < data[0].length; j++) {
+			for(int i = 0; i < data.length; i++) {
+				sumSqExpected += Math.pow(data[i][j], 2);
+			}
+		}
+
+		double[] sumSq = new double[data[0].length];
+		AggregateOperator aop = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject());
+		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceAll.getReduceAllFnObject());
+		unaryAggregate(data, isTransposed, auop, sumSq);
+
+		Assert.assertEquals(sumSq[0], sumSqExpected, 0.001);
+	}
+
+	@Test
+	public void testSum() {
+		boolean isTransposed = false;
+		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 53, -100}};
+
+		double sumExpected = 0;
+		for(int j = 0; j < data[0].length; j++) {
+			for(int i = 0; i < data.length; i++) {
+				sumExpected += data[i][j];
+			}
+		}
+
+		double[] sumSq = new double[data[0].length];
+		AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
+		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceAll.getReduceAllFnObject());
+		unaryAggregate(data, isTransposed, auop, sumSq);
+
+		Assert.assertEquals(sumSq[0], sumExpected, 0.001);
+	}
+
+	@Test
+	public void testRowSums() {
+		boolean isTransposed = false;
+		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 53, -100}};
+
+		double[] rowSumExpected = new double[data.length];
+		for(int i = 0; i < data.length; i++) {
+			double rowSum = 0;
+			for(int j = 0; j < data[0].length; j++) {
+				rowSum += data[i][j];
+			}
+			rowSumExpected[i] = rowSum;
+		}
+
+		double[] rowSums = new double[data.length];
+		AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
+		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceCol.getReduceColFnObject());
+		unaryAggregate(data, isTransposed, auop, rowSums);
+
+		Assert.assertArrayEquals(rowSums, rowSumExpected, 0.001);
+	}
+
+	public void unaryAggregate(double[][] data, boolean isTransposed, AggregateUnaryOperator auop, double[] res) {
+		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+
+		final int numCols = isTransposed ? mbt.getNumRows() : mbt.getNumColumns();
+		final int numRows = isTransposed ? mbt.getNumColumns() : mbt.getNumRows();
+		int[] colIndexes = new int[numCols];
+		for(int x = 0; x < numCols; x++)
+			colIndexes[x] = x;
+
+		AColGroup cg = createCompressedColGroup(mbt, colIndexes, isTransposed);
+		cg.unaryAggregateOperations(auop, res, numRows, 0, numRows);
+	}
+
+	@Test
+	public void testColSums() {
+		boolean isTransposed = false;
+		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 53, -100}};
+
+		double[] colSumsExpected = new double[data[0].length];
+		for(int j = 0; j < data[0].length; j++) {
+			double colSum = 0;
+			for(int i = 0; i < data.length; i++) {
+				colSum += data[i][j];
+			}
+			colSumsExpected[j] = colSum;
+		}
+
+		double[] colSums = new double[data[0].length];
+		AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
+		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceRow.getReduceRowFnObject());
+		unaryAggregate(data, isTransposed, auop, colSums);
+
+		Assert.assertArrayEquals(colSums, colSumsExpected, 0.001);
+	}
+
+	public AColGroup createCompressedColGroup(MatrixBlock mbt, int[] colIndexes, boolean isTransposed) {
+		CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
+			.setValidCompressions(EnumSet.of(AColGroup.CompressionType.LinearFunctional)).create();
+		cs.transposed = isTransposed;
+
+		final CompressedSizeInfoColGroup cgi = new CompressedSizeEstimatorExact(mbt, cs)
+			.getColGroupInfo(colIndexes);
+		CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
+		AColGroup cg = ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
+
+		Assert.assertSame(cg.getCompType(), AColGroup.CompressionType.LinearFunctional);
+		return cg;
+	}
+
+	@Test
+	public void testRandomColumnCompression() {
+		double intercept = random.nextInt(1000) - 500 + random.nextDouble();
+		double slope = random.nextInt(1000) - 500 + random.nextDouble();
+
+		double[][] column = generatePointsOnLine(intercept, slope, 5000);
+
+		testDecompressToDenseBlock(column, true);
+	}
 
 	@Test
 	public void testDecompressToDenseBlockSingleColumn() {
-//		AColGroup colGroup = ColGroupConst.create(new double[] {3, 4, 5});
-//		double[] test = new double[] {0, 0, 0};
-//		colGroup.computeColSums(test, 10);
-//		System.out.println(colGroup.getNumCols());
-//		System.out.println(Arrays.toString(test));
-
 		testDecompressToDenseBlock(new double[][] {{1, 2, 3, 4, 5}}, true);
 	}
 
@@ -77,6 +270,11 @@ public class ColGroupLinearFunctionalTest {
 		testDecompressToDenseBlock(new double[][] {{1, 2, 3, 4, 5, 0}, {1, 1, 1, 1, 1, 2}}, true);
 	}
 
+	public void testDecompressToSparseBlock(double[][] data, boolean isTransposed) {
+		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+
+	}
+
 	public void testDecompressToDenseBlock(double[][] data, boolean isTransposed) {
 		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
 
@@ -86,16 +284,9 @@ public class ColGroupLinearFunctionalTest {
 		for(int x = 0; x < numCols; x++)
 			colIndexes[x] = x;
 
+		AColGroup cg = createCompressedColGroup(mbt, colIndexes, isTransposed);
+
 		try {
-			CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
-				.setValidCompressions(EnumSet.of(AColGroup.CompressionType.LinearFunctional)).create();
-			cs.transposed = isTransposed;
-
-			final CompressedSizeInfoColGroup cgi = new CompressedSizeEstimatorExact(mbt, cs)
-				.getColGroupInfo(colIndexes);
-			CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
-			AColGroup cg = ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
-
 			// Decompress to dense block
 			MatrixBlock ret = new MatrixBlock(numRows, numCols, false);
 			ret.allocateDenseBlock();

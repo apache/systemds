@@ -60,7 +60,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	/**
 	 * Generate a constant column group.
-	 * 
+	 *
 	 * @param colIndices   The specific column indexes that is contained in this constant group.
 	 * @param coefficents The coefficents vector
 	 * @return A Constant column group.
@@ -81,12 +81,12 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public CompressionType getCompType() {
-		return CompressionType.CONST;
+		return CompressionType.LinearFunctional;
 	}
 
 	@Override
 	public ColGroupType getColGroupType() {
-		return ColGroupType.CONST;
+		return ColGroupType.LinearFunctional;
 	}
 
 	@Override
@@ -104,7 +104,11 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public void decompressToSparseBlock(SparseBlock ret, int rl, int ru, int offR, int offC) {
-		throw new NotImplementedException();
+		final int nCol = _colIndexes.length;
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
+			for(int j = 0; j < nCol; j++)
+				ret.append(offT, _colIndexes[j] + offC, getIdx(i, j));
+		}
 	}
 
 	@Override
@@ -136,19 +140,6 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 //		return create(_colIndexes, _dict.binOpRight(op, v, _colIndexes));
 	}
 
-	/**
-	 * Take the values in this constant column group and add to the given constV. This allows us to completely ignore
-	 * this column group for future calculations.
-	 *
-	 * @param constV The output columns.
-	 */
-	public void addToCommon(double[] constV) {
-		throw new NotImplementedException();
-//		final double[] values = _dict.getValues();
-//		for(int i = 0; i < _colIndexes.length; i++)
-//			constV[_colIndexes[i]] += values[i];
-	}
-
 	@Override
 	protected double computeMxx(double c, Builtin builtin) {
 		throw new NotImplementedException();
@@ -161,27 +152,54 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	protected void computeSum(double[] c, int nRows) {
-		throw new NotImplementedException();
+		for(int colIndex : _colIndexes) {
+			double intercept = _coefficents[0][colIndex];
+			double slope = _coefficents[1][colIndex];
+			c[0] += nRows * (intercept + (nRows + 1) * slope / 2);
+		}
 	}
 
 	@Override
 	public void computeColSums(double[] c, int nRows) {
-		throw new NotImplementedException();
+		for(int colIndex : _colIndexes) {
+			double intercept = _coefficents[0][colIndex];
+			double slope = _coefficents[1][colIndex];
+			c[colIndex] += nRows * (intercept + (nRows + 1) * slope / 2);
+		}
 	}
 
 	@Override
 	protected void computeSumSq(double[] c, int nRows) {
-		throw new NotImplementedException();
+		for(int colIndex : _colIndexes) {
+			double intercept = _coefficents[0][colIndex];
+			double slope = _coefficents[1][colIndex];
+			c[0] += nRows * (Math.pow(intercept, 2) + (nRows + 1) * slope * intercept +
+				(nRows + 1) * (2 * nRows + 1) * Math.pow(slope, 2) / 6);
+		}
 	}
 
 	@Override
 	protected void computeColSumsSq(double[] c, int nRows) {
-		throw new NotImplementedException();
+		for(int colIndex : _colIndexes) {
+			double intercept = _coefficents[0][colIndex];
+			double slope = _coefficents[1][colIndex];
+			c[colIndex] += nRows * (Math.pow(intercept, 2) + (nRows + 1) * slope * intercept +
+				(nRows + 1) * (2 * nRows + 1) * Math.pow(slope, 2) / 6);
+		}
 	}
 
 	@Override
 	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
-		throw new NotImplementedException();
+		double intercept_sum = 0;
+		for(double intercept : _coefficents[0])
+			intercept_sum += intercept;
+
+		double slope_sum = 0;
+		for(double slope : _coefficents[1])
+			slope_sum += slope;
+
+		for(int rix = rl; rix < ru; rix++)
+			c[rix] += intercept_sum + slope_sum * (rix + 1);
 	}
 
 	@Override
@@ -267,18 +285,38 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	protected void computeProduct(double[] c, int nRows) {
-		throw new NotImplementedException();
-//		_dict.product(c, new int[] {nRows}, _colIndexes.length);
+		c[0] = 1;
+		for(int colIndex : _colIndexes) {
+			double intercept = _coefficents[0][colIndex];
+			double slope = _coefficents[1][colIndex];
+			for(int i = 0; i < nRows; i++) {
+				c[0] *= intercept + slope * (i + 1);
+			}
+		}
 	}
 
 	@Override
 	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
-		throw new NotImplementedException();
+		for(int rix = rl; rix < ru; rix++) {
+			c[rix] = 1;
+			for(int colIndex : _colIndexes) {
+				double intercept = _coefficents[0][colIndex];
+				double slope = _coefficents[1][colIndex];
+				c[rix] *= intercept + slope * (rix + 1);
+			}
+		}
 	}
 
 	@Override
 	protected void computeColProduct(double[] c, int nRows) {
-		throw new NotImplementedException();
+		for(int colIndex : _colIndexes) {
+			c[colIndex] = 1;
+			double intercept = _coefficents[0][colIndex];
+			double slope = _coefficents[1][colIndex];
+			for(int i = 0; i < nRows; i++) {
+				c[colIndex] *= intercept + slope * (i + 1);
+			}
+		}
 	}
 
 	@Override
@@ -303,11 +341,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public long estimateInMemorySize() {
-		throw new NotImplementedException();
-//		long size = super.estimateInMemorySize();
-//		size += _dict.getInMemorySize();
-//		size += 8; // dict reference
-//		return size;
+		return ColGroupSizes.estimateInMemorySizeLinearFunctional(getNumCols());
 	}
 
 	@Override

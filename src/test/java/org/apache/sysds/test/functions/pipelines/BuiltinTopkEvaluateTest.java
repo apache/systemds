@@ -43,10 +43,7 @@ public class BuiltinTopkEvaluateTest extends AutomatedTestBase {
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 	}
-
-
-	//TODO: debug test failure in git action
-
+	
 	@Test
 	public void testEvalPipClass() {
 		evalPip(0.8, "FALSE", INPUT+"/classification/", Types.ExecMode.SINGLE_NODE);

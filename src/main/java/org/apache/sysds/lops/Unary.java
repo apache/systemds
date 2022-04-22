@@ -138,6 +138,13 @@ public class Unary extends Lop
 			|| op==OpOp1.POW2
 			|| op==OpOp1.MULT2;
 	}
+
+	private void appendFedOut(StringBuilder sb){
+		if (getExecType() == ExecType.FED){
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _fedOutput.name() );
+		}
+	}
 	
 	@Override
 	public String getInstructions(String input1, String output) {
@@ -158,12 +165,14 @@ public class Unary extends Lop
 		sb.append( prepOutputOperand(output) );
 		
 		//num threads for cumulative cp ops
-		if( getExecType() == ExecType.CP && isMultiThreadedOp(operation) ) {
+		if( (getExecType() == ExecType.CP || getExecType() == ExecType.FED) && isMultiThreadedOp(operation) ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _inplace );
 		}
+
+		appendFedOut(sb);
 		
 		return sb.toString();
 	}
@@ -191,10 +200,12 @@ public class Unary extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output));
 		
-		if( getExecType() == ExecType.CP ) {
+		if( getExecType() == ExecType.CP  || getExecType() == ExecType.FED ) {
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( String.valueOf(_numThreads) );
+			sb.append(_numThreads);
 		}
+
+		appendFedOut(sb);
 		
 		return sb.toString();
 	}

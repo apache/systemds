@@ -55,8 +55,9 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	private final static String TEST_NAME_7 = "FederatedMultiplyPlanningTest7";
 	private final static String TEST_NAME_8 = "FederatedMultiplyPlanningTest8";
 	private final static String TEST_NAME_9 = "FederatedMultiplyPlanningTest9";
+	private final static String TEST_NAME_10 = "FederatedMultiplyPlanningTest10";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedMultiplyPlanningTest.class.getSimpleName() + "/";
-	private final static File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, "SystemDS-config-cost-based.xml");
+	private static File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, "SystemDS-config-cost-based.xml");
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -76,6 +77,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME_7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_7, new String[] {"Z"}));
 		addTestConfiguration(TEST_NAME_8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_8, new String[] {"Z.scalar"}));
 		addTestConfiguration(TEST_NAME_9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_9, new String[] {"Z.scalar"}));
+		addTestConfiguration(TEST_NAME_10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_10, new String[] {"Z"}));
 	}
 
 	@Parameterized.Parameters
@@ -146,6 +148,13 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_9, expectedHeavyHitters);
 	}
 
+	@Test
+	public void federatedMultiplyPlanningTest10(){
+		String[] expectedHeavyHitters = new String[]{"fed_fedinit", "fed_^2"};
+		TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, "SystemDS-config-fout.xml");
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_10, expectedHeavyHitters);
+	}
+
 	private void writeStandardMatrix(String matrixName, long seed){
 		writeStandardMatrix(matrixName, seed, new PrivacyConstraint(PrivacyConstraint.PrivacyLevel.PrivateAggregation));
 	}
@@ -199,6 +208,10 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 			writeColStandardMatrix("Y2", 21, null);
 			writeColStandardMatrix("W1", 76, null);
 			writeColStandardMatrix("W2", 11, null);
+		}
+		else if ( testName.equals(TEST_NAME_10) ){
+			writeStandardMatrix("X1", 42, null);
+			writeStandardMatrix("X2", 1340, null);
 		}
 		else {
 			writeStandardMatrix("X1", 42);

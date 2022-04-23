@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
@@ -77,6 +78,17 @@ public class FederatedResponse implements Serializable {
 		if ( !isSuccessful() )
 			throwExceptionFromResponse(); 
 		return _data;
+	}
+
+	public long estimateSerializationBufferSize() {
+		long minBufferSize = 312; // general offset for the FederatedResponse object
+		if(_data != null) {
+			for(Object obj : _data) {
+				if(obj instanceof CacheBlock)
+					minBufferSize += ((CacheBlock)obj).getExactSerializedSize();
+			}
+		}
+		return minBufferSize;
 	}
 
 	/**

@@ -195,6 +195,19 @@ public class FederatedRequest implements Serializable {
 		return _lineageTrace;
 	}
 
+	public long estimateSerializationBufferSize() {
+		long minBufferSize = 512; // general offset for the FederatedRequest object
+		if(_data != null) {
+			for(Object obj : _data) {
+				if(obj instanceof CacheBlock)
+					minBufferSize += ((CacheBlock)obj).getExactSerializedSize();
+			}
+		}
+		if(_lineageTrace != null)
+			minBufferSize += _lineageTrace.length();
+		return minBufferSize;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("FederatedRequest[");

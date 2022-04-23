@@ -775,23 +775,22 @@ public class HopRewriteUtils {
 	public static DataGenOp createSeqDataGenOp( Hop input, boolean asc ) {
 		Hop to = input.rowsKnown() ? new LiteralOp(input.getDim1()) : 
 			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT64, OpOp1.NROW, input);
-		
+		if( asc )
+			return createSeqDataGenOp(input, new LiteralOp(1), to, new LiteralOp(1));
+		else
+			return createSeqDataGenOp(input, to, new LiteralOp(1), new LiteralOp(-1));
+	}
+	
+	public static DataGenOp createSeqDataGenOp(Hop proxy, Hop from, Hop to, Hop incr) {
 		HashMap<String, Hop> params = new HashMap<>();
-		if( asc ) {
-			params.put(Statement.SEQ_FROM, new LiteralOp(1));
-			params.put(Statement.SEQ_TO, to);
-			params.put(Statement.SEQ_INCR, new LiteralOp(1));
-		}
-		else {
-			params.put(Statement.SEQ_FROM, to);
-			params.put(Statement.SEQ_TO, new LiteralOp(1));
-			params.put(Statement.SEQ_INCR, new LiteralOp(-1));	
-		}
+		params.put(Statement.SEQ_FROM, from);
+		params.put(Statement.SEQ_TO, to);
+		params.put(Statement.SEQ_INCR, incr);
 		
 		//note internal refresh size information
 		DataGenOp datagen = new DataGenOp(OpOpDG.SEQ, new DataIdentifier("tmp"), params);
-		datagen.setBlocksize(input.getBlocksize());
-		copyLineNumbers(input, datagen);
+		datagen.setBlocksize(proxy.getBlocksize());
+		copyLineNumbers(proxy, datagen);
 		
 		return datagen;
 	}

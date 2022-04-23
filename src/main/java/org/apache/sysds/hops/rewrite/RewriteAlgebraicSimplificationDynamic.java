@@ -177,6 +177,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y)); if col vector
 			hi = simplifySumDiagToTrace(hi);                  //e.g., sum(diag(X)) -> trace(X); if col vector
 			hi = simplifyLowerTriExtraction(hop, hi, i);      //e.g., X * cumsum(diag(matrix(1,nrow(X),1))) -> lower.tri
+			hi = simplifyConstantCumsum(hop, hi, i);          //e.g., cumsum(matrix(1/n,n,1)) -> seq(1/n, 1, 1/n)
 			hi = pushdownBinaryOperationOnDiag(hop, hi, i);   //e.g., diag(X)*7 -> diag(X*7); if col vector
 			hi = pushdownSumOnAdditiveBinary(hop, hi, i);     //e.g., sum(A+B) -> sum(A)+sum(B); if dims(A)==dims(B)
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION) {
@@ -1213,6 +1214,23 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hi = hnew;
 				LOG.debug("Applied simplifyLowerTriExtraction");
 			}
+		}
+		return hi;
+	}
+	
+	private static Hop simplifyConstantCumsum(Hop parent, Hop hi, int pos) {
+		//pattern: cumsum(matrix(1/n,n,1)) -> seq(1/n, 1, 1/n)
+		if( HopRewriteUtils.isUnary(hi, OpOp1.CUMSUM)
+			&& HopRewriteUtils.isDataGenOpWithConstantValue(hi.getInput(0))
+			&& hi.getInput(0).getParent().size() == 1 //cumsum only consumer
+			&& hi.dimsKnown() && hi.getDim2() == 1 )
+		{
+			Hop constVal = ((DataGenOp) hi.getInput(0)).getConstantValue();
+			Hop to = HopRewriteUtils.createBinary(new LiteralOp(hi.getDim1()), constVal, OpOp2.MULT);
+			Hop hnew = HopRewriteUtils.createSeqDataGenOp(hi, constVal, to, constVal);
+			HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
+			hi = hnew;
+			LOG.debug("Applied simplifyConstantCumsum (line "+hi.getBeginLine()+").");
 		}
 		return hi;
 	}

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,11 +34,12 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MetaData;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -184,7 +186,7 @@ public class FederatedData {
 					cp.addLast("ObjectDecoder", new ObjectDecoder(Integer.MAX_VALUE,
 						ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
 					cp.addLast("FederatedOperationHandler", handler);
-					cp.addLast("ObjectEncoder", new ObjectEncoder());
+					cp.addLast("FederatedRequestEncoder", new FederatedRequestEncoder());
 				}
 			});
 
@@ -283,5 +285,30 @@ public class FederatedData {
 		sb.append(" " + _address.toString());
 		sb.append(":" + _filepath);
 		return sb.toString();
+	}
+
+	public static class FederatedRequestEncoder extends ObjectEncoder {
+		@Override
+		protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, Serializable msg,
+		boolean preferDirect) throws Exception {
+			int initCapacity = 256; // default initial capacity
+			if(msg instanceof FederatedRequest[]) {
+				initCapacity = 0;
+				try {
+					for(FederatedRequest fr : (FederatedRequest[])msg) {
+						int frSize = Math.toIntExact(fr.estimateSerializationBufferSize());
+						if(Integer.MAX_VALUE - initCapacity < frSize) // summed sizes exceed integer limits
+							throw new ArithmeticException("Overflow.");
+						initCapacity += frSize;
+					}
+				} catch(ArithmeticException ae) { // size of federated request exceeds integer limits
+					initCapacity = Integer.MAX_VALUE;
+				}
+			}
+			if(preferDirect)
+				return ctx.alloc().ioBuffer(initCapacity);
+			else
+				return ctx.alloc().heapBuffer(initCapacity);
+		}
 	}
 }

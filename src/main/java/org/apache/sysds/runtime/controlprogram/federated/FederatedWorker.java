@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.io.Serializable;
 import java.security.cert.CertificateException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -27,7 +28,9 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -44,6 +47,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.log4j.Logger;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 
@@ -99,7 +103,7 @@ public class FederatedWorker {
 						cp.addLast("ObjectDecoder",
 							new ObjectDecoder(Integer.MAX_VALUE,
 								ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
-						cp.addLast("ObjectEncoder", new ObjectEncoder());
+						cp.addLast("FederatedResponseEncoder", new FederatedResponseEncoder());
 						cp.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_flt, _frc, _fan));
 					}
 				}).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
@@ -119,6 +123,28 @@ public class FederatedWorker {
 			log.info("Federated Worker Shutting down.");
 			workerGroup.shutdownGracefully();
 			bossGroup.shutdownGracefully();
+		}
+	}
+
+	public static class FederatedResponseEncoder extends ObjectEncoder {
+		@Override
+		protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, Serializable msg,
+			boolean preferDirect) throws Exception {
+			int initCapacity = 256;
+			if(msg instanceof FederatedResponse) {
+				FederatedResponse response = (FederatedResponse)msg;
+				if(response.getData() != null && response.getData().length > 0
+					&& response.getData()[0] instanceof CacheBlock)
+					try {
+						initCapacity = Math.toIntExact(((CacheBlock)response.getData()[0]).getInMemorySize());
+					} catch(ArithmeticException ae) { // in memory size of cache block exceeds integer limits
+						initCapacity = Integer.MAX_VALUE;
+					}
+			}
+			if(preferDirect)
+				return ctx.alloc().ioBuffer(initCapacity);
+			else
+				return ctx.alloc().heapBuffer(initCapacity);
 		}
 	}
 }

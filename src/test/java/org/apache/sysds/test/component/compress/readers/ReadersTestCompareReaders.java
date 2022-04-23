@@ -548,6 +548,7 @@ public class ReadersTestCompareReaders {
 	}
 
 	private class DenseBlockFP64Mock extends DenseBlockFP64 {
+		private static final long serialVersionUID = -3601232958390554672L;
 
 		public DenseBlockFP64Mock(int[] dims, double[] data) {
 			super(dims, data);

@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class OffsetTwo extends AOffset {
+	private static final long serialVersionUID = -3756723021239389269L;
 
 	private final int first;
 	private final int last;

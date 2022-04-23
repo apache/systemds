@@ -121,6 +121,7 @@ public class RewriteMMCBindZeroVector extends AutomatedTestBase {
 			writeInputMatrixWithMTD("Y", Y, false);
 
 			// execute tests
+			setOutputBuffering(true);
 			String out = runTest(null).toString();
 
 			for(String line : out.split("\n")) {

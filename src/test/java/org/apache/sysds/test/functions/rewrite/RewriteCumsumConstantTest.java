@@ -28,18 +28,16 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.utils.Statistics;
 
-public class RewriteFoldMinMaxTest extends AutomatedTestBase 
+public class RewriteCumsumConstantTest extends AutomatedTestBase 
 {
-	private static final String TEST_NAME1 = "RewriteFoldMin";
-	private static final String TEST_NAME2 = "RewriteFoldMax";
+	private static final String TEST_NAME1 = "RewriteCumsumConstant1";
+	private static final String TEST_NAME2 = "RewriteCumsumConstant2";
 	
 	private static final String TEST_DIR = "functions/rewrite/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteFoldMinMaxTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteCumsumConstantTest.class.getSimpleName() + "/";
 	
-	private static final int rows = 1932;
-	private static final int cols = 14;
+	private static final int rows = 4;
 	
 	@Override
 	public void setUp() {
@@ -49,26 +47,46 @@ public class RewriteFoldMinMaxTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testRewriteFoldMinNoRewrite() {
-		testRewriteFoldMinMax( TEST_NAME1, false, ExecType.CP );
+	public void testRewriteCumsumPosNoRewrite() {
+		testRewriteCumsumConst( TEST_NAME1, false, 1, ExecType.CP );
 	}
 	
 	@Test
-	public void testRewriteFoldMinRewrite() {
-		testRewriteFoldMinMax( TEST_NAME1, true, ExecType.CP );
+	public void testRewriteCumsumPosRewrite() {
+		testRewriteCumsumConst( TEST_NAME1, true, 1, ExecType.CP );
 	}
 	
 	@Test
-	public void testRewriteFoldMaxNoRewrite() {
-		testRewriteFoldMinMax( TEST_NAME2, false, ExecType.CP );
+	public void testRewriteCumsumNegNoRewrite() {
+		testRewriteCumsumConst( TEST_NAME2, false, 1, ExecType.CP );
 	}
 	
 	@Test
-	public void testRewriteFoldMaxRewrite() {
-		testRewriteFoldMinMax( TEST_NAME2, true, ExecType.CP );
+	public void testRewriteCumsumNegRewrite() {
+		testRewriteCumsumConst( TEST_NAME2, true, 1, ExecType.CP );
+	}
+	
+	@Test
+	public void testRewriteCumsumPos2NoRewrite() {
+		testRewriteCumsumConst( TEST_NAME1, false, 2, ExecType.CP );
+	}
+	
+	@Test
+	public void testRewriteCumsumPos2Rewrite() {
+		testRewriteCumsumConst( TEST_NAME1, true, 2, ExecType.CP );
+	}
+	
+	@Test
+	public void testRewriteCumsumNeg2NoRewrite() {
+		testRewriteCumsumConst( TEST_NAME2, false, 2, ExecType.CP );
+	}
+	
+	@Test
+	public void testRewriteCumsumNeg2Rewrite() {
+		testRewriteCumsumConst( TEST_NAME2, true, 2, ExecType.CP );
 	}
 
-	private void testRewriteFoldMinMax( String testname, boolean rewrites, ExecType et )
+	private void testRewriteCumsumConst( String testname, boolean rewrites, int cols, ExecType et )
 	{
 		ExecMode platformOld = setExecMode(et);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -79,22 +97,23 @@ public class RewriteFoldMinMaxTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{ "-stats", "-args", String.valueOf(rows), 
-					String.valueOf(cols), output("R") };
+			programArgs = new String[]{ "-stats", "-args",
+				String.valueOf(rows), String.valueOf(cols), output("R") };
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
 			//run performance tests
-			runTest(true, false, null, -1); 
+			runTest(true, false, null, -1);
 			
 			//compare matrices 
 			Double ret = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
-			Assert.assertEquals("Wrong result", Double.valueOf(5*rows*cols), ret);
+			double expected = cols * ((double)rows*(rows+1)/2)/rows
+				* (testname.equals(TEST_NAME1) ? 1 : -1);
+			Assert.assertEquals("Wrong result", Double.valueOf(expected), ret);
 			
 			//check for applied rewrites
-			if( rewrites ) {
-				Assert.assertTrue(!heavyHittersContainsString("min") && !heavyHittersContainsString("max")
-					&& (!testname.equals(TEST_NAME1) || Statistics.getCPHeavyHitterCount("nmin") == 1)
-					&& (!testname.equals(TEST_NAME2) || Statistics.getCPHeavyHitterCount("nmax") == 1));
+			if( rewrites && cols==1 ) { //sequence only for col vectors
+				Assert.assertTrue(!heavyHittersContainsString("rand")
+					&& !heavyHittersContainsString("ucumk+"));
 			}
 		}
 		finally {
@@ -103,4 +122,3 @@ public class RewriteFoldMinMaxTest extends AutomatedTestBase
 		}
 	}
 }
-

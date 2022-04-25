@@ -40,6 +40,7 @@ public class TransformStatistics {
 
 	private static final LongAdder outMatrixPreProcessingTime = new LongAdder();
 	private static final LongAdder outMatrixPostProcessingTime = new LongAdder();
+	private static final LongAdder mapSizeEstimationTime = new LongAdder();
 
 	public static void incEncoderCount(long encoders) {
 		encoderCount.add(encoders);
@@ -93,6 +94,10 @@ public class TransformStatistics {
 		outMatrixPostProcessingTime.add(t);
 	}
 
+	public static void incMapSizeEstimationTime(long t) {
+		mapSizeEstimationTime.add(t);
+	}
+
 	public static long getEncodeBuildTime() {
 		return binningBuildTime.longValue() + imputeBuildTime.longValue() +
 				recodeBuildTime.longValue();
@@ -121,6 +126,7 @@ public class TransformStatistics {
 		imputeApplyTime.reset();
 		outMatrixPreProcessingTime.reset();
 		outMatrixPostProcessingTime.reset();
+		mapSizeEstimationTime.reset();
 	}
 
 	public static String displayStatistics() {
@@ -168,6 +174,8 @@ public class TransformStatistics {
 				outMatrixPreProcessingTime.longValue()*1e-9)).append(" sec.\n");
 			sb.append("TransformEncode PostProc. time:\t").append(String.format("%.3f",
 				outMatrixPostProcessingTime.longValue()*1e-9)).append(" sec.\n");
+			sb.append("TransformEncode SizeEst. time:\t").append(String.format("%.3f",
+				mapSizeEstimationTime.longValue()*1e-9)).append(" sec.\n");
 			return sb.toString();
 		}
 		return "";

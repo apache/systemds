@@ -226,7 +226,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 			return _sample.getNonZeros();
 	}
 
-	private static int[] getSortedSample(int range, int sampleSize, long seed, int k) {
+	public static int[] getSortedSample(int range, int sampleSize, long seed, int k) {
 		// set meta data and allocate dense block
 		final int[] a = new int[sampleSize];
 

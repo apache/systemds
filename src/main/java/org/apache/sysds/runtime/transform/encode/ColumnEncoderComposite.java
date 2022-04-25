@@ -360,6 +360,14 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		return false;
 	}
 
+	public void computeRCDMapSizeEstimate(CacheBlock in, int[] sampleIndices) {
+		for (ColumnEncoder e : _columnEncoders)
+			if (e.getClass().equals(ColumnEncoderRecode.class))
+				((ColumnEncoderRecode) e).computeRCDMapSizeEstimate(in, sampleIndices);
+		long totEstSize = _columnEncoders.stream().mapToLong(ColumnEncoder::getEstMetaSize).sum();
+		setEstMetaSize(totEstSize);
+	}
+
 	@Override
 	public void shiftCol(int columnOffset) {
 		super.shiftCol(columnOffset);

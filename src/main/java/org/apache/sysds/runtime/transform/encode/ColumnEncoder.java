@@ -60,6 +60,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	private static final long serialVersionUID = 2299156350718979064L;
 	protected int _colID;
 	protected ArrayList<Integer> _sparseRowsWZeros = null;
+	protected long _estMetaSize = 0;
 
 	protected enum TransformType{
 		BIN, RECODE, DUMMYCODE, FEATURE_HASH, PASS_THROUGH, N_A
@@ -279,6 +280,14 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 
 	public void shiftCol(int columnOffset) {
 		_colID += columnOffset;
+	}
+
+	public void setEstMetaSize(long estSize) {
+		_estMetaSize = estSize;
+	}
+
+	public long getEstMetaSize() {
+		return _estMetaSize;
 	}
 
 	@Override

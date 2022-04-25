@@ -34,6 +34,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -126,6 +127,40 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	private long lookupRCDMap(String key) {
 		Long tmp = _rcdMap.get(key);
 		return (tmp != null) ? tmp : -1;
+	}
+
+	public void computeRCDMapSizeEstimate(CacheBlock in, int[] sampleIndices) {
+		if (getEstMetaSize() != 0)
+			return;
+
+		// Find the frequencies of distinct values in the sample
+		HashMap<String, Integer> distinctFreq = new HashMap<>();
+		long totSize = 0;
+		for (int sind : sampleIndices) {
+			String key = in.getString(sind, _colID-1);
+			if (key == null)
+				continue;
+			//distinctFreq.put(key, distinctFreq.getOrDefault(key, (long)0) + 1);
+			if (distinctFreq.containsKey(key))
+				distinctFreq.put(key, distinctFreq.get(key) + 1);
+			else {
+				distinctFreq.put(key, 1);
+				// Maintain total size of the keys
+				totSize += (key.length() * 2L + 16); //sizeof(String) = len(chars) + header
+			}
+		}
+
+		// Estimate total #distincts using Hass and Stokes estimator
+		int[] freq = distinctFreq.values().stream().mapToInt(v -> v).toArray();
+		int estDistCount = SampleEstimatorFactory.distinctCount(freq, in.getNumRows(),
+			sampleIndices.length, SampleEstimatorFactory.EstimationType.HassAndStokes);
+
+		// Compute total size estimates for each partial recode map
+		// We assume each partial map contains all distinct values and have the same size
+		long avgKeySize = totSize / distinctFreq.size();
+		long valSize = 16L; //sizeof(Long) = 8 + header
+		long estMapSize = estDistCount * (avgKeySize + valSize);
+		setEstMetaSize(estMapSize);
 	}
 
 	@Override

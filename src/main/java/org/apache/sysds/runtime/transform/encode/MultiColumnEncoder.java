@@ -44,7 +44,9 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorSample;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseRowVector;
@@ -401,11 +403,14 @@ public class MultiColumnEncoder implements Encoder {
 		int nRow = in.getNumRows();
 		int nThread = OptimizerUtils.getTransformNumThreads(); //VCores
 		int minNumRows = 16000; //min rows per partition
+		List<ColumnEncoderComposite> recodeEncoders = new ArrayList<>();
 		// Count #Builds and #Applies (= #Col)
 		int nBuild = 0;
 		for (ColumnEncoderComposite e : _columnEncoders)
-			if (e.hasBuild())
+			if (e.hasBuild()) {
 				nBuild++;
+				recodeEncoders.add(e);
+			}
 		int nApply = in.getNumColumns();
 		// #BuildBlocks = (2 * #PhysicalCores)/#build
 		if (numBlocks[0] == 0 && nBuild > 0 && nBuild < nThread)
@@ -420,6 +425,20 @@ public class MultiColumnEncoder implements Encoder {
 		while (numBlocks[1] > 1 && nRow/numBlocks[1] < minNumRows)
 			numBlocks[1]--;
 
+		// Reduce #build blocks if all don't fit in memory
+		if (numBlocks[0] > 1) {
+			// Estimate recode map sizes
+			estimateRCMapSize(in, recodeEncoders);
+			long totEstSize = recodeEncoders.stream().mapToLong(ColumnEncoderComposite::getEstMetaSize).sum();
+			// Worst case scenario: all partial maps contain all distinct values
+			long totPartMapSize = totEstSize * numBlocks[0];
+			if (totPartMapSize > InfrastructureAnalyzer.getLocalMaxMemory())
+				numBlocks[0] = 1;
+			System.out.println("Estimated total RC map size = "+totPartMapSize);
+			// TODO: Maintain #blocks per encoder. Reduce only the ones with large maps
+			// TODO: If this not enough, add dependencies between recode build tasks
+		}
+
 		// Set to 1 if not set by the above logics
 		for (int i=0; i<2; i++)
 			if (numBlocks[i] == 0)
@@ -428,6 +447,32 @@ public class MultiColumnEncoder implements Encoder {
 		return numBlocks;
 	}
 
+	private void estimateRCMapSize(CacheBlock in, List<ColumnEncoderComposite> rcList) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		// Collect sample row indices
+		int k = OptimizerUtils.getTransformNumThreads();
+		int sampleSize = (int) (0.1 * in.getNumRows());
+		int seed = (int) System.nanoTime();
+		int[] sampleInds = CompressedSizeEstimatorSample.getSortedSample(in.getNumRows(), sampleSize, seed, 1);
+
+		// Concurrent (col-wise) recode map size estimation
+		ExecutorService myPool = CommonThreadPool.get(k);
+		try {
+			myPool.submit(() -> {
+				rcList.stream().parallel().forEach(e -> {
+					e.computeRCDMapSizeEstimate(in, sampleInds);
+				});
+			}).get();
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+
+		if(DMLScript.STATISTICS) {
+			LOG.debug("Elapsed time for RC map size estimation: " + ((double) System.nanoTime() - t0) / 1000000 + " ms");
+			TransformStatistics.incMapSizeEstimationTime(System.nanoTime() - t0);
+		}
+	}
 
 	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock input, boolean hasDC) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;

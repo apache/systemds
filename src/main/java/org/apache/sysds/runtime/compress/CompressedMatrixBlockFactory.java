@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
+import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
 import org.apache.sysds.runtime.compress.cost.MemoryCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
@@ -114,6 +115,12 @@ public class CompressedMatrixBlockFactory {
 		return compress(mb, 1, new CompressionSettingsBuilder(), csb);
 	}
 
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, InstructionTypeCounter ins) {
+		if(ins == null)
+			return compress(mb, 1, new CompressionSettingsBuilder());
+		return compress(mb, 1, new CompressionSettingsBuilder(), new CostEstimatorBuilder(ins));
+	}
+
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb,
 		CompressionSettingsBuilder customSettings) {
 		return compress(mb, 1, customSettings, (WTreeRoot) null);
@@ -131,6 +138,12 @@ public class CompressedMatrixBlockFactory {
 		return compress(mb, k, new CompressionSettingsBuilder(), csb);
 	}
 
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, InstructionTypeCounter ins) {
+		if(ins == null)
+			return compress(mb, 1, new CompressionSettingsBuilder());
+		return compress(mb, k, new CompressionSettingsBuilder(), new CostEstimatorBuilder(ins));
+	}
+
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, ACostEstimate costEstimator) {
 		return compress(mb, 1, new CompressionSettingsBuilder(), costEstimator);
 	}
@@ -145,13 +158,17 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	public static void compressAsync(ExecutionContext ec, String varName) {
+		compressAsync(ec, varName, null);
+	}
+
+	public static void compressAsync(ExecutionContext ec, String varName, InstructionTypeCounter ins) {
 		CompletableFuture.runAsync(() -> {
 			// method call or code to be asynch.
 			CacheableData<?> data = ec.getCacheableData(varName);
 			if(data instanceof MatrixObject) {
 				MatrixObject mo = (MatrixObject) data;
 				MatrixBlock mb = mo.acquireReadAndRelease();
-				MatrixBlock mbc = CompressedMatrixBlockFactory.compress(mo.acquireReadAndRelease()).getLeft();
+				MatrixBlock mbc = CompressedMatrixBlockFactory.compress(mo.acquireReadAndRelease(), ins).getLeft();
 				if(mbc instanceof CompressedMatrixBlock) {
 					ExecutionContext.createCacheableData(mb);
 					mo.acquireModify(mbc);

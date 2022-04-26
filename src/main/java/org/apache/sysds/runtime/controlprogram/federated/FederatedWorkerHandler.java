@@ -498,7 +498,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private static void adaptToWorkload(ExecutionContext ec, FederatedWorkloadAnalyzer fan,  long tid, Instruction ins){
 		if(fan != null){
 			fan.incrementWorkload(ec, tid, ins);
-
 		}
 	}
 

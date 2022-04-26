@@ -51,7 +51,7 @@ jobs:
         python-version: [3.8]
         os: [ubuntu-latest]
         java: ['11']
-        javadist: ['adopt-openj9']
+        javadist: ['adopt']
 
     name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}
     steps:

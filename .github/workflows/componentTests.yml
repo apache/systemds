@@ -49,7 +49,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         java: ['11']
-        javadist: ['adopt-openj9']
+        javadist: ['adopt']
     name: ${{ matrix.os }}
     steps:
     - name: Checkout Repository

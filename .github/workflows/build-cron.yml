@@ -19,30 +19,16 @@
 #
 #-------------------------------------------------------------
 
-name: Build
+name: Build Different Distributions
 
 on:
-  push:
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - '*.html'
-      - 'src/main/python/**'
-      - 'dev/**'
-    branches:
-      - main
-  pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - '*.html'
-      - 'src/main/python/**'
-      - 'dev/**'
-    branches:
-      - main
+  schedule:
+    - cron: '30 1 * * 6' # Saturday at 1:30 AM UTC
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-cron:
+    if: github.repository == 'apache/systemds'
     name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -59,12 +45,12 @@ jobs:
           # '16'
           ]
         javadist: [
-          # 'temurin',
-          # 'zulu',
+          'temurin',
+          'zulu',
           'adopt',
-          # 'adopt-openj9',
-          # 'liberica',
-          # 'microsoft'
+          'adopt-openj9',
+          'liberica',
+          'microsoft'
           ]
     steps:
     - name: Checkout Repository

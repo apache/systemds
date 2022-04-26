@@ -23,7 +23,7 @@ name: Docker Image CI and CD
 
 on:
   schedule:
-    - cron: '30 1 * * *' # everyday at 1:30 PM UTC
+    - cron: '30 1 * * 6' # every saturday at 1:30 AM UTC
   workflow_dispatch:
   
 jobs:

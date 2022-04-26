@@ -64,6 +64,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -860,6 +861,11 @@ public class TestUtils
 
 	public static void compareMatricesBitAvgDistance(MatrixBlock expectedMatrix, MatrixBlock actualMatrix,
 		long maxUnitsOfLeastPrecision, long maxAvgDistance, String message) {
+		if(expectedMatrix instanceof CompressedMatrixBlock)
+			expectedMatrix = ((CompressedMatrixBlock) expectedMatrix).decompress();
+		if(actualMatrix instanceof CompressedMatrixBlock)
+			actualMatrix = ((CompressedMatrixBlock) actualMatrix).decompress();
+		
 		if(expectedMatrix.isEmpty() && actualMatrix.isEmpty())
 			return;
 		else if(expectedMatrix.isEmpty()) {

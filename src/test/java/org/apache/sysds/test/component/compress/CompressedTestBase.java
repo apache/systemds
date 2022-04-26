@@ -389,7 +389,7 @@ public abstract class CompressedTestBase extends TestBase {
 			ov, null, null});
 
 		CompressionSettingsBuilder sb = csb().setCostType(CostType.W_TREE);
-		InstructionTypeCounter itc = new InstructionTypeCounter(10, 10, 0, 100, 10, 0, 0, 10, false);
+		InstructionTypeCounter itc = new InstructionTypeCounter(10, 10, 0, 100, 10, 0, 0, 10, 50, false);
 		CostEstimatorBuilder csb = new CostEstimatorBuilder(itc);
 		SparsityType st = SparsityType.THIRTY;
 		ValueType vt = ValueType.ONE_HOT;
@@ -1127,7 +1127,8 @@ public abstract class CompressedTestBase extends TestBase {
 			result = ((CompressedMatrixBlock) result).decompress();
 
 		if(result.getNonZeros() < expected.getNonZeros())
-			fail("Nonzero is to low guarantee at least equal or higher" + result.getNonZeros() + " vs " +  expected.getNonZeros());
+			fail("Nonzero is to low guarantee at least equal or higher" + result.getNonZeros() + " vs "
+				+ expected.getNonZeros());
 
 		if(_cs != null && _cs.lossy)
 			TestUtils.compareMatricesPercentageDistance(expected, result, 0.25, 0.83, bufferedToString);

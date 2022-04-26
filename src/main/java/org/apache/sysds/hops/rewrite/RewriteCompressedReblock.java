@@ -32,7 +32,6 @@ import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
@@ -75,8 +74,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 			return Arrays.asList(sb);
 
 		// parse compression config
-		DMLConfig conf = ConfigurationManager.getDMLConfig();
-		CompressConfig compress = CompressConfig.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());
+		final CompressConfig compress = ConfigurationManager.getCompressConfig();
 		
 		// perform compressed reblock rewrite
 		if(compress.isEnabled()) {

@@ -203,8 +203,12 @@ public class ConfigurationManager
 	}
 
 	public static boolean isCompressionEnabled(){
-		CompressConfig compress = CompressConfig.valueOf(getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());
+		CompressConfig compress = getCompressConfig();
 		return compress.isEnabled();
+	}
+
+	public static CompressConfig getCompressConfig(){
+		return CompressConfig.valueOf(getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());
 	}
 	
 	public static int getFederatedTimeout(){

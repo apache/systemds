@@ -59,10 +59,12 @@ jobs:
           # '16'
           ]
         javadist: [
-          # 'adopt',
+          'temurin',
+          'zulu',
+          'adopt',
           'adopt-openj9',
-          # 'zulu',
-          # 'temurin'
+          'liberica',
+          'microsoft'
           ]
     steps:
     - name: Checkout Repository

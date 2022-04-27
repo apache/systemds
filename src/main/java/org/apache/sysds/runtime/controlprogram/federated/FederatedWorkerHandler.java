@@ -24,11 +24,12 @@ import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
@@ -497,7 +498,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private static void adaptToWorkload(ExecutionContext ec, FederatedWorkloadAnalyzer fan,  long tid, Instruction ins){
 		if(fan != null){
-			fan.incrementWorkload(ec, tid, ins);
+			CompletableFuture.runAsync(() -> {
+				fan.incrementWorkload(ec, tid, ins);
+				fan.compressRun(ec, tid);
+			});
 		}
 	}
 

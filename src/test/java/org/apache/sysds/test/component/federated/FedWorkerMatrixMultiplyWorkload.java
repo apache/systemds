@@ -26,7 +26,6 @@ import java.util.Collection;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
-import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -58,12 +57,6 @@ public class FedWorkerMatrixMultiplyWorkload extends FedWorkerBase {
 		tests.add(new Object[] {port, L_mb1x1000, R_mb1000x10_r});
 		tests.add(new Object[] {port, L_mb1x1000_r, R_mb1000x10_r});
 
-		// final MatrixBlock mb3x10 = TestUtils.generateTestMatrixBlock(3, 10, 0.5, 9.5, 1.0, 324);
-		// final MatrixBlock mb10x4 = TestUtils.generateTestMatrixBlock(10, 4, 0.5, 9.5, 1.0, 324);
-
-		// tests.add(new Object[] {port, mb3x10, mb10x10_2});
-		// tests.add(new Object[] {port, mb10x10_1_r, mb10x4});
-
 		return tests;
 	}
 
@@ -76,9 +69,8 @@ public class FedWorkerMatrixMultiplyWorkload extends FedWorkerBase {
 	@Test
 	public void verifySameOrAlsoCompressedAsLocalCompress() {
 		// Local
-		final InstructionTypeCounter c = InstructionTypeCounter.MML(10);
-		final CostEstimatorBuilder ceb = new CostEstimatorBuilder(c);
-		final MatrixBlock mbcLocal = CompressedMatrixBlockFactory.compress(mbr, ceb).getLeft();
+		final InstructionTypeCounter c = InstructionTypeCounter.MML(1000, 10);
+		final MatrixBlock mbcLocal = CompressedMatrixBlockFactory.compress(mbr, c).getLeft();
 		if(!(mbcLocal instanceof CompressedMatrixBlock))
 			return; // would not compress anyway so skip
 		
@@ -93,7 +85,7 @@ public class FedWorkerMatrixMultiplyWorkload extends FedWorkerBase {
 		final long idl = putMatrixBlock(mbl);
 		final long idr = putMatrixBlock(mbr);
 		long ide = matrixMult(idl, idr);
-		for(int i = 0; i < 10; i++) // chain left side compressed multiplications with idr.
+		for(int i = 0; i < 9; i++) // chain left side compressed multiplications with idr.
 			ide = matrixMult(ide, idr);
 
 		// give the federated site time to compress async (it should already be done, but just to be safe).

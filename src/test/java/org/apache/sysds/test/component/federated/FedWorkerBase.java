@@ -50,7 +50,7 @@ public abstract class FedWorkerBase {
 
 	protected static int startWorker(String confPath) {
 		final int port = AutomatedTestBase.getRandomAvailablePort();
-		AutomatedTestBase.startLocalFedWorkerThread(port, new String[] {"-config", confPath}, 2000);
+		AutomatedTestBase.startLocalFedWorkerThread(port, new String[] {"-config", confPath}, 3000);
 		return port;
 	}
 

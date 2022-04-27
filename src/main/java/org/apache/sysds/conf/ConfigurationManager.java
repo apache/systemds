@@ -215,6 +215,10 @@ public class ConfigurationManager
 		return getDMLConfig().getIntValue(DMLConfig.FEDERATED_TIMEOUT);
 	}
 
+	public static boolean isFederatedSSL(){
+		return getDMLConfig().getBooleanValue(DMLConfig.USE_SSL_FEDERATED_COMMUNICATION);
+	}
+
 	///////////////////////////////////////
 	// Thread-local classes
 	

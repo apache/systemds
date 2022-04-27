@@ -81,5 +81,4 @@ public class FedWorkerMatrix extends FedWorkerBase {
 				"Not equivalent matrix block returned from federated site");
 		}
 	}
-
 }

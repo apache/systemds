@@ -102,7 +102,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	 * separate execution contexts at the federated sites too
 	 * 
 	 * @param flt The Federated Lookup Table of the current Federated Worker.
-	 * @param frc read cache shared by all worker handlers
+	 * @param frc Read cache shared by all worker handlers.
+	 * @param fan A Workload analyzer object (should be null if not used).
 	 */
 	public FederatedWorkerHandler(FederatedLookupTable flt, FederatedReadCache frc, FederatedWorkloadAnalyzer fan) {
 		_flt = flt;

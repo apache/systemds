@@ -42,10 +42,8 @@ struct SpoofOperator {
 	
 	[[nodiscard]] virtual bool isSparseSafe() const = 0;
 
-	cudaStream_t stream{};
-	
-	SpoofOperator() { CHECK_CUDART(cudaStreamCreate(&stream));}
-	virtual ~SpoofOperator() {CHECK_CUDART(cudaStreamDestroy(stream));}
+	SpoofOperator() = default;
+	virtual ~SpoofOperator() = default;
 };
 
 struct SpoofCellwiseOp : public SpoofOperator {

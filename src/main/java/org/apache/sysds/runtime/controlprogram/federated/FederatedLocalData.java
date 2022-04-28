@@ -30,21 +30,15 @@ import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 public class FederatedLocalData extends FederatedData {
 	protected final static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
 
-	private final FederatedLookupTable _flt;
-	private final FederatedReadCache _frc;
-	private final FederatedWorkloadAnalyzer _fan;
+	private static final FederatedLookupTable _flt = new FederatedLookupTable();
+	private static final FederatedReadCache _frc = new FederatedReadCache();
+	private static final FederatedWorkloadAnalyzer _fan = initAnalyzer();
 	private final FederatedWorkerHandler _fwh;
 
 	private final CacheableData<?> _data;
 
 	public FederatedLocalData(long id, CacheableData<?> data) {
 		super(data.getDataType(), null, data.getFileName());
-		_flt = new FederatedLookupTable();
-		_frc = new FederatedReadCache();
-		if(ConfigurationManager.getCompressConfig().isWorkload())
-			_fan = new FederatedWorkloadAnalyzer();
-		else
-			_fan = null;
 		_fwh = new FederatedWorkerHandler(_flt, _frc, _fan);
 
 		_data = data;
@@ -54,6 +48,13 @@ public class FederatedLocalData extends FederatedData {
 			ecm.get(-1).setVariable(Long.toString(id), _data);
 		}
 		setVarID(id);
+	}
+
+	private static FederatedWorkloadAnalyzer initAnalyzer() {
+		if(ConfigurationManager.getCompressConfig().isWorkload())
+			return new FederatedWorkloadAnalyzer();
+		else
+			return null;
 	}
 
 	@Override

@@ -55,9 +55,14 @@ public:
 	size_t current_mem_size = 0; // the actual staging buffer size (should be default unless there was a resize)
 	std::byte* staging_buffer{}; // pinned host mem for async transfers
 	std::byte* device_buffer{};  // this buffer holds the pointers to the data buffers
+	cudaStream_t stream{};
 
 	explicit SpoofCUDAContext(const char* resource_path_, std::vector<std::string>  include_paths_) : reductions(nullptr),
-			resource_path(resource_path_), include_paths(std::move(include_paths_)) { }
+			resource_path(resource_path_), include_paths(std::move(include_paths_)) {
+			    CHECK_CUDART(cudaStreamCreate(&stream));
+            }
+
+    virtual ~SpoofCUDAContext() { CHECK_CUDART(cudaStreamDestroy(stream)); }
 
 	static size_t initialize_cuda(uint32_t device_id, const char* resource_path_);
 
@@ -70,7 +75,7 @@ public:
 
 		DataBufferWrapper dbw(staging_buffer, device_buffer);
 		SpoofOperator* op = compiled_ops[dbw.op_id()].get();
-		dbw.toDevice(op->stream);
+		dbw.toDevice(stream);
 
 		CALL::exec(this, op, &dbw);
 

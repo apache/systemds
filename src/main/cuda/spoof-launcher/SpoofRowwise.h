@@ -39,7 +39,7 @@ struct SpoofRowwise {
 			if(op->isSparseSafe() && dbw->h_out<T>()->nnz > 0)
 				out_num_elements = dbw->h_out<T>()->nnz;
 		//ToDo: only memset output when there is an output operation that *adds* to the buffer
-		CHECK_CUDART(cudaMemsetAsync(dbw->h_out<T>()->data, 0, out_num_elements * sizeof(T), op->stream));
+		CHECK_CUDART(cudaMemsetAsync(dbw->h_out<T>()->data, 0, out_num_elements * sizeof(T), ctx->stream));
 
 		//ToDo: handle this in JVM
 		uint32_t tmp_len = 0;
@@ -52,7 +52,7 @@ struct SpoofRowwise {
 			std::cout << "num_temp_vect: " << op->num_temp_vectors << " temp_buf_size: " << temp_buf_size << " tmp_len: " << tmp_len << std::endl;
 #endif
 			CHECK_CUDART(cudaMalloc(reinterpret_cast<void**>(&d_temp), temp_buf_size));
-			CHECK_CUDART(cudaMemsetAsync(d_temp, 0, temp_buf_size, op->stream));
+			CHECK_CUDART(cudaMemsetAsync(d_temp, 0, temp_buf_size, ctx->stream));
 		}
 
 		std::string op_name(op->name + "_DENSE");
@@ -68,7 +68,7 @@ struct SpoofRowwise {
 #endif
 		CHECK_CUDA(op->program->kernel(op_name)
 						   .instantiate(type_of(value_type), std::max(static_cast<uint32_t>(1), dbw->num_sides()), op->num_temp_vectors, tmp_len)
-						   .configure(grid, block, shared_mem_size, op->stream)
+						   .configure(grid, block, shared_mem_size, ctx->stream)
 						   .launch(dbw->d_in<T>(0), dbw->d_sides<T>(), dbw->d_out<T>(), dbw->d_scalars<T>(), d_temp, dbw->grix()));
 		
 		if(op->num_temp_vectors > 0)

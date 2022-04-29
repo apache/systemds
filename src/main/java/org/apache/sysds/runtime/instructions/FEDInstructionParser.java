@@ -26,9 +26,13 @@ import org.apache.sysds.runtime.instructions.fed.AggregateTernaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.AggregateUnaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.AppendFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.BinaryFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.CentralMomentFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.CovarianceFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.QuantilePickFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.QuantileSortFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.TernaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.TsmmFEDInstruction;
@@ -81,6 +85,12 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "+*" , FEDType.Ternary);
 		String2FEDInstructionType.put( "-*" , FEDType.Ternary);
 
+		//central moment, covariance, quantiles (sort/pick)
+		String2FEDInstructionType.put( "cm",    FEDType.CentralMoment);
+		String2FEDInstructionType.put( "cov",   FEDType.Covariance);
+		String2FEDInstructionType.put( "qsort", FEDType.QSort);
+		String2FEDInstructionType.put( "qpick", FEDType.QPick);
+
 		String2FEDInstructionType.put(Append.OPCODE, FEDType.Append);
 	}
 
@@ -118,6 +128,14 @@ public class FEDInstructionParser extends InstructionParser
 				return AppendFEDInstruction.parseInstruction(str);
 			case AggregateTernary:
 				return AggregateTernaryFEDInstruction.parseInstruction(str);
+			case CentralMoment:
+				return CentralMomentFEDInstruction.parseInstruction(str);
+			case Covariance:
+				return CovarianceFEDInstruction.parseInstruction(str);
+			case QSort:
+				return QuantileSortFEDInstruction.parseInstruction(str, true);
+			case QPick:
+				return QuantilePickFEDInstruction.parseInstruction(str);
 			default:
 				throw new DMLRuntimeException("Invalid FEDERATED Instruction Type: " + fedtype );
 		}

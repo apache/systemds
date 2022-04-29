@@ -247,6 +247,7 @@ public class BinaryOp extends MultiThreadedHop {
 				getInput().get(0).getDim2(), 
 				getInput().get(0).getBlocksize(), 
 				getInput().get(0).getNnz());
+		updateLopFedOut(sort);
 		PickByCount pick = new PickByCount(
 				sort,
 				null,
@@ -466,7 +467,7 @@ public class BinaryOp extends MultiThreadedHop {
 				
 				boolean isLeftXGt0 = isLeftXGt && HopRewriteUtils.isLiteralOfValue(potentialZero, 0);
 				
-				if(op == OpOp2.MULT && isLeftXGt0 && 
+				if(et != ExecType.FED && op == OpOp2.MULT && isLeftXGt0 &&
 					!getInput().get(0).isVector() && !getInput().get(1).isVector()
 					&& getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) {
 					binary = new DnnTransform(getInput().get(0).getInput().get(0).constructLops(), 

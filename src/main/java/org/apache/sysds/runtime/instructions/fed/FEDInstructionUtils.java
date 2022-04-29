@@ -156,10 +156,10 @@ public class FEDInstructionUtils {
 					MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 					if( mo1.isFederatedExcept(FType.BROADCAST) ) {
 						if(instruction.getOpcode().equalsIgnoreCase("cm"))
-							fedinst = CentralMomentFEDInstruction.parseInstruction(inst.getInstructionString());
+							fedinst = CentralMomentFEDInstruction.parseInstruction(inst);
 						else if(inst.getOpcode().equalsIgnoreCase("qsort")) {
 							if(mo1.isFederated(FType.ROW) || mo1.getFedMapping().getFederatedRanges().length == 1 && mo1.isFederated(FType.COL))
-								fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());
+								fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString(), false);
 						}
 						else if(inst.getOpcode().equalsIgnoreCase("rshape"))
 							fedinst = ReshapeFEDInstruction.parseInstruction(inst.getInstructionString());
@@ -180,12 +180,12 @@ public class FEDInstructionUtils {
 				if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederatedExcept(FType.BROADCAST))
 					|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederatedExcept(FType.BROADCAST))) {
 					if(instruction.getOpcode().equals("append") )
-						fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
+						fedinst = AppendFEDInstruction.parseInstruction(inst);
 					else if(instruction.getOpcode().equals("qpick"))
-						fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
+						fedinst = QuantilePickFEDInstruction.parseInstruction(inst);
 					else if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1).isFederated(FType.ROW) ||
 						ec.getMatrixObject(instruction.input2).isFederated(FType.ROW)))
-						fedinst = CovarianceFEDInstruction.parseInstruction(inst.getInstructionString());
+						fedinst = CovarianceFEDInstruction.parseInstruction(inst);
 					else
 						fedinst = BinaryFEDInstruction.parseInstruction(
 							InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
@@ -329,12 +329,12 @@ public class FEDInstructionUtils {
 				CentralMomentSPInstruction cinstruction = (CentralMomentSPInstruction) inst;
 				Data data = ec.getVariable(cinstruction.input1);
 				if (data instanceof MatrixObject && ((MatrixObject) data).isFederated() && ((MatrixObject) data).isFederatedExcept(FType.BROADCAST))
-					fedinst = CentralMomentFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = CentralMomentFEDInstruction.parseInstruction(inst);
 			} else if (inst instanceof QuantileSortSPInstruction) {
 				QuantileSortSPInstruction qinstruction = (QuantileSortSPInstruction) inst;
 				Data data = ec.getVariable(qinstruction.input1);
 				if (data instanceof MatrixObject && ((MatrixObject) data).isFederated() && ((MatrixObject) data).isFederatedExcept(FType.BROADCAST))
-					fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString(), false);
 			}
 			else if (inst instanceof AggregateUnarySPInstruction) {
 				AggregateUnarySPInstruction auinstruction = (AggregateUnarySPInstruction) inst;
@@ -369,7 +369,7 @@ public class FEDInstructionUtils {
 						fedinst = CentralMomentFEDInstruction.parseInstruction((CentralMomentCPInstruction)inst);
 					else if(inst.getOpcode().equalsIgnoreCase("qsort")) {
 						if(mo1.getFedMapping().getFederatedRanges().length == 1)
-							fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());
+							fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString(), false);
 					}
 					else if(inst.getOpcode().equalsIgnoreCase("rshape")) {
 						fedinst = ReshapeFEDInstruction.parseInstruction(inst.getInstructionString());
@@ -394,7 +394,7 @@ public class FEDInstructionUtils {
 				QuantilePickSPInstruction qinstruction = (QuantilePickSPInstruction) inst;
 				Data data = ec.getVariable(qinstruction.input1);
 				if(data instanceof MatrixObject && ((MatrixObject) data).isFederatedExcept(FType.BROADCAST))
-					fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = QuantilePickFEDInstruction.parseInstruction(inst);
 			}
 			else if (inst instanceof AppendGAlignedSPInstruction || inst instanceof AppendGSPInstruction
 				|| inst instanceof AppendMSPInstruction || inst instanceof AppendRSPInstruction) {
@@ -403,7 +403,7 @@ public class FEDInstructionUtils {
 				Data data2 = ec.getVariable(ainstruction.input2);
 				if ((data1 instanceof MatrixObject && ((MatrixObject) data1).isFederatedExcept(FType.BROADCAST))
 					|| (data2 instanceof MatrixObject && ((MatrixObject) data2).isFederatedExcept(FType.BROADCAST))) {
-					fedinst = AppendFEDInstruction.parseInstruction(instruction.getInstructionString());
+					fedinst = AppendFEDInstruction.parseInstruction(instruction);
 				}
 			}
 			else if (inst instanceof BinaryMatrixScalarSPInstruction
@@ -422,7 +422,7 @@ public class FEDInstructionUtils {
 				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederatedExcept(FType.BROADCAST))) {
 				if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1)
 					.isFederated(FType.ROW) || ec.getMatrixObject(instruction.input2).isFederated(FType.ROW)))
-					fedinst = CovarianceFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = CovarianceFEDInstruction.parseInstruction(inst);
 				else if(inst instanceof CumulativeOffsetSPInstruction) {
 					fedinst = CumulativeOffsetFEDInstruction.parseInstruction(inst.getInstructionString());
 				}

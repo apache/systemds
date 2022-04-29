@@ -109,6 +109,11 @@ public class PickByCount extends Lop
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append(inMemoryInput);
+
+		if ( getExecType() == ExecType.FED ){
+			sb.append( OPERAND_DELIMITOR );
+			sb.append(_fedOutput.name());
+		}
 		
 		return sb.toString();
 	}
@@ -121,12 +126,15 @@ public class PickByCount extends Lop
 	 */
 	@Override
 	public String getInstructions(String input, String output) {
-		return InstructionUtils.concatOperands(
+		String ret = InstructionUtils.concatOperands(
 			getExecType().name(),
 			OPCODE,
 			getInputs().get(0).prepInputOperand(input),
 			prepOutputOperand(output),
 			operation.name(),
 			String.valueOf(inMemoryInput));
+		if ( getExecType() == ExecType.FED )
+			ret = InstructionUtils.concatOperands(ret, _fedOutput.name());
+		return ret;
 	}
 }

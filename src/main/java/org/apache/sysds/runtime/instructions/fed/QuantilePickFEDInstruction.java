@@ -34,6 +34,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.PickByCount.OperationTypes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -47,6 +48,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -78,37 +80,45 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		this(op, in, in2, out, type, inmem, opcode, istr, FederatedOutput.NONE);
 	}
 
+	public static QuantilePickFEDInstruction parseInstruction( Instruction inst ){
+		return parseInstruction(inst.getInstructionString() + Lop.OPERAND_DELIMITOR + FederatedOutput.NONE);
+	}
+
 	public static QuantilePickFEDInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		if ( !opcode.equalsIgnoreCase("qpick") )
 			throw new DMLRuntimeException("Unknown opcode while parsing a QuantilePickCPInstruction: " + str);
+		FederatedOutput fedOut = FederatedOutput.valueOf(parts[parts.length-1]);
+		QuantilePickFEDInstruction inst = null;
 		//instruction parsing
-		if( parts.length == 4 ) {
-			//instructions of length 4 originate from unary - mr-iqm
+		if( parts.length == 5 ) {
+			//instructions of length 5 originate from unary - mr-iqm
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
 			OperationTypes ptype = OperationTypes.IQM;
 			boolean inmem = false;
-			return new QuantilePickFEDInstruction(null, in1, in2, out, ptype, inmem, opcode, str);
+			inst = new QuantilePickFEDInstruction(null, in1, in2, out, ptype, inmem, opcode, str);
 		}
-		else if( parts.length == 5 ) {
+		else if( parts.length == 6 ) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand out = new CPOperand(parts[2]);
 			OperationTypes ptype = OperationTypes.valueOf(parts[3]);
 			boolean inmem = Boolean.parseBoolean(parts[4]);
-			return new QuantilePickFEDInstruction(null, in1, out, ptype, inmem, opcode, str);
+			inst = new QuantilePickFEDInstruction(null, in1, out, ptype, inmem, opcode, str);
 		}
-		else if( parts.length == 6 ) {
+		else if( parts.length == 7 ) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
 			OperationTypes ptype = OperationTypes.valueOf(parts[4]);
 			boolean inmem = Boolean.parseBoolean(parts[5]);
-			return new QuantilePickFEDInstruction(null, in1, in2, out, ptype, inmem, opcode, str);
+			inst = new QuantilePickFEDInstruction(null, in1, in2, out, ptype, inmem, opcode, str);
 		}
-		return null;
+		if ( inst != null )
+			inst._fedOut = fedOut;
+		return inst;
 	}
 
 	@Override

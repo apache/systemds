@@ -70,7 +70,7 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction {
 		}
 	}
 
-	public static QuantileSortFEDInstruction parseInstruction ( String str ) {
+	public static QuantileSortFEDInstruction parseInstruction ( String str , boolean hasFedOut) {
 		CPOperand in1 = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
 		CPOperand in2 = null;
 		CPOperand out = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
@@ -78,7 +78,17 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		boolean isSpark = str.startsWith("SPARK");
-		int k = isSpark ? 1 : Integer.parseInt(parts[parts.length-1]);
+		int k;
+		FederatedOutput fedOut;
+		if ( hasFedOut){
+			k = isSpark ? 1 : Integer.parseInt(parts[parts.length-2]);
+			fedOut = FederatedOutput.valueOf(parts[parts.length-1]);
+		} else {
+			k = isSpark ? 1 : Integer.parseInt(parts[parts.length-1]);
+			fedOut = FederatedOutput.NONE;
+		}
+
+		QuantileSortFEDInstruction inst;
 
 		if ( opcode.equalsIgnoreCase(SortKeys.OPCODE) ) {
 			int oneInputLength = isSpark ? 3 : 4;
@@ -86,14 +96,14 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction {
 			if ( parts.length == oneInputLength ) {
 				// Example: sort:mVar1:mVar2 (input=mVar1, output=mVar2)
 				parseUnaryInstruction(str, in1, out);
-				return new QuantileSortFEDInstruction(in1, out, opcode, str, k);
+				inst = new QuantileSortFEDInstruction(in1, out, opcode, str, k);
 			}
 			else if ( parts.length == twoInputLength ) {
 				// Example: sort:mVar1:mVar2:mVar3 (input=mVar1, weights=mVar2, output=mVar3)
 				in2 = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
 				InstructionUtils.checkNumFields(str, twoInputLength-1);
 				parseInstruction(str, in1, in2, out);
-				return new QuantileSortFEDInstruction(in1, in2, out, opcode, str, k);
+				inst = new QuantileSortFEDInstruction(in1, in2, out, opcode, str, k);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
@@ -102,6 +112,8 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction {
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a QuantileSortFEDInstruction: " + str);
 		}
+		inst._fedOut = fedOut;
+		return inst;
 	}
 	@Override
 	public void processInstruction(ExecutionContext ec) {

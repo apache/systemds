@@ -228,7 +228,13 @@ public abstract class Hop implements ParseInfo {
 
 	public void setForcedExecType(ExecType etype)
 	{
+		logForcedETCall(etype);
 		_etypeForced = etype;
+	}
+
+	private void logForcedETCall(ExecType newEType){
+		if ( LOG.isDebugEnabled() && _etypeForced != null && newEType != _etypeForced )
+			LOG.debug("Forced ExecType of " + this + " changed from " + _etypeForced + " to " + newEType);
 	}
 
 	public abstract boolean allowsAllExecTypes();
@@ -908,12 +914,17 @@ public abstract class Hop implements ParseInfo {
 	 * This method only has an effect if FEDERATED_COMPILATION is activated.
 	 * Federated compilation is activated in OptimizerUtils.
 	 */
-	protected void updateETFed() {
+	public void updateETFed() {
 		boolean localOut = hasLocalOutput();
 		boolean fedIn = getInput().stream().anyMatch(
 			in -> in.hasFederatedOutput() && !(in.prefetchActivated() && localOut));
-		if( isFederatedDataOp() || fedIn )
+		if( isFederatedDataOp() || fedIn ){
+			setForcedExecType(ExecType.FED);
+			//TODO: Temporary solution where _etype is set directly
+			// since forcedExecType for BinaryOp may be overwritten
+			// if updateETFed is not called from optFindExecType.
 			_etype = ExecType.FED;
+		}
 	}
 
 	/**

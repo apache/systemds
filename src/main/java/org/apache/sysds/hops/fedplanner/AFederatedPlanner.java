@@ -34,6 +34,7 @@ import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.hops.ipa.FunctionCallGraph;
 import org.apache.sysds.hops.ipa.FunctionCallSizeInfo;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataExpression;
 
@@ -117,6 +118,10 @@ public abstract class AFederatedPlanner {
 		if ( hop.isScalar() )
 			return null;
 		if( hop instanceof AggBinaryOp ) {
+			MMTSJType mmtsj = ((AggBinaryOp) hop).checkTransposeSelf() ; //determine tsmm pattern
+			if ( mmtsj != MMTSJType.NONE &&
+				(( mmtsj.isLeft() && ft[0] == FType.ROW ) || ( mmtsj.isRight() && ft[0] == FType.COL ) ))
+				return FType.BROADCAST;
 			if( ft[0] != null )
 				return ft[0] == FType.ROW ? FType.ROW : null;
 		}

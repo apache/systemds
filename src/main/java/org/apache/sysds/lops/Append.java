@@ -59,7 +59,7 @@ public class Append extends Lop
 	//called when append executes in CP
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) {
-		return InstructionUtils.concatOperands(
+		String ret = InstructionUtils.concatOperands(
 			getExecType().name(),
 			"append",
 			getInputs().get(0).prepInputOperand(input1),
@@ -67,5 +67,8 @@ public class Append extends Lop
 			getInputs().get(2).prepScalarInputOperand(getExecType()),
 			prepOutputOperand(output),
 			String.valueOf(_cbind));
+		if ( getExecType() == ExecType.FED )
+			ret = InstructionUtils.concatOperands(ret,  _fedOutput.name());
+		return ret;
 	}
 }

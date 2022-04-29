@@ -434,8 +434,6 @@ public class AggBinaryOp extends MultiThreadedHop {
 			_etype = ExecType.SPARK;
 		}
 
-		updateETFed();
-		
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

@@ -498,8 +498,6 @@ public class DataOp extends Hop {
 			_etype = letype;
 		}
 
-		updateETFed();
-
 		return _etype;
 	}
 

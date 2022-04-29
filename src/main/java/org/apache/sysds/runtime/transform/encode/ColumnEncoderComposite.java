@@ -106,17 +106,17 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int nParition, int outputCol) {
+	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<Integer> sizes = new ArrayList<>();
 		for(int i = 0; i < _columnEncoders.size(); i++) {
 			List<DependencyTask<?>> t;
 			if(i == 0) {
 				// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
-				t = _columnEncoders.get(i).getApplyTasks(in, out, nParition, outputCol);
+				t = _columnEncoders.get(i).getApplyTasks(in, out, outputCol);
 			}
 			else {
-				t = _columnEncoders.get(i).getApplyTasks(out, out, nParition, outputCol);
+				t = _columnEncoders.get(i).getApplyTasks(out, out, outputCol);
 			}
 			if(t == null)
 				continue;
@@ -143,11 +143,11 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in, int nPartition) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		Map<Integer[], Integer[]> depMap = null;
 		for(ColumnEncoder columnEncoder : _columnEncoders) {
-			List<DependencyTask<?>> t = columnEncoder.getBuildTasks(in, nPartition);
+			List<DependencyTask<?>> t = columnEncoder.getBuildTasks(in);
 			if(t == null)
 				continue;
 			// Linear execution between encoders so they can't be built in parallel
@@ -366,6 +366,13 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 				((ColumnEncoderRecode) e).computeRCDMapSizeEstimate(in, sampleIndices);
 		long totEstSize = _columnEncoders.stream().mapToLong(ColumnEncoder::getEstMetaSize).sum();
 		setEstMetaSize(totEstSize);
+	}
+
+	public void setNumPartitions(int nBuild, int nApply) {
+			_columnEncoders.forEach(e -> {
+				e.setBuildRowBlocksPerColumn(nBuild);
+				e.setApplyRowBlocksPerColumn(nApply);
+			});
 	}
 
 	@Override

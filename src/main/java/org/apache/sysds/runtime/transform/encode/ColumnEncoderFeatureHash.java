@@ -93,7 +93,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in, int nParition) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		return null;
 	}
 

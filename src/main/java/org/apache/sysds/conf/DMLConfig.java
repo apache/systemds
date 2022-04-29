@@ -143,8 +143,8 @@ public class DMLConfig
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
 		_defaultVals.put(PARALLEL_ENCODE,        "false" );
 		_defaultVals.put(PARALLEL_ENCODE_STAGED, "false" );
-		_defaultVals.put(PARALLEL_ENCODE_APPLY_BLOCKS, "1");
-		_defaultVals.put(PARALLEL_ENCODE_BUILD_BLOCKS, "1");
+		_defaultVals.put(PARALLEL_ENCODE_APPLY_BLOCKS, "-1");
+		_defaultVals.put(PARALLEL_ENCODE_BUILD_BLOCKS, "-1");
 		_defaultVals.put(PARALLEL_ENCODE_NUM_THREADS, "-1");
 		_defaultVals.put(COMPRESSED_LINALG,      Compression.CompressConfig.FALSE.name() );
 		_defaultVals.put(COMPRESSED_LOSSY,       "false" );

@@ -61,6 +61,8 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	protected int _colID;
 	protected ArrayList<Integer> _sparseRowsWZeros = null;
 	protected long _estMetaSize = 0;
+	protected int _nBuildPartitions = 0;
+	protected int _nApplyPartitions = 0;
 
 	protected enum TransformType{
 		BIN, RECODE, DUMMYCODE, FEATURE_HASH, PASS_THROUGH, N_A
@@ -300,11 +302,11 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	 * complete if all previous tasks are done. This is so that we can use the last task as a dependency for the whole
 	 * build, reducing unnecessary dependencies.
 	 */
-	public List<DependencyTask<?>> getBuildTasks(CacheBlock in, int nBuildPartition) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
 		int nRows = in.getNumRows();
-		int[] blockSizes = getBlockSizes(nRows, nBuildPartition);
+		int[] blockSizes = getBlockSizes(nRows, _nBuildPartitions);
 		if(blockSizes.length == 1) {
 			tasks.add(getBuildTask(in));
 		}
@@ -335,17 +337,17 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 
-	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int nApplyPartitions, int outputCol) {
+	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
-		int[] blockSizes = getBlockSizes(in.getNumRows(), nApplyPartitions);
+		int[] blockSizes = getBlockSizes(in.getNumRows(), _nApplyPartitions);
 		for(int startRow = 0, i = 0; i < blockSizes.length; startRow+=blockSizes[i], i++){
 			if(out.isInSparseFormat())
 				tasks.add(getSparseTask(in, out, outputCol, startRow, blockSizes[i]));
 			else
 				tasks.add(getDenseTask(in, out, outputCol, startRow, blockSizes[i]));
 		}
-		if(tasks.size() > 1){
+		if(tasks.size() > 1) {
 			dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
 			tasks.add(() -> null);  // Empty task as barrier
 			dep.add(tasks.subList(0, tasks.size()-1));
@@ -380,15 +382,12 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		}
 	}
 
-	protected int getNumApplyRowPartitions(){
-		return ConfigurationManager.getParallelApplyBlocks();
+	protected void setBuildRowBlocksPerColumn(int nPart) {
+		_nBuildPartitions = nPart;
 	}
 
-	protected int getNumBuildRowPartitions(){
-		if (BUILD_ROW_BLOCKS_PER_COLUMN == -1)
-			return ConfigurationManager.getParallelBuildBlocks();
-		else
-			return BUILD_ROW_BLOCKS_PER_COLUMN;
+	protected void setApplyRowBlocksPerColumn(int nPart) {
+		_nApplyPartitions = nPart;
 	}
 
 	public enum EncoderType {

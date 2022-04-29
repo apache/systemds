@@ -215,6 +215,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 			updateFederatedOutput(root, rootHopRel);
 			visitInputDependency(rootHopRel);
 		}
+		root.updateETFed();
 	}
 
 	/**
@@ -358,6 +359,8 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 					} else {
 						foutHopRelMap.put(outputFType, alt);
 					}
+				} else {
+					LOG.trace("Allows federated, but FOUT is not allowed: " + currentHop + " input FTypes: " + inputCombination);
 				}
 			} else {
 				LOG.trace("Does not allow federated: " + currentHop + " input FTypes: " + inputCombination);

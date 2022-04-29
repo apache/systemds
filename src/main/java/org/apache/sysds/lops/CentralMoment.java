@@ -96,9 +96,13 @@ public class CentralMoment extends Lop
 				getInputs().get((input3!=null)?2:1).prepScalarInputOperand(getExecType()),
 				prepOutputOperand(output)));
 		}
-		if( getExecType() == ExecType.CP ) {
+		if( getExecType() == ExecType.CP || getExecType() == ExecType.FED ) {
 			sb.append(OPERAND_DELIMITOR);
-			sb.append(String.valueOf(_numThreads));
+			sb.append(_numThreads);
+			if ( getExecType() == ExecType.FED ){
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(_fedOutput);
+			}
 		}
 		return sb.toString();
 	}

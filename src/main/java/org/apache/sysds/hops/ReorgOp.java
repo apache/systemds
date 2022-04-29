@@ -374,8 +374,6 @@ public class ReorgOp extends MultiThreadedHop
 			checkAndSetInvalidCPDimsAndSize();
 		}
 
-		updateETFed();
-		
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

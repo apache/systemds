@@ -69,10 +69,13 @@ public class BinaryScalar extends Lop
 
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		return InstructionUtils.concatOperands(
+		String ret = InstructionUtils.concatOperands(
 			getExecType().name(), operation.toString(),
 			getInputs().get(0).prepScalarInputOperand(getExecType()),
 			getInputs().get(1).prepScalarInputOperand(getExecType()),
 			prepOutputOperand(output));
+		if ( getExecType() == ExecType.FED )
+			ret = InstructionUtils.concatOperands(ret, _fedOutput.name());
+		return ret;
 	}
 }

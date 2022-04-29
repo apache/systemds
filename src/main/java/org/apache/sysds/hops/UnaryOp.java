@@ -523,7 +523,6 @@ public class UnaryOp extends MultiThreadedHop
 		{
 			_etype = ExecType.CP;
 		} else {
-			updateETFed();
 			setRequiresRecompileIfNecessary();
 		}
 		

@@ -47,7 +47,6 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.log4j.Logger;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 
@@ -130,16 +129,14 @@ public class FederatedWorker {
 		@Override
 		protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, Serializable msg,
 			boolean preferDirect) throws Exception {
-			int initCapacity = 256;
+			int initCapacity = 256; // default initial capacity
 			if(msg instanceof FederatedResponse) {
 				FederatedResponse response = (FederatedResponse)msg;
-				if(response.getData() != null && response.getData().length > 0
-					&& response.getData()[0] instanceof CacheBlock)
-					try {
-						initCapacity = Math.toIntExact(((CacheBlock)response.getData()[0]).getInMemorySize());
-					} catch(ArithmeticException ae) { // in memory size of cache block exceeds integer limits
-						initCapacity = Integer.MAX_VALUE;
-					}
+				try {
+					initCapacity = Math.toIntExact(response.estimateSerializationBufferSize());
+				} catch(ArithmeticException ae) { // size of cache block exceeds integer limits
+					initCapacity = Integer.MAX_VALUE;
+				}
 			}
 			if(preferDirect)
 				return ctx.alloc().ioBuffer(initCapacity);

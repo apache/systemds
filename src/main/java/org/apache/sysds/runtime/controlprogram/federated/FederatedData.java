@@ -34,7 +34,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -294,17 +293,15 @@ public class FederatedData {
 		boolean preferDirect) throws Exception {
 			int initCapacity = 256; // default initial capacity
 			if(msg instanceof FederatedRequest[]) {
+				initCapacity = 0;
 				try {
 					for(FederatedRequest fr : (FederatedRequest[])msg) {
-						if(fr.getType() == RequestType.PUT_VAR && fr.getNumParams() > 0
-							&& fr.getParam(0) instanceof CacheBlock) {
-							int cbSize = Math.toIntExact(((CacheBlock)fr.getParam(0)).getInMemorySize());
-							if(Integer.MAX_VALUE - initCapacity < cbSize) // summed cache block sizes exceed integer limits
-								throw new ArithmeticException("Overflow.");
-							initCapacity += cbSize;
-						}
+						int frSize = Math.toIntExact(fr.estimateSerializationBufferSize());
+						if(Integer.MAX_VALUE - initCapacity < frSize) // summed sizes exceed integer limits
+							throw new ArithmeticException("Overflow.");
+						initCapacity += frSize;
 					}
-				} catch(ArithmeticException ae) { // in memory size of cache block exceeds integer limits
+				} catch(ArithmeticException ae) { // size of federated request exceeds integer limits
 					initCapacity = Integer.MAX_VALUE;
 				}
 			}

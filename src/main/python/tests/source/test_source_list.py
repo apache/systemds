@@ -47,7 +47,7 @@ class TestSource_01(unittest.TestCase):
 
     def test_input_multireturn(self):
         m = self.sds.full((10, 10), 2)
-        [a, b, c] = scale(m, True, True)
+        [a, b, c] = scale(m, center=True, scale=True)
         arr = self.sds.array(a, b, c)
         c = self.sds.source(self.source_path, "test").func(arr)
         res = c.sum().compute()

@@ -4147,11 +4147,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 * This means that if you call with rl == ru then you get 1 row output.
 	 * 
-	 * @param rl row lower if this value is bellow 0 or above the number of rows contained in the matrix an execption is thrown
-	 * @param ru row upper if this value is bellow rl or above the number of rows contained in the matrix an exception is thrown
-	 * @param cl column lower if this value us bellow 0 or above the number of columns contained in the matrix an exception is thrown
-	 * @param cu column upper if this value us bellow cl or above the number of columns contained in the matrix an exception is thrown
-	 * @param deep should perform deep copy, this is relelvant in cases where the matrix is in sparse format,
+	 * @param rl row lower if this value is below 0 or above the number of rows contained in the matrix an exception is thrown
+	 * @param ru row upper if this value is below rl or above the number of rows contained in the matrix an exception is thrown
+	 * @param cl column lower if this value us below 0 or above the number of columns contained in the matrix an exception is thrown
+	 * @param cu column upper if this value us below cl or above the number of columns contained in the matrix an exception is thrown
+	 * @param deep should perform deep copy, this is relevant in cases where the matrix is in sparse format,
 	 *            or the entire matrix is sliced out
 	 * @param ret output sliced out matrix block
 	 * @return matrix block output matrix block

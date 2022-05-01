@@ -37,7 +37,6 @@ import java.util.concurrent.Callable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.SparseRowVector;
@@ -65,7 +64,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	protected int _nApplyPartitions = 0;
 
 	protected enum TransformType{
-		BIN, RECODE, DUMMYCODE, FEATURE_HASH, PASS_THROUGH, N_A
+		BIN, RECODE, DUMMYCODE, FEATURE_HASH, PASS_THROUGH, UDF, N_A
 	}
 
 	protected ColumnEncoder(int colID) {

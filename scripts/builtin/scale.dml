@@ -26,20 +26,20 @@
 # NAME         TYPE              DEFAULT  MEANING
 # ----------------------------------------------------------------------------------------------------------------------
 # X            Matrix[Double]    ---      Input feature matrix
-# Center       Boolean           TRUE     Indicates whether or not to center the feature matrix
-# Scale        Boolean           TRUE     Indicates whether or not to scale the feature matrix
+# center       Boolean           TRUE     Indicates whether or not to center the feature matrix
+# scale        Boolean           TRUE     Indicates whether or not to scale the feature matrix
 # ----------------------------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ----------------------------------------------------------------------------------------------------------------------
-# NAME         TYPE                      MEANING
+# NAME         TYPE                       MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# Y            Matrix[Double]            Output feature matrix with K columns
-# Centering      Matrix[Double]            The column means of the input, subtracted if Center was TRUE
-# ScaleFactor  Matrix[Double]            The Scaling of the values, to make each dimension have similar value ranges
+# Y            Matrix[Double]             Output feature matrix with K columns
+# Centering    Matrix[Double]             The column means of the input, subtracted if Center was TRUE
+# ScaleFactor  Matrix[Double]             The Scaling of the values, to make each dimension have similar value ranges
 # ----------------------------------------------------------------------------------------------------------------------
 
-m_scale = function(Matrix[Double] X, Boolean center, Boolean scale) 
+m_scale = function(Matrix[Double] X, Boolean center=TRUE, Boolean scale=TRUE) 
   return (Matrix[Double] out, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
 {
   if(center){

@@ -91,25 +91,19 @@ public class EncoderFactory {
 				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol)));
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
 				TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfMethod.IMPUTE.toString(), minCol, maxCol)));
-
+			List<Integer> udfIDs = TfMetaUtils.parseUDFColIDs(jSpec, colnames, minCol, maxCol);
+			
 			// create individual encoders
-			if(!rcIDs.isEmpty()) {
-				for(Integer id : rcIDs) {
-					ColumnEncoderRecode ra = new ColumnEncoderRecode(id);
-					addEncoderToMap(ra, colEncoders);
-				}
-			}
-			if(!haIDs.isEmpty()) {
-				for(Integer id : haIDs) {
-					ColumnEncoderFeatureHash ha = new ColumnEncoderFeatureHash(id, TfMetaUtils.getK(jSpec));
-					addEncoderToMap(ha, colEncoders);
-				}
-			}
+			if(!rcIDs.isEmpty())
+				for(Integer id : rcIDs)
+					addEncoderToMap(new ColumnEncoderRecode(id), colEncoders);
+			if(!haIDs.isEmpty())
+				for(Integer id : haIDs)
+					addEncoderToMap(new ColumnEncoderFeatureHash(id, TfMetaUtils.getK(jSpec)), colEncoders);
 			if(!ptIDs.isEmpty())
-				for(Integer id : ptIDs) {
-					ColumnEncoderPassThrough pt = new ColumnEncoderPassThrough(id);
-					addEncoderToMap(pt, colEncoders);
-				}
+				for(Integer id : ptIDs)
+					addEncoderToMap(new ColumnEncoderPassThrough(id), colEncoders);
+			
 			if(!binIDs.isEmpty())
 				for(Object o : (JSONArray) jSpec.get(TfMethod.BIN.toString())) {
 					JSONObject colspec = (JSONObject) o;
@@ -129,10 +123,14 @@ public class EncoderFactory {
 					addEncoderToMap(bin, colEncoders);
 				}
 			if(!dcIDs.isEmpty())
-				for(Integer id : dcIDs) {
-					ColumnEncoderDummycode dc = new ColumnEncoderDummycode(id);
-					addEncoderToMap(dc, colEncoders);
-				}
+				for(Integer id : dcIDs)
+					addEncoderToMap(new ColumnEncoderDummycode(id), colEncoders);
+			if(!udfIDs.isEmpty()) {
+				String name = jSpec.getJSONObject("udf").getString("name");
+				for(Integer id : udfIDs)
+					addEncoderToMap(new ColumnEncoderUDF(id, name), colEncoders);
+			}
+			
 			// create composite decoder of all created encoders
 			for(Entry<Integer, List<ColumnEncoder>> listEntry : colEncoders.entrySet()) {
 				if(DMLScript.STATISTICS)
@@ -190,6 +188,8 @@ public class EncoderFactory {
 	}
 
 	public static int getEncoderType(ColumnEncoder columnEncoder) {
+		//TODO replace with columnEncoder.getType().ordinal
+		//(which requires a cleanup of all type handling)
 		if(columnEncoder instanceof ColumnEncoderBin)
 			return EncoderType.Bin.ordinal();
 		else if(columnEncoder instanceof ColumnEncoderDummycode)

@@ -106,7 +106,6 @@ public class TfMetaUtils
 	public static int[] parseJsonIDList(JSONObject spec, String[] colnames, String group, int minCol, int maxCol)
 		throws JSONException
 	{
-		List<Integer> colList = new ArrayList<>();
 		int[] arr = new int[0];
 		boolean ids = spec.containsKey("ids") && spec.getBoolean("ids");
 		
@@ -119,30 +118,7 @@ public class TfMetaUtils
 			}
 			else
 				attrs = (JSONArray)spec.get(group);
-			
-			//construct ID list array
-			for(int i=0; i < attrs.length(); i++) {
-				int ix;
-				if (ids) {
-					ix = UtilFunctions.toInt(attrs.get(i));
-					if(maxCol != -1 && ix >= maxCol)
-						ix = -1;
-					if(minCol != -1 && ix >= 0)
-						ix -= minCol - 1;
-				}
-				else {
-					ix = ArrayUtils.indexOf(colnames, attrs.get(i)) + 1;
-				}
-				if(ix > 0)
-					colList.add(ix);
-				else if(minCol == -1 && maxCol == -1)
-					// only if we remove some columns, ix -1 is expected
-					throw new RuntimeException("Specified column '" + attrs.get(i) + "' does not exist.");
-			}
-			
-			//ensure ascending order of column IDs
-			arr = colList.stream().mapToInt((i) -> i)
-				.sorted().toArray();
+			arr = parseJsonPlainArrayIDList(attrs, colnames, minCol, maxCol, ids);
 		}
 		return arr;
 	}
@@ -168,24 +144,58 @@ public class TfMetaUtils
 
 	public static int[] parseJsonObjectIDList(JSONObject spec, String[] colnames, String group, int minCol, int maxCol)
 		throws JSONException {
-		List<Integer> colList = new ArrayList<>();
 		int[] arr = new int[0];
 		boolean ids = spec.containsKey("ids") && spec.getBoolean("ids");
 
 		if(spec.containsKey(group) && spec.get(group) instanceof JSONArray) {
 			JSONArray colspecs = (JSONArray) spec.get(group);
-			for(Object o : colspecs) {
-				JSONObject colspec = (JSONObject) o;
-				int id = parseJsonObjectID(colspec, colnames, minCol, maxCol, ids);
-				if(id > 0)
-					colList.add(id);
-			}
-
-			// ensure ascending order of column IDs
-			arr = colList.stream().mapToInt((i) -> i).sorted().toArray();
+			arr = parseJsonArrayIDList(colspecs, colnames, minCol, maxCol, ids);
 		}
 
 		return arr;
+	}
+	
+	public static int[] parseJsonArrayIDList(JSONArray arr, String[] colnames, int minCol, int maxCol, boolean ids)
+		throws JSONException
+	{
+		List<Integer> colList = new ArrayList<>();
+		for(Object o : arr) {
+			JSONObject colspec = (JSONObject) o;
+			int id = parseJsonObjectID(colspec, colnames, minCol, maxCol, ids);
+			if(id > 0)
+				colList.add(id);
+		}
+
+		// ensure ascending order of column IDs
+		return colList.stream().mapToInt((i) -> i).sorted().toArray();
+	}
+	
+	public static int[] parseJsonPlainArrayIDList(JSONArray arr, String[] colnames, int minCol, int maxCol, boolean ids) {
+		List<Integer> colList = new ArrayList<>();
+		
+		//construct ID list array
+		for(int i=0; i < arr.length(); i++) {
+			int ix;
+			if (ids) {
+				ix = UtilFunctions.toInt(arr.get(i));
+				if(maxCol != -1 && ix >= maxCol)
+					ix = -1;
+				if(minCol != -1 && ix >= 0)
+					ix -= minCol - 1;
+			}
+			else {
+				ix = ArrayUtils.indexOf(colnames, arr.get(i)) + 1;
+			}
+			if(ix > 0)
+				colList.add(ix);
+			else if(minCol == -1 && maxCol == -1)
+				// only if we remove some columns, ix -1 is expected
+				throw new RuntimeException("Specified column '" + arr.get(i) + "' does not exist.");
+		}
+		
+		//ensure ascending order of column IDs
+		return colList.stream().mapToInt((i) -> i)
+			.sorted().toArray();
 	}
 
 	/**
@@ -429,16 +439,33 @@ public class TfMetaUtils
 			String binKey = TfMethod.BIN.toString();
 			if( jSpec.containsKey(binKey) && jSpec.get(binKey) instanceof JSONArray ) {
 				return Arrays.asList(ArrayUtils.toObject(
-						TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, binKey, minCol, maxCol)));
+					parseJsonObjectIDList(jSpec, colnames, binKey, minCol, maxCol)));
 			}
-			else { //internally generates
+			else { //internally generated
 				return Arrays.asList(ArrayUtils.toObject(
-						TfMetaUtils.parseJsonIDList(jSpec, colnames, binKey)));
+					parseJsonIDList(jSpec, colnames, binKey)));
 			}
 		}
 		catch(JSONException ex) {
 			throw new IOException(ex);
 		}
+	}
+	
+	public static List<Integer> parseUDFColIDs(JSONObject jSpec, String[] colnames, int minCol, int maxCol)
+		throws IOException 
+	{
+		try {
+			String binKey = TfMethod.UDF.toString();
+			if( jSpec.containsKey(binKey) ) {
+				JSONArray bin = jSpec.getJSONObject(binKey).getJSONArray("ids");
+				return Arrays.asList(ArrayUtils.toObject(
+					parseJsonPlainArrayIDList(bin, colnames, minCol, maxCol, true)));
+			}
+		}
+		catch(JSONException ex) {
+			throw new IOException(ex);
+		}
+		return new ArrayList<>();
 	}
 	
 	private static String getStringFromResource(String path) throws IOException {

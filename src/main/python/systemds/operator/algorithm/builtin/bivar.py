@@ -37,7 +37,7 @@ def bivar(X: Matrix,
           verbose: bool):
     """
     :param verbose: Print bivar stats
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing as output with bivar stats & as output with bivar stats & as output with bivar stats & as output with bivar stats 
     """
     params_dict = {'X': X, 'S1': S1, 'S2': S2, 'T1': T1, 'T2': T2, 'verbose': verbose}
     

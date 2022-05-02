@@ -31,7 +31,18 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def outlierByArima(X: Matrix,
                    **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param repairMethod: values: 0 = delete rows having outliers, 1 = replace outliers as zeros
+    :param p: non-seasonal AR order
+    :param d: non-seasonal differencing order
+    :param q: non-seasonal MA order
+    :param P: seasonal AR order
+    :param D: seasonal differencing order
+    :param Q: seasonal MA order
+    :param s: period in terms of number of time-steps
+    :param solver: solver, is either "cg" or "jacobi"
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

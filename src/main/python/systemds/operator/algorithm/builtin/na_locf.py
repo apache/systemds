@@ -31,7 +31,11 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def na_locf(X: Matrix,
             **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param option: String "locf" (last observation moved forward) to do forward fill
+    :param verbose: to print output on screen
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

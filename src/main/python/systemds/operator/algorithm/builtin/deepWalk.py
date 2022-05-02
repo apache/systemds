@@ -36,14 +36,13 @@ def deepWalk(Graph: Matrix,
              t: int,
              **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param Graph: adjacency matrix of a graph (n x n)
     :param w: window size
     :param d: embedding size
     :param gamma: walks per vertex
     :param t: walk length
     :param alpha: learning rate
     :param beta: factor for decreasing learning rate
-    :return: 'OperationNode' containing matrix of vertex/word representation (n x d) 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'Graph': Graph, 'w': w, 'd': d, 'gamma': gamma, 't': t}
     params_dict.update(kwargs)

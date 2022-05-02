@@ -32,7 +32,6 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def img_posterize(img_in: Matrix,
                   bits: int):
     """
-    :param img_in: Input image
     :param bits: The number of bits keep for the values.
     :param 1: and white, 8 means every integer between 0 and 255.
     :return: 'OperationNode' containing  

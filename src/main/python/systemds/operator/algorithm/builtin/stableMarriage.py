@@ -33,13 +33,11 @@ def stableMarriage(P: Matrix,
                    A: Matrix,
                    **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param P: proposer matrix P.
     :param It: a square matrix with no zeros.
-    :param A: acceptor matrix A.
     :param It: a square matrix with no zeros.
     :param ordered: If true, P and A are assumed to be ordered,
     :param index: vice-versa (higher is better).
-    :return: 'OperationNode' containing result matrix & 1 (2.0 preference value) and acceptor 2 (1.0 preference value). & 3 (2.0 preference value) and proposer 2 (1.0 preference value). & matched with proposer 3 (since [1,3] is non-zero) at a preference level of 3.0. & matched with proposer 2 (since [2,2] is non-zero) at a preference level of 3.0. & matched with proposer 1 (since [3,1] is non-zero) at a preference level of 1.0. 
+    :return: 'OperationNode' containing to the match. & 1 (2.0 preference value) and acceptor 2 (1.0 preference value). & 3 (2.0 preference value) and proposer 2 & matched with proposer 3 (since [1,3] is non-zero) at a & 3.0. & matched with proposer 2 (since [2,2] is non-zero) at a & 3.0. & matched with proposer 1 (since [3,1] is non-zero) at a & 1.0. 
     """
     params_dict = {'P': P, 'A': A}
     params_dict.update(kwargs)

@@ -32,7 +32,12 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def pnmf(X: Matrix,
          rnk: int,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param rnk: Number of components into which matrix X is to be factored.
+    :param maxi: Maximum number of conjugate gradient iterations.
+    :param verbose: If TRUE, 'iter' and 'obj' are printed.
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'rnk': rnk}
     params_dict.update(kwargs)
     

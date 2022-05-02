@@ -21,3 +21,4 @@ tests/federated/worker
 tests/federated/tmp
 
 tests/list/tmp
+tests/algorithms/readwrite/

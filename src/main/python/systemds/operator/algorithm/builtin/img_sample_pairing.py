@@ -33,8 +33,6 @@ def img_sample_pairing(img_in1: Matrix,
                        img_in2: Matrix,
                        weight: float):
     """
-    :param img_in1: First input image
-    :param img_in2: Second input image
     :param weight: The weight given to the second image.
     :param 0: img_in1, 1 means only img_in2 will be visible
     :return: 'OperationNode' containing  

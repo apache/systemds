@@ -49,7 +49,7 @@ def cox(X: Matrix,
     :param tol: Tolerance ("epsilon")
     :param moi: Max. number of outer (Newton) iterations
     :param mii: Max. number of inner (conjugate gradient) iterations, 0 = no max
-    :return: 'OperationNode' containing a summary of some statistics of the fitted model: & matrix rt that contains the order-preserving recoded timestamps from x & which is matrix x with sorted timestamps & matrix mf that contains the column indices of x with the baseline factors removed (if available) 
+    :return: 'OperationNode' containing matrix rt that contains the order-preserving recoded timestamps from x & which is matrix x with sorted timestamps & matrix mf that contains the column indices of x with the baseline factors removed (if available) 
     """
     params_dict = {'X': X, 'TE': TE, 'F': F, 'R': R}
     params_dict.update(kwargs)

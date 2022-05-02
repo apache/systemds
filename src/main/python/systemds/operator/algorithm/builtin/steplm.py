@@ -32,7 +32,14 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def steplm(X: Matrix,
            y: Matrix,
            **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param icpt: Intercept presence, shifting and rescaling the columns of X:
+    :param reg: learning rate
+    :param tol: Tolerance threashold to train until achieved
+    :param maxi: maximum iterations 0 means until tolerange is reached
+    :param verbose: If the algorithm should be verbose
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'y': y}
     params_dict.update(kwargs)
     

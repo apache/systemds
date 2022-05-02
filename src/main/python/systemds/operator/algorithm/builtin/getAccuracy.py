@@ -32,7 +32,10 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def getAccuracy(y: Matrix,
                 yhat: Matrix,
                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param isWeighted: Flag for weighted or non-weighted accuracy calculation
+    :return: 'OperationNode' containing of the predicted labels 
+    """
     params_dict = {'y': y, 'yhat': yhat}
     params_dict.update(kwargs)
     return Matrix(y.sds_context,

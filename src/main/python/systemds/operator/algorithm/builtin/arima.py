@@ -32,8 +32,6 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def arima(X: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param X: The input Matrix to apply Arima on.
-    :param max_func_invoc: ?
     :param p: non-seasonal AR order
     :param d: non-seasonal differencing order
     :param q: non-seasonal MA order
@@ -43,7 +41,7 @@ def arima(X: Matrix,
     :param s: period in terms of number of time-steps
     :param include_mean: center to mean 0, and include in result
     :param solver: solver, is either "cg" or "jacobi"
-    :return: 'OperationNode' containing the calculated coefficients 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'X': X}
     params_dict.update(kwargs)

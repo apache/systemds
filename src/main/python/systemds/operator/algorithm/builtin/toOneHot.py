@@ -32,9 +32,8 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def toOneHot(X: Matrix,
              numClasses: int):
     """
-    :param X: vector with N integer entries between 1 and numClasses
-    :param numclasses: number of columns, must be >= largest value in X
-    :return: 'OperationNode' containing matrix with shape (n, numclasses) 
+    :param numclasses: Number of columns, must be be greater than or equal to largest value in X
+    :return: 'OperationNode' containing  
     """
     params_dict = {'X': X, 'numClasses': numClasses}
     return Matrix(X.sds_context,

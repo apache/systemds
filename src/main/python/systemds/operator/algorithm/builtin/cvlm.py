@@ -33,7 +33,12 @@ def cvlm(X: Matrix,
          y: Matrix,
          k: int,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param k: Number of subsets needed, It should always be more than 1 and less than nrow(X)
+    :param icpt: Intercept presence, shifting and rescaling the columns of X
+    :param reg: Regularization constant (lambda) for L2-regularization. set to nonzero for
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'y': y, 'k': k}
     params_dict.update(kwargs)
     

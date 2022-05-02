@@ -30,7 +30,9 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def sigmoid(X: Matrix):
-    
+    """
+    :return: 'OperationNode' containing meaning 
+    """
     params_dict = {'X': X}
     return Matrix(X.sds_context,
         'sigmoid',

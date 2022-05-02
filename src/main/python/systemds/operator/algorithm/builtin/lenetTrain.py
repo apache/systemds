@@ -37,7 +37,20 @@ def lenetTrain(X: Matrix,
                Hin: int,
                Win: int,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param C: Number of input channels (dimensionality of input depth)
+    :param Hin: Input width
+    :param Win: Input height
+    :param batch_size: Batch size
+    :param epochs: Number of epochs
+    :param lr: Learning rate
+    :param mu: Momentum value
+    :param decay: Learning rate decay
+    :param lambda: Regularization strength
+    :param seed: Seed for model initialization
+    :param verbose: Flag indicates if function should print to stdout
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'Y': Y, 'X_val': X_val, 'Y_val': Y_val, 'C': C, 'Hin': Hin, 'Win': Win}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

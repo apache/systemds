@@ -32,7 +32,11 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def csplineDS(X: Matrix,
               Y: Matrix,
               inp_x: float):
-    
+    """
+    :param monotonically: there is no duplicates points in X
+    :param inp_x: the given input x, for which the cspline will find predicted y.
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'Y': Y, 'inp_x': inp_x}
     
     vX_0 = Matrix(X.sds_context, '')

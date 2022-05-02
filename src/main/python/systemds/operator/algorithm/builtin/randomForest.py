@@ -34,9 +34,6 @@ def randomForest(X: Matrix,
                  R: Matrix,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param X: Feature matrix X; note that X needs to be both recoded and dummy coded
-    :param Y: Label matrix Y; note that Y needs to be both recoded and dummy coded
-    :param R: "          Matrix which for each feature in X contains the following information
     :param If: not provided by default all variables are assumed to be scale
     :param bins: Number of equiheight bins per scale feature to choose thresholds
     :param depth: Maximum depth of the learned tree
@@ -49,7 +46,7 @@ def randomForest(X: Matrix,
     :param as: of number of features in the dataset;
     :param by: root of features (i.e., feature_subset = 0.5) are used at each tree node
     :param impurity: Impurity measure: entropy or Gini (the default)
-    :return: 'OperationNode' containing tree and each row contains the following information: & that leaf node j is supposed to predict & 7,8,... if j is categorical & chosen for j is categorical rows 7,8,... depict the value subset chosen for j & c containing the number of times samples are chosen in each tree of the random forest & from scale feature ids to global feature ids & from categorical feature ids to global feature ids 
+    :return: 'OperationNode' containing tree and each row contains the following information: & that leaf node j is supposed to predict & subset of values & 7,8,... if j is categorical & stored at m[7,j] if the feature chosen for j is scale; & chosen for j is categorical rows 7,8,... depict the value subset chosen for j 
     """
     params_dict = {'X': X, 'Y': Y, 'R': R}
     params_dict.update(kwargs)

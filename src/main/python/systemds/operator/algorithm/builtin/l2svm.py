@@ -33,16 +33,15 @@ def l2svm(X: Matrix,
           Y: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param X: matrix X of feature vectors
-    :param Y: matrix Y of class labels have to be a single column
     :param intercept: No Intercept ( If set to TRUE then a constant bias column is added to X)
-    :param epsilon: Procedure terminates early if the reduction in objective function value is less than epsilon (tolerance) times the initial objective function value.
+    :param epsilon: Procedure terminates early if the reduction in objective function value is less
     :param lambda: Regularization parameter (lambda) for L2 regularization
     :param maxIterations: Maximum number of conjugate gradient iterations
     :param maxii: -
     :param verbose: Set to true if one wants print statements updating on loss.
-    :param columnId: The column Id used if one wants to add a ID to the print statement, Specificly usefull when L2SVM is used in MSVM.
-    :return: 'OperationNode' containing model matrix 
+    :param columnId: The column Id used if one wants to add a ID to the print statement, Specificly
+    :param usefull: is used in MSVM.
+    :return: 'OperationNode' containing  
     """
     params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)

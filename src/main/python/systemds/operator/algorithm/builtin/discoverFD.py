@@ -32,7 +32,10 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def discoverFD(X: Matrix,
                Mask: Matrix,
                threshold: float):
-    
+    """
+    :param will: second column from processing
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'Mask': Mask, 'threshold': threshold}
     return Matrix(X.sds_context,
         'discoverFD',

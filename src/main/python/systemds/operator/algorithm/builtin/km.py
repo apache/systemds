@@ -35,20 +35,16 @@ def km(X: Matrix,
        SI: Matrix,
        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param X: Input matrix X containing the survival data: 
-    :param number: (categorical features) for grouping and/or stratifying 
-    :param TE: Column indices of X which contain timestamps (first entry) and event
-    :param GI: Column indices of X corresponding to the factors to be used for grouping
-    :param SI: Column indices of X corresponding to the factors to be used for stratifying
+    :param number: (categorical features) for grouping and/or stratifying
     :param alpha: Parameter to compute 100*(1-alpha)% confidence intervals for the survivor
-    :param function: median 
+    :param function: median
     :param err_type: Parameter to specify the error type according to "greenwood" (the default) or "peto"
-    :param conf_type: Parameter to modify the confidence interval; "plain" keeps the lower and 
+    :param conf_type: Parameter to modify the confidence interval; "plain" keeps the lower and
     :param upper: the confidence interval unmodified, "log" (the default)
     :param corresponds: transformation and "log-log" corresponds to the
     :param test_type: If survival data for multiple groups is available specifies which test to
     :param perform: survival data across multiple groups: "none" (the default)
-    :return: 'OperationNode' containing 7 consecutive columns in km corresponds to a unique combination of groups and strata in the data  & schema & whose dimension depends on the number of groups (g) and strata (s) in the data (k denotes the number  & for grouping  ,i.e., ncol(gi) and l denotes the number of factors used for stratifying, i.e., ncol(si)) & of groups and strata is equal to 1, m will have 4 columns with  & data from multiple groups available and ttype=log-rank or wilcoxon, a 1 x 4 matrix t and an g x 5 matrix t_groups_oe with 
+    :return: 'OperationNode' containing 7 consecutive columns in km corresponds to a unique & and strata in the data with the following schema & number of factors used for stratifying, i.e., ncol(si)) & of groups and strata is equal to 1, m will have 4 columns with & 4 matrix t and an g x 5 matrix t_groups_oe with 
     """
     params_dict = {'X': X, 'TE': TE, 'GI': GI, 'SI': SI}
     params_dict.update(kwargs)

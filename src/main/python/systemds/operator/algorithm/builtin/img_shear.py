@@ -34,11 +34,10 @@ def img_shear(img_in: Matrix,
               shear_y: float,
               fill_value: float):
     """
-    :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param shear_x: Shearing factor for horizontal shearing
     :param shear_y: Shearing factor for vertical shearing
     :param fill_value: The background color revealed by the shearing
-    :return: 'OperationNode' containing output image as 2d matrix with top left corner at [1, 1] 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'img_in': img_in, 'shear_x': shear_x, 'shear_y': shear_y, 'fill_value': fill_value}
     return Matrix(img_in.sds_context,

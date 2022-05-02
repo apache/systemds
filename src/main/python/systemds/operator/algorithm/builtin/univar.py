@@ -31,7 +31,10 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def univar(X: Matrix,
            types: Matrix):
-    
+    """
+    :param 1: 2 for nominal, 3 for ordinal
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'types': types}
     return Matrix(X.sds_context,
         'univar',

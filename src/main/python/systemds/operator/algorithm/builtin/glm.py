@@ -32,7 +32,20 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def glm(X: Matrix,
         Y: Matrix,
         **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param dfam: Distribution family code: 1 = Power, 2 = Binomial
+    :param vpow: Power for Variance defined as (mean)^power (ignored if dfam != 1):
+    :param link: Link function code: 0 = canonical (depends on distribution),
+    :param lpow: Power for Link function defined as (mean)^power (ignored if link != 1):
+    :param yneg: Response value for Bernoulli "No" label, usually 0.0 or -1.0
+    :param icpt: Intercept presence, X columns shifting and rescaling:
+    :param reg: Regularization parameter (lambda) for L2 regularization
+    :param tol: Tolerance (epsilon)
+    :param disp: (Over-)dispersion value, or 0.0 to estimate it from data
+    :param moi: Maximum number of outer (Newton / Fisher Scoring) iterations
+    :param mii: Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum
+    :return: 'OperationNode' containing line, as follows: & integer indicating success/failure as follows: & value (regression coefficient), excluding the intercept & for the smallest beta value & value (regression coefficient), excluding the intercept & for the largest beta value & or nan if there is no intercept (if icpt=0) & to scale deviance, provided as "disp" input parameter & from the dataset & the saturated model, assuming dispersion == 1.0 & the saturated model, scaled by the dispersion value & when requested, contains the following per-iteration variables in csv format, & triple (name, iteration, value) with iteration = 0 for initial values: & inner (conj.gradient) iterations in this outer iteration & function we minimize (i.e. negative partial log-likelihood) & the objective during this iteration, actual value & the objective predicted by a quadratic approximation & value of x %*% beta, used to check for overflows & value of x %*% beta, used to check for overflows & region size, the "delta" & supported glm distribution families & lpow  distribution.link   nical? 
+    """
     params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

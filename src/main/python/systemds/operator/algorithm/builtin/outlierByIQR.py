@@ -33,9 +33,32 @@ def outlierByIQR(X: Matrix,
                  k: float,
                  max_iterations: int,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param k: a constant used to discern outliers k*IQR
+    :param isIterative: iterative repair or single repair
+    :param repairMethod: values: 0 = delete rows having outliers,
+    :param max_iterations: values: 0 = arbitrary number of iteraition until all outliers are removed,
+    :param verbose: flag specifying if logging information should be printed
+    :return: 'OperationNode' containing meaning & matrix x with no outliers 
+    """
     params_dict = {'X': X, 'k': k, 'max_iterations': max_iterations}
     params_dict.update(kwargs)
-    return Matrix(X.sds_context,
-        'outlierByIQR',
-        named_input_nodes=params_dict)
+    
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    vX_2 = Matrix(X.sds_context, '')
+    vX_3 = Matrix(X.sds_context, '')
+    vX_4 = Scalar(X.sds_context, '')
+    vX_5 = Scalar(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, vX_2, vX_3, vX_4, vX_5, ]
+
+    op = MultiReturn(X.sds_context, 'outlierByIQR', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+    vX_2._unnamed_input_nodes = [op]
+    vX_3._unnamed_input_nodes = [op]
+    vX_4._unnamed_input_nodes = [op]
+    vX_5._unnamed_input_nodes = [op]
+
+    return op

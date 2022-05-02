@@ -32,9 +32,22 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def winsorize(X: Matrix,
               verbose: bool,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param verbose: To print output on screen
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'verbose': verbose}
     params_dict.update(kwargs)
-    return Matrix(X.sds_context,
-        'winsorize',
-        named_input_nodes=params_dict)
+    
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    vX_2 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, vX_2, ]
+
+    op = MultiReturn(X.sds_context, 'winsorize', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+    vX_2._unnamed_input_nodes = [op]
+
+    return op

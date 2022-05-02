@@ -247,6 +247,7 @@ public class BinaryOp extends MultiThreadedHop {
 				getInput().get(0).getDim2(), 
 				getInput().get(0).getBlocksize(), 
 				getInput().get(0).getNnz());
+		updateLopFedOut(sort);
 		PickByCount pick = new PickByCount(
 				sort,
 				null,

@@ -37,12 +37,15 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.COVOperator;
@@ -57,7 +60,21 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 	}
 
 	public static CovarianceFEDInstruction parseInstruction(String str) {
-		return parseInstruction(CovarianceCPInstruction.parseInstruction(str));
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		FederatedOutput fedOut = FederatedOutput.valueOf(parts[parts.length-1]);
+		String cleanInstStr = InstructionUtils.removeFEDOutputFlag(str);
+		CovarianceFEDInstruction fedInst = parseInstruction(CovarianceCPInstruction.parseInstruction(cleanInstStr));
+		fedInst._fedOut = fedOut;
+		return fedInst;
+	}
+
+	public static CovarianceFEDInstruction parseInstruction(Instruction inst){
+		if ( inst instanceof CovarianceCPInstruction )
+			return parseInstruction((CovarianceCPInstruction) inst);
+		else if ( inst instanceof SPInstruction )
+			return parseInstruction(CovarianceCPInstruction.parseInstruction(inst.getInstructionString()));
+		else
+			return parseInstruction(inst.getInstructionString());
 	}
 
 	public static CovarianceFEDInstruction parseInstruction(CovarianceCPInstruction inst) { 

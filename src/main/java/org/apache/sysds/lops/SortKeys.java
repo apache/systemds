@@ -85,35 +85,34 @@ public class SortKeys extends Lop
 
 	@Override
 	public String getInstructions(String input, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(InstructionUtils.concatOperands(
+		String ret = InstructionUtils.concatOperands(
 			getExecType().name(),
 			OPCODE,
 			getInputs().get(0).prepInputOperand(input),
-			prepOutputOperand(output)));
+			prepOutputOperand(output));
 
-			if( getExecType() == ExecType.CP ) {
-				sb.append( OPERAND_DELIMITOR );
-				sb.append(_numThreads);
-			}
-		return sb.toString();
+		if( getExecType() == ExecType.CP ) {
+			ret = InstructionUtils.concatOperands(ret, Integer.toString(_numThreads));
+		}
+		if ( getExecType() == ExecType.FED )
+			ret = InstructionUtils.concatOperands(ret, Integer.toString(_numThreads), _fedOutput.name());
+		return ret;
 	}
 	
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(InstructionUtils.concatOperands(
+		String ret = InstructionUtils.concatOperands(
 			getExecType().name(),
 			OPCODE,
 			getInputs().get(0).prepInputOperand(input1),
 			getInputs().get(1).prepInputOperand(input2),
-			prepOutputOperand(output)));
+			prepOutputOperand(output));
 
-		if( getExecType() == ExecType.CP ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append(_numThreads);
-		}
-		return sb.toString();
+		if( getExecType() == ExecType.CP )
+			ret = InstructionUtils.concatOperands(ret, Integer.toString(_numThreads));
+		if ( getExecType() == ExecType.FED )
+			ret = InstructionUtils.concatOperands(ret, Integer.toString(_numThreads), _fedOutput.name());
+		return ret;
 	}
 
 	// This method is invoked in two cases:

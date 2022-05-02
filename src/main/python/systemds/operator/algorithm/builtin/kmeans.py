@@ -32,15 +32,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def kmeans(X: Matrix,
            **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param X: The input Matrix to do KMeans on.
     :param k: Number of centroids
     :param runs: Number of runs (with different initial centroids)
     :param max_iter: Maximum number of iterations per run
     :param eps: Tolerance (epsilon) for WCSS change ratio
     :param is_verbose: do not print per-iteration stats
     :param avg_sample_size_per_centroid: Average number of records per centroid in data samples
-    :param seed: The seed used for initial sampling. If set to -1 random seeds are selected.
-    :return: 'OperationNode' containing the mapping of records to centroids & the output matrix with the centroids 
+    :param seed: The seed used for initial sampling. If set to -1
+    :param random: selected.
+    :return: 'OperationNode' containing  
     """
     params_dict = {'X': X}
     params_dict.update(kwargs)

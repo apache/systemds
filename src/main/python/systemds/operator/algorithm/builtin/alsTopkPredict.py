@@ -35,12 +35,8 @@ def alsTopkPredict(userIDs: Matrix,
                    R: Matrix,
                    **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param userIDs: Column vector of user-ids (n x 1)
-    :param I: Indicator matrix user-id x user-id to exclude from scoring
-    :param L: The factor matrix L: user-id x feature-id
-    :param R: The factor matrix R: feature-id x item-id
     :param K: The number of top-K items
-    :return: 'OperationNode' containing users (rows) & a matrix containing the top-k predicted ratings for the specified users (rows) 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'userIDs': userIDs, 'I': I, 'L': L, 'R': R}
     params_dict.update(kwargs)

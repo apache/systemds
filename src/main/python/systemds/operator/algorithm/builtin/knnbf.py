@@ -31,9 +31,10 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def knnbf(X: Matrix,
           T: Matrix,
-          k_value: int):
+          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X': X, 'T': T, 'k_value': k_value}
+    params_dict = {'X': X, 'T': T}
+    params_dict.update(kwargs)
     return Matrix(X.sds_context,
         'knnbf',
         named_input_nodes=params_dict)

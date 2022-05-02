@@ -33,10 +33,8 @@ def l2svmPredict(X: Matrix,
                  W: Matrix,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param X: matrix X of feature vectors to classify
-    :param W: matrix of the trained variables
     :param verbose: Set to true if one wants print statements.
-    :return: 'OperationNode' containing classification labels maxed to ones and zeros. 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'X': X, 'W': W}
     params_dict.update(kwargs)

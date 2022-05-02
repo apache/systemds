@@ -44,9 +44,7 @@ def ffTrain(X: Matrix,
     :param validation_split: Fraction of training set used as validation set
     :param seed: Seed for model initialization
     :param verbose: Flag which indicates if function should print to stdout
-    :param Supported: by the model
-    :param Supported: by the model
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing by the model & by the model 
     """
     params_dict = {'X': X, 'Y': Y, 'out_activation': out_activation, 'loss_fcn': loss_fcn}
     params_dict.update(kwargs)

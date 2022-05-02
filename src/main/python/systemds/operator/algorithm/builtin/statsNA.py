@@ -31,7 +31,12 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def statsNA(X: Matrix,
             **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param bins: Split number for bin stats. Number of bins the time series gets
+    :param missing: printed.
+    :param verbose: Print detailed information.
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

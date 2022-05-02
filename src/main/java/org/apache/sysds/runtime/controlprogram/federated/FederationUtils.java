@@ -56,6 +56,9 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
+import io.netty.handler.codec.serialization.ClassResolvers;
+import io.netty.handler.codec.serialization.ObjectDecoder;
+
 public class FederationUtils {
 	protected static Logger log = Logger.getLogger(FederationUtils.class);
 	private static final IDSequence _idSeq = new IDSequence();
@@ -554,5 +557,10 @@ public class FederationUtils {
 		for ( Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses )
 			dataParts.add(readResponse.getValue());
 		return FederationUtils.aggAdd(dataParts.toArray(new Future[0]));
+	}
+
+	public static ObjectDecoder decoder() {
+		return new ObjectDecoder(Integer.MAX_VALUE,
+			ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader()));
 	}
 }

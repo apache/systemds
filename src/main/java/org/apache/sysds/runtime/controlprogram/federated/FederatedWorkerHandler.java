@@ -428,26 +428,32 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse getVariable(FederatedRequest request, ExecutionContextMap ecm) {
-		checkNumParams(request.getNumParams(), 0);
-		ExecutionContext ec = ecm.get(request.getTID());
-		if(!ec.containsVariable(String.valueOf(request.getID())))
-			throw new FederatedWorkerHandlerException(
-				"Variable " + request.getID() + " does not exist at federated worker.");
+		try{
 
-		// get variable and construct response
-		Data dataObject = ec.getVariable(String.valueOf(request.getID()));
-		dataObject = PrivacyMonitor.handlePrivacy(dataObject);
-		switch(dataObject.getDataType()) {
-			case TENSOR:
-			case MATRIX:
-			case FRAME:
-				return new FederatedResponse(ResponseType.SUCCESS, ((CacheableData<?>) dataObject).acquireReadAndRelease());
-			case LIST:
-				return new FederatedResponse(ResponseType.SUCCESS, ((ListObject) dataObject).getData());
-			case SCALAR:
-				return new FederatedResponse(ResponseType.SUCCESS, dataObject);
-			default:
-				throw new FederatedWorkerHandlerException("Unsupported return datatype " + dataObject.getDataType().name());
+			checkNumParams(request.getNumParams(), 0);
+			ExecutionContext ec = ecm.get(request.getTID());
+			if(!ec.containsVariable(String.valueOf(request.getID())))
+				throw new FederatedWorkerHandlerException(
+					"Variable " + request.getID() + " does not exist at federated worker.");
+	
+			// get variable and construct response
+			Data dataObject = ec.getVariable(String.valueOf(request.getID()));
+			dataObject = PrivacyMonitor.handlePrivacy(dataObject);
+			switch(dataObject.getDataType()) {
+				case TENSOR:
+				case MATRIX:
+				case FRAME:
+					return new FederatedResponse(ResponseType.SUCCESS, ((CacheableData<?>) dataObject).acquireReadAndRelease());
+				case LIST:
+					return new FederatedResponse(ResponseType.SUCCESS, ((ListObject) dataObject).getData());
+				case SCALAR:
+					return new FederatedResponse(ResponseType.SUCCESS, dataObject);
+				default:
+					throw new FederatedWorkerHandlerException("Unsupported return datatype " + dataObject.getDataType().name());
+			}
+		}
+		catch(Exception e){
+			throw new FederatedWorkerHandlerException("Failed to getVariable " , e);
 		}
 	}
 

@@ -25,7 +25,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.cert.CertificateException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -73,14 +72,14 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
-import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.utils.Explain;
-import org.apache.sysds.utils.NativeHelper;
-import org.apache.sysds.utils.Statistics;
 import org.apache.sysds.utils.Explain.ExplainCounts;
 import org.apache.sysds.utils.Explain.ExplainType;
+import org.apache.sysds.utils.NativeHelper;
+import org.apache.sysds.utils.Statistics;
 
 public class DMLScript 
 {
@@ -281,12 +280,7 @@ public class DMLScript
 			
 			if(dmlOptions.fedWorker) {
 				loadConfiguration(fnameOptConfig);
-				try {
-					new FederatedWorker(dmlOptions.fedWorkerPort, dmlOptions.debug).run();
-				}
-				catch(CertificateException e) {
-					e.printStackTrace();
-				}
+				new FederatedWorker(dmlOptions.fedWorkerPort, dmlOptions.debug);
 				return true;
 			}
 

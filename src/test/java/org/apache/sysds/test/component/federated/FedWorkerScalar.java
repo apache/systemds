@@ -76,5 +76,4 @@ public class FedWorkerScalar extends FedWorkerBase {
 			assertEquals("values not equivalent", vrInit, vr, 0.0000001);
 		}
 	}
-
 }

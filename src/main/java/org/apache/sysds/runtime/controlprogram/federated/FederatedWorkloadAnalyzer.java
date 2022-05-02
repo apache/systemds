@@ -32,7 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 
 public class FederatedWorkloadAnalyzer {
-	private static final Log LOG = LogFactory.getLog(FederatedWorkerHandler.class.getName());
+	protected static final Log LOG = LogFactory.getLog(FederatedWorkerHandler.class.getName());
 
 	/** Frequency value for how many instructions before we do a pass for compression */
 	private static int compressRunFrequency = 10;
@@ -84,7 +84,6 @@ public class FederatedWorkloadAnalyzer {
 				getOrMakeCounter(mm, Long.parseLong(n2)).incLMM(c2);
 				counter++;
 			}
-			LOG.error(mm + " " + Long.parseLong(n2));
 		}
 	}
 

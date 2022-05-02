@@ -52,6 +52,9 @@ public class FedWorkerMatrix extends FedWorkerBase {
 		final MatrixBlock mb10x1000 = TestUtils.generateTestMatrixBlock(10, 1000, 0.5, 9.5, 1.0, 1342);
 		tests.add(new Object[] {port, mb10x1000, 10});
 
+		// final MatrixBlock mb1000x1000 = TestUtils.generateTestMatrixBlock(1000, 1000, 0.5, 9.5, 1.0, 1342);
+		// tests.add(new Object[] {port, mb1000x1000, 300});
+
 		return tests;
 	}
 
@@ -81,5 +84,4 @@ public class FedWorkerMatrix extends FedWorkerBase {
 				"Not equivalent matrix block returned from federated site");
 		}
 	}
-
 }

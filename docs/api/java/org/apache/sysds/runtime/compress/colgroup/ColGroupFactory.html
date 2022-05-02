@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9};
+var data = {"i0":9,"i1":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -90,13 +90,13 @@ loadScripts(document, 'script');</script>
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.compress.colgroup.ColGroupFactory</li>
@@ -132,7 +132,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <hr>
 <pre>public class <span class="typeNameLabel">ColGroupFactory</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
 <div class="block">Factory class for constructing ColGroups.</div>
 </li>
 </ul>
@@ -140,27 +140,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
-<!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<section role="region">
-<ul class="blockList">
-<li class="blockList"><a id="constructor.summary">
-<!--   -->
-</a>
-<h3>Constructor Summary</h3>
-<table class="memberSummary">
-<caption><span>Constructors</span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Constructor</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E()">ColGroupFactory</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-</table>
-</li>
-</ul>
-</section>
 <!-- ========== METHOD SUMMARY =========== -->
 <section role="region">
 <ul class="blockList">
@@ -176,61 +155,31 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compressColGroups(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,org.apache.sysds.runtime.compress.CompressionSettings,int)">compressColGroups</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                  <a href="../estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
-                 <a href="../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings,
+                 <a href="../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
                  int&nbsp;k)</code></th>
 <td class="colLast">
 <div class="block">The actual compression method, that handles the logic of compressing multiple columns together.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>static <a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#genColGroupConst(double%5B%5D)">genColGroupConst</a></span>&#8203;(double[]&nbsp;values)</code></th>
-<td class="colLast">
-<div class="block">Generate a constant column group.</div>
-</td>
-</tr>
-<tr id="i2" class="altColor">
-<td class="colFirst"><code>static <a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#genColGroupConst(int%5B%5D,double)">genColGroupConst</a></span>&#8203;(int[]&nbsp;cols,
-                double&nbsp;value)</code></th>
-<td class="colLast">
-<div class="block">Generate a constant column group.</div>
-</td>
-</tr>
-<tr id="i3" class="rowColor">
-<td class="colFirst"><code>static <a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#genColGroupConst(int%5B%5D,double%5B%5D)">genColGroupConst</a></span>&#8203;(int[]&nbsp;cols,
-                double[]&nbsp;values)</code></th>
-<td class="colLast">
-<div class="block">Generate a constant column group.</div>
-</td>
-</tr>
-<tr id="i4" class="altColor">
-<td class="colFirst"><code>static <a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#genColGroupConst(int,double)">genColGroupConst</a></span>&#8203;(int&nbsp;numCols,
-                double&nbsp;value)</code></th>
-<td class="colLast">
-<div class="block">Generate a constant column group.</div>
-</td>
-</tr>
-<tr id="i5" class="rowColor">
-<td class="colFirst"><code>static <a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#genColGroupConst(int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary)">genColGroupConst</a></span>&#8203;(int&nbsp;numCols,
-                <a href="dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict)</code></th>
-<td class="colLast">
-<div class="block">Generate a constant column group.</div>
-</td>
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compressColGroups(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,org.apache.sysds.runtime.compress.CompressionSettings,org.apache.sysds.runtime.compress.cost.ACostEstimate,int)">compressColGroups</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                 <a href="../estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
+                 <a href="../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
+                 <a href="../cost/ACostEstimate.html" title="class in org.apache.sysds.runtime.compress.cost">ACostEstimate</a>&nbsp;ce,
+                 int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -241,25 +190,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="details">
 <ul class="blockList">
 <li class="blockList">
-<!-- ========= CONSTRUCTOR DETAIL ======== -->
-<section role="region">
-<ul class="blockList">
-<li class="blockList"><a id="constructor.detail">
-<!--   -->
-</a>
-<h3>Constructor Detail</h3>
-<a id="&lt;init&gt;()">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>ColGroupFactory</h4>
-<pre>public&nbsp;ColGroupFactory()</pre>
-</li>
-</ul>
-</li>
-</ul>
-</section>
 <!-- ============ METHOD DETAIL ========== -->
 <section role="region">
 <ul class="blockList">
@@ -273,111 +203,46 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>compressColGroups</h4>
-<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;compressColGroups&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;compressColGroups&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                                                 <a href="../estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
-                                                <a href="../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings,
+                                                <a href="../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
                                                 int&nbsp;k)</pre>
 <div class="block">The actual compression method, that handles the logic of compressing multiple columns together.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>in</code> - The input matrix, that could have been transposed. If it is transposed the compSettings should
-                     specify this.</dd>
-<dd><code>csi</code> - The compression information extracted from the estimation, this contains which groups of
-                     columns to compress together.</dd>
-<dd><code>compSettings</code> - The compression settings to specify how to compress.</dd>
+<dd><code>in</code> - The input matrix, that could have been transposed. If it is transposed the compSettings should specify
+            this.</dd>
+<dd><code>csi</code> - The compression information extracted from the estimation, this contains which groups of columns to
+            compress together.</dd>
+<dd><code>cs</code> - The compression settings to specify how to compress.</dd>
 <dd><code>k</code> - The degree of parallelism to be used in the compression of the column groups.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A resulting array of ColGroups, containing the compressed information from the input matrix block.</dd>
 </dl>
 </li>
 </ul>
-<a id="genColGroupConst(int,double)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>genColGroupConst</h4>
-<pre class="methodSignature">public static&nbsp;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;genColGroupConst&#8203;(int&nbsp;numCols,
-                                         double&nbsp;value)</pre>
-<div class="block">Generate a constant column group.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>numCols</code> - The number of columns</dd>
-<dd><code>value</code> - The value contained in all cells.</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>A Constant column group.</dd>
-</dl>
-</li>
-</ul>
-<a id="genColGroupConst(double[])">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>genColGroupConst</h4>
-<pre class="methodSignature">public static&nbsp;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;genColGroupConst&#8203;(double[]&nbsp;values)</pre>
-<div class="block">Generate a constant column group.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>values</code> - The value vector that contains all the unique values for each column in the matrix.</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>A Constant column group.</dd>
-</dl>
-</li>
-</ul>
-<a id="genColGroupConst(int[],double)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>genColGroupConst</h4>
-<pre class="methodSignature">public static&nbsp;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;genColGroupConst&#8203;(int[]&nbsp;cols,
-                                         double&nbsp;value)</pre>
-<div class="block">Generate a constant column group.
- 
- It is assumed that the column group is intended for use, therefore zero value is allowed.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>cols</code> - The specific column indexes that is contained in this constant group.</dd>
-<dd><code>value</code> - The value contained in all cells.</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>A Constant column group.</dd>
-</dl>
-</li>
-</ul>
-<a id="genColGroupConst(int[],double[])">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>genColGroupConst</h4>
-<pre class="methodSignature">public static&nbsp;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;genColGroupConst&#8203;(int[]&nbsp;cols,
-                                         double[]&nbsp;values)</pre>
-<div class="block">Generate a constant column group.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>cols</code> - The specific column indexes that is contained in this constant group.</dd>
-<dd><code>values</code> - The value vector that contains all the unique values for each column in the matrix.</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>A Constant column group.</dd>
-</dl>
-</li>
-</ul>
-<a id="genColGroupConst(int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary)">
+<a id="compressColGroups(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,org.apache.sysds.runtime.compress.CompressionSettings,org.apache.sysds.runtime.compress.cost.ACostEstimate,int)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>genColGroupConst</h4>
-<pre class="methodSignature">public static&nbsp;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;genColGroupConst&#8203;(int&nbsp;numCols,
-                                         <a href="dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict)</pre>
-<div class="block">Generate a constant column group.</div>
+<h4>compressColGroups</h4>
+<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;compressColGroups&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                                                <a href="../estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
+                                                <a href="../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
+                                                <a href="../cost/ACostEstimate.html" title="class in org.apache.sysds.runtime.compress.cost">ACostEstimate</a>&nbsp;ce,
+                                                int&nbsp;k)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>numCols</code> - The number of columns.</dd>
-<dd><code>dict</code> - The dictionary to contain int the Constant group.</dd>
+<dd><code>in</code> - The input matrix, that could have been transposed. If it is transposed the compSettings should specify
+            this.</dd>
+<dd><code>csi</code> - The compression information extracted from the estimation, this contains which groups of columns to
+            compress together.</dd>
+<dd><code>cs</code> - The compression settings to specify how to compress.</dd>
+<dd><code>ce</code> - The cost estimator used for the compression</dd>
+<dd><code>k</code> - The degree of parallelism to be used in the compression of the column groups.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>A Constant column group.</dd>
+<dd>A resulting array of ColGroups, containing the compressed information from the input matrix block.</dd>
 </dl>
 </li>
 </ul>
@@ -435,13 +300,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
@@ -450,7 +315,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

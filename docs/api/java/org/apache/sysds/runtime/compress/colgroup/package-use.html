@@ -114,6 +114,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.cost">org.apache.sysds.runtime.compress.cost</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -140,12 +144,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="class-use/AColGroup.CompressionType.html#org.apache.sysds.runtime.compress">AColGroup.CompressionType</a></th>
 <td class="colLast">
 <div class="block">Public super types of compression ColGroups supported</div>
-</td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/ColGroupUncompressed.html#org.apache.sysds.runtime.compress">ColGroupUncompressed</a></th>
-<td class="colLast">
-<div class="block">Column group type for columns that are stored as dense arrays of doubles.</div>
 </td>
 </tr>
 </tbody>
@@ -192,10 +190,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/AMorphingMMColGroup.html#org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a></th>
+<td class="colLast">
+<div class="block">Abstract class for column group types that do not perform matrix Multiplication, and decompression for performance
+ reasons but instead transforms into another type of column group type to perform that operation.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/APreAgg.html#org.apache.sysds.runtime.compress.colgroup">APreAgg</a></th>
 <td class="colLast">
 <div class="block">Abstract class for all the column groups that use preAggregation for Left matrix multiplications.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/ASDCZero.html#org.apache.sysds.runtime.compress.colgroup">ASDCZero</a></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/ColGroupDDC.html#org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a></th>
@@ -217,6 +226,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="class-use/ColGroupSDCZeros.html#org.apache.sysds.runtime.compress.colgroup">ColGroupSDCZeros</a></th>
 <td class="colLast">
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.cost">
+<!--   -->
+</a>
+<table class="useSummary">
+<caption><span>Classes in <a href="package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> used by <a href="../cost/package-summary.html">org.apache.sysds.runtime.compress.cost</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/AColGroup.html#org.apache.sysds.runtime.compress.cost">AColGroup</a></th>
+<td class="colLast">
+<div class="block">Abstract Class that is the lowest class type for the Compression framework.</div>
 </td>
 </tr>
 </tbody>
@@ -289,7 +317,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

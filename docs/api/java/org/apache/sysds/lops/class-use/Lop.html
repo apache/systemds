@@ -122,10 +122,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="#org.apache.sysds.parser">org.apache.sysds.parser</a></th>
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.lops.compile.linearization">org.apache.sysds.lops.compile.linearization</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.parser">org.apache.sysds.parser</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions">org.apache.sysds.runtime.instructions</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -150,7 +154,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code><a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DnnOp.</span><code><span class="memberNameLink"><a href="../../hops/DnnOp.html#constructDnnLops(org.apache.sysds.common.Types.ExecType,java.util.ArrayList)">constructDnnLops</a></span>&#8203;(<a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
-                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../../hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;inputs)</code></th>
+                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../../hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;inputs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -278,6 +282,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Hop.</span><code><span class="memberNameLink"><a href="../../hops/Hop.html#setLops(org.apache.sysds.lops.Lop)">setLops</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;lops)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Hop.</span><code><span class="memberNameLink"><a href="../../hops/Hop.html#updateLopFedOut(org.apache.sysds.lops.Lop)">updateLopFedOut</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;lop)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Hop.</span><code><span class="memberNameLink"><a href="../../hops/Hop.html#updateLopFedOut(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.ExecType,org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput)">updateLopFedOut</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;lop,
+               <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;execType,
+               <a href="../../runtime/instructions/fed/FEDInstruction.FederatedOutput.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FederatedOutput</a>&nbsp;fedOut)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -728,18 +744,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ParameterizedBuiltin.</span><code><span class="memberNameLink"><a href="../ParameterizedBuiltin.html#getNamedInput(java.lang.String)">getNamedInput</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ParameterizedBuiltin.</span><code><span class="memberNameLink"><a href="../ParameterizedBuiltin.html#getNamedInput(java.lang.String)">getNamedInput</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">Data.</span><code><span class="memberNameLink"><a href="../Data.html#getNamedInputLop(java.lang.String)">getNamedInputLop</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Data.</span><code><span class="memberNameLink"><a href="../Data.html#getNamedInputLop(java.lang.String)">getNamedInputLop</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">Data.</span><code><span class="memberNameLink"><a href="../Data.html#getNamedInputLop(java.lang.String,java.lang.String)">getNamedInputLop</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name,
-                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;defaultVal)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Data.</span><code><span class="memberNameLink"><a href="../Data.html#getNamedInputLop(java.lang.String,java.lang.String)">getNamedInputLop</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name,
+                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;defaultVal)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -753,26 +769,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FunctionCallCP.</span><code><span class="memberNameLink"><a href="../FunctionCallCP.html#getFunctionOutputs()">getFunctionOutputs</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Data.</span><code><span class="memberNameLink"><a href="../Data.html#getInputParams()">getInputParams</a></span>()</code></th>
 <td class="colLast">
 <div class="block">method to get inputParams</div>
 </td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Lop.</span><code><span class="memberNameLink"><a href="../Lop.html#getInputs()">getInputs</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Method to get input of Lops</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Lop.</span><code><span class="memberNameLink"><a href="../Lop.html#getOutputs()">getOutputs</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Method to get output of Lops</div>
@@ -804,21 +820,23 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../SortKeys.html" title="class in org.apache.sysds.lops">SortKeys</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">SortKeys.</span><code><span class="memberNameLink"><a href="../SortKeys.html#constructSortByValueLop(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.SortKeys.OperationTypes,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">constructSortByValueLop</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+<th class="colSecond" scope="row"><span class="typeNameLabel">SortKeys.</span><code><span class="memberNameLink"><a href="../SortKeys.html#constructSortByValueLop(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.SortKeys.OperationTypes,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">constructSortByValueLop</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                        <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                        <a href="../SortKeys.OperationTypes.html" title="enum in org.apache.sysds.lops">SortKeys.OperationTypes</a>&nbsp;op,
                        <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                        <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-                       <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
+                       <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
+                       int&nbsp;numThreads)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../SortKeys.html" title="class in org.apache.sysds.lops">SortKeys</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">SortKeys.</span><code><span class="memberNameLink"><a href="../SortKeys.html#constructSortByValueLop(org.apache.sysds.lops.Lop,org.apache.sysds.lops.SortKeys.OperationTypes,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">constructSortByValueLop</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+<th class="colSecond" scope="row"><span class="typeNameLabel">SortKeys.</span><code><span class="memberNameLink"><a href="../SortKeys.html#constructSortByValueLop(org.apache.sysds.lops.Lop,org.apache.sysds.lops.SortKeys.OperationTypes,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">constructSortByValueLop</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                        <a href="../SortKeys.OperationTypes.html" title="enum in org.apache.sysds.lops">SortKeys.OperationTypes</a>&nbsp;op,
                        <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                        <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-                       <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
+                       <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
+                       int&nbsp;numThreads)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -912,12 +930,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">LopProperties.</span><code><span class="memberNameLink"><a href="../LopProperties.html#setLevel(java.util.ArrayList)">setLevel</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LopProperties.</span><code><span class="memberNameLink"><a href="../LopProperties.html#setLevel(java.util.ArrayList)">setLevel</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">LopProperties.</span><code><span class="memberNameLink"><a href="../LopProperties.html#setProperties(java.util.ArrayList,org.apache.sysds.common.Types.ExecType)">setProperties</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
+<th class="colSecond" scope="row"><span class="typeNameLabel">LopProperties.</span><code><span class="memberNameLink"><a href="../LopProperties.html#setProperties(java.util.ArrayList,org.apache.sysds.common.Types.ExecType)">setProperties</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
              <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1036,19 +1054,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CentralMoment.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">CentralMoment</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CentralMoment.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,int,org.apache.sysds.common.Types.ExecType)">CentralMoment</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
              <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
              <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
              <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+             int&nbsp;numThreads,
              <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CentralMoment.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">CentralMoment</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CentralMoment.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,int,org.apache.sysds.common.Types.ExecType)">CentralMoment</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
              <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
              <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
              <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
              <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+             int&nbsp;numThreads,
              <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1056,7 +1076,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Checkpoint.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,java.lang.String)">Checkpoint</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
           <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;level)</code></th>
+          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;level)</code></th>
 <td class="colLast">
 <div class="block">TODO change string parameter storage.level to StorageLevel as soon as we can assume
  that Spark libraries are always available.</div>
@@ -1071,30 +1091,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CoVariance.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">CoVariance</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CoVariance.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,int,org.apache.sysds.common.Types.ExecType)">CoVariance</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
           <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+          int&nbsp;numThreads,
           <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CoVariance.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">CoVariance</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
-          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
-          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
-          <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-          <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CoVariance.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">CoVariance</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CoVariance.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,int,org.apache.sysds.common.Types.ExecType)">CoVariance</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
           <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+          int&nbsp;numThreads,
           <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CSVReBlock.html#%3Cinit%3E(org.apache.sysds.lops.Lop,int,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">CSVReBlock</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
           int&nbsp;blen,
           <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1102,7 +1117,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
           <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Ctable.html#%3Cinit%3E(org.apache.sysds.lops.Lop%5B%5D,org.apache.sysds.lops.Ctable.OperationTypes,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,boolean,boolean,org.apache.sysds.common.Types.ExecType)">Ctable</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputLops,
       <a href="../Ctable.OperationTypes.html" title="enum in org.apache.sysds.lops">Ctable.OperationTypes</a>&nbsp;op,
       <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1112,7 +1127,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
       <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Ctable.html#%3Cinit%3E(org.apache.sysds.lops.Lop%5B%5D,org.apache.sysds.lops.Ctable.OperationTypes,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">Ctable</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputLops,
       <a href="../Ctable.OperationTypes.html" title="enum in org.apache.sysds.lops">Ctable.OperationTypes</a>&nbsp;op,
       <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1120,7 +1135,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
       <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CumulativeOffsetBinary.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,double,boolean,org.apache.sysds.common.Types.AggOp,org.apache.sysds.common.Types.ExecType)">CumulativeOffsetBinary</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;data,
                       <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;offsets,
                       <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1131,7 +1146,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                       <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CumulativeOffsetBinary.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.AggOp,org.apache.sysds.common.Types.ExecType)">CumulativeOffsetBinary</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;data,
                       <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;offsets,
                       <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1140,7 +1155,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                       <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CumulativePartialAggregate.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.AggOp,org.apache.sysds.common.Types.ExecType)">CumulativePartialAggregate</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
                           <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                           <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -1148,12 +1163,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                           <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Data.html#%3Cinit%3E(org.apache.sysds.common.Types.OpOpData,org.apache.sysds.lops.Lop,java.util.HashMap,java.lang.String,java.lang.String,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.FileFormat)">Data</a></span>&#8203;(<a href="../../common/Types.OpOpData.html" title="enum in org.apache.sysds.common">Types.OpOpData</a>&nbsp;op,
     <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;literal,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;literal,
     <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
     <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
     <a href="../../common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt)</code></th>
@@ -1162,14 +1177,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  In case of write: <code>input</code> must be provided.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../DeCompression.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">DeCompression</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
              <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
              <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
              <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../DnnTransform.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.OpOpDnn,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int,double)">DnnTransform</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
             <a href="../../common/Types.OpOpDnn.html" title="enum in org.apache.sysds.common">Types.OpOpDnn</a>&nbsp;op,
             <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1181,7 +1196,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Constructor when we have one input.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../DnnTransform.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.OpOpDnn,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">DnnTransform</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
             <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
             <a href="../../common/Types.OpOpDnn.html" title="enum in org.apache.sysds.common">Types.OpOpDnn</a>&nbsp;op,
@@ -1191,7 +1206,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
             int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../DnnTransform.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.OpOpDnn,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">DnnTransform</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
             <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
             <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1202,7 +1217,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
             int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../LeftIndex.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">LeftIndex</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;lhsInput,
          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rhsInput,
          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowL,
@@ -1214,7 +1229,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../LeftIndex.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,org.apache.sysds.lops.LeftIndex.LixCacheType)">LeftIndex</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;lhsInput,
          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rhsInput,
          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowL,
@@ -1227,13 +1242,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          <a href="../LeftIndex.LixCacheType.html" title="enum in org.apache.sysds.lops">LeftIndex.LixCacheType</a>&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Local.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType)">Local</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
      <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
      <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MapMult.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,boolean,boolean,boolean,org.apache.sysds.hops.AggBinaryOp.SparkAggType)">MapMult</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
        <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
        <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1246,7 +1261,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Constructor to setup a partial Matrix-Vector Multiplication for Spark</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MapMultChain.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">MapMultChain</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
             <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
             <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1256,7 +1271,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Constructor to setup a map mult chain without weights</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MapMultChain.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.MapMultChain.ChainType,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">MapMultChain</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
             <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
             <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1268,7 +1283,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Constructor to setup a map mult chain with weights</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MatMultCP.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">MatMultCP</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1276,7 +1291,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MatMultCP.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,boolean,boolean)">MatMultCP</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1286,7 +1301,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          boolean&nbsp;isRightTransposed)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MatMultCP.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">MatMultCP</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1295,7 +1310,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MatMultCP.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int,boolean,boolean)">MatMultCP</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1306,7 +1321,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          boolean&nbsp;isRightTransposed)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MMCJ.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,boolean,org.apache.sysds.hops.AggBinaryOp.SparkAggType,org.apache.sysds.common.Types.ExecType)">MMCJ</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
     <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
     <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1316,7 +1331,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
     <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MMCJ.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.MMCJ.MMCJType,org.apache.sysds.common.Types.ExecType)">MMCJ</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
     <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
     <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1327,7 +1342,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Constructor to perform a cross product operation.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MMRJ.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">MMRJ</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
     <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
     <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1337,7 +1352,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Constructor to perform a cross product operation.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MMTSJ.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,org.apache.sysds.lops.MMTSJ.MMTSJType)">MMTSJ</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
      <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -1345,7 +1360,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
      <a href="../MMTSJ.MMTSJType.html" title="enum in org.apache.sysds.lops">MMTSJ.MMTSJType</a>&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MMTSJ.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,org.apache.sysds.lops.MMTSJ.MMTSJType,boolean)">MMTSJ</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
      <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -1354,7 +1369,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
      boolean&nbsp;multiPass)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MMTSJ.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,org.apache.sysds.lops.MMTSJ.MMTSJType,boolean,int)">MMTSJ</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
      <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -1364,7 +1379,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
      int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MMZip.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,boolean,org.apache.sysds.common.Types.ExecType)">MMZip</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
      <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1373,7 +1388,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
      <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Nary.html#%3Cinit%3E(org.apache.sysds.common.Types.OpOpN,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.Lop%5B%5D,org.apache.sysds.common.Types.ExecType)">Nary</a></span>&#8203;(<a href="../../common/Types.OpOpN.html" title="enum in org.apache.sysds.common">Types.OpOpN</a>&nbsp;operationType,
     <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
     <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -1381,7 +1396,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
     <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PartialAggregate.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.AggOp,org.apache.sysds.common.Types.Direction,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">PartialAggregate</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
                 <a href="../../common/Types.AggOp.html" title="enum in org.apache.sysds.common">Types.AggOp</a>&nbsp;op,
                 <a href="../../common/Types.Direction.html" title="enum in org.apache.sysds.common">Types.Direction</a>&nbsp;direct,
@@ -1391,7 +1406,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                 int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PartialAggregate.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.AggOp,org.apache.sysds.common.Types.Direction,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.hops.AggBinaryOp.SparkAggType,org.apache.sysds.common.Types.ExecType)">PartialAggregate</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
                 <a href="../../common/Types.AggOp.html" title="enum in org.apache.sysds.common">Types.AggOp</a>&nbsp;op,
                 <a href="../../common/Types.Direction.html" title="enum in org.apache.sysds.common">Types.Direction</a>&nbsp;direct,
@@ -1401,7 +1416,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                 <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PickByCount.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.PickByCount.OperationTypes,org.apache.sysds.common.Types.ExecType)">PickByCount</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
            <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
            <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1410,7 +1425,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
            <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PickByCount.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.PickByCount.OperationTypes,org.apache.sysds.common.Types.ExecType,boolean)">PickByCount</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
            <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
            <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1420,14 +1435,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
            boolean&nbsp;inMemoryInput)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PMapMult.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType)">PMapMult</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
         <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
         <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
         <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../PMMJ.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,boolean,boolean,org.apache.sysds.common.Types.ExecType)">PMMJ</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;pminput,
     <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rightinput,
     <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;nrow,
@@ -1440,7 +1455,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Constructor to setup a Permutation Matrix Multiplication</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ReBlock.html#%3Cinit%3E(org.apache.sysds.lops.Lop,int,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,boolean,org.apache.sysds.common.Types.ExecType)">ReBlock</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
        int&nbsp;blen,
        <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1449,48 +1464,42 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
        <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RightIndex.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">RightIndex</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RightIndex.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">RightIndex</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowL,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowU,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;colL,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;colU,
-          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowDim,
-          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;colDim,
           <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
           <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RightIndex.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,boolean)">RightIndex</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RightIndex.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,boolean)">RightIndex</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowL,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowU,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;colL,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;colU,
-          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowDim,
-          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;colDim,
           <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
           <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
           boolean&nbsp;forleft)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RightIndex.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.hops.AggBinaryOp.SparkAggType,org.apache.sysds.common.Types.ExecType)">RightIndex</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../RightIndex.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.hops.AggBinaryOp.SparkAggType,org.apache.sysds.common.Types.ExecType)">RightIndex</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowL,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowU,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;colL,
           <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;colU,
-          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;rowDim,
-          <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;colDim,
           <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
           <a href="../../hops/AggBinaryOp.SparkAggType.html" title="enum in org.apache.sysds.hops">AggBinaryOp.SparkAggType</a>&nbsp;aggtype,
           <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../SortKeys.html#%3Cinit%3E(org.apache.sysds.lops.Lop,boolean,org.apache.sysds.lops.SortKeys.OperationTypes,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">SortKeys</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
         boolean&nbsp;desc,
         <a href="../SortKeys.OperationTypes.html" title="enum in org.apache.sysds.lops">SortKeys.OperationTypes</a>&nbsp;op,
@@ -1499,24 +1508,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
         <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../SortKeys.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.SortKeys.OperationTypes,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">SortKeys</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../SortKeys.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.SortKeys.OperationTypes,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">SortKeys</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
         <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
         <a href="../SortKeys.OperationTypes.html" title="enum in org.apache.sysds.lops">SortKeys.OperationTypes</a>&nbsp;op,
         <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
         <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-        <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../SortKeys.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.SortKeys.OperationTypes,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">SortKeys</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
-        <a href="../SortKeys.OperationTypes.html" title="enum in org.apache.sysds.lops">SortKeys.OperationTypes</a>&nbsp;op,
-        <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
-        <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-        <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
+        <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
+        int&nbsp;numThreads)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../SortKeys.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.SortKeys.OperationTypes,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">SortKeys</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
+        <a href="../SortKeys.OperationTypes.html" title="enum in org.apache.sysds.lops">SortKeys.OperationTypes</a>&nbsp;op,
+        <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
+        <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
+        <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
+        int&nbsp;numThreads)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Ternary.html#%3Cinit%3E(org.apache.sysds.common.Types.OpOp3,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">Ternary</a></span>&#8203;(<a href="../../common/Types.OpOp3.html" title="enum in org.apache.sysds.common">Types.OpOp3</a>&nbsp;op,
        <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
        <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
@@ -1527,7 +1538,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
        int&nbsp;numThreads)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../TernaryAggregate.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.AggOp,org.apache.sysds.common.Types.OpOp2,org.apache.sysds.common.Types.Direction,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">TernaryAggregate</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                 <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                 <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1540,7 +1551,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                 int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Transform.html#%3Cinit%3E(org.apache.sysds.lops.Lop%5B%5D,org.apache.sysds.common.Types.ReOrgOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,boolean,org.apache.sysds.common.Types.ExecType)">Transform</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputs,
          <a href="../../common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1549,7 +1560,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Transform.html#%3Cinit%3E(org.apache.sysds.lops.Lop%5B%5D,org.apache.sysds.common.Types.ReOrgOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,boolean)">Transform</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputs,
          <a href="../../common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1558,7 +1569,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          boolean&nbsp;bSortIndInMem)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Transform.html#%3Cinit%3E(org.apache.sysds.lops.Lop%5B%5D,org.apache.sysds.common.Types.ReOrgOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,boolean,int)">Transform</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputs,
          <a href="../../common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1568,7 +1579,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Transform.html#%3Cinit%3E(org.apache.sysds.lops.Lop%5B%5D,org.apache.sysds.common.Types.ReOrgOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">Transform</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputs,
          <a href="../../common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1577,7 +1588,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Transform.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.ReOrgOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">Transform</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
          <a href="../../common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1585,7 +1596,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Transform.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.ReOrgOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,boolean)">Transform</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
          <a href="../../common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1594,7 +1605,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          boolean&nbsp;bSortIndInMem)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Transform.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.ReOrgOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">Transform</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
          <a href="../../common/Types.ReOrgOp.html" title="enum in org.apache.sysds.common">Types.ReOrgOp</a>&nbsp;op,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1603,7 +1614,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../UAggOuterChain.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.AggOp,org.apache.sysds.common.Types.Direction,org.apache.sysds.common.Types.OpOp2,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">UAggOuterChain</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
               <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
               <a href="../../common/Types.AggOp.html" title="enum in org.apache.sysds.common">Types.AggOp</a>&nbsp;uaop,
@@ -1616,7 +1627,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Constructor to setup a unaryagg outer chain</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Unary.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.OpOp1,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int,boolean)">Unary</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../../common/Types.OpOp1.html" title="enum in org.apache.sysds.common">Types.OpOp1</a>&nbsp;op,
      <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1628,7 +1639,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Constructor to perform a unary operation with 1 input.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Unary.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.OpOp1,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">Unary</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
      <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
      <a href="../../common/Types.OpOp1.html" title="enum in org.apache.sysds.common">Types.OpOp1</a>&nbsp;op,
@@ -1640,14 +1651,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Constructor to perform a unary operation with 2 inputs</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../UnaryCP.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.OpOp1,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType)">UnaryCP</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
        <a href="../../common/Types.OpOp1.html" title="enum in org.apache.sysds.common">Types.OpOp1</a>&nbsp;op,
        <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
        <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../UnaryCP.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.OpOp1,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">UnaryCP</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
        <a href="../../common/Types.OpOp1.html" title="enum in org.apache.sysds.common">Types.OpOp1</a>&nbsp;op,
        <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -1657,7 +1668,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Constructor to perform a scalar operation</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WeightedCrossEntropy.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType,org.apache.sysds.common.Types.ExecType)">WeightedCrossEntropy</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                     <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                     <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1668,7 +1679,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                     <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WeightedCrossEntropyR.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType,boolean,boolean,org.apache.sysds.common.Types.ExecType)">WeightedCrossEntropyR</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                      <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                      <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1681,7 +1692,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                      <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WeightedDivMM.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.WeightedDivMM.WDivMMType,org.apache.sysds.common.Types.ExecType)">WeightedDivMM</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
              <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
              <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1692,7 +1703,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
              <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WeightedDivMMR.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.WeightedDivMM.WDivMMType,boolean,boolean,org.apache.sysds.common.Types.ExecType)">WeightedDivMMR</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
               <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
               <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1705,7 +1716,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
               <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WeightedSigmoid.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.WeightedSigmoid.WSigmoidType,org.apache.sysds.common.Types.ExecType)">WeightedSigmoid</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1715,7 +1726,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WeightedSigmoidR.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.WeightedSigmoid.WSigmoidType,boolean,boolean,org.apache.sysds.common.Types.ExecType)">WeightedSigmoidR</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                 <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                 <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1727,7 +1738,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                 <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WeightedSquaredLoss.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.WeightedSquaredLoss.WeightsType,org.apache.sysds.common.Types.ExecType)">WeightedSquaredLoss</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                    <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                    <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1738,7 +1749,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                    <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WeightedSquaredLossR.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.WeightedSquaredLoss.WeightsType,boolean,boolean,org.apache.sysds.common.Types.ExecType)">WeightedSquaredLossR</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                     <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                     <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1751,7 +1762,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                     <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WeightedUnaryMM.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.WeightedUnaryMM.WUMMType,org.apache.sysds.common.Types.OpOp1,org.apache.sysds.common.Types.ExecType)">WeightedUnaryMM</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1762,7 +1773,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../WeightedUnaryMMR.html#%3Cinit%3E(org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.lops.Lop,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.lops.WeightedUnaryMM.WUMMType,org.apache.sysds.common.Types.OpOp1,boolean,boolean,org.apache.sysds.common.Types.ExecType)">WeightedUnaryMMR</a></span>&#8203;(<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,
                 <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input2,
                 <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input3,
@@ -1787,9 +1798,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Data.html#%3Cinit%3E(org.apache.sysds.common.Types.OpOpData,org.apache.sysds.lops.Lop,java.util.HashMap,java.lang.String,java.lang.String,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.FileFormat)">Data</a></span>&#8203;(<a href="../../common/Types.OpOpData.html" title="enum in org.apache.sysds.common">Types.OpOpData</a>&nbsp;op,
     <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;literal,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;name,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;literal,
     <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
     <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
     <a href="../../common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt)</code></th>
@@ -1801,8 +1812,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../DataGen.html#%3Cinit%3E(org.apache.sysds.common.Types.OpOpDG,org.apache.sysds.parser.DataIdentifier,java.util.HashMap,java.lang.String,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">DataGen</a></span>&#8203;(<a href="../../common/Types.OpOpDG.html" title="enum in org.apache.sysds.common">Types.OpOpDG</a>&nbsp;op,
        <a href="../../parser/DataIdentifier.html" title="class in org.apache.sysds.parser">DataIdentifier</a>&nbsp;id,
-       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
-       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;baseDir,
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;baseDir,
        <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
        <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
        <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
@@ -1811,40 +1822,40 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Federated.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType)">Federated</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputLops,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Federated.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType)">Federated</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputLops,
          <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dataType,
          <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;valueType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../FunctionCallCP.html#%3Cinit%3E(java.util.ArrayList,java.lang.String,java.lang.String,java.lang.String%5B%5D,java.lang.String%5B%5D,java.util.ArrayList,boolean,org.apache.sysds.common.Types.ExecType)">FunctionCallCP</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fnamespace,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputNames,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputNames,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../../hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;outputHops,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../FunctionCallCP.html#%3Cinit%3E(java.util.ArrayList,java.lang.String,java.lang.String,java.lang.String%5B%5D,java.lang.String%5B%5D,java.util.ArrayList,boolean,org.apache.sysds.common.Types.ExecType)">FunctionCallCP</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fnamespace,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputNames,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputNames,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../../hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;outputHops,
               boolean&nbsp;opt,
               <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../FunctionCallCP.html#%3Cinit%3E(java.util.ArrayList,java.lang.String,java.lang.String,java.lang.String%5B%5D,java.lang.String%5B%5D,org.apache.sysds.common.Types.ExecType)">FunctionCallCP</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fnamespace,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputNames,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputNames,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../FunctionCallCP.html#%3Cinit%3E(java.util.ArrayList,java.lang.String,java.lang.String,java.lang.String%5B%5D,java.lang.String%5B%5D,org.apache.sysds.common.Types.ExecType)">FunctionCallCP</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fnamespace,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputNames,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputNames,
               <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../GroupedAggregate.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">GroupedAggregate</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParameterLops,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../GroupedAggregate.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">GroupedAggregate</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParameterLops,
                 <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                 <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                 <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../GroupedAggregate.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,boolean)">GroupedAggregate</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParameterLops,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../GroupedAggregate.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,boolean)">GroupedAggregate</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParameterLops,
                 <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                 <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                 <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
@@ -1852,7 +1863,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../GroupedAggregate.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">GroupedAggregate</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParameterLops,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../GroupedAggregate.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">GroupedAggregate</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParameterLops,
                 <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                 <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                 <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
@@ -1860,7 +1871,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../GroupedAggregateM.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,boolean,org.apache.sysds.common.Types.ExecType)">GroupedAggregateM</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParameterLops,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../GroupedAggregateM.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,boolean,org.apache.sysds.common.Types.ExecType)">GroupedAggregateM</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParameterLops,
                  <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                  <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                  boolean&nbsp;partitioned,
@@ -1868,7 +1879,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ParameterizedBuiltin.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.ParamBuiltinOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">ParameterizedBuiltin</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;paramLops,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ParameterizedBuiltin.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.ParamBuiltinOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType)">ParameterizedBuiltin</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;paramLops,
                     <a href="../../common/Types.ParamBuiltinOp.html" title="enum in org.apache.sysds.common">Types.ParamBuiltinOp</a>&nbsp;op,
                     <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                     <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -1876,7 +1887,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ParameterizedBuiltin.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.ParamBuiltinOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,boolean)">ParameterizedBuiltin</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;paramLops,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ParameterizedBuiltin.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.ParamBuiltinOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,boolean)">ParameterizedBuiltin</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;paramLops,
                     <a href="../../common/Types.ParamBuiltinOp.html" title="enum in org.apache.sysds.common">Types.ParamBuiltinOp</a>&nbsp;op,
                     <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                     <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -1885,7 +1896,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ParameterizedBuiltin.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.ParamBuiltinOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">ParameterizedBuiltin</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;paramLops,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ParameterizedBuiltin.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.ParamBuiltinOp,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,org.apache.sysds.common.Types.ExecType,int)">ParameterizedBuiltin</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;paramLops,
                     <a href="../../common/Types.ParamBuiltinOp.html" title="enum in org.apache.sysds.common">Types.ParamBuiltinOp</a>&nbsp;op,
                     <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
                     <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -1894,18 +1905,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../SpoofFused.html#%3Cinit%3E(java.util.ArrayList,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,java.lang.Class,org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI,java.lang.String,int,org.apache.sysds.common.Types.ExecType)">SpoofFused</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../SpoofFused.html#%3Cinit%3E(java.util.ArrayList,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType,java.lang.Class,org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI,java.lang.String,int,org.apache.sysds.common.Types.ExecType)">SpoofFused</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
           <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
           <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;?&gt;&nbsp;cla,
+          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;?&gt;&nbsp;cla,
           <a href="../../hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api,
-          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;genVarName,
+          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;genVarName,
           int&nbsp;k,
           <a href="../../common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;etype)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Sql.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType)">Sql</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Sql.html#%3Cinit%3E(java.util.HashMap,org.apache.sysds.common.Types.DataType,org.apache.sysds.common.Types.ValueType)">Sql</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
    <a href="../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
    <a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -1964,6 +1975,43 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </section>
 </li>
 <li class="blockList">
+<section role="region"><a id="org.apache.sysds.lops.compile.linearization">
+<!--   -->
+</a>
+<h3>Uses of <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a> in <a href="../compile/linearization/package-summary.html">org.apache.sysds.lops.compile.linearization</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../compile/linearization/package-summary.html">org.apache.sysds.lops.compile.linearization</a> that return types with arguments of type <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ILinearize.</span><code><span class="memberNameLink"><a href="../compile/linearization/ILinearize.html#linearize(java.util.List)">linearize</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;v)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Method parameters in <a href="../compile/linearization/package-summary.html">org.apache.sysds.lops.compile.linearization</a> with type arguments of type <a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ILinearize.</span><code><span class="memberNameLink"><a href="../compile/linearization/ILinearize.html#linearize(java.util.List)">linearize</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;v)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
 <section role="region"><a id="org.apache.sysds.parser">
 <!--   -->
 </a>
@@ -2012,7 +2060,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">StatementBlock.</span><code><span class="memberNameLink"><a href="../../parser/StatementBlock.html#getLops()">getLops</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -2063,7 +2111,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">StatementBlock.</span><code><span class="memberNameLink"><a href="../../parser/StatementBlock.html#setLops(java.util.ArrayList)">setLops</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;lops)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">StatementBlock.</span><code><span class="memberNameLink"><a href="../../parser/StatementBlock.html#setLops(java.util.ArrayList)">setLops</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;lops)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -2147,7 +2195,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

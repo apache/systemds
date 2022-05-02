@@ -26,8 +26,8 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":6,"i6":10,"i7":9,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10};
-var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":6,"i6":10,"i7":6};
+var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator</li>
@@ -132,11 +132,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>Direct Known Subclasses:</dt>
-<dd><code><a href="CompressedSizeEstimatorExact.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimatorExact</a></code>, <code><a href="CompressedSizeEstimatorSample.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimatorSample</a></code>, <code><a href="CompressedSizeEstimatorUltraSparse.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimatorUltraSparse</a></code></dd>
+<dd><code><a href="CompressedSizeEstimatorExact.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimatorExact</a></code>, <code><a href="CompressedSizeEstimatorSample.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimatorSample</a></code></dd>
 </dl>
 <hr>
 <pre>public abstract class <span class="typeNameLabel">CompressedSizeEstimator</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
 <div class="block">Main abstract class for estimating size of compressions on columns.</div>
 </li>
 </ul>
@@ -152,53 +152,55 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code><a href="CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#computeCompressedSizeInfos(int)">computeCompressedSizeInfos</a></span>&#8203;(int&nbsp;k)</code></th>
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clearNNZ()">clearNNZ</a></span>()</code></th>
 <td class="colLast">
-<div class="block">Multi threaded version of extracting Compression Size info</div>
+<div class="block">Clear the pointer to the materialized list of nnz in columns</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#computeCompressedSizeInfos(java.util.Collection)">computeCompressedSizeInfos</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util" class="externalLink">Collection</a>&lt;int[]&gt;&nbsp;columnLists)</code></th>
+<td class="colFirst"><code><a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combine(int%5B%5D,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">combine</a></span>&#8203;(int[]&nbsp;combinedColumns,
+       <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+       <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code></th>
 <td class="colLast">
-<div class="block">Compression Size info from list of specified columns</div>
+<div class="block">Combine two analyzed column groups together.</div>
 </td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#computeCompressedSizeInfos(java.util.Collection,int)">computeCompressedSizeInfos</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util" class="externalLink">Collection</a>&lt;int[]&gt;&nbsp;columnLists,
-                          int&nbsp;k)</code></th>
+<td class="colFirst"><code><a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#combine(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">combine</a></span>&#8203;(<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+       <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code></th>
 <td class="colLast">
-<div class="block">Multi threaded version of extracting Compression Size info from list of specified columns</div>
+<div class="block">combine two analyzed column groups together.</div>
 </td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code><a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateCompressedColGroupSize()">estimateCompressedColGroupSize</a></span>()</code></th>
+<td class="colFirst"><code><a href="CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#computeCompressedSizeInfos(int)">computeCompressedSizeInfos</a></span>&#8203;(int&nbsp;k)</code></th>
 <td class="colLast">
-<div class="block">Method used for compressing into one type of colGroup</div>
+<div class="block">Multi threaded version of extracting compression size info</div>
 </td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateCompressedColGroupSize(int%5B%5D)">estimateCompressedColGroupSize</a></span>&#8203;(int[]&nbsp;colIndexes)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getColGroupInfo(int%5B%5D)">getColGroupInfo</a></span>&#8203;(int[]&nbsp;colIndexes)</code></th>
 <td class="colLast">
 <div class="block">Method for extracting Compressed Size Info of specified columns, together in a single ColGroup</div>
 </td>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>abstract <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateCompressedColGroupSize(int%5B%5D,int,int)">estimateCompressedColGroupSize</a></span>&#8203;(int[]&nbsp;colIndexes,
-                              int&nbsp;estimate,
-                              int&nbsp;nrUniqueUpperBound)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getColGroupInfo(int%5B%5D,int,int)">getColGroupInfo</a></span>&#8203;(int[]&nbsp;colIndexes,
+               int&nbsp;estimate,
+               int&nbsp;nrUniqueUpperBound)</code></th>
 <td class="colLast">
 <div class="block">A method to extract the Compressed Size Info for a given list of columns, This method further limits the estimated
  number of unique values, since in some cases the estimated number of uniques is estimated higher than the number
@@ -206,60 +208,30 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </td>
 </tr>
 <tr id="i6" class="altColor">
-<td class="colFirst"><code><a href="EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateCompressedColGroupSize(org.apache.sysds.runtime.compress.bitmap.ABitmap,int%5B%5D)">estimateCompressedColGroupSize</a></span>&#8203;(<a href="../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
-                              int[]&nbsp;colIndexes)</code></th>
+<td class="colFirst"><code><a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDeltaColGroupInfo(int%5B%5D)">getDeltaColGroupInfo</a></span>&#8203;(int[]&nbsp;colIndexes)</code></th>
 <td class="colLast">
-<div class="block">Method used to extract the CompressedSizeEstimationFactors from an constructed UncompressedBitmap.</div>
+<div class="block">Method for extracting info of specified columns as delta encodings (delta from previous rows values)</div>
 </td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code>static <a href="EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateCompressedColGroupSize(org.apache.sysds.runtime.compress.bitmap.ABitmap,int%5B%5D,int,org.apache.sysds.runtime.compress.CompressionSettings)">estimateCompressedColGroupSize</a></span>&#8203;(<a href="../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
-                              int[]&nbsp;colIndexes,
-                              int&nbsp;nrRows,
-                              <a href="../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i8" class="altColor">
-<td class="colFirst"><code><a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateJoinCompressedSize(int%5B%5D,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">estimateJoinCompressedSize</a></span>&#8203;(int[]&nbsp;joined,
-                          <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
-                          <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code></th>
+<td class="colFirst"><code>abstract <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDeltaColGroupInfo(int%5B%5D,int,int)">getDeltaColGroupInfo</a></span>&#8203;(int[]&nbsp;colIndexes,
+                    int&nbsp;estimate,
+                    int&nbsp;nrUniqueUpperBound)</code></th>
 <td class="colLast">
-<div class="block">Join two analyzed column groups together.</div>
+<div class="block">A method to extract the Compressed Size Info for a given list of columns, This method further limits the estimated
+ number of unique values, since in some cases the estimated number of uniques is estimated higher than the number
+ estimated in sub groups of the given colIndexes.</div>
 </td>
-</tr>
-<tr id="i9" class="rowColor">
-<td class="colFirst"><code><a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateJoinCompressedSize(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">estimateJoinCompressedSize</a></span>&#8203;(<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
-                          <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code></th>
-<td class="colLast">
-<div class="block">Join two analyzed column groups together.</div>
-</td>
-</tr>
-<tr id="i10" class="altColor">
-<td class="colFirst"><code><a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getData()">getData</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i11" class="rowColor">
-<td class="colFirst"><code>int</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumColumns()">getNumColumns</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i12" class="altColor">
-<td class="colFirst"><code>int</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumRows()">getNumRows</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -277,41 +249,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="getNumRows()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getNumRows</h4>
-<pre class="methodSignature">public&nbsp;int&nbsp;getNumRows()</pre>
-</li>
-</ul>
-<a id="getNumColumns()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getNumColumns</h4>
-<pre class="methodSignature">public&nbsp;int&nbsp;getNumColumns()</pre>
-</li>
-</ul>
-<a id="getData()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getData</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;getData()</pre>
-</li>
-</ul>
 <a id="computeCompressedSizeInfos(int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>computeCompressedSizeInfos</h4>
-<pre class="methodSignature">public&nbsp;<a href="CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;computeCompressedSizeInfos&#8203;(int&nbsp;k)</pre>
-<div class="block">Multi threaded version of extracting Compression Size info</div>
+<pre class="methodSignature">public final&nbsp;<a href="CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;computeCompressedSizeInfos&#8203;(int&nbsp;k)</pre>
+<div class="block">Multi threaded version of extracting compression size info</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>k</code> - The concurrency degree.</dd>
@@ -320,61 +265,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a id="computeCompressedSizeInfos(java.util.Collection,int)">
+<a id="getColGroupInfo(int[])">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>computeCompressedSizeInfos</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;computeCompressedSizeInfos&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util" class="externalLink">Collection</a>&lt;int[]&gt;&nbsp;columnLists,
-                                                                   int&nbsp;k)</pre>
-<div class="block">Multi threaded version of extracting Compression Size info from list of specified columns</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>columnLists</code> - The specified columns to extract.</dd>
-<dd><code>k</code> - The parallelization degree</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>The Compression information from the specified column groups.</dd>
-</dl>
-</li>
-</ul>
-<a id="computeCompressedSizeInfos(java.util.Collection)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>computeCompressedSizeInfos</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;computeCompressedSizeInfos&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util" class="externalLink">Collection</a>&lt;int[]&gt;&nbsp;columnLists)</pre>
-<div class="block">Compression Size info from list of specified columns</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>columnLists</code> - The specified columns to extract.</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>The Compression information from the specified column groups.</dd>
-</dl>
-</li>
-</ul>
-<a id="estimateCompressedColGroupSize()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>estimateCompressedColGroupSize</h4>
-<pre class="methodSignature">public&nbsp;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;estimateCompressedColGroupSize()</pre>
-<div class="block">Method used for compressing into one type of colGroup</div>
-<dl>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>CompressedSizeInfo on a compressed colGroup compressing the entire matrix into a single colGroup type.</dd>
-</dl>
-</li>
-</ul>
-<a id="estimateCompressedColGroupSize(int[])">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>estimateCompressedColGroupSize</h4>
-<pre class="methodSignature">public&nbsp;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;estimateCompressedColGroupSize&#8203;(int[]&nbsp;colIndexes)</pre>
+<h4>getColGroupInfo</h4>
+<pre class="methodSignature">public final&nbsp;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;getColGroupInfo&#8203;(int[]&nbsp;colIndexes)</pre>
 <div class="block">Method for extracting Compressed Size Info of specified columns, together in a single ColGroup</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -384,15 +281,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a id="estimateCompressedColGroupSize(int[],int,int)">
+<a id="getColGroupInfo(int[],int,int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>estimateCompressedColGroupSize</h4>
-<pre class="methodSignature">public abstract&nbsp;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;estimateCompressedColGroupSize&#8203;(int[]&nbsp;colIndexes,
-                                                                          int&nbsp;estimate,
-                                                                          int&nbsp;nrUniqueUpperBound)</pre>
+<h4>getColGroupInfo</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;getColGroupInfo&#8203;(int[]&nbsp;colIndexes,
+                                                           int&nbsp;estimate,
+                                                           int&nbsp;nrUniqueUpperBound)</pre>
 <div class="block">A method to extract the Compressed Size Info for a given list of columns, This method further limits the estimated
  number of unique values, since in some cases the estimated number of uniques is estimated higher than the number
  estimated in sub groups of the given colIndexes.</div>
@@ -405,19 +302,62 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                            in the sense that if the sample is small then this unique can be manually edited like in
                            CoCodeCostMatrixMult.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>The CompressedSizeInfoColGroup fro the given column indexes.</dd>
+<dd>The CompressedSizeInfoColGroup for the given column indexes.</dd>
 </dl>
 </li>
 </ul>
-<a id="estimateJoinCompressedSize(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">
+<a id="getDeltaColGroupInfo(int[])">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>estimateJoinCompressedSize</h4>
-<pre class="methodSignature">public final&nbsp;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;estimateJoinCompressedSize&#8203;(<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
-                                                                   <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</pre>
-<div class="block">Join two analyzed column groups together. without materializing the dictionaries of either side.
+<h4>getDeltaColGroupInfo</h4>
+<pre class="methodSignature">public final&nbsp;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;getDeltaColGroupInfo&#8203;(int[]&nbsp;colIndexes)</pre>
+<div class="block">Method for extracting info of specified columns as delta encodings (delta from previous rows values)</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>colIndexes</code> - The columns to group together inside a ColGroup</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The CompressedSizeInformation assuming delta encoding of the column.</dd>
+</dl>
+</li>
+</ul>
+<a id="getDeltaColGroupInfo(int[],int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getDeltaColGroupInfo</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;getDeltaColGroupInfo&#8203;(int[]&nbsp;colIndexes,
+                                                                int&nbsp;estimate,
+                                                                int&nbsp;nrUniqueUpperBound)</pre>
+<div class="block">A method to extract the Compressed Size Info for a given list of columns, This method further limits the estimated
+ number of unique values, since in some cases the estimated number of uniques is estimated higher than the number
+ estimated in sub groups of the given colIndexes.
+ 
+ The Difference for this method is that it extract the values as delta values from the matrix block input.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>colIndexes</code> - The columns to extract compression information from</dd>
+<dd><code>estimate</code> - An estimate of number of unique delta elements in these columns</dd>
+<dd><code>nrUniqueUpperBound</code> - The upper bound of unique elements allowed in the estimate, can be calculated from the
+                           number of unique elements estimated in sub columns multiplied together. This is flexible
+                           in the sense that if the sample is small then this unique can be manually edited like in
+                           CoCodeCostMatrixMult.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The CompressedSizeInfoColGroup for the given column indexes.</dd>
+</dl>
+</li>
+</ul>
+<a id="combine(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>combine</h4>
+<pre class="methodSignature">public final&nbsp;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;combine&#8203;(<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+                                                <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</pre>
+<div class="block">combine two analyzed column groups together. without materializing the dictionaries of either side.
  
  if the number of distinct elements in both sides multiplied is larger than Integer, return null.
  
@@ -427,64 +367,42 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dd><code>g1</code> - First group</dd>
 <dd><code>g2</code> - Second group</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>A joined compressed size estimation for the group.</dd>
+<dd>A combined compressed size estimation for the group.</dd>
 </dl>
 </li>
 </ul>
-<a id="estimateJoinCompressedSize(int[],org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">
+<a id="combine(int[],org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>estimateJoinCompressedSize</h4>
-<pre class="methodSignature">public&nbsp;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;estimateJoinCompressedSize&#8203;(int[]&nbsp;joined,
-                                                             <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
-                                                             <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</pre>
-<div class="block">Join two analyzed column groups together. without materializing the dictionaries of either side.
+<h4>combine</h4>
+<pre class="methodSignature">public final&nbsp;<a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;combine&#8203;(int[]&nbsp;combinedColumns,
+                                                <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+                                                <a href="CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</pre>
+<div class="block">Combine two analyzed column groups together. without materializing the dictionaries of either side.
  
  if the number of distinct elements in both sides multiplied is larger than Integer, return null.
  
  If either side was constructed without analysis then fall back to default materialization of double arrays.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>joined</code> - The joined column indexes.</dd>
+<dd><code>combinedColumns</code> - The combined column indexes.</dd>
 <dd><code>g1</code> - First group</dd>
 <dd><code>g2</code> - Second group</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>A joined compressed size estimation for the group.</dd>
+<dd>A combined compressed size estimation for the columns specified using the combining algorithm</dd>
 </dl>
 </li>
 </ul>
-<a id="estimateCompressedColGroupSize(org.apache.sysds.runtime.compress.bitmap.ABitmap,int[])">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>estimateCompressedColGroupSize</h4>
-<pre class="methodSignature">public&nbsp;<a href="EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;estimateCompressedColGroupSize&#8203;(<a href="../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
-                                                        int[]&nbsp;colIndexes)</pre>
-<div class="block">Method used to extract the CompressedSizeEstimationFactors from an constructed UncompressedBitmap. Note this
- method works both for the sample based estimator and the exact estimator, since the bitmap, can be extracted from
- a sample or from the entire dataset.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>ubm</code> - The UncompressedBitmap, either extracted from a sample or from the entire dataset</dd>
-<dd><code>colIndexes</code> - The columns that is compressed together.</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>The size factors estimated from the Bit Map.</dd>
-</dl>
-</li>
-</ul>
-<a id="estimateCompressedColGroupSize(org.apache.sysds.runtime.compress.bitmap.ABitmap,int[],int,org.apache.sysds.runtime.compress.CompressionSettings)">
+<a id="clearNNZ()">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>estimateCompressedColGroupSize</h4>
-<pre class="methodSignature">public static&nbsp;<a href="EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;estimateCompressedColGroupSize&#8203;(<a href="../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
-                                                               int[]&nbsp;colIndexes,
-                                                               int&nbsp;nrRows,
-                                                               <a href="../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</pre>
+<h4>clearNNZ</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;clearNNZ()</pre>
+<div class="block">Clear the pointer to the materialized list of nnz in columns</div>
 </li>
 </ul>
 </li>
@@ -556,7 +474,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

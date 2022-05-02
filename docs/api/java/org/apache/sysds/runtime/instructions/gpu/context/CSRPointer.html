@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":10,"i4":9,"i5":9,"i6":10,"i7":10,"i8":9,"i9":9,"i10":10,"i11":10,"i12":9,"i13":10};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":10,"i5":9,"i6":9,"i7":10,"i8":10,"i9":9,"i10":9,"i11":10,"i12":10,"i13":9,"i14":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.instructions.gpu.context.CSRPointer</li>
@@ -132,7 +132,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <hr>
 <pre>public class <span class="typeNameLabel">CSRPointer</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
 <div class="block">Compressed Sparse Row (CSR) format for CUDA
  Generalized matrix multiply is implemented for CSR format in the cuSparse library among other operations
  
@@ -230,11 +230,19 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateEmpty(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,long,long)">allocateEmpty</a></span>&#8203;(<a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
              long&nbsp;nnz2,
              long&nbsp;rows)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>static <a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateEmpty(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,long,long,boolean)">allocateEmpty</a></span>&#8203;(<a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
+             long&nbsp;nnz2,
+             long&nbsp;rows,
+             boolean&nbsp;initialize)</code></th>
 <td class="colLast">
 <div class="block">Factory method to allocate an empty CSR Sparse matrix on the GPU</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>static <a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateForDgeam(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.jcusparse.cusparseHandle,org.apache.sysds.runtime.instructions.gpu.context.CSRPointer,org.apache.sysds.runtime.instructions.gpu.context.CSRPointer,int,int)">allocateForDgeam</a></span>&#8203;(<a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
                 jcuda.jcusparse.cusparseHandle&nbsp;handle,
@@ -247,7 +255,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  C = a op(A) + b op(B)</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>static <a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateForMatrixMultiply(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.jcusparse.cusparseHandle,org.apache.sysds.runtime.instructions.gpu.context.CSRPointer,int,org.apache.sysds.runtime.instructions.gpu.context.CSRPointer,int,int,int,int)">allocateForMatrixMultiply</a></span>&#8203;(<a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
                          jcuda.jcusparse.cusparseHandle&nbsp;handle,
@@ -263,12 +271,12 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  and returns the <a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>CSRPointer</code></a> to C with the appropriate GPU memory.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clone(int)">clone</a></span>&#8203;(int&nbsp;rows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyPtrToHost(org.apache.sysds.runtime.instructions.gpu.context.CSRPointer,int,long,int%5B%5D,int%5B%5D)">copyPtrToHost</a></span>&#8203;(<a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a>&nbsp;src,
              int&nbsp;rows,
@@ -279,7 +287,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Static method to copy a CSR sparse matrix from Device to host</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyToDevice(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,org.apache.sysds.runtime.instructions.gpu.context.CSRPointer,int,long,int%5B%5D,int%5B%5D,double%5B%5D)">copyToDevice</a></span>&#8203;(<a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
             <a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a>&nbsp;dest,
@@ -292,21 +300,21 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Static method to copy a CSR sparse matrix from Host to Device</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#deallocate()">deallocate</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Calls cudaFree lazily on the allocated <code>Pointer</code> instances</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#deallocate(boolean)">deallocate</a></span>&#8203;(boolean&nbsp;eager)</code></th>
 <td class="colLast">
 <div class="block">Calls cudaFree lazily or eagerly on the allocated <code>Pointer</code> instances</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateSize(long,long)">estimateSize</a></span>&#8203;(long&nbsp;nnz2,
             long&nbsp;rows)</code></th>
@@ -315,12 +323,12 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  Size of pointers is not needed and is not added in</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static jcuda.jcusparse.cusparseMatDescr</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDefaultCuSparseMatrixDescriptor()">getDefaultCuSparseMatrixDescriptor</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isUltraSparse(int,int)">isUltraSparse</a></span>&#8203;(int&nbsp;rows,
              int&nbsp;cols)</code></th>
@@ -328,25 +336,25 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Check for ultra sparsity</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>jcuda.Pointer</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toColumnMajorDenseMatrix(jcuda.jcusparse.cusparseHandle,jcuda.jcublas.cublasHandle,int,int,java.lang.String)">toColumnMajorDenseMatrix</a></span>&#8203;(jcuda.jcusparse.cusparseHandle&nbsp;cusparseHandle,
                         jcuda.jcublas.cublasHandle&nbsp;cublasHandle,
                         int&nbsp;rows,
                         int&nbsp;cols,
-                        <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
+                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
 <td class="colLast">
 <div class="block">Copies this CSR matrix on the GPU to a dense column-major matrix
  on the GPU.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toIntExact(long)">toIntExact</a></span>&#8203;(long&nbsp;l)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<tr id="i14" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -355,8 +363,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -593,6 +601,28 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
+<a id="allocateEmpty(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,long,long,boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>allocateEmpty</h4>
+<pre class="methodSignature">public static&nbsp;<a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a>&nbsp;allocateEmpty&#8203;(<a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
+                                       long&nbsp;nnz2,
+                                       long&nbsp;rows,
+                                       boolean&nbsp;initialize)</pre>
+<div class="block">Factory method to allocate an empty CSR Sparse matrix on the GPU</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>gCtx</code> - a valid <a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUContext</code></a></dd>
+<dd><code>nnz2</code> - number of non-zeroes</dd>
+<dd><code>rows</code> - number of rows</dd>
+<dd><code>initialize</code> - memset to zero?</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a <a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>CSRPointer</code></a> instance that encapsulates the CSR matrix on GPU</dd>
+</dl>
+</li>
+</ul>
 <a id="allocateEmpty(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,long,long)">
 <!--   -->
 </a>
@@ -602,15 +632,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre class="methodSignature">public static&nbsp;<a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a>&nbsp;allocateEmpty&#8203;(<a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
                                        long&nbsp;nnz2,
                                        long&nbsp;rows)</pre>
-<div class="block">Factory method to allocate an empty CSR Sparse matrix on the GPU</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>gCtx</code> - a valid <a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUContext</code></a></dd>
-<dd><code>nnz2</code> - number of non-zeroes</dd>
-<dd><code>rows</code> - number of rows</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>a <a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>CSRPointer</code></a> instance that encapsulates the CSR matrix on GPU</dd>
-</dl>
 </li>
 </ul>
 <a id="clone(int)">
@@ -650,7 +671,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                               jcuda.jcublas.cublasHandle&nbsp;cublasHandle,
                                               int&nbsp;rows,
                                               int&nbsp;cols,
-                                              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</pre>
+                                              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</pre>
 <div class="block">Copies this CSR matrix on the GPU to a dense column-major matrix
  on the GPU. This is a temporary matrix for operations such as
  cusparseDcsrmv.
@@ -698,10 +719,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockListLast">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -774,7 +795,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

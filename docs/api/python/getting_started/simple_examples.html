@@ -185,7 +185,7 @@
 <div class="section" id="matrix-operations">
 <h2>Matrix Operations<a class="headerlink" href="#matrix-operations" title="Permalink to this headline">¶</a></h2>
 <p>Making use of SystemDS, let us multiply an Matrix with an scalar:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import SystemDSContext</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="c1"># Create a context and if necessary (no SystemDS py4j instance running)</span>
 <span class="c1"># it starts a subprocess which does the execution in SystemDS</span>
@@ -198,23 +198,21 @@
     <span class="c1"># Do the calculation in SystemDS by calling compute().</span>
     <span class="c1"># The returned value is an numpy array that can be directly printed.</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">m_res</span><span class="o">.</span><span class="n">compute</span><span class="p">())</span>
-<span class="c1"># context will automatically be closed and process stopped</span>
+    <span class="c1"># context will automatically be closed and process stopped</span>
 </pre></div>
 </div>
 <p>As output we get</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span> <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span><span class="p">]</span>
- <span class="p">[</span> <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span><span class="p">]</span>
- <span class="p">[</span> <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span><span class="p">]</span>
- <span class="p">[</span> <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span><span class="p">]</span>
- <span class="p">[</span> <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span>  <span class="mf">13.02</span><span class="p">]]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span><span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span><span class="p">]</span>
+ <span class="p">[</span><span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span><span class="p">]</span>
+ <span class="p">[</span><span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span><span class="p">]</span>
+ <span class="p">[</span><span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span><span class="p">]</span>
+ <span class="p">[</span><span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span> <span class="mf">13.02</span><span class="p">]]</span>
 </pre></div>
 </div>
 <p>The Python SystemDS package is compatible with numpy arrays.
 Let us do a quick element-wise matrix multiplication of numpy arrays with SystemDS.
 Remember to first start up a new terminal:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>  <span class="c1"># import numpy</span>
-
-<span class="c1"># Import SystemDSContext</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 
 <span class="c1"># create a random array</span>
@@ -238,7 +236,7 @@ Remember to first start up a new terminal:</p>
 <h2>More complex operations<a class="headerlink" href="#more-complex-operations" title="Permalink to this headline">¶</a></h2>
 <p>SystemDS provides algorithm level functions as built-in functions to simplify development.
 One example of this is l2SVM, a high level functions for Data-Scientists. Let’s take a look at l2svm:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import numpy and SystemDS</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import numpy and SystemDS</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">l2svm</span>
@@ -247,7 +245,8 @@ One example of this is l2SVM, a high level functions for Data-Scientists. Let’
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="c1"># Generate random features and labels in numpy</span>
 <span class="c1"># This can easily be exchanged with a data set.</span>
-<span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.01</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+<span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+    <span class="mi">100</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.01</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
 <span class="n">features</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 
@@ -258,12 +257,13 @@ One example of this is l2SVM, a high level functions for Data-Scientists. Let’
 
 <span class="c1"># compute our model</span>
 <span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
-    <span class="n">model</span> <span class="o">=</span> <span class="n">l2svm</span><span class="p">(</span><span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">features</span><span class="p">),</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">labels</span><span class="p">))</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">l2svm</span><span class="p">(</span><span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">features</span><span class="p">),</span>
+                  <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">labels</span><span class="p">))</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The output should be similar to</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span> <span class="mf">0.02033445</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span> <span class="mf">0.02033445</span><span class="p">]</span>
  <span class="p">[</span><span class="o">-</span><span class="mf">0.00324092</span><span class="p">]</span>
  <span class="p">[</span> <span class="mf">0.0014692</span> <span class="p">]</span>
  <span class="p">[</span> <span class="mf">0.02649209</span><span class="p">]</span>
@@ -275,6 +275,27 @@ One example of this is l2SVM, a high level functions for Data-Scientists. Let’
  <span class="p">[</span><span class="o">-</span><span class="mf">0.03839821</span><span class="p">]]</span>
 </pre></div>
 </div>
+<p>To get the full performance of SystemDS one can modify the script to only use internal functionality,
+instead of using numpy arrays that have to be transfered into systemDS.
+The above script transformed goes like this:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import SystemDS</span>
+<span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">l2svm</span>
+
+<span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
+    <span class="c1"># Generate 10 by 10 matrix with values in range 0 to 100.</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="c1"># Add value to all cells in features</span>
+    <span class="n">features</span> <span class="o">+=</span> <span class="mf">1.1</span>
+    <span class="c1"># Generate labels of all ones and zeros</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sparsity</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">l2svm</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When reading in datasets for processing it is highly recommended that you read from inside systemds using
+sds.read(“file”), since this avoid the transferring of numpy arrays.</p>
 </div>
 </div>
 

@@ -114,12 +114,34 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="FederatedData.FederatedRequestEncoder.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData.FederatedRequestEncoder</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="FederatedLocalData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedLocalData</a></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="FederatedLookupTable.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedLookupTable</a></th>
+<td class="colLast">
+<div class="block">Lookup table mapping from a FedUniqueCoordID (funCID) to an
+ ExecutionContextMap (ECM) so that every coordinator can address federated
+ variables with its own local sequential variable IDs.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <th class="colFirst" scope="row"><a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="FederatedReadCache.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedReadCache</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="FederatedReadCache.ReadCacheEntry.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedReadCache.ReadCacheEntry</a></th>
+<td class="colLast">
+<div class="block">Class representing an entry of the federated read cache.</div>
+</td>
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a></th>
@@ -142,11 +164,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="FederatedWorker.FederatedResponseEncoder.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedWorker.FederatedResponseEncoder</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="FederatedWorkerHandler.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedWorkerHandler</a></th>
 <td class="colLast">
 <div class="block">Note: federated worker handler created for every command; and concurrent parfor threads at coordinator need separate
  execution contexts at the federated sites too</div>
 </td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="FederatedWorkloadAnalyzer.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedWorkloadAnalyzer</a></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></th>
@@ -155,6 +185,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <th class="colFirst" scope="row"><a href="FederationUtils.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationUtils</a></th>
 <td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="MatrixLineagePair.html" title="class in org.apache.sysds.runtime.controlprogram.federated">MatrixLineagePair</a></th>
+<td class="colLast">
+<div class="block">Class to represent the relation between a MatrixObject and the respective
+ LineageItem.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -173,22 +210,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <th class="colFirst" scope="row"><a href="FederatedResponse.ResponseType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse.ResponseType</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="FederationMap.AlignType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.AlignType</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="FederationMap.FPartitioning.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FPartitioning</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="FederationMap.FReplication.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FReplication</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -259,7 +280,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

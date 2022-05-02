@@ -12,11 +12,13 @@ org.apache.sysds.hops.codegen.opt
 org.apache.sysds.hops.codegen.template
 org.apache.sysds.hops.cost
 org.apache.sysds.hops.estim
+org.apache.sysds.hops.fedplanner
 org.apache.sysds.hops.ipa
 org.apache.sysds.hops.recompile
 org.apache.sysds.hops.rewrite
 org.apache.sysds.lops
 org.apache.sysds.lops.compile
+org.apache.sysds.lops.compile.linearization
 org.apache.sysds.parser
 org.apache.sysds.parser.dml
 org.apache.sysds.runtime
@@ -31,6 +33,7 @@ org.apache.sysds.runtime.compress.colgroup.mapping
 org.apache.sysds.runtime.compress.colgroup.offset
 org.apache.sysds.runtime.compress.cost
 org.apache.sysds.runtime.compress.estim
+org.apache.sysds.runtime.compress.estim.encoding
 org.apache.sysds.runtime.compress.estim.sample
 org.apache.sysds.runtime.compress.lib
 org.apache.sysds.runtime.compress.readers
@@ -40,6 +43,8 @@ org.apache.sysds.runtime.controlprogram
 org.apache.sysds.runtime.controlprogram.caching
 org.apache.sysds.runtime.controlprogram.context
 org.apache.sysds.runtime.controlprogram.federated
+org.apache.sysds.runtime.controlprogram.federated.monitoring
+org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers
 org.apache.sysds.runtime.controlprogram.paramserv
 org.apache.sysds.runtime.controlprogram.paramserv.dp
 org.apache.sysds.runtime.controlprogram.paramserv.rpc
@@ -65,6 +70,8 @@ org.apache.sysds.runtime.io.hdf5.message
 org.apache.sysds.runtime.iogen
 org.apache.sysds.runtime.lineage
 org.apache.sysds.runtime.matrix.data
+org.apache.sysds.runtime.matrix.data.sketch
+org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox
 org.apache.sysds.runtime.matrix.operators
 org.apache.sysds.runtime.meta
 org.apache.sysds.runtime.privacy
@@ -77,3 +84,4 @@ org.apache.sysds.runtime.transform.meta
 org.apache.sysds.runtime.transform.tokenize
 org.apache.sysds.runtime.util
 org.apache.sysds.utils
+org.apache.sysds.utils.stats

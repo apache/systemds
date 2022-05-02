@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":9,"i7":6,"i8":6,"i9":10,"i10":10,"i11":6,"i12":10,"i13":6,"i14":6,"i15":6,"i16":6,"i17":6,"i18":6,"i19":6,"i20":6,"i21":10,"i22":10,"i23":6,"i24":6,"i25":6,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":6,"i32":10,"i33":6,"i34":6,"i35":6,"i36":6,"i37":6,"i38":6,"i39":6,"i40":10,"i41":10,"i42":10,"i43":6,"i44":10,"i45":10,"i46":10,"i47":6,"i48":10,"i49":6,"i50":6};
+var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":9,"i7":6,"i8":6,"i9":10,"i10":10,"i11":6,"i12":10,"i13":6,"i14":6,"i15":6,"i16":6,"i17":6,"i18":6,"i19":6,"i20":6,"i21":6,"i22":10,"i23":10,"i24":6,"i25":6,"i26":6,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":6,"i33":10,"i34":6,"i35":6,"i36":6,"i37":6,"i38":6,"i39":6,"i40":6,"i41":10,"i42":10,"i43":10,"i44":6,"i45":10,"i46":10,"i47":10,"i48":6,"i49":10,"i50":6,"i51":6};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.data.DenseBlock</li>
@@ -132,7 +132,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code></dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
@@ -140,8 +140,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dl>
 <hr>
 <pre>public abstract class <span class="typeNameLabel">DenseBlock</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>
-implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>
+implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></pre>
 <div class="block">This DenseBlock is an abstraction for different dense, row-major 
  matrix formats. For efficient dense operations, this API does not
  expose a row but a row-block abstraction, where a block can contain
@@ -291,7 +291,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </td>
 </tr>
 <tr id="i13" class="rowColor">
-<td class="colFirst"><code>abstract <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<td class="colFirst"><code>abstract <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getString(int%5B%5D)">getString</a></span>&#8203;(int[]&nbsp;ix)</code></th>
 <td class="colLast">
 <div class="block">Get the value of a given cell as a String</div>
@@ -347,27 +347,34 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </td>
 </tr>
 <tr id="i20" class="altColor">
+<td class="colFirst"><code>abstract boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
+<td class="colLast">
+<div class="block">Indicates if the dense block is a specific numeric value type.</div>
+</td>
+</tr>
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#numBlocks()">numBlocks</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of allocated blocks.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#numDims()">numDims</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of dimensions.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#numRows()">numRows</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of rows.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pos(int)">pos</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
@@ -375,7 +382,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  its associated block.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pos(int%5B%5D)">pos</a></span>&#8203;(int[]&nbsp;ix)</code></th>
 <td class="colLast">
@@ -383,7 +390,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  within the associated block.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pos(int,int)">pos</a></span>&#8203;(int&nbsp;r,
    int&nbsp;c)</code></th>
@@ -392,21 +399,21 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  within the associated block.</div>
 </td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset()">reset</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Resets the dense block by deleting non-zero values.</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int%5B%5D)">reset</a></span>&#8203;(int[]&nbsp;dims)</code></th>
 <td class="colLast">
 <div class="block">Resets the dense block by deleting non-zero values.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int%5B%5D,double)">reset</a></span>&#8203;(int[]&nbsp;dims,
      double&nbsp;v)</code></th>
@@ -414,7 +421,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Resets the dense block by deleting non-zeros.</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int)">reset</a></span>&#8203;(int&nbsp;rlen,
      int&nbsp;clen)</code></th>
@@ -422,7 +429,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Resets the dense block by deleting non-zeros.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int%5B%5D)">reset</a></span>&#8203;(int&nbsp;rlen,
      int[]&nbsp;odims)</code></th>
@@ -430,7 +437,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Resets the dense block by deleting non-zeros.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int%5B%5D,double)">reset</a></span>&#8203;(int&nbsp;rlen,
      int[]&nbsp;odims,
@@ -439,7 +446,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Resets the dense block by setting the given value.</div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int,double)">reset</a></span>&#8203;(int&nbsp;rlen,
      int&nbsp;clen,
@@ -448,14 +455,14 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Resets the dense block by setting the given value.</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>abstract <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(double)">set</a></span>&#8203;(double&nbsp;v)</code></th>
 <td class="colLast">
 <div class="block">Set the given value for the entire dense block (fill).</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>abstract <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int%5B%5D,double)">set</a></span>&#8203;(int[]&nbsp;ix,
    double&nbsp;v)</code></th>
@@ -463,7 +470,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>abstract <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int%5B%5D,long)">set</a></span>&#8203;(int[]&nbsp;ix,
    long&nbsp;v)</code></th>
@@ -471,15 +478,15 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>abstract <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int%5B%5D,java.lang.String)">set</a></span>&#8203;(int[]&nbsp;ix,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;v)</code></th>
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;v)</code></th>
 <td class="colLast">
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>abstract <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,double%5B%5D)">set</a></span>&#8203;(int&nbsp;r,
    double[]&nbsp;v)</code></th>
@@ -487,7 +494,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Copy the given vector into the given row.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>abstract <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,int,double)">set</a></span>&#8203;(int&nbsp;r,
    int&nbsp;c,
@@ -496,7 +503,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="block">Set the given value for a given row and column.</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>abstract <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,int,int,int,double)">set</a></span>&#8203;(int&nbsp;rl,
    int&nbsp;ru,
@@ -508,7 +515,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  dense block (fill).</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code><a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,int,int,int,org.apache.sysds.runtime.data.DenseBlock)">set</a></span>&#8203;(int&nbsp;rl,
    int&nbsp;ru,
@@ -520,7 +527,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  index range.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code><a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,org.apache.sysds.runtime.instructions.cp.KahanObject)">set</a></span>&#8203;(int&nbsp;r,
    <a href="../instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a>&nbsp;kbuff)</code></th>
@@ -529,35 +536,35 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  into the given row.</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code><a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(java.lang.String)">set</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;s)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(java.lang.String)">set</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;s)</code></th>
 <td class="colLast">
 <div class="block">Set the given string for the entire dense block (fill).</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code>abstract <a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(org.apache.sysds.runtime.data.DenseBlock)">set</a></span>&#8203;(<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;db)</code></th>
 <td class="colLast">
 <div class="block">Copy the given dense block.</div>
 </td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code><a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(org.apache.sysds.runtime.instructions.cp.KahanObject)">set</a></span>&#8203;(<a href="../instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a>&nbsp;kbuff)</code></th>
 <td class="colLast">
 <div class="block">Copy the given kahan object sum and correction.</div>
 </td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setDims(int%5B%5D)">setDims</a></span>&#8203;(int[]&nbsp;dims)</code></th>
 <td class="colLast">
 <div class="block">Set the dimensions of the dense MatrixBlock.</div>
 </td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size()">size</a></span>()</code></th>
 <td class="colLast">
@@ -565,26 +572,26 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  of all dimensions.</div>
 </td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size(int)">size</a></span>&#8203;(int&nbsp;bix)</code></th>
 <td class="colLast">
 <div class="block">Get the length of the given block.</div>
 </td>
 </tr>
-<tr id="i48" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<tr id="i49" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#values(int)">values</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
 <div class="block">Get the allocated block for the given row.</div>
 </td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i51" class="rowColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#valuesAt(int)">valuesAt</a></span>&#8203;(int&nbsp;bix)</code></th>
 <td class="colLast">
@@ -596,8 +603,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -866,6 +873,22 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if numeric (FP, INT, BOOLEAN)</dd>
+</dl>
+</li>
+</ul>
+<a id="isNumeric(org.apache.sysds.common.Types.ValueType)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isNumeric</h4>
+<pre class="methodSignature">public abstract&nbsp;boolean&nbsp;isNumeric&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</pre>
+<div class="block">Indicates if the dense block is a specific numeric value type.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>vt</code> - value type to check</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if numeric and of value type vt</dd>
 </dl>
 </li>
 </ul>
@@ -1162,7 +1185,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockList">
 <li class="blockList">
 <h4>set</h4>
-<pre class="methodSignature">public&nbsp;<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;set&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;s)</pre>
+<pre class="methodSignature">public&nbsp;<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;set&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;s)</pre>
 <div class="block">Set the given string for the entire dense block (fill). Generally the string will be parsed, except for string
  DenseBlock.</div>
 <dl>
@@ -1351,7 +1374,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList">
 <h4>set</h4>
 <pre class="methodSignature">public abstract&nbsp;<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;set&#8203;(int[]&nbsp;ix,
-                               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;v)</pre>
+                               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;v)</pre>
 <div class="block">Set the specified cell to the given value.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1421,7 +1444,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockList">
 <li class="blockList">
 <h4>getString</h4>
-<pre class="methodSignature">public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getString&#8203;(int[]&nbsp;ix)</pre>
+<pre class="methodSignature">public abstract&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getString&#8203;(int[]&nbsp;ix)</pre>
 <div class="block">Get the value of a given cell as a String</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1453,10 +1476,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockListLast">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -1529,7 +1552,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

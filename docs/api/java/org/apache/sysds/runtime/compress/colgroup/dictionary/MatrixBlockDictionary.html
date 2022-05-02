@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":9,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":9,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":9,"i28":10,"i29":10,"i30":9,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":9,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary</a></li>
@@ -137,7 +137,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code></dd>
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">MatrixBlockDictionary</span>
@@ -166,12 +166,8 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(double%5B%5D,int)">MatrixBlockDictionary</a></span>&#8203;(double[]&nbsp;values,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">MatrixBlockDictionary</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
                      int&nbsp;nCol)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.matrix.data.MatrixBlock)">MatrixBlockDictionary</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -194,15 +190,7 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addMaxAndMin(double%5B%5D,int%5B%5D)">addMaxAndMin</a></span>&#8203;(double[]&nbsp;ret,
-            int[]&nbsp;colIndexes)</code></th>
-<td class="colLast">
-<div class="block">This method adds the max and min values contained in the dictionary to corresponding cells in the ret variable.</div>
-</td>
-</tr>
-<tr id="i1" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addToEntry(org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int,int,int)">addToEntry</a></span>&#8203;(<a href="Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;d,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addToEntry(double%5B%5D,int,int,int)">addToEntry</a></span>&#8203;(double[]&nbsp;v,
           int&nbsp;fr,
           int&nbsp;to,
           int&nbsp;nCol)</code></th>
@@ -210,7 +198,40 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <div class="block">Copies and adds the dictionary entry from this dictionary to the d dictionary</div>
 </td>
 </tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addToEntry(double%5B%5D,int,int,int,int)">addToEntry</a></span>&#8203;(double[]&nbsp;v,
+          int&nbsp;fr,
+          int&nbsp;to,
+          int&nbsp;nCol,
+          int&nbsp;rep)</code></th>
+<td class="colLast">
+<div class="block">copies and adds the dictonary entry from this dictionary yo the d dictionary rep times.</div>
+</td>
+</tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addToEntryVectorized(double%5B%5D,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int)">addToEntryVectorized</a></span>&#8203;(double[]&nbsp;v,
+                    int&nbsp;f1,
+                    int&nbsp;f2,
+                    int&nbsp;f3,
+                    int&nbsp;f4,
+                    int&nbsp;f5,
+                    int&nbsp;f6,
+                    int&nbsp;f7,
+                    int&nbsp;f8,
+                    int&nbsp;t1,
+                    int&nbsp;t2,
+                    int&nbsp;t3,
+                    int&nbsp;t4,
+                    int&nbsp;t5,
+                    int&nbsp;t6,
+                    int&nbsp;t7,
+                    int&nbsp;t8,
+                    int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggregate(double,org.apache.sysds.runtime.functionobjects.Builtin)">aggregate</a></span>&#8203;(double&nbsp;init,
          <a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn)</code></th>
@@ -219,7 +240,7 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
  values contained in the dictionary.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggregateCols(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,int%5B%5D)">aggregateCols</a></span>&#8203;(double[]&nbsp;c,
              <a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
@@ -228,42 +249,85 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <div class="block">Aggregates the columns into the target double array provided.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggregateColsWithReference(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,int%5B%5D,double%5B%5D,boolean)">aggregateColsWithReference</a></span>&#8203;(double[]&nbsp;c,
+                          <a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                          int[]&nbsp;colIndexes,
+                          double[]&nbsp;reference,
+                          boolean&nbsp;def)</code></th>
+<td class="colLast">
+<div class="block">Aggregates the columns into the target double array provided.</div>
+</td>
+</tr>
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>double[]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggregateTuples(org.apache.sysds.runtime.functionobjects.Builtin,int)">aggregateTuples</a></span>&#8203;(<a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
-               int&nbsp;nCol)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggregateRows(org.apache.sysds.runtime.functionobjects.Builtin,int)">aggregateRows</a></span>&#8203;(<a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+             int&nbsp;nCol)</code></th>
 <td class="colLast">
 <div class="block">Aggregate all entries in the rows.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
-<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyBinaryRowOpLeftAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">applyBinaryRowOpLeftAppendNewEntry</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                                  double[]&nbsp;v,
-                                  int[]&nbsp;colIndexes)</code></th>
-<td class="colLast">
-<div class="block">Apply binary row operation on the left side and allocate a new dictionary.</div>
-</td>
-</tr>
-<tr id="i6" class="altColor">
-<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyBinaryRowOpRightAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">applyBinaryRowOpRightAppendNewEntry</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                                   double[]&nbsp;v,
-                                   int[]&nbsp;colIndexes)</code></th>
-<td class="colLast">
-<div class="block">Apply binary row operation on this dictionary on the right side.</div>
-</td>
-</tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOp</a></span>&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
-             double&nbsp;newVal,
-             int&nbsp;numCols)</code></th>
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggregateRowsWithDefault(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithDefault</a></span>&#8203;(<a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                        double[]&nbsp;defaultTuple)</code></th>
 <td class="colLast">
-<div class="block">Applies the scalar operation on the dictionary.</div>
+<div class="block">Aggregate all entries in the rows of the dictionary with a extra cell in the end that contains the aggregate of
+ the given defaultTuple.</div>
 </td>
 </tr>
 <tr id="i8" class="altColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggregateRowsWithReference(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithReference</a></span>&#8203;(<a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                          double[]&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Aggregate all entries in the rows with an offset value reference added.</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggregateWithReference(double,org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D,boolean)">aggregateWithReference</a></span>&#8203;(double&nbsp;init,
+                      <a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                      double[]&nbsp;reference,
+                      boolean&nbsp;def)</code></th>
+<td class="colLast">
+<div class="block">Aggregate all the contained values, with a reference offset.</div>
+</td>
+</tr>
+<tr id="i10" class="altColor">
+<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
+<td class="colLast">
+<div class="block">Allocate a new dictionary and applies the scalar operation on each cell of the to then return the new dictionary.</div>
+</td>
+</tr>
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                          double[]&nbsp;reference,
+                          double[]&nbsp;newReference)</code></th>
+<td class="colLast">
+<div class="block">Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.</div>
+</td>
+</tr>
+<tr id="i12" class="altColor">
+<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyUnaryOp(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">applyUnaryOp</a></span>&#8203;(<a href="../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op)</code></th>
+<td class="colLast">
+<div class="block">Allocate a new dictionary and apply the unary operator on each cell.</div>
+</td>
+</tr>
+<tr id="i13" class="rowColor">
+<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyUnaryOpWithReference(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double%5B%5D,double%5B%5D)">applyUnaryOpWithReference</a></span>&#8203;(<a href="../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                         double[]&nbsp;reference,
+                         double[]&nbsp;newReference)</code></th>
+<td class="colLast">
+<div class="block">Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.</div>
+</td>
+</tr>
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpLeft</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
          double[]&nbsp;v,
@@ -272,8 +336,27 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <div class="block">Apply binary row operation on the left side in place</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
-<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<tr id="i15" class="rowColor">
+<td class="colFirst"><code><a href="Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                      double[]&nbsp;v,
+                      int[]&nbsp;colIndexes,
+                      double[]&nbsp;reference,
+                      double[]&nbsp;newReference)</code></th>
+<td class="colLast">
+<div class="block">Apply the binary operator such that each value is offset by the reference before application.</div>
+</td>
+</tr>
+<tr id="i16" class="altColor">
+<td class="colFirst"><code><a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+          double[]&nbsp;v)</code></th>
+<td class="colLast">
+<div class="block">Apply binary row operation on the right side.</div>
+</td>
+</tr>
+<tr id="i17" class="rowColor">
+<td class="colFirst"><code><a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpRight</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v,
           int[]&nbsp;colIndexes)</code></th>
@@ -281,86 +364,129 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <div class="block">Apply binary row operation on the right side.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i18" class="altColor">
+<td class="colFirst"><code><a href="Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                       double[]&nbsp;v,
+                       int[]&nbsp;colIndexes,
+                       double[]&nbsp;reference,
+                       double[]&nbsp;newReference)</code></th>
+<td class="colLast">
+<div class="block">Apply the binary operator such that each value is offset by the reference before application.</div>
+</td>
+</tr>
+<tr id="i19" class="rowColor">
+<td class="colFirst"><code><a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#centralMoment(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,int)">centralMoment</a></span>&#8203;(<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
+             <a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+             int[]&nbsp;counts,
+             int&nbsp;nRows)</code></th>
+<td class="colLast">
+<div class="block">Central moment function to calculate the central moment of this column group.</div>
+</td>
+</tr>
+<tr id="i20" class="altColor">
+<td class="colFirst"><code><a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#centralMomentWithReference(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithReference</a></span>&#8203;(<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
+                          <a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                          int[]&nbsp;counts,
+                          double&nbsp;reference,
+                          int&nbsp;nRows)</code></th>
+<td class="colLast">
+<div class="block">Central moment function to calculate the central moment of this column group with a reference offset on each
+ tuple.</div>
+</td>
+</tr>
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clone()">clone</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns a deep clone of the dictionary.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
-<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cloneAndExtend(int)">cloneAndExtend</a></span>&#8203;(int&nbsp;len)</code></th>
-<td class="colLast">
-<div class="block">Clone the dictionary, and extend size of the dictionary by a given length</div>
-</td>
-</tr>
-<tr id="i12" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#colProduct(double%5B%5D,int%5B%5D,int%5B%5D)">colProduct</a></span>&#8203;(double[]&nbsp;res,
-          int[]&nbsp;counts,
-          int[]&nbsp;colIndexes)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i13" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#colSum(double%5B%5D,int%5B%5D,int%5B%5D,boolean)">colSum</a></span>&#8203;(double[]&nbsp;c,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#colSum(double%5B%5D,int%5B%5D,int%5B%5D)">colSum</a></span>&#8203;(double[]&nbsp;c,
       int[]&nbsp;counts,
-      int[]&nbsp;colIndexes,
-      boolean&nbsp;square)</code></th>
+      int[]&nbsp;colIndexes)</code></th>
 <td class="colLast">
 <div class="block">Get the column sum of the values contained in the dictionary</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
-<td class="colFirst"><code>double[]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#colSum(int%5B%5D,int)">colSum</a></span>&#8203;(int[]&nbsp;counts,
-      int&nbsp;nCol)</code></th>
+<tr id="i23" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#colSumSq(double%5B%5D,int%5B%5D,int%5B%5D)">colSumSq</a></span>&#8203;(double[]&nbsp;c,
+        int[]&nbsp;counts,
+        int[]&nbsp;colIndexes)</code></th>
 <td class="colLast">
-<div class="block">get the column sum of this dictionary only.</div>
+<div class="block">Get the column sum of the values contained in the dictionary</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i24" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#colSumSqWithReference(double%5B%5D,int%5B%5D,int%5B%5D,double%5B%5D)">colSumSqWithReference</a></span>&#8203;(double[]&nbsp;c,
+                     int[]&nbsp;counts,
+                     int[]&nbsp;colIndexes,
+                     double[]&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Get the column sum of the values contained in the dictionary with an offset reference value added to each cell.</div>
+</td>
+</tr>
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#containsValue(double)">containsValue</a></span>&#8203;(double&nbsp;pattern)</code></th>
 <td class="colLast">
 <div class="block">Detect if the dictionary contains a specific value.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i26" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#containsValueWithReference(double,double%5B%5D)">containsValueWithReference</a></span>&#8203;(double&nbsp;pattern,
+                          double[]&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Detect if the dictionary contains a specific value with reference offset.</div>
+</td>
+</tr>
+<tr id="i27" class="rowColor">
+<td class="colFirst"><code>static <a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createDictionary(double%5B%5D,int)">createDictionary</a></span>&#8203;(double[]&nbsp;values,
+                int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExactSizeOnDisk()">getExactSizeOnDisk</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Calculate the space consumption if the dictionary is stored on disk.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInMemorySize()">getInMemorySize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns the memory usage of the dictionary.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInMemorySize(int,int,double)">getInMemorySize</a></span>&#8203;(int&nbsp;numberValues,
                int&nbsp;numberColumns,
                double&nbsp;sparsity)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code><a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMatrixBlock()">getMatrixBlock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code><a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMBDict(int)">getMBDict</a></span>&#8203;(int&nbsp;nCol)</code></th>
 <td class="colLast">
-<div class="block">Get this dictionary as a matrixBlock dictionary.</div>
+<div class="block">Get this dictionary as a MatrixBlock dictionary.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumberNonZeros(int%5B%5D,int)">getNumberNonZeros</a></span>&#8203;(int[]&nbsp;counts,
                  int&nbsp;nCol)</code></th>
@@ -368,57 +494,77 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <div class="block">Calculate the number of non zeros in the dictionary.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i34" class="altColor">
+<td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumberNonZerosWithReference(int%5B%5D,double%5B%5D,int)">getNumberNonZerosWithReference</a></span>&#8203;(int[]&nbsp;counts,
+                              double[]&nbsp;reference,
+                              int&nbsp;nRows)</code></th>
+<td class="colLast">
+<div class="block">Calculate the number of non zeros in the dictionary.</div>
+</td>
+</tr>
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumberOfValues(int)">getNumberOfValues</a></span>&#8203;(int&nbsp;ncol)</code></th>
 <td class="colLast">
 <div class="block">Get the number of distinct tuples given that the column group has n columns</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<tr id="i36" class="altColor">
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSparsity()">getSparsity</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get the sparsity of the dictionary.</div>
+</td>
+</tr>
+<tr id="i37" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getString(int)">getString</a></span>&#8203;(int&nbsp;colIndexes)</code></th>
 <td class="colLast">
 <div class="block">Get a string representation of the dictionary, that considers the layout of the data.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
-<td class="colFirst"><code>double[]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getTuple(int,int)">getTuple</a></span>&#8203;(int&nbsp;index,
-        int&nbsp;nCol)</code></th>
-<td class="colLast">
-<div class="block">Get the values contained in a specific tuple of the dictionary.</div>
-</td>
-</tr>
-<tr id="i25" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValue(int)">getValue</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">
 <div class="block">Get Specific value contained in the dictionary at index.</div>
 </td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValues()">getValues</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get all the values contained in the dictionary as a linearized double array.</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inplaceScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">inplaceScalarOp</a></span>&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
 <div class="block">Applies the scalar operation on the dictionary.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isLossy()">isLossy</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Specify if the Dictionary is lossy.</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i42" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#multiplyScalar(double,double%5B%5D,int,int,int%5B%5D)">multiplyScalar</a></span>&#8203;(double&nbsp;v,
+              double[]&nbsp;ret,
+              int&nbsp;off,
+              int&nbsp;dictIdx,
+              int[]&nbsp;cols)</code></th>
+<td class="colLast">
+<div class="block">Multiply the v value with the dictionary entry at dictIdx and add it to the ret matrix at the columns specified in
+ the int array.</div>
+</td>
+</tr>
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code><a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preaggValuesFromDense(int,int%5B%5D,int%5B%5D,double%5B%5D,int)">preaggValuesFromDense</a></span>&#8203;(int&nbsp;numVals,
                      int[]&nbsp;colIndexes,
@@ -426,28 +572,44 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
                      double[]&nbsp;b,
                      int&nbsp;cut)</code></th>
 <td class="colLast">
-<div class="block">Pre Aggregate values for right Matrix Multiplication.</div>
+<div class="block">Pre Aggregate values for Right Matrix Multiplication.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
-<td class="colFirst"><code>double</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#product(int%5B%5D,int)">product</a></span>&#8203;(int[]&nbsp;counts,
+<tr id="i44" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#product(double%5B%5D,int%5B%5D,int)">product</a></span>&#8203;(double[]&nbsp;ret,
+       int[]&nbsp;counts,
        int&nbsp;nCol)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i31" class="rowColor">
-<td class="colFirst"><code>static <a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#read(java.io.DataInput)">read</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i32" class="altColor">
-<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reExpandColumns(int)">reExpandColumns</a></span>&#8203;(int&nbsp;max)</code></th>
 <td class="colLast">
-<div class="block">return a new Dictionary that have re expanded all values, based on the entries already contained.</div>
+<div class="block">Calculate the product of the dictionary weighted by counts.</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i45" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#productWithDefault(double%5B%5D,int%5B%5D,double%5B%5D,int)">productWithDefault</a></span>&#8203;(double[]&nbsp;ret,
+                  int[]&nbsp;counts,
+                  double[]&nbsp;def,
+                  int&nbsp;defCount)</code></th>
+<td class="colLast">
+<div class="block">Calculate the product of the dictionary weighted by counts with a default value added .</div>
+</td>
+</tr>
+<tr id="i46" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#productWithReference(double%5B%5D,int%5B%5D,double%5B%5D,int)">productWithReference</a></span>&#8203;(double[]&nbsp;ret,
+                    int[]&nbsp;counts,
+                    double[]&nbsp;reference,
+                    int&nbsp;refCount)</code></th>
+<td class="colLast">
+<div class="block">Calculate the product of the dictionary weighted by counts and offset by reference</div>
+</td>
+</tr>
+<tr id="i47" class="rowColor">
+<td class="colFirst"><code>static <a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#read(java.io.DataInput)">read</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i48" class="altColor">
 <td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replace(double,double,int)">replace</a></span>&#8203;(double&nbsp;pattern,
        double&nbsp;replace,
@@ -456,13 +618,36 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <div class="block">Make a copy of the values, and replace all values that match pattern with replacement value.</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceZeroAndExtend(double,int)">replaceZeroAndExtend</a></span>&#8203;(double&nbsp;replace,
-                    int&nbsp;nCol)</code></th>
-<td class="colLast">&nbsp;</td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceWithReference(double,double,double%5B%5D)">replaceWithReference</a></span>&#8203;(double&nbsp;pattern,
+                    double&nbsp;replace,
+                    double[]&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Make a copy of the values, and replace all values that match pattern with replacement value.</div>
+</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i50" class="altColor">
+<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rexpandCols(int,boolean,boolean,int)">rexpandCols</a></span>&#8203;(int&nbsp;max,
+           boolean&nbsp;ignore,
+           boolean&nbsp;cast,
+           int&nbsp;nCol)</code></th>
+<td class="colLast">
+<div class="block">Rexpand the dictionary (one hot encode)</div>
+</td>
+</tr>
+<tr id="i51" class="rowColor">
+<td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rexpandColsWithReference(int,boolean,boolean,double)">rexpandColsWithReference</a></span>&#8203;(int&nbsp;max,
+                        boolean&nbsp;ignore,
+                        boolean&nbsp;cast,
+                        double&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Rexpand the dictionary (one hot encode)</div>
+</td>
+</tr>
+<tr id="i52" class="altColor">
 <td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#scaleTuples(int%5B%5D,int)">scaleTuples</a></span>&#8203;(int[]&nbsp;scaling,
            int&nbsp;nCol)</code></th>
@@ -470,7 +655,7 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <div class="block">Scale all tuples contained in the dictionary by the scaling factor given in the int list.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i53" class="rowColor">
 <td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sliceOutColumnRange(int,int,int)">sliceOutColumnRange</a></span>&#8203;(int&nbsp;idxStart,
                    int&nbsp;idxEnd,
@@ -479,14 +664,14 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <div class="block">Modify the dictionary by removing columns not within the index range.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i54" class="altColor">
 <td class="colFirst"><code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#subtractTuple(double%5B%5D)">subtractTuple</a></span>&#8203;(double[]&nbsp;tuple)</code></th>
 <td class="colLast">
 <div class="block">Allocate a new dictionary where the tuple given is subtracted from all tuples in the previous dictionary.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i55" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sum(int%5B%5D,int)">sum</a></span>&#8203;(int[]&nbsp;counts,
    int&nbsp;ncol)</code></th>
@@ -494,50 +679,91 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <div class="block">Get the sum of the values contained in the dictionary</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i56" class="altColor">
 <td class="colFirst"><code>double[]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDouble(boolean,int)">sumAllRowsToDouble</a></span>&#8203;(boolean&nbsp;square,
-                  int&nbsp;nrColumns)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDouble(int)">sumAllRowsToDouble</a></span>&#8203;(int&nbsp;nrColumns)</code></th>
 <td class="colLast">
 <div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
-<td class="colFirst"><code>double</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumRow(int,boolean,int)">sumRow</a></span>&#8203;(int&nbsp;k,
-      boolean&nbsp;square,
-      int&nbsp;nrColumns)</code></th>
+<tr id="i57" class="rowColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDoubleSq(int)">sumAllRowsToDoubleSq</a></span>&#8203;(int&nbsp;nrColumns)</code></th>
 <td class="colLast">
-<div class="block">Sum the values at a specific row.</div>
+<div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i58" class="altColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDoubleSqWithDefault(double%5B%5D)">sumAllRowsToDoubleSqWithDefault</a></span>&#8203;(double[]&nbsp;defaultTuple)</code></th>
+<td class="colLast">
+<div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values.</div>
+</td>
+</tr>
+<tr id="i59" class="rowColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDoubleSqWithReference(double%5B%5D)">sumAllRowsToDoubleSqWithReference</a></span>&#8203;(double[]&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values.</div>
+</td>
+</tr>
+<tr id="i60" class="altColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDoubleWithDefault(double%5B%5D)">sumAllRowsToDoubleWithDefault</a></span>&#8203;(double[]&nbsp;defaultTuple)</code></th>
+<td class="colLast">
+<div class="block">Do exactly the same as the sumAllRowsToDouble but also sum the array given to a extra index in the end of the
+ array.</div>
+</td>
+</tr>
+<tr id="i61" class="rowColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDoubleWithReference(double%5B%5D)">sumAllRowsToDoubleWithReference</a></span>&#8203;(double[]&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values with a reference.</div>
+</td>
+</tr>
+<tr id="i62" class="altColor">
 <td class="colFirst"><code>double</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumsq(int%5B%5D,int)">sumsq</a></span>&#8203;(int[]&nbsp;counts,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumSq(int%5B%5D,int)">sumSq</a></span>&#8203;(int[]&nbsp;counts,
      int&nbsp;ncol)</code></th>
 <td class="colLast">
 <div class="block">Get the square sum of the values contained in the dictionary</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<tr id="i63" class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumSqWithReference(int%5B%5D,double%5B%5D)">sumSqWithReference</a></span>&#8203;(int[]&nbsp;counts,
+                  double[]&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Get the square sum of the values contained in the dictionary with a reference offset on each value.</div>
+</td>
+</tr>
+<tr id="i64" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
 <div class="block">Write the dictionary to a DataOutput.</div>
 </td>
 </tr>
 </table>
 <ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.dictionary.<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></h3>
+<code><a href="ADictionary.html#centralMoment(org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,int)">centralMoment</a>, <a href="ADictionary.html#centralMomentWithReference(org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithReference</a>, <a href="ADictionary.html#colProduct(double%5B%5D,int%5B%5D,int%5B%5D)">colProduct</a></code></li>
+</ul>
+<ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -555,23 +781,14 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(double[],int)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>MatrixBlockDictionary</h4>
-<pre>public&nbsp;MatrixBlockDictionary&#8203;(double[]&nbsp;values,
-                             int&nbsp;nCol)</pre>
-</li>
-</ul>
-<a id="&lt;init&gt;(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<a id="&lt;init&gt;(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>MatrixBlockDictionary</h4>
-<pre>public&nbsp;MatrixBlockDictionary&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data)</pre>
+<pre>public&nbsp;MatrixBlockDictionary&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+                             int&nbsp;nCol)</pre>
 </li>
 </ul>
 </li>
@@ -584,6 +801,16 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="createDictionary(double[],int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>createDictionary</h4>
+<pre class="methodSignature">public static&nbsp;<a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a>&nbsp;createDictionary&#8203;(double[]&nbsp;values,
+                                                     int&nbsp;nCol)</pre>
+</li>
+</ul>
 <a id="getMatrixBlock()">
 <!--   -->
 </a>
@@ -679,22 +906,90 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </dl>
 </li>
 </ul>
-<a id="aggregateTuples(org.apache.sysds.runtime.functionobjects.Builtin,int)">
+<a id="aggregateWithReference(double,org.apache.sysds.runtime.functionobjects.Builtin,double[],boolean)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>aggregateTuples</h4>
-<pre class="methodSignature">public&nbsp;double[]&nbsp;aggregateTuples&#8203;(<a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
-                                int&nbsp;nCol)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#aggregateTuples(org.apache.sysds.runtime.functionobjects.Builtin,int)">ADictionary</a></code></span></div>
+<h4>aggregateWithReference</h4>
+<pre class="methodSignature">public&nbsp;double&nbsp;aggregateWithReference&#8203;(double&nbsp;init,
+                                     <a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                                     double[]&nbsp;reference,
+                                     boolean&nbsp;def)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#aggregateWithReference(double,org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D,boolean)">ADictionary</a></code></span></div>
+<div class="block">Aggregate all the contained values, with a reference offset.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#aggregateWithReference(double,org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D,boolean)">aggregateWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>init</code> - The initial value, in cases such as Max value this could be -infinity.</dd>
+<dd><code>fn</code> - The function to apply to the values</dd>
+<dd><code>reference</code> - The reference offset to each value in the dictionary</dd>
+<dd><code>def</code> - If the reference should be treated as an instance of only as reference</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The aggregated value as a double.</dd>
+</dl>
+</li>
+</ul>
+<a id="aggregateRows(org.apache.sysds.runtime.functionobjects.Builtin,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>aggregateRows</h4>
+<pre class="methodSignature">public&nbsp;double[]&nbsp;aggregateRows&#8203;(<a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                              int&nbsp;nCol)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#aggregateRows(org.apache.sysds.runtime.functionobjects.Builtin,int)">ADictionary</a></code></span></div>
 <div class="block">Aggregate all entries in the rows.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#aggregateTuples(org.apache.sysds.runtime.functionobjects.Builtin,int)">aggregateTuples</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#aggregateRows(org.apache.sysds.runtime.functionobjects.Builtin,int)">aggregateRows</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>fn</code> - The aggregate function</dd>
 <dd><code>nCol</code> - The number of columns contained in the dictionary.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>Aggregates for this dictionary tuples.</dd>
+</dl>
+</li>
+</ul>
+<a id="aggregateRowsWithDefault(org.apache.sysds.runtime.functionobjects.Builtin,double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>aggregateRowsWithDefault</h4>
+<pre class="methodSignature">public&nbsp;double[]&nbsp;aggregateRowsWithDefault&#8203;(<a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                                         double[]&nbsp;defaultTuple)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#aggregateRowsWithDefault(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Aggregate all entries in the rows of the dictionary with a extra cell in the end that contains the aggregate of
+ the given defaultTuple.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#aggregateRowsWithDefault(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithDefault</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>fn</code> - The aggregate function</dd>
+<dd><code>defaultTuple</code> - The default tuple to aggregate in last cell</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>Aggregates for this dictionary tuples.</dd>
+</dl>
+</li>
+</ul>
+<a id="aggregateRowsWithReference(org.apache.sysds.runtime.functionobjects.Builtin,double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>aggregateRowsWithReference</h4>
+<pre class="methodSignature">public&nbsp;double[]&nbsp;aggregateRowsWithReference&#8203;(<a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                                           double[]&nbsp;reference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#aggregateRowsWithReference(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Aggregate all entries in the rows with an offset value reference added.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#aggregateRowsWithReference(org.apache.sysds.runtime.functionobjects.Builtin,double%5B%5D)">aggregateRowsWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>fn</code> - The aggregate function</dd>
+<dd><code>reference</code> - The reference offset to each value in the dictionary</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>Aggregates for this dictionary tuples.</dd>
 </dl>
@@ -722,6 +1017,120 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </dl>
 </li>
 </ul>
+<a id="aggregateColsWithReference(double[],org.apache.sysds.runtime.functionobjects.Builtin,int[],double[],boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>aggregateColsWithReference</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;aggregateColsWithReference&#8203;(double[]&nbsp;c,
+                                       <a href="../../../functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a>&nbsp;fn,
+                                       int[]&nbsp;colIndexes,
+                                       double[]&nbsp;reference,
+                                       boolean&nbsp;def)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#aggregateColsWithReference(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,int%5B%5D,double%5B%5D,boolean)">ADictionary</a></code></span></div>
+<div class="block">Aggregates the columns into the target double array provided.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#aggregateColsWithReference(double%5B%5D,org.apache.sysds.runtime.functionobjects.Builtin,int%5B%5D,double%5B%5D,boolean)">aggregateColsWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>c</code> - The target double array, this contains the full number of columns, therefore the colIndexes for
+                   this specific dictionary is needed.</dd>
+<dd><code>fn</code> - The function to apply to individual columns</dd>
+<dd><code>colIndexes</code> - The mapping to the target columns from the individual columns</dd>
+<dd><code>reference</code> - The reference offset values to add to each cell.</dd>
+<dd><code>def</code> - If the reference should be treated as a tuple as well</dd>
+</dl>
+</li>
+</ul>
+<a id="applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>applyScalarOp</h4>
+<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;applyScalarOp&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">ADictionary</a></code></span></div>
+<div class="block">Allocate a new dictionary and applies the scalar operation on each cell of the to then return the new dictionary.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - The operator.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The new dictionary to return.</dd>
+</dl>
+</li>
+</ul>
+<a id="applyUnaryOp(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>applyUnaryOp</h4>
+<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;applyUnaryOp&#8203;(<a href="../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#applyUnaryOp(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">ADictionary</a></code></span></div>
+<div class="block">Allocate a new dictionary and apply the unary operator on each cell.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#applyUnaryOp(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">applyUnaryOp</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - the operator.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The new dictionary to return.</dd>
+</dl>
+</li>
+</ul>
+<a id="applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double[],double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>applyScalarOpWithReference</h4>
+<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;applyScalarOpWithReference&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                                              double[]&nbsp;reference,
+                                              double[]&nbsp;newReference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.
+ 
+ outValues[j] = op(this.values[j] + reference[i]) - newReference[i]</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - The operator to apply to each cell.</dd>
+<dd><code>reference</code> - The reference value to add before the operator.</dd>
+<dd><code>newReference</code> - The reference value to subtract after the operator.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A New Dictionary.</dd>
+</dl>
+</li>
+</ul>
+<a id="applyUnaryOpWithReference(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double[],double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>applyUnaryOpWithReference</h4>
+<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;applyUnaryOpWithReference&#8203;(<a href="../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                                             double[]&nbsp;reference,
+                                             double[]&nbsp;newReference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#applyUnaryOpWithReference(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double%5B%5D,double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.
+ 
+ outValues[j] = op(this.values[j] + reference[i]) - newReference[i]</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#applyUnaryOpWithReference(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double%5B%5D,double%5B%5D)">applyUnaryOpWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - The unary operator to apply to each cell.</dd>
+<dd><code>reference</code> - The reference value to add before the operator.</dd>
+<dd><code>newReference</code> - The reference value to subtract after the operator.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A New Dictionary.</dd>
+</dl>
+</li>
+</ul>
 <a id="inplaceScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">
 <!--   -->
 </a>
@@ -739,30 +1148,6 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <dd><code>op</code> - The operator to apply to the dictionary values.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>this dictionary with modified values.</dd>
-</dl>
-</li>
-</ul>
-<a id="applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>applyScalarOp</h4>
-<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;applyScalarOp&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
-                                 double&nbsp;newVal,
-                                 int&nbsp;numCols)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">ADictionary</a></code></span></div>
-<div class="block">Applies the scalar operation on the dictionary. The returned dictionary should contain a new instance of the
- underlying data. Therefore it will not modify the previous object.</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOp</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>op</code> - The operator to apply to the dictionary values.</dd>
-<dd><code>newVal</code> - The value to append to the dictionary.</dd>
-<dd><code>numCols</code> - The number of columns stored in the dictionary.</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>Another dictionary with modified values.</dd>
 </dl>
 </li>
 </ul>
@@ -789,28 +1174,33 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </dl>
 </li>
 </ul>
-<a id="applyBinaryRowOpLeftAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double[],int[])">
+<a id="binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double[],int[],double[],double[])">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>applyBinaryRowOpLeftAppendNewEntry</h4>
-<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;applyBinaryRowOpLeftAppendNewEntry&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                                                      double[]&nbsp;v,
-                                                      int[]&nbsp;colIndexes)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#applyBinaryRowOpLeftAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">ADictionary</a></code></span></div>
-<div class="block">Apply binary row operation on the left side and allocate a new dictionary.
+<h4>binOpLeftWithReference</h4>
+<pre class="methodSignature">public&nbsp;<a href="Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;binOpLeftWithReference&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                                         double[]&nbsp;v,
+                                         int[]&nbsp;colIndexes,
+                                         double[]&nbsp;reference,
+                                         double[]&nbsp;newReference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Apply the binary operator such that each value is offset by the reference before application. Then put the result
+ into the new dictionary, but offset it by the new reference.
  
- While adding a new tuple, where the operation is applied with zero values.</div>
+ outValues[j] = op(v[colIndexes[i]], this.values[j] + reference[i]) - newReference[i]</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#applyBinaryRowOpLeftAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">applyBinaryRowOpLeftAppendNewEntry</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>op</code> - The operation to this dictionary</dd>
-<dd><code>v</code> - The values to use on the left hand side.</dd>
-<dd><code>colIndexes</code> - The column indexes to consider inside v.</dd>
+<dd><code>op</code> - The operation to apply on the dictionary values.</dd>
+<dd><code>v</code> - The values to use on the left side of the operator.</dd>
+<dd><code>colIndexes</code> - The column indexes to use.</dd>
+<dd><code>reference</code> - The reference value to add before operator.</dd>
+<dd><code>newReference</code> - The reference value to subtract after operator.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>A new dictionary containing the updated values.</dd>
+<dd>A new dictionary.</dd>
 </dl>
 </li>
 </ul>
@@ -820,9 +1210,9 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <ul class="blockList">
 <li class="blockList">
 <h4>binOpRight</h4>
-<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;binOpRight&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                              double[]&nbsp;v,
-                              int[]&nbsp;colIndexes)</pre>
+<pre class="methodSignature">public&nbsp;<a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a>&nbsp;binOpRight&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                                        double[]&nbsp;v,
+                                        int[]&nbsp;colIndexes)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">ADictionary</a></code></span></div>
 <div class="block">Apply binary row operation on the right side.</div>
 <dl>
@@ -837,26 +1227,54 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </dl>
 </li>
 </ul>
-<a id="applyBinaryRowOpRightAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double[],int[])">
+<a id="binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double[])">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>applyBinaryRowOpRightAppendNewEntry</h4>
-<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;applyBinaryRowOpRightAppendNewEntry&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                                                       double[]&nbsp;v,
-                                                       int[]&nbsp;colIndexes)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#applyBinaryRowOpRightAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">ADictionary</a></code></span></div>
-<div class="block">Apply binary row operation on this dictionary on the right side.</div>
+<h4>binOpRight</h4>
+<pre class="methodSignature">public&nbsp;<a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a>&nbsp;binOpRight&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                                        double[]&nbsp;v)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Apply binary row operation on the right side.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#applyBinaryRowOpRightAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">applyBinaryRowOpRightAppendNewEntry</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>op</code> - The operation to this dictionary</dd>
-<dd><code>v</code> - The values to use on the right hand side.</dd>
-<dd><code>colIndexes</code> - The column indexes to consider inside v.</dd>
+<dd><code>v</code> - The values to apply on the dictionary (same number of cols as the dictionary)</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A new dictionary containing the updated values.</dd>
+</dl>
+</li>
+</ul>
+<a id="binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double[],int[],double[],double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>binOpRightWithReference</h4>
+<pre class="methodSignature">public&nbsp;<a href="Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;binOpRightWithReference&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                                          double[]&nbsp;v,
+                                          int[]&nbsp;colIndexes,
+                                          double[]&nbsp;reference,
+                                          double[]&nbsp;newReference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Apply the binary operator such that each value is offset by the reference before application. Then put the result
+ into the new dictionary, but offset it by the new reference.
+ 
+ outValues[j] = op(this.values[j] + reference[i], v[colIndexes[i]]) - newReference[i]</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - The operation to apply on the dictionary values.</dd>
+<dd><code>v</code> - The values to use on the right side of the operator.</dd>
+<dd><code>colIndexes</code> - The column indexes to use.</dd>
+<dd><code>reference</code> - The reference value to add before operator.</dd>
+<dd><code>newReference</code> - The reference value to subtract after operator.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A new dictionary.</dd>
 </dl>
 </li>
 </ul>
@@ -872,25 +1290,6 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="ADictionary.html#clone()">clone</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
-</dl>
-</li>
-</ul>
-<a id="cloneAndExtend(int)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>cloneAndExtend</h4>
-<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;cloneAndExtend&#8203;(int&nbsp;len)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#cloneAndExtend(int)">ADictionary</a></code></span></div>
-<div class="block">Clone the dictionary, and extend size of the dictionary by a given length</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#cloneAndExtend(int)">cloneAndExtend</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>len</code> - The length to extend the dictionary, it is assumed this value is positive.</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>a clone of the dictionary, extended by len.</dd>
 </dl>
 </li>
 </ul>
@@ -930,74 +1329,127 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </dl>
 </li>
 </ul>
-<a id="sumAllRowsToDouble(boolean,int)">
+<a id="sumAllRowsToDouble(int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>sumAllRowsToDouble</h4>
-<pre class="methodSignature">public&nbsp;double[]&nbsp;sumAllRowsToDouble&#8203;(boolean&nbsp;square,
-                                   int&nbsp;nrColumns)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#sumAllRowsToDouble(boolean,int)">ADictionary</a></code></span></div>
+<pre class="methodSignature">public&nbsp;double[]&nbsp;sumAllRowsToDouble&#8203;(int&nbsp;nrColumns)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#sumAllRowsToDouble(int)">ADictionary</a></code></span></div>
 <div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values.
  
  Note if the number of columns is one the actual dictionaries values are simply returned.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#sumAllRowsToDouble(boolean,int)">sumAllRowsToDouble</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#sumAllRowsToDouble(int)">sumAllRowsToDouble</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>square</code> - If each entry should be squared.</dd>
 <dd><code>nrColumns</code> - The number of columns in the ColGroup to know how to get the values from the dictionary.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>a double array containing the row sums from this dictionary.</dd>
 </dl>
 </li>
 </ul>
-<a id="sumRow(int,boolean,int)">
+<a id="sumAllRowsToDoubleWithDefault(double[])">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>sumRow</h4>
-<pre class="methodSignature">public&nbsp;double&nbsp;sumRow&#8203;(int&nbsp;k,
-                     boolean&nbsp;square,
-                     int&nbsp;nrColumns)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#sumRow(int,boolean,int)">ADictionary</a></code></span></div>
-<div class="block">Sum the values at a specific row.</div>
+<h4>sumAllRowsToDoubleWithDefault</h4>
+<pre class="methodSignature">public&nbsp;double[]&nbsp;sumAllRowsToDoubleWithDefault&#8203;(double[]&nbsp;defaultTuple)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#sumAllRowsToDoubleWithDefault(double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Do exactly the same as the sumAllRowsToDouble but also sum the array given to a extra index in the end of the
+ array.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#sumRow(int,boolean,int)">sumRow</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#sumAllRowsToDoubleWithDefault(double%5B%5D)">sumAllRowsToDoubleWithDefault</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>k</code> - The row index to sum</dd>
-<dd><code>square</code> - If each entry should be squared.</dd>
-<dd><code>nrColumns</code> - The number of columns</dd>
+<dd><code>defaultTuple</code> - The default row to sum in the end index returned.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>The sum of the row.</dd>
+<dd>a double array containing the row sums from this dictionary.</dd>
 </dl>
 </li>
 </ul>
-<a id="colSum(int[],int)">
+<a id="sumAllRowsToDoubleWithReference(double[])">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>colSum</h4>
-<pre class="methodSignature">public&nbsp;double[]&nbsp;colSum&#8203;(int[]&nbsp;counts,
-                       int&nbsp;nCol)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#colSum(int%5B%5D,int)">ADictionary</a></code></span></div>
-<div class="block">get the column sum of this dictionary only.</div>
+<h4>sumAllRowsToDoubleWithReference</h4>
+<pre class="methodSignature">public&nbsp;double[]&nbsp;sumAllRowsToDoubleWithReference&#8203;(double[]&nbsp;reference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#sumAllRowsToDoubleWithReference(double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values with a reference.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#colSum(int%5B%5D,int)">colSum</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#sumAllRowsToDoubleWithReference(double%5B%5D)">sumAllRowsToDoubleWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>counts</code> - the counts of the values contained</dd>
-<dd><code>nCol</code> - The number of columns contained in each tuple.</dd>
+<dd><code>reference</code> - The reference values to add to each cell.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the colSums of this column group.</dd>
+<dd>a double array containing the row sums from this dictionary.</dd>
 </dl>
 </li>
 </ul>
-<a id="colSum(double[],int[],int[],boolean)">
+<a id="sumAllRowsToDoubleSq(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>sumAllRowsToDoubleSq</h4>
+<pre class="methodSignature">public&nbsp;double[]&nbsp;sumAllRowsToDoubleSq&#8203;(int&nbsp;nrColumns)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#sumAllRowsToDoubleSq(int)">ADictionary</a></code></span></div>
+<div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values.
+ 
+ Note if the number of columns is one the actual dictionaries values are simply returned.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#sumAllRowsToDoubleSq(int)">sumAllRowsToDoubleSq</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>nrColumns</code> - The number of columns in the ColGroup to know how to get the values from the dictionary.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a double array containing the row sums from this dictionary.</dd>
+</dl>
+</li>
+</ul>
+<a id="sumAllRowsToDoubleSqWithDefault(double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>sumAllRowsToDoubleSqWithDefault</h4>
+<pre class="methodSignature">public&nbsp;double[]&nbsp;sumAllRowsToDoubleSqWithDefault&#8203;(double[]&nbsp;defaultTuple)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#sumAllRowsToDoubleSqWithDefault(double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values. But adds another cell to
+ the return with an extra value that is the sum of the given defaultTuple.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#sumAllRowsToDoubleSqWithDefault(double%5B%5D)">sumAllRowsToDoubleSqWithDefault</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>defaultTuple</code> - The default row to sum in the end index returned.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a double array containing the row sums from this dictionary.</dd>
+</dl>
+</li>
+</ul>
+<a id="sumAllRowsToDoubleSqWithReference(double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>sumAllRowsToDoubleSqWithReference</h4>
+<pre class="methodSignature">public&nbsp;double[]&nbsp;sumAllRowsToDoubleSqWithReference&#8203;(double[]&nbsp;reference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#sumAllRowsToDoubleSqWithReference(double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#sumAllRowsToDoubleSqWithReference(double%5B%5D)">sumAllRowsToDoubleSqWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>reference</code> - The reference values to add to each cell.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a double array containing the row sums from this dictionary.</dd>
+</dl>
+</li>
+</ul>
+<a id="colSum(double[],int[],int[])">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -1005,19 +1457,63 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <h4>colSum</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;colSum&#8203;(double[]&nbsp;c,
                    int[]&nbsp;counts,
-                   int[]&nbsp;colIndexes,
-                   boolean&nbsp;square)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#colSum(double%5B%5D,int%5B%5D,int%5B%5D,boolean)">ADictionary</a></code></span></div>
+                   int[]&nbsp;colIndexes)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#colSum(double%5B%5D,int%5B%5D,int%5B%5D)">ADictionary</a></code></span></div>
 <div class="block">Get the column sum of the values contained in the dictionary</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#colSum(double%5B%5D,int%5B%5D,int%5B%5D,boolean)">colSum</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#colSum(double%5B%5D,int%5B%5D,int%5B%5D)">colSum</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>c</code> - The output array allocated to contain all column groups output.</dd>
 <dd><code>counts</code> - The counts of the individual tuples.</dd>
 <dd><code>colIndexes</code> - The columns indexes of the parent column group, this indicate where to put the column sum into
                    the c output.</dd>
-<dd><code>square</code> - Specify if the values should be squared</dd>
+</dl>
+</li>
+</ul>
+<a id="colSumSq(double[],int[],int[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>colSumSq</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;colSumSq&#8203;(double[]&nbsp;c,
+                     int[]&nbsp;counts,
+                     int[]&nbsp;colIndexes)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#colSumSq(double%5B%5D,int%5B%5D,int%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Get the column sum of the values contained in the dictionary</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#colSumSq(double%5B%5D,int%5B%5D,int%5B%5D)">colSumSq</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>c</code> - The output array allocated to contain all column groups output.</dd>
+<dd><code>counts</code> - The counts of the individual tuples.</dd>
+<dd><code>colIndexes</code> - The columns indexes of the parent column group, this indicate where to put the column sum into
+                   the c output.</dd>
+</dl>
+</li>
+</ul>
+<a id="colSumSqWithReference(double[],int[],int[],double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>colSumSqWithReference</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;colSumSqWithReference&#8203;(double[]&nbsp;c,
+                                  int[]&nbsp;counts,
+                                  int[]&nbsp;colIndexes,
+                                  double[]&nbsp;reference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#colSumSqWithReference(double%5B%5D,int%5B%5D,int%5B%5D,double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Get the column sum of the values contained in the dictionary with an offset reference value added to each cell.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#colSumSqWithReference(double%5B%5D,int%5B%5D,int%5B%5D,double%5B%5D)">colSumSqWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>c</code> - The output array allocated to contain all column groups output.</dd>
+<dd><code>counts</code> - The counts of the individual tuples.</dd>
+<dd><code>colIndexes</code> - The columns indexes of the parent column group, this indicate where to put the column sum into
+                   the c output.</dd>
+<dd><code>reference</code> - The reference values to add to each cell.</dd>
 </dl>
 </li>
 </ul>
@@ -1042,19 +1538,19 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </dl>
 </li>
 </ul>
-<a id="sumsq(int[],int)">
+<a id="sumSq(int[],int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>sumsq</h4>
-<pre class="methodSignature">public&nbsp;double&nbsp;sumsq&#8203;(int[]&nbsp;counts,
+<h4>sumSq</h4>
+<pre class="methodSignature">public&nbsp;double&nbsp;sumSq&#8203;(int[]&nbsp;counts,
                     int&nbsp;ncol)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#sumsq(int%5B%5D,int)">ADictionary</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#sumSq(int%5B%5D,int)">ADictionary</a></code></span></div>
 <div class="block">Get the square sum of the values contained in the dictionary</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#sumsq(int%5B%5D,int)">sumsq</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#sumSq(int%5B%5D,int)">sumSq</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>counts</code> - The counts of the individual tuples</dd>
 <dd><code>ncol</code> - The number of columns contained</dd>
@@ -1063,43 +1559,24 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </dl>
 </li>
 </ul>
-<a id="getString(int)">
+<a id="sumSqWithReference(int[],double[])">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getString&#8203;(int&nbsp;colIndexes)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#getString(int)">ADictionary</a></code></span></div>
-<div class="block">Get a string representation of the dictionary, that considers the layout of the data.</div>
+<h4>sumSqWithReference</h4>
+<pre class="methodSignature">public&nbsp;double&nbsp;sumSqWithReference&#8203;(int[]&nbsp;counts,
+                                 double[]&nbsp;reference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#sumSqWithReference(int%5B%5D,double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Get the square sum of the values contained in the dictionary with a reference offset on each value.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#getString(int)">getString</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#sumSqWithReference(int%5B%5D,double%5B%5D)">sumSqWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>colIndexes</code> - The number of columns in the dictionary.</dd>
+<dd><code>counts</code> - The counts of the individual tuples</dd>
+<dd><code>reference</code> - The reference value</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>A string that is nicer to print.</dd>
-</dl>
-</li>
-</ul>
-<a id="addMaxAndMin(double[],int[])">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>addMaxAndMin</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;addMaxAndMin&#8203;(double[]&nbsp;ret,
-                         int[]&nbsp;colIndexes)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#addMaxAndMin(double%5B%5D,int%5B%5D)">ADictionary</a></code></span></div>
-<div class="block">This method adds the max and min values contained in the dictionary to corresponding cells in the ret variable.
- 
- One use case for this method is the squash operation, to go from an overlapping state to normal compression.</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#addMaxAndMin(double%5B%5D,int%5B%5D)">addMaxAndMin</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>ret</code> - The double array that contains all columns min and max.</dd>
-<dd><code>colIndexes</code> - The column indexes contained in this dictionary.</dd>
+<dd>The square sum scaled by the counts and reference.</dd>
 </dl>
 </li>
 </ul>
@@ -1126,25 +1603,6 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </dl>
 </li>
 </ul>
-<a id="reExpandColumns(int)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>reExpandColumns</h4>
-<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;reExpandColumns&#8203;(int&nbsp;max)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#reExpandColumns(int)">ADictionary</a></code></span></div>
-<div class="block">return a new Dictionary that have re expanded all values, based on the entries already contained.</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#reExpandColumns(int)">reExpandColumns</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>max</code> - The number of output columns possible.</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>The re expanded Dictionary.</dd>
-</dl>
-</li>
-</ul>
 <a id="containsValue(double)">
 <!--   -->
 </a>
@@ -1159,6 +1617,27 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <dd><code><a href="ADictionary.html#containsValue(double)">containsValue</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>pattern</code> - The value to search for</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if the value is contained else false.</dd>
+</dl>
+</li>
+</ul>
+<a id="containsValueWithReference(double,double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>containsValueWithReference</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;containsValueWithReference&#8203;(double&nbsp;pattern,
+                                          double[]&nbsp;reference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#containsValueWithReference(double,double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Detect if the dictionary contains a specific value with reference offset.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#containsValueWithReference(double,double%5B%5D)">containsValueWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>pattern</code> - The pattern/ value to search for</dd>
+<dd><code>reference</code> - The reference double array.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if the value is contained else false.</dd>
 </dl>
@@ -1186,49 +1665,108 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </dl>
 </li>
 </ul>
-<a id="addToEntry(org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int,int,int)">
+<a id="getNumberNonZerosWithReference(int[],double[],int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getNumberNonZerosWithReference</h4>
+<pre class="methodSignature">public&nbsp;long&nbsp;getNumberNonZerosWithReference&#8203;(int[]&nbsp;counts,
+                                           double[]&nbsp;reference,
+                                           int&nbsp;nRows)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#getNumberNonZerosWithReference(int%5B%5D,double%5B%5D,int)">ADictionary</a></code></span></div>
+<div class="block">Calculate the number of non zeros in the dictionary.
+ 
+ Each value in the dictionary should be added to the reference value.
+ 
+ The number of non zeros should be scaled with the given counts.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#getNumberNonZerosWithReference(int%5B%5D,double%5B%5D,int)">getNumberNonZerosWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>counts</code> - The Counts of each dict entry.</dd>
+<dd><code>reference</code> - The reference vector.</dd>
+<dd><code>nRows</code> - The number of rows in the input.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The NonZero Count.</dd>
+</dl>
+</li>
+</ul>
+<a id="addToEntry(double[],int,int,int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>addToEntry</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;addToEntry&#8203;(<a href="Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;d,
+<pre class="methodSignature">public&nbsp;void&nbsp;addToEntry&#8203;(double[]&nbsp;v,
                        int&nbsp;fr,
                        int&nbsp;to,
                        int&nbsp;nCol)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#addToEntry(org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int,int,int)">ADictionary</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#addToEntry(double%5B%5D,int,int,int)">ADictionary</a></code></span></div>
 <div class="block">Copies and adds the dictionary entry from this dictionary to the d dictionary</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#addToEntry(org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int,int,int)">addToEntry</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#addToEntry(double%5B%5D,int,int,int)">addToEntry</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>d</code> - the target dictionary</dd>
+<dd><code>v</code> - the target dictionary (dense double array)</dd>
 <dd><code>fr</code> - the from index</dd>
 <dd><code>to</code> - the to index</dd>
 <dd><code>nCol</code> - the number of columns</dd>
 </dl>
 </li>
 </ul>
-<a id="getTuple(int,int)">
+<a id="addToEntry(double[],int,int,int,int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getTuple</h4>
-<pre class="methodSignature">public&nbsp;double[]&nbsp;getTuple&#8203;(int&nbsp;index,
-                         int&nbsp;nCol)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#getTuple(int,int)">ADictionary</a></code></span></div>
-<div class="block">Get the values contained in a specific tuple of the dictionary.
- 
- If the entire row is zero return null.</div>
+<h4>addToEntry</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;addToEntry&#8203;(double[]&nbsp;v,
+                       int&nbsp;fr,
+                       int&nbsp;to,
+                       int&nbsp;nCol,
+                       int&nbsp;rep)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#addToEntry(double%5B%5D,int,int,int,int)">ADictionary</a></code></span></div>
+<div class="block">copies and adds the dictonary entry from this dictionary yo the d dictionary rep times.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#getTuple(int,int)">getTuple</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#addToEntry(double%5B%5D,int,int,int,int)">addToEntry</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>index</code> - The index where the values are located</dd>
-<dd><code>nCol</code> - The number of columns contained in this dictionary</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>a materialized double array containing the tuple.</dd>
+<dd><code>v</code> - the target dictionary (dense double array)</dd>
+<dd><code>fr</code> - the from index</dd>
+<dd><code>to</code> - the to index</dd>
+<dd><code>nCol</code> - the number of columns</dd>
+<dd><code>rep</code> - the number of repetitions to apply (simply multiply do not loop)</dd>
+</dl>
+</li>
+</ul>
+<a id="addToEntryVectorized(double[],int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>addToEntryVectorized</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;addToEntryVectorized&#8203;(double[]&nbsp;v,
+                                 int&nbsp;f1,
+                                 int&nbsp;f2,
+                                 int&nbsp;f3,
+                                 int&nbsp;f4,
+                                 int&nbsp;f5,
+                                 int&nbsp;f6,
+                                 int&nbsp;f7,
+                                 int&nbsp;f8,
+                                 int&nbsp;t1,
+                                 int&nbsp;t2,
+                                 int&nbsp;t3,
+                                 int&nbsp;t4,
+                                 int&nbsp;t5,
+                                 int&nbsp;t6,
+                                 int&nbsp;t7,
+                                 int&nbsp;t8,
+                                 int&nbsp;nCol)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#addToEntryVectorized(double%5B%5D,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int)">addToEntryVectorized</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -1259,8 +1797,10 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <h4>getMBDict</h4>
 <pre class="methodSignature">public&nbsp;<a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a>&nbsp;getMBDict&#8203;(int&nbsp;nCol)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#getMBDict(int)">ADictionary</a></code></span></div>
-<div class="block">Get this dictionary as a matrixBlock dictionary. This allows us to use optimized kernels coded elsewhere in the
- system, such as matrix multiplication.</div>
+<div class="block">Get this dictionary as a MatrixBlock dictionary. This allows us to use optimized kernels coded elsewhere in the
+ system, such as matrix multiplication.
+ 
+ Return null if the matrix is empty.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="ADictionary.html#getMBDict(int)">getMBDict</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
@@ -1271,16 +1811,35 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </dl>
 </li>
 </ul>
+<a id="getString(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getString</h4>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getString&#8203;(int&nbsp;colIndexes)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#getString(int)">ADictionary</a></code></span></div>
+<div class="block">Get a string representation of the dictionary, that considers the layout of the data.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#getString(int)">getString</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>colIndexes</code> - The number of columns in the dictionary.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A string that is nicer to print.</dd>
+</dl>
+</li>
+</ul>
 <a id="toString()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -1298,7 +1857,7 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="ADictionary.html#scaleTuples(int%5B%5D,int)">scaleTuples</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>scaling</code> - The ammout to multiply the given tuples with</dd>
+<dd><code>scaling</code> - The amount to multiply the given tuples with</dd>
 <dd><code>nCol</code> - The number of columns contained in this column group.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A New dictionary (since we don't want to modify the underlying dictionary)</dd>
@@ -1311,8 +1870,8 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <ul class="blockList">
 <li class="blockList">
 <h4>write</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;write&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)
-           throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;write&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)
+           throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#write(java.io.DataOutput)">ADictionary</a></code></span></div>
 <div class="block">Write the dictionary to a DataOutput.</div>
 <dl>
@@ -1321,7 +1880,7 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>out</code> - the output sink to write the dictionary to.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if the sink fails.</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if the sink fails.</dd>
 </dl>
 </li>
 </ul>
@@ -1331,11 +1890,11 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 <ul class="blockList">
 <li class="blockList">
 <h4>read</h4>
-<pre class="methodSignature">public static&nbsp;<a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a>&nbsp;read&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)
-                                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public static&nbsp;<a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a>&nbsp;read&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)
+                                  throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -1368,7 +1927,7 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
                                                    double[]&nbsp;b,
                                                    int&nbsp;cut)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#preaggValuesFromDense(int,int%5B%5D,int%5B%5D,double%5B%5D,int)">ADictionary</a></code></span></div>
-<div class="block">Pre Aggregate values for right Matrix Multiplication.</div>
+<div class="block">Pre Aggregate values for Right Matrix Multiplication.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="ADictionary.html#preaggValuesFromDense(int,int%5B%5D,int%5B%5D,double%5B%5D,int)">preaggValuesFromDense</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
@@ -1408,46 +1967,242 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </dl>
 </li>
 </ul>
-<a id="replaceZeroAndExtend(double,int)">
+<a id="replaceWithReference(double,double,double[])">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>replaceZeroAndExtend</h4>
-<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;replaceZeroAndExtend&#8203;(double&nbsp;replace,
-                                        int&nbsp;nCol)</pre>
+<h4>replaceWithReference</h4>
+<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;replaceWithReference&#8203;(double&nbsp;pattern,
+                                        double&nbsp;replace,
+                                        double[]&nbsp;reference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#replaceWithReference(double,double,double%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Make a copy of the values, and replace all values that match pattern with replacement value. If needed add a new
+ column index. With reference such that each value in the dict is considered offset by the values contained in the
+ reference.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#replaceZeroAndExtend(double,int)">replaceZeroAndExtend</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#replaceWithReference(double,double,double%5B%5D)">replaceWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>pattern</code> - The value to look for</dd>
+<dd><code>replace</code> - The value to replace the other value with</dd>
+<dd><code>reference</code> - The reference tuple to add to all entries when replacing</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A new Column Group, reusing the index structure but with new values.</dd>
 </dl>
 </li>
 </ul>
-<a id="product(int[],int)">
+<a id="product(double[],int[],int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>product</h4>
-<pre class="methodSignature">public&nbsp;double&nbsp;product&#8203;(int[]&nbsp;counts,
-                      int&nbsp;nCol)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;product&#8203;(double[]&nbsp;ret,
+                    int[]&nbsp;counts,
+                    int&nbsp;nCol)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#product(double%5B%5D,int%5B%5D,int)">ADictionary</a></code></span></div>
+<div class="block">Calculate the product of the dictionary weighted by counts.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#product(int%5B%5D,int)">product</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#product(double%5B%5D,int%5B%5D,int)">product</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ret</code> - The result dense double array (containing one value)</dd>
+<dd><code>counts</code> - The count of individual tuples</dd>
+<dd><code>nCol</code> - Number of columns in the dictionary.</dd>
 </dl>
 </li>
 </ul>
-<a id="colProduct(double[],int[],int[])">
+<a id="productWithDefault(double[],int[],double[],int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>productWithDefault</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;productWithDefault&#8203;(double[]&nbsp;ret,
+                               int[]&nbsp;counts,
+                               double[]&nbsp;def,
+                               int&nbsp;defCount)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#productWithDefault(double%5B%5D,int%5B%5D,double%5B%5D,int)">ADictionary</a></code></span></div>
+<div class="block">Calculate the product of the dictionary weighted by counts with a default value added .</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#productWithDefault(double%5B%5D,int%5B%5D,double%5B%5D,int)">productWithDefault</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ret</code> - The result dense double array (containing one value)</dd>
+<dd><code>counts</code> - The count of individual tuples</dd>
+<dd><code>def</code> - The default tuple</dd>
+<dd><code>defCount</code> - The count of the default tuple</dd>
+</dl>
+</li>
+</ul>
+<a id="productWithReference(double[],int[],double[],int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>productWithReference</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;productWithReference&#8203;(double[]&nbsp;ret,
+                                 int[]&nbsp;counts,
+                                 double[]&nbsp;reference,
+                                 int&nbsp;refCount)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#productWithReference(double%5B%5D,int%5B%5D,double%5B%5D,int)">ADictionary</a></code></span></div>
+<div class="block">Calculate the product of the dictionary weighted by counts and offset by reference</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#productWithReference(double%5B%5D,int%5B%5D,double%5B%5D,int)">productWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ret</code> - The result dense double array (containing one value)</dd>
+<dd><code>counts</code> - The counts of each entry in the dictionary</dd>
+<dd><code>reference</code> - The reference value.</dd>
+<dd><code>refCount</code> - The number of occurences of the ref value.</dd>
+</dl>
+</li>
+</ul>
+<a id="centralMoment(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int[],int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>centralMoment</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;centralMoment&#8203;(<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
+                                   <a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                                   int[]&nbsp;counts,
+                                   int&nbsp;nRows)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#centralMoment(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,int)">ADictionary</a></code></span></div>
+<div class="block">Central moment function to calculate the central moment of this column group. MUST be on a single column
+ dictionary.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#centralMoment(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,int)">centralMoment</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ret</code> - The Central Moment object to be modified and returned</dd>
+<dd><code>fn</code> - The value function to apply</dd>
+<dd><code>counts</code> - The weight of individual tuples</dd>
+<dd><code>nRows</code> - The number of rows in total of the column group</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The central moment Object</dd>
+</dl>
+</li>
+</ul>
+<a id="centralMomentWithReference(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int[],double,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>centralMomentWithReference</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;centralMomentWithReference&#8203;(<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
+                                                <a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                                                int[]&nbsp;counts,
+                                                double&nbsp;reference,
+                                                int&nbsp;nRows)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#centralMomentWithReference(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">ADictionary</a></code></span></div>
+<div class="block">Central moment function to calculate the central moment of this column group with a reference offset on each
+ tuple. MUST be on a single column dictionary.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#centralMomentWithReference(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ret</code> - The Central Moment object to be modified and returned</dd>
+<dd><code>fn</code> - The value function to apply</dd>
+<dd><code>counts</code> - The weight of individual tuples</dd>
+<dd><code>reference</code> - The reference values to offset the tuples with</dd>
+<dd><code>nRows</code> - The number of rows in total of the column group</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The central moment Object</dd>
+</dl>
+</li>
+</ul>
+<a id="rexpandCols(int,boolean,boolean,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>rexpandCols</h4>
+<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;rexpandCols&#8203;(int&nbsp;max,
+                               boolean&nbsp;ignore,
+                               boolean&nbsp;cast,
+                               int&nbsp;nCol)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#rexpandCols(int,boolean,boolean,int)">ADictionary</a></code></span></div>
+<div class="block">Rexpand the dictionary (one hot encode)</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#rexpandCols(int,boolean,boolean,int)">rexpandCols</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>max</code> - the tuple width of the output</dd>
+<dd><code>ignore</code> - If we should ignore zero and negative values</dd>
+<dd><code>cast</code> - If we should cast all double values to whole integer values</dd>
+<dd><code>nCol</code> - The number of columns in the dictionary already (should be 1)</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A new dictionary</dd>
+</dl>
+</li>
+</ul>
+<a id="rexpandColsWithReference(int,boolean,boolean,double)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>rexpandColsWithReference</h4>
+<pre class="methodSignature">public&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;rexpandColsWithReference&#8203;(int&nbsp;max,
+                                            boolean&nbsp;ignore,
+                                            boolean&nbsp;cast,
+                                            double&nbsp;reference)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#rexpandColsWithReference(int,boolean,boolean,double)">ADictionary</a></code></span></div>
+<div class="block">Rexpand the dictionary (one hot encode)</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#rexpandColsWithReference(int,boolean,boolean,double)">rexpandColsWithReference</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>max</code> - the tuple width of the output</dd>
+<dd><code>ignore</code> - If we should ignore zero and negative values</dd>
+<dd><code>cast</code> - If we should cast all double values to whole integer values</dd>
+<dd><code>reference</code> - A reference value to add to all tuples before expanding</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A new dictionary</dd>
+</dl>
+</li>
+</ul>
+<a id="getSparsity()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getSparsity</h4>
+<pre class="methodSignature">public&nbsp;double&nbsp;getSparsity()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#getSparsity()">ADictionary</a></code></span></div>
+<div class="block">Get the sparsity of the dictionary.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="ADictionary.html#getSparsity()">getSparsity</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a sparsity between 0 and 1</dd>
+</dl>
+</li>
+</ul>
+<a id="multiplyScalar(double,double[],int,int,int[])">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>colProduct</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;colProduct&#8203;(double[]&nbsp;res,
-                       int[]&nbsp;counts,
-                       int[]&nbsp;colIndexes)</pre>
+<h4>multiplyScalar</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;multiplyScalar&#8203;(double&nbsp;v,
+                           double[]&nbsp;ret,
+                           int&nbsp;off,
+                           int&nbsp;dictIdx,
+                           int[]&nbsp;cols)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ADictionary.html#multiplyScalar(double,double%5B%5D,int,int,int%5B%5D)">ADictionary</a></code></span></div>
+<div class="block">Multiply the v value with the dictionary entry at dictIdx and add it to the ret matrix at the columns specified in
+ the int array.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ADictionary.html#colProduct(double%5B%5D,int%5B%5D,int%5B%5D)">colProduct</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="ADictionary.html#multiplyScalar(double,double%5B%5D,int,int,int%5B%5D)">multiplyScalar</a></code>&nbsp;in class&nbsp;<code><a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>v</code> - Value to multiply</dd>
+<dd><code>ret</code> - Output dense double array location</dd>
+<dd><code>off</code> - Offset into the ret array that the "row" output starts at</dd>
+<dd><code>dictIdx</code> - The dictionary entry to multiply.</dd>
+<dd><code>cols</code> - The columns to multiply into of the output.</dd>
 </dl>
 </li>
 </ul>
@@ -1520,7 +2275,7 @@ extends <a href="ADictionary.html" title="class in org.apache.sysds.runtime.comp
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

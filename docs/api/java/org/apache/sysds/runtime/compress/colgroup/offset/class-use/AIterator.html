@@ -106,6 +106,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup.offset">org.apache.sysds.runtime.compress.colgroup.offset</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -114,6 +118,91 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section role="region"><a id="org.apache.sysds.runtime.compress.colgroup">
+<!--   -->
+</a>
+<h3>Uses of <a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a> in <a href="../../package-summary.html">org.apache.sysds.runtime.compress.colgroup</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> that return <a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ASDCZero.</span><code><span class="memberNameLink"><a href="../../ASDCZero.html#getIterator(int)">getIterator</a></span>&#8203;(int&nbsp;row)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> with parameters of type <a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ASDCZero.</span><code><span class="memberNameLink"><a href="../../ASDCZero.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int,int,int,org.apache.sysds.runtime.compress.colgroup.offset.AIterator)">decompressToDenseBlock</a></span>&#8203;(<a href="../../../../data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;db,
+                      int&nbsp;rl,
+                      int&nbsp;ru,
+                      int&nbsp;offR,
+                      int&nbsp;offC,
+                      <a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a>&nbsp;it)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ASDCZero.</span><code><span class="memberNameLink"><a href="../../ASDCZero.html#decompressToDenseBlockDenseDictionary(org.apache.sysds.runtime.data.DenseBlock,int,int,int,int,org.apache.sysds.runtime.compress.colgroup.offset.AIterator)">decompressToDenseBlockDenseDictionary</a></span>&#8203;(<a href="../../../../data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;db,
+                                     int&nbsp;rl,
+                                     int&nbsp;ru,
+                                     int&nbsp;offR,
+                                     int&nbsp;offC,
+                                     <a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a>&nbsp;it)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>abstract void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ASDCZero.</span><code><span class="memberNameLink"><a href="../../ASDCZero.html#decompressToDenseBlockDenseDictionaryWithProvidedIterator(org.apache.sysds.runtime.data.DenseBlock,int,int,int,int,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.offset.AIterator)">decompressToDenseBlockDenseDictionaryWithProvidedIterator</a></span>&#8203;(<a href="../../../../data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;db,
+                                                         int&nbsp;rl,
+                                                         int&nbsp;ru,
+                                                         int&nbsp;offR,
+                                                         int&nbsp;offC,
+                                                         double[]&nbsp;values,
+                                                         <a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a>&nbsp;it)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCSingleZeros.</span><code><span class="memberNameLink"><a href="../../ColGroupSDCSingleZeros.html#decompressToDenseBlockDenseDictionaryWithProvidedIterator(org.apache.sysds.runtime.data.DenseBlock,int,int,int,int,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.offset.AIterator)">decompressToDenseBlockDenseDictionaryWithProvidedIterator</a></span>&#8203;(<a href="../../../../data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;db,
+                                                         int&nbsp;rl,
+                                                         int&nbsp;ru,
+                                                         int&nbsp;offR,
+                                                         int&nbsp;offC,
+                                                         double[]&nbsp;values,
+                                                         <a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a>&nbsp;it)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCZeros.</span><code><span class="memberNameLink"><a href="../../ColGroupSDCZeros.html#decompressToDenseBlockDenseDictionaryWithProvidedIterator(org.apache.sysds.runtime.data.DenseBlock,int,int,int,int,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.offset.AIterator)">decompressToDenseBlockDenseDictionaryWithProvidedIterator</a></span>&#8203;(<a href="../../../../data/DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;db,
+                                                         int&nbsp;rl,
+                                                         int&nbsp;ru,
+                                                         int&nbsp;offR,
+                                                         int&nbsp;offC,
+                                                         double[]&nbsp;values,
+                                                         <a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a>&nbsp;it)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section role="region"><a id="org.apache.sysds.runtime.compress.colgroup.offset">
 <!--   -->
@@ -138,7 +227,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>abstract <a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AOffset.</span><code><span class="memberNameLink"><a href="../AOffset.html#getIterator()">getIterator</a></span>()</code></th>
 <td class="colLast">
-<div class="block">Get an iterator of the offsets.</div>
+<div class="block">Get an iterator of the offsets while also maintaining the data index pointer.</div>
 </td>
 </tr>
 <tr class="altColor">
@@ -147,6 +236,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">
 <div class="block">Get an iterator that is pointing at a specific offset.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">OffsetByte.</span><code><span class="memberNameLink"><a href="../OffsetByte.html#getIterator()">getIterator</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">OffsetChar.</span><code><span class="memberNameLink"><a href="../OffsetChar.html#getIterator()">getIterator</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">OffsetSingle.</span><code><span class="memberNameLink"><a href="../OffsetSingle.html#getIterator()">getIterator</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">OffsetTwo.</span><code><span class="memberNameLink"><a href="../OffsetTwo.html#getIterator()">getIterator</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -164,6 +273,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
              int&nbsp;row)</code></th>
 <td class="colLast">
 <div class="block">Cache a iterator in use, note that there is no check for if the iterator is correctly positioned at the given row</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AIterator.</span><code><span class="memberNameLink"><a href="../AIterator.html#equals(org.apache.sysds.runtime.compress.colgroup.offset.AIterator)">equals</a></span>&#8203;(<a href="../AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a>&nbsp;o)</code></th>
+<td class="colLast">
+<div class="block">Unsafe version of equals, note that it should only compare iterators stemming from the same Offset Object.</div>
 </td>
 </tr>
 </tbody>
@@ -220,7 +336,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

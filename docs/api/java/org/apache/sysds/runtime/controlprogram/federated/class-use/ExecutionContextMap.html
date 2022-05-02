@@ -120,16 +120,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a>
 <h3>Uses of <a href="../ExecutionContextMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">ExecutionContextMap</a> in <a href="../package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a></h3>
 <table class="useSummary">
-<caption><span>Constructors in <a href="../package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> with parameters of type <a href="../ExecutionContextMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">ExecutionContextMap</a></span><span class="tabEnd">&nbsp;</span></caption>
+<caption><span>Methods in <a href="../package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> that return <a href="../ExecutionContextMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">ExecutionContextMap</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
-<th class="colFirst" scope="col">Constructor</th>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../FederatedWorkerHandler.html#%3Cinit%3E(org.apache.sysds.runtime.controlprogram.federated.ExecutionContextMap)">FederatedWorkerHandler</a></span>&#8203;(<a href="../ExecutionContextMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">ExecutionContextMap</a>&nbsp;ecm)</code></th>
+<td class="colFirst"><code><a href="../ExecutionContextMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">ExecutionContextMap</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FederatedLookupTable.</span><code><span class="memberNameLink"><a href="../FederatedLookupTable.html#getECM(java.lang.String,long)">getECM</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;host,
+      long&nbsp;pid)</code></th>
 <td class="colLast">
-<div class="block">Create a Federated Worker Handler.</div>
+<div class="block">Get the ExecutionContextMap corresponding to the given host and pid of the
+ requesting coordinator from the lookup table.</div>
 </td>
 </tr>
 </tbody>
@@ -186,7 +190,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

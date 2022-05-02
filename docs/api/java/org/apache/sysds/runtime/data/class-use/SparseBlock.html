@@ -114,6 +114,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup.mapping">org.apache.sysds.runtime.compress.colgroup.mapping</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup.offset">org.apache.sysds.runtime.compress.colgroup.offset</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.caching">org.apache.sysds.runtime.controlprogram.caching</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -196,6 +204,28 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/AColGroup.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int)">decompressToSparseBlock</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                       int&nbsp;rl,
+                       int&nbsp;ru)</code></th>
+<td class="colLast">
+<div class="block">Decompress a range of rows into a sparse block
+ 
+ Note that this is using append, so the sparse column indexes need to be sorted afterwards.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/AColGroup.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                       int&nbsp;rl,
+                       int&nbsp;ru,
+                       int&nbsp;offR,
+                       int&nbsp;offC)</code></th>
+<td class="colLast">
+<div class="block">Decompress into the SparseBlock.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupValue.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/AColGroupValue.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
                        int&nbsp;rl,
                        int&nbsp;ru,
@@ -228,6 +258,103 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                        int&nbsp;ru,
                        int&nbsp;offR,
                        int&nbsp;offC)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>abstract void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">APreAgg.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/APreAgg.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                  double[]&nbsp;preAgg,
+                  int&nbsp;rl,
+                  int&nbsp;ru)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDC.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ColGroupDDC.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                  double[]&nbsp;preAgg,
+                  int&nbsp;rl,
+                  int&nbsp;ru)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCSingleZeros.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ColGroupSDCSingleZeros.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                  double[]&nbsp;preAgg,
+                  int&nbsp;rl,
+                  int&nbsp;ru)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCZeros.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ColGroupSDCZeros.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                  double[]&nbsp;preAgg,
+                  int&nbsp;rl,
+                  int&nbsp;ru)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section role="region"><a id="org.apache.sysds.runtime.compress.colgroup.mapping">
+<!--   -->
+</a>
+<h3>Uses of <a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a> in <a href="../../compress/colgroup/mapping/package-summary.html">org.apache.sysds.runtime.compress.colgroup.mapping</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../compress/colgroup/mapping/package-summary.html">org.apache.sysds.runtime.compress.colgroup.mapping</a> with parameters of type <a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AMapToData.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/mapping/AMapToData.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                  double[]&nbsp;preAV,
+                  int&nbsp;rl,
+                  int&nbsp;ru)</code></th>
+<td class="colLast">
+<div class="block">PreAggregate the sparseblock in the range of rows given.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AMapToData.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/mapping/AMapToData.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int,org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">preAggregateSparse</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                  double[]&nbsp;preAV,
+                  int&nbsp;rl,
+                  int&nbsp;ru,
+                  <a href="../../compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;indexes)</code></th>
+<td class="colLast">
+<div class="block">PreAggregate the SparseBlock in the range of rows given.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section role="region"><a id="org.apache.sysds.runtime.compress.colgroup.offset">
+<!--   -->
+</a>
+<h3>Uses of <a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a> in <a href="../../compress/colgroup/offset/package-summary.html">org.apache.sysds.runtime.compress.colgroup.offset</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../compress/colgroup/offset/package-summary.html">org.apache.sysds.runtime.compress.colgroup.offset</a> with parameters of type <a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AOffset.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/offset/AOffset.html#preAggregateSparseMap(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int,int,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">preAggregateSparseMap</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                     double[]&nbsp;preAV,
+                     int&nbsp;rl,
+                     int&nbsp;ru,
+                     int&nbsp;nVal,
+                     <a href="../../compress/colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -615,7 +742,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

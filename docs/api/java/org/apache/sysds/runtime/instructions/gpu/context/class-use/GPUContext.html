@@ -190,7 +190,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../../../controlprogram/context/ExecutionContext.html#getGPUContexts()">getGPUContexts</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Gets the list of GPUContexts</div>
@@ -208,7 +208,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../../../controlprogram/context/ExecutionContext.html#setGPUContexts(java.util.List)">setGPUContexts</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&gt;&nbsp;gpuContexts)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../../../controlprogram/context/ExecutionContext.html#setGPUContexts(java.util.List)">setGPUContexts</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&gt;&nbsp;gpuContexts)</code></th>
 <td class="colLast">
 <div class="block">Sets the list of GPUContexts</div>
 </td>
@@ -231,7 +231,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&gt;</code></td>
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">GPUContextPool.</span><code><span class="memberNameLink"><a href="../GPUContextPool.html#reserveAllGPUContexts()">reserveAllGPUContexts</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Reserves and gets an initialized list of GPUContexts</div>
@@ -252,11 +252,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">CSRPointer.</span><code><span class="memberNameLink"><a href="../CSRPointer.html#allocateEmpty(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,long,long)">allocateEmpty</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
              long&nbsp;nnz2,
              long&nbsp;rows)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CSRPointer.</span><code><span class="memberNameLink"><a href="../CSRPointer.html#allocateEmpty(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,long,long,boolean)">allocateEmpty</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
+             long&nbsp;nnz2,
+             long&nbsp;rows,
+             boolean&nbsp;initialize)</code></th>
 <td class="colLast">
 <div class="block">Factory method to allocate an empty CSR Sparse matrix on the GPU</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CSRPointer.</span><code><span class="memberNameLink"><a href="../CSRPointer.html#allocateForDgeam(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.jcusparse.cusparseHandle,org.apache.sysds.runtime.instructions.gpu.context.CSRPointer,org.apache.sysds.runtime.instructions.gpu.context.CSRPointer,int,int)">allocateForDgeam</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
                 jcuda.jcusparse.cusparseHandle&nbsp;handle,
@@ -269,7 +277,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  C = a op(A) + b op(B)</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CSRPointer.</span><code><span class="memberNameLink"><a href="../CSRPointer.html#allocateForMatrixMultiply(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.jcusparse.cusparseHandle,org.apache.sysds.runtime.instructions.gpu.context.CSRPointer,int,org.apache.sysds.runtime.instructions.gpu.context.CSRPointer,int,int,int,int)">allocateForMatrixMultiply</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
                          jcuda.jcusparse.cusparseHandle&nbsp;handle,
@@ -285,7 +293,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  and returns the <a href="../CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>CSRPointer</code></a> to C with the appropriate GPU memory.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">GPUObject.</span><code><span class="memberNameLink"><a href="../GPUObject.html#columnMajorDenseToRowMajorSparse(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.jcusparse.cusparseHandle,jcuda.Pointer,int,int)">columnMajorDenseToRowMajorSparse</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
                                 jcuda.jcusparse.cusparseHandle&nbsp;cusparseHandle,
@@ -297,7 +305,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  Since the allocated matrix is temporary, bookkeeping is not updated.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CSRPointer.</span><code><span class="memberNameLink"><a href="../CSRPointer.html#copyToDevice(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,org.apache.sysds.runtime.instructions.gpu.context.CSRPointer,int,long,int%5B%5D,int%5B%5D,double%5B%5D)">copyToDevice</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
             <a href="../CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a>&nbsp;dest,
@@ -310,7 +318,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Static method to copy a CSR sparse matrix from Host to Device</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static jcuda.Pointer</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">GPUObject.</span><code><span class="memberNameLink"><a href="../GPUObject.html#transpose(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.Pointer,int,int,int,int)">transpose</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
          jcuda.Pointer&nbsp;densePtr,
@@ -362,9 +370,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#abs(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">abs</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
    <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
    <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "abs" operation on a matrix on the GPU</div>
 </td>
@@ -373,9 +381,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#acos(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">acos</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "acos" operation on a matrix on the GPU</div>
 </td>
@@ -384,9 +392,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#asin(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">asin</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "asin" operation on a matrix on the GPU</div>
 </td>
@@ -395,9 +403,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#atan(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">atan</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "atan" operation on a matrix on the GPU</div>
 </td>
@@ -406,10 +414,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#axpy(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String,double)">axpy</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in2,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
     double&nbsp;constant)</code></th>
 <td class="colLast">
 <div class="block">Performs daxpy operation</div>
@@ -418,7 +426,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#batchNormalizationBackward(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,double,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject)">batchNormalizationBackward</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                           <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;image,
                           <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;dout,
                           <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;scale,
@@ -435,7 +443,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#batchNormalizationForwardInference(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,double)">batchNormalizationForwardInference</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                                   <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;image,
                                   <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;scale,
                                   <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;bias,
@@ -450,7 +458,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#batchNormalizationForwardTraining(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,double,double,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject)">batchNormalizationForwardTraining</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                                  <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;image,
                                  <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;scale,
                                  <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;bias,
@@ -470,7 +478,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#biasAdd(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject)">biasAdd</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
        <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;input,
        <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;bias,
        <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;outputBlock)</code></th>
@@ -484,7 +492,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#biasMultiply(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject)">biasMultiply</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
             <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;input,
             <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;bias,
             <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;outputBlock)</code></th>
@@ -499,19 +507,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#cbind(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">cbind</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
      <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
      <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
      <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in2,
-     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#ceil(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">ceil</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "ceil" operation on a matrix on the GPU</div>
 </td>
@@ -519,7 +527,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#channelSums(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,long,long)">channelSums</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
            <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;input,
            <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;outputBlock,
            long&nbsp;C,
@@ -540,7 +548,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#conv2d(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int,int,int,int,int,int,int,int,int,int,int,int,int,double)">conv2d</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
       <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;image,
       <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;filter,
       <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;outputBlock,
@@ -565,7 +573,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#conv2dBackwardData(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int,int,int,int,int,int,int,int,int,int,int,int,int,double)">conv2dBackwardData</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                   <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;filter,
                   <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;dout,
                   <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;output,
@@ -590,7 +598,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#conv2dBackwardFilter(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int,int,int,int,int,int,int,int,int,int,int,int,int,double)">conv2dBackwardFilter</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;image,
                     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;dout,
                     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;outputBlock,
@@ -615,7 +623,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#conv2dBiasAdd(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int,int,int,int,int,int,int,int,int,int,int,int,int,double)">conv2dBiasAdd</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
              <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;image,
              <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;bias,
              <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;filter,
@@ -642,9 +650,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#cos(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">cos</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
    <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
    <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "cos" operation on a matrix on the GPU</div>
 </td>
@@ -653,9 +661,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#cosh(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">cosh</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "cosh" operation on a matrix on the GPU</div>
 </td>
@@ -663,7 +671,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../matrix/data/LibMatrixCuDNNConvolutionAlgorithm.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCuDNNConvolutionAlgorithm</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNNConvolutionAlgorithm.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNNConvolutionAlgorithm.html#cudnnGetConvolutionBackwardDataAlgorithm(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,int,int,int,int,int,int,int,int,int,int,int,int,int,long)">cudnnGetConvolutionBackwardDataAlgorithm</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                                        <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                                         int&nbsp;N,
                                         int&nbsp;C,
                                         int&nbsp;H,
@@ -685,7 +693,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../matrix/data/LibMatrixCuDNNConvolutionAlgorithm.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCuDNNConvolutionAlgorithm</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNNConvolutionAlgorithm.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNNConvolutionAlgorithm.html#cudnnGetConvolutionBackwardFilterAlgorithm(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,int,int,int,int,int,int,int,int,int,int,int,int,int,long)">cudnnGetConvolutionBackwardFilterAlgorithm</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                                          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                                           int&nbsp;N,
                                           int&nbsp;C,
                                           int&nbsp;H,
@@ -707,7 +715,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../matrix/data/LibMatrixCuDNNConvolutionAlgorithm.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCuDNNConvolutionAlgorithm</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNNConvolutionAlgorithm.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNNConvolutionAlgorithm.html#cudnnGetConvolutionForwardAlgorithm(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,int,int,int,int,int,int,int,int,int,int,int,int,int,long)">cudnnGetConvolutionForwardAlgorithm</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                                    int&nbsp;N,
                                    int&nbsp;C,
                                    int&nbsp;H,
@@ -729,7 +737,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../matrix/data/LibMatrixCuDNNPoolingDescriptors.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCuDNNPoolingDescriptors</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNNPoolingDescriptors.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNNPoolingDescriptors.html#cudnnPoolingBackwardDescriptors(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,int,int,int,int,int,int,int,int,int,int,int,int,int,org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType)">cudnnPoolingBackwardDescriptors</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                                int&nbsp;N,
                                int&nbsp;C,
                                int&nbsp;H,
@@ -751,7 +759,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../matrix/data/LibMatrixCuDNNPoolingDescriptors.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixCuDNNPoolingDescriptors</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNNPoolingDescriptors.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNNPoolingDescriptors.html#cudnnPoolingDescriptors(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,int,int,int,int,int,int,int,int,int,int,int,int,int,org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType)">cudnnPoolingDescriptors</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                        int&nbsp;N,
                        int&nbsp;C,
                        int&nbsp;H,
@@ -774,10 +782,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#cumulativeScan(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">cumulativeScan</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
               <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;kernelFunction,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;kernelFunction,
               <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Cumulative scan</div>
 </td>
@@ -786,10 +794,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#cumulativeSumProduct(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">cumulativeSumProduct</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;kernelFunction,
+                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;kernelFunction,
                     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Cumulative sum-product kernel cascade invokation</div>
 </td>
@@ -798,7 +806,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#denseTranspose(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,jcuda.Pointer,jcuda.Pointer,long,long)">denseTranspose</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
               <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
               jcuda.Pointer&nbsp;A,
               jcuda.Pointer&nbsp;C,
               long&nbsp;numRowsA,
@@ -812,7 +820,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">CudaSupportFunctions.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/CudaSupportFunctions.html#deviceToHost(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.Pointer,double%5B%5D,java.lang.String,boolean)">deviceToHost</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
             jcuda.Pointer&nbsp;src,
             double[]&nbsp;dest,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
             boolean&nbsp;isEviction)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -821,7 +829,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">DoublePrecisionCudaSupportFunctions.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/DoublePrecisionCudaSupportFunctions.html#deviceToHost(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.Pointer,double%5B%5D,java.lang.String,boolean)">deviceToHost</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
             jcuda.Pointer&nbsp;src,
             double[]&nbsp;dest,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
             boolean&nbsp;isEviction)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -830,7 +838,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">SinglePrecisionCudaSupportFunctions.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/SinglePrecisionCudaSupportFunctions.html#deviceToHost(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.Pointer,double%5B%5D,java.lang.String,boolean)">deviceToHost</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
             jcuda.Pointer&nbsp;src,
             double[]&nbsp;dest,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
             boolean&nbsp;isEviction)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -846,9 +854,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#exp(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">exp</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
    <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
    <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "exp" operation on a matrix on the GPU</div>
 </td>
@@ -865,9 +873,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#floor(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">floor</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
      <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
      <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "floor" operation on a matrix on the GPU</div>
 </td>
@@ -881,7 +889,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static jcuda.Pointer</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#getDensePointer(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">getDensePointer</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
                <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;input,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
 <td class="colLast">
 <div class="block">Convenience method to get jcudaDenseMatrixPtr.</div>
 </td>
@@ -890,7 +898,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static jcuda.Pointer</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#getDensePointerForCuDNN(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String,int,int)">getDensePointerForCuDNN</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
                        <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;image,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                        int&nbsp;numRows,
                        int&nbsp;numCols)</code></th>
 <td class="colLast">
@@ -900,7 +908,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#getNnz(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,boolean)">getNnz</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
       <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo,
       boolean&nbsp;recomputeDenseNNZ)</code></th>
 <td class="colLast">
@@ -912,7 +920,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">CudaSupportFunctions.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/CudaSupportFunctions.html#hostToDevice(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,double%5B%5D,jcuda.Pointer,java.lang.String)">hostToDevice</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
             double[]&nbsp;src,
             jcuda.Pointer&nbsp;dest,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -920,7 +928,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">DoublePrecisionCudaSupportFunctions.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/DoublePrecisionCudaSupportFunctions.html#hostToDevice(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,double%5B%5D,jcuda.Pointer,java.lang.String)">hostToDevice</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
             double[]&nbsp;src,
             jcuda.Pointer&nbsp;dest,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -928,7 +936,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">SinglePrecisionCudaSupportFunctions.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/SinglePrecisionCudaSupportFunctions.html#hostToDevice(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,double%5B%5D,jcuda.Pointer,java.lang.String)">hostToDevice</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
             double[]&nbsp;src,
             jcuda.Pointer&nbsp;dest,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -941,9 +949,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#log(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">log</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
    <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
    <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "log" operation on a matrix on the GPU</div>
 </td>
@@ -952,14 +960,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#lstm(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,jcuda.Pointer,jcuda.Pointer,jcuda.Pointer,jcuda.Pointer,boolean,java.lang.String,java.lang.String,int,int,int,int)">lstm</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     jcuda.Pointer&nbsp;X,
     jcuda.Pointer&nbsp;wPointer,
     jcuda.Pointer&nbsp;out0,
     jcuda.Pointer&nbsp;c0,
     boolean&nbsp;return_sequences,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;cyName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;cyName,
     int&nbsp;N,
     int&nbsp;M,
     int&nbsp;D,
@@ -972,18 +980,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#lstmBackward(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,jcuda.Pointer,jcuda.Pointer,jcuda.Pointer,jcuda.Pointer,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,boolean,int,int,int,int)">lstmBackward</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
             <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
             jcuda.Pointer&nbsp;x,
             jcuda.Pointer&nbsp;hx,
             jcuda.Pointer&nbsp;cx,
             jcuda.Pointer&nbsp;wPointer,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;doutName,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dcyName,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dxName,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dwName,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dbName,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dhxName,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dcxName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;doutName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dcyName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dxName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dwName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dbName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dhxName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;dcxName,
             boolean&nbsp;return_sequences,
             int&nbsp;N,
             int&nbsp;M,
@@ -995,10 +1003,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuMatMult.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuMatMult.html#matmult(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String,boolean,boolean)">matmult</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
        <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
        <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;left,
        <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;right,
-       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
        boolean&nbsp;isLeftTransposed,
        boolean&nbsp;isRightTransposed)</code></th>
 <td class="colLast">
@@ -1013,9 +1021,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#matmultTSMM(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String,boolean)">matmultTSMM</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
            <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
            <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;left,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
+           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
            boolean&nbsp;isLeftTransposed)</code></th>
 <td class="colLast">
 <div class="block">Performs tsmm, A %*% A' or A' %*% A, on GPU by exploiting cublasDsyrk(...)</div>
@@ -1025,10 +1033,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#matrixMatrixArithmetic(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String,boolean,boolean,org.apache.sysds.runtime.matrix.operators.BinaryOperator)">matrixMatrixArithmetic</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                       <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                       <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
                       <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in2,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
+                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
                       boolean&nbsp;isLeftTransposed,
                       boolean&nbsp;isRightTransposed,
                       <a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op)</code></th>
@@ -1040,10 +1048,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#matrixMatrixRelational(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String,org.apache.sysds.runtime.matrix.operators.BinaryOperator)">matrixMatrixRelational</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                       <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                       <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
                       <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in2,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
+                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
                       <a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
 <div class="block">Performs elementwise operation relational specified by op of two input matrices in1 and in2</div>
@@ -1053,9 +1061,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#matrixScalarArithmetic(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String,boolean,org.apache.sysds.runtime.matrix.operators.ScalarOperator)">matrixScalarArithmetic</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                       <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                       <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
+                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
                       boolean&nbsp;isInputTransposed,
                       <a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
@@ -1066,9 +1074,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#matrixScalarOp(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String,boolean,org.apache.sysds.runtime.matrix.operators.ScalarOperator)">matrixScalarOp</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
               <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
               <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
               boolean&nbsp;isInputTransposed,
               <a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
@@ -1079,9 +1087,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#matrixScalarRelational(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String,org.apache.sysds.runtime.matrix.operators.ScalarOperator)">matrixScalarRelational</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                       <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                       <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
+                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName,
                       <a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
 <div class="block">Entry point to perform elementwise matrix-scalar relational operation specified by op</div>
@@ -1090,7 +1098,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#pooling(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int,int,int,int,int,int,int,int,int,int,int,int,int,org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType,double)">pooling</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
        <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;image,
        <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;outputBlock,
        int&nbsp;N,
@@ -1115,7 +1123,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#poolingBackward(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int,int,int,int,int,int,int,int,int,int,int,int,int,org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType,double)">poolingBackward</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;image,
                <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;dout,
                <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;maxpoolOutput,
@@ -1144,19 +1152,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#rbind(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">rbind</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
      <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
      <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
      <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in2,
-     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#relu(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">relu</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs the relu operation on the GPU.</div>
 </td>
@@ -1164,7 +1172,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#reluBackward(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject)">reluBackward</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
             <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;input,
             <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;dout,
             <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;outputBlock)</code></th>
@@ -1176,9 +1184,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#round(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">round</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
      <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
      <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "round" operation on a matrix on the GPU</div>
 </td>
@@ -1187,9 +1195,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#sigmoid(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">sigmoid</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
        <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
        <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "sigmoid" operation on a matrix on the GPU</div>
 </td>
@@ -1198,9 +1206,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#sign(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">sign</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "sign" operation on a matrix on the GPU</div>
 </td>
@@ -1209,9 +1217,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#sin(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">sin</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
    <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
    <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "sin" operation on a matrix on the GPU</div>
 </td>
@@ -1220,9 +1228,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#sinh(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">sinh</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "sinh" operation on a matrix on the GPU</div>
 </td>
@@ -1231,10 +1239,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#sliceOperations(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.util.IndexRange,java.lang.String)">sliceOperations</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
                <a href="../../../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Method to perform rightIndex operation for a given lower and upper bounds in row and column dimensions.</div>
 </td>
@@ -1243,9 +1251,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCuDNN.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNN.html#softmax(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">softmax</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
        <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
        <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "softmax" operation on a matrix on the GPU</div>
 </td>
@@ -1254,10 +1262,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#solve(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">solve</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
      <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
      <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
      <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in2,
-     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Implements the "solve" function for systemds Ax = B (A is of size m*n, B is of size m*1, x is of size n*1)</div>
 </td>
@@ -1266,9 +1274,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#sqrt(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">sqrt</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "sqrt" operation on a matrix on the GPU</div>
 </td>
@@ -1277,9 +1285,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#tan(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">tan</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
    <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
    <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "tan" operation on a matrix on the GPU</div>
 </td>
@@ -1288,9 +1296,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#tanh(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">tanh</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
     <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
     <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Performs an "tanh" operation on a matrix on the GPU</div>
 </td>
@@ -1299,9 +1307,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#transpose(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String)">transpose</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
          <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-         <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
          <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in,
-         <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
+         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;outputName)</code></th>
 <td class="colLast">
 <div class="block">Transposes the input matrix using cublasDgeam</div>
 </td>
@@ -1310,9 +1318,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCUDA.html#unaryAggregate(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">unaryAggregate</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
               <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
               <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;output,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;output,
               <a href="../../../../matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
 <div class="block">Entry point to perform Unary aggregate operations on the GPU.</div>
@@ -1329,7 +1337,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNNInputRowFetcher.html#%3Cinit%3E(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject)">LibMatrixCuDNNInputRowFetcher</a></span>&#8203;(<a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                              <a href="../../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;image)</code></th>
 <td class="colLast">
 <div class="block">Initialize the input fetcher</div>
@@ -1338,8 +1346,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../../matrix/data/LibMatrixCuDNNRnnAlgorithm.html#%3Cinit%3E(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,java.lang.String,int,int,int,int,boolean,jcuda.Pointer)">LibMatrixCuDNNRnnAlgorithm</a></span>&#8203;(<a href="../../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                           <a href="../GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;rnnMode,
+                          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+                          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;rnnMode,
                           int&nbsp;N,
                           int&nbsp;T,
                           int&nbsp;M,
@@ -1402,7 +1410,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

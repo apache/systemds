@@ -113,6 +113,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup.dictionary">org.apache.sysds.runtime.compress.colgroup.dictionary</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup.mapping">org.apache.sysds.runtime.compress.colgroup.mapping</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -136,6 +140,23 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupValue.</span><code><span class="memberNameLink"><a href="../../AColGroupValue.html#getDictionary()">getDictionary</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDC.</span><code><span class="memberNameLink"><a href="../../ColGroupSDC.html#getDictionary()">getDictionary</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCSingle.</span><code><span class="memberNameLink"><a href="../../ColGroupSDCSingle.html#getDictionary()">getDictionary</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">APreAgg.</span><code><span class="memberNameLink"><a href="../../APreAgg.html#preAggregateThatIndexStructure(org.apache.sysds.runtime.compress.colgroup.APreAgg)">preAggregateThatIndexStructure</a></span>&#8203;(<a href="../../APreAgg.html" title="class in org.apache.sysds.runtime.compress.colgroup">APreAgg</a>&nbsp;that)</code></th>
+<td class="colLast">
+<div class="block">Pre aggregate into a dictionary.</div>
+</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary">
@@ -147,23 +168,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupValue.</span><code><span class="memberNameLink"><a href="../../AColGroupValue.html#copyAndSet(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary)">copyAndSet</a></span>&#8203;(int[]&nbsp;colIndexes,
-          <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;newDictionary)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupValue.</span><code><span class="memberNameLink"><a href="../../AColGroupValue.html#copyAndSet(org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary)">copyAndSet</a></span>&#8203;(<a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;newDictionary)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code>static <a href="../../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../ColGroupFactory.html#genColGroupConst(int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary)">genColGroupConst</a></span>&#8203;(int&nbsp;numCols,
-                <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../../ColGroupConst.html#create(int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary)">create</a></span>&#8203;(int&nbsp;numCols,
+      <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict)</code></th>
 <td class="colLast">
 <div class="block">Generate a constant column group.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDeltaDDC.</span><code><span class="memberNameLink"><a href="../../ColGroupDeltaDDC.html#create(int%5B%5D,int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndices,
+      int&nbsp;numRows,
+      <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="../../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts)</code></th>
+<td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -184,18 +203,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../DeltaDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">DeltaDictionary</a></span></code></th>
+<td class="colLast">
+<div class="block">This dictionary class is a specialization for the DeltaDDCColgroup.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></span></code></th>
 <td class="colLast">
 <div class="block">This dictionary class aims to encapsulate the storage and operations over unique floating point values of a column
  group.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../QDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">QDictionary</a></span></code></th>
 <td class="colLast">
@@ -215,64 +241,84 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#applyBinaryRowOpLeftAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">applyBinaryRowOpLeftAppendNewEntry</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                                  double[]&nbsp;v,
-                                  int[]&nbsp;colIndexes)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
-<div class="block">Apply binary row operation on the left side and allocate a new dictionary.</div>
+<div class="block">Allocate a new dictionary and applies the scalar operation on each cell of the to then return the new dictionary.</div>
 </td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#applyBinaryRowOpLeftAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">applyBinaryRowOpLeftAppendNewEntry</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                                  double[]&nbsp;v,
-                                  int[]&nbsp;colIndexes)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#applyBinaryRowOpLeftAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">applyBinaryRowOpLeftAppendNewEntry</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                                  double[]&nbsp;v,
-                                  int[]&nbsp;colIndexes)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#applyBinaryRowOpRightAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">applyBinaryRowOpRightAppendNewEntry</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                                   double[]&nbsp;v,
-                                   int[]&nbsp;colIndexes)</code></th>
-<td class="colLast">
-<div class="block">Apply binary row operation on this dictionary on the right side.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#applyBinaryRowOpRightAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">applyBinaryRowOpRightAppendNewEntry</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                                   double[]&nbsp;v,
-                                   int[]&nbsp;colIndexes)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#applyBinaryRowOpRightAppendNewEntry(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">applyBinaryRowOpRightAppendNewEntry</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-                                   double[]&nbsp;v,
-                                   int[]&nbsp;colIndexes)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOp</a></span>&#8203;(<a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
-             double&nbsp;newVal,
-             int&nbsp;numCols)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                          double[]&nbsp;reference,
+                          double[]&nbsp;newReference)</code></th>
 <td class="colLast">
-<div class="block">Applies the scalar operation on the dictionary.</div>
+<div class="block">Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.</div>
 </td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOp</a></span>&#8203;(<a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
-             double&nbsp;newVal,
-             int&nbsp;numCols)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                          double[]&nbsp;reference,
+                          double[]&nbsp;newReference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                          double[]&nbsp;reference,
+                          double[]&nbsp;newReference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#applyUnaryOp(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">applyUnaryOp</a></span>&#8203;(<a href="../../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op)</code></th>
+<td class="colLast">
+<div class="block">Allocate a new dictionary and apply the unary operator on each cell.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#applyUnaryOp(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">applyUnaryOp</a></span>&#8203;(<a href="../../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#applyUnaryOp(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">applyUnaryOp</a></span>&#8203;(<a href="../../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#applyUnaryOpWithReference(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double%5B%5D,double%5B%5D)">applyUnaryOpWithReference</a></span>&#8203;(<a href="../../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                         double[]&nbsp;reference,
+                         double[]&nbsp;newReference)</code></th>
+<td class="colLast">
+<div class="block">Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../Dictionary.html#applyUnaryOpWithReference(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double%5B%5D,double%5B%5D)">applyUnaryOpWithReference</a></span>&#8203;(<a href="../../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                         double[]&nbsp;reference,
+                         double[]&nbsp;newReference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#applyUnaryOpWithReference(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double%5B%5D,double%5B%5D)">applyUnaryOpWithReference</a></span>&#8203;(<a href="../../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                         double[]&nbsp;reference,
+                         double[]&nbsp;newReference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#applyUnaryOpWithReference(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double%5B%5D,double%5B%5D)">applyUnaryOpWithReference</a></span>&#8203;(<a href="../../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                         double[]&nbsp;reference,
+                         double[]&nbsp;newReference)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -300,6 +346,34 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                      double[]&nbsp;v,
+                      int[]&nbsp;colIndexes,
+                      double[]&nbsp;reference,
+                      double[]&nbsp;newReference)</code></th>
+<td class="colLast">
+<div class="block">Apply the binary operator such that each value is offset by the reference before application.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                      double[]&nbsp;v,
+                      int[]&nbsp;colIndexes,
+                      double[]&nbsp;reference,
+                      double[]&nbsp;newReference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+          double[]&nbsp;v)</code></th>
+<td class="colLast">
+<div class="block">Apply binary row operation on the right side.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpRight</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v,
           int[]&nbsp;colIndexes)</code></th>
@@ -307,93 +381,107 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Apply binary row operation on the right side.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpRight</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
-          double[]&nbsp;v,
-          int[]&nbsp;colIndexes)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+          double[]&nbsp;v)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpRight</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v,
           int[]&nbsp;colIndexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                       double[]&nbsp;v,
+                       int[]&nbsp;colIndexes,
+                       double[]&nbsp;reference,
+                       double[]&nbsp;newReference)</code></th>
+<td class="colLast">
+<div class="block">Apply the binary operator such that each value is offset by the reference before application.</div>
+</td>
+</tr>
 <tr class="altColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                       double[]&nbsp;v,
+                       int[]&nbsp;colIndexes,
+                       double[]&nbsp;reference,
+                       double[]&nbsp;newReference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#clone()">clone</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns a deep clone of the dictionary.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#clone()">clone</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
-<td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#cloneAndExtend(int)">cloneAndExtend</a></span>&#8203;(int&nbsp;len)</code></th>
-<td class="colLast">
-<div class="block">Clone the dictionary, and extend size of the dictionary by a given length</div>
-</td>
-</tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#cloneAndExtend(int)">cloneAndExtend</a></span>&#8203;(int&nbsp;len)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code>static <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#create(org.apache.sysds.runtime.compress.bitmap.ABitmap)">create</a></span>&#8203;(<a href="../../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#create(org.apache.sysds.runtime.compress.bitmap.ABitmap,double)">create</a></span>&#8203;(<a href="../../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
       double&nbsp;sparsity)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#create(org.apache.sysds.runtime.compress.bitmap.ABitmap,double,boolean)">create</a></span>&#8203;(<a href="../../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
       double&nbsp;sparsity,
       boolean&nbsp;withZeroTuple)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#create(org.apache.sysds.runtime.compress.bitmap.ABitmap,int,double%5B%5D,double,boolean)">create</a></span>&#8203;(<a href="../../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
+      int&nbsp;defaultIndex,
+      double[]&nbsp;defaultTuple,
+      double&nbsp;sparsity,
+      boolean&nbsp;addZero)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#create(org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap,int,boolean)">create</a></span>&#8203;(<a href="../../../utils/DblArrayCountHashMap.html" title="class in org.apache.sysds.runtime.compress.utils">DblArrayCountHashMap</a>&nbsp;map,
+<th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#create(org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap,int,boolean,double)">create</a></span>&#8203;(<a href="../../../utils/DblArrayCountHashMap.html" title="class in org.apache.sysds.runtime.compress.utils">DblArrayCountHashMap</a>&nbsp;map,
       int&nbsp;nCols,
-      boolean&nbsp;addZeroTuple)</code></th>
+      boolean&nbsp;addZeroTuple,
+      double&nbsp;sparsity)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#create(org.apache.sysds.runtime.compress.utils.DoubleCountHashMap)">create</a></span>&#8203;(<a href="../../../utils/DoubleCountHashMap.html" title="class in org.apache.sysds.runtime.compress.utils">DoubleCountHashMap</a>&nbsp;map)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#createWithAppendedZeroTuple(org.apache.sysds.runtime.compress.bitmap.ABitmap,double)">createWithAppendedZeroTuple</a></span>&#8203;(<a href="../../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
                            double&nbsp;sparsity)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#inplaceScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">inplaceScalarOp</a></span>&#8203;(<a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
 <div class="block">Applies the scalar operation on the dictionary.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#inplaceScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">inplaceScalarOp</a></span>&#8203;(<a href="../../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#moveFrequentToLastDictionaryEntry(org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.bitmap.ABitmap,int,int)">moveFrequentToLastDictionaryEntry</a></span>&#8203;(<a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
-                                 <a href="../../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
-                                 int&nbsp;nRow,
-                                 int&nbsp;largestIndex)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -404,7 +492,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                      double[]&nbsp;b,
                      int&nbsp;cut)</code></th>
 <td class="colLast">
-<div class="block">Pre Aggregate values for right Matrix Multiplication.</div>
+<div class="block">Pre Aggregate values for Right Matrix Multiplication.</div>
 </td>
 </tr>
 <tr class="rowColor">
@@ -418,29 +506,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#read(java.io.DataInput)">read</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#reExpandColumns(int)">reExpandColumns</a></span>&#8203;(int&nbsp;max)</code></th>
-<td class="colLast">
-<div class="block">return a new Dictionary that have re expanded all values, based on the entries already contained.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../Dictionary.html#reExpandColumns(int)">reExpandColumns</a></span>&#8203;(int&nbsp;max)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#reExpandColumns(int)">reExpandColumns</a></span>&#8203;(int&nbsp;max)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#reExpandColumns(int)">reExpandColumns</a></span>&#8203;(int&nbsp;max)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#read(java.io.DataInput)">read</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -475,26 +541,100 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#replaceZeroAndExtend(double,int)">replaceZeroAndExtend</a></span>&#8203;(double&nbsp;replace,
-                    int&nbsp;nCol)</code></th>
-<td class="colLast">&nbsp;</td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#replaceWithReference(double,double,double%5B%5D)">replaceWithReference</a></span>&#8203;(double&nbsp;pattern,
+                    double&nbsp;replace,
+                    double[]&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Make a copy of the values, and replace all values that match pattern with replacement value.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../Dictionary.html#replaceZeroAndExtend(double,int)">replaceZeroAndExtend</a></span>&#8203;(double&nbsp;replace,
-                    int&nbsp;nCol)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../Dictionary.html#replaceWithReference(double,double,double%5B%5D)">replaceWithReference</a></span>&#8203;(double&nbsp;pattern,
+                    double&nbsp;replace,
+                    double[]&nbsp;reference)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#replaceZeroAndExtend(double,int)">replaceZeroAndExtend</a></span>&#8203;(double&nbsp;replace,
-                    int&nbsp;nCol)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#replaceWithReference(double,double,double%5B%5D)">replaceWithReference</a></span>&#8203;(double&nbsp;pattern,
+                    double&nbsp;replace,
+                    double[]&nbsp;reference)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#replaceZeroAndExtend(double,int)">replaceZeroAndExtend</a></span>&#8203;(double&nbsp;replace,
-                    int&nbsp;nCol)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#replaceWithReference(double,double,double%5B%5D)">replaceWithReference</a></span>&#8203;(double&nbsp;pattern,
+                    double&nbsp;replace,
+                    double[]&nbsp;reference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#rexpandCols(int,boolean,boolean,int)">rexpandCols</a></span>&#8203;(int&nbsp;max,
+           boolean&nbsp;ignore,
+           boolean&nbsp;cast,
+           int&nbsp;nCol)</code></th>
+<td class="colLast">
+<div class="block">Rexpand the dictionary (one hot encode)</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../Dictionary.html#rexpandCols(int,boolean,boolean,int)">rexpandCols</a></span>&#8203;(int&nbsp;max,
+           boolean&nbsp;ignore,
+           boolean&nbsp;cast,
+           int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#rexpandCols(int,boolean,boolean,int)">rexpandCols</a></span>&#8203;(int&nbsp;max,
+           boolean&nbsp;ignore,
+           boolean&nbsp;cast,
+           int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#rexpandCols(int,boolean,boolean,int)">rexpandCols</a></span>&#8203;(int&nbsp;max,
+           boolean&nbsp;ignore,
+           boolean&nbsp;cast,
+           int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../ADictionary.html#rexpandColsWithReference(int,boolean,boolean,double)">rexpandColsWithReference</a></span>&#8203;(int&nbsp;max,
+                        boolean&nbsp;ignore,
+                        boolean&nbsp;cast,
+                        double&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Rexpand the dictionary (one hot encode)</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../Dictionary.html#rexpandColsWithReference(int,boolean,boolean,double)">rexpandColsWithReference</a></span>&#8203;(int&nbsp;max,
+                        boolean&nbsp;ignore,
+                        boolean&nbsp;cast,
+                        double&nbsp;reference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../MatrixBlockDictionary.html#rexpandColsWithReference(int,boolean,boolean,double)">rexpandColsWithReference</a></span>&#8203;(int&nbsp;max,
+                        boolean&nbsp;ignore,
+                        boolean&nbsp;cast,
+                        double&nbsp;reference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../QDictionary.html#rexpandColsWithReference(int,boolean,boolean,double)">rexpandColsWithReference</a></span>&#8203;(int&nbsp;max,
+                        boolean&nbsp;ignore,
+                        boolean&nbsp;cast,
+                        double&nbsp;reference)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -586,11 +726,145 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>static <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DictionaryFactory.</span><code><span class="memberNameLink"><a href="../DictionaryFactory.html#moveFrequentToLastDictionaryEntry(org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.bitmap.ABitmap,int,int)">moveFrequentToLastDictionaryEntry</a></span>&#8203;(<a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
-                                 <a href="../../../bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;ubm,
-                                 int&nbsp;nRow,
-                                 int&nbsp;largestIndex)</code></th>
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DictLibMatrixMult.</span><code><span class="memberNameLink"><a href="../DictLibMatrixMult.html#MMDicts(org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,int%5B%5D,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">MMDicts</a></span>&#8203;(<a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;left,
+       <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;right,
+       int[]&nbsp;rowsLeft,
+       int[]&nbsp;colsRight,
+       <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<td class="colLast">
+<div class="block">Matrix Multiply the two dictionaries, note that the left side is considered transposed but not allocated
+ transposed making the multiplication a: t(left) %*% right</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DictLibMatrixMult.</span><code><span class="memberNameLink"><a href="../DictLibMatrixMult.html#MMDictsWithScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,int%5B%5D,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">MMDictsWithScaling</a></span>&#8203;(<a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;left,
+                  <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;right,
+                  int[]&nbsp;leftRows,
+                  int[]&nbsp;rightColumns,
+                  <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                  int[]&nbsp;counts)</code></th>
+<td class="colLast">
+<div class="block">Matrix multiply with scaling (left side transposed)</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DictLibMatrixMult.</span><code><span class="memberNameLink"><a href="../DictLibMatrixMult.html#TSMMDictionaryWithScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,int%5B%5D,int%5B%5D,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMDictionaryWithScaling</a></span>&#8203;(<a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+                         int[]&nbsp;counts,
+                         int[]&nbsp;rows,
+                         int[]&nbsp;cols,
+                         <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
+<td class="colLast">
+<div class="block">Perform the full tsmm with the dictionary (allocating into the entire output matrix.)</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DictLibMatrixMult.</span><code><span class="memberNameLink"><a href="../DictLibMatrixMult.html#TSMMToUpperTriangle(org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,int%5B%5D,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangle</a></span>&#8203;(<a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;left,
+                   <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;right,
+                   int[]&nbsp;rowsLeft,
+                   int[]&nbsp;colsRight,
+                   <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<td class="colLast">
+<div class="block">Does two matrix multiplications in one go but only add to the upper triangle.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">DictLibMatrixMult.</span><code><span class="memberNameLink"><a href="../DictLibMatrixMult.html#TSMMToUpperTriangleScaling(org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,int%5B%5D,int%5B%5D,int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">TSMMToUpperTriangleScaling</a></span>&#8203;(<a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;left,
+                          <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;right,
+                          int[]&nbsp;rowsLeft,
+                          int[]&nbsp;colsRight,
+                          int[]&nbsp;scale,
+                          <a href="../../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<td class="colLast">
+<div class="block">Does two matrix multiplications in one go but only add to the upper triangle with scaling.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section role="region"><a id="org.apache.sysds.runtime.compress.colgroup.mapping">
+<!--   -->
+</a>
+<h3>Uses of <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a> in <a href="../../mapping/package-summary.html">org.apache.sysds.runtime.compress.colgroup.mapping</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../mapping/package-summary.html">org.apache.sysds.runtime.compress.colgroup.mapping</a> with parameters of type <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AMapToData.</span><code><span class="memberNameLink"><a href="../../mapping/AMapToData.html#preAggregateDDC_DDC(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_DDC</a></span>&#8203;(<a href="../../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;tm,
+                   <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;td,
+                   <a href="../Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;ret,
+                   int&nbsp;nCol)</code></th>
+<td class="colLast">
+<div class="block">PreAggregate into dictionary with two sides of DDC.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MapToBit.</span><code><span class="memberNameLink"><a href="../../mapping/MapToBit.html#preAggregateDDC_DDCMultiCol(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,double%5B%5D,int)">preAggregateDDC_DDCMultiCol</a></span>&#8203;(<a href="../../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;tm,
+                           <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;td,
+                           double[]&nbsp;v,
+                           int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MapToZero.</span><code><span class="memberNameLink"><a href="../../mapping/MapToZero.html#preAggregateDDC_DDCMultiCol(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,double%5B%5D,int)">preAggregateDDC_DDCMultiCol</a></span>&#8203;(<a href="../../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;tm,
+                           <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;td,
+                           double[]&nbsp;v,
+                           int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AMapToData.</span><code><span class="memberNameLink"><a href="../../mapping/AMapToData.html#preAggregateDDC_SDCZ(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_SDCZ</a></span>&#8203;(<a href="../../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;tm,
+                    <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;td,
+                    <a href="../../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;tof,
+                    <a href="../Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;ret,
+                    int&nbsp;nCol)</code></th>
+<td class="colLast">
+<div class="block">PreAggregate into SDCZero dictionary from DDC dictionary.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AMapToData.</span><code><span class="memberNameLink"><a href="../../mapping/AMapToData.html#preAggregateDDC_SDCZMultiCol(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,double%5B%5D,int)">preAggregateDDC_SDCZMultiCol</a></span>&#8203;(<a href="../../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;tm,
+                            <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;td,
+                            <a href="../../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;tof,
+                            double[]&nbsp;v,
+                            int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AMapToData.</span><code><span class="memberNameLink"><a href="../../mapping/AMapToData.html#preAggregateSDCZ_DDC(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateSDCZ_DDC</a></span>&#8203;(<a href="../../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;tm,
+                    <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;td,
+                    <a href="../../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;of,
+                    <a href="../Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;ret,
+                    int&nbsp;nCol)</code></th>
+<td class="colLast">
+<div class="block">PreAggregate into DDC dictionary from SDCZero dictionary.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AMapToData.</span><code><span class="memberNameLink"><a href="../../mapping/AMapToData.html#preAggregateSDCZ_SDCZ(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateSDCZ_SDCZ</a></span>&#8203;(<a href="../../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;tm,
+                     <a href="../ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;td,
+                     <a href="../../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;tof,
+                     <a href="../../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;of,
+                     <a href="../Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;ret,
+                     int&nbsp;nCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -647,7 +921,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

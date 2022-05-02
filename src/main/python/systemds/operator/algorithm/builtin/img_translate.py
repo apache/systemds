@@ -36,13 +36,12 @@ def img_translate(img_in: Matrix,
                   out_h: int,
                   fill_value: float):
     """
-    :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param offset_x: The distance to move the image in x direction
     :param offset_y: The distance to move the image in y direction
     :param out_w: Width of the output image
     :param out_h: Height of the output image
     :param fill_value: The background of the image
-    :return: 'OperationNode' containing output image as 2d matrix with top left corner at [1, 1] 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'img_in': img_in, 'offset_x': offset_x, 'offset_y': offset_y, 'out_w': out_w, 'out_h': out_h, 'fill_value': fill_value}
     return Matrix(img_in.sds_context,

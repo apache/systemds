@@ -28,7 +28,7 @@ from systemds.operator.algorithm import gmm, gmmPredict
 
 class TestGMM(unittest.TestCase):
 
-    model_dir: str =  "tests/algorithm/readwrite/"
+    model_dir: str =  "tests/algorithms/readwrite/"
     model_path: str = model_dir + "model"
 
     @classmethod

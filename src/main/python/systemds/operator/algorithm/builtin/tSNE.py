@@ -32,7 +32,6 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def tSNE(X: Matrix,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param X: Data Matrix of shape
     :param reduced_dims: Output dimensionality
     :param perplexity: Perplexity Parameter
     :param lr: Learning rate
@@ -41,7 +40,7 @@ def tSNE(X: Matrix,
     :param seed: The seed used for initial values.
     :param If: -1 random seeds are selected.
     :param is_verbose: Print debug information
-    :return: 'OperationNode' containing data matrix of shape (number of data points, reduced_dims) 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'X': X}
     params_dict.update(kwargs)

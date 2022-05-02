@@ -32,13 +32,12 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def ppca(X: Matrix,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param X: n x m input feature matrix
     :param k: indicates dimension of the new vector space constructed from eigen vectors
     :param maxi: maximum number of iterations until convergence
     :param tolobj: objective function tolerance value to stop ppca algorithm
     :param tolrecerr: reconstruction error tolerance value to stop the algorithm
     :param verbose: verbose debug output
-    :return: 'OperationNode' containing output feature matrix with k columns & output dominant eigen vectors (can be used for projections) 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'X': X}
     params_dict.update(kwargs)

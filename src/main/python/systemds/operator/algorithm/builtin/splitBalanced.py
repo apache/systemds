@@ -31,10 +31,14 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def splitBalanced(X: Matrix,
                   Y: Matrix,
-                  splitRatio: float,
-                  verbose: bool):
-    
-    params_dict = {'X': X, 'Y': Y, 'splitRatio': splitRatio, 'verbose': verbose}
+                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
+    """
+    :param f: Train set fraction [0,1]
+    :param verbose: print available
+    :return: 'OperationNode' containing  
+    """
+    params_dict = {'X': X, 'Y': Y}
+    params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')

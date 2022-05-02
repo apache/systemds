@@ -32,9 +32,8 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def confusionMatrix(P: Matrix,
                     Y: Matrix):
     """
-    :param P: vector of Predictions
-    :param Y: vector of Golden standard One Hot Encoded; the one hot encoded vector of actual labels
-    :return: 'OperationNode' containing the confusion matrix sums of classifications & the confusion matrix averages of each true class 
+    :param encoded: actual labels
+    :return: 'OperationNode' containing  
     """
     params_dict = {'P': P, 'Y': Y}
     

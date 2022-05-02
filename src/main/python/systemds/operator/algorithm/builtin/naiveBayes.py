@@ -32,7 +32,11 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def naiveBayes(D: Matrix,
                C: Matrix,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param Laplace: Any Double value.
+    :param Verbose: Boolean value.
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'D': D, 'C': C}
     params_dict.update(kwargs)
     

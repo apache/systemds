@@ -32,7 +32,12 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def smote(X: Matrix,
           mask: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param s: Amount of SMOTE (percentage of oversampling), integral multiple of 100
+    :param k: Number of nearest neighbour
+    :param verbose: if the algorithm should be verbose
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'mask': mask}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

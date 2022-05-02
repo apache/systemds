@@ -39,7 +39,6 @@ def garch(X: Matrix,
           sim_seed: int,
           verbose: bool):
     """
-    :param X: The input Matrix to apply Arima on.
     :param kmax: Number of iterations
     :param momentum: Momentum for momentum-gradient descent (set to 0 to deactivate)
     :param start_stepsize: Initial gradient-descent stepsize
@@ -48,7 +47,7 @@ def garch(X: Matrix,
     :param end_vicinity: same at end (linear decay)
     :param sim_seed: seed for simulation of process on fitted coefficients
     :param verbose: verbosity, comments during fitting
-    :return: 'OperationNode' containing simulated garch(1,1) process on fitted coefficients & variances of simulated fitted process & constant term of fitted process & 1-st arch-coefficient of fitted process & 1-st garch-coefficient of fitted process & drawbacks: slow convergence of optimization (sort of simulated annealing/gradient descent) 
+    :return: 'OperationNode' containing term of fitted process & arch-coefficient of fitted process & garch-coefficient of fitted process & drawbacks: slow convergence of optimization (sort of simulated annealing/gradient descent) 
     """
     params_dict = {'X': X, 'kmax': kmax, 'momentum': momentum, 'start_stepsize': start_stepsize, 'end_stepsize': end_stepsize, 'start_vicinity': start_vicinity, 'end_vicinity': end_vicinity, 'sim_seed': sim_seed, 'verbose': verbose}
     

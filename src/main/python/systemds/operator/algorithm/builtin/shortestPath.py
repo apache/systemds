@@ -32,7 +32,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def shortestPath(G: Matrix,
                  sourceNode: int,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param The: G can be 0/1 (just specifying whether the nodes
+    :param are: not) or integer values (representing the weight
+    :param of: or the distances between nodes, 0 if not connected).
+    :param maxi: Integer max number of iterations accepted (0 for FALSE, i.e.
+    :param max: iterations not defined)
+    :param sourceNode: index to calculate the shortest paths to all other nodes.
+    :param verbose: flag for verbose debug output
+    :return: 'OperationNode' containing minimum distance shortest-path from vertex i to vertex j. & of the minimum distance is infinity, the two nodes are 
+    """
     params_dict = {'G': G, 'sourceNode': sourceNode}
     params_dict.update(kwargs)
     return Matrix(G.sds_context,

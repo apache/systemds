@@ -195,6 +195,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupCompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroupCompressed.html#preAggRows(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">preAggRows</a></span>&#8203;(<a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroup.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int)">unaryAggregateOperations</a></span>&#8203;(<a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
                         double[]&nbsp;c,
@@ -206,13 +211,23 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  matrix.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupCompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int)">unaryAggregateOperations</a></span>&#8203;(<a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
                         double[]&nbsp;c,
                         int&nbsp;nRows,
                         int&nbsp;rl,
                         int&nbsp;ru)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupCompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int,double%5B%5D)">unaryAggregateOperations</a></span>&#8203;(<a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
+                        double[]&nbsp;c,
+                        int&nbsp;nRows,
+                        int&nbsp;rl,
+                        int&nbsp;ru,
+                        double[]&nbsp;preAgg)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -271,21 +286,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FederationUtils.</span><code><span class="memberNameLink"><a href="../../../controlprogram/federated/FederationUtils.html#aggMatrix(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,java.util.concurrent.Future%5B%5D,java.util.concurrent.Future%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederationMap)">aggMatrix</a></span>&#8203;(<a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;aop,
-         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr,
-         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;meanFfr,
+         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr,
+         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;meanFfr,
          <a href="../../../controlprogram/federated/FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;map)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FederationUtils.</span><code><span class="memberNameLink"><a href="../../../controlprogram/federated/FederationUtils.html#aggMatrix(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,java.util.concurrent.Future%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederationMap)">aggMatrix</a></span>&#8203;(<a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;aop,
-         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr,
+         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr,
          <a href="../../../controlprogram/federated/FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;map)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">FederationUtils.</span><code><span class="memberNameLink"><a href="../../../controlprogram/federated/FederationUtils.html#aggProd(java.util.concurrent.Future%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederationMap,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">aggProd</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr,
+<th class="colSecond" scope="row"><span class="typeNameLabel">FederationUtils.</span><code><span class="memberNameLink"><a href="../../../controlprogram/federated/FederationUtils.html#aggProd(java.util.concurrent.Future%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederationMap,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">aggProd</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr,
        <a href="../../../controlprogram/federated/FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;fedMap,
        <a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;aop)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -293,21 +308,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FederationUtils.</span><code><span class="memberNameLink"><a href="../../../controlprogram/federated/FederationUtils.html#aggScalar(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,java.util.concurrent.Future%5B%5D)">aggScalar</a></span>&#8203;(<a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;aop,
-         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr)</code></th>
+         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FederationUtils.</span><code><span class="memberNameLink"><a href="../../../controlprogram/federated/FederationUtils.html#aggScalar(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,java.util.concurrent.Future%5B%5D,java.util.concurrent.Future%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederationMap)">aggScalar</a></span>&#8203;(<a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;aop,
-         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr,
-         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;meanFfr,
+         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr,
+         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;meanFfr,
          <a href="../../../controlprogram/federated/FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;map)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">FederationUtils.</span><code><span class="memberNameLink"><a href="../../../controlprogram/federated/FederationUtils.html#aggScalar(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,java.util.concurrent.Future%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederationMap)">aggScalar</a></span>&#8203;(<a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;aop,
-         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr,
+         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="../../../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;ffr,
          <a href="../../../controlprogram/federated/FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;map)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -371,19 +386,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">InstructionUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/InstructionUtils.html#parseAggregateUnaryRowIndexOperator(java.lang.String,int,int)">parseAggregateUnaryRowIndexOperator</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode,
+<th class="colSecond" scope="row"><span class="typeNameLabel">InstructionUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/InstructionUtils.html#parseAggregateUnaryRowIndexOperator(java.lang.String,int,int)">parseAggregateUnaryRowIndexOperator</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode,
                                    int&nbsp;numOutputs,
                                    int&nbsp;numThreads)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">InstructionUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/InstructionUtils.html#parseBasicAggregateUnaryOperator(java.lang.String)">parseBasicAggregateUnaryOperator</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">InstructionUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/InstructionUtils.html#parseBasicAggregateUnaryOperator(java.lang.String)">parseBasicAggregateUnaryOperator</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">InstructionUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/InstructionUtils.html#parseBasicAggregateUnaryOperator(java.lang.String,int)">parseBasicAggregateUnaryOperator</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode,
+<th class="colSecond" scope="row"><span class="typeNameLabel">InstructionUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/InstructionUtils.html#parseBasicAggregateUnaryOperator(java.lang.String,int)">parseBasicAggregateUnaryOperator</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode,
                                 int&nbsp;numThreads)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -394,7 +409,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">InstructionUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/InstructionUtils.html#parseCumulativeAggregateUnaryOperator(java.lang.String)">parseCumulativeAggregateUnaryOperator</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">InstructionUtils.</span><code><span class="memberNameLink"><a href="../../../instructions/InstructionUtils.html#parseCumulativeAggregateUnaryOperator(java.lang.String)">parseCumulativeAggregateUnaryOperator</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -637,9 +652,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../data/LibMatrixCUDA.html#unaryAggregate(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.gpu.context.GPUContext,java.lang.String,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,java.lang.String,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">unaryAggregate</a></span>&#8203;(<a href="../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
               <a href="../../../instructions/gpu/context/GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
               <a href="../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;in1,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;output,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;output,
               <a href="../AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
 <div class="block">Entry point to perform Unary aggregate operations on the GPU.</div>
@@ -723,7 +738,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":10,"i2":9,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":9,"i12":10,"i13":10};
+var data = {"i0":9,"i1":9,"i2":10,"i3":9,"i4":9,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":9,"i14":10,"i15":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -88,7 +88,7 @@ loadScripts(document, 'script');</script>
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.controlprogram.federated.FederatedData</li>
@@ -136,13 +136,36 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">FederatedData</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
 </li>
 </ul>
 </div>
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
+<!-- ======== NESTED CLASS SUMMARY ======== -->
+<section role="region">
+<ul class="blockList">
+<li class="blockList"><a id="nested.class.summary">
+<!--   -->
+</a>
+<h3>Nested Class Summary</h3>
+<table class="memberSummary">
+<caption><span>Nested Classes</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Class</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="FederatedData.FederatedRequestEncoder.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData.FederatedRequestEncoder</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</table>
+</li>
+</ul>
+</section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
 <section role="region">
 <ul class="blockList">
@@ -158,14 +181,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.common.Types.DataType,java.net.InetSocketAddress,java.lang.String)">FederatedData</a></span>&#8203;(<a href="../../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dataType,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;filepath)</code></th>
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;filepath)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.common.Types.DataType,java.net.InetSocketAddress,java.lang.String,long)">FederatedData</a></span>&#8203;(<a href="../../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dataType,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;filepath,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;filepath,
              long&nbsp;varID)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -193,73 +216,83 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clearWorkGroup()">clearWorkGroup</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyWithNewID(long)">copyWithNewID</a></span>&#8203;(long&nbsp;varID)</code></th>
 <td class="colLast">
 <div class="block">Make a copy of the <code>FederatedData</code> metadata, but use another varID (refer to another object on worker)</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
-<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#executeFederatedOperation(java.net.InetSocketAddress,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...)">executeFederatedOperation</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createWorkGroup()">createWorkGroup</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#executeFederatedOperation(java.net.InetSocketAddress,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...)">executeFederatedOperation</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
                          <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;request)</code></th>
 <td class="colLast">
 <div class="block">Executes an federated operation on a federated worker.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#executeFederatedOperation(org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...)">executeFederatedOperation</a></span>&#8203;(<a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;request)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a></code></td>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAddress()">getAddress</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDataType()">getDataType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFilepath()">getFilepath</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getVarID()">getVarID</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
+<tr id="i10" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initFederatedData(long)">initFederatedData</a></span>&#8203;(long&nbsp;id)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initFederatedData(long,org.apache.sysds.runtime.meta.MetaData)">initFederatedData</a></span>&#8203;(long&nbsp;id,
                  <a href="../../meta/MetaData.html" title="class in org.apache.sysds.runtime.meta">MetaData</a>&nbsp;mtd)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isInitialized()">isInitialized</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#resetFederatedSites()">resetFederatedSites</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setVarID(long)">setVarID</a></span>&#8203;(long&nbsp;varID)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<tr id="i15" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -268,8 +301,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -294,8 +327,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>FederatedData</h4>
 <pre>public&nbsp;FederatedData&#8203;(<a href="../../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dataType,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;filepath)</pre>
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;filepath)</pre>
 </li>
 </ul>
 <a id="&lt;init&gt;(org.apache.sysds.common.Types.DataType,java.net.InetSocketAddress,java.lang.String,long)">
@@ -305,8 +338,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>FederatedData</h4>
 <pre>public&nbsp;FederatedData&#8203;(<a href="../../../common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dataType,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;filepath,
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;filepath,
                      long&nbsp;varID)</pre>
 </li>
 </ul>
@@ -326,7 +359,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getAddress</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;getAddress()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;getAddress()</pre>
 </li>
 </ul>
 <a id="setVarID(long)">
@@ -353,7 +386,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getFilepath</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getFilepath()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getFilepath()</pre>
 </li>
 </ul>
 <a id="getDataType()">
@@ -396,7 +429,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>initFederatedData</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&nbsp;initFederatedData&#8203;(long&nbsp;id)</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&nbsp;initFederatedData&#8203;(long&nbsp;id)</pre>
 </li>
 </ul>
 <a id="initFederatedData(long,org.apache.sysds.runtime.meta.MetaData)">
@@ -405,7 +438,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>initFederatedData</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&nbsp;initFederatedData&#8203;(long&nbsp;id,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&nbsp;initFederatedData&#8203;(long&nbsp;id,
                                                    <a href="../../meta/MetaData.html" title="class in org.apache.sysds.runtime.meta">MetaData</a>&nbsp;mtd)</pre>
 </li>
 </ul>
@@ -415,7 +448,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>executeFederatedOperation</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&nbsp;executeFederatedOperation&#8203;(<a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;request)</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&nbsp;executeFederatedOperation&#8203;(<a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;request)</pre>
 </li>
 </ul>
 <a id="executeFederatedOperation(java.net.InetSocketAddress,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...)">
@@ -424,9 +457,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>executeFederatedOperation</h4>
-<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&nbsp;executeFederatedOperation&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
-                                                                  <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;request)
-                                                           throws <a href="https://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLException.html?is-external=true" title="class or interface in javax.net.ssl" class="externalLink">SSLException</a></pre>
+<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&nbsp;executeFederatedOperation&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net" class="externalLink">InetSocketAddress</a>&nbsp;address,
+                                                                  <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;request)</pre>
 <div class="block">Executes an federated operation on a federated worker.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -434,8 +466,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dd><code>request</code> - the requested operation</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the response</dd>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLException.html?is-external=true" title="class or interface in javax.net.ssl" class="externalLink">SSLException</a></code> - Throws an SSL exception if the ssl construction fails.</dd>
 </dl>
 </li>
 </ul>
@@ -457,16 +487,34 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre class="methodSignature">public static&nbsp;void&nbsp;resetFederatedSites()</pre>
 </li>
 </ul>
+<a id="clearWorkGroup()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>clearWorkGroup</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;clearWorkGroup()</pre>
+</li>
+</ul>
+<a id="createWorkGroup()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>createWorkGroup</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;createWorkGroup()</pre>
+</li>
+</ul>
 <a id="toString()">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -522,7 +570,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
@@ -539,7 +587,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

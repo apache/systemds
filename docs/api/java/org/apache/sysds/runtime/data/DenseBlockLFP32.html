@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li><a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">org.apache.sysds.runtime.data.DenseBlock</a></li>
@@ -142,7 +142,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code></dd>
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">DenseBlockLFP32</span>
@@ -239,7 +239,7 @@ extends <a href="DenseBlockLDRB.html" title="class in org.apache.sysds.runtime.d
 </td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getString(int%5B%5D)">getString</a></span>&#8203;(int[]&nbsp;ix)</code></th>
 <td class="colLast">
 <div class="block">Get the value of a given cell as a String</div>
@@ -279,13 +279,20 @@ extends <a href="DenseBlockLDRB.html" title="class in org.apache.sysds.runtime.d
 </td>
 </tr>
 <tr id="i9" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></span>&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code></th>
+<td class="colLast">
+<div class="block">Indicates if the dense block is a specific numeric value type.</div>
+</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#numBlocks()">numBlocks</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of allocated blocks.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int%5B%5D,double)">set</a></span>&#8203;(int[]&nbsp;ix,
    double&nbsp;v)</code></th>
@@ -293,7 +300,7 @@ extends <a href="DenseBlockLDRB.html" title="class in org.apache.sysds.runtime.d
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int%5B%5D,long)">set</a></span>&#8203;(int[]&nbsp;ix,
    long&nbsp;v)</code></th>
@@ -301,15 +308,15 @@ extends <a href="DenseBlockLDRB.html" title="class in org.apache.sysds.runtime.d
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int%5B%5D,java.lang.String)">set</a></span>&#8203;(int[]&nbsp;ix,
-   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;v)</code></th>
+   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;v)</code></th>
 <td class="colLast">
 <div class="block">Set the specified cell to the given value.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,int,double)">set</a></span>&#8203;(int&nbsp;r,
    int&nbsp;c,
@@ -318,14 +325,14 @@ extends <a href="DenseBlockLDRB.html" title="class in org.apache.sysds.runtime.d
 <div class="block">Set the given value for a given row and column.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#values(int)">values</a></span>&#8203;(int&nbsp;r)</code></th>
 <td class="colLast">
 <div class="block">Get the allocated block for the given row.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#valuesAt(int)">valuesAt</a></span>&#8203;(int&nbsp;bix)</code></th>
 <td class="colLast">
@@ -351,8 +358,8 @@ extends <a href="DenseBlockLDRB.html" title="class in org.apache.sysds.runtime.d
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -403,6 +410,25 @@ extends <a href="DenseBlockLDRB.html" title="class in org.apache.sysds.runtime.d
 <dd><code><a href="DenseBlock.html#isNumeric()">isNumeric</a></code>&nbsp;in class&nbsp;<code><a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if numeric (FP, INT, BOOLEAN)</dd>
+</dl>
+</li>
+</ul>
+<a id="isNumeric(org.apache.sysds.common.Types.ValueType)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isNumeric</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;isNumeric&#8203;(<a href="../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="DenseBlock.html#isNumeric(org.apache.sysds.common.Types.ValueType)">DenseBlock</a></code></span></div>
+<div class="block">Indicates if the dense block is a specific numeric value type.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="DenseBlock.html#isNumeric(org.apache.sysds.common.Types.ValueType)">isNumeric</a></code>&nbsp;in class&nbsp;<code><a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>vt</code> - value type to check</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if numeric and of value type vt</dd>
 </dl>
 </li>
 </ul>
@@ -610,7 +636,7 @@ extends <a href="DenseBlockLDRB.html" title="class in org.apache.sysds.runtime.d
 <li class="blockList">
 <h4>set</h4>
 <pre class="methodSignature">public&nbsp;<a href="DenseBlock.html" title="class in org.apache.sysds.runtime.data">DenseBlock</a>&nbsp;set&#8203;(int[]&nbsp;ix,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;v)</pre>
+                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;v)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="DenseBlock.html#set(int%5B%5D,java.lang.String)">DenseBlock</a></code></span></div>
 <div class="block">Set the specified cell to the given value.</div>
 <dl>
@@ -670,7 +696,7 @@ extends <a href="DenseBlockLDRB.html" title="class in org.apache.sysds.runtime.d
 <ul class="blockList">
 <li class="blockList">
 <h4>getString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getString&#8203;(int[]&nbsp;ix)</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getString&#8203;(int[]&nbsp;ix)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="DenseBlock.html#getString(int%5B%5D)">DenseBlock</a></code></span></div>
 <div class="block">Get the value of a given cell as a String</div>
 <dl>
@@ -771,7 +797,7 @@ extends <a href="DenseBlockLDRB.html" title="class in org.apache.sysds.runtime.d
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

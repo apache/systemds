@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":9,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":9,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":9,"i47":10,"i48":9};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":9,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":9,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":9,"i49":10,"i50":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.instructions.gpu.context.GPUObject</li>
@@ -132,7 +132,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <hr>
 <pre>public class <span class="typeNameLabel">GPUObject</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
 <div class="block">Handle to a matrix block on the GPU</div>
 </li>
 </ul>
@@ -216,32 +216,42 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#acquireDeviceModifySparse()">acquireDeviceModifySparse</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#acquireDeviceModifyDense(boolean)">acquireDeviceModifyDense</a></span>&#8203;(boolean&nbsp;initialize)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#acquireDeviceRead(java.lang.String)">acquireDeviceRead</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#acquireDeviceModifySparse()">acquireDeviceModifySparse</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#acquireHostRead(java.lang.String)">acquireHostRead</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#acquireDeviceModifySparse(boolean)">acquireDeviceModifySparse</a></span>&#8203;(boolean&nbsp;initialize)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#acquireDeviceRead(java.lang.String)">acquireDeviceRead</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#acquireHostRead(java.lang.String)">acquireHostRead</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</code></th>
 <td class="colLast">
 <div class="block">if the data is allocated on the GPU and is dirty, it is copied back to the host memory</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addReadLock()">addReadLock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addWriteLock()">addWriteLock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateAndFillDense(double)">allocateAndFillDense</a></span>&#8203;(double&nbsp;v)</code></th>
 <td class="colLast">
@@ -249,7 +259,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  and fills it up with a single value</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateSparseAndEmpty()">allocateSparseAndEmpty</a></span>()</code></th>
 <td class="colLast">
@@ -257,32 +267,32 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  This is the result of operations that are both non zero matrices.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clearData(java.lang.String,boolean)">clearData</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clearData(java.lang.String,boolean)">clearData</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode,
          boolean&nbsp;eager)</code></th>
 <td class="colLast">
 <div class="block">Clears the data associated with this <a href="GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> instance</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clearDensePointer()">clearDensePointer</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Removes the dense pointer and potential soft reference</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clearGPUObject()">clearGPUObject</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></td>
+<tr id="i13" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clone()">clone</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static <a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#columnMajorDenseToRowMajorSparse(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.jcusparse.cusparseHandle,jcuda.Pointer,int,int)">columnMajorDenseToRowMajorSparse</a></span>&#8203;(<a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
                                 jcuda.jcusparse.cusparseHandle&nbsp;cusparseHandle,
@@ -294,122 +304,122 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  Since the allocated matrix is temporary, bookkeeping is not updated.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#denseColumnMajorToRowMajor()">denseColumnMajorToRowMajor</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Convenience method.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#denseRowMajorToColumnMajor()">denseRowMajorToColumnMajor</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Convenience method.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#denseToSparse()">denseToSparse</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Converts this GPUObject from dense to sparse format.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#evictFromDeviceToHostMB(java.lang.String,boolean)">evictFromDeviceToHostMB</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#evictFromDeviceToHostMB(java.lang.String,boolean)">evictFromDeviceToHostMB</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                        boolean&nbsp;eagerDelete)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>jcuda.Pointer</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDensePointer()">getDensePointer</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Pointer to dense matrix</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDensePointerAddress()">getDensePointerAddress</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getJcudaSparseMatrixPtr()">getJcudaSparseMatrixPtr</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Pointer to sparse matrix</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMatrixObject()">getMatrixObject</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNnz(java.lang.String,boolean)">getNnz</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNnz(java.lang.String,boolean)">getNnz</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
       boolean&nbsp;recomputeDenseNNZ)</code></th>
 <td class="colLast">
 <div class="block">Being allocated is a prerequisite for computing nnz.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPointerAddress(jcuda.Pointer)">getPointerAddress</a></span>&#8203;(jcuda.Pointer&nbsp;p)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSizeOnDevice()">getSizeOnDevice</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code><a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSparseMatrixCudaPointer()">getSparseMatrixCudaPointer</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Convenience method to directly examine the Sparse matrix on GPU</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isAllocated()">isAllocated</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isDensePointerNull()">isDensePointerNull</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Checks if the dense pointer is null</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isDirty()">isDirty</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Whether this block is dirty on the GPU</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isLinCached()">isLinCached</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isLocked()">isLocked</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isrmVarPending()">isrmVarPending</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isSparse()">isSparse</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isSparseAndEmpty()">isSparseAndEmpty</a></span>()</code></th>
 <td class="colLast">
@@ -417,58 +427,58 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  Being allocated is a prerequisite to being sparse and empty.</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#releaseInput()">releaseInput</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Releases input allocated on GPU</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#releaseOutput()">releaseOutput</a></span>()</code></th>
 <td class="colLast">
 <div class="block">releases output allocated on GPU</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#releaseReadLock()">releaseReadLock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#releaseWriteLock()">releaseWriteLock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#resetReadWriteLock()">resetReadWriteLock</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setDensePointer(jcuda.Pointer)">setDensePointer</a></span>&#8203;(jcuda.Pointer&nbsp;densePtr)</code></th>
 <td class="colLast">
 <div class="block">Convenience method to directly set the dense matrix pointer on GPU</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setDirty(boolean)">setDirty</a></span>&#8203;(boolean&nbsp;flag)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setIsLinCached(boolean)">setIsLinCached</a></span>&#8203;(boolean&nbsp;val)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setrmVarPending(boolean)">setrmVarPending</a></span>&#8203;(boolean&nbsp;val)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setSparseMatrixCudaPointer(org.apache.sysds.runtime.instructions.gpu.context.CSRPointer)">setSparseMatrixCudaPointer</a></span>&#8203;(<a href="CSRPointer.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">CSRPointer</a>&nbsp;sparseMatrixPtr)</code></th>
 <td class="colLast">
@@ -476,39 +486,39 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  Needed for operations like cusparseDcsrgemm(cusparseHandle, int, int, int, int, int, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, int, Pointer, Pointer, Pointer, cusparseMatDescr, Pointer, Pointer, Pointer)</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sparseToColumnMajorDense()">sparseToColumnMajorDense</a></span>()</code></th>
 <td class="colLast">
 <div class="block">More efficient method to convert sparse to dense but returns dense in column major format</div>
 </td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sparseToDense()">sparseToDense</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Convert sparse to dense (Performs transpose, use sparseToColumnMajorDense if the kernel can deal with column major format)</div>
 </td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sparseToDense(java.lang.String)">sparseToDense</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sparseToDense(java.lang.String)">sparseToDense</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName)</code></th>
 <td class="colLast">
 <div class="block">Convert sparse to dense (Performs transpose, use sparseToColumnMajorDense if the kernel can deal with column major format)
  Also records per instruction invokation of sparseToDense.</div>
 </td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toIntExact(long)">toIntExact</a></span>&#8203;(long&nbsp;l)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i47" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<tr id="i49" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>static jcuda.Pointer</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transpose(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.Pointer,int,int,int,int)">transpose</a></span>&#8203;(<a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
          jcuda.Pointer&nbsp;densePtr,
@@ -525,8 +535,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -671,7 +681,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>clone</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;clone()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;clone()</pre>
 </li>
 </ul>
 <a id="transpose(org.apache.sysds.runtime.instructions.gpu.context.GPUContext,jcuda.Pointer,int,int,int,int)">
@@ -802,7 +812,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>sparseToDense</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;sparseToDense&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;sparseToDense&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName)</pre>
 <div class="block">Convert sparse to dense (Performs transpose, use sparseToColumnMajorDense if the kernel can deal with column major format)
  Also records per instruction invokation of sparseToDense.</div>
 <dl>
@@ -886,7 +896,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getNnz</h4>
-<pre class="methodSignature">public&nbsp;long&nbsp;getNnz&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+<pre class="methodSignature">public&nbsp;long&nbsp;getNnz&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                    boolean&nbsp;recomputeDenseNNZ)</pre>
 <div class="block">Being allocated is a prerequisite for computing nnz.
  Note: if the matrix is in dense format, it explicitly re-computes the number of nonzeros.</div>
@@ -905,7 +915,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>acquireDeviceRead</h4>
-<pre class="methodSignature">public&nbsp;boolean&nbsp;acquireDeviceRead&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</pre>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;acquireDeviceRead&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</pre>
 </li>
 </ul>
 <a id="acquireDeviceModifyDense()">
@@ -917,6 +927,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre class="methodSignature">public&nbsp;boolean&nbsp;acquireDeviceModifyDense()</pre>
 </li>
 </ul>
+<a id="acquireDeviceModifyDense(boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>acquireDeviceModifyDense</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;acquireDeviceModifyDense&#8203;(boolean&nbsp;initialize)</pre>
+</li>
+</ul>
 <a id="acquireDeviceModifySparse()">
 <!--   -->
 </a>
@@ -926,13 +945,22 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre class="methodSignature">public&nbsp;boolean&nbsp;acquireDeviceModifySparse()</pre>
 </li>
 </ul>
+<a id="acquireDeviceModifySparse(boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>acquireDeviceModifySparse</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;acquireDeviceModifySparse&#8203;(boolean&nbsp;initialize)</pre>
+</li>
+</ul>
 <a id="acquireHostRead(java.lang.String)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>acquireHostRead</h4>
-<pre class="methodSignature">public&nbsp;boolean&nbsp;acquireHostRead&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</pre>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;acquireHostRead&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName)</pre>
 <div class="block">if the data is allocated on the GPU and is dirty, it is copied back to the host memory</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1040,7 +1068,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>evictFromDeviceToHostMB</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;evictFromDeviceToHostMB&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
+<pre class="methodSignature">public&nbsp;<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;evictFromDeviceToHostMB&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instName,
                                            boolean&nbsp;eagerDelete)
                                     throws <a href="../../../DMLRuntimeException.html" title="class in org.apache.sysds.runtime">DMLRuntimeException</a></pre>
 <dl>
@@ -1055,7 +1083,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>clearData</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;clearData&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode,
+<pre class="methodSignature">public&nbsp;void&nbsp;clearData&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode,
                       boolean&nbsp;eager)
                throws <a href="../../../DMLRuntimeException.html" title="class in org.apache.sysds.runtime">DMLRuntimeException</a></pre>
 <div class="block">Clears the data associated with this <a href="GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> instance</div>
@@ -1147,10 +1175,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -1241,7 +1269,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

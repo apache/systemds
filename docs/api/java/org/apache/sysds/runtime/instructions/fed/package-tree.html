@@ -103,13 +103,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <section role="region">
 <h2 title="Class Hierarchy">Class Hierarchy</h2>
 <ul>
-<li class="circle">java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink"><span class="typeNameLink">Object</span></a>
+<li class="circle">java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink"><span class="typeNameLink">Object</span></a>
 <ul>
-<li class="circle">org.apache.sysds.runtime.controlprogram.federated.<a href="../../controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated"><span class="typeNameLink">FederatedUDF</span></a> (implements org.apache.sysds.runtime.lineage.<a href="../../lineage/LineageTraceable.html" title="interface in org.apache.sysds.runtime.lineage">LineageTraceable</a>, java.io.<a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a>)
+<li class="circle">org.apache.sysds.runtime.controlprogram.federated.<a href="../../controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated"><span class="typeNameLink">FederatedUDF</span></a> (implements org.apache.sysds.runtime.lineage.<a href="../../lineage/LineageTraceable.html" title="interface in org.apache.sysds.runtime.lineage">LineageTraceable</a>, java.io.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a>)
 <ul>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder</span></a></li>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder</span></a></li>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="ParameterizedBuiltinFEDInstruction.DecodeMatrix.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">ParameterizedBuiltinFEDInstruction.DecodeMatrix</span></a></li>
+<li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="QuantilePickFEDInstruction.GetHistogram.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">QuantilePickFEDInstruction.GetHistogram</span></a></li>
+<li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="QuantilePickFEDInstruction.GetValuesInRange.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">QuantilePickFEDInstruction.GetValuesInRange</span></a></li>
+<li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="QuantilePickFEDInstruction.GetValuesInRanges.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">QuantilePickFEDInstruction.GetValuesInRanges</span></a></li>
+<li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="QuantilePickFEDInstruction.MinMax.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">QuantilePickFEDInstruction.MinMax</span></a></li>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="ReorgFEDInstruction.DiagMatrix.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">ReorgFEDInstruction.DiagMatrix</span></a></li>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="ReorgFEDInstruction.Rdiag.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">ReorgFEDInstruction.Rdiag</span></a></li>
 </ul>
@@ -126,7 +130,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="AggregateBinaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">AggregateBinaryFEDInstruction</span></a></li>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="AppendFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">AppendFEDInstruction</span></a></li>
-<li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="BinaryFrameScalarFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">BinaryFrameScalarFEDInstruction</span></a></li>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="BinaryMatrixMatrixFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">BinaryMatrixMatrixFEDInstruction</span></a></li>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="BinaryMatrixScalarFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">BinaryMatrixScalarFEDInstruction</span></a></li>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="CovarianceFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">CovarianceFEDInstruction</span></a></li>
@@ -148,7 +151,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="QuaternaryWUMMFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">QuaternaryWUMMFEDInstruction</span></a></li>
 </ul>
 </li>
-<li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="TernaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">TernaryFEDInstruction</span></a></li>
+<li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="TernaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">TernaryFEDInstruction</span></a>
+<ul>
+<li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="TernaryFrameScalarFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">TernaryFrameScalarFEDInstruction</span></a></li>
+</ul>
+</li>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="UnaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">UnaryFEDInstruction</span></a>
 <ul>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="AggregateUnaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">AggregateUnaryFEDInstruction</span></a>
@@ -182,9 +189,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <section role="region">
 <h2 title="Enum Hierarchy">Enum Hierarchy</h2>
 <ul>
-<li class="circle">java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink"><span class="typeNameLink">Object</span></a>
+<li class="circle">java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink"><span class="typeNameLink">Object</span></a>
 <ul>
-<li class="circle">java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?is-external=true" title="class or interface in java.lang" class="externalLink"><span class="typeNameLink">Enum</span></a>&lt;E&gt; (implements java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Comparable</a>&lt;T&gt;, java.io.<a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a>)
+<li class="circle">java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Enum.html?is-external=true" title="class or interface in java.lang" class="externalLink"><span class="typeNameLink">Enum</span></a>&lt;E&gt; (implements java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Comparable</a>&lt;T&gt;, java.io.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a>)
 <ul>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="FEDInstruction.FederatedOutput.html" title="enum in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">FEDInstruction.FederatedOutput</span></a></li>
 <li class="circle">org.apache.sysds.runtime.instructions.fed.<a href="FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">FEDInstruction.FEDType</span></a></li>
@@ -241,7 +248,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
+var data = {"i0":6,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.AColGroup</a></li>
@@ -147,7 +147,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code>, <code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Cloneable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Cloneable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code>, <code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Cloneable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Cloneable</a></code></dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
@@ -226,32 +226,40 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCost(org.apache.sysds.runtime.compress.cost.ComputationCostEstimator,int)">getCost</a></span>&#8203;(<a href="../cost/ComputationCostEstimator.html" title="class in org.apache.sysds.runtime.compress.cost">ComputationCostEstimator</a>&nbsp;e,
+       int&nbsp;nRows)</code></th>
+<td class="colLast">
+<div class="block">Get the computation cost associated with this column group.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExactSizeOnDisk()">getExactSizeOnDisk</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns the exact serialized size of column group.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hasZeros()">hasZeros</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readFields(java.io.DataInput)">readFields</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readFields(java.io.DataInput)">readFields</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Deserialize column group from data input.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
 <div class="block">Serializes column group to data output.</div>
 </td>
@@ -262,28 +270,28 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></h3>
-<code><a href="AColGroupValue.html#addMatrixToResult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">addMatrixToResult</a>, <a href="AColGroupValue.html#containsValue(double)">containsValue</a>, <a href="AColGroupValue.html#copy()">copy</a>, <a href="AColGroupValue.html#copyAndSet(double%5B%5D)">copyAndSet</a>, <a href="AColGroupValue.html#copyAndSet(int%5B%5D,double%5B%5D)">copyAndSet</a>, <a href="AColGroupValue.html#copyAndSet(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary)">copyAndSet</a>, <a href="AColGroupValue.html#copyAndSet(org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary)">copyAndSet</a>, <a href="AColGroupValue.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int,int,int)">decompressToDenseBlock</a>, <a href="AColGroupValue.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a>, <a href="AColGroupValue.html#getCachedCounts()">getCachedCounts</a>, <a href="AColGroupValue.html#getCounts()">getCounts</a>, <a href="AColGroupValue.html#getCounts(int%5B%5D)">getCounts</a>, <a href="AColGroupValue.html#getDictionary()">getDictionary</a>, <a href="AColGroupValue.html#getNumberNonZeros(int)">getNumberNonZeros</a>, <a href="AColGroupValue.html#getNumValues()">getNumValues</a>, <a href="AColGroupValue.html#getValuesAsBlock()">getValuesAsBlock</a>, <a href="AColGroupValue.html#leftMultByPreAggregateMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByPreAggregateMatrix</a>, <a href="AColGroupValue.html#replace(double,double)">replace</a>, <a href="AColGroupValue.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></code></li>
+<code><a href="AColGroupValue.html#centralMoment(org.apache.sysds.runtime.matrix.operators.CMOperator,int)">centralMoment</a>, <a href="AColGroupValue.html#computeColSums(double%5B%5D,int)">computeColSums</a>, <a href="AColGroupValue.html#containsValue(double)">containsValue</a>, <a href="AColGroupValue.html#copy()">copy</a>, <a href="AColGroupValue.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int,int,int)">decompressToDenseBlock</a>, <a href="AColGroupValue.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a>, <a href="AColGroupValue.html#forceMatrixBlockDictionary()">forceMatrixBlockDictionary</a>, <a href="AColGroupValue.html#getCachedCounts()">getCachedCounts</a>, <a href="AColGroupValue.html#getCounts()">getCounts</a>, <a href="AColGroupValue.html#getCounts(int%5B%5D)">getCounts</a>, <a href="AColGroupValue.html#getDictionary()">getDictionary</a>, <a href="AColGroupValue.html#getNumberNonZeros(int)">getNumberNonZeros</a>, <a href="AColGroupValue.html#getNumValues()">getNumValues</a>, <a href="AColGroupValue.html#replace(double,double)">replace</a>, <a href="AColGroupValue.html#rexpandCols(int,boolean,boolean,int)">rexpandCols</a>, <a href="AColGroupValue.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a></h3>
-<code><a href="AColGroupCompressed.html#computeColSums(double%5B%5D,int)">computeColSums</a>, <a href="AColGroupCompressed.html#getMax()">getMax</a>, <a href="AColGroupCompressed.html#getMin()">getMin</a>, <a href="AColGroupCompressed.html#tsmm(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">tsmm</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int)">unaryAggregateOperations</a></code></li>
+<code><a href="AColGroupCompressed.html#getMax()">getMax</a>, <a href="AColGroupCompressed.html#getMin()">getMin</a>, <a href="AColGroupCompressed.html#preAggRows(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">preAggRows</a>, <a href="AColGroupCompressed.html#tsmm(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">tsmm</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int)">unaryAggregateOperations</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int,double%5B%5D)">unaryAggregateOperations</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.AColGroup">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></h3>
-<code><a href="AColGroup.html#binaryRowOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,boolean)">binaryRowOpLeft</a>, <a href="AColGroup.html#binaryRowOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,boolean)">binaryRowOpRight</a>, <a href="AColGroup.html#colSum(java.util.List,double%5B%5D,int)">colSum</a>, <a href="AColGroup.html#decompressToBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">decompressToBlock</a>, <a href="AColGroup.html#decompressToBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">decompressToBlock</a>, <a href="AColGroup.html#get(int,int)">get</a>, <a href="AColGroup.html#getColIndices()">getColIndices</a>, <a href="AColGroup.html#getCompType()">getCompType</a>, <a href="AColGroup.html#getIdx(int,int)">getIdx</a>, <a href="AColGroup.html#getNumCols()">getNumCols</a>, <a href="AColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a>, <a href="AColGroup.html#leftMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">leftMultByMatrix</a>, <a href="AColGroup.html#scalarOperation(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">scalarOperation</a>, <a href="AColGroup.html#shiftColIndices(int)">shiftColIndices</a>, <a href="AColGroup.html#sliceColumn(int)">sliceColumn</a>, <a href="AColGroup.html#sliceColumns(int,int)">sliceColumns</a>, <a href="AColGroup.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></code></li>
+<code><a href="AColGroup.html#binaryRowOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,boolean)">binaryRowOpLeft</a>, <a href="AColGroup.html#binaryRowOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,boolean)">binaryRowOpRight</a>, <a href="AColGroup.html#colSum(java.util.List,double%5B%5D,int)">colSum</a>, <a href="AColGroup.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int)">decompressToDenseBlock</a>, <a href="AColGroup.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int)">decompressToSparseBlock</a>, <a href="AColGroup.html#get(int,int)">get</a>, <a href="AColGroup.html#getColIndices()">getColIndices</a>, <a href="AColGroup.html#getCompType()">getCompType</a>, <a href="AColGroup.html#getIdx(int,int)">getIdx</a>, <a href="AColGroup.html#getNumCols()">getNumCols</a>, <a href="AColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a>, <a href="AColGroup.html#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">leftMultByMatrixNoPreAgg</a>, <a href="AColGroup.html#scalarOperation(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">scalarOperation</a>, <a href="AColGroup.html#shiftColIndices(int)">shiftColIndices</a>, <a href="AColGroup.html#sliceColumn(int)">sliceColumn</a>, <a href="AColGroup.html#sliceColumns(int,int)">sliceColumns</a>, <a href="AColGroup.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a>, <a href="AColGroup.html#unaryOperation(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">unaryOperation</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -351,8 +359,8 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 <ul class="blockList">
 <li class="blockList">
 <h4>readFields</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;readFields&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)
-                throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;readFields&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)
+                throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#readFields(java.io.DataInput)">AColGroup</a></code></span></div>
 <div class="block">Deserialize column group from data input.</div>
 <dl>
@@ -361,7 +369,7 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - data input</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -371,8 +379,8 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 <ul class="blockList">
 <li class="blockList">
 <h4>write</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;write&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)
-           throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;write&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)
+           throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#write(java.io.DataOutput)">AColGroup</a></code></span></div>
 <div class="block">Serializes column group to data output.</div>
 <dl>
@@ -381,7 +389,7 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>out</code> - data output</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -413,13 +421,34 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
                                          int&nbsp;ru)</pre>
 </li>
 </ul>
+<a id="getCost(org.apache.sysds.runtime.compress.cost.ComputationCostEstimator,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getCost</h4>
+<pre class="methodSignature">public&nbsp;double&nbsp;getCost&#8203;(<a href="../cost/ComputationCostEstimator.html" title="class in org.apache.sysds.runtime.compress.cost">ComputationCostEstimator</a>&nbsp;e,
+                      int&nbsp;nRows)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#getCost(org.apache.sysds.runtime.compress.cost.ComputationCostEstimator,int)">AColGroup</a></code></span></div>
+<div class="block">Get the computation cost associated with this column group.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="AColGroup.html#getCost(org.apache.sysds.runtime.compress.cost.ComputationCostEstimator,int)">getCost</a></code>&nbsp;in class&nbsp;<code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>e</code> - The computation cost estimator</dd>
+<dd><code>nRows</code> - the number of rows in the column group</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The cost of this column group</dd>
+</dl>
+</li>
+</ul>
 <a id="toString()">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="AColGroupValue.html#toString()">toString</a></code>&nbsp;in class&nbsp;<code><a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></code></dd>
@@ -495,7 +524,7 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

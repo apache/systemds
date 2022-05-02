@@ -89,7 +89,7 @@ loadScripts(document, 'script');</script>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
+<li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
@@ -120,10 +120,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li>
+<ul class="inheritance">
+<li><a href="ACostEstimate.html" title="class in org.apache.sysds.runtime.compress.cost">org.apache.sysds.runtime.compress.cost.ACostEstimate</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.compress.cost.DistinctCostEstimator</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -132,12 +137,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code>, <code><a href="ICostEstimate.html" title="interface in org.apache.sysds.runtime.compress.cost">ICostEstimate</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code></dd>
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">DistinctCostEstimator</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>
-implements <a href="ICostEstimate.html" title="interface in org.apache.sysds.runtime.compress.cost">ICostEstimate</a></pre>
+extends <a href="ACostEstimate.html" title="class in org.apache.sysds.runtime.compress.cost">ACostEstimate</a></pre>
 <div class="block">A Cost based estimator that based the compression and co-coding cost on the number of distinct elements in the column
  groups.
  
@@ -153,23 +157,6 @@ implements <a href="ICostEstimate.html" title="interface in org.apache.sysds.run
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
-<!-- =========== FIELD SUMMARY =========== -->
-<section role="region">
-<ul class="blockList">
-<li class="blockList"><a id="field.summary">
-<!--   -->
-</a>
-<h3>Field Summary</h3>
-<ul class="blockList">
-<li class="blockList"><a id="fields.inherited.from.class.org.apache.sysds.runtime.compress.cost.ICostEstimate">
-<!--   -->
-</a>
-<h3>Fields inherited from interface&nbsp;org.apache.sysds.runtime.compress.cost.<a href="ICostEstimate.html" title="interface in org.apache.sysds.runtime.compress.cost">ICostEstimate</a></h3>
-<code><a href="ICostEstimate.html#LOG">LOG</a></code></li>
-</ul>
-</li>
-</ul>
-</section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
 <section role="region">
 <ul class="blockList">
@@ -209,34 +196,40 @@ implements <a href="ICostEstimate.html" title="interface in org.apache.sysds.run
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>double</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCostOfColumnGroup(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">getCostOfColumnGroup</a></span>&#8203;(<a href="../estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCost(org.apache.sysds.runtime.compress.colgroup.AColGroup,int)">getCost</a></span>&#8203;(<a href="../colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;cg,
+       int&nbsp;nRows)</code></th>
 <td class="colLast">
-<div class="block">If the instruction does not care about the inter column group cost, such as in memory cost or in computation cost
- of right or left matrix multiplication we simply estimate the cost of individual column groups.</div>
+<div class="block">Get the cost of a compressed columnGroup.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>double</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getUncompressedCost(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">getUncompressedCost</a></span>&#8203;(<a href="../estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCost(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getCost</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb)</code></th>
 <td class="colLast">
-<div class="block">Calculate the cost of execution if uncompressed.</div>
+<div class="block">Get the cost of a matrix block.</div>
 </td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shouldAnalyze(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">shouldAnalyze</a></span>&#8203;(<a href="../estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
-             <a href="../estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shouldSparsify()">shouldSparsify</a></span>()</code></th>
 <td class="colLast">
-<div class="block">Decide if the column groups should be analysed, or the worst case join should be expected.</div>
+<div class="block">Ask the cost estimator if it is a good idea to try to sparsify a column group.</div>
 </td>
 </tr>
 </table>
 <ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.cost.ACostEstimate">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.cost.<a href="ACostEstimate.html" title="class in org.apache.sysds.runtime.compress.cost">ACostEstimate</a></h3>
+<code><a href="ACostEstimate.html#getCost(java.util.Collection,int)">getCost</a>, <a href="ACostEstimate.html#getCost(org.apache.sysds.runtime.compress.CompressedMatrixBlock)">getCost</a>, <a href="ACostEstimate.html#getCost(org.apache.sysds.runtime.compress.estim.CompressedSizeInfo)">getCost</a>, <a href="ACostEstimate.html#getCost(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">getCost</a>, <a href="ACostEstimate.html#toString()">toString</a></code></li>
+</ul>
+<ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -275,69 +268,61 @@ implements <a href="ICostEstimate.html" title="interface in org.apache.sysds.run
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="getUncompressedCost(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">
+<a id="getCost(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getUncompressedCost</h4>
-<pre class="methodSignature">public&nbsp;double&nbsp;getUncompressedCost&#8203;(<a href="../estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="ICostEstimate.html#getUncompressedCost(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">ICostEstimate</a></code></span></div>
-<div class="block">Calculate the cost of execution if uncompressed.
- 
- This is used as an optimization goal to at least achieve, since if the uncompressed cost of calculation is lower
- than in compressed space we don't want to compress.</div>
+<h4>getCost</h4>
+<pre class="methodSignature">public&nbsp;double&nbsp;getCost&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ACostEstimate.html#getCost(org.apache.sysds.runtime.matrix.data.MatrixBlock)">ACostEstimate</a></code></span></div>
+<div class="block">Get the cost of a matrix block.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ICostEstimate.html#getUncompressedCost(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">getUncompressedCost</a></code>&nbsp;in interface&nbsp;<code><a href="ICostEstimate.html" title="interface in org.apache.sysds.runtime.compress.cost">ICostEstimate</a></code></dd>
+<dd><code><a href="ACostEstimate.html#getCost(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getCost</a></code>&nbsp;in class&nbsp;<code><a href="ACostEstimate.html" title="class in org.apache.sysds.runtime.compress.cost">ACostEstimate</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>g</code> - A potential column group to compare to.</dd>
+<dd><code>mb</code> - A MatrixBlock</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>The uncompressed cost.</dd>
+<dd>The cost subject to the internal cost functions</dd>
 </dl>
 </li>
 </ul>
-<a id="getCostOfColumnGroup(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">
+<a id="getCost(org.apache.sysds.runtime.compress.colgroup.AColGroup,int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getCostOfColumnGroup</h4>
-<pre class="methodSignature">public&nbsp;double&nbsp;getCostOfColumnGroup&#8203;(<a href="../estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="ICostEstimate.html#getCostOfColumnGroup(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">ICostEstimate</a></code></span></div>
-<div class="block">If the instruction does not care about the inter column group cost, such as in memory cost or in computation cost
- of right or left matrix multiplication we simply estimate the cost of individual column groups.</div>
+<h4>getCost</h4>
+<pre class="methodSignature">public&nbsp;double&nbsp;getCost&#8203;(<a href="../colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;cg,
+                      int&nbsp;nRows)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ACostEstimate.html#getCost(org.apache.sysds.runtime.compress.colgroup.AColGroup,int)">ACostEstimate</a></code></span></div>
+<div class="block">Get the cost of a compressed columnGroup.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ICostEstimate.html#getCostOfColumnGroup(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">getCostOfColumnGroup</a></code>&nbsp;in interface&nbsp;<code><a href="ICostEstimate.html" title="interface in org.apache.sysds.runtime.compress.cost">ICostEstimate</a></code></dd>
+<dd><code><a href="ACostEstimate.html#getCost(org.apache.sysds.runtime.compress.colgroup.AColGroup,int)">getCost</a></code>&nbsp;in class&nbsp;<code><a href="ACostEstimate.html" title="class in org.apache.sysds.runtime.compress.cost">ACostEstimate</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>g</code> - Column group to estimate the cost of</dd>
+<dd><code>cg</code> - A ColumnGroup</dd>
+<dd><code>nRows</code> - The number of rows in the column group</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>The Cost of this column group</dd>
+<dd>The cost subject to the internal cost functions</dd>
 </dl>
 </li>
 </ul>
-<a id="shouldAnalyze(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">
+<a id="shouldSparsify()">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>shouldAnalyze</h4>
-<pre class="methodSignature">public&nbsp;boolean&nbsp;shouldAnalyze&#8203;(<a href="../estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
-                             <a href="../estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="ICostEstimate.html#shouldAnalyze(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">ICostEstimate</a></code></span></div>
-<div class="block">Decide if the column groups should be analysed, or the worst case join should be expected. This is use full if
- the column groups are very small and the in practice difference between joining or not is small.
- 
- Or in the other case where there is some obvious reason why these two groups does not fit together.</div>
+<h4>shouldSparsify</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;shouldSparsify()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ACostEstimate.html#shouldSparsify()">ACostEstimate</a></code></span></div>
+<div class="block">Ask the cost estimator if it is a good idea to try to sparsify a column group. It is the same as asking if it is a
+ good idea to make FOR on top of the column group.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ICostEstimate.html#shouldAnalyze(org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup,org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup)">shouldAnalyze</a></code>&nbsp;in interface&nbsp;<code><a href="ICostEstimate.html" title="interface in org.apache.sysds.runtime.compress.cost">ICostEstimate</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>g1</code> - Group 1</dd>
-<dd><code>g2</code> - Group 2</dd>
+<dd><code><a href="ACostEstimate.html#shouldSparsify()">shouldSparsify</a></code>&nbsp;in class&nbsp;<code><a href="ACostEstimate.html" title="class in org.apache.sysds.runtime.compress.cost">ACostEstimate</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>If the joining should be analyzed.</dd>
+<dd>true if yes</dd>
 </dl>
 </li>
 </ul>
@@ -394,7 +379,7 @@ implements <a href="ICostEstimate.html" title="interface in org.apache.sysds.run
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
+<li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
@@ -410,7 +395,7 @@ implements <a href="ICostEstimate.html" title="interface in org.apache.sysds.run
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

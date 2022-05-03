@@ -30,8 +30,11 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.functionobjects.OffsetColumnIndex;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -47,18 +50,43 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 		_cbind = cbind;
 	}
 
+	protected AppendFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean cbind,
+		String opcode, String istr, FederatedOutput fedOut) {
+		super(FEDType.Append, op, in1, in2, out, opcode, istr, fedOut);
+		_cbind = cbind;
+	}
+
+	public static AppendFEDInstruction parseInstruction(Instruction inst){
+		if ( inst instanceof CPInstruction || inst instanceof SPInstruction ){
+			String instStr = inst.getInstructionString();
+			String[] parts = InstructionUtils.getInstructionPartsWithValueType(instStr);
+			InstructionUtils.checkNumFields(parts, 6, 5, 4);
+
+			String opcode = parts[0];
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand out = new CPOperand(parts[parts.length - 2]);
+			boolean cbind = Boolean.parseBoolean(parts[parts.length - 1]);
+
+			Operator op = new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1));
+			return new AppendFEDInstruction(op, in1, in2, out, cbind, opcode, instStr);
+		}
+		else return parseInstruction(inst.getInstructionString());
+	}
+
 	public static AppendFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields(parts, 6, 5, 4);
+		InstructionUtils.checkNumFields(parts, 7, 6, 5);
 
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
-		CPOperand out = new CPOperand(parts[parts.length - 2]);
-		boolean cbind = Boolean.parseBoolean(parts[parts.length - 1]);
+		CPOperand out = new CPOperand(parts[parts.length - 3]);
+		boolean cbind = Boolean.parseBoolean(parts[parts.length - 2]);
+		FederatedOutput fedOut = FederatedOutput.valueOf(parts[parts.length-1]);
 
 		Operator op = new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1));
-		return new AppendFEDInstruction(op, in1, in2, out, cbind, opcode, str);
+		return new AppendFEDInstruction(op, in1, in2, out, cbind, opcode, str, fedOut);
 	}
 
 	@Override

@@ -180,7 +180,7 @@ public class FEDInstructionUtils {
 				if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederatedExcept(FType.BROADCAST))
 					|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederatedExcept(FType.BROADCAST))) {
 					if(instruction.getOpcode().equals("append") )
-						fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
+						fedinst = AppendFEDInstruction.parseInstruction(inst);
 					else if(instruction.getOpcode().equals("qpick"))
 						fedinst = QuantilePickFEDInstruction.parseInstruction(inst);
 					else if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1).isFederated(FType.ROW) ||
@@ -402,7 +402,7 @@ public class FEDInstructionUtils {
 				Data data2 = ec.getVariable(ainstruction.input2);
 				if ((data1 instanceof MatrixObject && ((MatrixObject) data1).isFederatedExcept(FType.BROADCAST))
 					|| (data2 instanceof MatrixObject && ((MatrixObject) data2).isFederatedExcept(FType.BROADCAST))) {
-					fedinst = AppendFEDInstruction.parseInstruction(instruction.getInstructionString());
+					fedinst = AppendFEDInstruction.parseInstruction(instruction);
 				}
 			}
 			else if (inst instanceof BinaryMatrixScalarSPInstruction

@@ -174,8 +174,9 @@ public class TransformStatistics {
 				outMatrixPreProcessingTime.longValue()*1e-9)).append(" sec.\n");
 			sb.append("TransformEncode PostProc. time:\t").append(String.format("%.3f",
 				outMatrixPostProcessingTime.longValue()*1e-9)).append(" sec.\n");
-			sb.append("TransformEncode SizeEst. time:\t").append(String.format("%.3f",
-				mapSizeEstimationTime.longValue()*1e-9)).append(" sec.\n");
+			if(mapSizeEstimationTime.longValue() > 0)
+				sb.append("TransformEncode SizeEst. time:\t").append(String.format("%.3f",
+					mapSizeEstimationTime.longValue()*1e-9)).append(" sec.\n");
 			return sb.toString();
 		}
 		return "";

@@ -46,7 +46,6 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorSample;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseRowVector;
@@ -427,18 +426,23 @@ public class MultiColumnEncoder implements Encoder {
 		while (numBlocks[1] > 1 && nRow/numBlocks[1] < minNumRows)
 			numBlocks[1]--;
 
-		// Reduce #build blocks if all don't fit in memory
+		// Reduce #build blocks for the recoders if all don't fit in memory
+		int rcdNumBuildBlks = numBlocks[0];
 		if (numBlocks[0] > 1) {
 			// Estimate recode map sizes
 			estimateRCMapSize(in, recodeEncoders);
-			long totEstSize = recodeEncoders.stream().mapToLong(ColumnEncoderComposite::getEstMetaSize).sum();
-			// Worst case scenario: all partial maps contain all distinct values
-			long totPartMapSize = totEstSize * numBlocks[0];
-			if (totPartMapSize > InfrastructureAnalyzer.getLocalMaxMemory())
-				numBlocks[0] = 1;
-			// TODO: Maintain #blocks per encoder. Reduce only the ones with large maps
-			// TODO: If this not enough, add dependencies between recode build tasks
+			// Memory budget for maps = 70% of heap - sizeof(input)
+			long memBudget = (long) (OptimizerUtils.getLocalMemBudget() - in.getInMemorySize());
+			// Worst case scenario: all partial maps contain all distinct values (if < #rows)
+			long totMemOverhead = getTotalMemOverhead(in, rcdNumBuildBlks, recodeEncoders);
+			// Reduce recode build blocks count till they fit int the memory budget
+			while (rcdNumBuildBlks > 1 && totMemOverhead > memBudget) {
+				rcdNumBuildBlks--;
+				totMemOverhead = getTotalMemOverhead(in, rcdNumBuildBlks, recodeEncoders);
+				// TODO: Reduce only the ones with large maps
+			}
 		}
+		// TODO: If still don't fit, serialize the column encoders
 
 		// Set to 1 if not set by the above logics
 		for (int i=0; i<2; i++)
@@ -448,6 +452,11 @@ public class MultiColumnEncoder implements Encoder {
 		_partitionDone = true;
 		// Materialize the partition counts in the encoders
 		_columnEncoders.forEach(e -> e.setNumPartitions(numBlocks[0], numBlocks[1]));
+		if (rcdNumBuildBlks > 0 && rcdNumBuildBlks != numBlocks[0]) {
+			int rcdNumBlocks = rcdNumBuildBlks;
+			recodeEncoders.forEach(e -> e.setNumPartitions(rcdNumBlocks, numBlocks[1]));
+		}
+		//System.out.println("Block count = ["+numBlocks[0]+", "+numBlocks[1]+"], Recode block count = "+rcdNumBuildBlks);
 	}
 
 	private void estimateRCMapSize(CacheBlock in, List<ColumnEncoderComposite> rcList) {
@@ -475,6 +484,25 @@ public class MultiColumnEncoder implements Encoder {
 			LOG.debug("Elapsed time for RC map size estimation: " + ((double) System.nanoTime() - t0) / 1000000 + " ms");
 			TransformStatistics.incMapSizeEstimationTime(System.nanoTime() - t0);
 		}
+	}
+
+	// Estimate total memory overhead of the partial recode maps of all recoders
+	private long getTotalMemOverhead(CacheBlock in, int nBuildpart, List<ColumnEncoderComposite> rcEncoders) {
+		long totMemOverhead = 0;
+		if (nBuildpart == 1) {
+			// Sum the estimated map sizes
+			totMemOverhead = rcEncoders.stream().mapToLong(ColumnEncoderComposite::getEstMetaSize).sum();
+			return totMemOverhead;
+		}
+		// Estimate map size of each partition and sum
+		for (ColumnEncoderComposite rce : rcEncoders) {
+			long avgEntrySize = rce.getEstMetaSize()/ rce.getEstNumDistincts();
+			int partSize = in.getNumRows()/nBuildpart;
+			int partNumDist = Math.min(partSize, rce.getEstNumDistincts()); //#distincts not more than #rows
+			long allMapsSize = partNumDist * avgEntrySize * nBuildpart; //worst-case scenario
+			totMemOverhead += allMapsSize;
+		}
+		return totMemOverhead;
 	}
 
 	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock input, boolean hasDC) {

@@ -60,6 +60,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	protected int _colID;
 	protected ArrayList<Integer> _sparseRowsWZeros = null;
 	protected long _estMetaSize = 0;
+	protected int _estNumDistincts = 0;
 	protected int _nBuildPartitions = 0;
 	protected int _nApplyPartitions = 0;
 
@@ -289,6 +290,14 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 
 	public long getEstMetaSize() {
 		return _estMetaSize;
+	}
+
+	public void setEstNumDistincts(int numDistincts) {
+		_estNumDistincts = numDistincts;
+	}
+
+	public int getEstNumDistincts() {
+		return _estNumDistincts;
 	}
 
 	@Override

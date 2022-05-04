@@ -154,6 +154,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		int[] freq = distinctFreq.values().stream().mapToInt(v -> v).toArray();
 		int estDistCount = SampleEstimatorFactory.distinctCount(freq, in.getNumRows(),
 			sampleIndices.length, SampleEstimatorFactory.EstimationType.HassAndStokes);
+		setEstNumDistincts(estDistCount);
 
 		// Compute total size estimates for each partial recode map
 		// We assume each partial map contains all distinct values and have the same size

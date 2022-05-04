@@ -361,11 +361,15 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	public void computeRCDMapSizeEstimate(CacheBlock in, int[] sampleIndices) {
+		int estNumDist = 0;
 		for (ColumnEncoder e : _columnEncoders)
-			if (e.getClass().equals(ColumnEncoderRecode.class))
+			if (e.getClass().equals(ColumnEncoderRecode.class)) {
 				((ColumnEncoderRecode) e).computeRCDMapSizeEstimate(in, sampleIndices);
+				estNumDist = e.getEstNumDistincts();
+			}
 		long totEstSize = _columnEncoders.stream().mapToLong(ColumnEncoder::getEstMetaSize).sum();
 		setEstMetaSize(totEstSize);
+		setEstNumDistincts(estNumDist);
 	}
 
 	public void setNumPartitions(int nBuild, int nApply) {

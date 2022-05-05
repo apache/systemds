@@ -215,6 +215,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 			updateFederatedOutput(root, rootHopRel);
 			visitInputDependency(rootHopRel);
 		}
+		root.updateETFed();
 	}
 
 	/**

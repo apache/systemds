@@ -511,8 +511,6 @@ public class TernaryOp extends MultiThreadedHop
 			checkAndSetInvalidCPDimsAndSize();
 		}
 
-		updateETFed();
-
 		//mark for recompile (forever)
 		// additional condition: when execType=CP and additional dimension inputs 
 		// are provided (and those values are unknown at initial compile time).

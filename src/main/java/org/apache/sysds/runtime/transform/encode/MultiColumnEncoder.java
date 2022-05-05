@@ -403,6 +403,7 @@ public class MultiColumnEncoder implements Encoder {
 		// Else, derive the optimum number of partitions
 		int nRow = in.getNumRows();
 		int nThread = OptimizerUtils.getTransformNumThreads(); //VCores
+		nThread = 32;
 		int minNumRows = 16000; //min rows per partition
 		List<ColumnEncoderComposite> recodeEncoders = new ArrayList<>();
 		// Count #Builds and #Applies (= #Col)
@@ -410,7 +411,8 @@ public class MultiColumnEncoder implements Encoder {
 		for (ColumnEncoderComposite e : _columnEncoders)
 			if (e.hasBuild()) {
 				nBuild++;
-				recodeEncoders.add(e);
+				if (e.hasEncoder(ColumnEncoderRecode.class))
+					recodeEncoders.add(e);
 			}
 		int nApply = in.getNumColumns();
 		// #BuildBlocks = (2 * #PhysicalCores)/#build
@@ -428,7 +430,7 @@ public class MultiColumnEncoder implements Encoder {
 
 		// Reduce #build blocks for the recoders if all don't fit in memory
 		int rcdNumBuildBlks = numBlocks[0];
-		if (numBlocks[0] > 1) {
+		if (numBlocks[0] > 1 && recodeEncoders.size() > 0) {
 			// Estimate recode map sizes
 			estimateRCMapSize(in, recodeEncoders);
 			// Memory budget for maps = 70% of heap - sizeof(input)

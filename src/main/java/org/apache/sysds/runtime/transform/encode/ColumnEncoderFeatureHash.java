@@ -81,8 +81,11 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 			String key = in.getString(i, _colID - 1);
 			if(key == null || key.isEmpty())
 				codes[i-startInd] = Double.NaN;
-			else
-				codes[i-startInd] = (key.hashCode() % _K) + 1;
+			else {
+				// Calculate non-negative modulo
+				double mod = key.hashCode() % _K > 0 ? key.hashCode() % _K : _K + key.hashCode() % _K;
+				codes[i - startInd] = mod + 1;
+			}
 		}
 		return codes;
 	}

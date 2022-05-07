@@ -19,9 +19,9 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=10, cols=8, seed=1234);
-n = 70000;
-for(counter in 1:n) { # create lineage trace
-  X = 0.1 + X;
-}
-print(sum(X));
+l1 = list(1, 2, 3)
+l1 = append(l1, 4)
+[l2,i] = remove(l1, 1)
+S = as.matrix(length(l2))
+
+write(S, $1)

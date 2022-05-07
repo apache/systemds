@@ -361,13 +361,15 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			DataIdentifier out1 = (DataIdentifier) getOutputs()[0];
 			DataIdentifier out2 = (DataIdentifier) getOutputs()[1];
 			
-			// Output1 - Eigen Values
+			// Output1 - list after removal
+			long nrow = getFirstExpr().getOutput().getDim1() > 0 ? 
+				getFirstExpr().getOutput().getDim1() + 1 : -1;
 			out1.setDataType(DataType.LIST);
 			out1.setValueType(getFirstExpr().getOutput().getValueType());
-			out1.setDimensions(getFirstExpr().getOutput().getDim1()-1, 1);
+			out1.setDimensions(nrow, 1);
 			out1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
 			
-			// Output2 - Eigen Vectors
+			// Output2 - list of removed element
 			out2.setDataType(DataType.LIST);
 			out2.setValueType(getFirstExpr().getOutput().getValueType());
 			out2.setDimensions(1, 1);

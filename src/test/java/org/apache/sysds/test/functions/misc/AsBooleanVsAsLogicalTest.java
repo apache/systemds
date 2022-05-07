@@ -46,10 +46,11 @@ public class AsBooleanVsAsLogicalTest extends AutomatedTestBase {
 	public void testPrintNotExpressionTest() {
 		TestConfiguration config = getTestConfiguration(TEST_NAME1);
 		loadTestConfiguration(config);
-		String HOME = SCRIPT_DIR + TEST_DIR;			
+		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 		try{
 			programArgs = new String[]{};
+			setOutputBuffering(true);
 			String out = runTest(null).toString();
 			LOG.debug(out);
 			assertTrue(out.contains("TRUE\nFALSE\nFALSE"));

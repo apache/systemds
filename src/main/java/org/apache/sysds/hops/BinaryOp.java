@@ -951,11 +951,16 @@ public class BinaryOp extends MultiThreadedHop {
 		DataType dt1 = input1.getDataType();
 		DataType dt2 = input2.getDataType();
 		
-		if ( getDataType() == DataType.SCALAR ) 
-		{
+		if ( getDataType() == DataType.SCALAR ) {
 			//do nothing always known
 			setDim1(0);
 			setDim2(0);
+		}
+		else if ( getDataType() == DataType.LIST ) {
+			if( input1.getDataType().isList() && input1.rowsKnown() ) {
+				setDim1(input1.getDim1() + 1);
+				setDim2(1); //always col-vector
+			}
 		}
 		else //MATRIX OUTPUT
 		{

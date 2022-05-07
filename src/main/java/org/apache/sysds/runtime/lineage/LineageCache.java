@@ -216,7 +216,7 @@ public class LineageCache
 			LineageItem li = new LineageItem(opcode, liInputs);
 			// set _distLeaf2Node for this special lineage item to 1
 			// to save it from early eviction if DAGHEIGHT policy is selected
-			li.setDistLeaf2Node(1);
+			li.setHeight(1);
 			LineageCacheEntry e = null;
 			synchronized(_cache) {
 				if (LineageCache.probe(li)) {
@@ -301,7 +301,7 @@ public class LineageCache
 			return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
 
 		LineageItem li = udf.getLineageItem(ec).getValue();
-		li.setDistLeaf2Node(1); //to save from early eviction
+		li.setHeight(1); //to save from early eviction
 		LineageCacheEntry e = null;
 		synchronized(_cache) {
 			if (probe(li))

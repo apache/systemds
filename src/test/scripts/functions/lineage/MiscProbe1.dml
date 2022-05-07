@@ -1,0 +1,7 @@
+
+X = rand(rows=10, cols=8, seed=1234);
+n = 200000;
+for(counter in 1:n) { # create lineage trace
+  X = X + 0.1;
+}
+print(sum(X));

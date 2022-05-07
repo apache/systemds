@@ -261,15 +261,8 @@ public class LineageItemUtils {
 		else if (root instanceof SpoofFusedOp)
 			li = LineageCodegenItem.getCodegenLTrace(((SpoofFusedOp) root).getClassName());
 		
-		else if (root instanceof LiteralOp) {  //TODO: remove redundancy
-			StringBuilder sb = new StringBuilder(root.getName());
-			sb.append(Instruction.VALUETYPE_PREFIX);
-			sb.append(root.getDataType().toString());
-			sb.append(Instruction.VALUETYPE_PREFIX);
-			sb.append(root.getValueType().toString());
-			sb.append(Instruction.VALUETYPE_PREFIX);
-			sb.append(true); //isLiteral = true
-			li = new LineageItem(sb.toString());
+		else if (root instanceof LiteralOp) {
+			li = createScalarLineageItem((LiteralOp) root);
 		}
 		else
 			throw new DMLRuntimeException("Unsupported hop: "+root.getOpString());
@@ -536,5 +529,16 @@ public class LineageItemUtils {
 				ec.traceLineage(VariableCPInstruction.prepMoveInstruction(fromVar, e.getKey()));
 			}
 		}
+	}
+	
+	public static LineageItem createScalarLineageItem(LiteralOp lop) {
+		StringBuilder sb = new StringBuilder(lop.getName());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(lop.getDataType().toString());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(lop.getValueType().toString());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(true); //isLiteral = true
+		return new LineageItem(sb.toString());
 	}
 }

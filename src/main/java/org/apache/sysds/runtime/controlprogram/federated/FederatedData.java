@@ -141,8 +141,9 @@ public class FederatedData {
 		if(!_dataType.isMatrix() && !_dataType.isFrame())
 			throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
 		_varID = id;
-		FederatedRequest request = (mtd != null) ? new FederatedRequest(RequestType.READ_VAR, id,
-			mtd) : new FederatedRequest(RequestType.READ_VAR, id);
+		FederatedRequest request = (mtd != null) ?
+			new FederatedRequest(RequestType.READ_VAR, id, mtd) :
+			new FederatedRequest(RequestType.READ_VAR, id);
 		request.appendParam(_filepath);
 		request.appendParam(_dataType.name());
 		return executeFederatedOperation(request);

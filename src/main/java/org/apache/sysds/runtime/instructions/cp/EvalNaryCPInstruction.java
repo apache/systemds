@@ -42,6 +42,7 @@ import org.apache.sysds.parser.DMLTranslator;
 import org.apache.sysds.parser.Expression;
 import org.apache.sysds.parser.FunctionStatement;
 import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.dml.DmlSyntacticValidator;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
@@ -52,6 +53,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -140,7 +142,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			&& !(fpb.getInputParams().size() == 1 && fpb.getInputParams().get(0).getDataType().isList()))
 		{
 			ListObject lo = ec.getListObject(boundInputs[0]);
-			lo = appendNamedDefaults(lo, (FunctionStatement)fpb.getStatementBlock().getStatement(0));
+			lo = appendNamedDefaults(lo, fpb.getStatementBlock());
 			checkValidArguments(lo.getData(), lo.getNames(), fpb.getInputParamNames());
 			if( lo.isNamedList() )
 				lo = reorderNamedListForFunctionCall(lo, fpb.getInputParamNames());
@@ -276,11 +278,12 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		}
 	}
 	
-	private static ListObject appendNamedDefaults(ListObject params, FunctionStatement fstmt) {
-		if( !params.isNamedList() )
+	private static ListObject appendNamedDefaults(ListObject params, StatementBlock sb) {
+		if( !params.isNamedList() || sb == null )
 			return params;
 		
 		//best effort replacement of scalar literal defaults
+		FunctionStatement fstmt = (FunctionStatement) sb.getStatement(0);
 		ListObject ret = new ListObject(params);
 		for( int i=0; i<fstmt.getInputParams().size(); i++ ) {
 			String param = fstmt.getInputParamNames()[i];
@@ -290,8 +293,12 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			{
 				ValueType vt = fstmt.getInputParams().get(i).getValueType();
 				Expression expr = fstmt.getInputDefaults().get(i);
-				if( expr instanceof ConstIdentifier )
-					ret.add(param, ScalarObjectFactory.createScalarObject(vt, expr.toString()), null);
+				if( expr instanceof ConstIdentifier ) {
+					ScalarObject sobj = ScalarObjectFactory.createScalarObject(vt, expr.toString());
+					LineageItem litem = !DMLScript.LINEAGE ? null :
+						LineageItemUtils.createScalarLineageItem(ScalarObjectFactory.createLiteralOp(sobj));
+					ret.add(param, sobj, litem);
+				}
 			}
 		}
 		

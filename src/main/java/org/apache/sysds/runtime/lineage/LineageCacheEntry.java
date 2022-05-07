@@ -215,7 +215,7 @@ public class LineageCacheEntry {
 	}
 	
 	protected synchronized long getDagHeight() {
-		return _key.getDistLeaf2Node();
+		return _key.getHeight();
 	}
 	
 	protected synchronized double getCostNsize() {

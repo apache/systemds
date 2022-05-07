@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.lineage;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -35,11 +36,13 @@ public class LineageItem {
 	private final String _opcode;
 	private final String _data;
 	private LineageItem[] _inputs;
+	private long _height = 0; //distance leaf to node
 	private int _hash = 0;
 	private LineageItem _dedupPatch;
-	private long _distLeaf2Node;
 	private final BooleanArray32 _specialValueBits;  // TODO: Move this to a new subclass
 	// map from thread id to visited flag to allow concurrent checks through the lineage trace
+	
+	//TODO replace with thread local concurrent hashmap per worker
 	private Map<Long, Boolean> _visited = new ConcurrentHashMap<>();
 	
 	public enum LineageItemType {Literal, Creation, Instruction, Dedup}
@@ -100,11 +103,12 @@ public class LineageItem {
 		_opcode = opcode;
 		_data = data;
 		_inputs = inputs;
+		// store the distance of this node from the leaves. (O(#inputs)) operation
+		_height = ((inputs != null && inputs.length != 0) ?
+			Arrays.stream(inputs).map(l -> l._height).max(Long::compare).get() : 0) + 1;
 		// materialize hash on construction 
 		// (constant time operation if input hashes constructed)
 		_hash = hashCode();
-		// store the distance of this node from the leaves. (O(#inputs)) operation
-		_distLeaf2Node = distLeaf2Node();
 		_specialValueBits = new BooleanArray32(specialValueBits);
 	}
 	
@@ -127,8 +131,16 @@ public class LineageItem {
 		return _data;
 	}
 	
-	public void fixHash() {
-		_hash = 0;
+	public long getHeight() {
+		return _height;
+	}
+	
+	public void setHeight(long height) {
+		_height = height;
+	}
+	
+	public void resetHash() {
+		_hash = 0; //enable recomputation
 		_hash = hashCode();
 	}
 
@@ -154,25 +166,6 @@ public class LineageItem {
 		_specialValueBits.setValue(value);
 	}
 
-	private long distLeaf2Node() {
-		// Derive height only if the corresponding reuse
-		// policy is selected, otherwise set -1.
-		if (LineageCacheConfig.ReuseCacheType.isNone()
-			|| !LineageCacheConfig.isDagHeightBased())
-			return -1;
-
-		if (_inputs != null && _inputs.length > 0) {
-			// find the input with highest height
-			long maxDistance = _inputs[0].getDistLeaf2Node();
-			for (int i=1; i<_inputs.length; i++)
-				if (_inputs[i].getDistLeaf2Node() > maxDistance)
-					maxDistance = _inputs[i].getDistLeaf2Node();
-			return maxDistance + 1;
-		}
-		else
-			return 1;  //leaf node
-	}
-	
 	public long getId() {
 		return _id;
 	}
@@ -191,14 +184,6 @@ public class LineageItem {
 
 	public boolean isPlaceholder() {
 		return _opcode.startsWith(LineageItemUtils.LPLACEHOLDER);
-	}
-	
-	public void setDistLeaf2Node(long d) {
-		_distLeaf2Node = d;
-	}
-	
-	public long getDistLeaf2Node() {
-		return _distLeaf2Node;
 	}
 	
 	public LineageItem getDedupPatch() {
@@ -299,6 +284,8 @@ public class LineageItem {
 				ret = li1._opcode.equals(li2._opcode);
 				ret &= li1._data.equals(li2._data);
 			}
+			//check hash including height as pre-filter
+			//(for special cases the height is later set to 1 but the hash is materialized)
 			ret &= (li1.hashCode() == li2.hashCode());
 			if (!ret) break;
 
@@ -428,8 +415,9 @@ public class LineageItem {
 				_opcode.hashCode(), _data.hashCode());
 			if (_inputs != null)
 				for (LineageItem li : _inputs)
-					h = UtilFunctions.intHashCodeRobust(li.hashCode(), h);
-			_hash = h;
+					h = UtilFunctions.intHashCodeRobust(h, li.hashCode());
+			_hash = UtilFunctions.intHashCodeRobust(h,
+				UtilFunctions.longHashCode(_height));
 		}
 		return _hash;
 	}

@@ -234,7 +234,7 @@ public class LineageCacheEviction
 				System.out.println(" spill time = " + getDiskSpillEstimate(e) * 1000);
 				System.out.print("dim = " + e.getMBValue().getNumRows() + " " + e.getMBValue().getNumColumns());
 				System.out.print(" size = " + getDiskSizeEstimate(e));
-				System.out.println(" DAG height = " + e._key.getDistLeaf2Node());
+				System.out.println(" DAG height = " + e._key.getHeight());
 			}
 
 			if (spilltime < LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE) {

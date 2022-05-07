@@ -414,7 +414,7 @@ public class LineageItemUtils {
 		}
 
 		//fix the hash codes bottom-up, as the inputs have changed
-		root.fixHash();
+		root.resetHash();
 		root.setVisited();
 	}
 

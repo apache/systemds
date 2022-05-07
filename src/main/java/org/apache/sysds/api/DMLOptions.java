@@ -73,6 +73,8 @@ public class DMLOptions {
 	public boolean              lineage_debugger = false;         // whether enable lineage debugger
 	public boolean              fedWorker     = false;
 	public int                  fedWorkerPort = -1;
+	public boolean              fedMonitoring     = false;
+	public int                  fedMonitoringPort = -1;
 	public int                  pythonPort    = -1; 
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
 	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
@@ -95,6 +97,7 @@ public class DMLOptions {
 			", statsCount=" + statsCount +
 			", fedStats=" + fedStats +
 			", fedStatsCount=" + fedStatsCount +
+			", fedMonitor=" + fedMonitoring +
 			", memStats=" + memStats +
 			", explainType=" + explainType +
 			", execMode=" + execMode +
@@ -217,6 +220,7 @@ public class DMLOptions {
 				}
 			}
 		}
+
 		dmlOptions.memStats = line.hasOption("mem");
 
 		dmlOptions.clean = line.hasOption("clean");
@@ -228,6 +232,11 @@ public class DMLOptions {
 		if (line.hasOption("w")){
 			dmlOptions.fedWorker = true;
 			dmlOptions.fedWorkerPort = Integer.parseInt(line.getOptionValue("w"));
+		}
+
+		if (line.hasOption("fedMonitor")){
+			dmlOptions.fedMonitoring= true;
+			dmlOptions.fedMonitoringPort = Integer.parseInt(line.getOptionValue("fedMonitor"));
 		}
 
 		if (line.hasOption("f")){
@@ -349,6 +358,8 @@ public class DMLOptions {
 			.hasOptionalArgs().create("lineage");
 		Option fedOpt = OptionBuilder.withDescription("starts a federated worker with the given argument as the port.")
 			.hasOptionalArg().create("w");
+		Option monitorOpt = OptionBuilder.withDescription("Starts a federated monitoring backend with the given argument as the port.")
+				.hasOptionalArg().create("fedMonitor");
 		Option checkPrivacy = OptionBuilder
 			.withDescription("Check which privacy constraints are loaded and checked during federated execution")
 			.create("checkPrivacy");
@@ -375,6 +386,7 @@ public class DMLOptions {
 		options.addOption(debugOpt);
 		options.addOption(lineageOpt);
 		options.addOption(fedOpt);
+		options.addOption(monitorOpt);
 		options.addOption(checkPrivacy);
 		options.addOption(federatedCompilation);
 		options.addOption(noFedRuntimeConversion);
@@ -387,6 +399,7 @@ public class DMLOptions {
 			.addOption(cleanOpt)
 			.addOption(helpOpt)
 			.addOption(fedOpt)
+			.addOption(monitorOpt)
 			.addOption(pythonOpt);
 		fileOrScriptOpt.setRequired(true);
 		options.addOptionGroup(fileOrScriptOpt);

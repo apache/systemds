@@ -1603,6 +1603,31 @@ public abstract class AutomatedTestBase {
 	}
 
 	/**
+	 * Start new JVM for a federated monitoring backend at the port.
+	 *
+	 * @param port Port to use for the JVM
+	 * @return the process associated with the worker.
+	 */
+	protected Process startLocalFedMonitoring(int port, String[] addArgs) {
+		Process process = null;
+		String separator = System.getProperty("file.separator");
+		String classpath = System.getProperty("java.class.path");
+		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
+		String[] args = ArrayUtils.addAll(new String[]{path, "-cp", classpath, DMLScript.class.getName(),
+				"-fedMonitor", Integer.toString(port)}, addArgs);
+		ProcessBuilder processBuilder = new ProcessBuilder(args);
+
+		try {
+			process = processBuilder.start();
+			sleep(1000);
+		}
+		catch(IOException | InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+		return process;
+	}
+
+	/**
 	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.!
 	 * 
 	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.

@@ -120,6 +120,10 @@ public class ListObject extends Data implements Externalizable {
 		return _names;
 	}
 
+	public void setNames(List<String> names) {
+		_names = names;
+	}
+	
 	public String getName(int ix) {
 		return (_names == null) ? null : _names.get(ix);
 	}
@@ -153,6 +157,11 @@ public class ListObject extends Data implements Externalizable {
 	public boolean contains(Data d) {
 		return _data.stream().anyMatch(lo -> lo instanceof ListObject ?
 			(lo == d || ((ListObject)lo).contains(d)) : lo == d);
+	}
+	
+	public boolean contains(String name) {
+		return _names != null
+			&& _names.contains(name);
 	}
 	
 	public long getDataSize() {

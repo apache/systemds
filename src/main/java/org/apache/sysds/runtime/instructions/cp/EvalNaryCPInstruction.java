@@ -30,13 +30,17 @@ import java.util.stream.Collectors;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewrite.ProgramRewriter;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.compile.Dag;
+import org.apache.sysds.parser.ConstIdentifier;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
+import org.apache.sysds.parser.Expression;
+import org.apache.sysds.parser.FunctionStatement;
 import org.apache.sysds.parser.FunctionStatementBlock;
 import org.apache.sysds.parser.dml.DmlSyntacticValidator;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -136,6 +140,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			&& !(fpb.getInputParams().size() == 1 && fpb.getInputParams().get(0).getDataType().isList()))
 		{
 			ListObject lo = ec.getListObject(boundInputs[0]);
+			lo = appendNamedDefaults(lo, (FunctionStatement)fpb.getStatementBlock().getStatement(0));
 			checkValidArguments(lo.getData(), lo.getNames(), fpb.getInputParamNames());
 			if( lo.isNamedList() )
 				lo = reorderNamedListForFunctionCall(lo, fpb.getInputParamNames());
@@ -269,6 +274,28 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			if(!prog.containsFunctionProgramBlock(nsName, fsb.getKey(), false))
 				prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, false); // unoptimized -> eval
 		}
+	}
+	
+	private static ListObject appendNamedDefaults(ListObject params, FunctionStatement fstmt) {
+		if( !params.isNamedList() )
+			return params;
+		
+		//best effort replacement of scalar literal defaults
+		ListObject ret = new ListObject(params);
+		for( int i=0; i<fstmt.getInputParams().size(); i++ ) {
+			String param = fstmt.getInputParamNames()[i];
+			if( !ret.contains(param)
+				&& fstmt.getInputDefaults().get(i) != null
+				&& fstmt.getInputParams().get(i).getDataType().isScalar() )
+			{
+				ValueType vt = fstmt.getInputParams().get(i).getValueType();
+				Expression expr = fstmt.getInputDefaults().get(i);
+				if( expr instanceof ConstIdentifier )
+					ret.add(param, ScalarObjectFactory.createScalarObject(vt, expr.toString()), null);
+			}
+		}
+		
+		return ret;
 	}
 	
 	private static void checkValidArguments(List<Data> loData, List<String> loNames, List<String> fArgNames) {

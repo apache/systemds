@@ -28,6 +28,7 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
 
 public class BuiltinGridSearchTest extends AutomatedTestBase
 {
@@ -72,6 +73,16 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testGridSearchLmVerboseCP() {
+		runGridSearch(TEST_NAME1, ExecMode.SINGLE_NODE, false, true);
+	}
+	
+	@Test
+	public void testGridSearchLmVerboseHybrid() {
+		runGridSearch(TEST_NAME1, ExecMode.HYBRID, false, true);
+	}
+	
+	@Test
 	public void testGridSearchLmSpark() {
 		runGridSearch(TEST_NAME1, ExecMode.SPARK, false);
 	}
@@ -85,6 +96,19 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 	public void testGridSearchMLogregHybrid() {
 		runGridSearch(TEST_NAME2, ExecMode.HYBRID, false);
 	}
+	
+	@Test
+	public void testGridSearchMLogregVerboseCP() {
+		//verbose default
+		runGridSearch(TEST_NAME2, ExecMode.SINGLE_NODE, false, true);
+	}
+	
+	@Test
+	public void testGridSearchMLogregVerboseHybrid() {
+		//verbose default
+		runGridSearch(TEST_NAME2, ExecMode.HYBRID, false, true);
+	}
+	
 	
 	@Test
 	public void testGridSearchLm2CP() {
@@ -108,20 +132,24 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 	
 	@Test
 	public void testGridSearchMLogreg4CP() {
-		runGridSearch(TEST_NAME2, ExecMode.SINGLE_NODE, 10, 4, false);
+		runGridSearch(TEST_NAME2, ExecMode.SINGLE_NODE, 10, 4, false, false);
 	}
 	
 	@Test
 	public void testGridSearchMLogreg4Hybrid() {
-		runGridSearch(TEST_NAME2, ExecMode.HYBRID, 10, 4, false);
+		runGridSearch(TEST_NAME2, ExecMode.HYBRID, 10, 4, false, false);
 	}
 	
 	
 	private void runGridSearch(String testname, ExecMode et, boolean codegen) {
-		runGridSearch(testname, et, _cols, 2, codegen); //binary classification
+		runGridSearch(testname, et, _cols, 2, codegen, false); //binary classification
 	}
 	
-	private void runGridSearch(String testname, ExecMode et, int cols, int nc, boolean codegen)
+	private void runGridSearch(String testname, ExecMode et, boolean codegen, boolean verbose) {
+		runGridSearch(testname, et, _cols, 2, codegen, verbose); //binary classification
+	}
+	
+	private void runGridSearch(String testname, ExecMode et, int cols, int nc, boolean codegen, boolean verbose)
 	{
 		ExecMode modeOld = setExecMode(et);
 		_codegen = codegen;
@@ -131,7 +159,8 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 	
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] {"-args", input("X"), input("y"), output("R")};
+			programArgs = new String[] {"-stats", "100", "-args",
+				input("X"), input("y"), output("R"), String.valueOf(verbose).toUpperCase()};
 			double max = testname.equals(TEST_NAME2) ? nc : 2;
 			double[][] X = getRandomMatrix(_rows, cols, 0, 1, 0.8, 7);
 			double[][] y = getRandomMatrix(_rows, 1, 1, max, 1, 1);
@@ -142,6 +171,11 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 			
 			//expected loss smaller than default invocation
 			Assert.assertTrue(TestUtils.readDMLBoolean(output("R")));
+			
+			//correct handling of verbose flag
+			if( verbose ) // 2 prints outside, if verbose more
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount("print")>100);
+			
 			//Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 			//TODO analyze influence of multiple subsequent tests
 		}

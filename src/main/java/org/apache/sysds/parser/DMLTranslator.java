@@ -659,6 +659,9 @@ public class DMLTranslator
 			
 			retPB = rtpb;
 			
+			// add statement block
+			retPB.setStatementBlock(sb);
+			
 			// add location information
 			retPB.setParseInfo(sb);
 		}

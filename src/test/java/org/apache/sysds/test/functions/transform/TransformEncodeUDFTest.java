@@ -31,7 +31,8 @@ import org.apache.sysds.utils.Statistics;
 
 public class TransformEncodeUDFTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "TransformEncodeUDF1";
+	private final static String TEST_NAME1 = "TransformEncodeUDF1"; //min-max
+	private final static String TEST_NAME2 = "TransformEncodeUDF2"; //scale w/ defaults
 	private final static String TEST_DIR = "functions/transform/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransformEncodeUDFTest.class.getSimpleName() + "/";
 	
@@ -42,6 +43,7 @@ public class TransformEncodeUDFTest extends AutomatedTestBase
 	public void setUp()  {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}) );
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}) );
 	}
 	
 	@Test
@@ -53,6 +55,17 @@ public class TransformEncodeUDFTest extends AutomatedTestBase
 	public void testUDF1Hybrid() {
 		runTransformTest(ExecMode.HYBRID, TEST_NAME1);
 	}
+
+// TODO default handling without named lists
+//	@Test
+//	public void testUDF2Singlenode() {
+//		runTransformTest(ExecMode.SINGLE_NODE, TEST_NAME2);
+//	}
+//	
+//	@Test
+//	public void testUDF2Hybrid() {
+//		runTransformTest(ExecMode.HYBRID, TEST_NAME2);
+//	}
 	
 	private void runTransformTest(ExecMode rt, String testname)
 	{
@@ -61,10 +74,10 @@ public class TransformEncodeUDFTest extends AutomatedTestBase
 		
 		try
 		{
-			getAndLoadTestConfiguration(TEST_NAME1);
+			getAndLoadTestConfiguration(testname);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
+			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{"-explain",
 				"-nvargs", "DATA=" + DATASET_DIR + DATASET, "R="+output("R")};
 

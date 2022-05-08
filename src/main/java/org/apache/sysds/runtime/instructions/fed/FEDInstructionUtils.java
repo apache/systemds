@@ -20,8 +20,8 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
-import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
 import org.apache.sysds.runtime.codegen.SpoofOuterProduct;
@@ -293,7 +293,8 @@ public class FEDInstructionUtils {
 		FEDInstruction fedinst = null;
 		if(inst instanceof CastSPInstruction){
 			CastSPInstruction ins = (CastSPInstruction) inst;
-			if((ins.getOpcode().equalsIgnoreCase(UnaryCP.CAST_AS_FRAME_OPCODE) || ins.getOpcode().equalsIgnoreCase(UnaryCP.CAST_AS_MATRIX_OPCODE))
+			if((ins.getOpcode().equalsIgnoreCase(OpOp1.CAST_AS_FRAME.toString())
+					|| ins.getOpcode().equalsIgnoreCase(OpOp1.CAST_AS_MATRIX.toString()))
 				&& ins.input1.isMatrix() && ec.getCacheableData(ins.input1).isFederatedExcept(FType.BROADCAST)){
 				fedinst = CastFEDInstruction.parseInstruction(ins.getInstructionString());
 			}

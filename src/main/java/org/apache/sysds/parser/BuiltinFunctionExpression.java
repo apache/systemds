@@ -720,6 +720,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlocksize(id.getBlocksize());
 			output.setValueType(ValueType.FP64); //matrices always in double
 			break;
+		case CAST_AS_LIST: //list unnesting
+			checkNumParameters(1);
+			checkDataTypeParam(getFirstExpr(), DataType.LIST);
+			output.setDataType(DataType.LIST);
+			output.setDimensions(-1, 1);
+			output.setBlocksize(id.getBlocksize());
+			output.setValueType(ValueType.UNKNOWN);
+			break;
 		case TYPEOF:
 		case DETECTSCHEMA:
 		case COLNAMES:

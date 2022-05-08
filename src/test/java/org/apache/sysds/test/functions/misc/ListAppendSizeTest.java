@@ -20,7 +20,6 @@
 package org.apache.sysds.test.functions.misc;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.common.Types.ExecMode;
@@ -64,7 +63,6 @@ public class ListAppendSizeTest extends AutomatedTestBase
 	}
 	
 	@Test
-	@Ignore //TODO support for as.list unnesting
 	public void testListAppendSize4CP() {
 		runListAppendSize(TEST_NAME4, ExecType.CP, 4);
 	}

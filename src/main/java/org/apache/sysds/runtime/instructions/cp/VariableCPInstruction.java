@@ -29,11 +29,11 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
@@ -88,8 +88,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 *      createvar x FP [dimensions] [formatinfo]
 	 */
 
-	public enum VariableOperationCode
-	{
+	public enum VariableOperationCode {
 		CreateVariable,
 		AssignVariable,
 		CopyVariable,
@@ -99,6 +98,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		CastAsScalarVariable,
 		CastAsMatrixVariable,
 		CastAsFrameVariable,
+		CastAsListVariable,
 		CastAsDoubleVariable,
 		CastAsIntegerVariable,
 		CastAsBooleanVariable,
@@ -178,22 +178,19 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		else if ( str.equalsIgnoreCase("rmfilevar") )
 			return VariableOperationCode.RemoveVariableAndFile;
 
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_SCALAR_OPCODE) )
+		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_SCALAR.toString()) )
 			return VariableOperationCode.CastAsScalarVariable;
-
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_MATRIX_OPCODE) )
+		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_MATRIX.toString()) )
 			return VariableOperationCode.CastAsMatrixVariable;
-
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_FRAME_OPCODE) )
+		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_FRAME.toString()) )
 			return VariableOperationCode.CastAsFrameVariable;
-
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_DOUBLE_OPCODE) )
+		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_LIST.toString()) )
+			return VariableOperationCode.CastAsListVariable;
+		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_DOUBLE.toString()) )
 			return VariableOperationCode.CastAsDoubleVariable;
-
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_INT_OPCODE) )
+		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_INT.toString()) )
 			return VariableOperationCode.CastAsIntegerVariable;
-
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_BOOLEAN_OPCODE) )
+		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_BOOLEAN.toString()) )
 			return VariableOperationCode.CastAsBooleanVariable;
 
 		else if ( str.equalsIgnoreCase("write") )
@@ -512,6 +509,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		case CastAsScalarVariable:
 		case CastAsMatrixVariable:
 		case CastAsFrameVariable:
+		case CastAsListVariable:
 		case CastAsDoubleVariable:
 		case CastAsIntegerVariable:
 		case CastAsBooleanVariable:
@@ -607,6 +605,14 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 		case CastAsFrameVariable:
 			processCastAsFrameVariableInstruction(ec);
+			break;
+
+		case CastAsListVariable:
+			ListObject lobj = ec.getListObject(getInput1());
+			if( lobj.getLength() != 1 || !(lobj.getData(0) instanceof ListObject) )
+				throw new RuntimeException("as.list() expects a list input with one nested list: "
+					+ "length(list)="+lobj.getLength()+", dt(list[0])="+lobj.getData(0).getDataType() );
+			ec.setVariable(output.getName(), lobj.getData(0));
 			break;
 
 		case CastAsDoubleVariable:
@@ -856,7 +862,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 	/**
 	 * Handler for CastAsMatrixVariable instruction
-   *
+	 *
 	 * @param ec execution context
 	 */
 	private void processCastAsMatrixVariableInstruction(ExecutionContext ec) {

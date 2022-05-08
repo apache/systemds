@@ -26,8 +26,8 @@ import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -59,9 +59,9 @@ public class CastFEDInstruction extends UnaryFEDInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		if(getOpcode().equals(UnaryCP.CAST_AS_MATRIX_OPCODE))
+		if(getOpcode().equals(OpOp1.CAST_AS_MATRIX.toString()))
 			processCastAsMatrixVariableInstruction(ec);
-		else if(getOpcode().equals(UnaryCP.CAST_AS_FRAME_OPCODE))
+		else if(getOpcode().equals(OpOp1.CAST_AS_FRAME.toString()))
 			processCastAsFrameVariableInstruction(ec);
 		else
 			throw new DMLRuntimeException("Unsupported Opcode for federated Variable Instruction : " + getOpcode());

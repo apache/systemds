@@ -232,8 +232,9 @@ public class Types
 	
 	// Operations that require 1 operand
 	public enum OpOp1 {
-		ABS, ACOS, ASIN, ASSERT, ATAN, BROADCAST, CAST_AS_SCALAR, CAST_AS_MATRIX,
-		CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
+		ABS, ACOS, ASIN, ASSERT, ATAN, BROADCAST,
+		CAST_AS_FRAME, CAST_AS_LIST, CAST_AS_MATRIX, CAST_AS_SCALAR,
+		CAST_AS_BOOLEAN, CAST_AS_DOUBLE, CAST_AS_INT,
 		CEIL, CHOLESKY, COS, COSH, CUMMAX, CUMMIN, CUMPROD, CUMSUM,
 		CUMSUMPROD, DETECTSCHEMA, COLNAMES, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
 		IQM, ISNA, ISNAN, ISINF, LENGTH, LINEAGE, LOG, NCOL, NOT, NROW,
@@ -266,6 +267,7 @@ public class Types
 				case CAST_AS_SCALAR:  return "castdts";
 				case CAST_AS_MATRIX:  return "castdtm";
 				case CAST_AS_FRAME:   return "castdtf";
+				case CAST_AS_LIST:    return "castdtl";
 				case CAST_AS_DOUBLE:  return "castvtd";
 				case CAST_AS_INT:     return "castvti";
 				case CAST_AS_BOOLEAN: return "castvtb";

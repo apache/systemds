@@ -184,7 +184,8 @@ strictParameterizedKeyValueString : paramName=ID '=' paramVal=STRING ;
 ID : (ALPHABET (ALPHABET|DIGIT|'_')*  '::')? ALPHABET (ALPHABET|DIGIT|'_')*
     // Special ID cases:
    // | 'matrix' // --> This is a special case which causes lot of headache
-   | 'as.scalar' | 'as.matrix' | 'as.frame' | 'as.double' | 'as.integer' | 'as.logical' | 'as.boolean' | 'index.return' | 'empty.return' | 'lower.tail'
+   | 'as.scalar' | 'as.matrix' | 'as.frame' | 'as.list' 
+   | 'as.double' | 'as.integer' | 'as.logical' | 'as.boolean' | 'index.return' | 'empty.return' | 'lower.tail'
    | 'lower.tri' | 'upper.tri'
    | 'is.na' | 'is.nan' | 'is.infinite'
 ;

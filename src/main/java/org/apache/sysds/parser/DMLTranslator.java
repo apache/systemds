@@ -2507,6 +2507,9 @@ public class DMLTranslator
 		case CAST_AS_FRAME:
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.FRAME, target.getValueType(), OpOp1.CAST_AS_FRAME, expr);
 			break;
+		case CAST_AS_LIST:
+			currBuiltinOp = new UnaryOp(target.getName(), DataType.LIST, target.getValueType(), OpOp1.CAST_AS_LIST, expr);
+			break;
 
 		//value type casts
 		case CAST_AS_DOUBLE:

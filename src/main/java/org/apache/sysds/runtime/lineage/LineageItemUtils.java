@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -43,7 +44,6 @@ import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.hops.codegen.SpoofFusedOp;
 import org.apache.sysds.lops.PartialAggregate;
-import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -192,7 +192,7 @@ public class LineageItemUtils {
 			LineageItem out = operands.get(roots[0].getHopID());
 			if( roots.length > 1 ) { //multi-agg
 				LineageItem[] outputs = Arrays.stream(roots)
-					.map(h -> new LineageItem("", UnaryCP.CAST_AS_MATRIX_OPCODE,
+					.map(h -> new LineageItem("", OpOp1.CAST_AS_MATRIX.toString(),
 						new LineageItem[]{operands.get(h.getHopID())}))
 					.toArray(LineageItem[]::new);
 				out = new LineageItem("", "cbind", outputs);

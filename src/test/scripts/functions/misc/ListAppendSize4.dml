@@ -22,11 +22,8 @@
 l1 = list(1, 2, 3)
 l2 = list()
 l2 = append(l2, l1)
-l3 = as.list(l2[1]) # TODO
+l3 = as.list(l2[1])
 l4 = append(l3, 12)
-
-print(toString(l4))
-print(length(l4))
-
 S = as.matrix(length(l4))
+
 write(S, $1)

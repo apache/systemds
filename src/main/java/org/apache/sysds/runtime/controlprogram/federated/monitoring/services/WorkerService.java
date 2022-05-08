@@ -19,15 +19,19 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
 
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.ArrayList;
+import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.Future;
 
 public class WorkerService {
     private final IRepository _entityRepository = new DerbyRepository();
@@ -37,37 +41,50 @@ public class WorkerService {
     }
 
     public BaseEntityModel get(Long id) {
-        return null;
+        var model = _entityRepository.getEntity(EntityEnum.WORKER, id);
+
+        try {
+            var statisticsResponse = getWorkerStatistics(model.getAddress()).get();
+
+            if (statisticsResponse.isSuccessful()) {
+                FederatedStatistics.FedStatsCollection aggFedStats = new FederatedStatistics.FedStatsCollection();
+
+                Object[] tmp = statisticsResponse.getData();
+                if(tmp[0] instanceof FederatedStatistics.FedStatsCollection)
+                    aggFedStats.aggregate((FederatedStatistics.FedStatsCollection)tmp[0]);
+
+                var statsStr = FederatedStatistics.displayStatistics(aggFedStats, 5);
+                model.setData(statsStr);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return model;
     }
 
     public List<BaseEntityModel> getAll() {
+        return _entityRepository.getAllEntities(EntityEnum.WORKER);
+    }
 
-        var resultSet = _entityRepository.getAllEntities(EntityEnum.WORKER);
+    private Future<FederatedResponse> getWorkerStatistics(String address) {
+        Future<FederatedResponse> result = null;
 
+        String host = address.split(":")[0];
+        int port = Integer.parseInt(address.split(":")[1]);
+
+        InetSocketAddress isa = new InetSocketAddress(host, port);
+        FederatedRequest frUDF = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+                new FederatedStatistics.FedStatsCollectFunction());
         try {
-            List<BaseEntityModel> resultModels = new ArrayList<>();
-
-            while(resultSet.next()){
-                BaseEntityModel tmpModel = new BaseEntityModel();
-                for (int column = 1; column <= resultSet.getMetaData().getColumnCount(); column++) {
-                    if (resultSet.getMetaData().getColumnType(column) == Types.INTEGER) {
-                        tmpModel.setId(resultSet.getLong(column));
-                    }
-
-                    if (resultSet.getMetaData().getColumnType(column) == Types.VARCHAR) {
-                        if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase("name")) {
-                            tmpModel.setName(resultSet.getString(column));
-                        } else if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase("address")) {
-                            tmpModel.setAddress(resultSet.getString(column));
-                        }
-                    }
-                }
-                resultModels.add(tmpModel);
-            }
-
-            return resultModels;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            result = FederatedData.executeFederatedOperation(isa, frUDF);
+        } catch(DMLRuntimeException dre) {
+            // silently ignore this exception --> caused by offline federated workers
+        } catch (Exception e) {
+            System.out.println("Exception of type " + e.getClass().getName()
+                    + " thrown while getting stats from federated worker: " + e.getMessage());
         }
+
+        return result;
     }
 }

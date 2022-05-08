@@ -2,12 +2,12 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositorie
 
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
 
-import java.sql.ResultSet;
+import java.util.List;
 
 public interface IRepository {
-    public void createEntity(EntityEnum type, BaseEntityModel model);
+    void createEntity(EntityEnum type, BaseEntityModel model);
 
-    public ResultSet getEntity(EntityEnum type, Long id);
+    BaseEntityModel getEntity(EntityEnum type, Long id);
 
-    public ResultSet getAllEntities(EntityEnum type);
+    List<BaseEntityModel> getAllEntities(EntityEnum type);
 }

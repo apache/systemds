@@ -19,11 +19,24 @@
 
 package org.apache.sysds.test.functions.federated.monitoring;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
 import org.apache.sysds.test.functions.federated.multitenant.MultiTenantTestBase;
 import org.junit.After;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
     protected Process monitoringProcess;
+    private int monitoringPort;
+
+    private static final String WORKER_MAIN_PATH = "/workers";
 
     @Override
     public abstract void setUp();
@@ -31,18 +44,63 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
     // ensure that the processes are killed - even if the test throws an exception
     @After
     public void stopMonitoringProcesses() {
-        monitoringProcess.destroyForcibly();
+        if (monitoringProcess != null) {
+            monitoringProcess.destroyForcibly();
+        }
     }
 
     /**
      * Start federated backend monitoring processes on available port
      *
-     * @return int the port of the created federated backend monitoring
+     * @return
      */
-    protected int startFedMonitoring(String[] addArgs) {
-        int port = getRandomAvailablePort();
-        monitoringProcess = startLocalFedMonitoring(port, addArgs);
+    protected void startFedMonitoring(String[] addArgs) {
+        monitoringPort = getRandomAvailablePort();
+        monitoringProcess = startLocalFedMonitoring(monitoringPort, addArgs);
+    }
 
-        return port;
+    protected List<HttpResponse> addWorkers(int numWorkers) {
+        String uriStr = String.format("http://localhost:%d%s", monitoringPort, WORKER_MAIN_PATH);
+
+        List<HttpResponse> responses = new ArrayList<>();
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            for (int i = 0; i < numWorkers; i++) {
+                String requestBody = objectMapper
+                        .writerWithDefaultPrettyPrinter()
+                        .writeValueAsString(new BaseEntityModel((i + 1L), "Worker", "localhost"));
+
+                var client = HttpClient.newHttpClient();
+                var request = HttpRequest.newBuilder(
+                                URI.create(uriStr))
+                        .header("accept", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                        .build();
+
+                responses.add(client.send(request, HttpResponse.BodyHandlers.ofString()));
+            }
+
+            return responses;
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected HttpResponse getWorkers() {
+        String uriStr = String.format("http://localhost:%d%s", monitoringPort, WORKER_MAIN_PATH);
+
+        try {
+            var client = HttpClient.newHttpClient();
+            var request = HttpRequest.newBuilder(
+                            URI.create(uriStr))
+                    .header("accept", "application/json")
+                    .GET()
+                    .build();
+
+            return client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

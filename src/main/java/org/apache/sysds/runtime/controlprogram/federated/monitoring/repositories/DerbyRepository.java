@@ -26,6 +26,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DerbyRepository implements IRepository {
     private final static String DB_CONNECTION = "jdbc:derby:memory:derbyDB";
@@ -80,25 +83,47 @@ public class DerbyRepository implements IRepository {
         executeQuery(type, query);
     }
 
-    public ResultSet getEntity(EntityEnum type, Long id) {
+    public BaseEntityModel getEntity(EntityEnum type, Long id) {
         String query = "";
+        BaseEntityModel resultModel = null;
 
         if (type == EntityEnum.WORKER) {
             query = "SELECT * FROM " + WORKER_TABLE + " WHERE " +
                     String.format("id = %d", id);
+
+            var resultSet = executeQuery(type, query);
+            try {
+                if(resultSet.next()){
+                    resultModel = mapWorkerToModel(resultSet);
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
 
-        return executeQuery(type, query);
+        return resultModel;
     }
 
-    public ResultSet getAllEntities(EntityEnum type) {
+    public List<BaseEntityModel> getAllEntities(EntityEnum type) {
         String query = "";
+        List<BaseEntityModel> resultModels = new ArrayList<>();
 
         if (type == EntityEnum.WORKER) {
             query = "SELECT * FROM " + WORKER_TABLE;
+
+            var resultSet = executeQuery(type, query);
+            try {
+                while(resultSet.next()){
+
+                    resultModels.add(mapWorkerToModel(resultSet));
+                }
+
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
 
-        return executeQuery(type, query);
+        return resultModels;
     }
 
     private ResultSet executeQuery(EntityEnum type, String query) {
@@ -114,5 +139,23 @@ public class DerbyRepository implements IRepository {
         catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private BaseEntityModel mapWorkerToModel(ResultSet resultSet) throws SQLException {
+        BaseEntityModel tmpModel = new BaseEntityModel();
+        for (int column = 1; column <= resultSet.getMetaData().getColumnCount(); column++) {
+            if (resultSet.getMetaData().getColumnType(column) == Types.INTEGER) {
+                tmpModel.setId(resultSet.getLong(column));
+            }
+
+            if (resultSet.getMetaData().getColumnType(column) == Types.VARCHAR) {
+                if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase("name")) {
+                    tmpModel.setName(resultSet.getString(column));
+                } else if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase("address")) {
+                    tmpModel.setAddress(resultSet.getString(column));
+                }
+            }
+        }
+        return tmpModel;
     }
 }

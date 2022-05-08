@@ -24,6 +24,8 @@ public class BaseEntityModel {
     private String _name;
     private String _address;
 
+    private String _data;
+
     public BaseEntityModel() { }
 
     public BaseEntityModel(final Long id, final String name, final String address) {
@@ -56,13 +58,22 @@ public class BaseEntityModel {
         this._address = address;
     }
 
+    public String getData() {
+        return _data;
+    }
+
+    public void setData(final String data) {
+        this._data = data;
+    }
+
     @Override
     public String toString()
     {
         return String.format("{" +
                 "\"id\": %d," +
                 "\"name\": \"%s\"," +
-                "\"address\": \"%s\"" +
-                "}", _id, _name, _address);
+                "\"address\": \"%s\"," +
+                "\"data\": \"%s\"" +
+                "}", _id, _name, _address, _data);
     }
 }

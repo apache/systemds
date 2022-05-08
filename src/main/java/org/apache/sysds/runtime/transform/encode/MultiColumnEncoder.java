@@ -262,6 +262,24 @@ public class MultiColumnEncoder implements Encoder {
 			legacyBuild((FrameBlock) in);
 	}
 
+	public void build(CacheBlock in, int k, Map<Integer, double[]> equiHeightBinMaxs) {
+		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
+			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
+		if(!_partitionDone) //happens if this method is directly called
+			deriveNumRowPartitions(in, k);
+		if(k > 1) {
+			buildMT(in, k);
+		}
+		else {
+			for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
+				columnEncoder.build(in, equiHeightBinMaxs);
+				columnEncoder.updateAllDCEncoders();
+			}
+		}
+		if(hasLegacyEncoder())
+			legacyBuild((FrameBlock) in);
+	}
+
 	private List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
@@ -1197,5 +1215,4 @@ public class MultiColumnEncoder implements Encoder {
 			return getClass().getSimpleName() + "<ColId: " + _colEncoder._colID + ">";
 		}
 	}
-
 }

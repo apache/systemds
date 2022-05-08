@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,14 +29,19 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.PickByCount.OperationTypes;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
@@ -47,6 +53,7 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
@@ -55,18 +62,18 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 	private final OperationTypes _type;
 
-	private QuantilePickFEDInstruction(Operator op, CPOperand in, CPOperand out, OperationTypes type, boolean inmem,
+	public QuantilePickFEDInstruction(Operator op, CPOperand in, CPOperand out, OperationTypes type, boolean inmem,
 			String opcode, String istr) {
 		this(op, in, null, out, type, inmem, opcode, istr);
 	}
 
-	private QuantilePickFEDInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out, OperationTypes type,
+	public QuantilePickFEDInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out, OperationTypes type,
 			boolean inmem, String opcode, String istr, FederatedOutput fedOut) {
 		super(FEDType.QPick, op, in, in2, out, opcode, istr, fedOut);
 		_type = type;
 	}
 
-	private QuantilePickFEDInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out, OperationTypes type,
+	public QuantilePickFEDInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out, OperationTypes type,
 		boolean inmem, String opcode, String istr) {
 		this(op, in, in2, out, type, inmem, opcode, istr, FederatedOutput.NONE);
 	}
@@ -110,6 +117,101 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			processColumnQPick(ec);
 		else
 			processRowQPick(ec);
+	}
+
+	public <T> MatrixBlock getEquiHeightBins(ExecutionContext ec, int colID, double[] quantiles) {
+		FrameObject inFrame = ec.getFrameObject(input1);
+		FederationMap frameFedMap = inFrame.getFedMapping();
+
+		// Create vector
+		MatrixObject in = ExecutionContext.createMatrixObject(new MatrixBlock((int) inFrame.getNumRows(), 1, false));
+		long varID = FederationUtils.getNextFedDataID();
+		ec.setVariable(String.valueOf(varID), in);
+
+		// modify map here
+		List<FederatedRange> ranges = new ArrayList<>();
+		FederationMap oldFedMap = frameFedMap.mapParallel(varID, (range, data) -> {
+			try {
+				int colIDWorker = colID;
+				if(colID >= range.getBeginDims()[1] && colID < range.getEndDims()[1]) {
+					if(range.getBeginDims()[1] > 1)
+						colIDWorker = colID - (int) range.getBeginDims()[1];
+					FederatedResponse response = data.executeFederatedOperation(
+						new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+							new QuantilePickFEDInstruction.CreateMatrixFromFrame(data.getVarID(), varID, colIDWorker))).get();
+
+					synchronized(ranges) {
+						ranges.add(range);
+					}
+					if(!response.isSuccessful())
+						response.throwExceptionFromResponse();
+				}
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+			return null;
+		});
+
+		//create one column federated object
+		List<Pair<FederatedRange, FederatedData>> newFedMapPairs = new ArrayList<>();
+		for(Pair<FederatedRange, FederatedData> mapPair : oldFedMap.getMap()) {
+			for(FederatedRange r : ranges) {
+				if(mapPair.getLeft().equals(r)) {
+					newFedMapPairs.add(mapPair);
+				}
+			}
+		}
+
+		FederationMap newFedMap = new FederationMap(varID, newFedMapPairs, FType.COL);
+
+		// construct a federated matrix with the encoded data
+		in.getDataCharacteristics().setDimension(in.getNumRows(),1);
+		in.setFedMapping(newFedMap);
+
+
+		// Find min and max
+		List<double[]> minMax = new ArrayList<>();
+		newFedMap.mapParallel(varID, (range, data) -> {
+			try {
+				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(
+					FederatedRequest.RequestType.EXEC_UDF, -1,
+					new QuantilePickFEDInstruction.MinMax(data.getVarID()))).get();
+				if(!response.isSuccessful())
+					response.throwExceptionFromResponse();
+				double[] rangeMinMax = (double[]) response.getData()[0];
+				minMax.add(rangeMinMax);
+
+				return null;
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		});
+
+		// Find weights sum, min and max
+		double globalMin = Double.MAX_VALUE, globalMax = Double.MIN_VALUE, vectorLength = inFrame.getNumColumns() == 2 ? 0 : inFrame.getNumRows();
+		for(double[] values : minMax) {
+			globalMin = Math.min(globalMin, values[0]);
+			globalMax = Math.max(globalMax, values[1]);
+		}
+
+		// If multiple quantiles take first histogram and reuse bins, otherwise recursively get bin with result
+		int numBuckets = 256; // (int) Math.round(in.getNumRows() / 2.0);
+
+		T ret = createHistogram(in, (int) vectorLength, globalMin, globalMax, numBuckets, -1, false);
+
+		// Compute and set results
+		MatrixBlock quantileValues =  computeMultipleQuantiles(ec, in, (int[]) ret, quantiles, (int) vectorLength, varID, (globalMax-globalMin) / numBuckets, globalMin, _type, true);
+
+		ec.removeVariable(String.valueOf(varID));
+
+		// Add min to the result
+		MatrixBlock res = new MatrixBlock(quantileValues.getNumRows() + 1, 1, false);
+		res.setValue(0,0, globalMin);
+		res.copy(1, quantileValues.getNumRows(), 0, 0,  quantileValues,false);
+
+		return res;
 	}
 
 	public <T> void processRowQPick(ExecutionContext ec) {
@@ -165,13 +267,16 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 
 		// Compute and set results
 		if(quantiles != null && quantiles.length > 1) {
-			computeMultipleQuantiles(ec, in, (int[]) ret, quantiles, (int) vectorLength, varID, (globalMax-globalMin) / numBuckets, globalMin, _type);
-		} else
+			double finalVectorLength = vectorLength;
+			quantiles = Arrays.stream(quantiles).map(val -> (int) Math.round(finalVectorLength * val)).toArray();
+			computeMultipleQuantiles(ec, in, (int[]) ret, quantiles, (int) vectorLength, varID, (globalMax-globalMin) / numBuckets, globalMin, _type, false);
+		}
+		else
 			getSingleQuantileResult(ret, ec, fedMap, varID, average, false, (int) vectorLength, null);
 	}
 
-	private <T> void computeMultipleQuantiles(ExecutionContext ec, MatrixObject in, int[] bucketsFrequencies, double[] quantiles,
-		int vectorLength, long varID, double bucketRange, double min, OperationTypes type) {
+	private <T> MatrixBlock computeMultipleQuantiles(ExecutionContext ec, MatrixObject in, int[] bucketsFrequencies, double[] quantiles,
+		int vectorLength, long varID, double bucketRange, double min, OperationTypes type, boolean returnOutput) {
 		MatrixBlock out = new MatrixBlock(quantiles.length, 1, false);
 		ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>>[] bucketsWithIndex = new ImmutableTriple[quantiles.length];
 
@@ -181,12 +286,12 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			sizeBeforeTmp += bucketsFrequencies[j];
 
 			for(int i = 0; i < quantiles.length; i++) {
-				int quantileIndex = (int) Math.round(vectorLength * quantiles[i]);
+
 				ImmutablePair<Double, Double> bucketWithQ;
 
-				if(quantileIndex > sizeBefore && quantileIndex <= sizeBeforeTmp) {
+				if(quantiles[i] > sizeBefore && quantiles[i] <= sizeBeforeTmp) {
 					bucketWithQ = new ImmutablePair<>(min + (j * bucketRange), min + ((j+1) * bucketRange));
-					bucketsWithIndex[i] = new ImmutableTriple<>(quantileIndex == 1 ? 1 : quantileIndex - sizeBefore, bucketsFrequencies[j], bucketWithQ);
+					bucketsWithIndex[i] = new ImmutableTriple<Integer, Integer, ImmutablePair<Double, Double>>(quantiles[i] == 1 ? 1 : (int) quantiles[i] - sizeBefore, bucketsFrequencies[j], bucketWithQ);
 					countFoundBins++;
 				}
 			}
@@ -248,9 +353,12 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 					}
 				});
 			}
-
-			ec.setMatrixOutput(output.getName(), out);
+			if(returnOutput)
+				return out;
+			else
+				ec.setMatrixOutput(output.getName(), out);
 		}
+		return null;
 	}
 
 	private <T> void getSingleQuantileResult(T ret, ExecutionContext ec, FederationMap fedMap, long varID, boolean average, boolean isIQM, int vectorLength, ImmutablePair<Double, Double> iqmRange) {
@@ -298,7 +406,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		ec.setScalarOutput(output.getName(), new DoubleObject(result));
 	}
 
-	public <T> T createHistogram(MatrixObject in, int vectorLength,  double globalMin, double globalMax, int numBuckets, int quantileIndex, boolean average) {
+	public <T> T createHistogram(CacheableData<?> in, int vectorLength,  double globalMin, double globalMax, int numBuckets, int quantileIndex, boolean average) {
 		FederationMap fedMap = in.getFedMapping();
 		List<int[]> hists = new ArrayList<>();
 		List<Set<Double>> distincts = new ArrayList<>();
@@ -342,7 +450,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		Set<Double> distinctValues = distincts.stream().flatMap(Set::stream).collect(Collectors.toSet());
 
 		if(distinctValues.size() > quantileIndex-1 && !average)
-			return (T) distinctValues.stream().sorted().toArray()[quantileIndex-1];
+			return (T) distinctValues.stream().sorted().toArray()[quantileIndex > 0 ? quantileIndex-1 : 0];
 
 		if(average && distinctValues.size() > quantileIndex) {
 			Double[] distinctsSorted = distinctValues.stream().flatMap(Stream::of).sorted().toArray(Double[]::new);
@@ -350,13 +458,19 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			return (T) medianSum;
 		}
 
-		if(average && distinctValues.size() == 2)
+		if((average && distinctValues.size() == 2) || (!average && distinctValues.size() == 1))
 			return (T) distinctValues.stream().reduce(0.0, Double::sum);
 
 		ImmutablePair<Double, Double> finalBucketWithQ = bucketWithIndex.right;
 		List<Double> distinctInNewBucket = distinctValues.stream().filter( e -> e >= finalBucketWithQ.left && e <= finalBucketWithQ.right).collect(Collectors.toList());
 		if((distinctInNewBucket.size() == 1 && !average) || (average && distinctInNewBucket.size() == 2))
 			return (T) distinctInNewBucket.stream().reduce(0.0, Double::sum);
+
+		if(!average) {
+			Set<Double> distinctsSet = new HashSet<>(distinctInNewBucket);
+			if(distinctsSet.size() == 1)
+				return (T) distinctsSet.toArray()[0];
+		}
 
 		if(distinctValues.size() == 1 || (bucketWithIndex.middle == 1 && !average) || (bucketWithIndex.middle == 2 && isEvenNumRows && average) ||
 			globalMin == globalMax)
@@ -400,6 +514,41 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		}
 		quantileIndex = quantileIndex == 1 ? 1 : quantileIndex - sizeBefore;
 		return new ImmutableTriple<>(quantileIndex, bucketWithQSize, bucketWithQ);
+	}
+
+	public static class CreateMatrixFromFrame extends FederatedUDF {
+		private static final long serialVersionUID = -6569370318237863595L;
+		private final long _outputID;
+		private final int _id;
+
+		public CreateMatrixFromFrame(long input, long output, int id) {
+			super(new long[] {input});
+			_outputID = output;
+			_id = id;
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			FrameBlock fb = ((FrameObject) data[0]).acquireReadAndRelease();
+
+			double[] colData = ArrayUtils.toPrimitive(Arrays.stream((Object[]) fb.getColumnData(_id)).map(e -> Double.valueOf(String.valueOf(e))).toArray(Double[] :: new));
+
+			MatrixBlock mbout = new MatrixBlock(fb.getNumRows(), 1, colData);
+
+			// create output matrix object
+			MatrixObject mo = ExecutionContext.createMatrixObject(mbout);
+
+			// add it to the list of variables
+			ec.setVariable(String.valueOf(_outputID), mo);
+
+			// return id handle
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS_EMPTY);
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
+		}
 	}
 
 	public static class GetHistogram extends FederatedUDF {

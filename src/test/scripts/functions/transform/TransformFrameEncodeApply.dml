@@ -28,6 +28,7 @@ jspec = read($TFSPEC, data_type="scalar", value_type="string");
 while(FALSE){}
 
 X2 = transformapply(target=F1, spec=jspec, meta=M);
+print(toString(X))
 
 write(X, $TFDATA1, format=$OFMT);
 write(X2, $TFDATA2, format=$OFMT);

@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -29,6 +27,7 @@ import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
@@ -42,6 +41,11 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	public static final String MAX_PREFIX = "max";
 	public static final String NBINS_PREFIX = "nbins";
 	private static final long serialVersionUID = 1917445005206076078L;
+
+	public int getNumBin() {
+		return _numBin;
+	}
+
 	protected int _numBin = -1;
 	private BinMethod _binMethod = BinMethod.EQUI_WIDTH;
 
@@ -109,6 +113,35 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		else if(_binMethod == BinMethod.EQUI_HEIGHT) {
 			double[] sortedCol = prepareDataForEqualHeightBins(in, _colID, 0, -1);
 			computeEqualHeightBins(sortedCol);
+		}
+
+		if(DMLScript.STATISTICS)
+			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
+	}
+
+	//TODO move federated things outside the location-agnostic encoder,
+	// and/or generalize to fit the existing mergeAt and similar methods
+	public void buildEquiHeight(double[] equiHeightMaxs) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		if(!isApplicable())
+			return;
+		if(_binMethod == BinMethod.EQUI_HEIGHT)
+			computeFedEqualHeightBins(equiHeightMaxs);
+
+		if(DMLScript.STATISTICS)
+			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
+	}
+
+	public void build(CacheBlock in, double[] equiHeightMaxs) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		if(!isApplicable())
+			return;
+		if(_binMethod == BinMethod.EQUI_WIDTH) {
+			double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
+			computeBins(pairMinMax[0], pairMinMax[1]);
+		}
+		else if(_binMethod == BinMethod.EQUI_HEIGHT) {
+			computeFedEqualHeightBins(equiHeightMaxs);
 		}
 
 		if(DMLScript.STATISTICS)
@@ -245,6 +278,16 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		}
 		_binMaxs[_numBin-1] = sortedCol[n-1];
 		_binMins[0] = sortedCol[0];
+		System.arraycopy(_binMaxs, 0, _binMins, 1, _numBin - 1);
+	}
+
+	private void computeFedEqualHeightBins(double[] binMaxs) {
+		if(_binMins == null || _binMaxs == null) {
+			_binMins = new double[_numBin];
+			_binMaxs = new double[_numBin];
+		}
+		System.arraycopy(binMaxs, 1, _binMaxs, 0, _numBin);
+		_binMins[0] = binMaxs[0];
 		System.arraycopy(_binMaxs, 0, _binMins, 1, _numBin - 1);
 	}
 

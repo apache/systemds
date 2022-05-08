@@ -77,7 +77,6 @@ public class FTypes
 		OTHER(FPartitioning.MIXED, FReplication.NONE);
 
 		private final FPartitioning _partType;
-		@SuppressWarnings("unused") //not yet
 		private final FReplication _repType;
 
 		private FType(FPartitioning ptype, FReplication rtype) {

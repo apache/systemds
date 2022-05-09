@@ -26,10 +26,10 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class BuiltinTopkEvaluateTest extends AutomatedTestBase {
+public class BuiltinFitPipelineTest extends AutomatedTestBase {
 	//	private final static String TEST_NAME1 = "prioritized";
-	private final static String TEST_NAME1 = "applyEvaluateTest";
-	private final static String TEST_CLASS_DIR = SCRIPT_DIR + BuiltinTopkEvaluateTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME1 = "fit_pipelineTest";
+	private final static String TEST_CLASS_DIR = SCRIPT_DIR + BuiltinFitPipelineTest.class.getSimpleName() + "/";
 
 	private static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
 	private static final String DATA_DIR = DATASET_DIR+ "pipelines/";

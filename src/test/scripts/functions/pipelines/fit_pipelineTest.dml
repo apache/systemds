@@ -59,7 +59,7 @@ trainData = F[1:split,]
 testData = F[split+1:nrow(F),]
 
 
-result = applyAndEvaluate(trainData, testData, metaInfo, pip[1,], applyFunc[1,], hp[1,], "evalClassification", evalHp, TRUE, FALSE)
+result = fit_pipeline(trainData, testData, metaInfo, pip[1,], applyFunc[1,], hp[1,], "evalClassification", evalHp, TRUE, FALSE)
 
 header = frame(["dirty acc", "train acc", "test acc"], rows=1, cols=3)
 result = as.frame(result)

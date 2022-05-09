@@ -51,15 +51,13 @@ source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/builtin/topk_cleaning.dml") as topk;
 source("scripts/builtin/bandit.dml") as bandit;
 
-s_applyAndEvaluate = function(Frame[Unknown] trainData, Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"),
+s_fit_pipeline = function(Frame[Unknown] trainData, Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"),
   Frame[Unknown] pip, Frame[Unknown] applyFunc, Matrix[Double] hp, String evaluationFunc, Matrix[Double] evalFunHp,
   Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE)
 return (Matrix[Double] result, Matrix[Double] cleanTrain, Matrix[Double] cleanTest)
 {
   no_of_flag_vars = 5
   [schema, mask, fdMask, maskY] = topk::prepareMeta(trainData, metaData)
-  print(toString(schema, sep=","))
-  print(toString(mask, sep=","))
   pip = removeEmpty(target=pip, margin="cols")
   applyFunc = removeEmpty(target=applyFunc, margin="cols")
   metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=as.frame("NULL"))

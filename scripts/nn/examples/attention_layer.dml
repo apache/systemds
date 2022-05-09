@@ -34,13 +34,14 @@ print("Before attention calculation")
 attention = attention::forward(q, k, v)
 
 print(toString(attention))
-[a,b,c] = attention::backward(1,q,k,v)
-print("da/dq")
-print(toString(a))
-print("da/dk")
-print(toString(b))
-print("da/dv")
-print(toString(c))
+# [a,b,c] = attention::backward(1,q,k,v)
+# print("da/dq")
+# print(toString(a))
+# print("da/dk")
+# print(toString(b))
+# print("da/dv")
+# print(toString(c))
+
 
 # ============== Simple test case =============================
 # Create training data
@@ -53,7 +54,7 @@ print(toString(calculated))
 
 # expected = q * k = 1.1 * 1.6 = 1.76
 expected = matrix(1.76, rows=1, cols=1)
-assert(toString(calculated) == toString(expected))
+# assert(toString(calculated) == toString(expected))
 
 # ============== Example ======================================
 # 1. input eg text data
@@ -64,6 +65,27 @@ assert(toString(calculated) == toString(expected))
 
 
 # ============== Trying out syntax etc. ====================
+print("Start of test stuff")
+d = matrix("2 3 4", 1, 3);
+print(toString(d))
+
+A = tensor(3, d)
+print(toString(A))
+
+# B = tensor(A, "4 2 3")
+# print(toString(B))
+
+# C = tensor(B, B)
+# print(toString(C))
+
+# M = matrix("matrix("1 2 3", 3, 1) matrix("4 5 6", 3, 1)", 2, 1)
+M = matrix(matrix("1 2 3", 3, 1), 1, 1)
+N = matrix(list(matrix("1 2 3", 3, 1), matrix("4 5 6", 3, 1)), 2, 1)
+print(toString(N))
+
+print("test2 -> reshape")
+a = matrix(matrix(1, 4, 1), 2, 2)
+print(toString(a))
 # q = matrix(1, rows=2, cols=2)
 # print(toString(q))
 #

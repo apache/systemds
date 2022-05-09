@@ -128,7 +128,7 @@ public class AggUnaryOp extends MultiThreadedHop
 				if( isTernaryAggregateRewriteApplicable() ) {
 					agg1 = constructLopsTernaryAggregateRewrite(et);
 				}
-				else if( isUnaryAggregateOuterCPRewriteApplicable() )
+				else if( et != ExecType.FED && isUnaryAggregateOuterCPRewriteApplicable() )
 				{
 					BinaryOp binput = (BinaryOp)getInput().get(0);
 					agg1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 

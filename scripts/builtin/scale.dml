@@ -43,8 +43,8 @@ m_scale = function(Matrix[Double] X, Boolean center=TRUE, Boolean scale=TRUE)
   return (Matrix[Double] out, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
 {
   if(center){
-    # ColMean = colMeans(replace(target=X, pattern=NaN, replacement=0))
-    ColMean = colMeans(X)
+    ColMean = colMeans(replace(target=X, pattern=NaN, replacement=0))
+    # ColMean = colMeans(X)
     X =  X - ColMean
   }
   else {
@@ -55,8 +55,8 @@ m_scale = function(Matrix[Double] X, Boolean center=TRUE, Boolean scale=TRUE)
 
   if (scale) {
     N = nrow(X)
-    # ScaleFactor = sqrt(colSums(replace(target=X, pattern=NaN, replacement=0)^2)/(N-1))
-    ScaleFactor = sqrt(colSums(X^2)/(N-1))
+    ScaleFactor = sqrt(colSums(replace(target=X, pattern=NaN, replacement=0)^2)/(N-1))
+    # ScaleFactor = sqrt(colSums(X^2)/(N-1))
 
     # Replace entries in the scale factor that are 0 and NaN with 1.
     # To avoid division by 0 or NaN, introducing NaN to the ouput.

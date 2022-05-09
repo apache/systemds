@@ -44,7 +44,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 # NAME           TYPE             MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# result         Matrix[Double]   ---
+# scores         Matrix[Double]   ---
 # ----------------------------------------------------------------------------------------------------------------------
 
 source("scripts/pipelines/scripts/utils.dml") as utils;
@@ -54,10 +54,12 @@ source("scripts/builtin/bandit.dml") as bandit;
 s_fit_pipeline = function(Frame[Unknown] trainData, Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"),
   Frame[Unknown] pip, Frame[Unknown] applyFunc, Matrix[Double] hp, String evaluationFunc, Matrix[Double] evalFunHp,
   Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE)
-return (Matrix[Double] result, Matrix[Double] cleanTrain, Matrix[Double] cleanTest)
+return (Matrix[Double] scores, Matrix[Double] cleanTrain, Matrix[Double] cleanTest, List[Unknown] externalState, List[Unknown] iState)
 {
+  externalState = list()
   no_of_flag_vars = 5
   [schema, mask, fdMask, maskY] = topk::prepareMeta(trainData, metaData)
+
   pip = removeEmpty(target=pip, margin="cols")
   applyFunc = removeEmpty(target=applyFunc, margin="cols")
   metaList = list(mask=mask, schema=schema, fd=fdMask, applyFunc=as.frame("NULL"))
@@ -70,6 +72,7 @@ return (Matrix[Double] result, Matrix[Double] cleanTrain, Matrix[Double] cleanTe
   if(maskY == 1) {
     [eYtrain, M] = transformencode(target=Ytrain, spec= "{ids:true, recode:[1]}");
     eYtest = transformapply(target=Ytest, spec= "{ids:true, recode:[1]}", meta=M);
+    externalState = append(externalState, M)
   }
   else
   {
@@ -83,14 +86,11 @@ return (Matrix[Double] result, Matrix[Double] cleanTrain, Matrix[Double] cleanTe
   [Xtrain, Xtest] = topk::runStringPipeline(Xtrain, Xtest, schema, mask, FALSE, correctTypos, ctx)
   
   # # # if mask has 1s then there are categorical features
-  [eXtrain, eXtest] = topk::recodeData(Xtrain, Xtest, mask, FALSE, "recode")
+  [eXtrain, eXtest, M1] = topk::recodeData(Xtrain, Xtest, mask, FALSE, "recode")
+  externalState = append(externalState, M1)
   # # # do the early dropping
-  [eXtrain, eXtest, metaList] = topk::featureDrop(eXtrain, eXtest, metaList, FALSE)
+  # [eXtrain, eXtest, metaList] = topk::featureDrop(eXtrain, eXtest, metaList, FALSE)
   metaList["applyFunc"] = applyFunc
-  # construct the parameter list for best hyper-parameters if the oversampling technique is part of 
-  # pipeline then take it out because oversampling is not applied on test dataset
-  # this condition is unnecessary here in this case because the input dataset is balanced and 
-  # instead of diving the dataset into train/test I am doing cross validations
 
   no_of_param = as.scalar(hp[1, 1]) + 1
   hp_width= hp[1, 2:no_of_param]
@@ -98,7 +98,7 @@ return (Matrix[Double] result, Matrix[Double] cleanTrain, Matrix[Double] cleanTe
   pipList = list(ph = pip, hp = hp_matrix, flags = no_of_flag_vars)
 
   # # # now test accuracy
-  [eXtrain, eYtrain, eXtest, eYtest, a, b,Tr] = executePipeline(pipeline=pip, Xtrain=eXtrain, Ytrain=eYtrain,
+  [eXtrain, eYtrain, eXtest, eYtest, a, b, c, d, iState] = executePipeline(pipeline=pip, Xtrain=eXtrain, Ytrain=eYtrain,
     Xtest=eXtest, Ytest=eYtest, metaList=metaList, hyperParameters=hp_matrix, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
   
   if(max(eYtrain) == min(eYtrain)) 
@@ -110,10 +110,10 @@ return (Matrix[Double] result, Matrix[Double] cleanTrain, Matrix[Double] cleanTe
   score = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
   testAccuracy = as.scalar(score[1, 1])
   
-  result = matrix(0, rows=1, cols=3)
-  result[1, 1] = dirtyScore
-  result[1, 2] = trainAccuracy
-  result[1, 3] = testAccuracy  
+  scores = matrix(0, rows=1, cols=3)
+  scores[1, 1] = dirtyScore
+  scores[1, 2] = trainAccuracy
+  scores[1, 3] = testAccuracy  
   cleanTrain = cbind(eXtrain, eYtrain)
   cleanTest = cbind(eXtest, eYtest)
 }

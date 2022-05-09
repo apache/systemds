@@ -22,5 +22,5 @@
 if($5) { A = rbind(read($1), read($2), read($3), read($4)); }
 else { A = cbind(read($1), read($2), read($3), read($4));}
 
-s = lower.tri(target=A, diag=FALSE, values=TRUE);
-write(s, $6);
+A = cbind(read($1), read($2), read($3), read($4));
+write(A, $6);

@@ -87,7 +87,9 @@ public class DataExpression extends DataIdentifier
 	public static final String FED_ADDRESSES = "addresses";
 	public static final String FED_RANGES = "ranges";
 	public static final String FED_TYPE = "type";
-	
+	public static final String FED_LOCAL_OBJECTS = "objects";
+	public static final String FED_FTYPE = "ftype";
+
 	public static final String FORMAT_TYPE = "format";
 	
 	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
@@ -132,7 +134,7 @@ public class DataExpression extends DataIdentifier
 		Arrays.asList(SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY));
 	
 	public static final Set<String> FEDERATED_VALID_PARAM_NAMES = new HashSet<>(
-		Arrays.asList(FED_ADDRESSES, FED_RANGES, FED_TYPE));
+		Arrays.asList(FED_ADDRESSES, FED_RANGES, FED_TYPE, FED_FTYPE, FED_LOCAL_OBJECTS));
 
 	/** Valid parameter names in metadata file */
 	public static final Set<String> READ_VALID_MTD_PARAM_NAMES =new HashSet<>(
@@ -540,6 +542,16 @@ public class DataExpression extends DataIdentifier
 				param = passedParamExprs.get(2);
 				dataExpr.addFederatedExprParam(DataExpression.FED_TYPE, param.getExpr());
 			}
+			else if(unnamedParamCount == 4) {
+				ParameterExpression param = passedParamExprs.get(0);
+				dataExpr.addFederatedExprParam(DataExpression.FED_LOCAL_OBJECTS, param.getExpr());
+				param = passedParamExprs.get(1);
+				dataExpr.addFederatedExprParam(DataExpression.FED_ADDRESSES, param.getExpr());
+				param = passedParamExprs.get(2);
+				dataExpr.addFederatedExprParam(DataExpression.FED_FTYPE, param.getExpr());
+				param = passedParamExprs.get(3);
+				dataExpr.addFederatedExprParam(DataExpression.FED_TYPE, param.getExpr());
+			}
 			else {
 				errorListener.validationError(parseInfo,
 					"for federated statement, at most 3 arguments are supported: addresses, ranges, type");
@@ -888,7 +900,7 @@ public class DataExpression extends DataIdentifier
 				raiseValidateError("UDF function call not supported as parameter to built-in function call", false,LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			inputParamExpr.validateExpression(ids, currConstVars, conditional);
-			if (s != null && !s.equals(RAND_DATA) && !s.equals(RAND_DIMS) && !s.equals(FED_ADDRESSES) && !s.equals(FED_RANGES)
+			if (s != null && !s.equals(RAND_DATA) && !s.equals(RAND_DIMS) && !s.equals(FED_ADDRESSES) && !s.equals(FED_RANGES) && !s.equals(FED_LOCAL_OBJECTS)
 					&& !s.equals(DELIM_NA_STRINGS) && !s.equals(SCHEMAPARAM) && getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
 				raiseValidateError("Non-scalar data types are not supported for data expression.", conditional,LanguageErrorCodes.INVALID_PARAMETERS);
 			}
@@ -2174,28 +2186,59 @@ public class DataExpression extends DataIdentifier
 				raiseValidateError("for federated statement " + FED_ADDRESSES + " has incorrect value type", conditional);
 			}
 			getVarParam(FED_ADDRESSES).validateExpression(ids, currConstVars, conditional);
-			exp = getVarParam(FED_RANGES);
-			if( !(exp instanceof DataIdentifier) ) {
-				raiseValidateError("for federated statement " + FED_RANGES + " has incorrect value type", conditional);
+
+			if(_varParams.size() == 4) {
+				exp = getVarParam(FED_LOCAL_OBJECTS);
+				if( !(exp instanceof DataIdentifier) ) {
+					raiseValidateError("for federated statement " + FED_LOCAL_OBJECTS + " has incorrect value type", conditional);
+				}
+				getVarParam(FED_LOCAL_OBJECTS).validateExpression(ids, currConstVars, conditional);
+				exp = getVarParam(FED_FTYPE);
+				if( !(exp instanceof StringIdentifier) ) {
+					raiseValidateError("for federated statement " + FED_FTYPE + " has incorrect value type", conditional);
+				}
+				getVarParam(FED_FTYPE).validateExpression(ids, currConstVars, conditional);
+				exp = getVarParam(FED_TYPE);
+				if( !(exp instanceof StringIdentifier) ) {
+					raiseValidateError("for federated statement " + FED_TYPE + " has incorrect value type", conditional);
+				}
+				getVarParam(FED_TYPE).validateExpression(ids, currConstVars, conditional);
+
+				getOutput().setFileFormat(FileFormat.BINARY);
+				StringIdentifier fedType = (StringIdentifier) exp;
+				if(fedType.getValue().equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
+					getOutput().setDataType(DataType.MATRIX);
+					getOutput().setValueType(ValueType.FP64);
+				}
+				else if(fedType.getValue().equalsIgnoreCase(FED_FRAME_IDENTIFIER)) {
+					getOutput().setDataType(DataType.FRAME);
+				}
+				getOutput().setDimensions(-1, -1);
+			} else {
+				exp = getVarParam(FED_RANGES);
+				if(!(exp instanceof DataIdentifier)) {
+					raiseValidateError("for federated statement " + FED_RANGES + " has incorrect value type",
+						conditional);
+				}
+				getVarParam(FED_RANGES).validateExpression(ids, currConstVars, conditional);
+				exp = getVarParam(FED_TYPE);
+				if(!(exp instanceof StringIdentifier)) {
+					raiseValidateError("for federated statement " + FED_TYPE + " has incorrect value type", conditional);
+				}
+				getVarParam(FED_TYPE).validateExpression(ids, currConstVars, conditional);
+
+				getOutput().setFileFormat(FileFormat.BINARY);
+				StringIdentifier fedType = (StringIdentifier) exp;
+				if(fedType.getValue().equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
+					getOutput().setDataType(DataType.MATRIX);
+					// TODO value type for federated object
+					getOutput().setValueType(ValueType.FP64);
+				}
+				else if(fedType.getValue().equalsIgnoreCase(FED_FRAME_IDENTIFIER)) {
+					getOutput().setDataType(DataType.FRAME);
+				}
+				getOutput().setDimensions(-1, -1);
 			}
-			getVarParam(FED_RANGES).validateExpression(ids, currConstVars, conditional);
-			exp = getVarParam(FED_TYPE);
-			if( !(exp instanceof StringIdentifier) ) {
-				raiseValidateError("for federated statement " + FED_TYPE + " has incorrect value type", conditional);
-			}
-			getVarParam(FED_TYPE).validateExpression(ids, currConstVars, conditional);
-			
-			getOutput().setFileFormat(FileFormat.BINARY);
-			StringIdentifier fedType = (StringIdentifier) exp;
-			if(fedType.getValue().equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
-				getOutput().setDataType(DataType.MATRIX);
-				// TODO value type for federated object
-				getOutput().setValueType(ValueType.FP64);
-			}
-			else if(fedType.getValue().equalsIgnoreCase(FED_FRAME_IDENTIFIER)) {
-				getOutput().setDataType(DataType.FRAME);
-			}
-			getOutput().setDimensions(-1, -1);
 			break;
 			
 		default:

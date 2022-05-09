@@ -21,6 +21,7 @@ package org.apache.sysds.hops;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,6 +31,7 @@ import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.fedplanner.FTypes;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.Federated;
@@ -38,6 +40,8 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.Sql;
 import org.apache.sysds.parser.DataExpression;
+import static org.apache.sysds.parser.DataExpression.FED_FTYPE;
+import static org.apache.sysds.parser.DataExpression.FED_LOCAL_OBJECTS;
 import static org.apache.sysds.parser.DataExpression.FED_RANGES;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -512,16 +516,39 @@ public class DataOp extends Hop {
 			setNnz(input1.getNnz());
 		}
 		else if( _op == OpOpData.FEDERATED ) {
-			Hop ranges = getInput().get(getParameterIndex(FED_RANGES));
-			long nrow = -1, ncol = -1;
-			for( Hop c : ranges.getInput() ) {
-				if( !(c.getInput(0) instanceof LiteralOp && c.getInput(1) instanceof LiteralOp))
-					return; // invalid size inference if not all know.
-				nrow = Math.max(nrow, HopRewriteUtils.getIntValueSafe(c.getInput(0)));
-				ncol = Math.max(ncol, HopRewriteUtils.getIntValueSafe(c.getInput(1)));
+			if (getInput().size() == 4) {
+				FTypes.FType ftype = FTypes.FType.valueOf(getInput().get(getParameterIndex(FED_FTYPE)).getName());
+				Hop objects = getInput().get(getParameterIndex(FED_LOCAL_OBJECTS));
+				long nrow = 0, ncol = 0;
+				for(Hop c : objects.getInput()) {
+					if(!(c.getInput(0) instanceof LiteralOp && c.getInput(1) instanceof LiteralOp))
+						return; // invalid size inference if not all know.
+					if(ftype == FTypes.FType.ROW) {
+						nrow += HopRewriteUtils.getIntValueSafe(c.getInput(6));
+						ncol = HopRewriteUtils.getIntValueSafe(c.getInput(7));
+					} else if(ftype == FTypes.FType.COL) {
+						nrow = HopRewriteUtils.getIntValueSafe(c.getInput(6));
+						ncol += HopRewriteUtils.getIntValueSafe(c.getInput(7));
+					} else if(ftype == FTypes.FType.FULL) {
+						nrow = HopRewriteUtils.getIntValueSafe(c.getInput(6));
+						ncol = HopRewriteUtils.getIntValueSafe(c.getInput(7));
+					}
+					// TODO add BROADCAST
+				}
+				setDim1(nrow);
+				setDim2(ncol);
+			} else {
+				Hop ranges = getInput().get(getParameterIndex(FED_RANGES));
+				long nrow = -1, ncol = -1;
+				for(Hop c : ranges.getInput()) {
+					if(!(c.getInput(0) instanceof LiteralOp && c.getInput(1) instanceof LiteralOp))
+						return; // invalid size inference if not all know.
+					nrow = Math.max(nrow, HopRewriteUtils.getIntValueSafe(c.getInput(0)));
+					ncol = Math.max(ncol, HopRewriteUtils.getIntValueSafe(c.getInput(1)));
+				}
+				setDim1(nrow);
+				setDim2(ncol);
 			}
-			setDim1(nrow);
-			setDim2(ncol);
 		}
 		else { //READ
 			//do nothing; dimensions updated via set output params

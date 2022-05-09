@@ -60,6 +60,7 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 public class InitFEDInstruction extends FEDInstruction implements LineageTraceable {
@@ -70,6 +71,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 	public static final String FED_FRAME_IDENTIFIER = "frame";
 
 	private CPOperand _type, _addresses, _ranges, _output;
+	private CPOperand _fType, _objects;
 
 	public InitFEDInstruction(CPOperand type, CPOperand addresses, CPOperand ranges, CPOperand out, String opcode,
 		String instr) {
@@ -80,24 +82,144 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		_output = out;
 	}
 
+	public InitFEDInstruction(CPOperand type, CPOperand addresses, CPOperand objects, CPOperand fType, CPOperand out, String opcode,
+		String instr) {
+		super(FEDType.Init, opcode, instr);
+		_type = type;
+		_addresses = addresses;
+		_objects = objects;
+		_fType = fType;
+		_output = out;
+	}
+
 	public static InitFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		// We need 5 parts: Opcode, Type (Frame/Matrix), Addresses (list of Strings with
 		// url/ip:port/filepath), ranges and the output Operand
-		if(parts.length != 5)
+		if(parts.length != 5 && parts.length != 6)
 			throw new DMLRuntimeException("Invalid number of operands in federated instruction: " + str);
 		String opcode = parts[0];
 
-		CPOperand type, addresses, ranges, out;
-		type = new CPOperand(parts[1]);
-		addresses = new CPOperand(parts[2]);
-		ranges = new CPOperand(parts[3]);
-		out = new CPOperand(parts[4]);
-		return new InitFEDInstruction(type, addresses, ranges, out, opcode, str);
+		if(parts.length == 5) {
+			CPOperand type, addresses, ranges, out;
+			type = new CPOperand(parts[1]);
+			addresses = new CPOperand(parts[2]);
+			ranges = new CPOperand(parts[3]);
+			out = new CPOperand(parts[4]);
+			return new InitFEDInstruction(type, addresses, ranges, out, opcode, str);
+		} else {
+			CPOperand type, addresses, objects, fType, out;
+			type = new CPOperand(parts[1]);
+			addresses = new CPOperand(parts[2]);
+			objects = new CPOperand(parts[3]);
+			fType = new CPOperand(parts[4]);
+			out = new CPOperand(parts[5]);
+			return new InitFEDInstruction(type, addresses, objects, fType, out, opcode, str);
+		}
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		if(_objects != null)
+			initLocalData(ec);
+		else
+			processFedInit(ec);
+	}
+
+	private void initLocalData(ExecutionContext ec) {
+		String type = ec.getScalarInput(_type).getStringValue();
+		String fTypeString = ec.getScalarInput(_fType).getStringValue();
+		ListObject addresses = ec.getListObject(_addresses.getName());
+		ListObject objects = ec.getListObject(_objects.getName());
+		List<Pair<FederatedRange, FederatedData>> feds = new ArrayList<>();
+
+		if(addresses.getLength() != objects.getLength())
+			throw new DMLRuntimeException("Federated read needs twice the amount of addresses as ranges "
+				+ "(begin and end): addresses=" + addresses.getLength() + " objects=" + objects.getLength());
+
+		//check for duplicate addresses (would lead to overwrite with common variable names)
+		// TODO relax requirement by using different execution contexts per federated data?
+		Set<String> addCheck = new HashSet<>();
+		for( Data dat : addresses.getData() )
+			if( dat instanceof StringObject ) {
+				String address = ((StringObject)dat).getStringValue();
+				if(addCheck.contains(address))
+					LOG.warn("Federated data contains address duplicates: " + addresses);
+				addCheck.add(address);
+			}
+
+		Types.DataType fedDataType;
+		if(type.equalsIgnoreCase(FED_MATRIX_IDENTIFIER))
+			fedDataType = Types.DataType.MATRIX;
+		else if(type.equalsIgnoreCase(FED_FRAME_IDENTIFIER))
+			fedDataType = Types.DataType.FRAME;
+		else
+			throw new DMLRuntimeException("type \"" + type + "\" non valid federated type");
+
+		FType ftype = FType.valueOf(fTypeString);
+
+		long[] usedDims = new long[] {0, 0};
+		for(int i = 0; i < addresses.getLength(); i++) {
+			Data addressData = addresses.getData().get(i);
+			Data data = objects.getData().get(i);
+			if(addressData instanceof StringObject) {
+				// We split address into url/ip, the port and file path of file to read
+				String[] parsedValues = parseURL(((StringObject) addressData).getStringValue());
+				String host = parsedValues[0];
+				int port = Integer.parseInt(parsedValues[1]);
+				String filePath = parsedValues[2];
+
+				if(DMLScript.FED_STATISTICS)
+					// register the federated worker for federated statistics creation
+					FederatedStatistics.registerFedWorker(host, port);
+
+				// fill begin and end dims
+				long[] beginDims = new long[2]; // FIXME more for local objects?
+				long[] endDims = new long[2];
+				for(int d = 0; d < beginDims.length; d++) {
+					if(ftype == FType.ROW) {
+						beginDims[d] = usedDims[0] ;//+ ((MatrixBlock) data.get).getLongValue();
+						endDims[d] = usedDims[1] ;//+ ((ScalarObject) data.get(d)).getLongValue();
+					} else if(ftype == FType.COL) {
+
+					} else if(ftype == FType.FULL) {
+
+					}
+				}
+				usedDims[0] = Math.max(usedDims[0], endDims[0]);
+				usedDims[1] = Math.max(usedDims[1], endDims[1]);
+				try {
+					FederatedData federatedData = new FederatedData(fedDataType,
+						new InetSocketAddress(InetAddress.getByName(host), port), filePath);
+					feds.add(new ImmutablePair<>(new FederatedRange(beginDims, endDims), federatedData));
+				}
+				catch(UnknownHostException e) {
+					throw new DMLRuntimeException("federated host was unknown: " + host);
+				}
+			}
+			else {
+				throw new DMLRuntimeException("federated instruction only takes strings as addresses");
+			}
+		}
+		if(type.equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
+			CacheableData<?> output = ec.getCacheableData(_output);
+			output.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
+			federateMatrix(output, feds);
+		}
+		else if(type.equalsIgnoreCase(FED_FRAME_IDENTIFIER)) {
+			if(usedDims[1] > Integer.MAX_VALUE)
+				throw new DMLRuntimeException("federated Frame can not have more than max int columns, because the "
+					+ "schema can only be max int length");
+			FrameObject output = ec.getFrameObject(_output);
+			output.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
+			federateFrame(output, feds);
+		}
+		else {
+			throw new DMLRuntimeException("type \"" + type + "\" non valid federated type");
+		}
+	}
+
+	private void processFedInit(ExecutionContext ec) {
 		String type = ec.getScalarInput(_type).getStringValue();
 		ListObject addresses = ec.getListObject(_addresses.getName());
 		ListObject ranges = ec.getListObject(_ranges.getName());
@@ -117,7 +239,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 					LOG.warn("Federated data contains address duplicates: " + addresses);
 				addCheck.add(address);
 			}
-		
+
 		Types.DataType fedDataType;
 		if(type.equalsIgnoreCase(FED_MATRIX_IDENTIFIER))
 			fedDataType = Types.DataType.MATRIX;

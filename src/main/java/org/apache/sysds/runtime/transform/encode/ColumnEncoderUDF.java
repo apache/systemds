@@ -33,7 +33,9 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.EvalNaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
@@ -75,7 +77,7 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 		//create execution context and input
 		ExecutionContext ec = ExecutionContextFactory.createContext(new Program(new DMLProgram()));
 		MatrixBlock col = out.slice(0, in.getNumRows()-1, _colID-1, _colID-1, new MatrixBlock());
-		ec.setVariable("I", ParamservUtils.newMatrixObject(col, true));
+		ec.setVariable("I", new ListObject(new Data[] {ParamservUtils.newMatrixObject(col, true)}));
 		ec.setVariable("O", ParamservUtils.newMatrixObject(col, true));
 		
 		//call UDF function via eval machinery
@@ -83,7 +85,7 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 			new CPOperand("O", ValueType.FP64, DataType.MATRIX),
 			new CPOperand[] {
 				new CPOperand(_fName, ValueType.STRING, DataType.SCALAR, true),
-				new CPOperand("I", ValueType.FP64, DataType.MATRIX)});
+				new CPOperand("I", ValueType.UNKNOWN, DataType.LIST)});
 		fun.processInstruction(ec);
 		
 		//obtain result and in-place write back

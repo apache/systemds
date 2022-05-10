@@ -142,7 +142,9 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			&& !(fpb.getInputParams().size() == 1 && fpb.getInputParams().get(0).getDataType().isList()))
 		{
 			ListObject lo = ec.getListObject(boundInputs[0]);
-			lo = appendNamedDefaults(lo, fpb.getStatementBlock());
+			lo = lo.isNamedList() ?
+				appendNamedDefaults(lo, fpb.getStatementBlock()) :
+				appendPositionalDefaults(lo, fpb.getStatementBlock());
 			checkValidArguments(lo.getData(), lo.getNames(), fpb.getInputParamNames());
 			if( lo.isNamedList() )
 				lo = reorderNamedListForFunctionCall(lo, fpb.getInputParamNames());
@@ -300,6 +302,30 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 					ret.add(param, sobj, litem);
 				}
 			}
+		}
+		
+		return ret;
+	}
+	
+	private static ListObject appendPositionalDefaults(ListObject params, StatementBlock sb) {
+		if( sb == null )
+			return params;
+		
+		//best effort replacement of scalar literal defaults
+		FunctionStatement fstmt = (FunctionStatement) sb.getStatement(0);
+		ListObject ret = new ListObject(params);
+		for( int i=ret.getLength(); i<fstmt.getInputParams().size(); i++ ) {
+			String param = fstmt.getInputParamNames()[i];
+			if( !(fstmt.getInputDefaults().get(i) != null
+				&& fstmt.getInputParams().get(i).getDataType().isScalar()
+				&& fstmt.getInputDefaults().get(i) instanceof ConstIdentifier) )
+				throw new DMLRuntimeException("Unable to append positional scalar default for '"+param+"'");
+			ValueType vt = fstmt.getInputParams().get(i).getValueType();
+			Expression expr = fstmt.getInputDefaults().get(i);
+			ScalarObject sobj = ScalarObjectFactory.createScalarObject(vt, expr.toString());
+			LineageItem litem = !DMLScript.LINEAGE ? null :
+				LineageItemUtils.createScalarLineageItem(ScalarObjectFactory.createLiteralOp(sobj));
+			ret.add(sobj, litem);
 		}
 		
 		return ret;

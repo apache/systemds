@@ -34,6 +34,6 @@ jspec2 = "{ids: true, recode: [1, 2, 7], udf: {name: scale, ids: [1, 2, 3, 4, 5,
 
 while(FALSE){}
 
-R = sum(R1==R2);
+R = sum(abs(R1-R2)<1e-10);
 write(R, $R);
 

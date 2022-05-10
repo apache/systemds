@@ -56,16 +56,15 @@ public class TransformEncodeUDFTest extends AutomatedTestBase
 		runTransformTest(ExecMode.HYBRID, TEST_NAME1);
 	}
 
-// TODO default handling without named lists
-//	@Test
-//	public void testUDF2Singlenode() {
-//		runTransformTest(ExecMode.SINGLE_NODE, TEST_NAME2);
-//	}
-//	
-//	@Test
-//	public void testUDF2Hybrid() {
-//		runTransformTest(ExecMode.HYBRID, TEST_NAME2);
-//	}
+	@Test
+	public void testUDF2Singlenode() {
+		runTransformTest(ExecMode.SINGLE_NODE, TEST_NAME2);
+	}
+
+	@Test
+	public void testUDF2Hybrid() {
+	runTransformTest(ExecMode.HYBRID, TEST_NAME2);
+	}
 	
 	private void runTransformTest(ExecMode rt, String testname)
 	{

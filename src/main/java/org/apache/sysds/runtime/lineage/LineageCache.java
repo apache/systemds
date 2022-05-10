@@ -402,7 +402,7 @@ public class LineageCache
 		if (ReuseCacheType.isNone() || objLI == null)
 			return null;
 
-		LineageItem li = LineageItemUtils.getSerializedLineageItem(objLI);
+		LineageItem li = LineageItemUtils.getSerializedFedResponseLineageItem(objLI);
 
 		LineageCacheEntry e = null;
 		synchronized(_cache) {
@@ -731,7 +731,7 @@ public class LineageCache
 		if(ReuseCacheType.isNone())
 			return;
 
-		LineageItem li = LineageItemUtils.getSerializedLineageItem(objLI);
+		LineageItem li = LineageItemUtils.getSerializedFedResponseLineageItem(objLI);
 
 		LineageCacheEntry entry = getIntern(li);
 

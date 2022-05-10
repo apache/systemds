@@ -141,7 +141,7 @@ public class LineageCacheEntry {
 	}
 
 	public boolean isSerializedBytes() {
-		return _dt.isUnknown() && _key.getOpcode() == "serialize";
+		return _dt.isUnknown() && _key.getOpcode().equals(LineageItemUtils.SERIALIZATION_OPCODE);
 	}
 
 	public synchronized void setValue(MatrixBlock val, long computetime) {

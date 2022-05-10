@@ -514,7 +514,7 @@ public class ColGroupFactory {
 			}
 		}
 		else {
-			throw new NotImplementedException();
+			throw new NotImplementedException("");
 		}
 	}
 
@@ -546,7 +546,7 @@ public class ColGroupFactory {
 			}
 		}
 		else {
-			throw new NotImplementedException();
+			throw new NotImplementedException("");
 		}
 	}
 

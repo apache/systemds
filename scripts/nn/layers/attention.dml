@@ -31,6 +31,7 @@ calculate_scores = function(matrix[double] query, matrix[double] key)
      * dim(scores) = AxC
      */
     scores = query %*% t(key)
+    print("calculate_scores: \n" + toString(scores))
 }
 
 apply_scores = function(matrix[double] scores, matrix[double] value)
@@ -44,7 +45,7 @@ apply_scores = function(matrix[double] scores, matrix[double] value)
   # We divide by the sqrt of the value vector to keep the gradient stable.
   # Also we assume that dim V equals dim K.
   weights = softmax(scores / ncol(value) ^ 0.5)
-  print(toString(weights))
+  print("weighted scores: \n" + toString(weights))
   attention = weights %*% value
 }
 
@@ -58,13 +59,14 @@ forward = function(matrix[double] query, matrix[double] key, matrix[double] valu
      * dim(attention) = AxD
      */
     scores = calculate_scores(query, key)
-    print("scores: \n" + toString(scores))
     attention = apply_scores(scores, value)
 }
 
 backward = function(matrix[double] dattention, matrix[double] query, matrix[double] key, matrix[double] value)
-    return (matrix[double] dquery, matrix[double] dkey, matrix[double]dvalue)
+    return (matrix[double] dquery, matrix[double] dkey, matrix[double] dvalue)
 {
+# We have to derive the attention formulae: softmax ( (Q @ K^T) / (d_K^0.5) ) * V
+#    for each of the return values (dquery, dkey, dvalue)
     /*
      * attention = weights * value
      * weights = softmax(v)

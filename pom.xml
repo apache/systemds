@@ -49,7 +49,7 @@
 		<project.build.outputTimestamp>1</project.build.outputTimestamp>
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
-		<jcuda.version>10.2.0</jcuda.version>
+		<jcuda.version>11.6.1</jcuda.version>
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
 		<java.level>11</java.level>
 		<!-->Testing settings<!-->
@@ -460,33 +460,6 @@
 				<jcuda.arch>x86_64</jcuda.arch>
 			</properties>
 		</profile>
-		<profile>
-			<id>apple-x86_64</id>
-			<activation>
-				<os>
-					<family>mac</family>
-					<arch>x86_64</arch>
-				</os>
-			</activation>
-			<properties>
-				<jcuda.os>apple</jcuda.os>
-				<jcuda.arch>x86_64</jcuda.arch>
-			</properties>
-		</profile>
-		<profile>
-			<id>linux-ppc_64</id>
-			<activation>
-				<os>
-					<family>unix</family>
-					<arch>ppc64le</arch>
-				</os>
-			</activation>
-			<properties>
-				<jcuda.os>linux</jcuda.os>
-				<jcuda.arch>ppc_64</jcuda.arch>
-			</properties>
-		</profile>
-
 		<profile>
 			<id>eclipse-only</id>
 			<activation>
@@ -937,58 +910,6 @@
 			<classifier>linux-x86_64</classifier>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcuda-natives</artifactId>
-			<classifier>apple-x86_64</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcublas-natives</artifactId>
-			<classifier>apple-x86_64</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcusparse-natives</artifactId>
-			<classifier>apple-x86_64</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcusolver-natives</artifactId>
-			<classifier>apple-x86_64</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcudnn-natives</artifactId>
-			<classifier>apple-x86_64</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-core_${scala.binary.version}</artifactId>
-			<version>${spark.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-sql_${scala.binary.version}</artifactId>
-			<version>${spark.version}</version>
 		</dependency>
 
 		<dependency>

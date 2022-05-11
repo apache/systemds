@@ -427,7 +427,7 @@ public class GPUObject {
 		if (getJcudaSparseMatrixPtr() == null || !isAllocated())
 			throw new DMLRuntimeException("Expected allocated sparse matrix before sparseToDense() call");
 
-		sparseToColumnMajorDense();
+		sparseToColumnMajorDense(instructionName);
 		denseColumnMajorToRowMajor();
 		if (DMLScript.STATISTICS)
 			end = System.nanoTime();
@@ -440,7 +440,7 @@ public class GPUObject {
 	/**
 	 * More efficient method to convert sparse to dense but returns dense in column major format
 	 */
-	public void sparseToColumnMajorDense() {
+	public void sparseToColumnMajorDense(String instructionName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : sparse -> col-major dense on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -452,7 +452,7 @@ public class GPUObject {
 			throw new DMLRuntimeException("Expected cusparse to be initialized");
 		int rows = toIntExact(mat.getNumRows());
 		int cols = toIntExact(mat.getNumColumns());
-		setDensePointer(getJcudaSparseMatrixPtr().toColumnMajorDenseMatrix(cusparseHandle, null, rows, cols, null));
+		setDensePointer(getJcudaSparseMatrixPtr().toColumnMajorDenseMatrix(cusparseHandle, rows, cols, instructionName));
 	}
 
 	/**
@@ -935,8 +935,8 @@ public class GPUObject {
 
 	/**
 	 * Copies the data from device to host.
-	 * Currently eagerDelete and isEviction are both provided for better control in different scenarios. 
-	 * In future, we can force eagerDelete if isEviction is true, else false.
+	 * Currently, eagerDelete and isEviction are both provided for better control in different scenarios.
+	 * In the future, we can force eagerDelete if isEviction is true, else false.
 	 * 
 	 * @param instName opcode of the instruction for fine-grained statistics
 	 * @param isEviction is called for eviction
@@ -948,16 +948,12 @@ public class GPUObject {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
 		if(shadowBuffer.isBuffered()) {
-			if(isEviction) {
-				// If already copied to shadow buffer as part of previous eviction, do nothing.
-				return;
-			}
-			else {
-				// If already copied to shadow buffer as part of previous eviction and this is not an eviction (i.e. bufferpool call for subsequent CP/Spark instruction),
+			if(!isEviction) {
+				// If already copied to a shadow buffer during a previous eviction and this is not an eviction (i.e. buffer pool call for subsequent CP/Spark instruction),
 				// then copy from shadow buffer to MatrixObject.
 				shadowBuffer.moveToHost();
-				return;
 			}
+			return;
 		}
 		else if(shadowBuffer.isEligibleForBuffering(isEviction, eagerDelete)) {
 			// Perform shadow buffering if (1) single precision, (2) during eviction, (3) eagerDelete is true 
@@ -977,36 +973,29 @@ public class GPUObject {
 					"Block not in sparse format on host yet the device sparse matrix pointer is not null");
 		}
 		else if(getJcudaSparseMatrixPtr() != null && isSparseAndEmpty()) {
-			mat.acquireModify(new MatrixBlock((int)mat.getNumRows(), (int)mat.getNumColumns(), 0l)); // empty block
+			mat.acquireModify(new MatrixBlock((int)mat.getNumRows(), (int)mat.getNumColumns(), 0L)); // empty block
 			mat.release();
 			return;
 		}
-		boolean sparse = false;
-		if(isDensePointerNull())
-			sparse = true;
-		MatrixBlock tmp = null;
+		boolean sparse = isDensePointerNull();
+		MatrixBlock tmp;
 		long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if (!isDensePointerNull()) {
 			tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
-			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
-						getDensePointer(), tmp.getDenseBlockValues(), instName, isEviction);
+			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getDensePointer(), tmp.getDenseBlockValues(),
+					instName, isEviction);
 			if(eagerDelete && !isLinCached())
 				clearData(instName, true);
 			tmp.recomputeNonZeros();
-		} else {
+		}
+		else {
 			int rows = toIntExact(mat.getNumRows());
 			int cols = toIntExact(mat.getNumColumns());
-			int nnz = toIntExact(getJcudaSparseMatrixPtr().nnz);
-			double[] values = new double[nnz];
-			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaSparseMatrixPtr().val, values, instName, isEviction);
-			int[] rowPtr = new int[rows + 1];
-			int[] colInd = new int[nnz];
-			CSRPointer.copyPtrToHost(getJcudaSparseMatrixPtr(), rows, nnz, rowPtr, colInd);
+			SparseBlockCSR sparseBlock = CSRPointer.copyPtrToHost(getGPUContext(), getJcudaSparseMatrixPtr(), rows, instName);
 			if(eagerDelete && !isLinCached())
 				clearData(instName, true);
-			SparseBlockCSR sparseBlock = new SparseBlockCSR(rowPtr, colInd, values, nnz);
-			tmp = new MatrixBlock(rows, cols, nnz, sparseBlock);
+			tmp = new MatrixBlock(rows, cols, sparseBlock.size(), sparseBlock);
 		}
 		mat.acquireModify(tmp);
 		mat.release();
@@ -1019,13 +1008,20 @@ public class GPUObject {
 		}
 		dirty = false;
 	}
-	
-	// Copy and convert to a MatrixBlock, and return
+
+	/**
+	 * Copies the data from device to host into a temporary matrix block
+	 *
+	 * @param instName opcode of the instruction for fine-grained statistics
+	 * @param eagerDelete flag to reuse deleted allocation
+	 * @return MatrixBlock holding evicted data
+	 * @throws DMLRuntimeException if error occurs
+	 */
 	public MatrixBlock evictFromDeviceToHostMB(String instName, boolean eagerDelete) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
-		MatrixBlock tmp = null;
+		MatrixBlock tmp;
 		if (!isDensePointerNull()) {
 			tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
@@ -1037,16 +1033,10 @@ public class GPUObject {
 		} else {
 			int rows = toIntExact(mat.getNumRows());
 			int cols = toIntExact(mat.getNumColumns());
-			int nnz = toIntExact(getJcudaSparseMatrixPtr().nnz);
-			double[] values = new double[nnz];
-			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(), getJcudaSparseMatrixPtr().val, values, instName, true);
-			int[] rowPtr = new int[rows + 1];
-			int[] colInd = new int[nnz];
-			CSRPointer.copyPtrToHost(getJcudaSparseMatrixPtr(), rows, nnz, rowPtr, colInd);
+			SparseBlockCSR sparseBlock = CSRPointer.copyPtrToHost(getGPUContext(), getJcudaSparseMatrixPtr(), rows, instName);
+			tmp = new MatrixBlock(rows, cols, sparseBlock.size(), sparseBlock);
 			//if(eagerDelete)
 			//	clearData(instName, true);
-			SparseBlockCSR sparseBlock = new SparseBlockCSR(rowPtr, colInd, values, nnz);
-			tmp = new MatrixBlock(rows, cols, nnz, sparseBlock);
 		}
 		//mat.acquireModify(tmp);
 		//mat.release();

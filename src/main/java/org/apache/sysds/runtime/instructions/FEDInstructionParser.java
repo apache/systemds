@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions;
 
 import org.apache.sysds.lops.Append;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.fed.AggregateBinaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.AggregateTernaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.AggregateUnaryFEDInstruction;
@@ -52,6 +53,8 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "uak+"    , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uark+"   , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uack+"   , FEDType.AggregateUnary );
+		String2FEDInstructionType.put( "uamax"   , FEDType.AggregateUnary );
+		String2FEDInstructionType.put( "uamin"   , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uasqk+"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uarsqk+" , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uacsqk+" , FEDType.AggregateUnary );

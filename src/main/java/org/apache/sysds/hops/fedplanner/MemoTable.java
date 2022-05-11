@@ -23,6 +23,7 @@ import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.cost.HopRel;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -45,6 +46,20 @@ public class MemoTable {
 	 * Map holding the relation between Hop IDs and execution plan alternatives.
 	 */
 	private final static Map<Long, List<HopRel>> hopRelMemo = new HashMap<>();
+
+	/**
+	 * Get list of strings representing the different
+	 * hopRel federated outputs related to root hop.
+	 * @param root for which HopRel fedouts are found
+	 * @return federated output values as strings
+	 */
+	public List<String> getFedOutAlternatives(Hop root){
+		if ( !containsHop(root) )
+			return null;
+		else return hopRelMemo.get(root.getHopID()).stream()
+			.map(HopRel::getFederatedOutput)
+			.map(FEDInstruction.FederatedOutput::name).collect(Collectors.toList());
+	}
 
 	/**
 	 * Get the HopRel with minimum cost for given root hop

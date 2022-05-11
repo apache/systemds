@@ -20,6 +20,7 @@
 package org.apache.sysds.hops.cost;
 
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.fedplanner.FTypes;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
@@ -43,8 +44,9 @@ import java.util.stream.Collectors;
 public class HopRel {
 	protected final Hop hopRef;
 	protected final FEDInstruction.FederatedOutput fedOut;
+	protected ExecType execType;
 	protected FTypes.FType fType;
-	protected final FederatedCost cost;
+	protected FederatedCost cost;
 	protected final Set<Long> costPointerSet = new HashSet<>();
 	protected List<Hop> inputHops;
 	protected List<HopRel> inputDependency = new ArrayList<>();
@@ -70,6 +72,13 @@ public class HopRel {
 		this(associatedHop, fedOut, null, hopRelMemo, inputs);
 	}
 
+	private HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, FType fType, List<Hop> inputs){
+		hopRef = associatedHop;
+		this.fedOut = fedOut;
+		this.fType = fType;
+		this.inputHops = inputs;
+	}
+
 	/**
 	 * Constructs a HopRel with input dependency and cost estimate based on entries in hopRelMemo.
 	 * @param associatedHop hop associated with this HopRel
@@ -79,21 +88,17 @@ public class HopRel {
 	 * @param inputs hop inputs which input dependencies and cost is based on
 	 */
 	public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, FType fType, MemoTable hopRelMemo, ArrayList<Hop> inputs){
-		hopRef = associatedHop;
-		this.fedOut = fedOut;
-		this.fType = fType;
-		this.inputHops = inputs;
+		this(associatedHop, fedOut, fType, inputs);
 		setInputDependency(hopRelMemo);
 		cost = FederatedCostEstimator.costEstimate(this, hopRelMemo);
+		setExecType();
 	}
 
 	public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, FType fType, MemoTable hopRelMemo, List<Hop> inputs, List<FType> inputDependency){
-		hopRef = associatedHop;
-		this.fedOut = fedOut;
-		this.inputHops = inputs;
-		this.fType = fType;
+		this(associatedHop, fedOut, fType, inputs);
 		setInputFTypeDependency(inputs, inputDependency, hopRelMemo);
 		cost = FederatedCostEstimator.costEstimate(this, hopRelMemo);
+		setExecType();
 	}
 
 	private void setInputFTypeDependency(List<Hop> inputs, List<FType> inputDependency, MemoTable hopRelMemo){
@@ -101,6 +106,11 @@ public class HopRel {
 			this.inputDependency.add(hopRelMemo.getHopRel(inputs.get(i), inputDependency.get(i)));
 		}
 		validateInputDependency();
+	}
+
+	private void setExecType(){
+		if ( inputDependency.stream().anyMatch(HopRel::hasFederatedOutput) )
+			execType = ExecType.FED;
 	}
 
 	/**
@@ -152,6 +162,10 @@ public class HopRel {
 
 	public void setFType(FType fType){
 		this.fType = fType;
+	}
+
+	public ExecType getExecType(){
+		return execType;
 	}
 
 	/**

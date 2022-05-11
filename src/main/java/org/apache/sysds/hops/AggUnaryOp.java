@@ -608,6 +608,9 @@ public class AggUnaryOp extends MultiThreadedHop
 		ExecType et_input = input1.optFindExecType();
 		// Because ternary aggregate are not supported on GPU
 		et_input = et_input == ExecType.GPU ? ExecType.CP :  et_input;
+		// If forced ExecType is FED, it means that the federated planner updated the ExecType and
+		// execution may fail if ExecType is not FED
+		et_input = (getForcedExecType() == ExecType.FED) ? ExecType.FED : et_input;
 		
 		return new TernaryAggregate(in1, in2, in3, AggOp.SUM, 
 			OpOp2.MULT, _direction, getDataType(), ValueType.FP64, et_input, k);

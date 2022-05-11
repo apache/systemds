@@ -35,6 +35,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
+import org.apache.sysds.hops.fedplanner.MemoTable;
 import org.apache.sysds.hops.ipa.FunctionCallGraph;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
@@ -78,6 +79,9 @@ public class Explain
 	private static final boolean SHOW_DATA_DEPENDENCIES     = true;
 	private static final boolean SHOW_DATA_FLOW_PROPERTIES  = true;
 
+	//federated execution plan alternatives
+	private static MemoTable MEMO_TABLE;
+
 	//different explain levels
 	public enum ExplainType {
 		NONE, 	  // explain disabled
@@ -99,6 +103,14 @@ public class Explain
 		public int numJobs = 0;
 		public int numReblocks = 0;
 		public int numChkpts = 0;
+	}
+
+	/**
+	 * Store memo table for adding additional explain info regarding hops.
+	 * @param memoTable to store in Explain
+	 */
+	public static void setMemo(MemoTable memoTable){
+		MEMO_TABLE = memoTable;
 	}
 
 	//////////////
@@ -599,6 +611,16 @@ public class Explain
 		//exec type
 		if (hop.getExecType() != null)
 			sb.append(", " + hop.getExecType());
+
+		if ( MEMO_TABLE != null && MEMO_TABLE.containsHop(hop) ){
+			List<String> fedAlts = MEMO_TABLE.getFedOutAlternatives(hop);
+			if ( fedAlts != null ){
+				sb.append(" [ ");
+				for ( String fedAlt : fedAlts )
+					sb.append(fedAlt).append(" ");
+				sb.append("]");
+			}
+		}
 
 		sb.append('\n');
 

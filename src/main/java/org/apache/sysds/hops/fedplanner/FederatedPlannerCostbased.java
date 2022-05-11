@@ -215,7 +215,6 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 			updateFederatedOutput(root, rootHopRel);
 			visitInputDependency(rootHopRel);
 		}
-		root.updateETFed();
 	}
 
 	/**
@@ -238,6 +237,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	private void updateFederatedOutput(Hop root, HopRel updateHopRel) {
 		root.setFederatedOutput(updateHopRel.getFederatedOutput());
 		root.setFederatedCost(updateHopRel.getCostObject());
+		root.setForcedExecType(updateHopRel.getExecType());
 		forceFixedFedOut(root);
 		LOG.trace("Updated fedOut to " + updateHopRel.getFederatedOutput() + " for hop "
 			+ root.getHopID() + " opcode: " + root.getOpString());

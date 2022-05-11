@@ -910,24 +910,6 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	/**
-	 * Update the execution type if input is federated.
-	 * This method only has an effect if FEDERATED_COMPILATION is activated.
-	 * Federated compilation is activated in OptimizerUtils.
-	 */
-	public void updateETFed() {
-		boolean localOut = hasLocalOutput();
-		boolean fedIn = getInput().stream().anyMatch(
-			in -> in.hasFederatedOutput() && !(in.prefetchActivated() && localOut));
-		if( isFederatedDataOp() || fedIn ){
-			setForcedExecType(ExecType.FED);
-			//TODO: Temporary solution where _etype is set directly
-			// since forcedExecType for BinaryOp may be overwritten
-			// if updateETFed is not called from optFindExecType.
-			_etype = ExecType.FED;
-		}
-	}
-
-	/**
 	 * Checks if ExecType is federated.
 	 * @return true if ExecType is federated
 	 */

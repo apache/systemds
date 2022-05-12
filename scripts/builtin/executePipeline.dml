@@ -57,9 +57,9 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
   Matrix[Double] Xtest,  Matrix[Double] Ytest, List[Unknown] metaList, Matrix[Double] hyperParameters, Matrix[Double] hpForPruning = as.matrix(0),
   Matrix[Double] changesByOp = as.matrix(0), Integer flagsCount, Boolean test = FALSE, Boolean verbose)
   return (Matrix[Double] Xtrain, Matrix[Double] Ytrain, Matrix[Double] Xtest, Matrix[Double] Ytest,
-    Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp, Double changesAll)
+    Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp, Double changesAll, List[Unknown] internalStates)
 {
-
+  internalStates = list()
   mask=as.matrix(metaList['mask'])
   FD = as.matrix(metaList['fd'])
   applyFunc = as.frame(metaList['applyFunc'])
@@ -76,7 +76,7 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
   for(i in 1:ncol(pipeline)) {
     op = as.scalar(pipeline[1,i])
     applyOp = toString(as.scalar(applyFunc[1,i]))
-
+    # print("op: "+op)
     Xclone = Xtrain
     XtestClone = Xtest
     [hp, dataFlag, yFlag, executeFlag] = matrixToList(Xtrain, Ytrain, mask, FD, hyperParameters[i], flagsCount, op)
@@ -86,11 +86,14 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
       Xtrain = as.matrix(O)
       if(applyOp != "NA") {
         [Xtest, executeFlag] = applyDataFlag(Xtest, mask, dataFlag)
+        internalStates = append(internalStates, L)
         L = append(L, list(X=Xtest));
         Xtest = eval(applyOp, L);
-        Xtest = confirmData(Xtest, XtestClone, mask, dataFlag, yFlag)
+        # print("L \n"+toString(L, rows=3))
+        Xtest = confirmData(Xtest, XtestClone, mask, dataFlag)
       }
-      Xtrain = confirmData(Xtrain, Xclone, mask, dataFlag, yFlag)
+      else internalStates = append(internalStates, as.frame("NA"))
+      Xtrain = confirmData(Xtrain, Xclone, mask, dataFlag)
 
       # dataFlag 0 = only on numeric, 1 = on whole data
       if(yFlag) {
@@ -98,6 +101,7 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
         Ytrain = as.matrix(Y)
       }
       Xtrain = confirmMeta(Xtrain, mask)
+      Xtest = confirmMeta(Xtest, mask)
     }
     else {
       print("not applying "+op+" executeFlag = 0")
@@ -225,7 +229,7 @@ return (Matrix[Double] X)
 }
 
 
-confirmData = function(Matrix[Double] nX, Matrix[Double] originalX, Matrix[Double] mask, Integer dataFlag, Integer yFlag)
+confirmData = function(Matrix[Double] nX, Matrix[Double] originalX, Matrix[Double] mask, Integer dataFlag)
 return (Matrix[Double] X)
 {
 

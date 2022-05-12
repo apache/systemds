@@ -37,10 +37,9 @@
 # f_odered  Frame[String]                sorted dataset by column 1 in decreasing order
 # ----------------------------------------------------------------------------------------------------------------------
 
-s_frameSort = function(Frame[String] F, Matrix[Double] mask, Boolean orderDesc = TRUE )
+s_frameSort = function(Frame[String] F, Matrix[Double] mask, Boolean orderDesc = TRUE)
 return (Frame[String] f_odered)
 {
-  # idx[1,1] = 0 # to save accuracy column from encoding 
   index = vectorToCsv(mask)
   # recode logical pipelines for easy handling
   jspecR = "{ids:true, recode:["+index+"]}";

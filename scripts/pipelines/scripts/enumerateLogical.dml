@@ -87,7 +87,7 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
   pipelines = rbind(ref, pipelines)
   population = pipelines
   populationSize = nrow(pipelines)
-  transitions = sample(3, (populationSize * max_iter), TRUE, seed)
+  transitions = sample(4, (populationSize * max_iter), TRUE, seed)
   opToAdd = sample(nrow(allOps), (populationSize * max_iter), TRUE, seed)
   # opToRemove = sample(max_iter, (populationSize * max_iter), TRUE, seed)
   refChangesInternal = 0
@@ -117,18 +117,39 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
     finalOutput = append(finalOutput, sortedPipelines)
     finalOutputHp = append(finalOutputHp, sortedHp)
     # # # if converged then stop otherwise generate new population
-    children = frame(0, rows=populationSize, cols=ncol(sortedPipelines))
+    children = frame(0, rows=populationSize, cols=ncol(sortedPipelines)+(ncol(sortedPipelines)/2))
     sortedPipelines = sortedPipelines[, 3:ncol(sortedPipelines)]
+    start = 1; 
+    end = 0;
+    topk = frame(0, rows=round((populationSize/2)) * length(finalOutput) , cols=populationLength + 2) 
+    for(i in 1:length(finalOutput))
+    {
+      pipFrame = as.frame(finalOutput[i])
+      end = end + nrow(pipFrame)
+      topk[start:end, 1:ncol(pipFrame)] = pipFrame
+      start = end + 1
+    }
+    sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(topk) - 2))
+    topk = removeEmpty(target=topk, margin="rows")
+    topk = frameSort(topk, sort_mask, TRUE)
+    topk = topk[, 3:ncol(topk)]
     # # randomly pick the pipelines for transitions
     pipRand = sample(nrow(sortedPipelines), populationSize, TRUE, seed)
     if(!converged) {
       parfor(i in 1:nrow(children), check=0) {
         idxR = (nrow(children) * (iter - 1)) + i
         idx = as.scalar(pipRand[i])
-        top = removeEmpty(target=sortedPipelines[idx], margin="cols")
-        tail = top[, ncol(top)]
-        if(sum(mask) > 0)
+        top = removeEmpty(target=topk[idx], margin="cols")
+        # top = removeEmpty(target=sortedPipelines[idx], margin="cols")
+        idx2 = min(max(pipRand), idx + 1)
+        top2 = removeEmpty(target=topk[idx2], margin="cols")
+        # top2 = removeEmpty(target=sortedPipelines[idx2], margin="cols")
+        if(sum(mask) > 0) {
+          tail = top[, ncol(top)]
+          tail2 = top2[, ncol(top2)]
           top = top[, 1:ncol(top) - 1]
+          top2 = top2[, 1:ncol(top2) - 1]
+        }
           
         random = ifelse(ncol(top) <=2, 1, as.scalar(transitions[idxR]))
         if(random == 1)
@@ -137,6 +158,8 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
           c1 = mutation(top, seed) 
         else if(random == 3)
           c1 = removal(top, seed) 
+        else if(random == 4)
+          c1 = crossover(top, top2, seed)
         
         if(sum(mask) > 0)
           c1 = cbind(c1, tail)
@@ -171,10 +194,8 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
   
   refChanges = as.double(as.scalar(outputPip[nrow(outputPip), 2]))
   acc = outputPip[, 1]
+  print(toString(outputPip))
   outputPip = outputPip[,3:ncol(outputPip)]
-
-  print(toString(outputHp))
-
 
 }
 
@@ -213,6 +234,19 @@ return (Frame[Unknown] child)
     child = removeEmpty(target=child, margin="cols")
   }
 }
+
+crossover = function(Frame[Unknown] p1, Frame[Unknown] p2, Integer seed)
+return(Frame[Unknown] child)
+{
+    # # randomly select the lengths to be append
+    lp1 = as.scalar(sample(ncol(p1), 1, FALSE, seed))
+    lp2 = as.scalar(sample(ncol(p2), 1, FALSE, seed))
+    child = cbind(p1[, 1:lp1], p2[, lp2:ncol(p2)])
+    print("p1 "+toString(p1))
+    print("p2 "+toString(p2))
+    print("child "+toString(child))
+}
+
 
 getOps = function( Frame[string] allOps, Frame[String] refSol, Integer dist, Integer n, Integer minValue)
  return (Frame[String] allOps, Frame[String] refSol) {

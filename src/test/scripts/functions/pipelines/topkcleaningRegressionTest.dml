@@ -50,7 +50,7 @@ else {
 #matrix("1 1e-6 1e-9 1000", rows=1, cols=4)
 [topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData, 
   primitives=primitives, parameters=param, evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),
-  topK=topK, resource_val=resources, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output)
+  topK=topK, resource_val=resources, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE)
 
 write(topKPipelines, output+"/pip.csv", format="csv")
 write(topKHyperParams, output+"/hp.csv", format="csv")

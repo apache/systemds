@@ -610,9 +610,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		case CastAsListVariable:
 			ListObject lobj = ec.getListObject(getInput1());
 			if( lobj.getLength() != 1 || !(lobj.getData(0) instanceof ListObject) )
-				throw new RuntimeException("as.list() expects a list input with one nested list: "
-					+ "length(list)="+lobj.getLength()+", dt(list[0])="+lobj.getData(0).getDataType() );
-			ec.setVariable(output.getName(), lobj.getData(0));
+				ec.setVariable(output.getName(), lobj);
+//				throw new RuntimeException("as.list() expects a list input with one nested list: "
+//					+ "length(list)="+lobj.getLength()+", dt(list[0])="+lobj.getData(0).getDataType() );
+			else ec.setVariable(output.getName(), lobj.getData(0));
 			break;
 
 		case CastAsDoubleVariable:

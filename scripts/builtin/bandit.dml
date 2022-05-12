@@ -53,7 +53,7 @@
 
 m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Double] X_test, Matrix[Double] Y_test, List[Unknown] metaList,
   String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] lp, Matrix[Double] lpHp, Frame[Unknown] primitives, Frame[Unknown] param, Integer k = 3,
-  Integer R=50, Double baseLineScore, Boolean cv,  Integer cvk = 2, Double ref = 0, Integer seed = -1, Boolean enablePruning = FALSE, Boolean verbose = TRUE, String output="")
+  Integer R=50, Double baseLineScore, Boolean cv,  Integer cvk = 2, Double ref = 0, Integer seed = -1, Boolean enablePruning = FALSE, Boolean verbose = TRUE)
   # return(Boolean perf)
   return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams, Matrix[Double] bestAccuracy, Frame[String] applyFunc) 
 {
@@ -290,7 +290,7 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Do
     hp = hp[, 2:totalVals]
     applyFunctions = allApplyFunctions[i]
     no_of_res = nrow(hp)
-    # print("PIPELINE EXECUTION START ... "+toString(op))
+    print("PIPELINE EXECUTION START ... "+toString(op))
     hpForPruning = matrix(0, rows=1, cols=ncol(op))
     changesByOp = matrix(0, rows=1, cols=ncol(op))
     metaList2 = metaList; #ensure metaList is no result var
@@ -564,6 +564,7 @@ return (Double accuracy, Matrix[Double] evalFunHp, Matrix[Double] hpForPruning, 
   allChanges = min(allChanges)
   changesByOp = colMaxs(cvChanges)
   accuracy =  mean(accuracyMatrix)
+  print("mean: \n"+toString(accuracyMatrix))
   print("cv accuracy: "+toString(accuracy))
 }
 

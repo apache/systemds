@@ -1,5 +1,5 @@
-miceApply,forward_fill,imputeByMeanApply,normalizeApply,scaleApply,0,0,0
-miceApply,forward_fill,imputeByMeanApply,normalizeApply,scaleApply,0,0,0
-miceApply,forward_fill,winsorizeApply,normalizeApply,scaleApply,0,0,0
-winsorizeApply,forward_fill,miceApply,normalizeApply,scaleApply,0,0,0
-miceApply,forward_fill,normalizeApply,winsorizeApply,scaleApply,0,0,0
+winsorizeApply,imputeByMeanApply,normalizeApply,scaleApply,0,0,0
+miceApply,forward_fill,imputeByMeanApply,normalizeApply,scaleApply,0,0
+miceApply,imputeByMeanApply,forward_fill,normalizeApply,scaleApply,0,0
+normalizeApply,miceApply,forward_fill,scaleApply,0,0,0
+normalizeApply,miceApply,forward_fill,scaleApply,0,0,0

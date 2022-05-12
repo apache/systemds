@@ -48,13 +48,13 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 	@Ignore
 	public void testFindBestPipelineCompany() {
 		runtopkCleaning(DATA_DIR+ "company.csv", RESOURCE+ "meta/meta_company.csv", 1.0, 3,5,
-			.0,"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
+			5.0,"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testFindBestPipelineCensus() {
 		runtopkCleaning(DATA_DIR+ "dirty.csv", RESOURCE+ "meta/meta_census.csv", 1.0, 3,5,
-			27.0,"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
+			2.0,"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
 	}
 
 	// this test is ignored due to it long running time in Git actions

@@ -58,8 +58,7 @@ source("scripts/builtin/bandit.dml") as bandit;
 
 s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"), Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives,
   Frame[Unknown] parameters, Frame[String] refSol = as.frame("NaN"), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, Integer resource_val = 20, Integer max_iter = 10,
-  Double sample = 1.0, Double expectedIncrease=1.0, Integer seed = -1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, Boolean enablePruning = FALSE,
-  String output)
+  Double sample = 1.0, Double expectedIncrease=1.0, Integer seed = -1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, Boolean enablePruning = FALSE)
   return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores,
     Double dirtyScore, Matrix[Double] evalFunHp, Frame[Unknown] applyFunc)
 {
@@ -104,7 +103,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   print("---- feature transformations to numeric matrix");
   [eXtrain, eXtest] = recodeData(Xtrain, Xtest, mask, cv, "recode")
   # # # do the early dropping
-  [eXtrain, eXtest, metaList] = featureDrop(eXtrain, eXtest, metaList, cv)
+  # [eXtrain, eXtest, metaList] = featureDrop(eXtrain, eXtest, metaList, cv)
   # apply sampling on training data for pipeline enumeration
   # TODO why recoding/sampling twice (within getDirtyScore)
   print("---- class-stratified sampling of feature matrix w/ f="+sample);
@@ -148,7 +147,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   # stop("end of enumlp")
   [topKPipelines, topKHyperParams, topKScores, applyFunc] = bandit(X_train=eXtrain, Y_train=eYtrain, X_test=eXtest, Y_test=eYtest,  metaList=metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, lp=bestLogical, lpHp=bestHp, primitives=primitives, param=parameters, baseLineScore=dirtyScore,
-    k=topK, R=resource_val, cv=cv, cvk=cvk, ref=refChanges, seed=seed, enablePruning = enablePruning, output=output, verbose=TRUE);  
+    k=topK, R=resource_val, cv=cv, cvk=cvk, ref=refChanges, seed=seed, enablePruning = enablePruning, verbose=TRUE);  
   t7 = time(); print("-- Cleaning - Enum Physical Pipelines: "+(t7-t6)/1e9+"s");
 }
 
@@ -239,7 +238,7 @@ return(Double dirtyScore, Matrix[Double] evalFunHp)
 }
 
 recodeData = function(Frame[Unknown] Xtrain, Frame[Unknown] Xtest, Matrix[Double] mask, Boolean cv, String code)
-return(Matrix[Double] eXtrain, Matrix[Double] eXtest)
+return(Matrix[Double] eXtrain, Matrix[Double] eXtest, Frame[Unknown] X_meta)
 {
   if(sum(mask) > 0)
   {
@@ -257,31 +256,31 @@ return(Matrix[Double] eXtrain, Matrix[Double] eXtest)
   }
 }
 
-featureDrop = function(Matrix[Double] eXtrain, Matrix[Double] eXtest, List[Unknown] metaList, Boolean cv)
-return(Matrix[Double] eXtrain, Matrix[Double] eXtest, List[Unknown] metaList)
-{
-  mask = as.matrix(metaList['mask'])
-  fdMask = as.matrix(metaList['fd'])
-  schema = as.frame(metaList['schema'])
-  # # 1. if 90% of the column is empty
-  # # # 2. if the column has only single value
-  # # # have all unique values
-  Xtmp = replace(target = eXtrain, pattern = NaN, replacement = 0)
-  nullMask = is.na(eXtrain)
-  singleValuesCol = ((colMins(Xtmp) == 0) & (colMaxs(Xtmp) == 1)) | (colMaxs(Xtmp) == colMins(Xtmp))
-  allmostEmpty = colSums(nullMask) 
-  allmostEmptyRatio = allmostEmpty >= (nrow(Xtmp) * 0.9)
-  allSum = singleValuesCol | allmostEmptyRatio
-  if(sum(allSum) > 0) {
-    eXtrain = removeEmpty(target=eXtrain, margin="cols", select = (allSum == 0))
-    if(!cv)
-      eXtest = removeEmpty(target=eXtest, margin="cols", select = (allSum == 0))
-    mask = removeEmpty(target=mask, margin="cols", select = (allSum == 0))
-    fdMask = removeEmpty(target=fdMask, margin="cols", select = (allSum == 0))
-    schema = removeEmpty(target=schema, margin="cols", select = (allSum == 0))
-    metaList['mask'] = mask
-    metaList['schema'] = schema
-    metaList['fd'] = fdMask
-  }
-}
+# featureDrop = function(Matrix[Double] eXtrain, Matrix[Double] eXtest, List[Unknown] metaList, Boolean cv)
+# return(Matrix[Double] eXtrain, Matrix[Double] eXtest, List[Unknown] metaList)
+# {
+  # mask = as.matrix(metaList['mask'])
+  # fdMask = as.matrix(metaList['fd'])
+  # schema = as.frame(metaList['schema'])
+  # # # 1. if 90% of the column is empty
+  # # # # 2. if the column has only single value
+  # # # # have all unique values
+  # Xtmp = replace(target = eXtrain, pattern = NaN, replacement = 0)
+  # nullMask = is.na(eXtrain)
+  # singleValuesCol = ((colMins(Xtmp) == 0) & (colMaxs(Xtmp) == 1)) | (colMaxs(Xtmp) == colMins(Xtmp))
+  # allmostEmpty = colSums(nullMask) 
+  # allmostEmptyRatio = allmostEmpty >= (nrow(Xtmp) * 0.9)
+  # allSum = singleValuesCol | allmostEmptyRatio
+  # if(sum(allSum) > 0) {
+    # eXtrain = removeEmpty(target=eXtrain, margin="cols", select = (allSum == 0))
+    # if(!cv)
+      # eXtest = removeEmpty(target=eXtest, margin="cols", select = (allSum == 0))
+    # mask = removeEmpty(target=mask, margin="cols", select = (allSum == 0))
+    # fdMask = removeEmpty(target=fdMask, margin="cols", select = (allSum == 0))
+    # schema = removeEmpty(target=schema, margin="cols", select = (allSum == 0))
+    # metaList['mask'] = mask
+    # metaList['schema'] = schema
+    # metaList['fd'] = fdMask
+  # }
+# }
 

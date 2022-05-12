@@ -59,9 +59,10 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Boolean 
   return (Matrix[Double] sampledX, Matrix[Double] sampledY)
 {
   MIN_SAMPLE = 1000
-  sampled = floor(nrow(eX) * ratio)
   sampledX = eX
   sampledY = eY
+  ratio = ifelse(nrow(eY) > 200000, 0.6, ratio)
+  sampled = floor(nrow(eX) * ratio)
   
   if(sampled > MIN_SAMPLE & ratio != 1.0)
   {

@@ -56,9 +56,10 @@ if(nrow(metaInfo) < 2)
 metaInfo = metaInfo[, 2:ncol(metaInfo)]
 # # # split in train/test 70/30
 
-[topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData, metaData=metaInfo, primitives=primitives, parameters=param, refSol = frame(["imputeByMean", "scale", "dummycoding"], rows=1, cols=3),
+[topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData, metaData=metaInfo, primitives=primitives, parameters=param, 
+  refSol = frame(["imputeByMean", "scale", "dummycoding"], rows=1, cols=3),
   evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),topK=topK, resource_val=resources, enablePruning=TRUE,
-  expectedIncrease=expectedIncrease, seed = 23, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output) 
+  expectedIncrease=expectedIncrease, seed = 23, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE) 
 
 write(topKPipelines, output+"/pip.csv", format="csv")
 write(topKHyperParams, output+"/hp.csv", format="csv")

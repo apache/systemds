@@ -32,9 +32,10 @@ if ($rP) {
 */
 
 A1 = matrix(0, rows=3, cols=4);
-A = federated(objects = list(matrix(0, rows=3, cols=4), matrix(0, rows=3, cols=4),
-    matrix(0, rows=3, cols=4), matrix(0, rows=3, cols=4)),
+m = list(matrix(0, rows=3, cols=4), matrix(0, rows=3, cols=4), matrix(0, rows=3, cols=4), matrix(0, rows=3, cols=4));
+#print(toString(m)) string object
+print(m)
+A = federated(objects = m,
     addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
     ftype="ROW", type="MATRIX");
-
 write(A, $out_S);

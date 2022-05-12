@@ -555,7 +555,7 @@ public class ExecutionContext {
 		return (ListObject) dat;
 	}
 	
-	private List<MatrixObject> getMatricesFromList(ListObject lo) {
+	public List<MatrixObject> getMatricesFromList(ListObject lo) {
 		List<MatrixObject> ret = new ArrayList<>();
 		for (Data e : lo.getData()) {
 			if (e instanceof MatrixObject)
@@ -564,6 +564,19 @@ public class ExecutionContext {
 				ret.addAll(getMatricesFromList((ListObject)e));
 			else
 				throw new DMLRuntimeException("List must contain only matrices or lists for rbind/cbind.");
+		}
+		return ret;
+	}
+
+	public List<CacheableData<?>> getObjectsFromList(ListObject lo) {
+		List<CacheableData<?>> ret = new ArrayList<>();
+		for (Data e : lo.getData()) {
+			if (e instanceof MatrixObject || e instanceof FrameObject)
+				ret.add((CacheableData<?>) e);
+			else if (e instanceof ListObject)
+				ret.addAll(getObjectsFromList((ListObject)e));
+			else
+				throw new DMLRuntimeException("List must contain only matrices, frames or lists.");
 		}
 		return ret;
 	}

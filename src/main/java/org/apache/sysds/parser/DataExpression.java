@@ -544,9 +544,9 @@ public class DataExpression extends DataIdentifier
 			}
 			else if(unnamedParamCount == 4) {
 				ParameterExpression param = passedParamExprs.get(0);
-				dataExpr.addFederatedExprParam(DataExpression.FED_LOCAL_OBJECTS, param.getExpr());
-				param = passedParamExprs.get(1);
 				dataExpr.addFederatedExprParam(DataExpression.FED_ADDRESSES, param.getExpr());
+				param = passedParamExprs.get(1);
+				dataExpr.addFederatedExprParam(DataExpression.FED_LOCAL_OBJECTS, param.getExpr());
 				param = passedParamExprs.get(2);
 				dataExpr.addFederatedExprParam(DataExpression.FED_FTYPE, param.getExpr());
 				param = passedParamExprs.get(3);

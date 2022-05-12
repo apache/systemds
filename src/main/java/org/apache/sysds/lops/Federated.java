@@ -41,7 +41,7 @@ public class Federated extends Lop {
 		if(inputLops.size() == 4) {
 			_objects = inputLops.get(FED_LOCAL_OBJECTS);
 			addInput(_objects);
-			_fType =inputLops.get(FED_FTYPE);
+			_fType = inputLops.get(FED_FTYPE);
 			addInput(_fType);
 		}
 		else {

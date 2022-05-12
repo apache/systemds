@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -45,6 +46,7 @@ import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
@@ -130,7 +132,9 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		String type = ec.getScalarInput(_type).getStringValue();
 		String fTypeString = ec.getScalarInput(_fType).getStringValue();
 		ListObject addresses = ec.getListObject(_addresses.getName());
-		ListObject objects = ec.getListObject(_objects.getName());
+		ListObject objects = ec.getListObject(_objects.getName()); //FIXME
+		List<CacheableData<?>> objectsList = ec.getObjectsFromList(objects);
+
 		List<Pair<FederatedRange, FederatedData>> feds = new ArrayList<>();
 
 		if(addresses.getLength() != objects.getLength())
@@ -161,7 +165,6 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		long[] usedDims = new long[] {0, 0};
 		for(int i = 0; i < addresses.getLength(); i++) {
 			Data addressData = addresses.getData().get(i);
-			Data data = objects.getData().get(i);
 			if(addressData instanceof StringObject) {
 				// We split address into url/ip, the port and file path of file to read
 				String[] parsedValues = parseURL(((StringObject) addressData).getStringValue());
@@ -174,17 +177,22 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 					FederatedStatistics.registerFedWorker(host, port);
 
 				// fill begin and end dims
-				long[] beginDims = new long[2]; // FIXME more for local objects?
+				long[] beginDims = new long[2]; //FIXME
 				long[] endDims = new long[2];
-				for(int d = 0; d < beginDims.length; d++) {
-					if(ftype == FType.ROW) {
-						beginDims[d] = usedDims[0] ;//+ ((MatrixBlock) data.get).getLongValue();
-						endDims[d] = usedDims[1] ;//+ ((ScalarObject) data.get(d)).getLongValue();
-					} else if(ftype == FType.COL) {
 
-					} else if(ftype == FType.FULL) {
+				CacheableData<?> data = objectsList.get(i);
 
-					}
+				if(ftype == FType.ROW) {
+					beginDims[0] = usedDims[0];
+					beginDims[1] = data.getNumColumns();
+					endDims[0] = usedDims[0] + data.getNumRows();
+				} else if(ftype == FType.COL) {
+					beginDims[1] = usedDims[1];
+					endDims[0] = data.getNumRows();
+					endDims[1] = usedDims[1] + data.getNumColumns();
+				} else if(ftype == FType.FULL) {
+					endDims[0] = data.getNumRows();
+					endDims[1] = data.getNumColumns();
 				}
 				usedDims[0] = Math.max(usedDims[0], endDims[0]);
 				usedDims[1] = Math.max(usedDims[1], endDims[1]);
@@ -204,7 +212,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		if(type.equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
 			CacheableData<?> output = ec.getCacheableData(_output);
 			output.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
-			federateMatrix(output, feds);
+			federateMatrix(output, feds, null); //FIXME
 		}
 		else if(type.equalsIgnoreCase(FED_FRAME_IDENTIFIER)) {
 			if(usedDims[1] > Integer.MAX_VALUE)
@@ -212,7 +220,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 					+ "schema can only be max int length");
 			FrameObject output = ec.getFrameObject(_output);
 			output.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
-			federateFrame(output, feds);
+			federateFrame(output, feds, null); //FIXME
 		}
 		else {
 			throw new DMLRuntimeException("type \"" + type + "\" non valid federated type");
@@ -297,7 +305,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		if(type.equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
 			CacheableData<?> output = ec.getCacheableData(_output);
 			output.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
-			federateMatrix(output, feds);
+			federateMatrix(output, feds, null);
 		}
 		else if(type.equalsIgnoreCase(FED_FRAME_IDENTIFIER)) {
 			if(usedDims[1] > Integer.MAX_VALUE)
@@ -305,7 +313,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 					+ "schema can only be max int length");
 			FrameObject output = ec.getFrameObject(_output);
 			output.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
-			federateFrame(output, feds);
+			federateFrame(output, feds, null);
 		}
 		else {
 			throw new DMLRuntimeException("type \"" + type + "\" non valid federated type");
@@ -352,7 +360,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		}
 	}
 
-	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers) {
+	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers, List<MatrixObject> broadcasts) {
 
 		List<Pair<FederatedRange, FederatedData>> fedMapping = new ArrayList<>();
 		for(Pair<FederatedRange, FederatedData> e : workers)
@@ -402,11 +410,16 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		output.getFedMapping().setType(rowPartitioned &&
 			colPartitioned ? FType.FULL : rowPartitioned ? FType.ROW : colPartitioned ? FType.COL : FType.OTHER);
 
+		if(!broadcasts.isEmpty()) {
+			//FIXME aquireRead and slice? then no list of matrices needed
+//			output.getFedMapping().broadcastSliced()
+		}
+
 		if(LOG.isDebugEnabled())
 			LOG.debug("Fed map Inited:" + output.getFedMapping());
 	}
 
-	public static void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers) {
+	public static void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers, List<FrameObject> broadcasts) {
 		List<Pair<FederatedRange, FederatedData>> fedMapping = new ArrayList<>();
 		for(Pair<FederatedRange, FederatedData> e : workers)
 			fedMapping.add(e);
@@ -456,6 +469,10 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		output.setFedMapping(new FederationMap(id, fedMapping));
 		output.getFedMapping().setType(rowPartitioned &&
 			colPartitioned ? FType.FULL : rowPartitioned ? FType.ROW : colPartitioned ? FType.COL : FType.OTHER);
+
+		if(!broadcasts.isEmpty()) {
+			//			output.getFedMapping().broadcastSliced()
+		}
 
 		if(LOG.isDebugEnabled())
 			LOG.debug("Fed map Inited: " + output.getFedMapping());

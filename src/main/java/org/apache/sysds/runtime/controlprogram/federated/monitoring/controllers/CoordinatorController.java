@@ -24,28 +24,28 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Reque
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
 
 public class CoordinatorController implements IController {
-    @Override
-    public FullHttpResponse create(Request request) {
-        return null;
-    }
+	@Override
+	public FullHttpResponse create(Request request) {
+		return null;
+	}
 
-    @Override
-    public FullHttpResponse update(Request request, Long objectId) {
-        return null;
-    }
+	@Override
+	public FullHttpResponse update(Request request, Long objectId) {
+		return null;
+	}
 
-    @Override
-    public FullHttpResponse delete(Request request, Long objectId) {
-        return null;
-    }
+	@Override
+	public FullHttpResponse delete(Request request, Long objectId) {
+		return null;
+	}
 
-    @Override
-    public FullHttpResponse get(Request request, Long objectId) {
-        return Response.ok("Success");
-    }
+	@Override
+	public FullHttpResponse get(Request request, Long objectId) {
+		return Response.ok("Success");
+	}
 
-    @Override
-    public FullHttpResponse getAll(Request request) {
-        return Response.ok("Success");
-    }
+	@Override
+	public FullHttpResponse getAll(Request request) {
+		return Response.ok("Success");
+	}
 }

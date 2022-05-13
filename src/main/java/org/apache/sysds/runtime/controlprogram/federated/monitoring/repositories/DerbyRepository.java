@@ -23,139 +23,149 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseE
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DerbyRepository implements IRepository {
-    private final static String DB_CONNECTION = "jdbc:derby:memory:derbyDB";
-    private final Connection _db;
+	private final static String DB_CONNECTION = "jdbc:derby:memory:derbyDB";
+	private final Connection _db;
 
-    private static final String WORKER_TABLE = "WORKERS";
+	private static final String WORKERS_TABLE_NAME= "workers";
+	private static final String ENTITY_NAME_COL = "name";
+	private static final String ENTITY_ADDR_COL = "address";
 
-    public DerbyRepository() {
-        _db = createMonitoringDatabase();
-    }
+	private static final String ENTITY_SCHEMA_CREATE_STMT = "CREATE TABLE %s " +
+			"(id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1), " +
+			"%s VARCHAR(60), " +
+			"%s VARCHAR(120))";
+	private static final String ENTITY_INSERT_STMT = "INSERT INTO %s (%s, %s) VALUES (?, ?)";
 
-    private Connection createMonitoringDatabase() {
-        Connection db = null;
-        try {
-            db = DriverManager.getConnection(DB_CONNECTION + ";create=true");
-            createMonitoringEntitiesInDB(db);
+	private static final String GET_ENTITY_WITH_ID_STMT = "SELECT * FROM %s WHERE id = ?";
+	private static final String GET_ALL_ENTITIES_STMT = "SELECT * FROM %s";
 
-            return db;
-        }
-        catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public DerbyRepository() {
+		_db = createMonitoringDatabase();
+	}
 
-    private void createMonitoringEntitiesInDB(Connection db) {
-        try {
-            Statement st = db.createStatement();
-            st.execute("CREATE TABLE " + WORKER_TABLE +
-                    " (id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)," +
-                    "name VARCHAR(60)," +
-                    "address VARCHAR(120))");
-        }
-        catch (SQLException e) {
-            String derbyTableCreationError = "X0Y32";
-            if(e.getSQLState().equals(derbyTableCreationError)) {
-                // Known issue and a solution:
-                // https://stackoverflow.com/questions/5866154/how-to-create-table-if-it-doesnt-exist-using-derby-db
-                return;
-            }
-            throw new RuntimeException(e);
-        }
-    }
+	private Connection createMonitoringDatabase() {
+		Connection db = null;
+		try {
+			// Creates only if DB doesn't exist
+			db = DriverManager.getConnection(DB_CONNECTION + ";create=true");
+			createMonitoringEntitiesInDB(db);
 
-    public void createEntity(EntityEnum type, BaseEntityModel model) {
-        String query = "";
+			return db;
+		}
+		catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-        if (type == EntityEnum.WORKER) {
-            query = "INSERT INTO " + WORKER_TABLE + "(name, address) VALUES " +
-                    String.format("('%s', '%s')", model.getName(), model.getAddress());
-        }
+	private void createMonitoringEntitiesInDB(Connection db) {
+		try {
+			var dbMetaData = db.getMetaData();
+			var workersExist = dbMetaData.getTables(null, null, WORKERS_TABLE_NAME.toUpperCase(),null);
 
-        executeQuery(type, query);
-    }
+			// Check if table already exists and create if not
+			if(!workersExist.next())
+			{
+				PreparedStatement st = db.prepareStatement(
+						String.format(ENTITY_SCHEMA_CREATE_STMT, WORKERS_TABLE_NAME, ENTITY_NAME_COL, ENTITY_ADDR_COL));
+				st.executeUpdate();
 
-    public BaseEntityModel getEntity(EntityEnum type, Long id) {
-        String query = "";
-        BaseEntityModel resultModel = null;
+			}
+		}
+		catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-        if (type == EntityEnum.WORKER) {
-            query = "SELECT * FROM " + WORKER_TABLE + " WHERE " +
-                    String.format("id = %d", id);
+	public void createEntity(EntityEnum type, BaseEntityModel model) {
 
-            var resultSet = executeQuery(type, query);
-            try {
-                if(resultSet.next()){
-                    resultModel = mapWorkerToModel(resultSet);
-                }
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        }
+		try {
+			PreparedStatement st = _db.prepareStatement(
+					String.format(ENTITY_INSERT_STMT, WORKERS_TABLE_NAME, ENTITY_NAME_COL, ENTITY_ADDR_COL));
 
-        return resultModel;
-    }
+			if (type == EntityEnum.COORDINATOR) {
+				// Change statement
+			}
 
-    public List<BaseEntityModel> getAllEntities(EntityEnum type) {
-        String query = "";
-        List<BaseEntityModel> resultModels = new ArrayList<>();
+			st.setString(1, model.getName());
+			st.setString(2, model.getAddress());
+			st.executeUpdate();
 
-        if (type == EntityEnum.WORKER) {
-            query = "SELECT * FROM " + WORKER_TABLE;
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-            var resultSet = executeQuery(type, query);
-            try {
-                while(resultSet.next()){
+	public BaseEntityModel getEntity(EntityEnum type, Long id) {
+		BaseEntityModel resultModel = null;
 
-                    resultModels.add(mapWorkerToModel(resultSet));
-                }
+		try {
+			PreparedStatement st = _db.prepareStatement(
+					String.format(GET_ENTITY_WITH_ID_STMT, WORKERS_TABLE_NAME));
 
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        }
+			if (type == EntityEnum.COORDINATOR) {
+				// Change statement
+			}
 
-        return resultModels;
-    }
+			st.setLong(1, id);
+			var resultSet = st.executeQuery();
 
-    private ResultSet executeQuery(EntityEnum type, String query) {
-        try {
-            Statement st = _db.createStatement();
+			if (resultSet.next()){
+				resultModel = mapEntityToModel(resultSet);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 
-            if (type == EntityEnum.WORKER) {
-                st.execute(query);
-            }
+		return resultModel;
+	}
 
-            return st.getResultSet();
-        }
-        catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public List<BaseEntityModel> getAllEntities(EntityEnum type) {
+		List<BaseEntityModel> resultModels = new ArrayList<>();
 
-    private BaseEntityModel mapWorkerToModel(ResultSet resultSet) throws SQLException {
-        BaseEntityModel tmpModel = new BaseEntityModel();
-        for (int column = 1; column <= resultSet.getMetaData().getColumnCount(); column++) {
-            if (resultSet.getMetaData().getColumnType(column) == Types.INTEGER) {
-                tmpModel.setId(resultSet.getLong(column));
-            }
+		try {
+			PreparedStatement st = _db.prepareStatement(
+					String.format(GET_ALL_ENTITIES_STMT, WORKERS_TABLE_NAME));
 
-            if (resultSet.getMetaData().getColumnType(column) == Types.VARCHAR) {
-                if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase("name")) {
-                    tmpModel.setName(resultSet.getString(column));
-                } else if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase("address")) {
-                    tmpModel.setAddress(resultSet.getString(column));
-                }
-            }
-        }
-        return tmpModel;
-    }
+			if (type == EntityEnum.COORDINATOR) {
+				// Change statement
+			}
+
+			var resultSet = st.executeQuery();
+
+			while (resultSet.next()){
+				resultModels.add(mapEntityToModel(resultSet));
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+
+		return resultModels;
+	}
+
+	private BaseEntityModel mapEntityToModel(ResultSet resultSet) throws SQLException {
+		BaseEntityModel tmpModel = new BaseEntityModel();
+
+		for (int column = 1; column <= resultSet.getMetaData().getColumnCount(); column++) {
+			if (resultSet.getMetaData().getColumnType(column) == Types.INTEGER) {
+				tmpModel.setId(resultSet.getLong(column));
+			}
+
+			if (resultSet.getMetaData().getColumnType(column) == Types.VARCHAR) {
+				if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(ENTITY_NAME_COL)) {
+					tmpModel.setName(resultSet.getString(column));
+				} else if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(ENTITY_ADDR_COL)) {
+					tmpModel.setAddress(resultSet.getString(column));
+				}
+			}
+		}
+		return tmpModel;
+	}
 }

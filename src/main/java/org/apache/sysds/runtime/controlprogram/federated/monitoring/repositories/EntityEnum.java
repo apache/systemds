@@ -20,5 +20,6 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories;
 
 public enum EntityEnum {
-    WORKER
+	WORKER,
+	COORDINATOR
 }

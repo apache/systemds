@@ -20,60 +20,60 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
 public class BaseEntityModel {
-    private Long _id;
-    private String _name;
-    private String _address;
+	private Long _id;
+	private String _name;
+	private String _address;
 
-    private String _data;
+	private String _data;
 
-    public BaseEntityModel() { }
+	public BaseEntityModel() { }
 
-    public BaseEntityModel(final Long id, final String name, final String address) {
-        this._id = id;
-        this._name = name;
-        this._address = address;
-    }
+	public BaseEntityModel(final Long id, final String name, final String address) {
+		this._id = id;
+		this._name = name;
+		this._address = address;
+	}
 
-    public Long getId() {
-        return _id;
-    }
+	public Long getId() {
+		return _id;
+	}
 
-    public void setId(final Long id) {
-        this._id = id;
-    }
+	public void setId(final Long id) {
+		this._id = id;
+	}
 
-    public String getName() {
-        return _name;
-    }
+	public String getName() {
+		return _name;
+	}
 
-    public void setName(final String name) {
-        this._name = name;
-    }
+	public void setName(final String name) {
+		this._name = name;
+	}
 
-    public String getAddress() {
-        return _address;
-    }
+	public String getAddress() {
+		return _address;
+	}
 
-    public void setAddress(final String address) {
-        this._address = address;
-    }
+	public void setAddress(final String address) {
+		this._address = address;
+	}
 
-    public String getData() {
-        return _data;
-    }
+	public String getData() {
+		return _data;
+	}
 
-    public void setData(final String data) {
-        this._data = data;
-    }
+	public void setData(final String data) {
+		this._data = data;
+	}
 
-    @Override
-    public String toString()
-    {
-        return String.format("{" +
-                "\"id\": %d," +
-                "\"name\": \"%s\"," +
-                "\"address\": \"%s\"," +
-                "\"data\": \"%s\"" +
-                "}", _id, _name, _address, _data);
-    }
+	@Override
+	public String toString()
+	{
+		return String.format("{" +
+				"\"id\": %d," +
+				"\"name\": \"%s\"," +
+				"\"address\": \"%s\"," +
+				"\"data\": \"%s\"" +
+				"}", _id, _name, _address, _data);
+	}
 }

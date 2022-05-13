@@ -24,13 +24,13 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Reque
 
 public interface IController {
 
-    FullHttpResponse create(final Request request);
+	FullHttpResponse create(final Request request);
 
-    FullHttpResponse update(final Request request, final Long objectId);
+	FullHttpResponse update(final Request request, final Long objectId);
 
-    FullHttpResponse delete(final Request request, final Long objectId);
+	FullHttpResponse delete(final Request request, final Long objectId);
 
-    FullHttpResponse get(final Request request, final Long objectId);
+	FullHttpResponse get(final Request request, final Long objectId);
 
-    FullHttpResponse getAll(final Request request);
+	FullHttpResponse getAll(final Request request);
 }

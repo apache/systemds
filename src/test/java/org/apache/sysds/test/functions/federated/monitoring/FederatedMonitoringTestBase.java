@@ -33,74 +33,74 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
-    protected Process monitoringProcess;
-    private int monitoringPort;
+	protected Process monitoringProcess;
+	private int monitoringPort;
 
-    private static final String WORKER_MAIN_PATH = "/workers";
+	private static final String WORKER_MAIN_PATH = "/workers";
 
-    @Override
-    public abstract void setUp();
+	@Override
+	public abstract void setUp();
 
-    // ensure that the processes are killed - even if the test throws an exception
-    @After
-    public void stopMonitoringProcesses() {
-        if (monitoringProcess != null) {
-            monitoringProcess.destroyForcibly();
-        }
-    }
+	// ensure that the processes are killed - even if the test throws an exception
+	@After
+	public void stopMonitoringProcesses() {
+		if (monitoringProcess != null) {
+			monitoringProcess.destroyForcibly();
+		}
+	}
 
-    /**
-     * Start federated backend monitoring processes on available port
-     *
-     * @return
-     */
-    protected void startFedMonitoring(String[] addArgs) {
-        monitoringPort = getRandomAvailablePort();
-        monitoringProcess = startLocalFedMonitoring(monitoringPort, addArgs);
-    }
+	/**
+	 * Start federated backend monitoring processes on available port
+	 *
+	 * @return
+	 */
+	protected void startFedMonitoring(String[] addArgs) {
+		monitoringPort = getRandomAvailablePort();
+		monitoringProcess = startLocalFedMonitoring(monitoringPort, addArgs);
+	}
 
-    protected List<HttpResponse> addWorkers(int numWorkers) {
-        String uriStr = String.format("http://localhost:%d%s", monitoringPort, WORKER_MAIN_PATH);
+	protected List<HttpResponse> addWorkers(int numWorkers) {
+		String uriStr = String.format("http://localhost:%d%s", monitoringPort, WORKER_MAIN_PATH);
 
-        List<HttpResponse> responses = new ArrayList<>();
+		List<HttpResponse> responses = new ArrayList<>();
 
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            for (int i = 0; i < numWorkers; i++) {
-                String requestBody = objectMapper
-                        .writerWithDefaultPrettyPrinter()
-                        .writeValueAsString(new BaseEntityModel((i + 1L), "Worker", "localhost"));
+		try {
+			ObjectMapper objectMapper = new ObjectMapper();
+			for (int i = 0; i < numWorkers; i++) {
+				String requestBody = objectMapper
+						.writerWithDefaultPrettyPrinter()
+						.writeValueAsString(new BaseEntityModel((i + 1L), "Worker", "localhost"));
 
-                var client = HttpClient.newHttpClient();
-                var request = HttpRequest.newBuilder(
-                                URI.create(uriStr))
-                        .header("accept", "application/json")
-                        .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                        .build();
+				var client = HttpClient.newHttpClient();
+				var request = HttpRequest.newBuilder(
+								URI.create(uriStr))
+						.header("accept", "application/json")
+						.POST(HttpRequest.BodyPublishers.ofString(requestBody))
+						.build();
 
-                responses.add(client.send(request, HttpResponse.BodyHandlers.ofString()));
-            }
+				responses.add(client.send(request, HttpResponse.BodyHandlers.ofString()));
+			}
 
-            return responses;
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
+			return responses;
+		} catch (IOException | InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    protected HttpResponse getWorkers() {
-        String uriStr = String.format("http://localhost:%d%s", monitoringPort, WORKER_MAIN_PATH);
+	protected HttpResponse getWorkers() {
+		String uriStr = String.format("http://localhost:%d%s", monitoringPort, WORKER_MAIN_PATH);
 
-        try {
-            var client = HttpClient.newHttpClient();
-            var request = HttpRequest.newBuilder(
-                            URI.create(uriStr))
-                    .header("accept", "application/json")
-                    .GET()
-                    .build();
+		try {
+			var client = HttpClient.newHttpClient();
+			var request = HttpRequest.newBuilder(
+							URI.create(uriStr))
+					.header("accept", "application/json")
+					.GET()
+					.build();
 
-            return client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
+			return client.send(request, HttpResponse.BodyHandlers.ofString());
+		} catch (IOException | InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }

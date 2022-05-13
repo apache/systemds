@@ -31,52 +31,52 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import org.apache.log4j.Logger;
 
 public class FederatedMonitoringServer {
-    protected static Logger log = Logger.getLogger(FederatedMonitoringServer.class);
-    private final int _port;
+	protected static Logger log = Logger.getLogger(FederatedMonitoringServer.class);
+	private final int _port;
 
-    private final boolean _debug;
+	private final boolean _debug;
 
-    public FederatedMonitoringServer(int port, boolean debug) {
-        _port = (port == -1) ? 4201 : port;
+	public FederatedMonitoringServer(int port, boolean debug) {
+		_port = (port == -1) ? 4201 : port;
 
-        _debug = debug;
+		_debug = debug;
 
-        run();
-    }
+		run();
+	}
 
-    public void run() {
-        log.info("Setting up Federated Monitoring Backend on port " + _port);
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+	public void run() {
+		log.info("Setting up Federated Monitoring Backend on port " + _port);
+		EventLoopGroup bossGroup = new NioEventLoopGroup();
+		EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-        try {
-            ServerBootstrap server = new ServerBootstrap();
-            server.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childHandler(new ChannelInitializer<>() {
-                    @Override
-                    protected void initChannel(Channel ch) {
-                    ChannelPipeline pipeline = ch.pipeline();
+		try {
+			ServerBootstrap server = new ServerBootstrap();
+			server.group(bossGroup, workerGroup)
+				.channel(NioServerSocketChannel.class)
+				.childHandler(new ChannelInitializer<>() {
+					@Override
+					protected void initChannel(Channel ch) {
+					ChannelPipeline pipeline = ch.pipeline();
 
-                    pipeline.addLast(new HttpServerCodec());
-                    pipeline.addLast(new FederatedMonitoringServerHandler());
-                    }
-                });
+					pipeline.addLast(new HttpServerCodec());
+					pipeline.addLast(new FederatedMonitoringServerHandler());
+					}
+				});
 
-            log.info("Starting Federated Monitoring Backend server at port: " + _port);
-            ChannelFuture f = server.bind(_port).sync();
-            log.info("Started Federated Monitoring Backend at port: " + _port);
-            f.channel().closeFuture().sync();
-        } catch(Exception e) {
-            log.info("Federated Monitoring Backend Interrupted");
-            if (_debug) {
-                log.error(e.getMessage());
-                e.printStackTrace();
-            }
-        } finally{
-            log.info("Federated Monitoring Backend Shutting down.");
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
-        }
-    }
+			log.info("Starting Federated Monitoring Backend server at port: " + _port);
+			ChannelFuture f = server.bind(_port).sync();
+			log.info("Started Federated Monitoring Backend at port: " + _port);
+			f.channel().closeFuture().sync();
+		} catch(Exception e) {
+			log.info("Federated Monitoring Backend Interrupted");
+			if (_debug) {
+				log.error(e.getMessage());
+				e.printStackTrace();
+			}
+		} finally{
+			log.info("Federated Monitoring Backend Shutting down.");
+			workerGroup.shutdownGracefully();
+			bossGroup.shutdownGracefully();
+		}
+	}
 }

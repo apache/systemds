@@ -30,52 +30,52 @@ import java.io.IOException;
 
 public class WorkerController implements IController {
 
-    private final WorkerService _workerService = new WorkerService();
+	private final WorkerService _workerService = new WorkerService();
 
-    @Override
-    public FullHttpResponse create(Request request) {
+	@Override
+	public FullHttpResponse create(Request request) {
 
-        ObjectMapper mapper = new ObjectMapper();
+		ObjectMapper mapper = new ObjectMapper();
 
-        try {
-            BaseEntityModel model = mapper.readValue(request.getBody(), BaseEntityModel.class);
+		try {
+			BaseEntityModel model = mapper.readValue(request.getBody(), BaseEntityModel.class);
 
-            _workerService.create(model);
-            return Response.ok("Success");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+			_workerService.create(model);
+			return Response.ok("Success");
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    @Override
-    public FullHttpResponse update(Request request, Long objectId) {
-        return null;
-    }
+	@Override
+	public FullHttpResponse update(Request request, Long objectId) {
+		return null;
+	}
 
-    @Override
-    public FullHttpResponse delete(Request request, Long objectId) {
-        return null;
-    }
+	@Override
+	public FullHttpResponse delete(Request request, Long objectId) {
+		return null;
+	}
 
-    @Override
-    public FullHttpResponse get(Request request, Long objectId) {
-        var result = _workerService.get(objectId);
+	@Override
+	public FullHttpResponse get(Request request, Long objectId) {
+		var result = _workerService.get(objectId);
 
-        if (result == null) {
-            return Response.notFound("No such worker can be found");
-        }
+		if (result == null) {
+			return Response.notFound("No such worker can be found");
+		}
 
-        return Response.ok(result.toString());
-    }
+		return Response.ok(result.toString());
+	}
 
-    @Override
-    public FullHttpResponse getAll(Request request) {
-        var workers = _workerService.getAll();
+	@Override
+	public FullHttpResponse getAll(Request request) {
+		var workers = _workerService.getAll();
 
-        if (workers.isEmpty()) {
-            return Response.notFound("No workers can be found");
-        }
+		if (workers.isEmpty()) {
+			return Response.notFound("No workers can be found");
+		}
 
-        return Response.ok(workers.toString());
-    }
+		return Response.ok(workers.toString());
+	}
 }

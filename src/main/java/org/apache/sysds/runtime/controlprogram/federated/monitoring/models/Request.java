@@ -22,22 +22,22 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 import io.netty.handler.codec.http.HttpRequest;
 
 public class Request {
-    private HttpRequest _context;
-    private String _body;
+	private HttpRequest _context;
+	private String _body;
 
-    public HttpRequest getContext() {
-        return _context;
-    }
+	public HttpRequest getContext() {
+		return _context;
+	}
 
-    public void setContext(final HttpRequest requestContext) {
-        this._context = requestContext;
-    }
+	public void setContext(final HttpRequest requestContext) {
+		this._context = requestContext;
+	}
 
-    public String getBody() {
-        return _body;
-    }
+	public String getBody() {
+		return _body;
+	}
 
-    public void setBody(final String content) {
-        this._body = content;
-    }
+	public void setBody(final String content) {
+		this._body = content;
+	}
 }

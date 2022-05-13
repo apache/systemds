@@ -19,40 +19,48 @@
 
 package org.apache.sysds.test.functions.federated.monitoring;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.WorkerService;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
-	private final static String TEST_NAME = "FederatedWorkerStatisticsTest";
+public class FederatedWorkerIntegrationCRUDTest extends FederatedMonitoringTestBase {
+	private final static String TEST_NAME = "FederatedWorkerIntegrationCRUDTest";
 
 	private final static String TEST_DIR = "functions/federated/monitoring/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedWorkerStatisticsTest.class.getSimpleName() + "/";
-
-	private static int[] workerPorts;
-	private final WorkerService workerMonitoringService = new WorkerService();
+	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedWorkerIntegrationCRUDTest.class.getSimpleName() + "/";
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S"}));
-
-		workerPorts = startFedWorkers(3);
+		startFedMonitoring(null);
 	}
 
 	@Test
-	public void testWorkerStatisticsReturnedForMonitoring() {
-		workerMonitoringService.create(new BaseEntityModel(1L, "Worker", "localhost:" + workerPorts[0]));
+	public void testWorkerAddedForMonitoring() {
+		var addedWorkers = addWorkers(1);
+		var firstWorkerStatus = addedWorkers.get(0).statusCode();
 
-		var model = workerMonitoringService.get(1L);
-		var modelData = model.getData();
+		Assert.assertEquals("Added worker status code", HttpStatus.SC_OK, firstWorkerStatus);
+	}
 
-		Assert.assertNotNull("Data field of model contains worker statistics", model.getData());
+	@Test
+	public void testCorrectAmountAddedWorkersForMonitoring() {
+		int numWorkers = 3;
+		var addedWorkers = addWorkers(numWorkers);
 
-		Assert.assertNotEquals("Data field of model contains worker statistics",0, modelData.length());
-		Assert.assertTrue("Data field of model contains worker statistics", modelData.contains("JVM"));
+		for (int i = 0; i < numWorkers; i++) {
+			var workerStatus = addedWorkers.get(i).statusCode();
+			Assert.assertEquals("Added worker status code", HttpStatus.SC_OK, workerStatus);
+		}
+
+		var getAllWorkersResponse = getWorkers();
+
+		var numReturnedWorkers = StringUtils.countMatches(getAllWorkersResponse.body().toString(), "id");
+
+		Assert.assertEquals("Amount of workers to get", numWorkers, numReturnedWorkers);
 	}
 }

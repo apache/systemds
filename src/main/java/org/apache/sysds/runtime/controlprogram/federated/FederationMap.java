@@ -351,6 +351,11 @@ public class FederationMap {
 		return ret.toArray(new Future[0]);
 	}
 
+	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRange[] fedRange1,
+		FederatedRequest elseFr, FederatedRequest frSlice1, FederatedRequest frSlice2, FederatedRequest fr) {
+		return execute(tid, wait, fedRange1, elseFr, new FederatedRequest[]{frSlice1}, new FederatedRequest[]{frSlice2}, fr);
+	}
+
 	@SuppressWarnings("unchecked")
 	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRange[] fedRange1, FederatedRequest elseFr, FederatedRequest[] frSlices1, FederatedRequest[] frSlices2, FederatedRequest... fr) {
 		// executes step1[] - step 2 - ... step4 (only first step federated-data-specific)

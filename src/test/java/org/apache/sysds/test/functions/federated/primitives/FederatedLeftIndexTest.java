@@ -40,6 +40,7 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 
 	private final static String TEST_NAME1 = "FederatedLeftIndexFullTest";
 	private final static String TEST_NAME2 = "FederatedLeftIndexFrameFullTest";
+	private final static String TEST_NAME3 = "FederatedLeftIndexScalarTest";
 
 	private final static String TEST_DIR = "functions/federated/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedLeftIndexTest.class.getSimpleName() + "/";
@@ -81,7 +82,7 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 	}
 
 	private enum DataType {
-		MATRIX, FRAME
+		MATRIX, FRAME, SCALAR
 	}
 
 	@Override
@@ -89,6 +90,7 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"S"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"S"}));
 	}
 
 	@Test
@@ -109,6 +111,16 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 		runAggregateOperationTest(DataType.FRAME, ExecMode.SPARK);
 	}
 
+	@Test
+	public void testLeftIndexScalarCP() {
+		runAggregateOperationTest(DataType.SCALAR, ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	public void testLeftIndexScalarSP() {
+		runAggregateOperationTest(DataType.SCALAR, ExecMode.SPARK);
+	}
+
 	private void runAggregateOperationTest(DataType dataType, ExecMode execMode) {
 		setExecMode(execMode);
 
@@ -116,8 +128,10 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 
 		if(dataType == DataType.MATRIX)
 			TEST_NAME = TEST_NAME1;
-		else
+		else if(dataType == DataType.FRAME)
 			TEST_NAME = TEST_NAME2;
+		else
+			TEST_NAME = TEST_NAME3;
 
 
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -142,10 +156,12 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X3", X3, false, mc);
 		writeInputMatrixWithMTD("X4", X4, false, mc);
 
-		double[][] Y = getRandomMatrix(rows2, cols2, 1, 5, 1, 3);
+		if(dataType != DataType.SCALAR) {
+			double[][] Y = getRandomMatrix(rows2, cols2, 1, 5, 1, 3);
 
-		MatrixCharacteristics mc2 = new MatrixCharacteristics(rows2, cols2, blocksize, rows2 * cols2);
-		writeInputMatrixWithMTD("Y", Y, false, mc2);
+			MatrixCharacteristics mc2 = new MatrixCharacteristics(rows2, cols2, blocksize, rows2 * cols2);
+			writeInputMatrixWithMTD("Y", Y, false, mc2);
+		}
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
@@ -173,7 +189,7 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-explain", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
+		programArgs = new String[] {"-args", input("X1"), input("X2"), input("X3"), input("X4"),
 			input("Y"), String.valueOf(from), String.valueOf(to),
 			String.valueOf(from2), String.valueOf(to2),
 			Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};

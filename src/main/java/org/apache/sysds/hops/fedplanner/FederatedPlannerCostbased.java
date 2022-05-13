@@ -30,6 +30,7 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.hops.DataOp;
@@ -53,6 +54,8 @@ import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
+import org.apache.sysds.utils.Explain;
+import org.apache.sysds.utils.Explain.ExplainType;
 
 public class FederatedPlannerCostbased extends AFederatedPlanner {
 	private static final Log LOG = LogFactory.getLog(FederatedPlannerCostbased.class.getName());
@@ -77,6 +80,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		prog.updateRepetitionEstimates();
 		rewriteStatementBlocks(prog, prog.getStatementBlocks());
 		setFinalFedouts();
+		updateExplain();
 	}
 	
 	/**
@@ -392,6 +396,14 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 				buildCombinations(validFTypes, result, currentIndex+1, currentPass);
 			}
 		}
+	}
+
+	/**
+	 * Add hopRelMemo to Explain class to get explain info related to federated enumeration.
+	 */
+	private void updateExplain(){
+		if (DMLScript.EXPLAIN == ExplainType.HOPS)
+			Explain.setMemo(hopRelMemo);
 	}
 
 	/**

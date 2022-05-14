@@ -1,0 +1,69 @@
+# ======================= Workbench ==========================
+m = matrix(2, rows=2, cols=2)
+m = m ^ 0.5
+print(toString(m))
+
+# ============== Trying out syntax etc. ====================
+print("Start of test stuff")
+d = matrix("2 3 4", 1, 3);
+print(toString(d))
+
+A = tensor(3, d)
+print(toString(A))
+
+print("test2 -> reshape")
+a = matrix(matrix(1, 4, 1), 2, 2)
+print(toString(a))
+q = matrix(1, rows=2, cols=2)
+print(toString(q))
+
+A = matrix(0, rows=10, cols=10)
+B = 10
+C = B + sum(A)
+print( "B:" + B + ", C:" + C + ", A[1,1]:" + as.scalar(A[1,1]))
+
+
+# ------ Example of function definition -------
+minMax = function( matrix[double] M) return (double minVal, double maxVal) {
+  minVal = min(M);
+  maxVal = max(M);
+}
+
+# ----- Function call with multiple return values ------
+[a, b] = minMax(d)
+print(a + " b: " + b)
+
+# ------ Setting values in matrix -----
+d = matrix("2 3 4 5", 2, 2);
+print(toString(d, decimal=1))
+
+# ----- Creating random valued matrix -----
+M = rand(rows=3, cols=3)
+print("Random matrix: \n" + toString(M))
+
+# ============================== Trying out our attention layer ===================================
+print("===== Trying out our attention layer =====")
+source("nn/layers/attention.dml") as attention
+
+# Create training data
+q = matrix("2 0 2 2 0 0 4 0 2 2 1 2", rows=4, cols=3)
+k = matrix("2 2 2 0 2 1 2 4 3 0 1 1", rows=4, cols=3)
+v = matrix("1 1 0 0 1 1 1 2 1 0 0 0", rows=4, cols=3)
+
+print(toString(q))
+print(toString(k))
+print(toString(v))
+print("Before attention calculation")
+attention = attention::forward(q, k, v)
+
+print(toString(attention))
+# [a,b,c] = attention::backward(1,q,k,v)
+# print("da/dq")
+# print(toString(a))
+# print("da/dk")
+# print(toString(b))
+# print("da/dv")
+# print(toString(c))
+
+
+

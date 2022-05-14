@@ -62,8 +62,10 @@ forward = function(matrix[double] query, matrix[double] key, matrix[double] valu
 }
 
 backward = function(matrix[double] dattention, matrix[double] query, matrix[double] key, matrix[double] value)
-    return (matrix[double] dquery, matrix[double] dkey, matrix[double]dvalue)
+    return (matrix[double] dquery, matrix[double] dkey, matrix[double] dvalue)
 {
+# We have to derive the attention formulae: softmax ( (Q @ K^T) / (d_K^0.5) ) * V
+#    for each of the return values (dquery, dkey, dvalue)
     /*
      * attention = weights * value
      * weights = softmax(v)

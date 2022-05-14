@@ -41,7 +41,8 @@ apply_scores = function(matrix[double] scores, matrix[double] value, int d)
      * dim(weights) =
      * dim(attention) = AxD
      */
-    # put MxM matrix into M*Mx1 vector for softmax
+    # put MxM matrix into M*Mx1 vector for matrix wise softmax
+    # TODO: check if softmax is matrix wise or column wise or row wise
     x = matrix(scores / d ^ 0.5, cols=nrow(scores) * ncol(scores), rows=1)
     weights = matrix(softmax::forward(x), cols=ncol(scores), rows=nrow(scores))
     attention = weights %*% value

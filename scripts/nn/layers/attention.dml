@@ -33,33 +33,31 @@ calculate_scores = function(matrix[double] query, matrix[double] key)
     scores = query %*% t(key)
 }
 
-apply_scores = function(matrix[double] scores, matrix[double] value)
+apply_scores = function(matrix[double] scores, matrix[double] value, int d)
     return (matrix[double] attention) {
     /*
-     * dim(scores) = AxC
-     * dim(value) = CxD
-     * dim(weights) = AxC
+     * dim(scores) = MxM
+     * dim(value) = MxL
+     * dim(weights) =
      * dim(attention) = AxD
      */
-  # We divide by the sqrt of the value vector to keep the gradient stable.
-  # Also we assume that dim V equals dim K.
-  weights = softmax(scores / ncol(value) ^ 0.5)
-  print(toString(weights))
-  attention = weights %*% value
+    # put MxM matrix into M*Mx1 vector for softmax
+    x = matrix(scores / d ^ 0.5, cols=nrow(scores) * ncol(scores), rows=1)
+    weights = matrix(softmax::forward(x), cols=ncol(scores), rows=nrow(scores))
+    attention = weights %*% value
 }
 
 forward = function(matrix[double] query, matrix[double] key, matrix[double] value)
     return (matrix[double] attention) {
     /*
-     * dim(query) = AxB
-     * dim(key) = CxB
-     * dim(value) = CxD
-     * dim(scores) = AxC
-     * dim(attention) = AxD
+     * dim(query) = MxN
+     * dim(key) = MxN
+     * dim(value) = MxL
+     * dim(scores) = MxM
+     * dim(attention) = MxL
      */
     scores = calculate_scores(query, key)
-    print("scores: \n" + toString(scores))
-    attention = apply_scores(scores, value)
+    attention = apply_scores(scores, value, ncol(key))
 }
 
 backward = function(matrix[double] dattention, matrix[double] query, matrix[double] key, matrix[double] value)
@@ -72,12 +70,41 @@ backward = function(matrix[double] dattention, matrix[double] query, matrix[doub
      * scores = query * t(key)
      */
     scores = calculate_scores(query, key)
-    norm = 1/ncol(value)^0.5
-    x = scores * norm
-    dx = softmax::backward(1,x)
-    norm_dx = dx * norm
-    dquery = norm_dx * value %*% t(key)
-    dvalue = softmax(x)
-    dkey =  norm_dx * value %*% query
 
+    M = nrow(query)
+    N = ncol(query)
+    L = ncol(value)
+
+    norm = 1/N^0.5
+    x = scores * norm
+    y = matrix(softmax::forward(matrix(x, rows=1, cols=M*M)), rows=M, cols=M)
+    dx = softmax::backward(y,x)
+
+    dvalue = matrix(0, rows=M, cols=L)
+    for (i in 1:M)
+    {
+        dvalue[,1:L] += t(y[i,])
+    }
+
+    #TODO: not sure how to add the derivative of softmax dx
+    dquery = matrix(0, rows=M, cols=N)
+    dquery_i = matrix(t(value) %*% key * norm, rows=M, cols=N)
+    for (j in 1:M)
+    {
+        dquery[1:M] += dquery_i[j]
+    }
+
+    #TODO: not sure how to add the derivative of softmax dx
+    dkey = matrix(0, rows=M, cols=N)
+    v = matrix(0, rows=M, cols=1)
+    for (i in 1:M)
+    {
+        v[i] = sum(value[i])
+        q = matrix(0, rows=1, cols=N)
+        for(j in 1:N)
+        {
+          dkey[i,j] = sum(query[,j] %*% v[i])
+        }
+    }
+    dkey = dkey * norm
 }

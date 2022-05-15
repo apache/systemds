@@ -1102,31 +1102,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return true if matrix block should be in sparse format in memory
 	 */
 	public boolean evalSparseFormatInMemory() {
+		return evalSparseFormatInMemory(false);
+	}
+	
+	public boolean evalSparseFormatInMemory(boolean allowCSR) {
 		//ensure exact size estimates for write
 		if( nonZeros<=0 )
 			recomputeNonZeros();
 		
 		//decide on in-memory representation
-		return evalSparseFormatInMemory(rlen, clen, nonZeros);
+		return evalSparseFormatInMemory(rlen, clen, nonZeros, allowCSR);
 	}
-	
-	@SuppressWarnings("unused")
-	private boolean evalSparseFormatInMemory(boolean transpose)
-	{
-		int lrlen = (transpose) ? clen : rlen;
-		int lclen = (transpose) ? rlen : clen;
-		long lnonZeros = nonZeros;
-		
-		//ensure exact size estimates for write
-		if( lnonZeros<=0 ) {
-			recomputeNonZeros();
-			lnonZeros = nonZeros;
-		}
-		
-		//decide on in-memory representation
-		return evalSparseFormatInMemory(lrlen, lclen, lnonZeros);
-	}
-	
+
 	/**
 	 * Evaluates if this matrix block should be in sparse format on
 	 * disk. This applies to any serialized matrix representation, i.e.,
@@ -1169,7 +1156,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 */
 	public void examSparsity(boolean allowCSR) {
 		//determine target representation
-		boolean sparseDst = evalSparseFormatInMemory(); 
+		boolean sparseDst = evalSparseFormatInMemory(allowCSR); 
 		
 		//check for empty blocks (e.g., sparse-sparse)
 		if( isEmptyBlock(false) ) {
@@ -1198,17 +1185,22 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param nnz number of non-zeros
 	 * @return true if matrix block shold be in sparse format in memory
 	 */
-	public static boolean evalSparseFormatInMemory( final long nrows, final long ncols, final long nnz )
+	public static boolean evalSparseFormatInMemory(long nrows, long ncols, long nnz) {
+		return evalSparseFormatInMemory(nrows, ncols, nnz, false);
+	}
+
+	public static boolean evalSparseFormatInMemory(final long nrows,
+		final long ncols, final long nnz, final boolean allowCSR)
 	{
 		//evaluate sparsity threshold
 		double lsparsity = (double)nnz/nrows/ncols;
-		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT);
+		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT) && ncols > 1;
 		
 		//compare size of sparse and dense representation in order to prevent
 		//that the sparse size exceed the dense size since we use the dense size
 		//as worst-case estimate if unknown (and it requires less io from 
 		//main memory).
-		double sizeSparse = estimateSizeSparseInMemory(nrows, ncols, lsparsity);
+		double sizeSparse = estimateSizeSparseInMemory(nrows, ncols, lsparsity, allowCSR);
 		double sizeDense = estimateSizeDenseInMemory(nrows, ncols);
 		
 		return lsparse && (sizeSparse<sizeDense);
@@ -1223,8 +1215,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param nnz number of non-zeros
 	 * @return true if matrix block shold be in sparse format on disk
 	 */
-	public static boolean evalSparseFormatOnDisk( final long nrows, final long ncols, final long nnz )
-	{
+	public static boolean evalSparseFormatOnDisk( final long nrows, final long ncols, final long nnz ) {
 		//evaluate sparsity threshold
 		double lsparsity = ((double)nnz/nrows)/ncols;
 		boolean lsparse = (lsparsity < SPARSITY_TURN_POINT);
@@ -1233,7 +1224,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		double sizeSparse = estimateSizeSparseOnDisk(nrows, ncols, nnz);
 		double sizeDense = estimateSizeDenseOnDisk(nrows, ncols);
 		
-		return lsparse && (sizeSparse<sizeDense || sizeUltraSparse<sizeDense);		
+		return lsparse && (sizeSparse<sizeDense || sizeUltraSparse<sizeDense);
 	}
 	
 	
@@ -2588,6 +2579,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			return estimateSizeDenseInMemory(nrows, ncols);
 	}
 
+	public long estimateSizeDenseInMemory() {
+		return estimateSizeDenseInMemory(rlen, clen);
+	}
+
 	public static long estimateSizeDenseInMemory(long nrows, long ncols) {
 		double size = getHeaderSize()
 			+ DenseBlockFactory.estimateSizeDenseInMemory(nrows, ncols);
@@ -2595,8 +2590,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 
+	public long estimateSizeSparseInMemory() {
+		return estimateSizeSparseInMemory(rlen, clen, getSparsity());
+	}
+
 	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity) {
 		return estimateSizeSparseInMemory(nrows, ncols, sparsity, DEFAULT_SPARSEBLOCK);
+	}
+
+	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity, boolean allowCSR) {
+		if(allowCSR)
+			return estimateSizeSparseInMemory(nrows, ncols, sparsity, SparseBlock.Type.CSR);
+		else 
+			return estimateSizeSparseInMemory(nrows, ncols, sparsity, DEFAULT_SPARSEBLOCK);
+	}
+
+	public long estimateSizeSparseInMemory(SparseBlock.Type stype){
+		return estimateSizeSparseInMemory(rlen, clen, getSparsity(), stype);
 	}
 	
 	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity, SparseBlock.Type stype) {

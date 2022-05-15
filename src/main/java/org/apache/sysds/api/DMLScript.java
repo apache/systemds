@@ -64,6 +64,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorker;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.FederatedMonitoringServer;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
@@ -281,6 +282,11 @@ public class DMLScript
 			if(dmlOptions.fedWorker) {
 				loadConfiguration(fnameOptConfig);
 				new FederatedWorker(dmlOptions.fedWorkerPort, dmlOptions.debug);
+				return true;
+			}
+
+			if(dmlOptions.fedMonitoring) {
+				new FederatedMonitoringServer(dmlOptions.fedMonitoringPort, dmlOptions.debug);
 				return true;
 			}
 

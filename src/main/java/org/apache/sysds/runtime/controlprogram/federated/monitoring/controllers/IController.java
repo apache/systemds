@@ -17,27 +17,20 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram.federated.monitoring;
+package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 
-public class Request {
-    private HttpRequest _context;
-    private String _body;
+public interface IController {
 
-    public HttpRequest getContext() {
-        return _context;
-    }
+	FullHttpResponse create(final Request request);
 
-    public void setContext(final HttpRequest requestContext) {
-        this._context = requestContext;
-    }
+	FullHttpResponse update(final Request request, final Long objectId);
 
-    public String getBody() {
-        return _body;
-    }
+	FullHttpResponse delete(final Request request, final Long objectId);
 
-    public void setBody(final String content) {
-        this._body = content;
-    }
+	FullHttpResponse get(final Request request, final Long objectId);
+
+	FullHttpResponse getAll(final Request request);
 }

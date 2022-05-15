@@ -219,8 +219,12 @@ public class FederatedStatistics {
 	}
 
 	public static String displayStatistics(int numHeavyHitters) {
-		StringBuilder sb = new StringBuilder();
 		FedStatsCollection fedStats = collectFedStats();
+		return displayStatistics(fedStats, numHeavyHitters);
+	}
+
+	public static String displayStatistics(FedStatsCollection fedStats, int numHeavyHitters) {
+		StringBuilder sb = new StringBuilder();
 		sb.append("SystemDS Federated Statistics:\n");
 		sb.append(displayCacheStats(fedStats.cacheStats));
 		sb.append(String.format("Total JIT compile time:\t\t%.3f sec.\n", fedStats.jitCompileTime));
@@ -499,7 +503,7 @@ public class FederatedStatistics {
 		return "";
 	}
 
-	private static class FedStatsCollectFunction extends FederatedUDF {
+	public static class FedStatsCollectFunction extends FederatedUDF {
 		private static final long serialVersionUID = 1L;
 
 		public FedStatsCollectFunction() {
@@ -519,7 +523,7 @@ public class FederatedStatistics {
 		}
 	}
 
-	protected static class FedStatsCollection implements Serializable {
+	public static class FedStatsCollection implements Serializable {
 		private static final long serialVersionUID = 1L;
 
 		private void collectStats() {
@@ -531,7 +535,7 @@ public class FederatedStatistics {
 			heavyHitters = Statistics.getHeavyHittersHashMap();
 		}
 		
-		private void aggregate(FedStatsCollection that) {
+		public void aggregate(FedStatsCollection that) {
 			cacheStats.aggregate(that.cacheStats);
 			jitCompileTime += that.jitCompileTime;
 			gcStats.aggregate(that.gcStats);

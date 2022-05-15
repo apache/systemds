@@ -19,14 +19,32 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.FullHttpResponse;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.WorkerService;
 
-public class CoordinatorController implements IController {
+import java.io.IOException;
+
+public class WorkerController implements IController {
+
+	private final WorkerService _workerService = new WorkerService();
+
 	@Override
 	public FullHttpResponse create(Request request) {
-		return null;
+
+		ObjectMapper mapper = new ObjectMapper();
+
+		try {
+			BaseEntityModel model = mapper.readValue(request.getBody(), BaseEntityModel.class);
+			_workerService.create(model);
+			return Response.ok("Success");
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
@@ -41,11 +59,23 @@ public class CoordinatorController implements IController {
 
 	@Override
 	public FullHttpResponse get(Request request, Long objectId) {
-		return Response.ok("Success");
+		var result = _workerService.get(objectId);
+
+		if (result == null) {
+			return Response.notFound("No such worker can be found");
+		}
+
+		return Response.ok(result.toString());
 	}
 
 	@Override
 	public FullHttpResponse getAll(Request request) {
-		return Response.ok("Success");
+		var workers = _workerService.getAll();
+
+		if (workers.isEmpty()) {
+			return Response.notFound("No workers can be found");
+		}
+
+		return Response.ok(workers.toString());
 	}
 }

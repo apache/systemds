@@ -443,7 +443,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				case TENSOR:
 				case MATRIX:
 				case FRAME:
-					return new FederatedResponse(ResponseType.SUCCESS, ((CacheableData<?>) dataObject).acquireReadAndRelease());
+					return new FederatedResponse(ResponseType.SUCCESS, ((CacheableData<?>) dataObject).acquireReadAndRelease(),
+						ReuseCacheType.isNone() ? null : ec.getLineage().get(String.valueOf(request.getID())));
 				case LIST:
 					return new FederatedResponse(ResponseType.SUCCESS, ((ListObject) dataObject).getData());
 				case SCALAR:

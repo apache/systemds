@@ -76,6 +76,9 @@ import java.util.stream.Collectors;
 public class LineageItemUtils {
 	
 	public static final String LPLACEHOLDER = "IN#";
+
+	// opcode to represent the serialized bytes of a federated response in lineage cache
+	public static final String SERIALIZATION_OPCODE = "serialize";
 	
 	public static LineageItemType getType(String str) {
 		if (str.length() == 1) {
@@ -540,5 +543,9 @@ public class LineageItemUtils {
 		sb.append(Instruction.VALUETYPE_PREFIX);
 		sb.append(true); //isLiteral = true
 		return new LineageItem(sb.toString());
+	}
+
+	public static LineageItem getSerializedFedResponseLineageItem(LineageItem li) {
+		return new LineageItem(SERIALIZATION_OPCODE, new LineageItem[]{li});
 	}
 }

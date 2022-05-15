@@ -40,11 +40,11 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
-	private final static String TEST_NAME = "FederatedLineageTraceReuseTest";
+public class FederatedSerializationReuseTest extends MultiTenantTestBase {
+	private final static String TEST_NAME = "FederatedSerializationReuseTest";
 
 	private final static String TEST_DIR = "functions/federated/multitenant/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedLineageTraceReuseTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedSerializationReuseTest.class.getSimpleName() + "/";
 
 	private final static double TOLERANCE = 0;
 
@@ -70,9 +70,9 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	}
 
 	private enum OpType {
-		EW_PLUS,
-		MM,
-		PARFOR_ADD,
+		EW_DIV,
+		ROWSUMS,
+		PARFOR_MULT,
 	}
 
 	@Override
@@ -82,39 +82,39 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	}
 
 	@Test
-	public void testElementWisePlusCP() {
-		runLineageTraceReuseTest(OpType.EW_PLUS, 4, ExecMode.SINGLE_NODE);
+	@Ignore
+	public void testElementWiseDivCP() {
+		runSerializationReuseTest(OpType.EW_DIV, 4, ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	public void testElementWiseDivSP() {
+		runSerializationReuseTest(OpType.EW_DIV, 4, ExecMode.SPARK);
 	}
 
 	@Test
 	@Ignore
-	public void testElementWisePlusSP() {
-		runLineageTraceReuseTest(OpType.EW_PLUS, 4, ExecMode.SPARK);
+	public void testRowSumsCP() {
+		runSerializationReuseTest(OpType.ROWSUMS, 4, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testMatrixMultCP() {
-		runLineageTraceReuseTest(OpType.MM, 4, ExecMode.SINGLE_NODE);
+	public void testRowSumsSP() {
+		runSerializationReuseTest(OpType.ROWSUMS, 4, ExecMode.SPARK);
 	}
 
 	@Test
-	@Ignore // TODO: allow for reuse of respective spark instructions
-	public void testMatrixMultSP() {
-		runLineageTraceReuseTest(OpType.MM, 4, ExecMode.SPARK);
-	}
-
-	@Test
-	public void testParforAddCP() {
-		runLineageTraceReuseTest(OpType.PARFOR_ADD, 3, ExecMode.SINGLE_NODE);
+	public void testParforMultCP() {
+		runSerializationReuseTest(OpType.PARFOR_MULT, 3, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	@Ignore
-	public void testParforAddSP() {
-		runLineageTraceReuseTest(OpType.PARFOR_ADD, 3, ExecMode.SPARK);
+	public void testParforMultSP() {
+		runSerializationReuseTest(OpType.PARFOR_MULT, 3, ExecMode.SPARK);
 	}
 
-	private void runLineageTraceReuseTest(OpType opType, int numCoordinators, ExecMode execMode) {
+	private void runSerializationReuseTest(OpType opType, int numCoordinators, ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -203,21 +203,15 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	private boolean checkForHeavyHitter(OpType opType, String outputLog, ExecMode execMode) {
 		boolean retVal = false;
 		switch(opType) {
-			case EW_PLUS:
-				retVal = checkForHeavyHitter(outputLog, "fed_+");
-				if(execMode == ExecMode.SINGLE_NODE)
-					retVal &= checkForHeavyHitter(outputLog, "fed_uak+");
+			case EW_DIV:
+				retVal = checkForHeavyHitter(outputLog, "fed_/");
 				break;
-			case MM:
-				retVal = checkForHeavyHitter(outputLog, (execMode == ExecMode.SPARK) ? "fed_mapmm" : "fed_ba+*");
-				retVal &= checkForHeavyHitter(outputLog, "fed_r'");
-				if(!rowPartitioned)
-					retVal &= checkForHeavyHitter(outputLog, (execMode == ExecMode.SPARK) ? "fed_rblk" : "fed_uak+");
+			case ROWSUMS:
+				retVal = checkForHeavyHitter(outputLog, "fed_uark+");
 				break;
-			case PARFOR_ADD:
-				retVal = checkForHeavyHitter(outputLog, "fed_-");
-				retVal &= checkForHeavyHitter(outputLog, "fed_+");
-				retVal &= checkForHeavyHitter(outputLog, (execMode == ExecMode.SPARK) ? "fed_rblk" : "fed_uak+");
+			case PARFOR_MULT:
+				retVal = checkForHeavyHitter(outputLog, "fed_*");
+				retVal &= checkForHeavyHitter(outputLog, "fed_uack+");
 				break;
 		}
 		return retVal;
@@ -231,30 +225,33 @@ public class FederatedLineageTraceReuseTest extends MultiTenantTestBase {
 	private boolean checkForReuses(OpType opType, String outputLog, ExecMode execMode) {
 		final String LINCACHE_MULTILVL = "LinCache MultiLvl (Ins/SB/Fn):\t";
 		final String LINCACHE_WRITES = "LinCache writes (Mem/FS/Del):\t";
-		final String FED_LINEAGEPUT = "Fed PutLineage (Count, Items):\t";
+		final String SERIAL_REUSE = "Fed SerialReuse (Count, Bytes):\t";
 		boolean retVal = false;
-		int multiplier = 1;
 		int numInst = -1;
+		int multiplier = 1;
 		int serializationWrites = 0;
 		switch(opType) {
-			case EW_PLUS:
-				numInst = (execMode == ExecMode.SPARK) ? 1 : 2;
+			case EW_DIV:
+				numInst = 1;
+				serializationWrites = 1;
 				break;
-			case MM:
-				numInst = rowPartitioned ? 2 : 3;
-				serializationWrites = rowPartitioned ? 1 : 0;
+			case ROWSUMS:
+				numInst = (execMode == ExecMode.SPARK) ? 0 : 1;
+				serializationWrites = 1;
 				break;
-			case PARFOR_ADD: // number of instructions times number of iterations of the parfor loop
-				multiplier = 3;
-				numInst = ((execMode == ExecMode.SPARK) ? 2 : 3) * multiplier;
+			case PARFOR_MULT: // number of instructions times number of iterations of the parfor loop
+				multiplier = 3; // number of parfor iterations
+				numInst = (execMode == ExecMode.SPARK) ? 1 * multiplier : 2 * multiplier;
+				serializationWrites = multiplier;
 				break;
 		}
 		retVal = outputLog.contains(LINCACHE_MULTILVL
 			+ Integer.toString(numInst * (coordinatorProcesses.size()-1) * workerProcesses.size()) + "/");
 		retVal &= outputLog.contains(LINCACHE_WRITES // read + instructions + serializations
 			+ Integer.toString((1 + numInst + serializationWrites) * workerProcesses.size()) + "/");
-		retVal &= outputLog.contains(FED_LINEAGEPUT
-			+ Integer.toString(coordinatorProcesses.size() * workerProcesses.size() * multiplier) + "/");
+		retVal &= outputLog.contains(SERIAL_REUSE
+			+ Integer.toString(serializationWrites * (coordinatorProcesses.size()-1)
+				* workerProcesses.size()) + "/");
 		return retVal;
 	}
 }

@@ -170,6 +170,10 @@ Worker Usage: $0 [-r] WORKER [SystemDS.jar] <portnumber> [arguments] [-help]
 
     port         : The port to open for the federated worker.
 
+Federated Monitoring Usage: $0 [-r] FEDMONITOR [SystemDS.jar] <portnumber> [arguments] [-help]
+
+    port         : The port to open for the federated monitoring tool.
+
 Set custom launch configuration by setting/editing SYSTEMDS_STANDALONE_OPTS
 and/or SYSTEMDS_DISTRIBUTED_OPTS.
 
@@ -256,6 +260,20 @@ elif echo "$1" | grep -q "WORKER"; then
     printUsage
   fi
   shift
+elif echo "$1" | grep -q "FEDMONITOR"; then
+  FEDMONITOR=1
+  shift
+  if echo "$1" | grep -q "jar"; then
+    SYSTEMDS_JAR_FILE=$1
+    shift
+  fi
+  PORT=$1
+  re='^[0-9]+$'
+  if ! [[ $PORT =~ $re ]] ; then
+    echo "error: Port is not a number"
+    printUsage
+  fi
+  shift
 else
   # handle optional '-f' before DML file (for consistency)
   if  echo "$1" | grep -q "\-f"; then
@@ -272,6 +290,9 @@ if [ -z "$WORKER" ] ; then
   WORKER=0
 fi
 
+if [ -z "$FEDMONITOR" ] ; then
+  FEDMONITOR=0
+fi
 
 # find me a SystemDS jar file to run
 if [ -z "$SYSTEMDS_JAR_FILE" ];then
@@ -409,7 +430,7 @@ print_out "#  HADOOP_HOME= $HADOOP_HOME"
 #build the command to run
 if [ $WORKER == 1 ]; then
   print_out "#"
-  print_out "#  starting Fedederated worker on port $PORT"
+  print_out "#  starting Federated worker on port $PORT"
   print_out "###############################################################################"
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
@@ -417,6 +438,21 @@ if [ $WORKER == 1 ]; then
   $LOG4JPROP \
   org.apache.sysds.api.DMLScript \
   -w $PORT \
+  $CONFIG_FILE \
+  $*"
+  print_out "Executing command: $CMD"
+  print_out  ""
+
+if [ $FEDMONITORING == 1 ]; then
+  print_out "#"
+  print_out "#  starting Federated backend monitoring on port $PORT"
+  print_out "###############################################################################"
+  CMD=" \
+  java $SYSTEMDS_STANDALONE_OPTS \
+  -cp $CLASSPATH \
+  $LOG4JPROP \
+  org.apache.sysds.api.DMLScript \
+  -fedMonitor $PORT \
   $CONFIG_FILE \
   $*"
   print_out "Executing command: $CMD"

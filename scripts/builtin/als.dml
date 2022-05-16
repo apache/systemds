@@ -29,7 +29,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 # X       Matrix[Double]   ---        Location to read the input matrix X to be factorized
 # rank    Integer          10         Rank of the factorization
-# reg     String           "L2"	      Regularization: 
+# regType String           "L2"	      Regularization: 
 #                                      "L2" = L2 regularization;
 #                                         f (U, V) = 0.5 * sum (W * (U %*% V - X) ^ 2)
 #                                                  + 0.5 * lambda * (sum (U ^ 2) + sum (V ^ 2))
@@ -37,7 +37,7 @@
 #                                         f (U, V) = 0.5 * sum (W * (U %*% V - X) ^ 2)
 #                                                  + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) 
 #                                                  + sum (V ^ 2 * col_nonzeros))
-# lambda  Double            0.000001  Regularization parameter, no regularization if 0.0
+# reg     Double            0.000001  Regularization parameter, no regularization if 0.0
 # maxi    Integer               50    Maximum number of iterations
 # check   Boolean           TRUE      Check for convergence after every iteration, i.e., updating U and V once
 # thr     Double            0.0001    Assuming check is set to TRUE, the algorithm stops and convergence is declared 
@@ -53,7 +53,7 @@
 # V     Matrix         An m x r matrix where r is the factorization rank
 # ----------------------------------------------------------------------------------------------------------------------
 
-m_als = function(Matrix[Double] X, Integer rank = 10, String reg = "L2", Double lambda = 0.000001,
+m_als = function(Matrix[Double] X, Integer rank = 10, String regType = "L2", Double reg = 0.000001,
   Integer maxi = 50, Boolean check = TRUE, Double thr = 0.0001, Boolean verbose = TRUE)
   return (Matrix[Double] U, Matrix[Double] V)
 {

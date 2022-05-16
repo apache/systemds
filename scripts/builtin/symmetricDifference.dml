@@ -36,7 +36,7 @@
 # R               Matrix[Double]      vector with all elements in X and Y but not in both
 # ---------------------------------------------------------------------------------------------
 
-symmetricDifference = function(Matrix[Double] X, Matrix[Double] Y)
+m_symmetricDifference = function(Matrix[Double] X, Matrix[Double] Y)
     return (matrix[double] R)
 {
     R = setdiff(union(X,Y), intersect(X,Y))

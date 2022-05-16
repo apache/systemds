@@ -32,7 +32,7 @@
 # num_classes     integer         10          Number of classes
 # epsilon         Double          0.001       Procedure terminates early if the reduction in objective function
 #                                             value is less than epsilon (tolerance) times the initial objective function value.
-# lambda          Double          1.0         Regularization parameter (lambda) for L2 regularization
+# reg             Double          1.0         Regularization parameter (lambda) for L2 regularization
 # maxIterations   Int             100         Maximum number of conjugate gradient iterations
 # verbose         Boolean         False       Set to true to print while training.
 # ----------------------------------------------------------------------------------------------------------------------
@@ -45,7 +45,7 @@
 #-----------------------------------------------------------------------------------------------------------------------
 
 m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
-    Double epsilon = 0.001, Double lambda = 1.0, Integer maxIterations = 100,
+    Double epsilon = 0.001, Double reg = 1.0, Integer maxIterations = 100,
     Boolean verbose = FALSE)
   return(Matrix[Double] model)
 {

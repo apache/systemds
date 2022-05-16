@@ -39,7 +39,7 @@
 # lr                Double            0.01      Learning rate
 # mu                Double            0.9       Momentum value
 # decay             Double            0.95      Learning rate decay
-# lambda            Double            5e-04     Regularization strength
+# reg               Double            5e-04     Regularization strength
 # seed              Integer           -1        Seed for model initialization
 # verbose           Boolean           FALSE     Flag indicates if function should print to stdout
 # ----------------------------------------------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ source("nn/layers/lenetForwardPass.dml") as lenet_fw
 
 m_lenetTrain = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] X_val, 
   Matrix[Double] Y_val, Integer C, Integer Hin, Integer Win, Integer batch_size=64, 
-  Integer epochs=20, Double lr=0.01, Double mu=0.9, Double decay=0.95, Double lambda=5e-04, 
+  Integer epochs=20, Double lr=0.01, Double mu=0.9, Double decay=0.95, Double reg=5e-04, 
   Boolean verbose=FALSE, Integer seed=-1)
   return (List[unknown] model)
 {

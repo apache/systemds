@@ -30,7 +30,7 @@
 # intercept       Boolean         False       No Intercept ( If set to TRUE then a constant bias column is added to X)
 # epsilon         Double          0.001       Procedure terminates early if the reduction in objective function value is less
 #                                             than epsilon (tolerance) times the initial objective function value.
-# lambda          Double          1.0         Regularization parameter (lambda) for L2 regularization
+# reg             Double          1.0         Regularization parameter (reg) for L2 regularization
 # maxIterations   Int             100         Maximum number of conjugate gradient iterations
 # maxii           Int             20          -
 # verbose         Boolean         FALSE       Set to true if one wants print statements updating on loss.
@@ -46,7 +46,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
-    Double epsilon = 0.001, Double lambda = 1, Integer maxIterations = 100, 
+    Double epsilon = 0.001, Double reg = 1, Integer maxIterations = 100, 
     Integer maxii = 20, Boolean verbose = FALSE, Integer columnId = -1)
   return(Matrix[Double] model)
 {

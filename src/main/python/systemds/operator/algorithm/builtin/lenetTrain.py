@@ -46,7 +46,7 @@ def lenetTrain(X: Matrix,
     :param lr: Learning rate
     :param mu: Momentum value
     :param decay: Learning rate decay
-    :param lambda: Regularization strength
+    :param reg: Regularization strength
     :param seed: Seed for model initialization
     :param verbose: Flag indicates if function should print to stdout
     :return: 'OperationNode' containing  

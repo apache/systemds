@@ -33,7 +33,7 @@ def hyperband(X_train: Matrix,
               y_train: Matrix,
               X_val: Matrix,
               y_val: Matrix,
-              params: Iterable,
+              params: List,
               paramRanges: Matrix,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """

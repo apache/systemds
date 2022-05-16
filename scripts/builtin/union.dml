@@ -36,7 +36,7 @@
 # R               Matrix   matrix with all unique rows existing in X and Y
 # ---------------------------------------------------------------------------------------------
 
-union = function(Matrix[Double] X, Matrix[Double] Y)
+m_union = function(Matrix[Double] X, Matrix[Double] Y)
   return (matrix[double] R)
 {
   R = unique(rbind(X, Y));

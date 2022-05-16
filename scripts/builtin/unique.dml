@@ -35,7 +35,7 @@
 # R               Matrix[Double]  matrix with only unique rows
 # ---------------------------------------------------------------------------------------------
 
-unique = function(matrix[double] X)
+m_unique = function(matrix[double] X)
   return (matrix[double] R)
 {
   R = X

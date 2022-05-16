@@ -20,16 +20,16 @@
 # -------------------------------------------------------------
 
 
+import json
 import os
 import re
-import json
 
 
 class FunctionParser(object):
     header_input_pattern = r"^[ \t\n]*[#]+[ \t\n]*input[ \t\n\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\n\-]*[\s#\-]*$"
     header_output_pattern = r"[\s#\-]*[#]+[ \t]*(return|output)[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
-    function_pattern = r"^m_[\w]+[ \t\n]+=[ \t\n]+function[^#{]*"
-    parameter_pattern = r"^m_[\w]+[\s]+=[\s]+function[\s]*\([\s]*([\w\[\]\s,\d=.\-'\"_\.]*)[\s]*\)[\s]*return[\s]*\([\s]*([\w\[\]\s,\d=.\-_]*)[\s]*\)[\s]*"
+    function_pattern = r"^[ms]_[\w]+[ \t\n]*=[ \t\n]+function[^#{]*"
+    # parameter_pattern = r"^m_[\w]+[\s]+=[\s]+function[\s]*\([\s]*(?=return)[\s]*\)[\s]*return[\s]*\([\s]*([\w\[\]\s,\d=.\-_]*)[\s]*\)[\s]*"
     header_parameter_pattern = r"[\s#\-]*[#]+[ \t]*([\w|-]+)[\s]+([\w]+)[\s]+([\w,\d.\"\-]+)[\s]+([\w|\W]+)"
     divider_pattern = r"[\s#\-]*"
 
@@ -57,31 +57,71 @@ class FunctionParser(object):
         """
         file_name = os.path.basename(path)
         function_name, extension = os.path.splitext(file_name)
+        # try:
         function_definition = self.find_function_definition(path)
-        pattern = re.compile(
-            self.__class__.parameter_pattern, flags=re.I | re.M)
-        match = pattern.match(function_definition)
-        if match:
-            param_str, retval_str = match.group(1, 2)
+        # pattern = re.compile(
+        #     self.__class__.parameter_pattern, flags=re.I | re.M)
+        # match = pattern.match(function_definition)
+
+        # if match:
+
+        func_split = function_definition.split("function")[1].split("return")
+        param_str, retval_str = self.extract_param_str(
+            func_split[0]), self.extract_param_str(func_split[1])
+        if param_str:
             parameters = self.get_parameters(param_str)
             return_values = self.get_parameters(retval_str)
-        else:
-            # TODO handle default matrix variables. 
-            raise AttributeError("Unable to match to function definition:\n" + function_definition)
-        data = {'function_name': function_name,
+            data = {'function_name': function_name,
                     'parameters': parameters, 'return_values': return_values}
-        return data
+            if parameters and return_values:
+                return data
+            else:
+                raise AttributeError("Unable to match to function definition:\n" + function_definition +
+                                     "\n parameter_str: " + param_str + "\n retVal: " + retval_str)
+        else:
+            raise AttributeError("Unable to match to function definition:\n" + function_definition +
+                                 "\n parameter_str: " + param_str + "\n retVal: " + retval_str)
+        # else:
+        #     # TODO handle default matrix variables.
+        #     raise AttributeError("Unable to match to function definition:\n" + function_definition)
+        # except Exception as e:
+        #     import generator
+        #     raise AttributeError("Unable to parse " + path + " " + generator.format_exception(e))
+
+    def extract_param_str(self, a: str):
+        try:
+            return a[a.index("(") + 1: a.rindex(")")]
+        except:
+            raise AttributeError("failed extracting from: " + a)
 
     def get_parameters(self, param_str: str):
-        
+
         params = re.split(r",[\s]*", param_str)
-        
-        parameters = []
+
+        paramsCombined = []
+        inside = 0
+
         for param in params:
-            parameters.append(self.parse_single_parameter(param))
+            before = inside
+            start = param.count("(")
+            end = param.count(")")
+            inside += start - end
+            if before > 0:
+                if inside > 0:
+                    paramsCombined[-1] += param + ","
+                else:
+                    paramsCombined[-1] += param + ","
+            else:
+                paramsCombined.append(param)
+
+        parameters = []
+
+        for param in paramsCombined:
+            parameters.append(self.parse_single_parameter(param.strip()))
         return parameters
 
     def parse_single_parameter(self, param: str):
+        # try:
         splitted = re.split(r"[\s]+", param)
         dml_type = splitted[0]
         name = splitted[1]
@@ -94,7 +134,16 @@ class FunctionParser(object):
             default_split = name.split("=")
             name = default_split[0]
             default_value = default_split[1]
-        return (name, dml_type, default_value)
+            if default_value is None:
+                raise AttributeError("Failed parsing " + param)
+
+        if "(" in name or "=" in name or "]" in name or "=" in dml_type:
+            raise AttributeError("failed Parsing " +
+                                 param + "  " + str(splitted))
+        return [name, dml_type, default_value]
+        # except Exception as e:
+        #     import generator
+        #     raise AttributeError("Failed parsing " + param + " " + generator.format_exception(e))
 
     def get_header_parameters(self, param_str: str):
         parameters = list()
@@ -109,7 +158,6 @@ class FunctionParser(object):
             except Exception as e:
                 if re.search(pattern=self.__class__.divider_pattern, string=param_line, flags=re.I | re.M) is not None:
                     continue
-                print(e)
                 return parameters
 
         return parameters
@@ -196,9 +244,9 @@ class FunctionParser(object):
 
         header_param_names = [p[0].lower() for p in header["parameters"]]
         data_param_names = [p[0].lower() for p in data["parameters"]]
-        if header_param_names != data_param_names:
-            print("[WARNING] The parameter names of the function does not match with the documentation "
-                  "for file \'{file_name}\'.".format(file_name=data["function_name"]))
+        # if header_param_names != data_param_names:
+        # print("[WARNING] The parameter names of the function does not match with the documentation "
+        #   "for file \'{file_name}\'.".format(file_name=data["function_name"]))
 
         header_param_type = [p[1].lower() for p in header["parameters"]]
         header_param_type = [type_mapping["type"].get(
@@ -209,6 +257,6 @@ class FunctionParser(object):
             re.search(type_mapping_pattern, str(item).lower()).group() if item else str(item).lower(), item)
             for item in data_param_type]
 
-        if header_param_type != data_param_type:
-            print("[WARNING] The parameter type of the function does not match with the documentation "
-                  "for file \'{file_name}\'.".format(file_name=data["function_name"]))
+        # if header_param_type != data_param_type:
+        #     print("[WARNING] The parameter type of the function does not match with the documentation "
+        #           "for file \'{file_name}\'.".format(file_name=data["function_name"]))

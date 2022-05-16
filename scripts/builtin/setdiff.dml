@@ -36,7 +36,7 @@
 # R               Matrix[Double]    vector with all elements that are present in X but not in Y
 # ---------------------------------------------------------------------------------------------
 
-setdiff = function(Matrix[double] X, Matrix[double] Y)
+m_setdiff = function(Matrix[double] X, Matrix[double] Y)
   return (matrix[double] R)
 {
   common = intersect(X, Y);

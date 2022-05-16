@@ -50,7 +50,7 @@
 fmt = ifdef($fmt, "text")
 intercept = ifdef($icpt, FALSE)
 epsilon = ifdef($tol, 0.001)
-lambda = ifdef($reg, 1.0)
+reg = ifdef($reg, 1.0)
 maxIterations = ifdef($maxiter, 100)
 verbose = ifdef($verbose, FALSE)
 
@@ -62,7 +62,7 @@ negative_label = min(Y)
 dimensions = ncol(X)
 
 w = l2svm(X=X, Y=Y, intercept=intercept, 
-  epsilon=epsilon, lambda=lambda, 
+  epsilon=epsilon, reg=reg, 
   maxIterations=maxIterations,
   verbose=verbose)
 

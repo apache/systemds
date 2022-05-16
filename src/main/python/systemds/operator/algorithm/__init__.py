@@ -29,11 +29,16 @@ from .builtin.alsCG import alsCG
 from .builtin.alsDS import alsDS 
 from .builtin.alsPredict import alsPredict 
 from .builtin.alsTopkPredict import alsTopkPredict 
+from .builtin.apply_pipeline import apply_pipeline 
 from .builtin.arima import arima 
+from .builtin.autoencoder_2layer import autoencoder_2layer 
+from .builtin.bandit import bandit 
 from .builtin.bivar import bivar 
 from .builtin.components import components 
 from .builtin.confusionMatrix import confusionMatrix 
 from .builtin.cor import cor 
+from .builtin.correctTypos import correctTypos 
+from .builtin.correctTyposApply import correctTyposApply 
 from .builtin.cox import cox 
 from .builtin.cspline import cspline 
 from .builtin.csplineCG import csplineCG 
@@ -44,19 +49,29 @@ from .builtin.dbscanApply import dbscanApply
 from .builtin.decisionTree import decisionTree 
 from .builtin.decisionTreePredict import decisionTreePredict 
 from .builtin.deepWalk import deepWalk 
+from .builtin.denialConstraints import denialConstraints 
 from .builtin.discoverFD import discoverFD 
 from .builtin.dist import dist 
+from .builtin.dmv import dmv 
+from .builtin.ema import ema 
 from .builtin.executePipeline import executePipeline 
+from .builtin.ffPredict import ffPredict 
 from .builtin.ffTrain import ffTrain 
+from .builtin.fit_pipeline import fit_pipeline 
+from .builtin.fixInvalidLengths import fixInvalidLengths 
+from .builtin.fixInvalidLengthsApply import fixInvalidLengthsApply 
+from .builtin.frameSort import frameSort 
 from .builtin.frequencyEncode import frequencyEncode 
 from .builtin.frequencyEncodeApply import frequencyEncodeApply 
 from .builtin.garch import garch 
 from .builtin.gaussianClassifier import gaussianClassifier 
 from .builtin.getAccuracy import getAccuracy 
 from .builtin.glm import glm 
+from .builtin.glmPredict import glmPredict 
 from .builtin.gmm import gmm 
 from .builtin.gmmPredict import gmmPredict 
 from .builtin.gnmf import gnmf 
+from .builtin.gridSearch import gridSearch 
 from .builtin.hospitalResidencyMatch import hospitalResidencyMatch 
 from .builtin.hyperband import hyperband 
 from .builtin.img_brightness import img_brightness 
@@ -83,17 +98,23 @@ from .builtin.intersect import intersect
 from .builtin.km import km 
 from .builtin.kmeans import kmeans 
 from .builtin.kmeansPredict import kmeansPredict 
+from .builtin.knn import knn 
 from .builtin.knnGraph import knnGraph 
 from .builtin.knnbf import knnbf 
 from .builtin.l2svm import l2svm 
 from .builtin.l2svmPredict import l2svmPredict 
 from .builtin.lasso import lasso 
+from .builtin.lenetPredict import lenetPredict 
 from .builtin.lenetTrain import lenetTrain 
 from .builtin.lm import lm 
 from .builtin.lmCG import lmCG 
 from .builtin.lmDS import lmDS 
+from .builtin.lmPredict import lmPredict 
 from .builtin.logSumExp import logSumExp 
 from .builtin.matrixProfile import matrixProfile 
+from .builtin.mcc import mcc 
+from .builtin.mdedup import mdedup 
+from .builtin.mice import mice 
 from .builtin.miceApply import miceApply 
 from .builtin.msvm import msvm 
 from .builtin.msvmPredict import msvmPredict 
@@ -111,6 +132,8 @@ from .builtin.outlierByIQRApply import outlierByIQRApply
 from .builtin.outlierBySd import outlierBySd 
 from .builtin.outlierBySdApply import outlierBySdApply 
 from .builtin.pca import pca 
+from .builtin.pcaInverse import pcaInverse 
+from .builtin.pcaTransform import pcaTransform 
 from .builtin.pnmf import pnmf 
 from .builtin.ppca import ppca 
 from .builtin.randomForest import randomForest 
@@ -118,6 +141,7 @@ from .builtin.scale import scale
 from .builtin.scaleApply import scaleApply 
 from .builtin.scaleMinMax import scaleMinMax 
 from .builtin.selectByVarThresh import selectByVarThresh 
+from .builtin.setdiff import setdiff 
 from .builtin.sherlock import sherlock 
 from .builtin.sherlockPredict import sherlockPredict 
 from .builtin.shortestPath import shortestPath 
@@ -130,16 +154,22 @@ from .builtin.splitBalanced import splitBalanced
 from .builtin.stableMarriage import stableMarriage 
 from .builtin.statsNA import statsNA 
 from .builtin.steplm import steplm 
+from .builtin.stratstats import stratstats 
+from .builtin.symmetricDifference import symmetricDifference 
 from .builtin.tSNE import tSNE 
 from .builtin.toOneHot import toOneHot 
 from .builtin.tomeklink import tomeklink 
+from .builtin.topk_cleaning import topk_cleaning 
 from .builtin.underSampling import underSampling 
+from .builtin.union import union 
+from .builtin.unique import unique 
 from .builtin.univar import univar 
 from .builtin.vectorToCsv import vectorToCsv 
 from .builtin.winsorize import winsorize 
 from .builtin.winsorizeApply import winsorizeApply 
 from .builtin.xdummy1 import xdummy1 
 from .builtin.xdummy2 import xdummy2 
+from .builtin.xgboost import xgboost 
 from .builtin.xgboostPredictClassification import xgboostPredictClassification 
 from .builtin.xgboostPredictRegression import xgboostPredictRegression 
 
@@ -151,11 +181,16 @@ __all__ = ['WoE',
  'alsDS',
  'alsPredict',
  'alsTopkPredict',
+ 'apply_pipeline',
  'arima',
+ 'autoencoder_2layer',
+ 'bandit',
  'bivar',
  'components',
  'confusionMatrix',
  'cor',
+ 'correctTypos',
+ 'correctTyposApply',
  'cox',
  'cspline',
  'csplineCG',
@@ -166,19 +201,29 @@ __all__ = ['WoE',
  'decisionTree',
  'decisionTreePredict',
  'deepWalk',
+ 'denialConstraints',
  'discoverFD',
  'dist',
+ 'dmv',
+ 'ema',
  'executePipeline',
+ 'ffPredict',
  'ffTrain',
+ 'fit_pipeline',
+ 'fixInvalidLengths',
+ 'fixInvalidLengthsApply',
+ 'frameSort',
  'frequencyEncode',
  'frequencyEncodeApply',
  'garch',
  'gaussianClassifier',
  'getAccuracy',
  'glm',
+ 'glmPredict',
  'gmm',
  'gmmPredict',
  'gnmf',
+ 'gridSearch',
  'hospitalResidencyMatch',
  'hyperband',
  'img_brightness',
@@ -205,17 +250,23 @@ __all__ = ['WoE',
  'km',
  'kmeans',
  'kmeansPredict',
+ 'knn',
  'knnGraph',
  'knnbf',
  'l2svm',
  'l2svmPredict',
  'lasso',
+ 'lenetPredict',
  'lenetTrain',
  'lm',
  'lmCG',
  'lmDS',
+ 'lmPredict',
  'logSumExp',
  'matrixProfile',
+ 'mcc',
+ 'mdedup',
+ 'mice',
  'miceApply',
  'msvm',
  'msvmPredict',
@@ -233,6 +284,8 @@ __all__ = ['WoE',
  'outlierBySd',
  'outlierBySdApply',
  'pca',
+ 'pcaInverse',
+ 'pcaTransform',
  'pnmf',
  'ppca',
  'randomForest',
@@ -240,6 +293,7 @@ __all__ = ['WoE',
  'scaleApply',
  'scaleMinMax',
  'selectByVarThresh',
+ 'setdiff',
  'sherlock',
  'sherlockPredict',
  'shortestPath',
@@ -252,15 +306,21 @@ __all__ = ['WoE',
  'stableMarriage',
  'statsNA',
  'steplm',
+ 'stratstats',
+ 'symmetricDifference',
  'tSNE',
  'toOneHot',
  'tomeklink',
+ 'topk_cleaning',
  'underSampling',
+ 'union',
+ 'unique',
  'univar',
  'vectorToCsv',
  'winsorize',
  'winsorizeApply',
  'xdummy1',
  'xdummy2',
+ 'xgboost',
  'xgboostPredictClassification',
  'xgboostPredictRegression'] 

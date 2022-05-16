@@ -23,12 +23,12 @@ X = federated(addresses=list($in_X1, $in_X2),
   ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)));
 
 rank = $in_rank;
-reg = $in_reg;
-lambda = $in_lambda;
+regType = $in_reg;
+reg = $in_lambda;
 maxi = $in_maxi;
 thr = $in_thr;
 
-[U, V] = alsCG(X = X, rank = rank, reg = reg, lambda = lambda, maxi = maxi, check = TRUE, thr = thr);
+[U, V] = alsCG(X = X, rank = rank, regType = regType, reg = reg, maxi = maxi, check = TRUE, thr = thr);
 
 Z = U %*% V;
 

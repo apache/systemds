@@ -37,7 +37,7 @@ def msvm(X: Matrix,
     :param num_classes: Number of classes
     :param epsilon: Procedure terminates early if the reduction in objective function
     :param value: than epsilon (tolerance) times the initial objective function value.
-    :param lambda: Regularization parameter (lambda) for L2 regularization
+    :param reg: Regularization parameter (lambda) for L2 regularization
     :param maxIterations: Maximum number of conjugate gradient iterations
     :param verbose: Set to true to print while training.
     :return: 'OperationNode' containing  

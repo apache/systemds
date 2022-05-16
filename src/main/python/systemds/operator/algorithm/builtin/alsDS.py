@@ -33,7 +33,7 @@ def alsDS(X: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param rank: Rank of the factorization
-    :param lambda: Regularization parameter, no regularization if 0.0
+    :param reg: Regularization parameter, no regularization if 0.0
     :param maxi: Maximum number of iterations
     :param check: Check for convergence after every iteration, i.e., updating L and R once
     :param thr: Assuming check is set to TRUE, the algorithm stops and convergence is declared

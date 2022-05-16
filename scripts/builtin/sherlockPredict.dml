@@ -51,7 +51,7 @@
 # probs  Matrix[Double]              class probabilities of shape (N, K)
 # ----------------------------------------------------------------------------------------------------------------------
 
-source("scripts/builtin/sherlockNet.dml") as sherlockNet
+source("scripts/nn/examples/sherlockNet.dml") as sherlockNet
 
 m_sherlockPredict = function(Matrix[Double] X,
             Matrix[Double] cW1, Matrix[Double] cb1,

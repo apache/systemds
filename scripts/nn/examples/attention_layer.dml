@@ -21,6 +21,31 @@
 source("nn/layers/attention.dml") as attention
 source("nn/layers/conv1d.dml") as conv1d
 
+#toy gradient example
+
+M = 3
+N = 2
+L = 3
+Q = matrix("0.1 0.1 0.2 0.2 0.3 0.3", rows=M, cols=N)
+K = matrix("0.4 0.7 0.5 0.8 0.6 0.9", rows=M, cols=N)
+V = matrix("0.13 0.161 0.19 0.14 0.17 0.2 0.15 0.18 0.21", rows=M, cols=L)
+
+print("Q:\n" + toString(Q))
+print("K:\n" + toString(K))
+print("V:\n" + toString(V))
+
+att = attention::forward(Q, K, V)
+
+datt = 1
+[dQ, dK, dV] = attention::backward(datt, Q, K, V)
+
+print("dQ")
+print(toString(dQ))
+print("dK")
+print(toString(dK))
+print("dV")
+print(toString(dV))
+
 # ============== Simple test case =============================
 # Create training data
 q = matrix(1.1, rows=1, cols=1)

@@ -20,11 +20,13 @@
 package org.apache.sysds.hops.cost;
 
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.fedplanner.FTypes;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.hops.fedplanner.MemoTable;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 
@@ -109,7 +111,8 @@ public class HopRel {
 	}
 
 	private void setExecType(){
-		if ( inputDependency.stream().anyMatch(HopRel::hasFederatedOutput) )
+		if ( inputDependency.stream().anyMatch(HopRel::hasFederatedOutput)
+			|| HopRewriteUtils.isData(hopRef, Types.OpOpData.FEDERATED))
 			execType = ExecType.FED;
 	}
 

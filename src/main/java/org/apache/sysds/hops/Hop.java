@@ -975,6 +975,10 @@ public abstract class Hop implements ParseInfo {
 		return _privacyConstraint;
 	}
 
+	public FederatedOutput getFederatedOutput(){
+		return _federatedOutput;
+	}
+
 	public boolean hasFederatedOutput(){
 		return _federatedOutput == FederatedOutput.FOUT;
 	}

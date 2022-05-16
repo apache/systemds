@@ -69,6 +69,7 @@ import org.apache.sysds.runtime.instructions.spark.ReblockSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 
 public class Explain
 {
@@ -611,6 +612,9 @@ public class Explain
 		//exec type
 		if (hop.getExecType() != null)
 			sb.append(", " + hop.getExecType());
+
+		if ( hop.getFederatedOutput() != FederatedOutput.NONE )
+			sb.append(" ").append(hop.getFederatedOutput()).append(" ");
 
 		if ( MEMO_TABLE != null && MEMO_TABLE.containsHop(hop) ){
 			List<String> fedAlts = MEMO_TABLE.getFedOutAlternatives(hop);

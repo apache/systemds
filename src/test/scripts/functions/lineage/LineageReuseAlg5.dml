@@ -31,7 +31,7 @@ return (Matrix[Double] loss) {
 N = 1000;
 no_lamda = 10;
 stp = (0.1 - 0.0001)/no_lamda;
-lamda = 0.0001;
+reg = 0.0001;
 Rbeta = matrix(0, rows=N+1, cols=no_lamda*2);
 Rloss = matrix(0, rows=no_lamda*2, cols=1);
 i = 1;
@@ -43,18 +43,18 @@ y = ceil(y);
 for (l in 1:no_lamda)
 {
   beta = l2svm(X=X, Y=y, intercept=FALSE, epsilon=1e-12,
-      lambda = lamda, verbose=FALSE);
+      reg = reg, verbose=FALSE);
   Rbeta[1:nrow(beta),i] = beta;
   Rloss[i,] = l2norm(X, y, beta, FALSE);
   i = i + 1;
 
   beta = l2svm(X=X, Y=y, intercept=TRUE, epsilon=1e-12,
-      lambda = lamda, verbose=FALSE);
+      reg = reg, verbose=FALSE);
   Rbeta[1:nrow(beta),i] = beta;
   Rloss[i,] = l2norm(X, y, beta, TRUE);
   i = i + 1;
 
-  lamda = lamda + stp;
+  reg = reg + stp;
 }
 
 leastLoss = rowIndexMin(t(Rloss));

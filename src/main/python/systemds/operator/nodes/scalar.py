@@ -37,7 +37,7 @@ from systemds.utils.converters import numpy_to_matrix_block
 class Scalar(OperationNode):
     __assign: bool
 
-    def __init__(self, sds_context: 'SystemDSContext', operation: str,
+    def __init__(self, sds_context, operation: str,
                  unnamed_input_nodes: Iterable[VALID_INPUT_TYPES] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
                  output_type: OutputType = OutputType.DOUBLE,

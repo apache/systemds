@@ -33,7 +33,7 @@ def miceApply(X: Matrix,
               meta: Matrix,
               threshold: float,
               dM: Frame,
-              betaList: Iterable):
+              betaList: List):
     """
     :param threshold: confidence value [0, 1] for robust imputation, values will only be imputed
     :param if: value has probability greater than threshold,

@@ -24,15 +24,43 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def gridSearch(X: OperationNode, y: OperationNode, train: str, predict: str, params: Iterable, paramValues: Iterable, **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
-    params_dict = {'X':X, 'y':y, 'train':train, 'predict':predict, 'params':params, 'paramValues':paramValues}
+
+def gridSearch(X: Matrix,
+               y: Matrix,
+               train: str,
+               predict: str,
+               params: List,
+               paramValues: List,
+               **kwargs: Dict[str, VALID_INPUT_TYPES]):
+    """
+    :param train: Name ft of the train function to call via ft(trainArgs)
+    :param predict: Name fp of the loss function to call via fp((predictArgs,B))
+    :param numB: Maximum number of parameters in model B (pass the max because the size
+    :param may: parameters like icpt or multi-class classification)
+    :param columnvectors: hyper-parameters in 'params'
+    :param gridSearch: hyper-parameter by name, if
+    :param not: an empty list, the lm parameters are used
+    :param gridSearch: trained models at the end, if
+    :param not: an empty list, list(X, y) is used instead
+    :param cv: flag enabling k-fold cross validation, otherwise training loss
+    :param cvk: if cv=TRUE, specifies the the number of folds, otherwise ignored
+    :param verbose: flag for verbose debug output
+    :return: 'OperationNode' containing returned as a column-major linearized column vector 
+    """
+    params_dict = {'X': X, 'y': y, 'train': train, 'predict': predict, 'params': params, 'paramValues': paramValues}
     params_dict.update(kwargs)
-    return OperationNode(X.sds_context, 'gridSearch', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.FRAME])
-
-
     
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Frame(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
+
+    op = MultiReturn(X.sds_context, 'gridSearch', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

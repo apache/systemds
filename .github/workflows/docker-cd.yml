@@ -43,7 +43,7 @@ jobs:
     # https://github.com/docker/metadata-action
     - name: Configure Docker metadata
       id: meta
-      uses: docker/metadata-action@v3
+      uses: docker/metadata-action@v4
       with:
         images: apache/systemds
         tags: |

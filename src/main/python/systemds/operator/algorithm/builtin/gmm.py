@@ -30,7 +30,6 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def gmm(X: Matrix,
-        verbose: bool,
         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param n_components: Number of n_components in the Gaussian mixture model
@@ -41,7 +40,7 @@ def gmm(X: Matrix,
     :param tol: tolerance value for convergence
     :return: 'OperationNode' containing of estimated parameters & information criterion for best iteration & kth class 
     """
-    params_dict = {'X': X, 'verbose': verbose}
+    params_dict = {'X': X}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')

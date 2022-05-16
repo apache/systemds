@@ -52,7 +52,7 @@
 # fb           Matrix[Double]             biases vectors for combining all trained features (final)
 # ----------------------------------------------------------------------------------------------------------------------
 
-source("scripts/builtin/sherlockNet.dml") as sherlockNet
+source("scripts/nn/examples/sherlockNet.dml") as sherlockNet
 
 m_sherlock = function(Matrix[Double] X_train, Matrix[Double] y_train)
       return (Matrix[Double] cW1, Matrix[Double] cb1,

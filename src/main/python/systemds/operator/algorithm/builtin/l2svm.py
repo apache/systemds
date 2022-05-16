@@ -35,7 +35,7 @@ def l2svm(X: Matrix,
     """
     :param intercept: No Intercept ( If set to TRUE then a constant bias column is added to X)
     :param epsilon: Procedure terminates early if the reduction in objective function value is less
-    :param lambda: Regularization parameter (lambda) for L2 regularization
+    :param reg: Regularization parameter (reg) for L2 regularization
     :param maxIterations: Maximum number of conjugate gradient iterations
     :param maxii: -
     :param verbose: Set to true if one wants print statements updating on loss.

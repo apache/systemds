@@ -37,7 +37,7 @@
 # mattCC          Double    ---       Matthews' Correlation Coefficient
 # ---------------------------------------------------------------------------------------------
 
-m_mcc = function(Matrix[Double] predictions = matrix(0,0,0), Matrix[Double] labels = matrix(0,0,0))
+m_mcc = function(Matrix[Double] predictions, Matrix[Double] labels)
 return (Double mattCC)
 {
   # # validation checks   

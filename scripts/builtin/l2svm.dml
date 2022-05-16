@@ -55,7 +55,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
     stop("L2SVM: Stopping due to invalid inputs: Not possible to learn a binary class classifier without at least 2 rows")
   if(epsilon < 0)
     stop("L2SVM: Stopping due to invalid argument: Tolerance (tol) must be non-negative")
-  if(lambda < 0)
+  if(reg < 0)
     stop("L2SVM: Stopping due to invalid argument: Regularization constant (reg) must be non-negative")
   if(maxIterations < 1)
     stop("L2SVM: Stopping due to invalid argument: Maximum iterations should be a positive integer")
@@ -106,8 +106,8 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
     # minimizing primal obj along direction s
     step_sz = 0
     Xd = X %*% s
-    wd = lambda * sum(w * s)
-    dd = lambda * sum(s * s)
+    wd = reg * sum(w * s)
+    dd = reg * sum(s * s)
     continue1 = TRUE
     iiter = 0
     while(continue1 & iiter < maxii){
@@ -129,8 +129,8 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
     out = 1 - Y * Xw
     sv = (out > 0)
     out = sv * out
-    obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
-    g_new = t(X) %*% (out * Y) - lambda * w
+    obj = 0.5 * sum(out * out) + reg/2 * sum(w * w)
+    g_new = t(X) %*% (out * Y) - reg * w
 
     if(verbose) {
       colstr = ifelse(columnId!=-1, ", Col:"+columnId + " ,", " ,")

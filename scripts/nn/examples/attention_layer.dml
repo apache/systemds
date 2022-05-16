@@ -70,7 +70,7 @@ print("attention: \n" + toString(attention))
 #   1.999 7.814 0.273
 #   1.993 7.480 0.736
 
-# Which is the same result as in the article.
+# Which is roughly the same result as in the article.
 
 # ================ Practical example =================
 # Similar to the example from https://keras.io/api/layers/attention_layers/attention/
@@ -87,8 +87,8 @@ k_weights = matrix("0 0 1 1 1 0 0 1 0 1 1 0", rows=4, cols=3)
 v_weights = matrix("0 2 0 0 3 0 1 0 3 1 1 0", rows=4, cols=3)
 
 # 3. cnn layer
-foo = conv1d::forward(q_weights, 100, 0, 0, )
-print(foo)
+# foo = conv1d::forward(q_weights, 100, 0, 0, )
+# print(foo)
 
 # 5. dense layer
 

@@ -82,11 +82,8 @@ ordered_find() {
 if [ -n "$SYSTEMDS_STANDALONE_OPTS" ]; then
 	print_out "Overriding SYSTEMDS_STANDALONE_OPTS with env var: $SYSTEMDS_STANDALONE_OPTS"
 else
-  # specify paramteters  to java when running locally here
-  SYSTEMDS_STANDALONE_OPTS="\
-      -Xmx4g\
-      -Xms4g\
-      -Xmn400m "
+  # specify parameters  to java when running locally here
+  SYSTEMDS_STANDALONE_OPTS="-Xmx4g -Xms4g -Xmn400m "
 fi
 
 if [ -n "$SYSTEMDS_REMOTE_DEBUGGING" ]; then
@@ -363,7 +360,7 @@ fi
 read -r -d '' -a myArray < <( echo "$@" )
 INDEX=0
 for i in "${myArray[@]}"; do
-  if [[ ${myArray[INDEX]} == *-exec* ]]; then
+  if [[ "$i" == *-exec* ]]; then
     SYSDS_EXEC_MODE="${myArray[((INDEX+1))]}"
     break;
   fi
@@ -414,7 +411,7 @@ CLASSPATH=$(echo "${CLASSPATH}" | tr -d '[:space:]')
 if [ $PRINT_SYSDS_HELP == 1 ]; then
   echo "----------------------------------------------------------------------"
   echo "Further help on SystemDS arguments:"
-  java -cp $CLASSPATH org.apache.sysds.api.DMLScript -help
+  java -cp "$CLASSPATH" org.apache.sysds.api.DMLScript -help
   exit 1
 fi
 
@@ -443,7 +440,7 @@ if [ $WORKER == 1 ]; then
   print_out "Executing command: $CMD"
   print_out  ""
 
-if [ $FEDMONITORING == 1 ]; then
+elif [ "$FEDMONITORING" == 1 ]; then
   print_out "#"
   print_out "#  starting Federated backend monitoring on port $PORT"
   print_out "###############################################################################"

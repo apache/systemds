@@ -26,10 +26,12 @@ m = function(
   Boolean d, 
   Boolean e)
   return (Matrix[Double] m) {
+  # e is using a default value of TRUE
   f = !a & b & !c & d & e
   if (f)
+    # test parses if this is printed
     print("You Found Me Also! " + d)
-  m = matrix(1,1,1)
+  m = matrix(f,1,1)
 }
 
 p = function(boolean a, Matrix[Double] b) return(Matrix[double] loss){
@@ -42,7 +44,7 @@ Y = matrix(1,1,1)
 params = list("a", "b", "c", "d")
 paramRanges=list(seq(0,1), seq(0,1), seq(0,1), seq(0,1))
 # E have a default value of True
-trainArgs = list(a=TRUE,b=TRUE,c=TRUE,d=TRUE, e=TRUE)
+trainArgs = list(a=TRUE, b=TRUE, c=TRUE, d=TRUE, e=TRUE)
 predictArgs= list(TRUE)
 
 [b, opt] = gridSearch(X=X, y=Y, train="m", predict="p", numB = 1, params = params, 

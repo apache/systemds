@@ -163,11 +163,11 @@ public class MLContextTest extends MLContextTestBase {
 	private void runEvalTest(String name, String outputContains){
 		LOG.debug("MLContextTest - eval builtin test " + name);
 		final Script script = dmlFromFile(baseDirectory + File.separator + name);
-		ml.setExplain(true);
-		final String out = executeAndCaptureStdOut( script).getRight();
+		// ml.setExplain(true);
+		final String out = executeAndCaptureStdOut(script).getRight();
 		// LOG.error(out);
 		assertTrue(out, out.contains(outputContains));
-		ml.setExplain(false);
+		// ml.setExplain(false);
 	}
 
 	@Test

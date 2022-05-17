@@ -26,10 +26,12 @@ m = function(
   Boolean d, 
   Boolean e)
   return (Matrix[Double] m) {
+  # d and e is using a default value of TRUE
   f = !a & b & !c & !d & e
   if (f)
+    # test parses if this is printed
     print("Find Me! " + e)
-  m = matrix(1,1,1)
+  m = matrix(f,1,1)
 }
 
 p = function(boolean a, Matrix[Double] b) return(Matrix[double] loss){

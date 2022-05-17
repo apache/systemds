@@ -45,7 +45,7 @@ public class FederatedAlsCGTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedAlsCGTest.class.getSimpleName() + "/";
 
 	private final static String OUTPUT_NAME = "Z";
-	private final static double TOLERANCE = 0.01;
+	private final static double TOLERANCE = 0.06;
 	private final static int BLOCKSIZE = 1024;
 
 	@Parameterized.Parameter()

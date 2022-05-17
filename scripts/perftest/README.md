@@ -31,6 +31,7 @@ There are a few prerequisites:
 NOTE THE SCRIPT HAS TO BE RUN FROM THE PERFTEST FOLDER.
 
 Examples:
+
 ```bash
 ./runAll.sh
 ```

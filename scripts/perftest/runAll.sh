@@ -32,14 +32,17 @@ if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 
 # Command to be executed
 CMD="systemds"
-# CMD="./sparkDML.sh"
 
 # Max memory of data to be benchmarked
 MAXMEM=80 # Possible values: 80/80MB, 800/800MB, 8000/8000MB/8GB, 80000/80000MB/80GB, 800000/800000MB/800GB
 MAXMEM=${MAXMEM%"MB"}; MAXMEM=${MAXMEM/GB/"000"}
 
 # Set properties
-source ./conf/env-variables
+export LOG4JPROP='conf/log4j-off.properties'
+export SYSDS_QUIET=1
+export SYSDS_EXEC_MODE="hybrid"
+export SYSDS_DISTRIBUTED=1
+# export SYSTEMDS_STANDALONE_OPTS="-Xmx10g -Xms10g -Xmn2000m"
 
 # Possible lines to initialize Intel MKL, depending on version and install location
 #    . ~/intel/bin/compilervars.sh intel64

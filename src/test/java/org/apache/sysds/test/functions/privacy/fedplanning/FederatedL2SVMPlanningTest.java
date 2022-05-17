@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -41,6 +42,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/privacy/fedplanning/";
 	private final static String TEST_NAME = "FederatedL2SVMPlanningTest";
+	private final static String TEST_NAME_2 = "FederatedL2SVMFunctionPlanningTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedL2SVMPlanningTest.class.getSimpleName() + "/";
 	private static File TEST_CONF_FILE;
 
@@ -52,6 +54,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME_2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_2, new String[] {"Z"}));
 	}
 
 	@Test
@@ -59,24 +62,47 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
 			"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
 		setTestConf("SystemDS-config-fout.xml");
-		loadAndRunTest(expectedHeavyHitters);
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
 	}
 
 	@Test
 	public void runL2SVMHeuristicTest(){
 		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*"};
 		setTestConf("SystemDS-config-heuristic.xml");
-		loadAndRunTest(expectedHeavyHitters);
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
 	}
 
 	@Test
 	public void runL2SVMCostBasedTest(){
-		//String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
-		//	"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
 		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
-			"fed_max", "fed_1-*", "fed_>"};
+			"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
 		setTestConf("SystemDS-config-cost-based.xml");
-		loadAndRunTest(expectedHeavyHitters);
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
+	}
+
+	@Test
+	@Ignore
+	public void runL2SVMFunctionFOUTTest(){
+		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
+			"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
+		setTestConf("SystemDS-config-fout.xml");
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME_2);
+	}
+
+	@Test
+	@Ignore
+	public void runL2SVMFunctionHeuristicTest(){
+		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*"};
+		setTestConf("SystemDS-config-heuristic.xml");
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME_2);
+	}
+
+	@Test
+	public void runL2SVMFunctionCostBasedTest(){
+		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
+			"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
+		setTestConf("SystemDS-config-cost-based.xml");
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME_2);
 	}
 
 	private void setTestConf(String test_conf){
@@ -117,7 +143,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 		writeStandardMatrix(matrixName, seed, halfRows, privacyConstraint);
 	}
 
-	private void loadAndRunTest(String[] expectedHeavyHitters){
+	private void loadAndRunTest(String[] expectedHeavyHitters, String testName){
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
@@ -126,7 +152,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 		Thread t1 = null, t2 = null;
 
 		try {
-			getAndLoadTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(testName);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			writeInputMatrices();
@@ -137,7 +163,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 			t2 = startLocalFedWorkerThread(port2);
 
 			// Run actual dml script with federated matrix
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			fullDMLScriptName = HOME + testName + ".dml";
 			programArgs = new String[] { "-stats", "-explain", "hops", "-nvargs",
 				"X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
@@ -145,7 +171,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 			runTest(true, false, null, -1);
 
 			// Run reference dml script with normal matrix
-			fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+			fullDMLScriptName = HOME + testName + "Reference.dml";
 			programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"),
 				"Y=" + input("Y"), "Z=" + expected("Z")};
 			runTest(true, false, null, -1);

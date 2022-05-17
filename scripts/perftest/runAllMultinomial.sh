@@ -66,3 +66,5 @@ do
       ./${f}.sh ${BASE}/X${d}_k5 ${BASE}/y${d}_k5 5 ${BASE} ${MAXITR} ${COMMAND} &> logs/${f}_${d}_k5.out;
    done
 done
+
+echo -e "\n\n" >> results/times.txt

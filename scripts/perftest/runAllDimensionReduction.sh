@@ -51,3 +51,5 @@ do
    ./runPCA.sh ${BASE}/pcaData${d} ${BASE} ${COMMAND} &> logs/runPCA_${d}.out;
 
 done
+
+echo -e "\n\n" >> results/times.txt

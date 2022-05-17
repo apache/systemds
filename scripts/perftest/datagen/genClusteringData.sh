@@ -33,6 +33,8 @@ FORMAT="binary"
 DENSE_SP=0.9
 SPARSE_SP=0.01
 
+echo "-- Generating clustering data..." >> results/times.txt;
+
 #generate XS scenarios (80MB)
 if [ $MAXMEM -ge 80 ]; then
   ${CMD} -f ../datagen/genRandData4Kmeans.dml --nvargs nr=10000 nf=1000 nc=5 dc=10.0 dr=1.0 fbf=100.0 cbf=100.0 X=$BASE/X10k_1k_dense C=$BASE/C10k_1k_dense Y=$BASE/y10k_1k_dense YbyC=$BASE/YbyC10k_1k_dense fmt=$FORMAT & pidDense80=$!

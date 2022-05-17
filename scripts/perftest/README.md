@@ -28,14 +28,15 @@ There are a few prerequisites:
 - Setup OpenBlas: <https://github.com/xianyi/OpenBLAS/wiki/Precompiled-installation-packages>
 - Install Perf stat: <https://linoxide.com/linux-how-to/install-perf-tool-centos-ubuntu/>
 
-NOTE THE SCRIPT HAS TO BE RUN FROM THE PERFTEST FOLDER.
+## NOTE THE SCRIPT HAS TO BE RUN FROM THE PERFTEST FOLDER
 
 Examples:
+
 ```bash
 ./runAll.sh
 ```
 
 Look inside the runAll script to see how to run individual tests.
 
-Time calculations in the bash scripts additionally subtract a number, e.g. ".4". 
+Time calculations in the bash scripts additionally subtract a number, e.g. ".4".
 This is done to accommodate for time lost by shell script and JVM startup overheads, to match the actual application runtime of SystemML.

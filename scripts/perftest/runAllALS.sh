@@ -53,3 +53,5 @@ do
       ./${f}.sh ${DATADIR}/X${d} $MAXITR $DATADIR ${CMD} 0.001 FALSE &> logs/${f}_${d}.out;
    done
 done
+
+echo -e "\n\n" >> results/times.txt

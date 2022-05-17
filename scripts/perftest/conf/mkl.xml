@@ -17,6 +17,5 @@
  * under the License.
 -->
 <root>
-    <sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
     <sysds.native.blas>mkl</sysds.native.blas>
 </root>

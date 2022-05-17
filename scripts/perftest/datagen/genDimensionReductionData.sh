@@ -31,6 +31,8 @@ MAXMEM=$3
 
 FORMAT="binary"
 
+echo "-- Generating Dimension Reduction data." >> results/times.txt;
+
 #generate XS scenarios (80MB)
 if [ $MAXMEM -ge 80 ]; then
   ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=5000 C=2000 OUT=$BASE/pcaData5k_2k_dense FMT=$FORMAT &

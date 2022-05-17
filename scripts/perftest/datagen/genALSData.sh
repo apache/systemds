@@ -33,6 +33,8 @@ FORMAT="text" # can be csv, mm, text, binary
 DENSE_SP=0.9
 SPARSE_SP=0.01
 
+echo "-- Generating ALS data." >> results/times.txt;
+
 #generate XS scenarios (80MB)
 if [ $MAXMEM -ge 80 ]; then
   ${CMD} -f ../datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X10k_1k_dense rows=10000 cols=1000 rank=10 nnz=`echo "scale=0; 10000 * 1000 * $DENSE_SP" | bc` sigma=0.01 fmt=$FORMAT &

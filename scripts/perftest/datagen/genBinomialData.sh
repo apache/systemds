@@ -33,6 +33,8 @@ FORMAT="binary" # can be csv, mm, text, binary
 DENSE_SP=0.9
 SPARSE_SP=0.01
 
+echo -e "\n\n-- Generating binomial data..." >> results/times.txt;
+
 #generate XS scenarios (80MB)
 if [ $MAXMEM -ge 80 ]; then
   ${CMD} -f ../datagen/genRandData4LogisticRegression.dml --args 10000 1000 5 5 ${BASE}/w10k_1k_dense ${BASE}/X10k_1k_dense ${BASE}/y10k_1k_dense 1 0 $DENSE_SP $FORMAT 1       & pidDense80=$!

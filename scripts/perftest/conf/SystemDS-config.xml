@@ -18,6 +18,5 @@
 -->
 
 <root>
-    <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
     <sysds.native.blas>mkl</sysds.native.blas>
 </root>

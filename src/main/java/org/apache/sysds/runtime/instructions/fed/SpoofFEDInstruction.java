@@ -119,10 +119,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 		for(CPOperand cpo : _inputs) {
 			Data tmpData = ec.getVariable(cpo);
 			if(tmpData instanceof MatrixObject) {
-				MatrixLineagePair mo = MatrixLineagePair.of((MatrixObject) tmpData, 
-					DMLScript.LINEAGE ? ec.getLineageItem(cpo) : null 
-				// ec.getLineageItem(cpo)
-				 );
+				MatrixLineagePair mo = MatrixLineagePair.of((MatrixObject) tmpData,
+					DMLScript.LINEAGE ? ec.getLineageItem(cpo) : null);
 				if(mo.isFederatedExcept(FType.BROADCAST)) {
 					frIds[index++] = mo.getFedMapping().getID();
 				}

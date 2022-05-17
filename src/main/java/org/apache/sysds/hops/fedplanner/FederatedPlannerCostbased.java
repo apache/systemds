@@ -78,7 +78,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	@Override
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		prog.updateRepetitionEstimates();
-		rewriteStatementBlocks(prog, prog.getStatementBlocks());
+		rewriteStatementBlocks(prog, prog.getStatementBlocks(), null);
 		setFinalFedouts();
 		updateExplain();
 	}
@@ -89,12 +89,13 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 *
 	 * @param prog dml program
 	 * @param sbs  list of statement blocks
+	 * @param paramMap map of parameters in function call
 	 * @return list of statement blocks with the federated output value updated for each hop
 	 */
-	private ArrayList<StatementBlock> rewriteStatementBlocks(DMLProgram prog, List<StatementBlock> sbs) {
+	private ArrayList<StatementBlock> rewriteStatementBlocks(DMLProgram prog, List<StatementBlock> sbs, Map<String, Hop> paramMap) {
 		ArrayList<StatementBlock> rewrittenStmBlocks = new ArrayList<>();
 		for(StatementBlock stmBlock : sbs)
-			rewrittenStmBlocks.addAll(rewriteStatementBlock(prog, stmBlock));
+			rewrittenStmBlocks.addAll(rewriteStatementBlock(prog, stmBlock, paramMap));
 		return rewrittenStmBlocks;
 	}
 
@@ -104,77 +105,97 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 *
 	 * @param prog dml program
 	 * @param sb   statement block
+	 * @param paramMap map of parameters in function call
 	 * @return list of statement blocks with the federated output value updated for each hop
 	 */
-	public ArrayList<StatementBlock> rewriteStatementBlock(DMLProgram prog, StatementBlock sb) {
+	public ArrayList<StatementBlock> rewriteStatementBlock(DMLProgram prog, StatementBlock sb, Map<String, Hop> paramMap) {
 		if(sb instanceof WhileStatementBlock)
-			return rewriteWhileStatementBlock(prog, (WhileStatementBlock) sb);
+			return rewriteWhileStatementBlock(prog, (WhileStatementBlock) sb, paramMap);
 		else if(sb instanceof IfStatementBlock)
-			return rewriteIfStatementBlock(prog, (IfStatementBlock) sb);
+			return rewriteIfStatementBlock(prog, (IfStatementBlock) sb, paramMap);
 		else if(sb instanceof ForStatementBlock) {
 			// This also includes ParForStatementBlocks
-			return rewriteForStatementBlock(prog, (ForStatementBlock) sb);
+			return rewriteForStatementBlock(prog, (ForStatementBlock) sb, paramMap);
 		}
 		else if(sb instanceof FunctionStatementBlock)
-			return rewriteFunctionStatementBlock(prog, (FunctionStatementBlock) sb);
+			return rewriteFunctionStatementBlock(prog, (FunctionStatementBlock) sb, paramMap);
 		else {
 			// StatementBlock type (no subclass)
-			return rewriteDefaultStatementBlock(prog, sb);
+			return rewriteDefaultStatementBlock(prog, sb, paramMap);
 		}
 	}
 
-	private ArrayList<StatementBlock> rewriteWhileStatementBlock(DMLProgram prog, WhileStatementBlock whileSB) {
+	private ArrayList<StatementBlock> rewriteWhileStatementBlock(DMLProgram prog, WhileStatementBlock whileSB, Map<String, Hop> paramMap) {
 		Hop whilePredicateHop = whileSB.getPredicateHops();
-		selectFederatedExecutionPlan(whilePredicateHop);
+		selectFederatedExecutionPlan(whilePredicateHop, paramMap);
 		for(Statement stm : whileSB.getStatements()) {
 			WhileStatement whileStm = (WhileStatement) stm;
-			whileStm.setBody(rewriteStatementBlocks(prog, whileStm.getBody()));
+			whileStm.setBody(rewriteStatementBlocks(prog, whileStm.getBody(), paramMap));
 		}
 		return new ArrayList<>(Collections.singletonList(whileSB));
 	}
 
-	private ArrayList<StatementBlock> rewriteIfStatementBlock(DMLProgram prog, IfStatementBlock ifSB) {
-		selectFederatedExecutionPlan(ifSB.getPredicateHops());
+	private ArrayList<StatementBlock> rewriteIfStatementBlock(DMLProgram prog, IfStatementBlock ifSB, Map<String, Hop> paramMap) {
+		selectFederatedExecutionPlan(ifSB.getPredicateHops(), paramMap);
 		for(Statement statement : ifSB.getStatements()) {
 			IfStatement ifStatement = (IfStatement) statement;
-			ifStatement.setIfBody(rewriteStatementBlocks(prog, ifStatement.getIfBody()));
-			ifStatement.setElseBody(rewriteStatementBlocks(prog, ifStatement.getElseBody()));
+			ifStatement.setIfBody(rewriteStatementBlocks(prog, ifStatement.getIfBody(), paramMap));
+			ifStatement.setElseBody(rewriteStatementBlocks(prog, ifStatement.getElseBody(), paramMap));
 		}
 		return new ArrayList<>(Collections.singletonList(ifSB));
 	}
 
-	private ArrayList<StatementBlock> rewriteForStatementBlock(DMLProgram prog, ForStatementBlock forSB) {
-		selectFederatedExecutionPlan(forSB.getFromHops());
-		selectFederatedExecutionPlan(forSB.getToHops());
-		selectFederatedExecutionPlan(forSB.getIncrementHops());
+	private ArrayList<StatementBlock> rewriteForStatementBlock(DMLProgram prog, ForStatementBlock forSB, Map<String, Hop> paramMap) {
+		selectFederatedExecutionPlan(forSB.getFromHops(), paramMap);
+		selectFederatedExecutionPlan(forSB.getToHops(), paramMap);
+		selectFederatedExecutionPlan(forSB.getIncrementHops(), paramMap);
 		for(Statement statement : forSB.getStatements()) {
 			ForStatement forStatement = ((ForStatement) statement);
-			forStatement.setBody(rewriteStatementBlocks(prog, forStatement.getBody()));
+			forStatement.setBody(rewriteStatementBlocks(prog, forStatement.getBody(), paramMap));
 		}
 		return new ArrayList<>(Collections.singletonList(forSB));
 	}
 
-	private ArrayList<StatementBlock> rewriteFunctionStatementBlock(DMLProgram prog, FunctionStatementBlock funcSB) {
+	private ArrayList<StatementBlock> rewriteFunctionStatementBlock(DMLProgram prog, FunctionStatementBlock funcSB, Map<String, Hop> paramMap) {
 		for(Statement statement : funcSB.getStatements()) {
 			FunctionStatement funcStm = (FunctionStatement) statement;
-			funcStm.setBody(rewriteStatementBlocks(prog, funcStm.getBody()));
+			funcStm.setBody(rewriteStatementBlocks(prog, funcStm.getBody(), paramMap));
 		}
 		return new ArrayList<>(Collections.singletonList(funcSB));
 	}
 
-	private ArrayList<StatementBlock> rewriteDefaultStatementBlock(DMLProgram prog, StatementBlock sb) {
+	private ArrayList<StatementBlock> rewriteDefaultStatementBlock(DMLProgram prog, StatementBlock sb, Map<String, Hop> paramMap) {
 		if(sb.hasHops()) {
 			for(Hop sbHop : sb.getHops()) {
+				selectFederatedExecutionPlan(sbHop, paramMap);
 				if(sbHop instanceof FunctionOp) {
 					String funcName = ((FunctionOp) sbHop).getFunctionName();
+					Map<String, Hop> funcParamMap = getParamMap((FunctionOp) sbHop);
+					if ( paramMap != null && funcParamMap != null)
+						funcParamMap.putAll(paramMap);
+					paramMap = funcParamMap;
 					FunctionStatementBlock sbFuncBlock = prog.getBuiltinFunctionDictionary().getFunction(funcName);
-					rewriteStatementBlock(prog, sbFuncBlock);
+					rewriteStatementBlock(prog, sbFuncBlock, paramMap);
 				}
-				else
-					selectFederatedExecutionPlan(sbHop);
 			}
 		}
 		return new ArrayList<>(Collections.singletonList(sb));
+	}
+
+	/**
+	 * Return parameter map containing the mapping from parameter name to input hop
+	 * for all parameters of the function hop.
+	 * @param funcOp hop for which the mapping of parameter names to input hops are made
+	 * @return parameter map or empty map if function has no parameters
+	 */
+	private Map<String,Hop> getParamMap(FunctionOp funcOp){
+		String[] inputNames = funcOp.getInputVariableNames();
+		Map<String,Hop> paramMap = new HashMap<>();
+		if ( inputNames != null ){
+			for ( int i = 0; i < funcOp.getInput().size(); i++ )
+				paramMap.put(inputNames[i],funcOp.getInput(i));
+		}
+		return paramMap;
 	}
 
 	/**
@@ -266,21 +287,23 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 * The cost estimates of the hops are also updated when FederatedOutput is updated in the hops.
 	 *
 	 * @param roots starting point for going through the Hop DAG to update the FederatedOutput fields.
+	 * @param paramMap map of parameters in function call
 	 */
 	@SuppressWarnings("unused")
-	private void selectFederatedExecutionPlan(ArrayList<Hop> roots){
+	private void selectFederatedExecutionPlan(ArrayList<Hop> roots, Map<String, Hop> paramMap){
 		for ( Hop root : roots )
-			selectFederatedExecutionPlan(root);
+			selectFederatedExecutionPlan(root, paramMap);
 	}
 
 	/**
 	 * Select federated execution plan for every Hop in the DAG starting from given root.
 	 *
 	 * @param root starting point for going through the Hop DAG to update the federatedOutput fields
+	 * @param paramMap map of parameters in function call
 	 */
-	private void selectFederatedExecutionPlan(Hop root) {
+	private void selectFederatedExecutionPlan(Hop root, Map<String, Hop> paramMap) {
 		if ( root != null ){
-			visitFedPlanHop(root);
+			visitFedPlanHop(root, paramMap);
 			if ( HopRewriteUtils.isTerminalHop(root) )
 				terminalHops.add(root);
 		}
@@ -290,17 +313,18 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 * Go through the Hop DAG and set the FederatedOutput field and cost estimate for each Hop from leaf to given currentHop.
 	 *
 	 * @param currentHop the Hop from which the DAG is visited
+	 * @param paramMap map of parameters in function call
 	 */
-	private void visitFedPlanHop(Hop currentHop) {
+	private void visitFedPlanHop(Hop currentHop, Map<String, Hop> paramMap) {
 		// If the currentHop is in the hopRelMemo table, it means that it has been visited
 		if(hopRelMemo.containsHop(currentHop))
 			return;
 		debugLog(currentHop);
 		// If the currentHop has input, then the input should be visited depth-first
 		for(Hop input : currentHop.getInput())
-			visitFedPlanHop(input);
+			visitFedPlanHop(input, paramMap);
 		// Put FOUT and LOUT HopRels into the memo table
-		ArrayList<HopRel> hopRels = getFedPlans(currentHop);
+		ArrayList<HopRel> hopRels = getFedPlans(currentHop, paramMap);
 		// Put NONE HopRel into memo table if no FOUT or LOUT HopRels were added
 		if(hopRels.isEmpty())
 			hopRels.add(getNONEHopRel(currentHop));
@@ -319,17 +343,14 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	/**
 	 * Get the alternative plans regarding the federated output for given currentHop.
 	 * @param currentHop for which alternative federated plans are generated
+	 * @param paramMap map of parameters in function call
 	 * @return list of alternative plans
 	 */
-	private ArrayList<HopRel> getFedPlans(Hop currentHop){
+	private ArrayList<HopRel> getFedPlans(Hop currentHop, Map<String, Hop> paramMap){
 		ArrayList<HopRel> hopRels = new ArrayList<>();
 		ArrayList<Hop> inputHops = currentHop.getInput();
-		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) ){
-			Hop tWriteHop = transientWrites.get(currentHop.getName());
-			if ( tWriteHop == null )
-				throw new DMLRuntimeException("Transient write not found for " + currentHop);
-			inputHops = new ArrayList<>(Collections.singletonList(tWriteHop));
-		}
+		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) )
+			inputHops = getTransientInputs(currentHop, paramMap);
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) )
 			transientWrites.put(currentHop.getName(), currentHop);
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.FEDERATED) )
@@ -339,6 +360,25 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		if ( isLOUTSupported(currentHop) )
 			hopRels.add(new HopRel(currentHop, FederatedOutput.LOUT, hopRelMemo, inputHops));
 		return hopRels;
+	}
+
+	/**
+	 * Get transient inputs from either paramMap or transientWrites.
+	 * Inputs from paramMap has higher priority than inputs from transientWrites.
+	 * @param currentHop hop for which inputs are read from maps
+	 * @param paramMap of local parameters
+	 * @return inputs of currentHop
+	 */
+	private ArrayList<Hop> getTransientInputs(Hop currentHop, Map<String, Hop> paramMap){
+		Hop tWriteHop = null;
+		if ( paramMap != null)
+			tWriteHop = paramMap.get(currentHop.getName());
+		if ( tWriteHop == null )
+			tWriteHop = transientWrites.get(currentHop.getName());
+		if ( tWriteHop == null )
+			throw new DMLRuntimeException("Transient write not found for " + currentHop);
+		else
+			return new ArrayList<>(Collections.singletonList(tWriteHop));
 	}
 
 	/**

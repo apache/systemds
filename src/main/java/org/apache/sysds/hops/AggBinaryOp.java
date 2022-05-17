@@ -44,7 +44,7 @@ import org.apache.sysds.lops.PMMJ;
 import org.apache.sysds.lops.PMapMult;
 import org.apache.sysds.lops.Transform;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -677,7 +677,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		setLineNumbers(mult);
 
 		//result transpose (dimensions set outside)
-		ExecType outTransposeExecType = ( _federatedOutput == FEDInstruction.FederatedOutput.FOUT ) ?
+		ExecType outTransposeExecType = ( _federatedOutput == FederatedOutput.FOUT ) ?
 			ExecType.FED : ExecType.CP;
 		Lop out = new Transform(mult, ReOrgOp.TRANS, getDataType(), getValueType(), outTransposeExecType, k);
 

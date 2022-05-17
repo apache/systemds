@@ -453,9 +453,12 @@ public class ForStatementBlock extends StatementBlock
 	@Override
 	public void updateRepetitionEstimates(double repetitions){
 		this.repetitions = repetitions * getEstimateReps();
-		_fromHops.updateRepetitionEstimates(this.repetitions);
-		_toHops.updateRepetitionEstimates(this.repetitions);
-		_incrementHops.updateRepetitionEstimates(this.repetitions);
+		if ( _fromHops != null )
+			_fromHops.updateRepetitionEstimates(this.repetitions);
+		if ( _toHops != null )
+			_toHops.updateRepetitionEstimates(this.repetitions);
+		if ( _incrementHops != null )
+			_incrementHops.updateRepetitionEstimates(this.repetitions);
 		for(Statement statement : getStatements()) {
 			List<StatementBlock> children = ((ForStatement) statement).getBody();
 			for ( StatementBlock stmBlock : children ){

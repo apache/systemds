@@ -322,7 +322,8 @@ public class WhileStatementBlock extends StatementBlock
 	@Override
 	public void updateRepetitionEstimates(double repetitions){
 		this.repetitions = repetitions * DEFAULT_LOOP_REPETITIONS;
-		getPredicateHops().updateRepetitionEstimates(this.repetitions);
+		if ( getPredicateHops() != null )
+			getPredicateHops().updateRepetitionEstimates(this.repetitions);
 		for(Statement statement : getStatements()) {
 			List<StatementBlock> children = ((WhileStatement)statement).getBody();
 			for ( StatementBlock stmBlock : children ){

@@ -37,7 +37,9 @@ public class StringObject extends ScalarObject
 	
 	@Override
 	public boolean getBooleanValue() {
-		return "TRUE".equals(_value);
+		//robustness for internal conversions
+		return "TRUE".equals(_value)
+			|| "true".equals(_value);
 	}
 
 	@Override

@@ -412,7 +412,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		else if(opcode.equals("nvlist")) {
 			// obtain all input data objects and names in insertion order
 			List<Data> data = params.values().stream()
-				.map(d -> ec.containsVariable(d) ? ec.getVariable(d) : new StringObject(d))
+				.map(d -> ec.containsVariable(d) ? ec.getVariable(d) :
+					ScalarObjectFactory.createScalarObject(d))
 				.collect(Collectors.toList());
 			List<String> names = new ArrayList<>(params.keySet());
 

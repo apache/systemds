@@ -25,11 +25,12 @@ import java.util.HashMap;
 import static org.apache.sysds.common.Types.DataType;
 import static org.apache.sysds.common.Types.ValueType;
 import static org.apache.sysds.parser.DataExpression.FED_ADDRESSES;
+import static org.apache.sysds.parser.DataExpression.FED_LOCAL_OBJECT;
 import static org.apache.sysds.parser.DataExpression.FED_RANGES;
 import static org.apache.sysds.parser.DataExpression.FED_TYPE;
 
 public class Federated extends Lop {
-	private Lop _type, _addresses, _ranges;
+	private Lop _type, _addresses, _ranges, _localObject;
 	
 	public Federated(HashMap<String, Lop> inputLops, DataType dataType, ValueType valueType) {
 		super(Type.Federated, dataType, valueType);
@@ -43,6 +44,12 @@ public class Federated extends Lop {
 		_addresses.addOutput(this);
 		addInput(_ranges);
 		_ranges.addOutput(this);
+
+		if(inputLops.size() == 4) {
+			_localObject = inputLops.get(FED_LOCAL_OBJECT);
+			addInput(_localObject);
+			_localObject.addOutput(this);
+		}
 	}
 	
 	@Override
@@ -56,6 +63,22 @@ public class Federated extends Lop {
 		sb.append(_addresses.prepScalarInputOperand(addresses));
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(_ranges.prepScalarInputOperand(ranges));
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(prepOutputOperand(output));
+		return sb.toString();
+	}
+
+	@Override
+	public String getInstructions(String type, String addresses, String object, String output, String ranges) {
+		StringBuilder sb = new StringBuilder("FED");
+		sb.append(OPERAND_DELIMITOR);
+		sb.append("fedinit");
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(_type.prepScalarInputOperand(type));
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(_addresses.prepScalarInputOperand(addresses));
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(_localObject.prepScalarInputOperand(object));
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(prepOutputOperand(output));
 		return sb.toString();

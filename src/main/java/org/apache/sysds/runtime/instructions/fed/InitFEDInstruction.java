@@ -69,7 +69,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 	public static final String FED_MATRIX_IDENTIFIER = "matrix";
 	public static final String FED_FRAME_IDENTIFIER = "frame";
 
-	private CPOperand _type, _addresses, _ranges, _output;
+	private CPOperand _type, _addresses, _ranges, _localObject, _output;
 
 	public InitFEDInstruction(CPOperand type, CPOperand addresses, CPOperand ranges, CPOperand out, String opcode,
 		String instr) {
@@ -80,20 +80,39 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		_output = out;
 	}
 
+	public InitFEDInstruction(CPOperand type, CPOperand addresses, CPOperand object, CPOperand fType, CPOperand out, String opcode,
+		String instr) {
+		super(FEDType.Init, opcode, instr);
+		_type = type;
+		_addresses = addresses;
+		_localObject = object;
+		_output = out;
+	}
+
 	public static InitFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		// We need 5 parts: Opcode, Type (Frame/Matrix), Addresses (list of Strings with
 		// url/ip:port/filepath), ranges and the output Operand
-		if(parts.length != 5)
+		if(parts.length != 5 && parts.length != 6)
 			throw new DMLRuntimeException("Invalid number of operands in federated instruction: " + str);
 		String opcode = parts[0];
 
-		CPOperand type, addresses, ranges, out;
-		type = new CPOperand(parts[1]);
-		addresses = new CPOperand(parts[2]);
-		ranges = new CPOperand(parts[3]);
-		out = new CPOperand(parts[4]);
-		return new InitFEDInstruction(type, addresses, ranges, out, opcode, str);
+		if(parts.length == 5) {
+			CPOperand type, addresses, ranges, out;
+			type = new CPOperand(parts[1]);
+			addresses = new CPOperand(parts[2]);
+			ranges = new CPOperand(parts[3]);
+			out = new CPOperand(parts[4]);
+			return new InitFEDInstruction(type, addresses, ranges, out, opcode, str);
+		} else {
+			CPOperand type, addresses, objects, fType, out;
+			type = new CPOperand(parts[1]);
+			addresses = new CPOperand(parts[2]);
+			objects = new CPOperand(parts[3]);
+			fType = new CPOperand(parts[4]);
+			out = new CPOperand(parts[5]);
+			return new InitFEDInstruction(type, addresses, objects, fType, out, opcode, str);
+		}
 	}
 
 	@Override

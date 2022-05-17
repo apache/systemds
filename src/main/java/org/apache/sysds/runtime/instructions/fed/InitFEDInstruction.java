@@ -33,6 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.getUniqueFileName;
 import org.apache.sysds.api.DMLScript;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -45,6 +46,7 @@ import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
@@ -60,6 +62,7 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 public class InitFEDInstruction extends FEDInstruction implements LineageTraceable {
@@ -80,13 +83,10 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		_output = out;
 	}
 
-	public InitFEDInstruction(CPOperand type, CPOperand addresses, CPOperand object, CPOperand fType, CPOperand out, String opcode,
+	public InitFEDInstruction(CPOperand type, CPOperand addresses, CPOperand ranges, CPOperand object, CPOperand out, String opcode,
 		String instr) {
-		super(FEDType.Init, opcode, instr);
-		_type = type;
-		_addresses = addresses;
+		this(type, addresses, ranges, out, opcode, instr);
 		_localObject = object;
-		_output = out;
 	}
 
 	public static InitFEDInstruction parseInstruction(String str) {
@@ -105,14 +105,22 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 			out = new CPOperand(parts[4]);
 			return new InitFEDInstruction(type, addresses, ranges, out, opcode, str);
 		} else {
-			CPOperand type, addresses, objects, fType, out;
+			CPOperand type, addresses, object, ranges, out;
 			type = new CPOperand(parts[1]);
 			addresses = new CPOperand(parts[2]);
-			objects = new CPOperand(parts[3]);
-			fType = new CPOperand(parts[4]);
+			ranges = new CPOperand(parts[3]);
+			object = new CPOperand(parts[4]);
 			out = new CPOperand(parts[5]);
-			return new InitFEDInstruction(type, addresses, objects, fType, out, opcode, str);
+			return new InitFEDInstruction(type, addresses, ranges, object, out, opcode, str);
 		}
+	}
+
+	private String createUniqueFilename(){
+		//create new variable for symbol table and cache
+		//(existing objects gets cleared through rmvar instructions)
+		String fname = _localObject.getName();
+		// check if unique filename needs to be generated
+		return getUniqueFileName(fname);
 	}
 
 	@Override
@@ -122,21 +130,24 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		ListObject ranges = ec.getListObject(_ranges.getName());
 		List<Pair<FederatedRange, FederatedData>> feds = new ArrayList<>();
 
+		// FIXME frames
+		MatrixObject mo = _localObject != null ?  ec.getMatrixObject(_localObject) : null;
+		MatrixBlock mb =  _localObject != null ? mo.acquireReadAndRelease() : null;
+
 		if(addresses.getLength() * 2 != ranges.getLength())
-			throw new DMLRuntimeException("Federated read needs twice the amount of addresses as ranges "
-				+ "(begin and end): addresses=" + addresses.getLength() + " ranges=" + ranges.getLength());
+			throw new DMLRuntimeException("Federated read needs twice the amount of addresses as ranges " + "(begin and end): addresses=" + addresses.getLength() + " ranges=" + ranges.getLength());
 
 		//check for duplicate addresses (would lead to overwrite with common variable names)
 		// TODO relax requirement by using different execution contexts per federated data?
 		Set<String> addCheck = new HashSet<>();
-		for( Data dat : addresses.getData() )
-			if( dat instanceof StringObject ) {
-				String address = ((StringObject)dat).getStringValue();
+		for(Data dat : addresses.getData())
+			if(dat instanceof StringObject) {
+				String address = ((StringObject) dat).getStringValue();
 				if(addCheck.contains(address))
 					LOG.warn("Federated data contains address duplicates: " + addresses);
 				addCheck.add(address);
 			}
-		
+
 		Types.DataType fedDataType;
 		if(type.equalsIgnoreCase(FED_MATRIX_IDENTIFIER))
 			fedDataType = Types.DataType.MATRIX;
@@ -146,49 +157,103 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 			throw new DMLRuntimeException("type \"" + type + "\" non valid federated type");
 
 		long[] usedDims = new long[] {0, 0};
-		for(int i = 0; i < addresses.getLength(); i++) {
-			Data addressData = addresses.getData().get(i);
-			if(addressData instanceof StringObject) {
-				// We split address into url/ip, the port and file path of file to read
-				String[] parsedValues = parseURL(((StringObject) addressData).getStringValue());
-				String host = parsedValues[0];
-				int port = Integer.parseInt(parsedValues[1]);
-				String filePath = parsedValues[2];
+		if(_localObject != null) {
+			for(int i = 0; i < addresses.getLength(); i++) {
+				Data addressData = addresses.getData().get(i);
+				if(addressData instanceof StringObject) {
+					// We split address into url/ip, the port and file path of file to read
+					String[] parsedValues = parseURLNoFilePath(((StringObject) addressData).getStringValue());
+					String host = parsedValues[0];
+					int port = Integer.parseInt(parsedValues[1]);
+					String filePath = "";
 
-				if(DMLScript.FED_STATISTICS)
-					// register the federated worker for federated statistics creation
-					FederatedStatistics.registerFedWorker(host, port);
+					if(DMLScript.FED_STATISTICS)
+						// register the federated worker for federated statistics creation
+						FederatedStatistics.registerFedWorker(host, port);
 
-				// get beginning and end of data ranges
-				List<Data> rangesData = ranges.getData();
-				Data beginData = rangesData.get(i * 2);
-				Data endData = rangesData.get(i * 2 + 1);
-				if(beginData.getDataType() != Types.DataType.LIST || endData.getDataType() != Types.DataType.LIST)
-					throw new DMLRuntimeException(
-						"Federated read ranges (lower, upper) have to be lists of dimensions");
-				List<Data> beginDimsData = ((ListObject) beginData).getData();
-				List<Data> endDimsData = ((ListObject) endData).getData();
+					// get beginning and end of data ranges
+					List<Data> rangesData = ranges.getData();
+					Data beginData = rangesData.get(i * 2);
+					Data endData = rangesData.get(i * 2 + 1);
+					if(beginData.getDataType() != Types.DataType.LIST || endData.getDataType() != Types.DataType.LIST)
+						throw new DMLRuntimeException(
+							"Federated read ranges (lower, upper) have to be lists of dimensions");
+					List<Data> beginDimsData = ((ListObject) beginData).getData();
+					List<Data> endDimsData = ((ListObject) endData).getData();
 
-				// fill begin and end dims
-				long[] beginDims = new long[beginDimsData.size()];
-				long[] endDims = new long[beginDims.length];
-				for(int d = 0; d < beginDims.length; d++) {
-					beginDims[d] = ((ScalarObject) beginDimsData.get(d)).getLongValue();
-					endDims[d] = ((ScalarObject) endDimsData.get(d)).getLongValue();
+					// fill begin and end dims
+					long[] beginDims = new long[beginDimsData.size()];
+					long[] endDims = new long[beginDims.length];
+					for(int d = 0; d < beginDims.length; d++) {
+						beginDims[d] = ((ScalarObject) beginDimsData.get(d)).getLongValue();
+						endDims[d] = ((ScalarObject) endDimsData.get(d)).getLongValue();
+					}
+					usedDims[0] = Math.max(usedDims[0], endDims[0]);
+					usedDims[1] = Math.max(usedDims[1], endDims[1]);
+
+					// slice matrix and create file
+					MatrixBlock slice = mb.slice((int) beginDims[0], (int) endDims[0]-1, (int) beginDims[1], (int) endDims[1]-1, true);
+					MatrixObject moSliced = ExecutionContext.createMatrixObject(slice); //FIXME return FederatedTestUtils.putMatrixBlock(mb, addr);
+
+					try {
+						FederatedData federatedData = new FederatedData(fedDataType,
+							new InetSocketAddress(InetAddress.getByName(host), port), moSliced.getFileName());
+						feds.add(new ImmutablePair<>(new FederatedRange(beginDims, endDims), federatedData));
+					}
+					catch(UnknownHostException e) {
+						throw new DMLRuntimeException("federated host was unknown: " + host);
+					}
 				}
-				usedDims[0] = Math.max(usedDims[0], endDims[0]);
-				usedDims[1] = Math.max(usedDims[1], endDims[1]);
-				try {
-					FederatedData federatedData = new FederatedData(fedDataType,
-						new InetSocketAddress(InetAddress.getByName(host), port), filePath);
-					feds.add(new ImmutablePair<>(new FederatedRange(beginDims, endDims), federatedData));
-				}
-				catch(UnknownHostException e) {
-					throw new DMLRuntimeException("federated host was unknown: " + host);
+				else {
+					throw new DMLRuntimeException("federated instruction only takes strings as addresses");
 				}
 			}
-			else {
-				throw new DMLRuntimeException("federated instruction only takes strings as addresses");
+		}
+		else {
+			for(int i = 0; i < addresses.getLength(); i++) {
+				Data addressData = addresses.getData().get(i);
+				if(addressData instanceof StringObject) {
+					// We split address into url/ip, the port and file path of file to read
+					String[] parsedValues = parseURL(((StringObject) addressData).getStringValue());
+					String host = parsedValues[0];
+					int port = Integer.parseInt(parsedValues[1]);
+					String filePath = parsedValues[2];
+
+					if(DMLScript.FED_STATISTICS)
+						// register the federated worker for federated statistics creation
+						FederatedStatistics.registerFedWorker(host, port);
+
+					// get beginning and end of data ranges
+					List<Data> rangesData = ranges.getData();
+					Data beginData = rangesData.get(i * 2);
+					Data endData = rangesData.get(i * 2 + 1);
+					if(beginData.getDataType() != Types.DataType.LIST || endData.getDataType() != Types.DataType.LIST)
+						throw new DMLRuntimeException("Federated read ranges (lower, upper) have to be lists of dimensions");
+					List<Data> beginDimsData = ((ListObject) beginData).getData();
+					List<Data> endDimsData = ((ListObject) endData).getData();
+
+					// fill begin and end dims
+					long[] beginDims = new long[beginDimsData.size()];
+					long[] endDims = new long[beginDims.length];
+					for(int d = 0; d < beginDims.length; d++) {
+						beginDims[d] = ((ScalarObject) beginDimsData.get(d)).getLongValue();
+						endDims[d] = ((ScalarObject) endDimsData.get(d)).getLongValue();
+					}
+
+					usedDims[0] = Math.max(usedDims[0], endDims[0]);
+					usedDims[1] = Math.max(usedDims[1], endDims[1]);
+					try {
+						FederatedData federatedData = new FederatedData(fedDataType,
+							new InetSocketAddress(InetAddress.getByName(host), port), filePath);
+						feds.add(new ImmutablePair<>(new FederatedRange(beginDims, endDims), federatedData));
+					}
+					catch(UnknownHostException e) {
+						throw new DMLRuntimeException("federated host was unknown: " + host);
+					}
+				}
+				else {
+					throw new DMLRuntimeException("federated instruction only takes strings as addresses");
+				}
 			}
 		}
 		if(type.equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
@@ -206,6 +271,38 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		}
 		else {
 			throw new DMLRuntimeException("type \"" + type + "\" non valid federated type");
+		}
+	}
+
+
+	public static String[] parseURLNoFilePath(String input) {
+		try {
+			// Artificially making it http protocol.
+			// This is to avoid malformed address error in the URL passing.
+			// TODO: Construct new protocol name for Federated communication
+			URL address = new URL("http://" + input);
+			String host = address.getHost();
+			if(host.length() == 0)
+				throw new IllegalArgumentException("Missing Host name for federated address");
+			// The current system does not support ipv6, only ipv4.
+			// TODO: Support IPV6 address for Federated communication
+			String ipRegex = "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+			if(host.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$") && !host.matches(ipRegex))
+				throw new IllegalArgumentException("Input Host address looks like an IP address but is outside range");
+			int port = address.getPort();
+			if(port == -1)
+				port = DMLConfig.DEFAULT_FEDERATED_PORT;
+			if(address.getQuery() != null)
+				throw new IllegalArgumentException("Query is not supported");
+
+			if(address.getRef() != null)
+				throw new IllegalArgumentException("Reference is not supported");
+
+			return new String[] {host, String.valueOf(port)};
+		}
+		catch(MalformedURLException e) {
+			throw new IllegalArgumentException(
+				"federated address `" + input + "` does not fit required URL pattern of \"host:port/directory\"", e);
 		}
 	}
 

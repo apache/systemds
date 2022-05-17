@@ -4147,6 +4147,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return slice(rl, ru, cl, cu, true, ret);
 	}
 
+	/**
+	 * Slice out a row block
+	 * @param rl The row lower to start from
+	 * @param ru The row lower to end at
+	 * @param cl The col lower to start from
+	 * @param cu The col lower to end at
+	 * @param deep Deep copy or not
+	 * @return The sliced out matrix block.
+	 */
 	public final MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep){
 		return slice(rl, ru, cl, cu, deep, null);
 	}

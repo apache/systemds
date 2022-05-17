@@ -69,7 +69,7 @@ public class Federated extends Lop {
 	}
 
 	@Override
-	public String getInstructions(String type, String addresses, String object, String output, String ranges) {
+	public String getInstructions(String type, String addresses, String ranges, String object, String output) {
 		StringBuilder sb = new StringBuilder("FED");
 		sb.append(OPERAND_DELIMITOR);
 		sb.append("fedinit");
@@ -77,6 +77,8 @@ public class Federated extends Lop {
 		sb.append(_type.prepScalarInputOperand(type));
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(_addresses.prepScalarInputOperand(addresses));
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(_ranges.prepScalarInputOperand(ranges));
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(_localObject.prepScalarInputOperand(object));
 		sb.append(OPERAND_DELIMITOR);

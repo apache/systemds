@@ -37,15 +37,15 @@ innerRep=300
 is=("100 1000 5000")
 js=("100 1000 5000")
 ks=("100 1000 5000")
-
-is=("1000")
-js=("1000")
-ks=("1000")
-# spar=("1.0 0.35 0.1 0.01")
-# spar=("1.0 0.01")
+spar=("1.0 0.35 0.1 0.01")
 confs=("conf/std.xml conf/mkl.xml conf/openblas.xml")
-confs=("conf/mkl.xml")
-confs=("conf/openblas.xml")
+
+# is=("1000")
+# js=("1000")
+# ks=("1000")
+# spar=("1.0 0.01")
+# confs=("conf/mkl.xml")
+# confs=("conf/openblas.xml")
 
 # Logging output
 mkdir -p logs

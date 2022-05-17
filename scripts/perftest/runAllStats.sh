@@ -59,3 +59,4 @@ do
    ./runStratStats.sh ${BASE3}/${d}/data ${BASE3}/${d}/Xcid ${BASE3}/${d}/Ycid ${BASE3} ${COMMAND} &> logs/runStrats-stats_${d}.out;
 done
 
+echo -e "\n\n" >> results/times.txt

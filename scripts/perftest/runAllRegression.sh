@@ -71,3 +71,5 @@ do
       ./${f}.sh ${BASE}/X${d} ${BASE}/y${d} ${BASE} ${MAXITR} ${COMMAND} &> logs/${f}_${d}.out;
    done
 done
+
+echo -e "\n\n" >> results/times.txt

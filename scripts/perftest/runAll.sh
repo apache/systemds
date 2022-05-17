@@ -34,16 +34,17 @@ if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 CMD="systemds"
 
 # Max memory of data to be benchmarked
-MAXMEM=80 # Possible values: 80/80MB, 800/800MB, 8000/8000MB/8GB, 80000/80000MB/80GB, 800000/800000MB/800GB
+MAXMEM=80000 # Possible values: 80/80MB, 800/800MB, 8000/8000MB/8GB, 80000/80000MB/80GB, 800000/800000MB/800GB
 MAXMEM=${MAXMEM%"MB"}; MAXMEM=${MAXMEM/GB/"000"}
 
 # Set properties
 export LOG4JPROP='conf/log4j-off.properties'
 export SYSDS_QUIET=1
 export SYSDS_EXEC_MODE="hybrid"
-export SYSDS_EXEC_MODE="singlenode"
+# export SYSDS_EXEC_MODE="singlenode"
 # export SYSDS_DISTRIBUTED=1
-export SYSTEMDS_STANDALONE_OPTS="-Xmx10g -Xms10g -Xmn2000m"
+# export SYSTEMDS_STANDALONE_OPTS="-Xmx10g -Xms10g -Xmn2000m"
+export SYSTEMDS_STANDALONE_OPTS="-Xmx500g -Xms500g -Xmn50000m"
 
 # Possible lines to initialize Intel MKL, depending on version and install location
 if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
@@ -51,9 +52,6 @@ if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; t
 else
     . /opt/intel/bin/compilervars.sh intel64
 fi
-#    . ~/intel/bin/compilervars.sh intel64
-#    . ~/intel/oneapi/setvars.sh intel64
-#    . /opt/intel/bin/compilervars.sh intel64
 
 # make dirs if not exsisting
 mkdir -p logs 
@@ -83,19 +81,19 @@ echo -e "\n\n" >> results/times.txt
 
 ### Micro Benchmarks:
 ./MatrixMult.sh ${CMD}
-# ./MatrixTranspose.sh ${CMD}
+./MatrixTranspose.sh ${CMD}
 
 # Federate benchmark
 #./fed/runAllFed.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 
 ### Algorithms Benchmarks:
-# ./runAllBinomial.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-# ./runAllMultinomial.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-# ./runAllRegression.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-# ./runAllStats.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-# ./runAllClustering.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-# ./runAllDimensionReduction.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-# ./runAllALS.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllBinomial.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllMultinomial.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllRegression.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllStats.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllClustering.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllDimensionReduction.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllALS.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 
 # TODO The following benchmarks have yet to be written. The decision tree algorithms additionally need to be fixed.
 # add stepwise Linear 

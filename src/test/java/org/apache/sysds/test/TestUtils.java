@@ -3021,6 +3021,10 @@ public class TestUtils
 		return host + ':' + port + '/' + input;
 	}
 
+	public static String federatedAddressNoInput(String host, int port) {
+		return host + ':' + port;
+	}
+
 	public static double gaussian_probability (double point)
 	//  "Handbook of Mathematical Functions", ed. by M. Abramowitz and I.A. Stegun,
 	//  U.S. Nat-l Bureau of Standards, 10th print (Dec 1972), Sec. 7.1.26, p. 299

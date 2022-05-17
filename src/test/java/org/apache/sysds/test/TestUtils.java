@@ -1839,11 +1839,18 @@ public class TestUtils
 	public static double[][] generateTestMatrix(int rows, int cols, double min, double max, double sparsity, long seed) {
 		double[][] matrix = new double[rows][cols];
 		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
-		for (int i = 0; i < rows; i++) {
-			for (int j = 0; j < cols; j++) {
-				if (random.nextDouble() > sparsity)
-					continue;
-				matrix[i][j] = (random.nextDouble() * (max - min) + min);
+		if(sparsity >= 1.0){
+			for (int i = 0; i < rows; i++) 
+				for (int j = 0; j < cols; j++) 
+					matrix[i][j] = (random.nextDouble() * (max - min) + min);
+		}
+		else{
+			for (int i = 0; i < rows; i++) {
+				for (int j = 0; j < cols; j++) {
+					if (random.nextDouble() > sparsity)
+						continue;
+					matrix[i][j] = (random.nextDouble() * (max - min) + min);
+				}
 			}
 		}
 

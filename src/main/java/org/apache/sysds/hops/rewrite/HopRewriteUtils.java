@@ -1167,7 +1167,8 @@ public class HopRewriteUtils {
 	public static boolean isTerminalHop(Hop hop){
 		return isUnary(hop, OpOp1.PRINT)
 			|| isNary(hop, OpOpN.PRINTF)
-			|| isData(hop, OpOpData.PERSISTENTWRITE);
+			|| isData(hop, OpOpData.PERSISTENTWRITE)
+			|| isData(hop, OpOpData.TRANSIENTWRITE);
 	}
 	
 	public static boolean isMatrixMultiply(Hop hop) {

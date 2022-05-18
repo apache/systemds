@@ -31,6 +31,8 @@ MAXMEM=$3
 
 FORMAT="binary"
 
+echo "-- Generating stats data..." >> results/times.txt;
+
 #XS data 10K rows
 if [ $MAXMEM -ge 80 ]; then
   ${CMD} -f ../datagen/genRandData4StratStats.dml --explain --stats --nvargs nr=10000 nf=100 D=${BASE}/A_10k/data Xcid=${BASE}/A_10k/Xcid Ycid=${BASE}/A_10k/Ycid A=${BASE}/A_10k/A fmt=$FORMAT &

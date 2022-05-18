@@ -33,6 +33,8 @@ FORMAT="binary"
 DENSE_SP=0.9
 SPARSE_SP=0.01
 
+echo "-- Generating multinomial data..." >> results/times.txt;
+
 #generate XS scenarios (80MB)
 if [ $MAXMEM -ge 80 ]; then
   ${CMD} -f ../datagen/genRandData4Multinomial.dml $DASH-args 10000 1000 $DENSE_SP 5 0 $BASE/X10k_1k_dense_k5 $BASE/y10k_1k_dense_k5 $FORMAT 1 & pidDense80=$!

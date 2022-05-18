@@ -26,30 +26,50 @@ then
   exit 1;
 fi
 
-# Optional argument that can be a folder name for where generated data is stored
-TEMPFOLDER=$1
-if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
-
 # Command to be executed
 CMD="systemds"
+TEMPFOLDER="temp"
 
 # Max memory of data to be benchmarked
-MAXMEM=80000 # Possible values: 80/80MB, 800/800MB, 8000/8000MB/8GB, 80000/80000MB/80GB, 800000/800000MB/800GB
-MAXMEM=${MAXMEM%"MB"}; MAXMEM=${MAXMEM/GB/"000"}
+# Possible values: 80/80MB, 800/800MB, 8000/8000MB/8GB, 80000/80000MB/80GB, 800000/800000MB/800GB
+MAXMEM=80
 
 # Set properties
 export LOG4JPROP='conf/log4j-off.properties'
 export SYSDS_QUIET=1
 export SYSDS_EXEC_MODE="hybrid"
-# export SYSDS_EXEC_MODE="singlenode"
-# export SYSDS_DISTRIBUTED=1
-# export SYSTEMDS_STANDALONE_OPTS="-Xmx10g -Xms10g -Xmn2000m"
-export SYSTEMDS_STANDALONE_OPTS="-Xmx500g -Xms500g -Xmn50000m"
+export SYSTEMDS_STANDALONE_OPTS="-Xmx10g -Xms10g -Xmn2000m"
+export SYSDS_DISTRIBUTED=0
+
+if [ "$HOSTNAME" = "alpha" ]; then
+  # Just to make it easy to run on our machine without having to change anything.
+  export SYSTEMDS_STANDALONE_OPTS="-Xmx500g -Xms500g -Xmn50000m"
+  export SYSDS_DISTRIBUTED=1
+  export SYSTEMDS_DISTRIBUTED_OPTS="\
+        --master yarn \
+        --deploy-mode client \
+        --driver-memory 700g \
+        --conf spark.driver.extraJavaOptions=\"-Xms700g -Xmn70g -Dlog4j.configuration=file:$LOG4JPROP\" \
+        --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROP\" \
+        --conf spark.executor.heartbeatInterval=100s \
+        --files $LOG4JPROP \
+        --conf spark.network.timeout=512s \
+        --num-executors 6 \
+        --executor-memory 105g \
+        --executor-cores 32 \
+        "
+  MAXMEM="8GB"
+elif [ "$HOSTNAME" = "XPS-15-7590" ]; then
+  MAXMEM=800
+fi
+
+# Fix max mem to format.
+MAXMEM=${MAXMEM%"MB"}; MAXMEM=${MAXMEM/GB/"000"}
 
 # Possible lines to initialize Intel MKL, depending on version and install location
 if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
     . ~/intel/bin/compilervars.sh intel64
-else
+elif [ -d /opt ] && [ -d /opt/intel ] && [ -d /opt/intel/bin ]; then
     . /opt/intel/bin/compilervars.sh intel64
 fi
 
@@ -64,24 +84,18 @@ rm -f results/times.txt
 date +"%Y-%m-%d-%T" >> results/times.txt
 echo -e "\n\n" >> results/times.txt
 
-### Data Generation
-# echo "-- Generating binomial data..." >> results/times.txt;
-# ./genBinomialData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genBinomialData.out
-# echo "-- Generating multinomial data..." >> results/times.txt;
-# ./genMultinomialData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genMultinomialData.out
-# echo "-- Generating stats data..." >> results/times.txt;
-# ./genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStatsData.out
-# ./genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStratStatsData.out
-# echo "-- Generating clustering data..." >> results/times.txt;
-# ./genClusteringData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genClusteringData.out
-# echo "-- Generating Dimension Reduction data." >> results/times.txt;
-# ./genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genDimensionReductionData.out
-# echo "-- Generating ALS data." >> results/times.txt;
-# ./genALSData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genALSData.out
+## Data Gen
+./datagen/genBinomialData.sh ${COMMAND} ${TEMPFOLDER} ${MAXMEM} &> logs/genBinomialData.out
+./datagen/genMultinomialData.sh ${COMMAND} ${TEMPFOLDER} ${MAXMEM} &> logs/genMultinomialData.out
+./datagen/genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStatsData.out
+./datagen/genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStratStatsData.out
+./datagen/genClusteringData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genClusteringData.out
+./datagen/genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genDimensionReductionData.out
+./datagen/genALSData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genALSData.out
 
 ### Micro Benchmarks:
-./MatrixMult.sh ${CMD}
-./MatrixTranspose.sh ${CMD}
+# ./MatrixMult.sh ${CMD}
+# ./MatrixTranspose.sh ${CMD}
 
 # Federate benchmark
 #./fed/runAllFed.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}

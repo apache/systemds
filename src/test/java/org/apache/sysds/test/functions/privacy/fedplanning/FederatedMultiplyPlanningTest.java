@@ -130,7 +130,6 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedMultiplyDoubleHop() {
 		String[] expectedHeavyHitters = new String[]{"fed_*", "fed_fedinit", "fed_r'", "fed_ba+*"};
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_7, expectedHeavyHitters);

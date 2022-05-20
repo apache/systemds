@@ -44,7 +44,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorSample;
+import org.apache.sysds.runtime.compress.estim.ComEstSample;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
@@ -484,7 +484,7 @@ public class MultiColumnEncoder implements Encoder {
 		int k = OptimizerUtils.getTransformNumThreads();
 		int sampleSize = (int) (0.1 * in.getNumRows());
 		int seed = (int) System.nanoTime();
-		int[] sampleInds = CompressedSizeEstimatorSample.getSortedSample(in.getNumRows(), sampleSize, seed, 1);
+		int[] sampleInds = ComEstSample.getSortedSample(in.getNumRows(), sampleSize, seed, 1);
 
 		// Concurrent (column-wise) recode map size estimation
 		ExecutorService myPool = CommonThreadPool.get(k);

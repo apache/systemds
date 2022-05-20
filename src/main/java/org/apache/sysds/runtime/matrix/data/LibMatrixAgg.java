@@ -86,8 +86,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * 
  * TODO next opcode extensions: a+, colindexmax
  */
-public class LibMatrixAgg 
-{
+public class LibMatrixAgg {
 	// private static final Log LOG = LogFactory.getLog(LibMatrixAgg.class.getName());
 
 	//internal configuration parameters
@@ -1534,12 +1533,13 @@ public class LibMatrixAgg
 				break;
 			}
 			case PROD: { //PROD
+				long nnz = in.getNonZeros();
 				if( ixFn instanceof ReduceAll ) // PROD
-					d_uam(a, c, n, rl, ru );
+					d_uam(a, c, n, rl, ru , nnz);
 				else if( ixFn instanceof ReduceCol ) //ROWPROD
 					d_uarm(a, c, n, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLPROD
-					d_uacm(a, c, n, rl, ru);
+					d_uacm(a, c, n, rl, ru, nnz);
 				break;
 			}
 			
@@ -2300,13 +2300,16 @@ public class LibMatrixAgg
 	/**
 	 * PROD, opcode: ua*, dense input.
 	 * 
-	 * @param a ?
-	 * @param c ?
-	 * @param n ?
+	 * @param a dense input block
+	 * @param c dense output block
+	 * @param n number columns in input
 	 * @param rl row lower index
 	 * @param ru row upper index
+	 * @param nnz number non zero values in matrix block
 	 */
-	private static void d_uam( DenseBlock a, DenseBlock c, int n, int rl, int ru ) {
+	private static void d_uam( DenseBlock a, DenseBlock c, int n, int rl, int ru, long nnz ) {
+		if(nnz < (long)a.getDim(0) * n)
+			return; // if the input contains a zero the return is zero.
 		final int bil = a.index(rl);
 		final int biu = a.index(ru-1);
 		double tmp = 1;
@@ -2321,9 +2324,9 @@ public class LibMatrixAgg
 	/**
 	 * ROWPROD, opcode: uar*, dense input.
 	 * 
-	 * @param a ?
-	 * @param c ?
-	 * @param n ?
+	 * @param a dense input block
+	 * @param c dense output block
+	 * @param n number columns in input
 	 * @param rl row lower index
 	 * @param ru row upper index
 	 */
@@ -2336,26 +2339,60 @@ public class LibMatrixAgg
 	/**
 	 * COLPROD, opcode: uac*, dense input.
 	 * 
-	 * @param a ?
-	 * @param c ?
-	 * @param n ?
+	 * @param a dense input block
+	 * @param c dense output block
+	 * @param n number columns in input
 	 * @param rl row lower index
 	 * @param ru row upper index
+	 * @param nnz number non zeros in matrix
 	 */
-	private static void d_uacm( DenseBlock a, DenseBlock c, int n, int rl, int ru ) {
-		double[] lc = c.set(1).values(0); //guaranteed single row
-		for( int i=rl; i<ru; i++ )
-			LibMatrixMult.vectMultiplyWrite(a.values(i), lc, lc, a.pos(i), 0, 0, n);
+	private static void d_uacm( DenseBlock a, DenseBlock c, int n, int rl, int ru, long nnz ) {
+		double[] lc = c.set(1).values(0); // guaranteed single row
+		if(nnz < (double) a.getDim(0) * n * 0.90) { // 90% sparsity.
+			// process with early termination if a zero is hit in all columns.
+			final int blockz = 32;
+			for(int block = rl; block < ru; block += blockz) {
+				// process blocks of rows before checking for zero
+				final int be = Math.min(block + blockz, ru);
+				for(int i = block; i < be; i++)
+					for(int ci = 0, ai = i * n; ci < n; ci++, ai++)
+						lc[ci] *= a.values(i)[ai];
+
+				// Zeros check
+				int nz = 0;
+				for(double d : lc)
+					nz += d != 0 ? 1 : 0;
+				if(nz == 0)
+					return;
+			}
+			if(!NAN_AWARENESS)
+				correctNan(lc);
+		}
+		else {// full processing
+			for(int i = rl; i < ru; i++)
+				for(int ci = 0, ai = i * n; ci < n; ci++, ai++)
+					lc[ci] *= a.values(i)[ai];
+			if(!NAN_AWARENESS)
+				correctNan(lc);
+		}
+	}
+
+	protected static void correctNan(double[] res) {
+		// since there is no nan values every in a dictionary, we exploit that
+		// nan oly occur if we multiplied infinity with 0.
+		for(int j = 0; j < res.length; j++)
+			if(Double.isNaN(res[j]))
+				res[j] = 0;
 	}
 	
 	/**
 	 * SUM, opcode: uak+, sparse input. 
 	 * 
-	 * @param a ?
-	 * @param c ?
-	 * @param n ?
-	 * @param kbuff ?
-	 * @param kplus ?
+	 * @param a dense input block
+	 * @param c dense output block
+	 * @param n number columns in input
+	 * @param kbuff Kahn buffer
+	 * @param kplus Kahn operator
 	 * @param rl row lower index
 	 * @param ru row upper index
 	 */
@@ -3151,7 +3188,7 @@ public class LibMatrixAgg
 		}
 		for(int j = 0; j < n; j++)
 			if(cnt[j] < ru - rl)
-				lc[j] *= 0;
+				lc[j] = 0;
 	}
 	
 	

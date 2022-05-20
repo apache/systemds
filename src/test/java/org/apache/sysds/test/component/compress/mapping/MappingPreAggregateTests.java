@@ -305,8 +305,8 @@ public class MappingPreAggregateTests {
 	private static class OneOffset extends OffsetByte {
 		private static final long serialVersionUID = 1910028460503867232L;
 
-		private OneOffset(byte[] offsets, int offsetToFirst, int offsetToLast) {
-			super(offsets, offsetToFirst, offsetToLast);
+		private OneOffset(byte[] offsets, int offsetToFirst, int offsetToLast, int length) {
+			super(offsets, offsetToFirst, offsetToLast, length);
 		}
 
 		protected static OneOffset create(int length) {
@@ -315,7 +315,7 @@ public class MappingPreAggregateTests {
 			byte[] offsets = new byte[length - 1];
 			for(int i = 0; i < offsets.length; i++)
 				offsets[i] = 1;
-			return new OneOffset(offsets, offsetToFirst, offsetToLast);
+			return new OneOffset(offsets, offsetToFirst, offsetToLast, length);
 		}
 	}
 }

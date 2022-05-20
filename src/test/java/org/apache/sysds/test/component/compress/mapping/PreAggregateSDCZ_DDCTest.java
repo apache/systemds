@@ -96,7 +96,7 @@ public class PreAggregateSDCZ_DDCTest {
 	@Test
 	public void preAggregateSDCZ_DDC() {
 		try {
-			Dictionary ret = new Dictionary(new double[expected.length]);
+			Dictionary ret = Dictionary.createNoCheck(new double[expected.length]);
 			m.preAggregateSDCZ_DDC(tm, td, of, ret, nCol);
 			compare(ret.getValues(), expected, 0.000001);
 		}
@@ -124,7 +124,7 @@ public class PreAggregateSDCZ_DDCTest {
 		final AMapToData tm = MappingTestUtil.createRandomMap(nRows, nUnique2, r);
 
 		double[] dv = new double[nUnique2 * nCol];
-		ADictionary td = new Dictionary(dv);
+		ADictionary td = Dictionary.createNoCheck(dv);
 
 		for(int i = 0; i < dv.length; i++)
 			dv[i] = r.nextDouble();
@@ -133,7 +133,7 @@ public class PreAggregateSDCZ_DDCTest {
 
 		try {
 			// use implementation to get baseline.
-			m.preAggregateSDCZ_DDC(tm, td, of, new Dictionary(exp), nCol);
+			m.preAggregateSDCZ_DDC(tm, td, of, Dictionary.createNoCheck(exp), nCol);
 			createAllPermutations(tests, m, tm, of, nUnique1, nUnique2, td, exp, nCol);
 		}
 		catch(Exception e) {

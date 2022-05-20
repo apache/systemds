@@ -185,6 +185,18 @@ public class ReadersTestCompareReaders {
 	}
 
 	@Test
+	public void testCompareSparseDenseLastFewRows() {
+		final int nRow = m.getNumRows();
+		if(nRow > 30) {
+			final int start = m.getNumRows() - 5;
+			final int end = m.getNumRows() - 1;
+			ReaderColumnSelection a = ReaderColumnSelection.createReader(m, cols, false, start, end);
+			ReaderColumnSelection b = ReaderColumnSelection.createReader(sm, cols, false, start, end);
+			compareReaders(a, b, start, end);
+		}
+	}
+
+	@Test
 	public void testCompareDenseTransposedDense() {
 		ReaderColumnSelection a = ReaderColumnSelection.createReader(m, cols, false);
 		ReaderColumnSelection b = ReaderColumnSelection.createReader(tm, cols, true);
@@ -321,7 +333,7 @@ public class ReadersTestCompareReaders {
 		if(alen - apos > 2) {
 			final int end = idx[idx.length - 1];
 			final int start = Math.max(0, end - 2);
-			if(end > start){
+			if(end > start) {
 				ReaderColumnSelection a = ReaderColumnSelection.createReader(m, cols, false, start, end);
 				ReaderColumnSelection b = ReaderColumnSelection.createReader(tsm, cols, true, start, end);
 				compareReaders(a, b, start, end);
@@ -339,6 +351,22 @@ public class ReadersTestCompareReaders {
 
 			final int end = idx[alen - 1];
 			final int start = idx[alen - 2];
+			ReaderColumnSelection a = ReaderColumnSelection.createReader(m, cols, false, start, end);
+			ReaderColumnSelection b = ReaderColumnSelection.createReader(tsm, cols, true, start, end);
+			compareReaders(a, b, start, end);
+		}
+	}
+
+	@Test
+	public void testCompareDenseTransposedSparseBasedOnValueOffsetsOnLast() {
+		SparseBlock sb = tsm.getSparseBlock();
+		final int[] idx = sb.indexes(cols[0]);
+		final int apos = sb.pos(cols[0]);
+		final int alen = sb.size(cols[0]) + apos;
+		if(alen - apos > 2) {
+
+			final int end = tsm.getNumColumns();
+			final int start = idx[alen - 1];
 			ReaderColumnSelection a = ReaderColumnSelection.createReader(m, cols, false, start, end);
 			ReaderColumnSelection b = ReaderColumnSelection.createReader(tsm, cols, true, start, end);
 			compareReaders(a, b, start, end);

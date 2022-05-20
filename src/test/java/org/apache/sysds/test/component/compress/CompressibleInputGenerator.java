@@ -146,7 +146,7 @@ public class CompressibleInputGenerator {
 				if(valuePointer == values.size() && after == 0) {
 					while(pointer < rows) {
 						if(transpose)
-							output.quickSetValue(colNr, pointer, values.get(valuePointer));
+							output.quickSetValue(colNr, pointer, values.get(nrUnique - 1));
 						else
 							output.quickSetValue(pointer, colNr, values.get(nrUnique - 1));
 						pointer++;

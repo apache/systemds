@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -63,10 +64,12 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	private ColGroupSDCSingleZeros(int[] colIndices, int numRows, ADictionary dict, AOffset offsets,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, offsets, cachedCounts);
-		_zeros = true;
+		if(offsets.getSize() * 2 > numRows + 2)
+			throw new DMLCompressionException("Wrong direction of SDCSingleZero compression should be other way " + numRows
+				+ " vs " + _indexes + "\n" + this);
 	}
 
-	protected static AColGroup create(int[] colIndices, int numRows, ADictionary dict, AOffset offsets,
+	public static AColGroup create(int[] colIndices, int numRows, ADictionary dict, AOffset offsets,
 		int[] cachedCounts) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
@@ -92,13 +95,15 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			return;
 		else if(it.value() >= ru)
 			_indexes.cacheIterator(it, ru);
-		else
+		else{
 			decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, values, it);
+			_indexes.cacheIterator(it, ru);
+		}
 	}
 
 	@Override
-	public void decompressToDenseBlockDenseDictionaryWithProvidedIterator(DenseBlock db, int rl, int ru, int offR, int offC, double[] values,
-		AIterator it) {
+	public void decompressToDenseBlockDenseDictionaryWithProvidedIterator(DenseBlock db, int rl, int ru, int offR,
+		int offC, double[] values, AIterator it) {
 		final int last = _indexes.getOffsetToLast();
 		if(it == null || it.value() >= ru || rl > last)
 			return;
@@ -106,10 +111,9 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			decompressToDenseBlockDenseDictionaryPost(db, rl, ru, offR, offC, values, it);
 		else {
 			if(_colIndexes.length == 1 && db.getDim(1) == 1)
-				decompressToDenseBlockDenseDictionaryPreSingleColOutContiguous(db, rl, ru, offR, offC, values, it);
+				decompressToDenseBlockDenseDictionaryPreSingleColOutContiguous(db, rl, ru, offR, offC, values[0], it);
 			else
 				decompressToDenseBlockDenseDictionaryPre(db, rl, ru, offR, offC, values, it);
-			_indexes.cacheIterator(it, ru);
 		}
 	}
 
@@ -134,11 +138,8 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	private void decompressToDenseBlockDenseDictionaryPreSingleColOutContiguous(DenseBlock db, int rl, int ru, int offR,
-		int offC, double[] values, AIterator it) {
-		// final int nCol = _colIndexes.length;
+		int offC, double v, AIterator it) {
 		final double[] c = db.values(0);
-		// final int off = db.pos(row);
-		final double v = values[0];
 		int r = it.value();
 		while(r < ru) {
 			c[offR + r] += v;
@@ -169,36 +170,74 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			return;
 		else if(it.value() >= ru)
 			_indexes.cacheIterator(it, ru);
-		else if(ru > _indexes.getOffsetToLast()) {
-			throw new NotImplementedException();
+
+		final int last = _indexes.getOffsetToLast();
+		if(ru > last)
+			decompressToDenseBlockSparseDictionaryPost(db, rl, ru, offR, offC, sb, it, last);
+		else
+			decompressToDenseBlockSparseDictionaryPre(db, rl, ru, offR, offC, sb, it);
+
+	}
+
+	private final void decompressToDenseBlockSparseDictionaryPost(DenseBlock db, int rl, int ru, int offR, int offC,
+		SparseBlock sb, AIterator it, int last) {
+		final int apos = sb.pos(0);
+		final int alen = sb.size(0) + apos;
+		final double[] avals = sb.values(0);
+		final int[] aix = sb.indexes(0);
+		while(true) {
+			final int idx = offR + it.value();
+			final double[] c = db.values(idx);
+
+			final int off = db.pos(idx) + offC;
+			for(int j = apos; j < alen; j++)
+				c[off + _colIndexes[aix[j]]] += avals[j];
+			if(it.value() == last)
+				return;
+			it.next();
 		}
-		else {
-			final int apos = sb.pos(0);
-			final int alen = sb.size(0) + apos;
-			final int[] aix = sb.indexes(0);
-			final double[] avals = sb.values(0);
-			while(it.isNotOver(ru)) {
-				final int row = offR + it.value();
-				final double[] c = db.values(row);
-				final int off = db.pos(row);
-				for(int j = apos; j < alen; j++)
-					c[off + _colIndexes[aix[j]] + offC] += avals[j];
-				it.next();
-			}
-			_indexes.cacheIterator(it, ru);
+	}
+
+	private final void decompressToDenseBlockSparseDictionaryPre(DenseBlock db, int rl, int ru, int offR, int offC,
+		SparseBlock sb, AIterator it) {
+		final int apos = sb.pos(0);
+		final int alen = sb.size(0) + apos;
+		final int[] aix = sb.indexes(0);
+		final double[] avals = sb.values(0);
+		while(it.isNotOver(ru)) {
+			final int row = offR + it.value();
+			final double[] c = db.values(row);
+			final int off = db.pos(row);
+			for(int j = apos; j < alen; j++)
+				c[off + _colIndexes[aix[j]] + offC] += avals[j];
+			it.next();
 		}
+		_indexes.cacheIterator(it, ru);
 	}
 
 	@Override
 	protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
 		SparseBlock sb) {
 		final AIterator it = _indexes.getIterator(rl);
+		final int last = _indexes.getOffsetToLast();
 		if(it == null)
 			return;
 		else if(it.value() >= ru)
 			_indexes.cacheIterator(it, ru);
-		else if(ru > _indexes.getOffsetToLast()) {
-			throw new NotImplementedException();
+		else if(ru > last) {
+			final int apos = sb.pos(0);
+			final int alen = sb.size(0) + apos;
+			final int[] aix = sb.indexes(0);
+			final double[] avals = sb.values(0);
+			while(it.value() < last) {
+				final int row = offR + it.value();
+				for(int j = apos; j < alen; j++)
+					ret.append(row, _colIndexes[aix[j]] + offC, avals[j]);
+				it.next();
+			}
+			final int row = offR + it.value();
+			for(int j = apos; j < alen; j++)
+				ret.append(row, _colIndexes[aix[j]] + offC, avals[j]);
 		}
 		else {
 			final int apos = sb.pos(0);
@@ -293,6 +332,11 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
+	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
+		ColGroupSDCSingle.computeRowProduct(c, rl, ru, _indexes, _numRows, 0, preAgg[0]);
+	}
+
+	@Override
 	public int[] getCounts(int[] counts) {
 		counts[0] = _indexes.getSize();
 		return counts;
@@ -305,6 +349,8 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 
 	@Override
 	public void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
+		if(!m.getDenseBlock().isContiguous())
+			throw new NotImplementedException("Not implemented support for preAggregate non contiguous dense matrix");
 		final AIterator it = _indexes.getIterator(cl);
 		final double[] vals = m.getDenseBlockValues();
 		final int nCol = m.getNumColumns();
@@ -394,6 +440,8 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 
 		while(i < last) { // while we are not done iterating
 			for(int r = rl; r < ru; r++) {
+				if(sb.isEmpty(r))
+					continue;
 				final int off = r - rl;
 				int apos = aOffs[off]; // current offset
 				final int alen = sb.size(r) + sb.pos(r);
@@ -410,6 +458,8 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 
 		// process final element
 		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
 			final int off = r - rl;
 			int apos = aOffs[off];
 			final int alen = sb.size(r) + sb.pos(r);
@@ -434,10 +484,10 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
 		final double val0 = op.executeScalar(0);
-		final boolean isSparseSafeOp = op.sparseSafe || val0 == 0;
+		final boolean isSparseSafeOp = val0 == 0;
 		final ADictionary nDict = _dict.applyScalarOp(op);
 		if(isSparseSafeOp)
-			return new ColGroupSDCSingleZeros(_colIndexes, _numRows, nDict, _indexes, getCachedCounts());
+			return create(_colIndexes, _numRows, nDict, _indexes, getCachedCounts());
 		else {
 			final double[] defaultTuple = new double[_colIndexes.length];
 			Arrays.fill(defaultTuple, val0);
@@ -459,6 +509,25 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
+	protected double computeMxx(double c, Builtin builtin) {
+		c = builtin.execute(c, 0);
+		return _dict.aggregate(c, builtin);
+	}
+
+	@Override
+	protected void computeColMxx(double[] c, Builtin builtin) {
+		for(int x = 0; x < _colIndexes.length; x++)
+			c[_colIndexes[x]] = builtin.execute(c[_colIndexes[x]], 0);
+
+		_dict.aggregateCols(c, builtin, _colIndexes);
+	}
+
+	@Override
+	public boolean containsValue(double pattern) {
+		return (pattern == 0) || _dict.containsValue(pattern);
+	}
+
+	@Override
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
 		if(isRowSafe) {
 			ADictionary ret = _dict.binOpLeft(op, v, _colIndexes);
@@ -477,7 +546,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
 		if(isRowSafe) {
 			ADictionary ret = _dict.binOpRight(op, v, _colIndexes);
-			return new ColGroupSDCSingleZeros(_colIndexes, _numRows, ret, _indexes, getCachedCounts());
+			return ColGroupSDCSingleZeros.create(_colIndexes, _numRows, ret, _indexes, getCachedCounts());
 		}
 		else {
 			ADictionary newDict = _dict.binOpRight(op, v, _colIndexes);
@@ -656,6 +725,35 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
+	protected void preAggregateThatRLEStructure(ColGroupRLE that, Dictionary ret) {
+		final int finalOff = _indexes.getOffsetToLast();
+		final double[] v = ret.getValues();
+		final int nv = that.getNumValues();
+		final int nCol = that._colIndexes.length;
+		for(int k = 0; k < nv; k++) {
+			final AOffsetIterator itThis = _indexes.getOffsetIterator();
+			final int blen = that._ptr[k + 1];
+			for(int apos = that._ptr[k], rs = 0, re = 0; apos < blen; apos += 2) {
+				rs = re + that._data[apos];
+				re = rs + that._data[apos + 1];
+				// if index is later than run continue
+				if(itThis.value() >= re || rs == re || rs > finalOff)
+					continue;
+				// while lower than run iterate through
+				while(itThis.value() < rs && itThis.value() != finalOff)
+					itThis.next();
+				// process inside run
+				for(int rix = itThis.value(); rix < re; rix = itThis.value()) { // nice skip inside runs
+					that._dict.addToEntry(v, k, 0, nCol);
+					if(itThis.value() == finalOff) // break if final.
+						break;
+					itThis.next();
+				}
+			}
+		}
+	}
+
+	@Override
 	public int getPreAggregateSize() {
 		return 1;
 	}
@@ -678,15 +776,9 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
-	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
-		for(int i = 0; i < c.length; i++)
-			c[i] = 0;
-	}
-
-	@Override
 	protected void computeColProduct(double[] c, int nRows) {
-		for(int i = 0; i < c.length; i++)
-			c[i] = 0;
+		for(int i = 0; i < _colIndexes.length; i++)
+			c[_colIndexes[i]] = 0;
 	}
 
 	@Override
@@ -698,13 +790,16 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
-	protected int getIndexesSize() {
+	protected int numRowsToMultiply() {
 		return getCounts()[0];
 	}
 
 	@Override
-	protected int numRowsToMultiply() {
-		return getCounts()[0];
+	protected AColGroup allocateRightMultiplication(MatrixBlock right, int[] colIndexes, ADictionary preAgg) {
+		if(colIndexes != null && preAgg != null)
+			return create(colIndexes, _numRows, preAgg, _indexes, getCachedCounts());
+		else
+			return null;
 	}
 
 	@Override

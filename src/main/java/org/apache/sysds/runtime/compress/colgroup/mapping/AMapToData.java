@@ -624,7 +624,7 @@ public abstract class AMapToData implements Serializable {
 		}
 
 		// Remaining part (very small so not really main performance bottleneck)
-		preAggregateSDCZ_SDCZMultiCol_tail(tm, this, new Dictionary(td), dv, 1, itThat, itThis, tSize, size, i, j);
+		preAggregateSDCZ_SDCZMultiCol_tail(tm, this, Dictionary.create(td), dv, 1, itThat, itThis, tSize, size, i, j);
 	}
 
 	protected void preAggregateSDCZ_SDCZMultiCol(AMapToData tm, ADictionary td, AOffset tof, AOffset of, double[] dv,
@@ -697,6 +697,53 @@ public abstract class AMapToData implements Serializable {
 		}
 	}
 
+	public void preAggregateRLE_DDC(int[] ptr, char[] data, ADictionary td, Dictionary ret, int nCol) {
+		if(nCol == 1)
+			preAggregateRLE_DDCSingleCol(ptr, data, td.getValues(), ret.getValues());
+		else
+			preAggregateRLE_DDCMultiCol(ptr, data, td, ret.getValues(), nCol);
+	}
+
+	protected void preAggregateRLE_DDCSingleCol(int[] ptr, char[] data, double[] td, double[] ret) {
+		// find each index in RLE, and aggregate into those.
+		for(int k = 0; k < ret.length; k++) { // for each run in RLE
+			final int blen = ptr[k + 1];
+			for(int apos = ptr[k], rs = 0, re = 0; apos < blen; apos += 2) {
+				rs = re + data[apos];
+				re = rs + data[apos + 1];
+				for(int rix = rs; rix < re; rix++)
+					ret[k] += td[getIndex(rix)];
+			}
+		}
+	}
+
+	protected void preAggregateRLE_DDCMultiCol(int[] ptr, char[] data, ADictionary td, double[] ret, int nCol) {
+		// find each index in RLE, and aggregate into those.
+		for(int k = 0; k < ret.length / nCol; k++) { // for each run in RLE
+			final int blen = ptr[k + 1];
+			for(int apos = ptr[k], rs = 0, re = 0; apos < blen; apos += 2) {
+				rs = re + data[apos];
+				re = rs + data[apos + 1];
+				for(int rix = rs; rix < re; rix++)
+					td.addToEntry(ret, getIndex(rix), k, nCol);
+			}
+		}
+	}
+
+	public void preAggregateDDC_RLE(int[] ptr, char[] data, ADictionary td, Dictionary ret, int nCol) {
+		// find each index in RLE, and aggregate into those.
+		double[] v = ret.getValues();
+		for(int k = 0; k < ptr.length - 1; k++) { // for each run in RLE
+			final int blen = ptr[k + 1];
+			for(int apos = ptr[k], rs = 0, re = 0; apos < blen; apos += 2) {
+				rs = re + data[apos];
+				re = rs + data[apos + 1];
+				for(int rix = rs; rix < re; rix++)
+					td.addToEntry(v, k, getIndex(rix), nCol);
+			}
+		}
+	}
+
 	/**
 	 * Copy the values in this map into another mapping object.
 	 * 
@@ -740,6 +787,33 @@ public abstract class AMapToData implements Serializable {
 	}
 
 	public abstract AMapToData resize(int unique);
+
+	/**
+	 * Count the number of runs inside the map.
+	 * 
+	 * @return The number of runs
+	 */
+	public abstract int countRuns();
+
+	/**
+	 * Count the number of runs inside the map, but sparse with offsets.
+	 * 
+	 * @param off The sparse offsets to consider counting the runs from.
+	 * @return count of runs.
+	 */
+	public int countRuns(AOffset off) {
+		int c = 1;
+		final int size = size();
+		final AOffsetIterator of = off.getOffsetIterator();
+		for(int i = 1; i < size; i++) {
+			int id = of.value();
+			if(id + 1 == of.next())
+				c += getIndex(i - 1) == getIndex(i) ? 0 : 1;
+			else
+				c++;
+		}
+		return c;
+	}
 
 	@Override
 	public String toString() {

@@ -28,8 +28,8 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
-public final class ColGroupSizes {
-	protected static final Log LOG = LogFactory.getLog(ColGroupSizes.class.getName());
+public interface ColGroupSizes {
+	static final Log LOG = LogFactory.getLog(ColGroupSizes.class.getName());
 
 	public static long estimateInMemorySizeGroup(int nrColumns) {
 		long size = 16; // Object header
@@ -40,12 +40,8 @@ public final class ColGroupSizes {
 	public static long estimateInMemorySizeGroupValue(int nrColumns, int nrValues, double tupleSparsity, boolean lossy) {
 		long size = estimateInMemorySizeGroup(nrColumns);
 		size += 8; // Counts reference
-		size += 4; // Int nRows
-		size += 1; // _zeros boolean reference
-		size += 1; // _lossy boolean reference
-		size += 2; // padding
-		size += DictionaryFactory.getInMemorySize(nrValues, nrColumns, tupleSparsity, lossy);
 		size += 8; // Reference to Dict.
+		size += DictionaryFactory.getInMemorySize(nrValues, nrColumns, tupleSparsity, lossy);
 		return size;
 	}
 
@@ -59,6 +55,9 @@ public final class ColGroupSizes {
 	public static long estimateInMemorySizeOffset(int nrColumns, int nrValues, int pointers, int offsetLength,
 		double tupleSparsity, boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, tupleSparsity, lossy);
+		size += 4; // Int nRows
+		size += 1; // _zeros boolean reference
+		size += 3; // padding
 		size += MemoryEstimates.intArrayCost(pointers);
 		size += MemoryEstimates.charArrayCost(offsetLength);
 		return size;
@@ -74,9 +73,16 @@ public final class ColGroupSizes {
 
 	public static long estimateInMemorySizeRLE(int nrColumns, int nrValues, int nrRuns, int nrRows, double tupleSparsity,
 		boolean lossy) {
-		int offsetLength = (nrRuns) * 2;
-		long size = estimateInMemorySizeOffset(nrColumns, nrValues, (nrValues) + 1, offsetLength, tupleSparsity, lossy);
-		return size;
+		// Correct low number of runs if very large input.
+		// This correction handles the case where the skip runs are added in a safe manner
+		if(nrRows > Character.MAX_VALUE ) {
+
+			final double extra = (double)nrRows / Character.MAX_VALUE;
+			// we assume that half unique values contain extra runs if we have few runs to begin with.
+			// This is not 100% guaranteeing larger estimate than real but most likely 
+			nrRuns += (extra / 2) * nrValues;
+		}
+		return estimateInMemorySizeOffset(nrColumns, nrValues, nrValues + 1, nrRuns * 2, tupleSparsity, lossy);
 	}
 
 	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff,
@@ -112,7 +118,8 @@ public final class ColGroupSizes {
 		long size = 0;
 		// Since the Object is a col group the overhead from the Memory Size group is added
 		size += estimateInMemorySizeGroup(nrColumns);
-		size += MemoryEstimates.doubleArrayCost(2L * nrColumns); // coefficients; per column, we store 2 doubles (slope & intercept)
+		size += MemoryEstimates.doubleArrayCost(2L * nrColumns); // coefficients; per column, we store 2 doubles (slope &
+																					// intercept)
 		size += 4; // _numRows
 		return size;
 	}

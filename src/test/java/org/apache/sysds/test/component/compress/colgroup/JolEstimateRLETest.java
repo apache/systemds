@@ -21,10 +21,10 @@ package org.apache.sysds.test.component.compress.colgroup;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.test.component.compress.CompressibleInputGenerator;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -36,113 +36,115 @@ public class JolEstimateRLETest extends JolEstimateTest {
 	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
 
-		// MatrixBlock mb;
-		// mb = DataConverter.convertToMatrixBlock(new double[][] {{1}});
-		// tests.add(new Object[] {mb});
+		MatrixBlock mb;
 
-		// // The size of the compression is the same even at different numbers of repeated values.
-		// mb = DataConverter.convertToMatrixBlock(new double[][] {{0, 0, 0, 0, 5, 0}});
-		// tests.add(new Object[] {mb});
-		// mb = DataConverter.convertToMatrixBlock(new double[][] {{0, 0, 0, 0, 5, 5, 0}});
-		// tests.add(new Object[] {mb});
-		// mb = DataConverter.convertToMatrixBlock(new double[][] {{0, 0, 0, 0, 5, 5, 5, 0}});
-		// tests.add(new Object[] {mb});
-		// mb = DataConverter.convertToMatrixBlock(new double[][] {{0, 0, 0, 0, 5, 5, 5, 5, 5, 5}});
-		// tests.add(new Object[] {mb});
+		// The size of the compression is the same even at different numbers of repeated values.
+		tests.add(conv(new double[][] {{1}}));
+		tests.add(conv(new double[][] {{0, 0, 0, 0, 5, 0}}));
+		tests.add(conv(new double[][] {{0, 0, 0, 0, 5, 5, 0}}));
+		tests.add(conv(new double[][] {{0, 0, 0, 0, 5, 5, 5, 0}}));
+		tests.add(conv(new double[][] {{0, 0, 0, 0, 5, 5, 5, 5, 5, 5}}));
+		tests.add(conv(new double[][] {{0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 0}}));
+		tests.add(conv(new double[][] {{0, 0, 0, 0, 5, 0, 5, 5, 5, 0, 5}}));
+		tests.add(conv(new double[][] {{0, 5, 0, 5, 5, 5, 0, 5}}));
+		tests.add(conv(new double[][] {{0, 5, 0, 5, 0, 5}}));
+		tests.add(conv(new double[][] {{1, 5, 1, 5, 1, 5}}));
+		tests.add(conv(new double[][] {{1, 1, 1, 5, 1, 5}}));
+		tests.add(conv(new double[][] {{1, 1, 1, 5, 5, 5}}));
+		tests.add(conv(new double[][] {{1, 1, 1, 5, 5, 1}}));
 
-		// // Worst case all random numbers dense.
-		// mb = TestUtils.generateTestMatrixBlock(1, 100, 0, 100, 1.0, 7);
-		// tests.add(new Object[] {mb});
-		// mb = TestUtils.generateTestMatrixBlock(1, 1000, 0, 100, 1.0, 7);
-		// tests.add(new Object[] {mb});
-		// mb = TestUtils.generateTestMatrixBlock(1, 10000, 0, 100, 1.0, 7);
-		// tests.add(new Object[] {mb});
+		// Worst case all random numbers dense.
+		tests.add(gen(1, 100, 0, 100, 1.0, 7));
+		tests.add(gen(1, 1000, 0, 100, 1.0, 7));
+		tests.add(gen(1, 10000, 0, 100, 1.0, 7));
 
-		// // Random rounded numbers dense
-		// mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 1523, 0, 99, 1.0, 7));
-		// tests.add(new Object[] {mb});
-		// mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 4000, 0, 255, 1.0, 7));
-		// tests.add(new Object[] {mb});
+		// Random rounded numbers dense
+		for(int seed = 0; seed < 5; seed++) {
+			tests.add(genR(1, 30, 1, 4, 1.0, seed));
+			tests.add(genR(1, 63, 1, 3, 1.0, seed));
+			tests.add(genR(1, 64, 1, 3, 1.0, seed));
+			tests.add(genR(1, 100, 1, 3, 1.0, seed));
+			tests.add(genR(1, 128, 1, 3, 1.0, seed));
+			tests.add(genR(1, 100, 1, 10, 1.0, seed));
+		}
+		tests.add(genR(1, 1523, 1, 99, 1.0, 7));
+		tests.add(genR(1, 1523, 1, 3, 1.0, 7));
+		tests.add(genR(1, 2000, 1, 3, 1.0, 7));
+		tests.add(genR(1, 4000, 1, 255, 1.0, 7));
 
 		// // Sparse rounded numbers
 		// // Scale directly with sparsity
-		// mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 1523, 0, 99, 0.1, 7));
-		// tests.add(new Object[] {mb});
-		// mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 1621, 0, 99, 0.1, 142));
-		// tests.add(new Object[] {mb});
-		// mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 2321, 0, 99, 0.1, 512));
-		// tests.add(new Object[] {mb});
-		// mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 4000, 0, 255, 0.1, 7));
-		// tests.add(new Object[] {mb});
+		tests.add(genR(1, 1523, 0, 99, 0.1, 7));
+		tests.add(genR(1, 1621, 0, 99, 0.1, 142));
+		tests.add(genR(1, 2321, 0, 99, 0.1, 512));
+		tests.add(genR(1, 4000, 0, 255, 0.1, 7));
 
 		// // Medium sparsity
-		// mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 1523, 0, 99, 0.5, 7));
-		// tests.add(new Object[] {mb});
-		// mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 1621, 0, 99, 0.5, 142));
-		// tests.add(new Object[] {mb});
-		// mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 2321, 0, 99, 0.5, 512));
-		// tests.add(new Object[] {mb});
-		// mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 4000, 0, 255, 0.5, 7));
-		// tests.add(new Object[] {mb});
+		tests.add(genR(1, 1523, 0, 99, 0.5, 7));
+		tests.add(genR(1, 1621, 0, 99, 0.5, 142));
+		tests.add(genR(1, 2321, 0, 99, 0.5, 512));
+		tests.add(genR(1, 4000, 0, 255, 0.5, 7));
 
-		// // Dream inputs.
-		// // 1 unique value
-		// mb = CompressibleInputGenerator.getInput(10000, 1, CompressionType.RLE, 1, 1.0, 132);
-		// tests.add(new Object[] {mb});
+		// Dream inputs 1 unique value
+		tests.add(new Object[] {genRLE(10000, 1, 1, 2)});
 
-		// // when the rows length is larger than overflowing the character value,
-		// // the run gets split into two
-		// // char overflows into the next position increasing size by 1 char.
-		// int charMax = Character.MAX_VALUE;
-		// mb = CompressibleInputGenerator.getInput(charMax, 1, CompressionType.RLE, 1, 1.0, 132);
-		// tests.add(new Object[] {mb});
-		// mb = CompressibleInputGenerator.getInput(charMax + 1, 1, CompressionType.RLE, 1, 1.0, 132);
-		// tests.add(new Object[] {mb});
-		// mb = CompressibleInputGenerator.getInput(charMax * 2 + 1, 1, CompressionType.RLE, 1, 1.0, 132);
-		// tests.add(new Object[] {mb});
+		// when the rows length is larger than overflowing the character value,
+		// the run gets split into two
+		// char overflows into the next position increasing size by 1 char.
+		int charMax = Character.MAX_VALUE;
+		mb = genRLE(charMax, 1, 1, 132);
+		tests.add(new Object[] {mb});
+		mb = genRLE(charMax + 1, 1, 1, 132);
+		tests.add(new Object[] {mb});
+		mb = genRLE(charMax * 2 + 1, 1, 1, 132);
+		tests.add(new Object[] {mb});
 
-		// // 10 unique values ordered such that all 10 instances is in the same run.
-		// // Results in same size no matter the number of original rows.
-		// mb = CompressibleInputGenerator.getInput(100, 1, CompressionType.RLE, 10, 1.0, 1);
-		// tests.add(new Object[] {mb});
-		// mb = CompressibleInputGenerator.getInput(1000, 1, CompressionType.RLE, 10, 1.0, 1312);
-		// tests.add(new Object[] {mb});
-		// mb = CompressibleInputGenerator.getInput(10000, 1, CompressionType.RLE, 10, 1.0, 14512);
-		// tests.add(new Object[] {mb});
-		// mb = CompressibleInputGenerator.getInput(100000, 1, CompressionType.RLE, 10, 1.0, 132);
-		// tests.add(new Object[] {mb});
+		// full run before start
+		MatrixBlock mmb = new MatrixBlock(1, charMax, false);
+		MatrixBlock rrmb = genRM(1, 100, 1, 3, 1.0, 4);
+		tests.add(new Object[] {mmb.append(rrmb)});
+		tests.add(new Object[] {mmb.append(rrmb).append(mmb)});
+		tests.add(new Object[] {mmb.append(rrmb).append(mmb).append(rrmb)});
+		tests.add(new Object[] {mmb.append(rrmb).append(mmb).append(rrmb).append(mmb)});
+		tests.add(new Object[] {rrmb.append(mmb).append(rrmb)});
 
-		// // Sparse Dream inputs.
-		// mb = CompressibleInputGenerator.getInput(100, 1, CompressionType.RLE, 10, 0.1, 1);
-		// tests.add(new Object[] {mb});
-		// mb = CompressibleInputGenerator.getInput(1000, 1, CompressionType.RLE, 10, 0.1, 1312);
-		// tests.add(new Object[] {mb});
-		// mb = CompressibleInputGenerator.getInput(10000, 1, CompressionType.RLE, 10, 0.1, 14512);
-		// tests.add(new Object[] {mb});
-		// mb = CompressibleInputGenerator.getInput(100000, 1, CompressionType.RLE, 10, 0.1, 132);
-		// tests.add(new Object[] {mb});
-		// mb = CompressibleInputGenerator.getInput(1000000, 1, CompressionType.RLE, 10, 0.1, 132);
-		// tests.add(new Object[] {mb});
+		// 10 unique values ordered such that all 10 instances is in the same run.
+		// Results in same size no matter the number of original rows.
 
-		// mb = CompressibleInputGenerator.getInput(1000000, 1, CompressionType.RLE, 1, 1.0, 132);
+		mb = genRLE(100, 1, 10, 1);
+		tests.add(new Object[] {mb});
+		// mb = genRLE(1, 100, 10, 1);
+		// LOG.error(mb);
 		// tests.add(new Object[] {mb});
+		mb = genRLE(1000, 1, 10, 1312);
+		tests.add(new Object[] {mb});
+		mb = genRLE(10000, 1, 10, 14512);
+		tests.add(new Object[] {mb});
+		mb = genRLE(100000, 1, 10, 132);
+		tests.add(new Object[] {mb});
 
-		// // Multi Column
-		// // two identical columns
-		// mb = CompressibleInputGenerator.getInput(10, 2, CompressionType.RLE, 2, 1.0, 132);
-		// tests.add(new Object[] {mb});
+		// Sparse Dream inputs.
+		mb = genRLE(100, 1, 10, 1);
+		tests.add(new Object[] {mb});
+		mb = genRLE(1000, 1, 10, 1312);
+		tests.add(new Object[] {mb});
+		mb = genRLE(10000, 1, 10, 14512);
+		tests.add(new Object[] {mb});
+		mb = genRLE(100000, 1, 10, 132);
+		tests.add(new Object[] {mb});
+		mb = genRLE(1000000, 1, 10, 132);
+		tests.add(new Object[] {mb});
+		mb = genRLE(1000000, 1, 1, 132);
+		tests.add(new Object[] {mb});
 
-		// mb = CompressibleInputGenerator.getInput(10, 6, CompressionType.RLE, 2, 1.0, 132);
-		// tests.add(new Object[] {mb});
-
-		// mb = CompressibleInputGenerator.getInput(10, 100, CompressionType.RLE, 2, 1.0, 132);
-		// tests.add(new Object[] {mb});
-
-		// mb = CompressibleInputGenerator.getInput(101, 17, CompressionType.RLE, 2, 1.0, 132);
-		// tests.add(new Object[] {mb});
-
-		// mb = CompressibleInputGenerator.getInput(101, 17, CompressionType.RLE, 3, 1.0, 132);
-		// tests.add(new Object[] {mb});
+		// Multi Column
+		// two identical columns
+		tests.add(new Object[] {genRLE(5, 1000, 2, 132)});
+		// tests.add(new Object[] {genRLE(10, 2, 2, 132)});
+		// tests.add(new Object[] {genRLE(10, 6, 2, 132)});
+		// tests.add(new Object[] {genRLE(10, 100, 2, 132)});
+		// tests.add(new Object[] {genRLE(101, 17, 2, 132)});
+		// tests.add(new Object[] {genRLE(101, 17, 3, 132)});
 
 		return tests;
 	}
@@ -151,15 +153,8 @@ public class JolEstimateRLETest extends JolEstimateTest {
 		super(mb);
 	}
 
-	private static AtomicBoolean haveWarned = new AtomicBoolean(false);
-
-	@Override
-	public void compressedSizeInfoEstimatorSample(double ratio, double tolerance) {
-		// Skipping tests
-		if(!haveWarned.get()) {
-			LOG.error("Skipping sample based test for RLE");
-			haveWarned.set(true);
-		}
+	private static MatrixBlock genRLE(int row, int col, int runs, int seed) {
+		return CompressibleInputGenerator.getInput(row, col, CompressionType.RLE, runs, 1.0, seed, true);
 	}
 
 	@Override

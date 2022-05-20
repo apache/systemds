@@ -25,8 +25,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
+import org.apache.sysds.runtime.compress.estim.AComEst;
+import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Ignore;
@@ -109,11 +109,11 @@ public class SampleEstimatorTest {
 
 		cs_estimate.transposed = true;
 
-		final CompressedSizeEstimator estimate = CompressedSizeEstimatorFactory.createEstimator(mbt, cs_estimate, 1);
+		final AComEst estimate = ComEstFactory.createEstimator(mbt, cs_estimate, 1);
 		final int estimate_1 = estimate.getColGroupInfo(new int[] {0}).getNumVals() + 1;
 		final int estimate_2 = estimate.getColGroupInfo(new int[] {1}).getNumVals() + 1;
 
-		final int estimate_full = estimate.getColGroupInfo(new int[] {0, 1}, estimate_1,  estimate_1 * estimate_2)
+		final int estimate_full = estimate.getColGroupInfo(new int[] {0, 1}, estimate_1, estimate_1 * estimate_2)
 			.getNumVals();
 		assertTrue(
 			"Estimate of all columns should be upper bounded by distinct of each column multiplied: " + estimate_full

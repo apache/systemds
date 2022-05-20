@@ -24,8 +24,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public interface CompressedSizeEstimatorFactory {
-	static final Log LOG = LogFactory.getLog(CompressedSizeEstimatorFactory.class.getName());
+public interface ComEstFactory {
+	static final Log LOG = LogFactory.getLog(ComEstFactory.class.getName());
 
 	/**
 	 * Create an estimator for the input data with the given settings and parallelization degree.
@@ -35,7 +35,7 @@ public interface CompressedSizeEstimatorFactory {
 	 * @param k    The parallelization degree
 	 * @return A new CompressionSizeEstimator used to extract information of column groups
 	 */
-	public static CompressedSizeEstimator createEstimator(MatrixBlock data, CompressionSettings cs, int k) {
+	public static AComEst createEstimator(MatrixBlock data, CompressionSettings cs, int k) {
 		final int nRows = cs.transposed ? data.getNumColumns() : data.getNumRows();
 		final int nCols = cs.transposed ? data.getNumRows() : data.getNumColumns();
 		final double sparsity = data.getSparsity();
@@ -54,13 +54,13 @@ public interface CompressedSizeEstimatorFactory {
 	 * @param k          The parallelization degree
 	 * @return A new CompressionSizeEstimator used to extract information of column groups
 	 */
-	public static CompressedSizeEstimator createEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize,
+	public static AComEst createEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize,
 		int k) {
 		final int nRows = cs.transposed ? data.getNumColumns() : data.getNumRows();
 		return createEstimator(data, cs, sampleSize, k, nRows);
 	}
 
-	private static CompressedSizeEstimator createEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize,
+	private static AComEst createEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize,
 		int k, int nRows) {
 		if(sampleSize >= (double) nRows * 0.8) // if sample size is larger than 80% use entire input as sample.
 			return createExactEstimator(data, cs);
@@ -68,15 +68,15 @@ public interface CompressedSizeEstimatorFactory {
 			return createSampleEstimator(data, cs, sampleSize, k);
 	}
 
-	private static CompressedSizeEstimatorExact createExactEstimator(MatrixBlock data, CompressionSettings cs) {
+	private static ComEstExact createExactEstimator(MatrixBlock data, CompressionSettings cs) {
 		LOG.debug("Using full sample");
-		return new CompressedSizeEstimatorExact(data, cs);
+		return new ComEstExact(data, cs);
 	}
 
-	private static CompressedSizeEstimatorSample createSampleEstimator(MatrixBlock data, CompressionSettings cs,
+	private static ComEstSample createSampleEstimator(MatrixBlock data, CompressionSettings cs,
 		int sampleSize, int k) {
 		LOG.debug("Using sample size: " + sampleSize);
-		return new CompressedSizeEstimatorSample(data, cs, sampleSize, k);
+		return new ComEstSample(data, cs, sampleSize, k);
 	}
 
 	/**

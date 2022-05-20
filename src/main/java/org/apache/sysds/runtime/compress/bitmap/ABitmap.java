@@ -114,7 +114,9 @@ public abstract class ABitmap {
 	 * 
 	 * @return number of distinct value groups in the column;
 	 */
-	public abstract int getNumValues();
+	public final int getNumValues(){
+		return _offsetsLists.length;
+	}
 
 	/**
 	 * Get the number of non zeros in a specific offset's tuple value.

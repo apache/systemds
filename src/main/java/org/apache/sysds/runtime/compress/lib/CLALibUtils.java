@@ -21,7 +21,9 @@ package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -80,7 +82,7 @@ public final class CLALibUtils {
 	 */
 	protected static boolean shouldPreFilter(List<AColGroup> groups) {
 		for(AColGroup g : groups)
-			if(g instanceof AMorphingMMColGroup || g instanceof ColGroupConst)
+			if(g instanceof AMorphingMMColGroup || g instanceof ColGroupConst || g instanceof ColGroupEmpty || g.isEmpty())
 				return true;
 		return false;
 	}
@@ -98,10 +100,10 @@ public final class CLALibUtils {
 
 		final List<AColGroup> filteredGroups = new ArrayList<>();
 		for(AColGroup g : groups) {
-			if(g instanceof AMorphingMMColGroup)
-				filteredGroups.add(((AMorphingMMColGroup) g).extractCommon(constV));
-			else if(g instanceof ColGroupEmpty)
+			if(g instanceof ColGroupEmpty || g.isEmpty())
 				continue;
+			else if(g instanceof AMorphingMMColGroup)
+				filteredGroups.add(((AMorphingMMColGroup) g).extractCommon(constV));
 			else if(g instanceof ColGroupConst)
 				((ColGroupConst) g).addToCommon(constV);
 			else
@@ -193,4 +195,26 @@ public final class CLALibUtils {
 		return AColGroup.colSum(groups, new double[nCols], nRows);
 	}
 
+	protected static void addEmptyColumn(List<AColGroup> colGroups, int nCols) {
+
+		//	early abort loop
+		for(AColGroup g : colGroups)
+			if(g.getColIndices().length == nCols)
+				return; // there is some group that covers everything anyway
+
+		Set<Integer> emptyColumns = new HashSet<>(nCols);
+		for(int i = 0; i < nCols; i++)
+			emptyColumns.add(i);
+
+		for(AColGroup g : colGroups)
+			for(int c : g.getColIndices())
+				emptyColumns.remove(c);
+
+		if(emptyColumns.size() != 0) {
+			int[] emptyColumnsFinal = emptyColumns.stream().mapToInt(Integer::intValue).toArray();
+			colGroups.add(new ColGroupEmpty(emptyColumnsFinal));
+		}
+		else
+			return;
+	}
 }

@@ -27,9 +27,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 /**
  * Exact compressed size estimator (examines entire dataset).
  */
-public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
+public class ComEstExact extends AComEst {
 
-	public CompressedSizeEstimatorExact(MatrixBlock data, CompressionSettings compSettings) {
+	public ComEstExact(MatrixBlock data, CompressionSettings compSettings) {
 		super(data, compSettings);
 	}
 
@@ -56,7 +56,7 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 
 	private CompressedSizeInfoColGroup getFacts(IEncode map, int[] colIndexes) {
 		final int _numRows = getNumRows();
-		final EstimationFactors em = map.extractFacts(colIndexes, _numRows, _data.getSparsity(), _data.getSparsity());
+		final EstimationFactors em = map.extractFacts(_numRows, _data.getSparsity(), _data.getSparsity(), _cs);	
 		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
 	}
 

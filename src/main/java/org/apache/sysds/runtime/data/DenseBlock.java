@@ -655,7 +655,7 @@ public abstract class DenseBlock implements Serializable
 					sb.append((long)v);
 				else
 					sb.append(data[ix+j]);
-				sb.append("\t");
+				sb.append("  ");
 			}
 			sb.append("\n");
 		}

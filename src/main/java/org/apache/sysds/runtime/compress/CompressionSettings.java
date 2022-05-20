@@ -155,6 +155,10 @@ public class CompressionSettings {
 			LOG.debug(this.toString());
 	}
 
+	public boolean isRLEAllowed(){
+		return this.validCompressions.contains(CompressionType.RLE);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

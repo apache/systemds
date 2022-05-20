@@ -24,6 +24,7 @@ import java.util.Arrays;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -353,12 +354,23 @@ public interface IEncode {
 	public IEncode combine(IEncode e);
 
 	public int getUnique();
-
-	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity);
-
+	
+	//  * @param cols           The cols involved
+	/**
+	 * Extract the compression facts for this column group.
+	 * 
+	 * @param nRows          The total number of rows
+	 * @param tupleSparsity  The Sparsity of the unique tuples
+	 * @param matrixSparsity The matrix sparsity
+	 * @param cs             The compression settings
+	 * @return A EstimationFactors object
+	 */
+	public EstimationFactors extractFacts(int nRows, double tupleSparsity, double matrixSparsity,
+		CompressionSettings cs);
 
 	/**
 	 * Signify if the counts are including zero or without zero.
+	 * 
 	 * @return is dense
 	 */
 	public abstract boolean isDense();

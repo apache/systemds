@@ -39,8 +39,8 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 /**
  * Main abstract class for estimating size of compressions on columns.
  */
-public abstract class CompressedSizeEstimator {
-	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimator.class.getName());
+public abstract class AComEst {
+	protected static final Log LOG = LogFactory.getLog(AComEst.class.getName());
 
 	/** The Matrix Block to extract the compression estimates from */
 	final protected MatrixBlock _data;
@@ -52,12 +52,12 @@ public abstract class CompressedSizeEstimator {
 	/**
 	 * Main Constructor for Compression Estimator.
 	 * 
-	 * Protected because the factory should be used to construct the CompressedSizeEstimator
+	 * Protected because the factory should be used to construct the AComEst
 	 * 
 	 * @param data The matrix block to extract information from
 	 * @param cs   The Compression settings used.
 	 */
-	protected CompressedSizeEstimator(MatrixBlock data, CompressionSettings cs) {
+	protected AComEst(MatrixBlock data, CompressionSettings cs) {
 		_data = data;
 		_cs = cs;
 	}

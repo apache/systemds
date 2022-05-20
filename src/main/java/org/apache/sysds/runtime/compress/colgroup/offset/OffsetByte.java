@@ -32,6 +32,7 @@ public class OffsetByte extends AOffset {
 	private final byte[] offsets;
 	private final int offsetToFirst;
 	private final int offsetToLast;
+	private final int size;
 	private final boolean noOverHalf;
 	private final boolean noZero;
 
@@ -75,15 +76,16 @@ public class OffsetByte extends AOffset {
 		}
 
 		this.noOverHalf = getNoOverHalf();
-
+		this.size = alen - apos;
 	}
 
-	protected OffsetByte(byte[] offsets, int offsetToFirst, int offsetToLast) {
+	protected OffsetByte(byte[] offsets, int offsetToFirst, int offsetToLast, int size) {
 		this.offsets = offsets;
 		this.offsetToFirst = offsetToFirst;
 		this.offsetToLast = offsetToLast;
 		this.noOverHalf = getNoOverHalf();
 		this.noZero = getNoZero();
+		this.size = size;
 	}
 
 	private boolean getNoOverHalf() {
@@ -132,27 +134,19 @@ public class OffsetByte extends AOffset {
 		out.writeInt(offsetToFirst);
 		out.writeInt(offsets.length);
 		out.writeInt(offsetToLast);
+		out.writeInt(size);
 		for(byte o : offsets)
 			out.writeByte(o);
 	}
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 4 + 4 + 4 + offsets.length;
+		return 1 + 4 + 4 + 4 + 4 + offsets.length;
 	}
 
 	@Override
 	public int getSize() {
-		if(noZero)
-			return offsets.length + 1;
-		else {
-			int size = 1;
-			for(byte b : offsets)
-				if(b != 0)
-					size++;
-
-			return size;
-		}
+		return size;
 	}
 
 	@Override
@@ -176,7 +170,7 @@ public class OffsetByte extends AOffset {
 	}
 
 	public static long estimateInMemorySize(int nOffs) {
-		long size = 16 + 4 + 4 + 8; // object header plus int plus reference
+		long size = 16 + 4 + 4 + 4 + 8; // object header plus int plus reference
 		size += MemoryEstimates.byteArrayCost(nOffs);
 		return size;
 	}
@@ -185,13 +179,14 @@ public class OffsetByte extends AOffset {
 		final int offsetToFirst = in.readInt();
 		final int offsetsLength = in.readInt();
 		final int offsetToLast = in.readInt();
+		final int size = in.readInt();
 
 		final byte[] offsets = new byte[offsetsLength];
 
 		for(int i = 0; i < offsetsLength; i++)
 			offsets[i] = in.readByte();
 
-		return new OffsetByte(offsets, offsetToFirst, offsetToLast);
+		return new OffsetByte(offsets, offsetToFirst, offsetToLast, size);
 	}
 
 	private class IterateByteOffset extends AIterator {

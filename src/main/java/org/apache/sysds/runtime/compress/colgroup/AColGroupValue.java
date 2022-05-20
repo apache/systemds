@@ -19,166 +19,45 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.lang.ref.SoftReference;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.utils.Util;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 
-/**
- * Base class for column groups encoded with value dictionary. This include column groups such as DDC OLE and RLE.
- * 
- */
-public abstract class AColGroupValue extends AColGroupCompressed implements Cloneable {
+public abstract class AColGroupValue extends ADictBasedColGroup implements Cloneable {
 	private static final long serialVersionUID = -6835757655517301955L;
 
-	/** The number of rows in the column group */
-	final protected int _numRows;
-
-	/**
-	 * ColGroup Implementation Contains zero tuple. Note this is not if it contains a zero value. If false then the
-	 * stored values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
-	 * 
-	 * TODO remove
-	 */
-	protected boolean _zeros = false;
-
-	/** Distinct value tuples associated with individual bitmaps. */
-	protected ADictionary _dict;
+	private static final boolean soft = true;
 
 	/** The count of each distinct value contained in the dictionary */
 	private SoftReference<int[]> counts = null;
 
-	protected AColGroupValue(int numRows) {
+	protected AColGroupValue() {
 		super();
-		_numRows = numRows;
 	}
 
 	/**
-	 * A Abstract class for column groups that contain ADictionary for values.
+	 * A abstract class for column groups that contain ADictionary for values.
 	 * 
 	 * @param colIndices   The Column indexes
-	 * @param numRows      The number of rows contained in this group
 	 * @param dict         The dictionary to contain the distinct tuples
 	 * @param cachedCounts The cached counts of the distinct tuples (can be null since it should be possible to
 	 *                     reconstruct the counts on demand)
 	 */
-	protected AColGroupValue(int[] colIndices, int numRows, ADictionary dict, int[] cachedCounts) {
-		super(colIndices);
-		_numRows = numRows;
-		_dict = dict;
-		if(dict == null)
-			throw new NullPointerException("null dict is invalid");
+	protected AColGroupValue(int[] colIndices, ADictionary dict, int[] cachedCounts) {
+		super(colIndices, dict);
 		if(cachedCounts != null)
 			counts = new SoftReference<>(cachedCounts);
 	}
 
 	@Override
-	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
-		if(_dict instanceof MatrixBlockDictionary) {
-			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
-			final MatrixBlock mb = md.getMatrixBlock();
-			// The dictionary is never empty.
-			if(mb.isInSparseFormat())
-				decompressToDenseBlockSparseDictionary(db, rl, ru, offR, offC, mb.getSparseBlock());
-			else
-				decompressToDenseBlockDenseDictionary(db, rl, ru, offR, offC, mb.getDenseBlockValues());
-		}
-		else
-			decompressToDenseBlockDenseDictionary(db, rl, ru, offR, offC, _dict.getValues());
-	}
-
-	@Override
-	public final void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC) {
-		if(_dict instanceof MatrixBlockDictionary) {
-			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
-			final MatrixBlock mb = md.getMatrixBlock();
-			if(mb.isEmpty()) // Early abort if the dictionary is empty.
-				return;
-			else if(mb.isInSparseFormat())
-				decompressToSparseBlockSparseDictionary(sb, rl, ru, offR, offC, mb.getSparseBlock());
-			else
-				decompressToSparseBlockDenseDictionary(sb, rl, ru, offR, offC, mb.getDenseBlockValues());
-		}
-		else
-			decompressToSparseBlockDenseDictionary(sb, rl, ru, offR, offC, _dict.getValues());
-	}
-
-	/**
-	 * Decompress to DenseBlock using a sparse dictionary to lookup into.
-	 * 
-	 * @param db   The dense db block to decompress into
-	 * @param rl   The row to start decompression from
-	 * @param ru   The row to end decompression at
-	 * @param offR The row offset to insert into
-	 * @param offC The column offset to insert into
-	 * @param sb   The sparse dictionary block to take value tuples from
-	 */
-	protected abstract void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
-		SparseBlock sb);
-
-	/**
-	 * Decompress to DenseBlock using a dense dictionary to lookup into.
-	 * 
-	 * @param db     The dense db block to decompress into
-	 * @param rl     The row to start decompression from
-	 * @param ru     The row to end decompression at
-	 * @param offR   The row offset to insert into
-	 * @param offC   The column offset to insert into
-	 * @param values The dense dictionary values, linearized row major.
-	 */
-	protected abstract void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
-		double[] values);
-
-	/**
-	 * Decompress to SparseBlock using a sparse dictionary to lookup into.
-	 * 
-	 * @param ret  The dense ret block to decompress into
-	 * @param rl   The row to start decompression from
-	 * @param ru   The row to end decompression at
-	 * @param offR The row offset to insert into
-	 * @param offC The column offset to insert into
-	 * @param sb   The sparse dictionary block to take value tuples from
-	 */
-	protected abstract void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
-		SparseBlock sb);
-
-	/**
-	 * Decompress to SparseBlock using a dense dictionary to lookup into.
-	 * 
-	 * @param ret    The dense ret block to decompress into
-	 * @param rl     The row to start decompression from
-	 * @param ru     The row to end decompression at
-	 * @param offR   The row offset to insert into
-	 * @param offC   The column offset to insert into
-	 * @param values The dense dictionary values, linearized row major.
-	 */
-	protected abstract void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
-		double[] values);
-
-	@Override
 	public int getNumValues() {
 		return _dict.getNumberOfValues(_colIndexes.length);
-	}
-
-	public ADictionary getDictionary() {
-		return _dict;
 	}
 
 	/**
@@ -192,14 +71,18 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	 * @return The count of each value in the MatrixBlock.
 	 */
 	public final int[] getCounts() {
-		int[] ret = getCachedCounts();
+		if(soft){
 
-		if(ret == null) {
-			ret = getCounts(new int[getNumValues()]);
-			counts = new SoftReference<>(ret);
+			int[] ret = getCachedCounts();
+			if(ret == null) {
+				ret = getCounts(new int[getNumValues()]);
+				counts = new SoftReference<>(ret);
+			}
+			return ret;
 		}
-
-		return ret;
+		else{
+			return getCounts(new int[getNumValues()]);
+		}
 	}
 
 	/**
@@ -209,112 +92,12 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	 * 
 	 * @return The counts or null.
 	 */
-	public final int[] getCachedCounts() {
+	protected final int[] getCachedCounts() {
+
 		return counts != null ? counts.get() : null;
 	}
 
-	private int[] rightMMGetColsDense(double[] b, int cl, int cu, int cut) {
-		Set<Integer> aggregateColumnsSet = new HashSet<>();
-		final int retCols = (cu - cl);
-		for(int k = 0; k < _colIndexes.length; k++) {
-			int rowIdxOffset = _colIndexes[k] * cut;
-			for(int h = cl; h < cu; h++) {
-				double v = b[rowIdxOffset + h];
-				if(v != 0.0) {
-					aggregateColumnsSet.add(h);
-				}
-			}
-			if(aggregateColumnsSet.size() == retCols)
-				break;
-		}
-
-		int[] aggregateColumns = aggregateColumnsSet.stream().mapToInt(x -> x).toArray();
-		Arrays.sort(aggregateColumns);
-		return aggregateColumns;
-	}
-
-	private int[] rightMMGetColsSparse(SparseBlock b, int retCols) {
-		Set<Integer> aggregateColumnsSet = new HashSet<>();
-
-		for(int h = 0; h < _colIndexes.length; h++) {
-			int colIdx = _colIndexes[h];
-			if(!b.isEmpty(colIdx)) {
-				int[] sIndexes = b.indexes(colIdx);
-				for(int i = b.pos(colIdx); i < b.size(colIdx) + b.pos(colIdx); i++) {
-					aggregateColumnsSet.add(sIndexes[i]);
-				}
-			}
-			if(aggregateColumnsSet.size() == retCols)
-				break;
-		}
-
-		int[] aggregateColumns = aggregateColumnsSet.stream().mapToInt(x -> x).toArray();
-		Arrays.sort(aggregateColumns);
-		return aggregateColumns;
-	}
-
-	private double[] rightMMPreAggSparse(int numVals, SparseBlock b, int[] aggregateColumns, int cl, int cu, int cut) {
-		final double[] ret = new double[numVals * aggregateColumns.length];
-		for(int h = 0; h < _colIndexes.length; h++) {
-			int colIdx = _colIndexes[h];
-			if(!b.isEmpty(colIdx)) {
-				double[] sValues = b.values(colIdx);
-				int[] sIndexes = b.indexes(colIdx);
-				int retIdx = 0;
-				for(int i = b.pos(colIdx); i < b.size(colIdx) + b.pos(colIdx); i++) {
-					while(aggregateColumns[retIdx] < sIndexes[i])
-						retIdx++;
-					if(sIndexes[i] == aggregateColumns[retIdx])
-						for(int j = 0, offOrg = h;
-							j < numVals * aggregateColumns.length;
-							j += aggregateColumns.length, offOrg += _colIndexes.length) {
-							ret[j + retIdx] += _dict.getValue(offOrg) * sValues[i];
-						}
-				}
-			}
-		}
-		return ret;
-	}
-
-	@Override
-	protected double computeMxx(double c, Builtin builtin) {
-		if(_zeros)
-			c = builtin.execute(c, 0);
-		return _dict.aggregate(c, builtin);
-	}
-
-	@Override
-	protected void computeColMxx(double[] c, Builtin builtin) {
-		if(_zeros)
-			for(int x = 0; x < _colIndexes.length; x++)
-				c[_colIndexes[x]] = builtin.execute(c[_colIndexes[x]], 0);
-
-		_dict.aggregateCols(c, builtin, _colIndexes);
-	}
-
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		_zeros = in.readBoolean();
-		_dict = DictionaryFactory.read(in);
-	}
-
-	@Override
-	public void write(DataOutput out) throws IOException {
-		super.write(out);
-		out.writeBoolean(_zeros);
-		_dict.write(out);
-	}
-
-	@Override
-	public long getExactSizeOnDisk() {
-		long ret = super.getExactSizeOnDisk();
-		ret += 1; // zeros boolean
-		ret += _dict.getExactSizeOnDisk();
-		return ret;
-	}
-
-	public abstract int[] getCounts(int[] out);
+	protected abstract int[] getCounts(int[] out);
 
 	@Override
 	protected void computeSum(double[] c, int nRows) {
@@ -347,11 +130,6 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
-		throw new NotImplementedException();
-	}
-
-	@Override
 	protected double[] preAggSumRows() {
 		return _dict.sumAllRowsToDouble(_colIndexes.length);
 	}
@@ -363,7 +141,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 
 	@Override
 	protected double[] preAggProductRows() {
-		throw new NotImplementedException();
+		return _dict.productAllRowsToDouble(_colIndexes.length);
 	}
 
 	@Override
@@ -387,11 +165,13 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		return clone;
 	}
 
-	private AColGroup copyAndSet(int[] colIndexes, double[] newDictionary) {
-		return copyAndSet(colIndexes, new Dictionary(newDictionary));
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, double[] newDictionary) {
+		return copyAndSet(colIndexes, Dictionary.create(newDictionary));
 	}
 
-	private AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
 		AColGroupValue clone = (AColGroupValue) this.clone();
 		clone._dict = newDictionary;
 		clone.setColIndices(colIndexes);
@@ -431,7 +211,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
 		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
 		if(retDict == null)
-			return new ColGroupEmpty(_colIndexes);
+			return new ColGroupEmpty(outputCols);
 		final AColGroupValue ret = (AColGroupValue) this.clone();
 		ret._dict = retDict;
 		ret._colIndexes = outputCols;
@@ -446,60 +226,15 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	public boolean containsValue(double pattern) {
-		if(pattern == 0 && _zeros)
-			return true;
-		return _dict.containsValue(pattern);
-	}
-
-	@Override
 	public long getNumberNonZeros(int nRows) {
 		int[] counts = getCounts();
 		return _dict.getNumberNonZeros(counts, _colIndexes.length);
-	}
-
-	public synchronized void forceMatrixBlockDictionary() {
-		if(!(_dict instanceof MatrixBlockDictionary))
-			_dict = _dict.getMBDict(_colIndexes.length);
-	}
-
-	@Override
-	public final AColGroup rightMultByMatrix(MatrixBlock right) {
-
-		if(right.isEmpty())
-			return null;
-		final int cl = 0;
-		final int cr = right.getNumColumns();
-		final int numVals = getNumValues();
-		if(right.isInSparseFormat()) {
-			final SparseBlock sb = right.getSparseBlock();
-			final int[] agCols = rightMMGetColsSparse(sb, cr);
-			if(agCols.length == 0)
-				return null;
-			return copyAndSet(agCols, rightMMPreAggSparse(numVals, sb, agCols, cl, cr, cr));
-		}
-		else {
-			final double[] rightV = right.getDenseBlockValues();
-			final int[] agCols = rightMMGetColsDense(rightV, cl, cr, cr);
-			if(agCols.length == 0)
-				return null;
-			ADictionary d = _dict.preaggValuesFromDense(numVals, _colIndexes, agCols, rightV, cr);
-			if(d == null)
-				return null;
-			return copyAndSet(agCols, d);
-		}
 	}
 
 	@Override
 	public long estimateInMemorySize() {
 		long size = super.estimateInMemorySize();
 		size += 8; // Counts reference
-		size += 4; // Int nRows
-		size += 1; // _zeros boolean reference
-		size += 1; // _lossy boolean reference
-		size += 2; // padding
-		size += _dict.getInMemorySize();
-		size += 8; // dict reference
 		return size;
 	}
 
@@ -523,6 +258,10 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 			return copyAndSet(Util.genColsIndices(max), d);
 	}
 
+	protected AColGroup rexpandCols(int max, ADictionary d) {
+		return (d == null) ? ColGroupEmpty.create(max) : copyAndSet(Util.genColsIndices(max), d);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -531,4 +270,5 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		sb.append(_dict.getString(_colIndexes.length));
 		return sb.toString();
 	}
+
 }

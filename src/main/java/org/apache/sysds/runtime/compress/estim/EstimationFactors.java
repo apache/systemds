@@ -39,6 +39,8 @@ public class EstimationFactors {
 	protected final int numSingle;
 	/** The Number of rows in the column group */
 	protected final int numRows;
+	/** The Number of runs of continuous values inside the column group */
+	protected final int numRuns;
 	/** If the estimation of this column group is lossy */
 	protected final boolean lossy;
 	/** Boolean specifying if zero is the most frequent value */
@@ -50,28 +52,27 @@ public class EstimationFactors {
 	/** The sparsity of the tuples them selves in isolation */
 	protected final double tupleSparsity;
 
-	public EstimationFactors(int nCols, int numVals, int numRows) {
-		this.numVals = numVals;
-		this.numRows = numRows;
-		this.frequencies = null;
-		this.numOffs = -1;
-		this.largestOff = -1;
-		// this.numRuns = -1;
-		this.numSingle = -1;
-		this.lossy = false;
-		this.zeroIsMostFrequent = false;
-		this.containNoZeroValues = false;
-		this.overAllSparsity = 1;
-		this.tupleSparsity = 1;
+	public EstimationFactors(int numVals, int numRows) {
+		this(numVals, numRows, -1, null, -1, numRows, false, false, 1.0, 1.0);
 	}
 
-	public EstimationFactors(int nCols, int numVals, int numOffs, int largestOff, int[] frequencies, int numSingle,
-		int numRows, boolean lossy, boolean zeroIsMostFrequent, double overAllSparsity, double tupleSparsity) {
+	public EstimationFactors(int numVals, int numRows, double tupleSparsity) {
+		this(numVals, numRows, -1, null, -1, numRows, false, false, 1.0, tupleSparsity);
+	}
+
+	public EstimationFactors(int numVals, int numOffs, int largestOff, int[] frequencies, int numSingle, int numRows,
+		boolean lossy, boolean zeroIsMostFrequent, double overAllSparsity, double tupleSparsity) {
+		this(numVals, numOffs, largestOff, frequencies, numSingle, numRows, numOffs, lossy, zeroIsMostFrequent,
+			overAllSparsity, tupleSparsity);
+	}
+
+	public EstimationFactors(int numVals, int numOffs, int largestOff, int[] frequencies, int numSingle, int numRows,
+		int numRuns, boolean lossy, boolean zeroIsMostFrequent, double overAllSparsity, double tupleSparsity) {
 		this.numVals = numVals;
 		this.numOffs = numOffs;
 		this.largestOff = largestOff;
 		this.frequencies = frequencies;
-		// this.numRuns = numRuns;
+		this.numRuns = numRuns;
 		this.numSingle = numSingle;
 		this.numRows = numRows;
 		this.lossy = lossy;
@@ -82,20 +83,14 @@ public class EstimationFactors {
 
 		if(overAllSparsity > 1 || overAllSparsity < 0)
 			throw new DMLCompressionException("Invalid OverAllSparsity of: " + overAllSparsity);
-		if(tupleSparsity > 1 || tupleSparsity < 0)
+		else if(tupleSparsity > 1 || tupleSparsity < 0)
 			throw new DMLCompressionException("Invalid TupleSparsity of:" + tupleSparsity);
-		if(largestOff > numRows)
+		else if(largestOff > numRows)
 			throw new DMLCompressionException(
 				"Invalid number of instance of most common element should be lower than number of rows. " + largestOff
 					+ " > numRows: " + numRows);
-		if(numVals <= 0)
-			throw new DMLCompressionException("Should not use this constructor if empty");
-		if(numOffs <= 0)
-			throw new DMLCompressionException("Num offs are to low for this constructor");
-		if(numVals > numOffs)
+		else if(numVals > numOffs)
 			throw new DMLCompressionException("Num vals cannot be greater than num offs");
-		if(largestOff < 0)
-			throw new DMLCompressionException("Invalid number of offset, should be greater than one");
 	}
 
 	@Override
@@ -103,9 +98,11 @@ public class EstimationFactors {
 		StringBuilder sb = new StringBuilder();
 		sb.append("rows:" + numRows);
 		sb.append(" num Offsets:" + numOffs);
-		sb.append(" LargestOffset:" + largestOff);
+		if(largestOff != -1)
+			sb.append(" LargestOffset:" + largestOff);
 		sb.append(" num Singles:" + numSingle);
-		// sb.append(" num Runs:" + numRuns);
+		if(numRuns != numOffs)
+			sb.append(" num Runs: " + numRuns);
 		sb.append(" num Unique Vals:" + numVals);
 		sb.append(" overallSparsity:" + overAllSparsity);
 		sb.append(" tupleSparsity:" + tupleSparsity);

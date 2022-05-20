@@ -23,18 +23,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 
 public abstract class AColumnCoCoder {
 
 	protected static final Log LOG = LogFactory.getLog(AColumnCoCoder.class.getName());
 
-	protected final CompressedSizeEstimator _sest;
+	protected final AComEst _sest;
 	protected final ACostEstimate _cest;
 	protected final CompressionSettings _cs;
 
-	protected AColumnCoCoder(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator,
+	protected AColumnCoCoder(AComEst sizeEstimator, ACostEstimate costEstimator,
 		CompressionSettings cs) {
 		_sest = sizeEstimator;
 		_cest = costEstimator;

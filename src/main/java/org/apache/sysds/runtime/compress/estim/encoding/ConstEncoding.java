@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 
 /** Const encoding for cases where the entire group of columns is the same value */
@@ -48,9 +49,9 @@ public class ConstEncoding implements IEncode {
 	}
 
 	@Override
-	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
-		return new EstimationFactors(cols.length, 1, nRows, nRows, counts, 0, nRows, false, false, matrixSparsity,
-			tupleSparsity);
+	public EstimationFactors extractFacts(int nRows, double tupleSparsity, double matrixSparsity,
+		CompressionSettings cs) {
+		return new EstimationFactors(1, nRows, nRows, counts, 0, nRows, 1, false, false, matrixSparsity, tupleSparsity);
 	}
 
 	@Override

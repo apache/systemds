@@ -28,7 +28,7 @@ import java.util.concurrent.Future;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.utils.Util;
@@ -38,12 +38,12 @@ public class CoCodeGreedy extends AColumnCoCoder {
 
 	private final Memorizer mem;
 
-	protected CoCodeGreedy(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
+	protected CoCodeGreedy(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
 		mem = new Memorizer(sizeEstimator);
 	}
 
-	protected CoCodeGreedy(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs,
+	protected CoCodeGreedy(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs,
 		Memorizer mem) {
 		super(sizeEstimator, costEstimator, cs);
 		this.mem = mem;

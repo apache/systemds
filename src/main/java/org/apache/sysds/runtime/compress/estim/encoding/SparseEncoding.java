@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -98,7 +99,7 @@ public class SparseEncoding implements IEncode {
 				return new SparseEncoding(retMap, o, nRows - retOff.size(), nRows);
 			}
 			catch(Exception ex) {
-				throw new DMLCompressionException("Failed combining sparse " + retOff + " " +this + "  " + e, ex);
+				throw new DMLCompressionException("Failed combining sparse " + retOff + " " + this + "  " + e, ex);
 			}
 		}
 		else {
@@ -273,17 +274,23 @@ public class SparseEncoding implements IEncode {
 	}
 
 	@Override
-	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
+	public EstimationFactors extractFacts(int nRows, double tupleSparsity, double matrixSparsity,
+		CompressionSettings cs) {
 		final int largestOffs = nRows - map.size(); // known largest off is zero tuples
 		tupleSparsity = Math.min((double) map.size() / (double) nRows, tupleSparsity);
 		final int[] counts = map.getCounts(new int[map.getUnique()]);
-		return new EstimationFactors(cols.length, map.getUnique(), map.size(), largestOffs, counts, 0, nRows, false, true,
-			matrixSparsity, tupleSparsity);
+
+		if(cs.isRLEAllowed())
+			return new EstimationFactors(map.getUnique(), map.size(), largestOffs, counts, 0, nRows, map.countRuns(off),
+				false, true, matrixSparsity, tupleSparsity);
+		else
+			return new EstimationFactors(map.getUnique(), map.size(), largestOffs, counts, 0, nRows, false, true,
+				matrixSparsity, tupleSparsity);
+
 	}
 
-	
 	@Override
-	public  boolean isDense(){
+	public boolean isDense() {
 		return false;
 	}
 

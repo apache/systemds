@@ -24,7 +24,7 @@ import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class LinearRegression {
+public interface LinearRegression {
 
 	public static double[] regressMatrixBlock(MatrixBlock rawBlock, int[] colIndexes, boolean transposed) {
 		final int nRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
@@ -36,22 +36,32 @@ public class LinearRegression {
 
 		// the first `colIndexes.length` entries represent the intercepts (beta0)
 		// the second `colIndexes.length` entries represent the slopes (beta1)
-		double[] beta0_beta1 = new double[2 * colIndexes.length];
+		final double[] beta0_beta1 = new double[2 * colIndexes.length];
 
-		double s_xx = (Math.pow(nRows, 3) - nRows) / 12;
-		double x_bar = (double) (nRows + 1) / 2;
+		final double s_xx = (Math.pow(nRows, 3) - nRows) / 12;
+		final double x_bar = (double) (nRows + 1) / 2;
 
-		double[] colSums = new double[colIndexes.length];
-		double[] weightedColSums = new double[colIndexes.length];
+		final double[] colSums = new double[colIndexes.length];
+		final double[] weightedColSums = new double[colIndexes.length];
 
 		if(colIndexes.length == 1) {
-			for (int rowIdx = 0; rowIdx < nRows; rowIdx++) {
-				double value = transposed ? rawBlock.getValue(colIndexes[0], rowIdx) : rawBlock.getValue(rowIdx, colIndexes[0]);
-				colSums[0] += value;
-				weightedColSums[0] += (rowIdx + 1) * value;
+			if(transposed) {
+				for(int rowIdx = 0; rowIdx < nRows; rowIdx++) {
+					double value = rawBlock.getValue(colIndexes[0], rowIdx);
+					colSums[0] += value;
+					weightedColSums[0] += (rowIdx + 1) * value;
+				}
 			}
-		} else {
-			ReaderColumnSelection reader = ReaderColumnSelection.createReader(rawBlock, colIndexes, transposed);
+			else {
+				for(int rowIdx = 0; rowIdx < nRows; rowIdx++) {
+					double value = rawBlock.getValue(rowIdx, colIndexes[0]);
+					colSums[0] += value;
+					weightedColSums[0] += (rowIdx + 1) * value;
+				}
+			}
+		}
+		else {
+			final ReaderColumnSelection reader = ReaderColumnSelection.createReader(rawBlock, colIndexes, transposed);
 
 			DblArray cellVals;
 			while((cellVals = reader.nextRow()) != null) {

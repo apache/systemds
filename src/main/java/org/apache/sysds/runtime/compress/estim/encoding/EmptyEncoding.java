@@ -19,11 +19,12 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 
 /** Empty encoding for cases where the entire group of columns is zero */
 public class EmptyEncoding implements IEncode {
-	
+
 	// empty constructor
 	public EmptyEncoding() {
 	}
@@ -46,12 +47,13 @@ public class EmptyEncoding implements IEncode {
 	}
 
 	@Override
-	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
-		return new EstimationFactors(cols.length, 0, 0);
+	public EstimationFactors extractFacts(int nRows, double tupleSparsity, double matrixSparsity,
+		CompressionSettings cs) {
+		return new EstimationFactors(0, 0);
 	}
-	
+
 	@Override
-	public  boolean isDense(){
+	public boolean isDense() {
 		return false;
 	}
 }

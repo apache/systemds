@@ -241,7 +241,7 @@ public class CLALibCompAgg {
 	}
 
 	private static boolean isValidForParallelProcessing(CompressedMatrixBlock m1, AggregateUnaryOperator op) {
-		return op.getNumThreads() > 1 && m1.getExactSizeOnDisk() > MIN_PAR_AGG_THRESHOLD;
+		return op.getNumThreads() > 1 && ( m1.getColGroups().size() > 10 || m1.getExactSizeOnDisk() > MIN_PAR_AGG_THRESHOLD);
 	}
 
 	private static void aggregateInParallel(CompressedMatrixBlock m1, MatrixBlock ret, AggregateUnaryOperator op,
@@ -283,7 +283,7 @@ public class CLALibCompAgg {
 		for(int i = 0; i < groups.size(); i++) {
 			AColGroup g = groups.get(i);
 			if(g instanceof AColGroupCompressed) {
-				ret[i] = ((AColGroupCompressed) g).preAggRows(opm);
+				ret[i] = ((AColGroupCompressed) g).preAggRows(opm.aggOp.increOp.fn);
 			}
 		}
 		return ret;

@@ -70,8 +70,12 @@ public class CLALibTSMM {
 		double[] constV) {
 		final double[] retV = result.getDenseBlockValues();
 		final double[] filteredColSum = CLALibUtils.getColSum(filteredGroups, nCols, nRows);
-		outerProductUpperTriangle(constV, filteredColSum, retV);
-		outerProductUpperTriangleWithScaling(filteredColSum, constV, nRows, retV);
+		addCorrectionLayer(constV, filteredColSum, nRows, retV);
+	}
+
+	public static void addCorrectionLayer(double[] constV, double[] correctedSum, int nRow, double[] ret) {
+		outerProductUpperTriangle(constV, correctedSum, ret);
+		outerProductUpperTriangleWithScaling(correctedSum, constV, nRow, ret);
 	}
 
 	private static void tsmmColGroups(List<AColGroup> groups, MatrixBlock ret, int nRows, boolean overlapping, int k) {

@@ -109,4 +109,12 @@ public abstract class AIterator {
 	public boolean equals(AIterator o) {
 		return o.getOffsetsIndex() == getOffsetsIndex();
 	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" v:" + value() + " d:" + getDataIndex() + " o:" + getOffsetsIndex());
+		return sb.toString();
+	}
 }

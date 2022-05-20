@@ -215,4 +215,15 @@ public class MapToChar extends AMapToData {
 		ret.copy(this);
 		return ret;
 	}
+
+	@Override
+	public int countRuns() {
+		int c = 1;
+		char prev = _data[0];
+		for(int i = 1; i <_data.length; i++){
+			c += prev == _data[i] ? 0 : 1;
+			prev = _data[i];
+		}
+		return c;
+	}
 }

@@ -22,6 +22,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -92,7 +93,20 @@ public abstract class AOffset implements Serializable {
 			cacheIterator(it.clone(), row);
 			return it;
 		}
+	}
 
+	/**
+	 * Get an iterator that is pointing only at offsets from specific offset
+	 * 
+	 * @param row The row requested.
+	 * @return AOffsetIterator that iterate through index only offset values.
+	 */
+	public AOffsetIterator getOffsetIterator(int row) {
+		AOffsetIterator it = getOffsetIterator();
+		final int last = Math.min(row, getOffsetToLast());
+		while(it.value() < last)
+			it.next();
+		return it;
 	}
 
 	/**
@@ -172,6 +186,7 @@ public abstract class AOffset implements Serializable {
 			final DenseBlock db = m.getDenseBlock();
 			final double[] mV = db.values(rl);
 			final int off = db.pos(rl);
+			// guaranteed contiguous.
 			preAggregateDenseMapRow(mV, off, preAV, cu, nVal, data, it);
 		}
 		else {
@@ -215,7 +230,9 @@ public abstract class AOffset implements Serializable {
 
 	protected final void preAggregateDenseMapRows(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
 		int nVal, AMapToData data, AIterator it) {
-		if(cu <= getOffsetToLast())
+		if(!db.isContiguous())
+			throw new NotImplementedException("Not implemented support for preAggregate non contiguous dense matrix");
+		else if(cu <= getOffsetToLast())
 			preAggregateDenseMapRowsBelowEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
 		else
 			preAggregateDenseMapRowsEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
@@ -354,7 +371,7 @@ public abstract class AOffset implements Serializable {
 				apos++;
 
 			if(apos < alen && aix[apos] == last)
-				preAV[off* nVal + data.getIndex(it.getDataIndex())] += sb.values(r)[apos];
+				preAV[off * nVal + data.getIndex(it.getDataIndex())] += sb.values(r)[apos];
 			aOffs[off] = apos;
 		}
 	}

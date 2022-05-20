@@ -19,12 +19,14 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.IndexFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -61,6 +63,14 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	protected abstract void computeColSumsSq(double[] c, int nRows);
 
+	/**
+	 * Compute row sums, note that this function works even for row SQ, since the preaggregate is correct.
+	 * 
+	 * @param c      target to aggregate into
+	 * @param rl     row to start from
+	 * @param ru     row to end at (not inclusive)
+	 * @param preAgg the pre-aggregated rows from this column group.
+	 */
 	protected abstract void computeRowSums(double[] c, int rl, int ru, double[] preAgg);
 
 	protected abstract void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg);
@@ -79,8 +89,8 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	protected abstract double[] preAggBuiltinRows(Builtin builtin);
 
-	public double[] preAggRows(AggregateUnaryOperator op) {
-		final ValueFunction fn = op.aggOp.increOp.fn;
+	public double[] preAggRows(ValueFunction fn) {
+		// final ValueFunction fn = op.aggOp.increOp.fn;
 		if(fn instanceof KahanPlusSq)
 			return preAggSumSqRows();
 		else if(fn instanceof Plus || fn instanceof KahanPlus)
@@ -96,7 +106,7 @@ public abstract class AColGroupCompressed extends AColGroup {
 				throw new DMLScriptException("unsupported builtin type: " + bop);
 		}
 		else
-			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock " + op);
+			throw new DMLScriptException("Row Aggregate ValueFunction operator on CompressedMatrixBlock " + fn);
 	}
 
 	@Override
@@ -111,52 +121,73 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	@Override
 	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int nRows, int rl, int ru) {
-		unaryAggregateOperations(op, c, nRows, rl, ru, null);
+		unaryAggregateOperations(op, c, nRows, rl, ru,
+			(op.indexFn instanceof ReduceCol) ? preAggRows(op.aggOp.increOp.fn) : null);
 	}
 
 	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int nRows, int rl, int ru,
 		double[] preAgg) {
 		final ValueFunction fn = op.aggOp.increOp.fn;
-		if(fn instanceof KahanPlusSq) {
+		if(fn instanceof KahanPlusSq)
+			sumSq(op.indexFn, c, nRows, rl, ru, preAgg);
+		else if(fn instanceof Plus || fn instanceof KahanPlus)
+			sum(op.indexFn, c, nRows, rl, ru, preAgg);
+		else if(fn instanceof Multiply)
+			prod(op.indexFn, c, nRows, rl, ru, preAgg);
+		else if(fn instanceof Builtin)
+			builtin(op, c, nRows, rl, ru, preAgg);
+		else
+			throw new DMLRuntimeException("Unknown UnaryAggregate operator on CompressedMatrixBlock");
+	}
+
+	private final void sumSq(IndexFunction idx, double[] c, int nRows, int rl, int ru, double[] preAgg) {
+		if(idx instanceof ReduceAll)
+			computeSumSq(c, nRows);
+		else if(idx instanceof ReduceCol)
+			computeRowSums(c, rl, ru, preAgg);
+		else if(idx instanceof ReduceRow)
+			computeColSumsSq(c, nRows);
+		else
+			throw new DMLRuntimeException("unsupported index type in colgroup: " + idx);
+	}
+
+	private final void sum(IndexFunction idx, double[] c, int nRows, int rl, int ru, double[] preAgg) {
+		if(idx instanceof ReduceAll)
+			computeSum(c, nRows);
+		else if(idx instanceof ReduceCol)
+			computeRowSums(c, rl, ru, preAgg);
+		else if(idx instanceof ReduceRow)
+			computeColSums(c, nRows);
+		else
+			throw new DMLRuntimeException("unsupported index type in colgroup: " + idx);
+	}
+
+	private final void prod(IndexFunction idx, double[] c, int nRows, int rl, int ru, double[] preAgg) {
+		if(idx instanceof ReduceAll)
+			computeProduct(c, nRows);
+		else if(idx instanceof ReduceCol)
+			computeRowProduct(c, rl, ru, preAgg);
+		else if(idx instanceof ReduceRow)
+			computeColProduct(c, nRows);
+		else
+			throw new DMLRuntimeException("unsupported index type in colgroup: " + idx);
+	}
+
+	private final void builtin(AggregateUnaryOperator op, double[] c, int nRows, int rl, int ru, double[] preAgg) {
+		Builtin bop = (Builtin) op.aggOp.increOp.fn;
+		BuiltinCode bopC = bop.getBuiltinCode();
+		if(bopC == BuiltinCode.MAX || bopC == BuiltinCode.MIN) {
 			if(op.indexFn instanceof ReduceAll)
-				computeSumSq(c, nRows);
+				c[0] = computeMxx(c[0], bop);
 			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(c, rl, ru, preAgg);
+				computeRowMxx(c, bop, rl, ru, preAgg);
 			else if(op.indexFn instanceof ReduceRow)
-				computeColSumsSq(c, nRows);
-		}
-		else if(fn instanceof Plus || fn instanceof KahanPlus) {
-			if(op.indexFn instanceof ReduceAll)
-				computeSum(c, nRows);
-			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(c, rl, ru, preAgg);
-			else if(op.indexFn instanceof ReduceRow)
-				computeColSums(c, nRows);
-		}
-		else if(fn instanceof Multiply) {
-			if(op.indexFn instanceof ReduceAll)
-				computeProduct(c, nRows);
-			else if(op.indexFn instanceof ReduceCol)
-				computeRowProduct(c, rl, ru, preAgg);
-			else if(op.indexFn instanceof ReduceRow)
-				computeColProduct(c, nRows);
-		}
-		else if(fn instanceof Builtin) {
-			Builtin bop = (Builtin) fn;
-			BuiltinCode bopC = bop.getBuiltinCode();
-			if(bopC == BuiltinCode.MAX || bopC == BuiltinCode.MIN) {
-				if(op.indexFn instanceof ReduceAll)
-					c[0] = computeMxx(c[0], bop);
-				else if(op.indexFn instanceof ReduceCol)
-					computeRowMxx(c, bop, rl, ru, preAgg);
-				else if(op.indexFn instanceof ReduceRow)
-					computeColMxx(c, bop);
-			}
+				computeColMxx(c, bop);
 			else
-				throw new DMLScriptException("unsupported builtin type: " + bop);
+				throw new DMLRuntimeException("unsupported index type in colgroup: " + op.indexFn);
 		}
 		else
-			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock");
+			throw new DMLRuntimeException("unsupported builtin type: " + bop);
 	}
 
 	@Override
@@ -170,24 +201,23 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	protected static void tsmm(double[] result, int numColumns, int[] counts, ADictionary dict, int[] colIndexes) {
 		dict = dict.getMBDict(colIndexes.length);
-		if(dict instanceof MatrixBlockDictionary) {
-			MatrixBlockDictionary mbd = (MatrixBlockDictionary) dict;
-			MatrixBlock mb = mbd.getMatrixBlock();
-			if(mb.isEmpty())
-				return;
-			else if(mb.isInSparseFormat())
-				tsmmSparse(result, numColumns, mb.getSparseBlock(), counts, colIndexes);
+		if(dict != null) {
+			if(dict instanceof MatrixBlockDictionary) {
+				MatrixBlockDictionary mbd = (MatrixBlockDictionary) dict;
+				MatrixBlock mb = mbd.getMatrixBlock();
+				// Guaranteed not to be empty
+				if(mb.isInSparseFormat())
+					tsmmSparse(result, numColumns, mb.getSparseBlock(), counts, colIndexes);
+				else
+					tsmmDense(result, numColumns, mb.getDenseBlockValues(), counts, colIndexes);
+			}
 			else
-				tsmmDense(result, numColumns, mb.getDenseBlockValues(), counts, colIndexes);
+				tsmmDense(result, numColumns, dict.getValues(), counts, colIndexes);
 		}
-		else
-			tsmmDense(result, numColumns, dict.getValues(), counts, colIndexes);
 
 	}
 
 	protected static void tsmmDense(double[] result, int numColumns, double[] values, int[] counts, int[] colIndexes) {
-		if(values == null)
-			return;
 		final int nCol = colIndexes.length;
 		final int nRow = counts.length;
 		for(int k = 0; k < nRow; k++) {
@@ -219,5 +249,10 @@ public abstract class AColGroupCompressed extends AColGroup {
 				}
 			}
 		}
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return false;
 	}
 }

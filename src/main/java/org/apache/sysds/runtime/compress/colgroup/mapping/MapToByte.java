@@ -173,19 +173,30 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public AMapToData resize(int unique){
+	public int countRuns() {
+		int c = 1;
+		byte prev = _data[0];
+		for(int i = 1; i < _data.length; i++) {
+			c += prev == _data[i] ? 0 : 1;
+			prev = _data[i];
+		}
+		return c;
+	}
+
+	@Override
+	public AMapToData resize(int unique) {
 		final int size = _data.length;
 		AMapToData ret;
 		if(unique <= 1)
 			return new MapToZero(size);
 		else if(unique == 2 && size > 32)
 			ret = new MapToBit(unique, size);
-		else if (unique <= 127){
+		else if(unique <= 127) {
 			ret = toUByte();
 			ret.setUnique(unique);
 			return ret;
 		}
-		else{
+		else {
 			setUnique(unique);
 			return this;
 		}

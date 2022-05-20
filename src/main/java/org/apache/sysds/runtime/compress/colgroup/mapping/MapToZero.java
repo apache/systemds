@@ -138,4 +138,9 @@ public class MapToZero extends AMapToData {
 		// do nothing
 		return this;
 	}
+
+	@Override
+	public int countRuns() {
+		return 1;
+	}
 }

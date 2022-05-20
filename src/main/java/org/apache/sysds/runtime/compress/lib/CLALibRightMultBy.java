@@ -20,9 +20,7 @@
 package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -38,7 +36,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
@@ -113,11 +111,10 @@ public class CLALibRightMultBy {
 		if(colGroups == filteredGroups)
 			constV = null;
 
-		boolean containsNull = false;
 		if(k == 1)
-			containsNull = RMMSingle(filteredGroups, that, retCg);
+			RMMSingle(filteredGroups, that, retCg);
 		else
-			containsNull = RMMParallel(filteredGroups, that, retCg, k);
+			RMMParallel(filteredGroups, that, retCg, k);
 
 		if(constV != null) {
 			final MatrixBlock cb = new MatrixBlock(1, constV.length, constV);
@@ -132,7 +129,7 @@ public class CLALibRightMultBy {
 		if(retCg.size() > 1)
 			ret.setOverlapping(true);
 
-		addEmptyColumn(retCg, cr, rl, containsNull);
+		CLALibUtils.addEmptyColumn(retCg, cr);
 
 		return ret;
 	}
@@ -185,8 +182,10 @@ public class CLALibRightMultBy {
 			RMMParallel(filteredGroups, that, retCg, k);
 
 		if(constV != null) {
-			ColGroupConst cRet = (ColGroupConst) ColGroupConst.create(constV).rightMultByMatrix(that);
-			constV = cRet.getValues(); // overwrite constV
+			MatrixBlock constVMB = new MatrixBlock(1, constV.length, constV);
+			MatrixBlock mmTemp = new MatrixBlock(1, cr, false);
+			LibMatrixMult.matrixMult(constVMB, that, mmTemp);
+			constV = mmTemp.isEmpty() ? null : mmTemp.getDenseBlockValues();
 		}
 
 		final Timing time = new Timing(true);
@@ -213,8 +212,9 @@ public class CLALibRightMultBy {
 
 	private static boolean RMMSingle(List<AColGroup> filteredGroups, MatrixBlock that, List<AColGroup> retCg) {
 		boolean containsNull = false;
+		final int[] allCols = Util.genColsIndices(that.getNumColumns());
 		for(AColGroup g : filteredGroups) {
-			AColGroup retG = g.rightMultByMatrix(that);
+			AColGroup retG = g.rightMultByMatrix(that, allCols);
 			if(retG != null)
 				retCg.add(retG);
 			else
@@ -227,9 +227,10 @@ public class CLALibRightMultBy {
 		final ExecutorService pool = CommonThreadPool.get(k);
 		boolean containsNull = false;
 		try {
+			int[] allCols = Util.genColsIndices(that.getNumColumns());
 			List<Callable<AColGroup>> tasks = new ArrayList<>(filteredGroups.size());
 			for(AColGroup g : filteredGroups)
-				tasks.add(new RightMatrixMultTask(g, that));
+				tasks.add(new RightMatrixMultTask(g, that, allCols));
 			for(Future<AColGroup> fg : pool.invokeAll(tasks)) {
 				AColGroup g = fg.get();
 				if(g != null)
@@ -245,44 +246,21 @@ public class CLALibRightMultBy {
 		return containsNull;
 	}
 
-	private static void addEmptyColumn(List<AColGroup> retCg, int cr, int rl, boolean containsNull) {
-		if(containsNull) {
-			final ColGroupEmpty cge = findEmptyColumnsAndMakeEmptyColGroup(retCg, cr, rl);
-			if(cge != null)
-				retCg.add(cge);
-		}
-	}
-
-	private static ColGroupEmpty findEmptyColumnsAndMakeEmptyColGroup(List<AColGroup> colGroups, int nCols, int nRows) {
-		Set<Integer> emptyColumns = new HashSet<>(nCols);
-		for(int i = 0; i < nCols; i++)
-			emptyColumns.add(i);
-
-		for(AColGroup g : colGroups)
-			for(int c : g.getColIndices())
-				emptyColumns.remove(c);
-
-		if(emptyColumns.size() != 0) {
-			int[] emptyColumnsFinal = emptyColumns.stream().mapToInt(Integer::intValue).toArray();
-			return new ColGroupEmpty(emptyColumnsFinal);
-		}
-		else
-			return null;
-	}
-
 	private static class RightMatrixMultTask implements Callable<AColGroup> {
 		private final AColGroup _colGroup;
 		private final MatrixBlock _b;
+		private final int[] _allCols;
 
-		protected RightMatrixMultTask(AColGroup colGroup, MatrixBlock b) {
+		protected RightMatrixMultTask(AColGroup colGroup, MatrixBlock b, int[] allCols) {
 			_colGroup = colGroup;
 			_b = b;
+			_allCols = allCols;
 		}
 
 		@Override
 		public AColGroup call() {
 			try {
-				return _colGroup.rightMultByMatrix(_b);
+				return _colGroup.rightMultByMatrix(_b, _allCols);
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);

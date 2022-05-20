@@ -22,13 +22,8 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
-import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.utils.MemoryEstimates;
 
 /**
@@ -37,12 +32,18 @@ import org.apache.sysds.utils.MemoryEstimates;
  * NOTES: * OLE: separate storage segment length and bitmaps led to a 30% improvement but not applied because more
  * difficult to support both data layouts at the same time (distributed/local as well as w/ and w/o low-level opt)
  */
-public abstract class AColGroupOffset extends AColGroupValue {
+public abstract class AColGroupOffset extends APreAgg {
+
 	private static final long serialVersionUID = -4105103687174067602L;
-	/** Bitmaps, one per uncompressed value tuple in {@link #_dict}. */
+
+	/** Bitmaps, one per uncompressed value tuple in dict. */
 	protected int[] _ptr;
 	/** Linearized bitmaps (variable lengths) */
 	protected char[] _data;
+
+	final protected int _numRows;
+
+	protected boolean _zeros;
 
 	/**
 	 * Constructor for serialization
@@ -50,11 +51,13 @@ public abstract class AColGroupOffset extends AColGroupValue {
 	 * @param numRows Number of rows contained
 	 */
 	protected AColGroupOffset(int numRows) {
-		super(numRows);
+		super();
+		_numRows = numRows;
 	}
 
 	protected AColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict, int[] cachedCounts) {
-		super(colIndices, numRows, dict, cachedCounts);
+		super(colIndices, dict, cachedCounts);
+		_numRows = numRows;
 		_zeros = zeros;
 	}
 
@@ -62,17 +65,15 @@ public abstract class AColGroupOffset extends AColGroupValue {
 		return _ptr[k + 1] - _ptr[k];
 	}
 
-	protected void createCompressedBitmaps(int numVals, int totalLen, char[][] lbitmaps) {
+	protected static void createCompressedBitmaps(int[] bitmap, char[] data, char[][] lbitmaps) {
 		// compact bitmaps to linearized representation
-		_ptr = new int[numVals + 1];
-		_data = new char[totalLen];
-		for(int i = 0, off = 0; i < numVals; i++) {
+		for(int i = 0, off = 0; i < bitmap.length - 1; i++) {
 			int len = lbitmaps[i].length;
-			_ptr[i] = off;
-			System.arraycopy(lbitmaps[i], 0, _data, off, len);
+			bitmap[i] = off;
+			System.arraycopy(lbitmaps[i], 0, data, off, len);
 			off += len;
 		}
-		_ptr[numVals] = totalLen;
+		bitmap[bitmap.length - 1] = data.length;
 	}
 
 	@Override
@@ -80,40 +81,8 @@ public abstract class AColGroupOffset extends AColGroupValue {
 		long size = super.estimateInMemorySize();
 		size += MemoryEstimates.intArrayCost(_ptr.length);
 		size += MemoryEstimates.charArrayCost(_data.length);
+		size += 4 + 1 + 3;
 		return size;
-	}
-
-	protected final void sumAllValues(double[] b, double[] c) {
-		final int numVals = getNumValues();
-		final int numCols = getNumCols();
-		final double[] values = _dict.getValues();
-
-		// vectMultiplyAdd over cols instead of dotProduct over vals because
-		// usually more values than columns
-		for(int i = 0, off = 0; i < numCols; i++, off += numVals)
-			LibMatrixMult.vectMultiplyAdd(b[i], values, c, off, 0, numVals);
-	}
-
-	protected final double mxxValues(int bitmapIx, Builtin builtin, double[] values) {
-		final int numCols = getNumCols();
-		final int valOff = bitmapIx * numCols;
-		double val = values[valOff];
-		for(int i = 1; i < numCols; i++)
-			val = builtin.execute(val, values[valOff + i]);
-
-		return val;
-	}
-
-	public char[] getBitmaps() {
-		return _data;
-	}
-
-	public int[] getBitmapOffsets() {
-		return _ptr;
-	}
-
-	public boolean hasZeros() {
-		return _zeros;
 	}
 
 	/**
@@ -141,14 +110,14 @@ public abstract class AColGroupOffset extends AColGroupValue {
 
 		// read bitmaps
 		_ptr = new int[in.readInt()];
-		for(int i = 0; i < _ptr.length; i++) {
+		for(int i = 0; i < _ptr.length; i++)
 			_ptr[i] = in.readInt();
-		}
-		int totalLen = in.readInt();
-		_data = new char[totalLen];
-		for(int i = 0; i < totalLen; i++) {
+
+		_data = new char[in.readInt()];
+		for(int i = 0; i < _data.length; i++)
 			_data[i] = in.readChar();
-		}
+
+		_zeros = in.readBoolean();
 	}
 
 	@Override
@@ -156,56 +125,30 @@ public abstract class AColGroupOffset extends AColGroupValue {
 		super.write(out);
 		// write bitmaps (lens and data, offset later recreated)
 		out.writeInt(_ptr.length);
-		for(int i = 0; i < _ptr.length; i++) {
+		for(int i = 0; i < _ptr.length; i++)
 			out.writeInt(_ptr[i]);
-		}
-		out.writeInt(_data.length);
-		for(int i = 0; i < _data.length; i++) {
-			out.writeChar(_data[i]);
-		}
 
+		out.writeInt(_data.length);
+		for(int i = 0; i < _data.length; i++)
+			out.writeChar(_data[i]);
+
+		out.writeBoolean(_zeros);
 	}
 
 	@Override
 	public long getExactSizeOnDisk() {
 		long ret = super.getExactSizeOnDisk();
 		// actual bitmaps
-		ret += 4; // total length // _ptr list
+		ret += 4; // _ptr list length
 		ret += 4 * _ptr.length;
-		ret += 4; // _data list
+		ret += 4; // _data list length
 		ret += 2 * _data.length;
+		ret += 1; // boolean
 
 		return ret;
 	}
 
-	protected abstract boolean[] computeZeroIndicatorVector();
-
-	public abstract void countNonZerosPerRow(int[] rnnz, int rl, int ru);
-
-	@Override
-	public double getCost(ComputationCostEstimator e, int nRows) {
-		throw new NotImplementedException();
+	public boolean containZerosTuples() {
+		return _zeros;
 	}
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(super.toString());
-		sb.append(String.format("\n%15s%5d", "Pointers:", this._ptr.length));
-		sb.append(Arrays.toString(this._ptr));
-		return sb.toString();
-	}
-
-	protected static String charsToString(char[] data) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("[");
-		for(int x = 0; x < data.length; x++) {
-			sb.append(((int) data[x]));
-			if(x != data.length - 1)
-				sb.append(", ");
-		}
-		sb.append("]");
-		return sb.toString();
-	}
-
 }

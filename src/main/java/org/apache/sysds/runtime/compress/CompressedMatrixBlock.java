@@ -372,11 +372,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		if(getExactSizeOnDisk() > MatrixBlock.estimateSizeOnDisk(rlen, clen, nonZeros)) {
+		if(nonZeros > 0 && getExactSizeOnDisk() > MatrixBlock.estimateSizeOnDisk(rlen, clen, nonZeros)) {
 			// If the size of this matrixBlock is smaller in uncompressed format, then
 			// decompress and save inside an uncompressed column group.
 			MatrixBlock uncompressed = getUncompressed("for smaller serialization");
-			ColGroupUncompressed cg = new ColGroupUncompressed(uncompressed);
+			ColGroupUncompressed cg = (ColGroupUncompressed) ColGroupUncompressed.create(uncompressed);
 			allocateColGroup(cg);
 			nonZeros = cg.getNumberNonZeros(rlen);
 			// clear the soft reference to the decompressed version, since the one column group is perfectly,
@@ -724,7 +724,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return super.cmOperations(op, right);
 		AColGroup grp = _colGroups.get(0);
 		if(grp instanceof ColGroupUncompressed)
-			return ((ColGroupUncompressed) grp).getData().cmOperations(op);
+			return ((ColGroupUncompressed) grp).getData().cmOperations(op, right);
 		return getUncompressed().cmOperations(op, right);
 	}
 

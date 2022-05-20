@@ -116,8 +116,8 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 		result.allocateDenseBlock();
 		resultExpected.allocateDenseBlock();
 
-		base.leftMultByAColGroup(baseLeft, resultExpected);
-		lin.leftMultByAColGroup(cgLeft, result);
+		base.leftMultByAColGroup(baseLeft, resultExpected, nRowLeft);
+		lin.leftMultByAColGroup(cgLeft, result,nRowLeft);
 
 		Assert.assertArrayEquals(resultExpected.getDenseBlockValues(), result.getDenseBlockValues(), tolerance);
 	}
@@ -130,7 +130,7 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 
 		if(base instanceof AColGroupCompressed) {
 			AColGroupCompressed baseComp = (AColGroupCompressed) base;
-			baseComp.unaryAggregateOperations(auop, colSumsExpected, nRow, 0, nRow, baseComp.preAggRows(auop));
+			baseComp.unaryAggregateOperations(auop, colSumsExpected, nRow, 0, nRow, baseComp.preAggRows(auop.aggOp.increOp.fn));
 		}
 		else if(base instanceof ColGroupUncompressed) {
 			MatrixBlock mb = ((ColGroupUncompressed) base).getData();
@@ -148,7 +148,7 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 		}
 
 		double[] colSums = new double[lin.getNumCols()];
-		lin.unaryAggregateOperations(auop, colSums, nRow, 0, nRow, lin.preAggRows(auop));
+		lin.unaryAggregateOperations(auop, colSums, nRow, 0, nRow, lin.preAggRows(auop.aggOp.increOp.fn));
 
 		Assert.assertArrayEquals(colSumsExpected, colSums, tolerance);
 	}
@@ -162,7 +162,7 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 
 		if(base instanceof AColGroupCompressed) {
 			AColGroupCompressed baseComp = (AColGroupCompressed) base;
-			baseComp.unaryAggregateOperations(auop, productExpected, nRow, 0, nRow, baseComp.preAggRows(auop));
+			baseComp.unaryAggregateOperations(auop, productExpected, nRow, 0, nRow, baseComp.preAggRows(auop.aggOp.increOp.fn));
 		}
 		else if(base instanceof ColGroupUncompressed) {
 			MatrixBlock mb = ((ColGroupUncompressed) base).getData();
@@ -178,7 +178,7 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 		}
 
 		double[] product = new double[] {1};
-		lin.unaryAggregateOperations(auop, product, nRow, 0, nRow, lin.preAggRows(auop));
+		lin.unaryAggregateOperations(auop, product, nRow, 0, nRow, lin.preAggRows(auop.aggOp.increOp.fn));
 
 		// use relative tolerance since products can get very large
 		double relTolerance = tolerance * Math.abs(productExpected[0]);
@@ -204,7 +204,7 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 
 		if(base instanceof AColGroupCompressed) {
 			AColGroupCompressed baseComp = (AColGroupCompressed) base;
-			baseComp.unaryAggregateOperations(auop, colProductsExpected, nRow, 0, nRow, baseComp.preAggRows(auop));
+			baseComp.unaryAggregateOperations(auop, colProductsExpected, nRow, 0, nRow, baseComp.preAggRows(auop.aggOp.increOp.fn));
 		}
 		else if(base instanceof ColGroupUncompressed) {
 			MatrixBlock mb = ((ColGroupUncompressed) base).getData();
@@ -226,7 +226,7 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 			colProducts[j] = 1;
 		}
 
-		lin.unaryAggregateOperations(auop, colProducts, nRow, 0, nRow, lin.preAggRows(auop));
+		lin.unaryAggregateOperations(auop, colProducts, nRow, 0, nRow, lin.preAggRows(auop.aggOp.increOp.fn));
 
 		// use relative tolerance since column products can get very large
 		double relTolerance = tolerance * Math.abs(Arrays.stream(colProductsExpected).max().orElse(0));
@@ -242,7 +242,7 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 
 		if(base instanceof AColGroupCompressed) {
 			AColGroupCompressed baseComp = (AColGroupCompressed) base;
-			baseComp.unaryAggregateOperations(auop, sumSqExpected, nRow, 0, nRow, baseComp.preAggRows(auop));
+			baseComp.unaryAggregateOperations(auop, sumSqExpected, nRow, 0, nRow, baseComp.preAggRows(auop.aggOp.increOp.fn));
 		}
 		else if(base instanceof ColGroupUncompressed) {
 			MatrixBlock mb = ((ColGroupUncompressed) base).getData();
@@ -258,7 +258,7 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 		}
 
 		double[] sumSq = new double[] {0};
-		lin.unaryAggregateOperations(auop, sumSq, nRow, 0, nRow, lin.preAggRows(auop));
+		lin.unaryAggregateOperations(auop, sumSq, nRow, 0, nRow, lin.preAggRows(auop.aggOp.increOp.fn));
 
 		Assert.assertEquals(sumSqExpected[0], sumSq[0], tolerance);
 	}
@@ -272,7 +272,7 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 		double[] sum = new double[1];
 		AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceAll.getReduceAllFnObject());
-		lin.unaryAggregateOperations(auop, sum, nRow, 0, nRow, lin.preAggRows(auop));
+		lin.unaryAggregateOperations(auop, sum, nRow, 0, nRow, lin.preAggRows(auop.aggOp.increOp.fn));
 
 		Assert.assertEquals(sumExpected, sum[0], tolerance);
 	}
@@ -286,7 +286,7 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 
 		if(base instanceof AColGroupCompressed) {
 			AColGroupCompressed baseComp = (AColGroupCompressed) base;
-			baseComp.unaryAggregateOperations(auop, rowSumsExpected, nRow, 0, nRow, baseComp.preAggRows(auop));
+			baseComp.unaryAggregateOperations(auop, rowSumsExpected, nRow, 0, nRow, baseComp.preAggRows(auop.aggOp.increOp.fn));
 		}
 		else if(base instanceof ColGroupUncompressed) {
 			MatrixBlock mb = ((ColGroupUncompressed) base).getData();
@@ -304,7 +304,7 @@ public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 		}
 
 		double[] rowSums = new double[nRow];
-		lin.unaryAggregateOperations(auop, rowSums, nRow, 0, nRow, lin.preAggRows(auop));
+		lin.unaryAggregateOperations(auop, rowSums, nRow, 0, nRow, lin.preAggRows(auop.aggOp.increOp.fn));
 
 		Assert.assertArrayEquals(rowSumsExpected, rowSums, tolerance);
 	}

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
@@ -48,9 +49,15 @@ public class CompressedVectorTest extends CompressedTestBase {
 	protected static MatrixTypology[] usedMatrixTypologyLocal = new MatrixTypology[] {MatrixTypology.SINGLE_COL};
 
 	protected static CompressionSettingsBuilder[] usedCompressionSettings = new CompressionSettingsBuilder[] {
-		csb().setTransposeInput("false"), csb().setTransposeInput("true")};
+		csb().setTransposeInput("true"), // Default
+		csb().setValidCompressions(EnumSet.of(CompressionType.DDC)),
+		csb().setValidCompressions(EnumSet.of(CompressionType.SDC)),
+		csb().setValidCompressions(EnumSet.of(CompressionType.UNCOMPRESSED)),};
 
-	protected static OverLapping[] overLapping = new OverLapping[] {OverLapping.PLUS_LARGE};
+	protected static OverLapping[] overLapping = new OverLapping[] { //
+		OverLapping.PLUS_LARGE, //
+		OverLapping.PLUS_ROW_VECTOR //
+	};
 
 	@Parameters
 	public static Collection<Object[]> data() {

@@ -154,7 +154,7 @@ public class CLALibLeftMultBy {
 
 		for(int j = 0; j < fLeft.size(); j++)
 			for(int i = 0; i < fRight.size(); i++)
-				fRight.get(i).leftMultByAColGroup(fLeft.get(j), ret);
+				fRight.get(i).leftMultByAColGroup(fLeft.get(j), ret, sd);
 
 		double[] retV = ret.getDenseBlockValues();
 		if(containsLeft && containsRight)
@@ -185,7 +185,7 @@ public class CLALibLeftMultBy {
 			double[] rowSums;
 			if(!noPreAggGroups.isEmpty() || !preAggGroups.isEmpty()) {
 				final int sizeSum = preAggGroups.size() + noPreAggGroups.size();
-				rowSums = shouldFilter ? new double[lr] : null;
+				rowSums = new double[lr];
 				if(k == 1 || sizeSum == 1)
 					LMMTaskExec(noPreAggGroups, preAggGroups, that, ret, 0, lr, rowSums, k);
 				else
@@ -240,9 +240,6 @@ public class CLALibLeftMultBy {
 					for(AColGroup g : npa) // all groups get their own task
 						tasks.add(new LMMNoPreAggTask(g, that, ret, blo, end));
 
-					for(APreAgg p : pa)
-						p.forceMatrixBlockDictionary();
-
 					for(int off = 0; off < s; off++) { // only allocate k tasks at max
 						if(off == s - 1)
 							tasks.add(new LMMPreAggTask(pa, that, ret, blo, end, off, s, rowSums, 1));
@@ -267,9 +264,6 @@ public class CLALibLeftMultBy {
 
 					for(AColGroup g : npa) // all groups get their own task
 						tasks.add(new LMMNoPreAggTask(g, that, nRow, nCol, blo, end));
-
-					for(APreAgg p : pa)
-						p.forceMatrixBlockDictionary();
 
 					for(int off = 0; off < s; off++) { // only allocate k tasks at max
 						if(off == s - 1)
@@ -436,22 +430,43 @@ public class CLALibLeftMultBy {
 		}
 	}
 
+	public static double[] rowSum(MatrixBlock mb, int rl, int ru, int cl, int cu) {
+		double[] ret = new double[ru];
+		rowSum(mb, ret, rl, ru, cl, cu);
+		return ret;
+	}
+
+	private static void rowSum(MatrixBlock mb, double[] rowSum, int rl, int ru, int cl, int cu) {
+		if(mb.isInSparseFormat())
+			rowSumSparse(mb.getSparseBlock(), rowSum, rl, ru, cl, cu);
+		else
+			rowSumDense(mb, rowSum, rl, ru, cl, cu);
+	}
+
 	private static void rowSumSparse(SparseBlock sb, double[] rowSum, int rl, int ru, int cl, int cu) {
 		if(rowSum != null) {
 			for(int i = rl; i < ru; i++) {
 				if(sb.isEmpty(i))
 					continue;
-
 				final int apos = sb.pos(i);
 				final int alen = sb.size(i) + apos;
 				final double[] aval = sb.values(i);
-				for(int j = apos; j < alen; j++)
-					rowSum[i] += aval[j];
+				final int[] aix = sb.indexes(i);
+				if(cl == 0 && aix[alen - 1] < cu)
+					for(int j = apos; j < alen; j++)
+						rowSum[i] += aval[j];
+				else {
+					int j = apos;
+					while(j < alen && aix[j] < cl)
+						j++;
+					while(j < alen && aix[j] < cu)
+						rowSum[i] += aval[j++];
+				}
 			}
 		}
 	}
 
-	private static void rowSum(MatrixBlock that, double[] rowSum, int rl, int ru, int cl, int cu) {
+	private static void rowSumDense(MatrixBlock that, double[] rowSum, int rl, int ru, int cl, int cu) {
 		if(rowSum != null) {
 			final DenseBlock db = that.getDenseBlock();
 			for(int r = rl; r < ru; r++) {
@@ -578,7 +593,7 @@ public class CLALibLeftMultBy {
 		@Override
 		public MatrixBlock call() {
 			try {
-				rowSum(_that, _rowSums, _rl, _ru, 0, _that.getNumColumns());
+				rowSumDense(_that, _rowSums, _rl, _ru, 0, _that.getNumColumns());
 			}
 			catch(Exception e) {
 				e.printStackTrace();

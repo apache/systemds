@@ -24,15 +24,15 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 public class Memorizer {
-	private final CompressedSizeEstimator _sEst;
+	private final AComEst _sEst;
 	private final Map<ColIndexes, CompressedSizeInfoColGroup> mem;
 	private int st1 = 0, st2 = 0, st3 = 0, st4 = 0;
 
-	public Memorizer(CompressedSizeEstimator sEst) {
+	public Memorizer(AComEst sEst) {
 		_sEst = sEst;
 		mem = new HashMap<>();
 	}

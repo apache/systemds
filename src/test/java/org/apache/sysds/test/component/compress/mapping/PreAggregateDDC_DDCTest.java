@@ -98,7 +98,7 @@ public class PreAggregateDDC_DDCTest {
 	@Test
 	public void preAggregateDDC_DDC() {
 		try {
-			Dictionary ret = new Dictionary(new double[expected.length]);
+			Dictionary ret = Dictionary.createNoCheck(new double[expected.length]);
 			m.preAggregateDDC_DDC(tm, td, ret, nCol);
 			compare(ret.getValues(), expected, 0.000001);
 		}
@@ -129,13 +129,13 @@ public class PreAggregateDDC_DDCTest {
 		}
 
 		double[] dv = new double[nUnique2 * nCol];
-		ADictionary td = new Dictionary(dv);
+		ADictionary td = Dictionary.createNoCheck(dv);
 
 		for(int i = 0; i < dv.length; i++)
 			dv[i] = r.nextDouble();
 
 		double[] exp = new double[nUnique1 * nCol];
-		Dictionary expD = new Dictionary(exp);
+		Dictionary expD = Dictionary.createNoCheck(exp);
 
 		try {
 
@@ -157,13 +157,13 @@ public class PreAggregateDDC_DDCTest {
 		final AMapToData tm = MappingTestUtil.createRandomMap(nRows, nUnique2, r);
 
 		double[] dv = new double[nUnique2 * nCol];
-		ADictionary td = new Dictionary(dv);
+		ADictionary td = Dictionary.createNoCheck(dv);
 
 		for(int i = 0; i < dv.length; i++)
 			dv[i] = r.nextDouble();
 
 		double[] exp = new double[nUnique1 * nCol];
-		Dictionary expD = new Dictionary(exp);
+		Dictionary expD = Dictionary.createNoCheck(exp);
 
 		try {
 

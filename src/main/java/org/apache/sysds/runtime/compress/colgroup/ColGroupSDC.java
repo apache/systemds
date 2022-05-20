@@ -24,13 +24,11 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToBit;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
@@ -51,11 +49,9 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns. Then the zeros
  * would be materialized in the group without any overhead.
  */
-public class ColGroupSDC extends AMorphingMMColGroup {
+public class ColGroupSDC extends ASDC {
 	private static final long serialVersionUID = 769993538831949086L;
 
-	/** Sparse row indexes for the data */
-	protected AOffset _indexes;
 	/** Pointers to row indexes in the dictionary. */
 	protected AMapToData _data;
 	/** The default value stored in this column group */
@@ -70,9 +66,9 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 		super(numRows);
 	}
 
-	private ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
+	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 		AMapToData data, int[] cachedCounts) {
-		super(colIndices, numRows, dict, cachedCounts);
+		super(colIndices, numRows, dict, offsets, cachedCounts);
 		if(data.getUnique() != dict.getNumberOfValues(colIndices.length)) {
 			if(data.getUnique() != data.getMax())
 				throw new DMLCompressionException(
@@ -80,27 +76,29 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 			throw new DMLCompressionException("Invalid construction of SDC group: number uniques: " + data.getUnique()
 				+ " vs." + dict.getNumberOfValues(colIndices.length));
 		}
+		if(defaultTuple.length != colIndices.length)
+			throw new DMLCompressionException("Invalid construction of SDC group");
 
-		_indexes = offsets;
 		_data = data;
-		_zeros = false;
 		_defaultTuple = defaultTuple;
 
-		if(data instanceof MapToBit && ((MapToBit) data).isEmpty())
-			throw new DMLCompressionException("Error in SDC construction should have been SDCSingle");
 	}
 
-	protected static AColGroup create(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple,
+	public static AColGroup create(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple,
 		AOffset offsets, AMapToData data, int[] cachedCounts) {
-		final boolean allZero = FORUtil.allZero(defaultTuple);
+		final boolean allZero = ColGroupUtils.allZero(defaultTuple);
 		if(dict == null && allZero)
 			return new ColGroupEmpty(colIndices);
-		else if(dict == null)
-			return ColGroupSDCSingle.create(colIndices, numRows, null, defaultTuple, offsets, null);
+		else if(dict == null || dict.getNumberOfValues(colIndices.length) == 1)
+			return ColGroupSDCSingle.create(colIndices, numRows, dict, defaultTuple, offsets, null);
 		else if(allZero)
 			return ColGroupSDCZeros.create(colIndices, numRows, dict, offsets, data, cachedCounts);
 		else
 			return new ColGroupSDC(colIndices, numRows, dict, defaultTuple, offsets, data, cachedCounts);
+	}
+
+	public AColGroup sparsifyFOR() {
+		return ColGroupSDCFOR.sparsifyFOR(this);
 	}
 
 	@Override
@@ -114,22 +112,22 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 	}
 
 	@Override
+	public  double[] getDefaultTuple(){
+		return _defaultTuple;
+	}
+
+	public AMapToData getMapping(){
+		return _data;
+	}
+
+	@Override
 	public double getIdx(int r, int colIdx) {
 		final AIterator it = _indexes.getIterator(r);
 		if(it == null || it.value() != r)
 			return _defaultTuple[colIdx];
+		else
+			return _dict.getValue(_data.getIndex(it.getDataIndex()), colIdx, _colIndexes.length);
 
-		else {
-			final int rowOff = _data.getIndex(it.getDataIndex());
-			final int nCol = _colIndexes.length;
-			return _dict.getValue(rowOff * nCol + colIdx);
-		}
-	}
-
-	@Override
-	public ADictionary getDictionary() {
-		throw new NotImplementedException(
-			"Not implemented getting the dictionary out, and i think we should consider removing the option");
 	}
 
 	@Override
@@ -144,7 +142,7 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 
 	@Override
 	protected double[] preAggProductRows() {
-		throw new NotImplementedException("Should implement preAgg with extra cell");
+		return _dict.productAllRowsToDoubleWithDefault(_defaultTuple);
 	}
 
 	@Override
@@ -177,42 +175,43 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 		int r = rl;
 		final AIterator it = indexes.getIterator(rl);
 		final double def = preAgg[preAgg.length - 1];
-		if(it != null && it.value() > ru)
-			indexes.cacheIterator(it, ru);
-		else if(it != null && ru >= indexes.getOffsetToLast()) {
-			final int maxId = data.size() - 1;
-			while(true) {
-				if(it.value() == r) {
-					c[r] += preAgg[data.getIndex(it.getDataIndex())];
-					if(it.getDataIndex() < maxId)
-						it.next();
-					else {
-						r++;
-						break;
+		if(it != null) {
+
+			if(it.value() > ru)
+				indexes.cacheIterator(it, ru);
+			else if(ru > indexes.getOffsetToLast()) {
+				final int maxId = data.size() - 1;
+
+				while(true) {
+					if(it.value() == r) {
+						c[r] += preAgg[data.getIndex(it.getDataIndex())];
+						if(it.getDataIndex() < maxId)
+							it.next();
+						else {
+							r++;
+							break;
+						}
 					}
+					else
+						c[r] += def;
+					r++;
 				}
-				else
-					c[r] += def;
-				r++;
 			}
-		}
-		else if(it != null) {
-			while(r < ru) {
-				if(it.value() == r) {
-					c[r] += preAgg[data.getIndex(it.getDataIndex())];
-					it.next();
+			else {
+				while(r < ru) {
+					if(it.value() == r) {
+						c[r++] += preAgg[data.getIndex(it.getDataIndex())];
+						it.next();
+					}
+					else
+						c[r++] += def;
 				}
-				else
-					c[r] += def;
-				r++;
+				indexes.cacheIterator(it, ru);
 			}
-			indexes.cacheIterator(it, ru);
 		}
 
-		while(r < ru) {
-			c[r] += def;
-			r++;
-		}
+		while(r < ru)
+			c[r++] += def;
 	}
 
 	@Override
@@ -224,42 +223,45 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 		AMapToData data, AOffset indexes, int nRows, double def) {
 		int r = rl;
 		final AIterator it = indexes.getIterator(rl);
-		if(it != null && it.value() > ru)
-			indexes.cacheIterator(it, ru);
-		else if(it != null && ru >= indexes.getOffsetToLast()) {
-			final int maxId = data.size() - 1;
-			while(true) {
-				if(it.value() == r) {
-					c[r] = builtin.execute(c[r], preAgg[data.getIndex(it.getDataIndex())]);
-					if(it.getDataIndex() < maxId)
-						it.next();
-					else {
-						r++;
-						break;
+		if(it != null) {
+			if(it.value() > ru)
+				indexes.cacheIterator(it, ru);
+			else if(ru > indexes.getOffsetToLast()) {
+				final int maxId = data.size() - 1;
+				while(true) {
+					if(it.value() == r) {
+						c[r] = builtin.execute(c[r], preAgg[data.getIndex(it.getDataIndex())]);
+						if(it.getDataIndex() < maxId)
+							it.next();
+						else {
+							r++;
+							break;
+						}
 					}
+					else
+						c[r] = builtin.execute(c[r], def);
+					r++;
 				}
-				else
-					c[r] = builtin.execute(c[r], def);
-				r++;
 			}
-		}
-		else if(it != null) {
-			while(r < ru) {
-				if(it.value() == r) {
-					c[r] = builtin.execute(c[r], preAgg[data.getIndex(it.getDataIndex())]);
-					it.next();
+			else {
+				while(r < ru) {
+					if(it.value() == r) {
+						c[r] = builtin.execute(c[r], preAgg[data.getIndex(it.getDataIndex())]);
+						it.next();
+					}
+					else
+						c[r] = builtin.execute(c[r], def);
+					r++;
 				}
-				else
-					c[r] = builtin.execute(c[r], def);
-				r++;
+				indexes.cacheIterator(it, ru);
 			}
-			indexes.cacheIterator(it, ru);
 		}
 
 		while(r < ru) {
 			c[r] = builtin.execute(c[r], def);
 			r++;
 		}
+
 	}
 
 	@Override
@@ -303,13 +305,62 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 	@Override
 	protected void computeColProduct(double[] c, int nRows) {
 		super.computeColProduct(c, nRows);
-		for(int x = 0; x < _colIndexes.length; x++)
-			c[_colIndexes[x]] *= _defaultTuple[x];
+		final int count = _numRows - _data.size();
+		for(int x = 0; x < _colIndexes.length; x++) {
+			double v = c[_colIndexes[x]];
+			c[_colIndexes[x]] = v != 0 ? v * Math.pow(_defaultTuple[x], count) : 0;
+		}
 	}
 
 	@Override
 	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
-		throw new NotImplementedException();
+		computeRowProduct(c, rl, ru, preAgg, _data, _indexes, _numRows);
+	}
+
+	protected static final void computeRowProduct(double[] c, int rl, int ru, double[] preAgg, AMapToData data,
+		AOffset indexes, int nRows) {
+		int r = rl;
+		final AIterator it = indexes.getIterator(rl);
+		final double def = preAgg[preAgg.length - 1];
+		if(it != null) {
+
+			if(it.value() > ru)
+				indexes.cacheIterator(it, ru);
+			else if(ru > indexes.getOffsetToLast()) {
+				final int maxId = data.size() - 1;
+				while(true) {
+					if(it.value() == r) {
+						c[r] *= preAgg[data.getIndex(it.getDataIndex())];
+						if(it.getDataIndex() < maxId)
+							it.next();
+						else {
+							r++;
+							break;
+						}
+					}
+					else
+						c[r] *= def;
+					r++;
+				}
+			}
+			else {
+				while(r < ru) {
+					if(it.value() == r) {
+						c[r] *= preAgg[data.getIndex(it.getDataIndex())];
+						it.next();
+					}
+					else
+						c[r] *= def;
+					r++;
+				}
+				indexes.cacheIterator(it, ru);
+			}
+		}
+
+		while(r < ru) {
+			c[r] *= def;
+			r++;
+		}
 	}
 
 	@Override
@@ -425,44 +476,42 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 
 	@Override
 	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
-		CM_COV_Object ret = super.centralMoment(op, nRows);
-		int count = _numRows - _data.size();
-		op.fn.execute(ret, _defaultTuple[0], count);
-		return ret;
+		return _dict.centralMomentWithDefault(op.fn, getCounts(), _defaultTuple[0], nRows);
 	}
 
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.length);
-		return rexpandCols(max, ignore, cast, nRows, d, _indexes, _data, getCachedCounts(), _defaultTuple[0]);
+		return rexpandCols(max, ignore, cast, nRows, d, _indexes, _data, getCachedCounts(), (int) _defaultTuple[0]);
 	}
 
 	protected static AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows, ADictionary d,
-		AOffset indexes, AMapToData data, int[] counts, double def) {
-		// final double def = _defaultTuple[0];
+		AOffset indexes, AMapToData data, int[] counts, int def) {
+
 		if(d == null) {
 			if(def <= 0 || def > max)
 				return ColGroupEmpty.create(max);
 			else {
 				double[] retDef = new double[max];
 				retDef[((int) def) - 1] = 1;
-				return ColGroupSDCSingle.create(Util.genColsIndices(max), nRows, new Dictionary(new double[max]), retDef,
+				return ColGroupSDCSingle.create(Util.genColsIndices(max), nRows, Dictionary.create(new double[max]), retDef,
 					indexes, null);
 			}
 		}
 		else {
+			final int[] outCols = Util.genColsIndices(max);
 			if(def <= 0) {
 				if(ignore)
-					return ColGroupSDCZeros.create(Util.genColsIndices(max), nRows, d, indexes, data, counts);
+					return ColGroupSDCZeros.create(outCols, nRows, d, indexes, data, counts);
 				else
 					throw new DMLRuntimeException("Invalid content of zero in rexpand");
 			}
 			else if(def > max)
-				return ColGroupSDCZeros.create(Util.genColsIndices(max), nRows, d, indexes, data, counts);
+				return ColGroupSDCZeros.create(outCols, nRows, d, indexes, data, counts);
 			else {
 				double[] retDef = new double[max];
 				retDef[((int) def) - 1] = 1;
-				return ColGroupSDC.create(Util.genColsIndices(max), nRows, d, retDef, indexes, data, counts);
+				return ColGroupSDC.create(outCols, nRows, d, retDef, indexes, data, counts);
 			}
 		}
 	}
@@ -494,17 +543,24 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 
 	@Override
 	public boolean containsValue(double pattern) {
-		if(pattern == 0 && _zeros)
+		if(_dict.containsValue(pattern))
 			return true;
-		boolean ret = _dict.containsValue(pattern);
-		if(ret == true)
-			return ret;
 		else {
 			for(double v : _defaultTuple)
 				if(v == pattern)
 					return true;
 			return false;
 		}
+	}
+
+	@Override
+	public double[] getCommon() {
+		return _defaultTuple;
+	}
+
+	@Override
+	protected AColGroup allocateRightMultiplicationCommon(double[] common, int[] colIndexes, ADictionary preAgg) {
+		return create(colIndexes, _numRows, preAgg, common, _indexes, _data, getCachedCounts());
 	}
 
 	@Override

@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -30,13 +31,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.ColGroupType;
 
-/**
- * This has the IO responsibility of ColGroups, such that it enables to read and write ColGroups to and from a DataInput
- * and DataOutput
- */
-public class ColGroupIO {
+/** IO for ColGroups, it enables read and write ColGroups */
+public interface ColGroupIO {
 
-	protected static final Log LOG = LogFactory.getLog(ColGroupIO.class.getName());
+	static final Log LOG = LogFactory.getLog(ColGroupIO.class.getName());
 
 	/**
 	 * Read groups from a file. Note that the information about how many should be in the file already.
@@ -51,9 +49,7 @@ public class ColGroupIO {
 		// Read in how many colGroups there are
 		final int nColGroups = in.readInt();
 		final boolean trace = LOG.isTraceEnabled();
-		if(trace)
-			LOG.trace("reading " + nColGroups + " ColGroups");
-		
+
 		// Allocate that amount into an ArrayList
 		final List<AColGroup> _colGroups = new ArrayList<>(nColGroups);
 
@@ -77,7 +73,7 @@ public class ColGroupIO {
 	 * @param colGroups List of the ColGroups to write to file.
 	 * @throws IOException Throws IO Exception if the out refuses to write.
 	 */
-	public static void writeGroups(DataOutput out, List<AColGroup> colGroups) throws IOException {
+	public static void writeGroups(DataOutput out, Collection<AColGroup> colGroups) throws IOException {
 		// Write out how many ColGroups to save.
 		out.writeInt(colGroups.size());
 		for(AColGroup grp : colGroups)
@@ -92,12 +88,12 @@ public class ColGroupIO {
 	 */
 	public static long getExactSizeOnDisk(List<AColGroup> colGroups) {
 		long ret = 4; // int for number of colGroups.
-		for(AColGroup grp : colGroups) 
+		for(AColGroup grp : colGroups)
 			ret += grp.getExactSizeOnDisk();
 		return ret;
 	}
 
-	private static AColGroup constructColGroup(ColGroupType ctype, int nRows){
+	private static AColGroup constructColGroup(ColGroupType ctype, int nRows) {
 		switch(ctype) {
 			case UNCOMPRESSED:
 				return new ColGroupUncompressed();
@@ -106,9 +102,9 @@ public class ColGroupIO {
 			case RLE:
 				return new ColGroupRLE(nRows);
 			case DDC:
-				return new ColGroupDDC(nRows);
+				return new ColGroupDDC();
 			case DeltaDDC:
-				return new ColGroupDeltaDDC(nRows);
+				return new ColGroupDeltaDDC();
 			case CONST:
 				return new ColGroupConst();
 			case EMPTY:
@@ -124,7 +120,7 @@ public class ColGroupIO {
 			case SDCFOR:
 				return new ColGroupSDCFOR(nRows);
 			case DDCFOR:
-				return new ColGroupDDCFOR(nRows);
+				return new ColGroupDDCFOR();
 			default:
 				throw new DMLRuntimeException("Unsupported ColGroup Type used:  " + ctype);
 		}

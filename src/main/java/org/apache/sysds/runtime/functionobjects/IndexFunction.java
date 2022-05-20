@@ -38,4 +38,9 @@ public abstract class IndexFunction extends FunctionObject
 
 	//compute output dimensions
 	public abstract boolean computeDimension(DataCharacteristics in, DataCharacteristics out);
+
+	@Override
+	public String toString(){
+		return this.getClass().getSimpleName();
+	}
 }

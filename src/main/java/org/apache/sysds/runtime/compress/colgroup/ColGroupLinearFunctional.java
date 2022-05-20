@@ -371,9 +371,9 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	public AColGroup rightMultByMatrix(MatrixBlock right) {
+	public AColGroup rightMultByMatrix(MatrixBlock right, int[] allCols) {
 		final int nColR = right.getNumColumns();
-		final int[] outputCols = Util.genColsIndices(nColR);
+		final int[] outputCols = allCols != null ? allCols : Util.genColsIndices(nColR);
 
 		// TODO: add specialization for sparse/dense matrix blocks
 		MatrixBlock result = new MatrixBlock(_numRows, nColR, false);
@@ -417,11 +417,12 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		throw new DMLCompressionException("This method should never be called");
 	}
 
+
 	@Override
-	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
-		if(lhs instanceof ColGroupEmpty) {
+	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result, int nRows) {
+		if(lhs instanceof ColGroupEmpty) 
 			return;
-		}
+		
 
 		MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.length, 0);
 

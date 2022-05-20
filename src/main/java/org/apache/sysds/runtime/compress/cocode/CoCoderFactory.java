@@ -24,7 +24,7 @@ import java.util.List;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
@@ -51,7 +51,7 @@ public interface CoCoderFactory {
 	 * @param cs            The compression settings used in the compression.
 	 * @return The estimated (hopefully) best groups of ColGroups.
 	 */
-	public static CompressedSizeInfo findCoCodesByPartitioning(CompressedSizeEstimator est, CompressedSizeInfo colInfos,
+	public static CompressedSizeInfo findCoCodesByPartitioning(AComEst est, CompressedSizeInfo colInfos,
 		int k, ACostEstimate costEstimator, CompressionSettings cs) {
 
 		// Use column group partitioner to create partitions of columns
@@ -97,7 +97,7 @@ public interface CoCoderFactory {
 		return colInfos;
 	}
 
-	private static AColumnCoCoder createColumnGroupPartitioner(PartitionerType type, CompressedSizeEstimator est,
+	private static AColumnCoCoder createColumnGroupPartitioner(PartitionerType type, AComEst est,
 		ACostEstimate costEstimator, CompressionSettings cs) {
 		switch(type) {
 			case AUTO:

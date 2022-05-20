@@ -17,31 +17,35 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.compress.dictionary;
+package org.apache.sysds.test.component.compress.colgroup;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils;
 import org.junit.Test;
 
-public class DictionaryTest {
+public class ColGroupUtilsTest {
 
 	@Test
-	public void testContainsValue() {
-		Dictionary d = Dictionary.createNoCheck(new double[] {1, 2, 3});
-		assertTrue(d.containsValue(1));
-		assertTrue(!d.containsValue(-1));
+	public void containsNan_false() {
+		assertFalse(ColGroupUtils.containsInfOrNan(Double.NaN, new double[10]));
 	}
 
 	@Test
-	public void testContainsValue_nan() {
-		Dictionary d = Dictionary.createNoCheck(new double[] {Double.NaN, 2, 3});
-		assertTrue(d.containsValue(Double.NaN));
+	public void containsInf_false() {
+		assertFalse(ColGroupUtils.containsInfOrNan(Double.POSITIVE_INFINITY, new double[10]));
 	}
 
 	@Test
-	public void testContainsValue_nan_not() {
-		Dictionary d = Dictionary.createNoCheck(new double[] {1, 2, 3});
-		assertTrue(!d.containsValue(Double.NaN));
+	public void containsInf_True() {
+		assertTrue(ColGroupUtils.containsInfOrNan(Double.POSITIVE_INFINITY,
+			new double[] {0, 0, 0, 0, Double.POSITIVE_INFINITY, 0, 0, 0}));
 	}
+
+	@Test
+	public void containsNan_True() {
+		assertTrue(ColGroupUtils.containsInfOrNan(Double.NaN, new double[] {0, 0, 0, 0, Double.NaN, 0, 0, 0}));
+	}
+
 }

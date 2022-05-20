@@ -741,6 +741,11 @@ public class TestUtils
 		return Math.abs(v1 - v2) <= t;
 	}
 
+	public static void compareVectors(double[] expected, double[] actual, double tolerance){
+		// just overload
+		compareMatrices(expected, actual, tolerance);
+	}
+
 	public static void compareMatrices(double[] expectedMatrix, double[] actualMatrix, double epsilon) {
 		compareMatrices(new double[][]{expectedMatrix},
 			new double[][]{actualMatrix}, 1, expectedMatrix.length, epsilon);
@@ -832,8 +837,7 @@ public class TestUtils
 					continue;
 				else if(v1 == 0 || v2 == 0) {
 					if(Math.abs(v1 - v2) > 1E-16) {
-						message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i + " " + j
-							+ " Not using Bit distance since one value is 0");
+						message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i + " " + j);
 						countErrors++;
 					}
 				}
@@ -859,6 +863,50 @@ public class TestUtils
 		}
 	}
 
+	public static void compareMatricesBitAvgDistance(double[] expectedMatrix, double[] actualMatrix,
+		long maxUnitsOfLeastPrecision, long maxAvgDistance, String message) {
+		final int rows = expectedMatrix.length;
+		int countErrors = 0;
+		long sumDistance = 0;
+
+		long distance;
+		for(int i = 0; i < rows && countErrors < 20; i++) {
+			double v1 = expectedMatrix[i];
+			double v2 = actualMatrix[i];
+			if(v1 == 0 && v2 == 0)
+				continue;
+			else if(v1 == 0 || v2 == 0) {
+				if(Math.abs(v1 - v2) > 1E-16) {
+					message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i);
+					countErrors++;
+				}
+			}
+			else {
+				distance = compareScalarBits(expectedMatrix[i], actualMatrix[i]);
+				sumDistance += distance;
+				if(distance > maxUnitsOfLeastPrecision) {
+					message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i + " Distance in bits: " + distance);
+					countErrors++;
+				}
+			}
+
+		}
+		if(countErrors == 20) {
+			assertTrue(message + "\n At least 20 values are not in equal", countErrors == 0);
+		}
+		else {
+			long avgDistance = sumDistance / (rows);
+			assertTrue(message + "\n" + countErrors + " values are not in equal", countErrors == 0);
+			assertTrue(message + "\nThe avg distance in bits: " + avgDistance + " was higher than max: " + maxAvgDistance,
+				avgDistance <= maxAvgDistance);
+		}
+	}
+
+	public static void compareMatricesBitAvgDistance(MatrixBlock expectedMatrix, MatrixBlock actualMatrix,
+		long maxUnitsOfLeastPrecision, long maxAvgDistance) {
+		compareMatricesBitAvgDistance(expectedMatrix, actualMatrix, maxUnitsOfLeastPrecision, maxAvgDistance);
+	}
+
 	public static void compareMatricesBitAvgDistance(MatrixBlock expectedMatrix, MatrixBlock actualMatrix,
 		long maxUnitsOfLeastPrecision, long maxAvgDistance, String message) {
 		if(expectedMatrix instanceof CompressedMatrixBlock)
@@ -866,8 +914,12 @@ public class TestUtils
 		if(actualMatrix instanceof CompressedMatrixBlock)
 			actualMatrix = ((CompressedMatrixBlock) actualMatrix).decompress();
 		
-		if(expectedMatrix.isEmpty() && actualMatrix.isEmpty())
-			return;
+		if(expectedMatrix.isEmpty() && actualMatrix.isEmpty()){
+			expectedMatrix.recomputeNonZeros();
+			actualMatrix.recomputeNonZeros();
+			if(expectedMatrix.getNonZeros() == 0 && expectedMatrix.getNonZeros() == actualMatrix.getNonZeros())
+				return; // equally empty
+		}
 		else if(expectedMatrix.isEmpty()) {
 			if(expectedMatrix.getNumRows() < 10)
 				fail(message + "\nThe expected output is empty while the actual matrix is not\n" + expectedMatrix + "\n\n"
@@ -899,8 +951,7 @@ public class TestUtils
 				else if(v1 == 0 || v2 == 0) {
 					// take care of small epsilon from zero
 					if(Math.abs(v1 - v2) > 1E-16) {
-						message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i + " " + j
-						+ " Not using Bit distance since one value is 0");
+						message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i + " " + j);
 						countErrors++;
 					}
 				}
@@ -1058,33 +1109,71 @@ public class TestUtils
 	}
 
 	public static void compareMatricesPercentageDistance(double[][] expectedMatrix, double[][] actualMatrix, int rows,
-		int cols, double percentDistanceAllowed, double maxAveragePercentDistance,  String message, boolean ignoreZero){
-			assertTrue("percentDistanceAllowed should be between 1 and 0", percentDistanceAllowed >= 0.0 && percentDistanceAllowed <= 1.0);
-			assertTrue("maxAveragePercentDistance should be between 1 and 0", maxAveragePercentDistance >= 0.0 && maxAveragePercentDistance <= 1.0);
+		int cols, double percentDistanceAllowed, double maxAveragePercentDistance, String message, boolean ignoreZero) {
+		assertTrue("percentDistanceAllowed should be between 1 and 0",
+			percentDistanceAllowed >= 0.0 && percentDistanceAllowed <= 1.0);
+		assertTrue("maxAveragePercentDistance should be between 1 and 0",
+			maxAveragePercentDistance >= 0.0 && maxAveragePercentDistance <= 1.0);
 
-			int countErrors = 0;
-			double sumPercentDistance = 0;
-			double distance;
+		int countErrors = 0;
+		double sumPercentDistance = 0;
+		double distance;
 
-			for (int i = 0; i < rows && countErrors < 20; i++) {
-				for (int j = 0; j < cols && countErrors < 20; j++) {
-					distance = getPercentDistance(expectedMatrix[i][j], actualMatrix[i][j], ignoreZero);
-					sumPercentDistance += distance;
-					if(distance < percentDistanceAllowed){
-						message += ("\nExpected: "+ expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in percent " + distance);
-						countErrors++;
-					}
+		for(int i = 0; i < rows && countErrors < 20; i++) {
+			for(int j = 0; j < cols && countErrors < 20; j++) {
+				distance = getPercentDistance(expectedMatrix[i][j], actualMatrix[i][j], ignoreZero);
+				sumPercentDistance += distance;
+				if(distance < percentDistanceAllowed) {
+					message += ("\nExpected: " + expectedMatrix[i][j] + " vs actual: " + actualMatrix[i][j] + " at " + i
+						+ " " + j + " Distance in percent " + distance);
+					countErrors++;
 				}
 			}
-			if(countErrors == 20){
-				assertTrue(message + "\n At least 20 values are not in equal", countErrors == 0);
+		}
+		if(countErrors == 20) {
+			assertTrue(message + "\n At least 20 values are not in equal", countErrors == 0);
+		}
+		else {
+			double avgDistance = sumPercentDistance / (rows * cols);
+			assertTrue(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols),
+				countErrors == 0);
+			assertTrue(
+				message + "\nThe avg distance: " + avgDistance + " was lower than threshold " + maxAveragePercentDistance,
+				avgDistance > maxAveragePercentDistance);
+		}
+	}
+
+	public static void compareMatricesPercentageDistance(double[] expectedMatrix, double[] actualMatrix,
+		double percentDistanceAllowed, double maxAveragePercentDistance, String message, boolean ignoreZero) {
+		assertTrue("percentDistanceAllowed should be between 1 and 0",
+			percentDistanceAllowed >= 0.0 && percentDistanceAllowed <= 1.0);
+		assertTrue("maxAveragePercentDistance should be between 1 and 0",
+			maxAveragePercentDistance >= 0.0 && maxAveragePercentDistance <= 1.0);
+
+		int countErrors = 0;
+		double sumPercentDistance = 0;
+		double distance;
+		int rows = expectedMatrix.length;
+		for(int i = 0; i < rows && countErrors < 20; i++) {
+			distance = getPercentDistance(expectedMatrix[i], actualMatrix[i], ignoreZero);
+			sumPercentDistance += distance;
+			if(distance < percentDistanceAllowed) {
+				message += ("\nExpected: " + expectedMatrix[i] + " vs actual: " + actualMatrix[i] + " at " + i
+					+ " Distance in percent " + distance);
+				countErrors++;
 			}
-			else{
-				double avgDistance = sumPercentDistance / (rows * cols);
-				assertTrue(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols), countErrors == 0);
-				assertTrue(message + "\nThe avg distance: "+ avgDistance +" was lower than threshold " + maxAveragePercentDistance,
-					avgDistance > maxAveragePercentDistance);
-			}
+		}
+
+		if(countErrors == 20) {
+			assertTrue(message + "\n At least 20 values are not in equal", countErrors == 0);
+		}
+		else {
+			double avgDistance = sumPercentDistance / (rows);
+			assertTrue(message + "\n" + countErrors + " values are not in equal of total: " + (rows), countErrors == 0);
+			assertTrue(
+				message + "\nThe avg distance: " + avgDistance + " was lower than threshold " + maxAveragePercentDistance,
+				avgDistance > maxAveragePercentDistance);
+		}
 	}
 
 	public static void compareMatricesPercentageDistance(MatrixBlock expectedMatrix, MatrixBlock actualMatrix,
@@ -1094,8 +1183,12 @@ public class TestUtils
 		assertTrue("maxAveragePercentDistance should be between 1 and 0",
 			maxAveragePercentDistance >= 0.0 && maxAveragePercentDistance <= 1.0);
 
-		if(expectedMatrix.isEmpty() && actualMatrix.isEmpty())
-			return;
+		if(expectedMatrix.isEmpty() && actualMatrix.isEmpty()) {
+			expectedMatrix.recomputeNonZeros();
+			actualMatrix.recomputeNonZeros();
+			if(expectedMatrix.getNonZeros() == 0 && expectedMatrix.getNonZeros() == actualMatrix.getNonZeros())
+				return; // equally empty
+		}
 		if(expectedMatrix.isInSparseFormat() && actualMatrix.isInSparseFormat()) {
 			compareMatricesPercentageDistanceSparse(expectedMatrix.getSparseBlock(), actualMatrix.getSparseBlock(),
 				percentDistanceAllowed, maxAveragePercentDistance, message, ignoreZero, actualMatrix.getNumColumns());
@@ -2930,6 +3023,10 @@ public class TestUtils
 
 	public static MatrixBlock round(MatrixBlock data) {
 		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND)), null);
+	}
+
+	public static MatrixBlock ceil(MatrixBlock data){
+		return data.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.CEIL)), null);
 	}
 
 	public static double[][] floor(double[][] data) {

@@ -33,8 +33,8 @@ import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
+import org.apache.sysds.runtime.compress.estim.AComEst;
+import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
@@ -62,7 +62,7 @@ public abstract class ACostTest {
 			CompressionSettings cs = new CompressionSettingsBuilder() // Settings
 				.setColumnPartitioner(PartitionerType.GREEDY).setSeed(seed).create();
 			int k = 1;
-			CompressedSizeEstimator ie = CompressedSizeEstimatorFactory.createEstimator(mb, cs, k);
+			AComEst ie = ComEstFactory.createEstimator(mb, cs, k);
 			final int nRows = mb.getNumRows();
 			// Compress individual
 			CompressedSizeInfo individualGroups = ie.computeCompressedSizeInfos(k);

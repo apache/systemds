@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictLibMatrixMult;
@@ -42,27 +42,25 @@ public abstract class APreAgg extends AColGroupValue {
 	/**
 	 * Constructor for serialization
 	 * 
-	 * @param numRows number of rows
 	 */
-	protected APreAgg(int numRows) {
-		super(numRows);
+	protected APreAgg() {
+		super();
 	}
 
 	/**
 	 * A Abstract class for column groups that contain ADictionary for values.
 	 * 
 	 * @param colIndices   The Column indexes
-	 * @param numRows      The number of rows contained in this group
 	 * @param dict         The dictionary to contain the distinct tuples
 	 * @param cachedCounts The cached counts of the distinct tuples (can be null since it should be possible to
 	 *                     reconstruct the counts on demand)
 	 */
-	protected APreAgg(int[] colIndices, int numRows, ADictionary dict, int[] cachedCounts) {
-		super(colIndices, numRows, dict, cachedCounts);
+	protected APreAgg(int[] colIndices, ADictionary dict, int[] cachedCounts) {
+		super(colIndices, dict, cachedCounts);
 	}
 
 	@Override
-	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
+	public final void tsmmAColGroup(AColGroup other, MatrixBlock result) {
 		if(other instanceof ColGroupEmpty)
 			return;
 		else if(other instanceof APreAgg)
@@ -75,34 +73,15 @@ public abstract class APreAgg extends AColGroupValue {
 	}
 
 	@Override
-	public final void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
-		if(lhs instanceof ColGroupEmpty)
-			return;
-		else if(lhs instanceof APreAgg)
+	public final void leftMultByAColGroup(AColGroup lhs, MatrixBlock result, int nRows) {
+		// Not checking if empty since it should be guaranteed on call.
+		if(lhs instanceof APreAgg)
 			leftMultByColGroupValue((APreAgg) lhs, result);
 		else if(lhs instanceof ColGroupUncompressed)
 			leftMultByUncompressedColGroup((ColGroupUncompressed) lhs, result);
 		else
 			throw new DMLCompressionException(
 				"Not supported left multiplication with A ColGroup of type: " + lhs.getClass().getSimpleName());
-	}
-
-	@Deprecated
-	private final void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
-		if(matrix.isEmpty())
-			return;
-		final int nCol = _colIndexes.length;
-		final int numVals = getNumValues();
-		// Pre aggregate the matrix into same size as dictionary
-		final MatrixBlock preAgg = new MatrixBlock(ru - rl, numVals, false);
-		preAgg.allocateDenseBlock();
-		preAggregate(matrix, preAgg.getDenseBlockValues(), rl, ru);
-		preAgg.recomputeNonZeros();
-		final MatrixBlock tmpRes = new MatrixBlock(preAgg.getNumRows(), nCol, false);
-		forceMatrixBlockDictionary();
-		final MatrixBlock dictM = _dict.getMBDict(nCol).getMatrixBlock();
-		LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);
-		addMatrixToResult(tmpRes, result, _colIndexes, rl, ru);
 	}
 
 	/**
@@ -113,7 +92,8 @@ public abstract class APreAgg extends AColGroupValue {
 	 */
 	public final ADictionary preAggregateThatIndexStructure(APreAgg that) {
 		int outputLength = that._colIndexes.length * this.getNumValues();
-		Dictionary ret = new Dictionary(new double[outputLength]);
+		// create empty Dictionary that we slowly fill, hence the dictionary is empty and no check
+		final Dictionary ret = Dictionary.createNoCheck(new double[outputLength]);
 
 		if(that instanceof ColGroupDDC)
 			preAggregateThatDDCStructure((ColGroupDDC) that, ret);
@@ -121,12 +101,12 @@ public abstract class APreAgg extends AColGroupValue {
 			preAggregateThatSDCSingleZerosStructure((ColGroupSDCSingleZeros) that, ret);
 		else if(that instanceof ColGroupSDCZeros)
 			preAggregateThatSDCZerosStructure((ColGroupSDCZeros) that, ret);
-		else {
-			final String cThis = this.getClass().getSimpleName();
-			final String cThat = that.getClass().getSimpleName();
-			throw new NotImplementedException(
-				"Not supported pre aggregate using index structure of :" + cThat + " in " + cThis);
-		}
+		else if(that instanceof ColGroupRLE)
+			preAggregateThatRLEStructure((ColGroupRLE) that, ret);
+		else
+			throw new DMLRuntimeException("Not supported pre aggregate using index structure of :"
+				+ that.getClass().getSimpleName() + " in " + this.getClass().getSimpleName());
+
 		return ret.getMBDict(that._colIndexes.length);
 	}
 
@@ -138,7 +118,7 @@ public abstract class APreAgg extends AColGroupValue {
 	 * @param rl     Row lower on the left side matrix
 	 * @param ru     Row upper on the left side matrix
 	 */
-	public void preAggregate(MatrixBlock m, double[] preAgg, int rl, int ru) {
+	public final void preAggregate(MatrixBlock m, double[] preAgg, int rl, int ru) {
 		if(m.isInSparseFormat())
 			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
 		else
@@ -164,6 +144,8 @@ public abstract class APreAgg extends AColGroupValue {
 	protected abstract void preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret);
 
 	protected abstract void preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret);
+
+	protected abstract void preAggregateThatRLEStructure(ColGroupRLE that, Dictionary ret);
 
 	protected abstract boolean sameIndexStructure(AColGroupCompressed that);
 
@@ -251,8 +233,6 @@ public abstract class APreAgg extends AColGroupValue {
 	}
 
 	private void leftMultByUncompressedColGroup(ColGroupUncompressed lhs, MatrixBlock result) {
-		if(lhs.getData().isEmpty())
-			return;
 		LOG.warn("Transpose of uncompressed to fit to template need t(a) %*% b");
 		final MatrixBlock tmp = LibMatrixReorg.transpose(lhs.getData(), InfrastructureAnalyzer.getLocalParallelism());
 		final int numVals = getNumValues();
@@ -262,8 +242,10 @@ public abstract class APreAgg extends AColGroupValue {
 		preAgg.recomputeNonZeros();
 		final MatrixBlock tmpRes = new MatrixBlock(preAgg.getNumRows(), _colIndexes.length, false);
 		final MatrixBlock dictM = _dict.getMBDict(getNumCols()).getMatrixBlock();
-		LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);
-		addMatrixToResult(tmpRes, result, lhs._colIndexes);
+		if(dictM != null) {
+			LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);
+			addMatrixToResult(tmpRes, result, lhs._colIndexes);
+		}
 	}
 
 	private void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, int[] rowIndexes) {
@@ -299,9 +281,9 @@ public abstract class APreAgg extends AColGroupValue {
 		final int nCols = result.getNumColumns();
 		final MatrixBlock otherMBT = LibMatrixReorg.transpose(((ColGroupUncompressed) other).getData());
 		final int nRows = otherMBT.getNumRows();
-		final MatrixBlock tmp = new MatrixBlock(otherMBT.getNumRows(), nCols, false);
+		final MatrixBlock tmp = new MatrixBlock(nRows, nCols, false);
 		tmp.allocateDenseBlock();
-		leftMultByMatrix(otherMBT, tmp, 0, nRows);
+		leftMultByMatrixNoPreAgg(otherMBT, tmp, 0, nRows, 0, otherMBT.getNumColumns());
 
 		final double[] r = tmp.getDenseBlockValues();
 		final double[] resV = result.getDenseBlockValues();
@@ -311,7 +293,7 @@ public abstract class APreAgg extends AColGroupValue {
 			final int oid = other._colIndexes[i];
 			final int offR = i * nCols;
 			for(int j = 0; j < thisLen; j++)
-				DictLibMatrixMult.addToUpperTriangle(nCols, _colIndexes[j], oid, resV, r[offR + _colIndexes[j]]);
+				DictLibMatrixMult.addToUpperTriangle(nCols, oid, _colIndexes[j], resV, r[offR + _colIndexes[j]]);
 		}
 	}
 
@@ -326,7 +308,6 @@ public abstract class APreAgg extends AColGroupValue {
 	}
 
 	public void mmWithDictionary(MatrixBlock preAgg, MatrixBlock tmpRes, MatrixBlock ret, int k, int rl, int ru) {
-
 		// Shallow copy the preAgg to allow sparse PreAgg multiplication but do not remove the original dense allocation
 		// since the dense allocation is reused.
 		final MatrixBlock preAggCopy = new MatrixBlock();
@@ -334,45 +315,11 @@ public abstract class APreAgg extends AColGroupValue {
 		final MatrixBlock tmpResCopy = new MatrixBlock();
 		tmpResCopy.copy(tmpRes);
 		// Get dictionary matrixBlock
-		final ADictionary d = getDictionary();
-		final MatrixBlock dict = d.getMBDict(_colIndexes.length).getMatrixBlock();
-		try {
+		final MatrixBlock dict = getDictionary().getMBDict(_colIndexes.length).getMatrixBlock();
+		if(dict != null) {
 			// Multiply
 			LibMatrixMult.matrixMult(preAggCopy, dict, tmpResCopy, k);
-			addMatrixToResult(tmpResCopy, ret, _colIndexes, rl, ru);
-		}
-		catch(Exception e) {
-			throw new DMLCompressionException(
-				"Failed matrix multiply with preAggregate: \n" + preAggCopy + "\n" + dict + "\n" + tmpRes, e);
-		}
-
-	}
-
-	private static void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, int[] colIndexes, int rl, int ru) {
-		if(tmp.isEmpty())
-			return;
-		final double[] retV = result.getDenseBlockValues();
-		final int nColRet = result.getNumColumns();
-		if(tmp.isInSparseFormat()) {
-			final SparseBlock sb = tmp.getSparseBlock();
-			for(int row = rl, offT = 0; row < ru; row++, offT++) {
-				final int apos = sb.pos(offT);
-				final int alen = sb.size(offT);
-				final int[] aix = sb.indexes(offT);
-				final double[] avals = sb.values(offT);
-				final int offR = row * nColRet;
-				for(int i = apos; i < apos + alen; i++)
-					retV[offR + colIndexes[aix[i]]] += avals[i];
-			}
-		}
-		else {
-			final double[] tmpV = tmp.getDenseBlockValues();
-			final int nCol = colIndexes.length;
-			for(int row = rl, offT = 0; row < ru; row++, offT += nCol) {
-				final int offR = row * nColRet;
-				for(int col = 0; col < nCol; col++)
-					retV[offR + colIndexes[col]] += tmpV[offT + col];
-			}
+			ColGroupUtils.addMatrixToResult(tmpResCopy, ret, _colIndexes, rl, ru);
 		}
 	}
 

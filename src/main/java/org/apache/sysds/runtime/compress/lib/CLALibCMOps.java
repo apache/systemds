@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.compress.lib;
 import java.util.List;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
@@ -36,12 +35,14 @@ public class CLALibCMOps {
 			return LibMatrixAgg.aggregateCmCov(cmb, null, null, op.fn);
 		else if(cmb.isOverlapping())
 			return cmb.getUncompressed("cmOperations on overlapping state", op.getNumThreads()).cmOperations(op);
-		else {
-			final List<AColGroup> groups = cmb.getColGroups();
-			if(groups.size() == 1)
-				return groups.get(0).centralMoment(op, cmb.getNumRows());
-			else
-				throw new DMLCompressionException("Unsupported case for cmOperations");
-		}
+
+		final List<AColGroup> groups = cmb.getColGroups();
+		if(groups.size() == 1)
+			return groups.get(0).centralMoment(op, cmb.getNumRows());
+
+		return cmb.getUncompressed(
+			"Decompressing but should never happen that a single column is non overlapping and contain multiple groups",
+			op.getNumThreads()).cmOperations(op);
+
 	}
 }

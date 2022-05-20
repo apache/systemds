@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.estim.encoding;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -174,16 +175,21 @@ public class DenseEncoding implements IEncode {
 	}
 
 	@Override
-	public EstimationFactors extractFacts(int[] cols, int nRows, double tupleSparsity, double matrixSparsity) {
+	public EstimationFactors extractFacts(int nRows, double tupleSparsity, double matrixSparsity,
+		CompressionSettings cs) {
 		int largestOffs = 0;
 
 		int[] counts = map.getCounts(new int[map.getUnique()]);
 		for(int i = 0; i < counts.length; i++)
 			if(counts[i] > largestOffs)
 				largestOffs = counts[i];
+		if(cs.isRLEAllowed())
+			return new EstimationFactors(map.getUnique(), nRows, largestOffs, counts, 0, nRows, map.countRuns(), false,
+				false, matrixSparsity, tupleSparsity);
+		else
+			return new EstimationFactors(map.getUnique(), nRows, largestOffs, counts, 0, nRows, false, false,
+				matrixSparsity, tupleSparsity);
 
-		return new EstimationFactors(cols.length, map.getUnique(), nRows, largestOffs, counts, 0, nRows, false, false,
-			matrixSparsity, tupleSparsity);
 	}
 
 	@Override

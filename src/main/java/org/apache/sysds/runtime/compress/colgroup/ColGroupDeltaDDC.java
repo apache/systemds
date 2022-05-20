@@ -34,30 +34,23 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 
 	private static final long serialVersionUID = -1045556313148564147L;
 
-	/**
-	 * Constructor for serialization
-	 *
-	 * @param numRows number of rows
-	 */
-	protected ColGroupDeltaDDC(int numRows) {
-		super(numRows);
+	/** Constructor for serialization */
+	protected ColGroupDeltaDDC() {
 	}
 
-	private ColGroupDeltaDDC(int[] colIndexes, int numRows, ADictionary dict, AMapToData data, int[] cachedCounts) {
-		super(numRows);
+	private ColGroupDeltaDDC(int[] colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
+		super();
 		LOG.info("Carefully use of DeltaDDC since implementation is not finished.");
 		_colIndexes = colIndexes;
 		_dict = dict;
-		_zeros = false;
 		_data = data;
 	}
 
-	public static AColGroup create(int[] colIndices, int numRows, ADictionary dict, AMapToData data,
-		int[] cachedCounts) {
+	public static AColGroup create(int[] colIndices, ADictionary dict, AMapToData data, int[] cachedCounts) {
 		if(dict == null)
 			throw new NotImplementedException("Not implemented constant delta group");
 		else
-			return new ColGroupDeltaDDC(colIndices, numRows, dict, data, cachedCounts);
+			return new ColGroupDeltaDDC(colIndices, dict, data, cachedCounts);
 	}
 
 	public CompressionType getCompType() {
@@ -89,6 +82,6 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
-		return new ColGroupDeltaDDC(_colIndexes, _numRows, _dict.applyScalarOp(op), _data, getCachedCounts());
+		return new ColGroupDeltaDDC(_colIndexes, _dict.applyScalarOp(op), _data, getCachedCounts());
 	}
 }

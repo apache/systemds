@@ -21,7 +21,7 @@ package org.apache.sysds.runtime.compress.cocode;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 
 /**
@@ -29,7 +29,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
  */
 public class CoCodeStatic extends AColumnCoCoder {
 
-	protected CoCodeStatic(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
+	protected CoCodeStatic(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
 	}
 

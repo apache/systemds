@@ -53,7 +53,7 @@ import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
 import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
+import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.lib.CLALibAppend;
@@ -90,29 +90,48 @@ import org.junit.runners.Parameterized.Parameters;
 public abstract class CompressedTestBase extends TestBase {
 	protected static final Log LOG = LogFactory.getLog(CompressedTestBase.class.getName());
 
-	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {SparsityType.FULL, SparsityType.SPARSE,
-		SparsityType.ULTRA_SPARSE};
+	protected static SparsityType[] usedSparsityTypes = new SparsityType[] { //
+		SparsityType.FULL, //
+		SparsityType.SPARSE, //
+		SparsityType.ULTRA_SPARSE //
+	};
 
-	protected static ValueType[] usedValueTypes = new ValueType[] {ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE,
-		ValueType.RLE_COMPRESSIBLE, ValueType.CONST};
+	protected static ValueType[] usedValueTypes = new ValueType[] { //
+		ValueType.RAND_ROUND, //
+		ValueType.OLE_COMPRESSIBLE, //
+		// ValueType.RLE_COMPRESSIBLE, //
+		ValueType.CONST //
+	};
 
-	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.BOOLEAN, ValueRange.SMALL,
-		ValueRange.NEGATIVE};
+	protected static ValueRange[] usedValueRanges = new ValueRange[] { //
+		ValueRange.BOOLEAN, //
+		ValueRange.SMALL, //
+		// ValueRange.NEGATIVE, //
+		ValueRange.LARGE //
+	};
 
-	protected static OverLapping[] overLapping = new OverLapping[] {OverLapping.PLUS_LARGE, OverLapping.PLUS_ROW_VECTOR,
-		OverLapping.MATRIX, OverLapping.NONE, OverLapping.APPEND_CONST, OverLapping.C_BIND_SELF};
+	protected static OverLapping[] overLapping = new OverLapping[] { //
+		OverLapping.PLUS_LARGE, //
+		OverLapping.PLUS_ROW_VECTOR, //
+		OverLapping.MATRIX, //
+		OverLapping.NONE, //
+		OverLapping.APPEND_CONST, //
+		OverLapping.C_BIND_SELF //
+	};
 
-	protected static CompressionSettingsBuilder[] usedCompressionSettings = new CompressionSettingsBuilder[] {
-		// CLA TESTS!
+	protected static CompressionSettingsBuilder[] usedCompressionSettings = new CompressionSettingsBuilder[] { // s
 		// only DDC
 		// csb().setValidCompressions(EnumSet.of(CompressionType.DDC)),
 		// only SDC
 		// csb().setValidCompressions(EnumSet.of(CompressionType.SDC)),
 		// default settings
-		csb()};
+		csb() //
+	};
 
 	protected static MatrixTypology[] usedMatrixTypology = new MatrixTypology[] { // Selected Matrix Types
-		MatrixTypology.SMALL, MatrixTypology.LARGE};
+		MatrixTypology.SMALL, //
+		// MatrixTypology.LARGE //
+	};
 
 	private static final int compressionSeed = 7;
 	protected MatrixBlock cmb;
@@ -135,7 +154,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 		_k = parallelism;
 		mb.examSparsity();
-		// CompressionSettings.PAR_DDC_THRESHOLD = 1;
+		CompressionSettings.PAR_DDC_THRESHOLD = 1;
 
 		try {
 			if(_cs == null && ct == null) {
@@ -167,8 +186,7 @@ public abstract class CompressedTestBase extends TestBase {
 						colIndexes[x] = y;
 					}
 
-					CompressedSizeInfoColGroup cgi = CompressedSizeEstimatorFactory.createEstimator(mb, cs, _k)
-						.getColGroupInfo(colIndexes);
+					CompressedSizeInfoColGroup cgi = ComEstFactory.createEstimator(mb, cs, _k).getColGroupInfo(colIndexes);
 					CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
 
 					ACostEstimate ce = CostEstimatorFactory.create(cs, ceb, mb.getNumRows(), mb.getNumColumns(),

@@ -31,6 +31,7 @@ import java.util.stream.DoubleStream;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.functional.LinearRegression;
 import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.component.compress.colgroup.ColGroupLinearFunctionalBase;
@@ -77,6 +78,11 @@ public class LinearRegressionTests {
 		double[] trueCoefficients = new double[] {0, 0, 4, 5, 1, 1, 0, 0};
 		tests.add(new Object[] {data, colIndexes, false, trueCoefficients, null});
 
+		data = new double[][] {{1}, {2}, {3}};
+		colIndexes = new int[] {0};
+		trueCoefficients = new double[] {0, 1};
+		tests.add(new Object[] {data, colIndexes, false, trueCoefficients, null});
+
 		// expect exception if passing columns with single data points each
 		tests.add(new Object[] {new double[][] {{1, 2, 3}}, Util.genColsIndices(1), false, null,
 			new DMLCompressionException("At least 2 data points are required to fit a linear function.")});
@@ -89,9 +95,9 @@ public class LinearRegressionTests {
 		int rows = 100;
 		int cols = 200;
 		// TODO: move generateRandomInterceptsSlopes in an appropriate Util class
+		// TODO: move generateTestMatrixLinearColumns in an appropriate Util class
 		double[][] randomCoefficients = ColGroupLinearFunctionalBase.generateRandomInterceptsSlopes(cols, -1000, 1000,
 			-20, 20, 42);
-		// TODO: move generateTestMatrixLinearColumns in an appropriate Util class
 		double[][] testData = ColGroupLinearFunctionalBase.generateTestMatrixLinearColumns(rows, cols,
 			randomCoefficients[0], randomCoefficients[1]);
 		tests.add(new Object[] {testData, Util.genColsIndices(cols), false,
@@ -104,6 +110,20 @@ public class LinearRegressionTests {
 		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
 		try {
 			double[] coefficients = LinearRegression.regressMatrixBlock(mbt, colIndexes, isTransposed);
+			assertArrayEquals(expectedCoefficients, coefficients, EQUALITY_TOLERANCE);
+		}
+		catch(Exception e) {
+			assertEquals(expectedException.getClass(), e.getClass());
+			assertEquals(expectedException.getMessage(), e.getMessage());
+		}
+	}
+
+	@Test
+	public void testLineratRegressionEquivalentTransposed() {
+		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+		MatrixBlock mbtt = LibMatrixReorg.transpose(mbt);
+		try {
+			double[] coefficients = LinearRegression.regressMatrixBlock(mbtt, colIndexes, !isTransposed);
 			assertArrayEquals(expectedCoefficients, coefficients, EQUALITY_TOLERANCE);
 		}
 		catch(Exception e) {

@@ -34,7 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupLinearFunctional;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
+import org.apache.sysds.runtime.compress.estim.ComEstExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.utils.Util;
@@ -190,7 +190,7 @@ public abstract class ColGroupLinearFunctionalBase {
 			.setValidCompressions(EnumSet.of(cgType)).create();
 		cs.transposed = isTransposed;
 
-		final CompressedSizeInfoColGroup cgi = new CompressedSizeEstimatorExact(mbt, cs).getColGroupInfo(colIndexes);
+		final CompressedSizeInfoColGroup cgi = new ComEstExact(mbt, cs).getColGroupInfo(colIndexes);
 		CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
 		return ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
 	}

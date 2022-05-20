@@ -43,13 +43,30 @@ export SYSDS_DISTRIBUTED=0
 
 if [ "$HOSTNAME" = "alpha" ]; then
   # Just to make it easy to run on our machine without having to change anything.
-  export SYSTEMDS_STANDALONE_OPTS="-Xmx500g -Xms500g -Xmn50000m"
+  export SYSTEMDS_STANDALONE_OPTS="-Xmx500g -Xms500g -Xmn50g"
   export SYSDS_DISTRIBUTED=1
   export SYSTEMDS_DISTRIBUTED_OPTS="\
         --master yarn \
         --deploy-mode client \
         --driver-memory 700g \
         --conf spark.driver.extraJavaOptions=\"-Xms700g -Xmn70g -Dlog4j.configuration=file:$LOG4JPROP\" \
+        --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROP\" \
+        --conf spark.executor.heartbeatInterval=100s \
+        --files $LOG4JPROP \
+        --conf spark.network.timeout=512s \
+        --num-executors 6 \
+        --executor-memory 105g \
+        --executor-cores 32 \
+        "
+  MAXMEM="8GB"
+elif [ "$HOSTNAME" = "charlie" ]; then
+  export SYSTEMDS_STANDALONE_OPTS="-Xmx100g -Xms100g -Xmn10g"
+  export SYSDS_DISTRIBUTED=1
+  export SYSTEMDS_DISTRIBUTED_OPTS="\
+        --master yarn \
+        --deploy-mode client \
+        --driver-memory 700g \
+        --conf spark.driver.extraJavaOptions=\"-Xms100g -Xmn10g -Dlog4j.configuration=file:$LOG4JPROP\" \
         --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROP\" \
         --conf spark.executor.heartbeatInterval=100s \
         --files $LOG4JPROP \
@@ -82,20 +99,21 @@ mkdir -p temp
 
 rm -f results/times.txt
 date +"%Y-%m-%d-%T" >> results/times.txt
+echo -e "\n$HOSTNAME" >> results/times.txt
 echo -e "\n\n" >> results/times.txt
 
 ## Data Gen
-./datagen/genBinomialData.sh ${COMMAND} ${TEMPFOLDER} ${MAXMEM} &> logs/genBinomialData.out
-./datagen/genMultinomialData.sh ${COMMAND} ${TEMPFOLDER} ${MAXMEM} &> logs/genMultinomialData.out
-./datagen/genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStatsData.out
-./datagen/genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStratStatsData.out
-./datagen/genClusteringData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genClusteringData.out
-./datagen/genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genDimensionReductionData.out
-./datagen/genALSData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genALSData.out
+# ./datagen/genBinomialData.sh ${COMMAND} ${TEMPFOLDER} ${MAXMEM} &> logs/genBinomialData.out
+# ./datagen/genMultinomialData.sh ${COMMAND} ${TEMPFOLDER} ${MAXMEM} &> logs/genMultinomialData.out
+# ./datagen/genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStatsData.out
+# ./datagen/genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStratStatsData.out
+# ./datagen/genClusteringData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genClusteringData.out
+# ./datagen/genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genDimensionReductionData.out
+# ./datagen/genALSData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genALSData.out
 
 ### Micro Benchmarks:
-# ./MatrixMult.sh ${CMD}
-# ./MatrixTranspose.sh ${CMD}
+./MatrixMult.sh ${CMD}
+./MatrixTranspose.sh ${CMD}
 
 # Federate benchmark
 #./fed/runAllFed.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
@@ -119,4 +137,4 @@ echo -e "\n\n" >> results/times.txt
 #KaplanMeier
 #Cox
 
-cp results/times.txt "results/times-$(date +"%Y-%m-%d-%T").txt"
+cp results/times.txt "results/times-$HOSTNAME-$(date +"%Y-%m-%d-%T").txt"

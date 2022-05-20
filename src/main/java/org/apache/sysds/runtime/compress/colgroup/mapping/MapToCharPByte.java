@@ -193,4 +193,16 @@ public class MapToCharPByte extends AMapToData {
 		return ret;
 	}
 
+	@Override
+	public int countRuns() {
+		int c = 1;
+		char prev = _data_c[0];
+		byte prev_b = _data_b[0];
+		for(int i = 1; i <_data_c.length; i++){
+			c += prev == _data_c[i] && prev_b == _data_b[i] ? 0: 1;
+			prev = _data_c[i];
+			prev_b = _data_b[i];
+		}
+		return c;
+	}
 }

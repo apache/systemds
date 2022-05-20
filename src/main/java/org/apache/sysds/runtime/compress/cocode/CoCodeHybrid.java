@@ -21,7 +21,7 @@ package org.apache.sysds.runtime.compress.cocode;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 
@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
  */
 public class CoCodeHybrid extends AColumnCoCoder {
 
-	protected CoCodeHybrid(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
+	protected CoCodeHybrid(AComEst sizeEstimator, ACostEstimate costEstimator, CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
 	}
 

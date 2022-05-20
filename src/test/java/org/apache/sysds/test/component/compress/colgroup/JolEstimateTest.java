@@ -34,12 +34,14 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
+import org.apache.sysds.runtime.compress.estim.AComEst;
+import org.apache.sysds.runtime.compress.estim.ComEstExact;
+import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -82,7 +84,7 @@ public abstract class JolEstimateTest {
 				.setValidCompressions(EnumSet.of(getCT())).create();
 			cs.transposed = true;
 
-			final CompressedSizeInfoColGroup cgi = new CompressedSizeEstimatorExact(mbt, cs).getColGroupInfo(colIndexes);
+			final CompressedSizeInfoColGroup cgi = new ComEstExact(mbt, cs).getColGroupInfo(colIndexes);
 
 			final CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
 			final List<AColGroup> groups = ColGroupFactory.compressColGroups(mbt, csi, cs, 1);
@@ -130,10 +132,10 @@ public abstract class JolEstimateTest {
 		compressedSizeInfoEstimatorSample(0.1, 0.5);
 	}
 
-	// @Test
-	// public void compressedSizeInfoEstimatorSample_5() {
-	// compressedSizeInfoEstimatorSample(0.05, 0.5);
-	// }
+	@Test
+	public void compressedSizeInfoEstimatorSample_5() {
+		compressedSizeInfoEstimatorSample(0.05, 0.5);
+	}
 
 	// @Test
 	// public void compressedSizeInfoEstimatorSample_1() {
@@ -152,34 +154,43 @@ public abstract class JolEstimateTest {
 			return;
 		try {
 			if(mbt.getNumColumns() > 10000)
-				tolerance = tolerance * 0.95;
+				tolerance *= 0.95;
+
 			final CompressionSettings cs = csb.setSamplingRatio(ratio).setMinimumSampleSize(10)
 				.setValidCompressions(EnumSet.of(getCT())).create();
 			cs.transposed = true;
 
 			final int sampleSize = Math.max(10, (int) (mbt.getNumColumns() * ratio));
-			final CompressedSizeEstimator est = CompressedSizeEstimatorFactory.createEstimator(mbt, cs, sampleSize, 1);
-
-			// final int sampleSize = est.getSampleSize();
+			final AComEst est = ComEstFactory.createEstimator(mbt, cs, sampleSize, 1);
 			final CompressedSizeInfoColGroup cInfo = est.getColGroupInfo(colIndexes);
-			// LOG.error(cg);
 			final int estimateNUniques = cInfo.getNumVals();
 
-			final long estimateCSI = (cg.getCompType() == CompressionType.CONST) ? ColGroupSizes
+			final double estimateCSI = (cg.getCompType() == CompressionType.CONST) ? ColGroupSizes
 				.estimateInMemorySizeCONST(cg.getNumCols(), 1.0, false) : cInfo.getCompressionSize(cg.getCompType());
 			final double minTolerance = actualSize * tolerance *
 				(ratio < 1 && mbt.getSparsity() < 0.8 ? mbt.getSparsity() + 0.2 : 1);
-			final double maxTolerance = actualSize / tolerance +
-				(cg.getCompType() == CompressionType.SDC ? +8 * mbt.getNumRows() : 0);
-			final boolean withinToleranceOnSize = minTolerance <= estimateCSI && estimateCSI <= maxTolerance;
-			// LOG.error(cg);
-			if(!withinToleranceOnSize) {
-				final String rangeString = String.format("%.0f <= %d <= %.0f , Actual Size %d", minTolerance, estimateCSI,
-					maxTolerance, actualSize);
+			double maxTolerance = actualSize / tolerance;
+			if(cg.getNumValues() > sampleSize / 2)
+				maxTolerance += Math.abs(cg.getNumValues() - estimateNUniques ) * 8 * mbt.getNumRows();
+			
+			if(cg.getCompType() == CompressionType.SDC)
+				maxTolerance += 8 * mbt.getNumRows();
+			
+			if(cg.getCompType() == CompressionType.RLE)
+			maxTolerance += 8 * (mbt.getNumColumns() / Character.MAX_VALUE) * cg.getNumValues();
 
-				fail("CSI Sampled estimate size is not in tolerance range \n" + rangeString + "\nActual number uniques:"
-					+ actualNumberUnique + " estimated Uniques: " + estimateNUniques + "\nSampleSize of total rows:: "
-					+ sampleSize + " " + mbt.getNumColumns() + "\n" + cInfo + "\n" + mbt + "\n" + cg);
+			final boolean withinToleranceOnSize = minTolerance <= estimateCSI && estimateCSI <= maxTolerance;
+
+			if(!withinToleranceOnSize) {
+				final String rangeString = String.format("%.0f <= %.0f <= %.0f , Actual Size %d", minTolerance, estimateCSI,
+					maxTolerance, actualSize);
+				String message = "CSI Sampled estimate size is not in tolerance range \n" + rangeString + "\nActual number uniques:"
+				+ actualNumberUnique + " estimated Uniques: " + estimateNUniques + "\nSampleSize of total rows:: "
+				+ sampleSize + " " + mbt.getNumColumns() + "\n" + cInfo + "\n";
+				if(mbt.getNumColumns() < 1000)
+					message += mbt;
+				
+				fail(message + "\n" + cg);
 			}
 
 		}
@@ -187,5 +198,21 @@ public abstract class JolEstimateTest {
 			e.printStackTrace();
 			assertTrue("Failed sample test " + getCT() + "", false);
 		}
+	}
+
+	protected static Object[] conv(double[][] vals) {
+		return new Object[] {DataConverter.convertToMatrixBlock(vals)};
+	}
+
+	protected static Object[] gen(int row, int col, int min, int max, double spar, int seed) {
+		return new Object[] {TestUtils.generateTestMatrixBlock(row, col, min, max, spar, seed)};
+	}
+
+	protected static Object[] genR(int row, int col, int min, int max, double spar, int seed) {
+		return new Object[] {genRM(row, col, min, max, spar, seed)};
+	}
+
+	protected static MatrixBlock genRM(int row, int col, int min, int max, double spar, int seed) {
+		return TestUtils.ceil(TestUtils.generateTestMatrixBlock(row, col, min, max, spar, seed));
 	}
 }

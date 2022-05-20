@@ -40,8 +40,8 @@ import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
 import org.apache.sysds.runtime.compress.cost.MemoryCostEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
+import org.apache.sysds.runtime.compress.estim.AComEst;
+import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
@@ -80,7 +80,7 @@ public class CompressedMatrixBlockFactory {
 	/** The current Phase ID */
 	private int phase = 0;
 	/** Object to extract statistics from columns to make decisions based on */
-	private CompressedSizeEstimator informationExtractor;
+	private AComEst informationExtractor;
 	/** Compression information gathered through the sampling, used for the actual compression decided */
 	private CompressedSizeInfo compressionGroups;
 
@@ -228,14 +228,15 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	/**
-	 * Generate a CompressedMatrixBlock Object that contains a single uncompressed matrix block column group.
+	 * Generate a CompressedMatrixBlock Object that contains a single uncompressed matrix block column group. Note this
+	 * could be an empty colgroup if the input is empty.
 	 * 
 	 * @param mb The matrix block to be contained in the uncompressed matrix block column,
 	 * @return a CompressedMatrixBlock
 	 */
 	public static CompressedMatrixBlock genUncompressedCompressedMatrixBlock(MatrixBlock mb) {
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
-		AColGroup cg = new ColGroupUncompressed(mb);
+		AColGroup cg = ColGroupUncompressed.create(mb);
 		ret.allocateColGroup(cg);
 		ret.setNonZeros(mb.getNonZeros());
 		return ret;
@@ -296,7 +297,7 @@ public class CompressedMatrixBlockFactory {
 
 	private void classifyPhase() {
 		// Create the extractor for column statistics
-		informationExtractor = CompressedSizeEstimatorFactory.createEstimator(mb, compSettings, k);
+		informationExtractor = ComEstFactory.createEstimator(mb, compSettings, k);
 		// Compute the individual columns cost information
 		compressionGroups = informationExtractor.computeCompressedSizeInfos(k);
 

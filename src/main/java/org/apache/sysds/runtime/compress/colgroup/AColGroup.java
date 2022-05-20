@@ -24,7 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -166,7 +166,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param out data output
 	 * @throws IOException if IOException occurs
 	 */
-	public void write(DataOutput out) throws IOException {
+	protected void write(DataOutput out) throws IOException {
 		out.writeByte(getColGroupType().ordinal());
 		out.writeInt(_colIndexes.length);
 		// write col indices
@@ -180,7 +180,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param in data input
 	 * @throws IOException if IOException occurs
 	 */
-	public void readFields(DataInput in) throws IOException {
+	protected void readFields(DataInput in) throws IOException {
 		// column group type is read in ColGroupIO
 		final int numCols = in.readInt();
 		_colIndexes = new int[numCols];
@@ -269,7 +269,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param nRows  The number of rows in the groups
 	 * @return The given res list, where the sum of the column groups is added
 	 */
-	public static double[] colSum(List<AColGroup> groups, double[] res, int nRows) {
+	public static double[] colSum(Collection<AColGroup> groups, double[] res, int nRows) {
 		for(AColGroup g : groups)
 			g.computeColSums(res, nRows);
 		return res;
@@ -358,7 +358,20 @@ public abstract class AColGroup implements Serializable {
 	 * @param right The MatrixBlock on the right of this matrix multiplication
 	 * @return The new Column Group or null that is the result of the matrix multiplication.
 	 */
-	public abstract AColGroup rightMultByMatrix(MatrixBlock right);
+	public final AColGroup rightMultByMatrix(MatrixBlock right){
+		return rightMultByMatrix(right, null);
+	}
+
+	/**
+	 * Right matrix multiplication with this column group.
+	 * 
+	 * This method can return null, meaning that the output overlapping group would have been empty.
+	 * 
+	 * @param right The MatrixBlock on the right of this matrix multiplication
+	 * @param allCols A pre-materialized list of all col indexes, that can be shared across all column groups if use full, can be set to null.
+	 * @return The new Column Group or null that is the result of the matrix multiplication.
+	 */
+	public abstract AColGroup rightMultByMatrix(MatrixBlock right, int[] allCols);
 
 	/**
 	 * Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group.
@@ -391,10 +404,11 @@ public abstract class AColGroup implements Serializable {
 	 * Left side matrix multiplication with a column group that is transposed.
 	 * 
 	 * @param lhs    The left hand side Column group to multiply with, the left hand side should be considered
-	 *               transposed.
+	 *               transposed. Also it should be guaranteed that this column group is not empty.
 	 * @param result The result matrix to insert the result of the multiplication into
+	 * @param nRows   Number of rows in the lhs colGroup
 	 */
-	public abstract void leftMultByAColGroup(AColGroup lhs, MatrixBlock result);
+	public abstract void leftMultByAColGroup(AColGroup lhs, MatrixBlock result, int nRows);
 
 	/**
 	 * Matrix multiply with this other column group, but:
@@ -446,11 +460,13 @@ public abstract class AColGroup implements Serializable {
 	 * Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed
 	 * matrix.
 	 * 
+	 * The range of rl to ru only applies to row aggregates. (ReduceCol)
+	 * 
 	 * @param op    The operator used
 	 * @param c     The output matrix block
 	 * @param nRows The total number of rows in the Column Group
-	 * @param rl    The Starting Row to do aggregation from
-	 * @param ru    The last Row to do aggregation to (not included)
+	 * @param rl    The starting row to do aggregation from
+	 * @param ru    The last row to do aggregation to (not included)
 	 */
 	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int nRows, int rl, int ru);
 
@@ -563,6 +579,13 @@ public abstract class AColGroup implements Serializable {
 
 	public abstract AColGroup unaryOperation(UnaryOperator op);
 
+	/**
+	 * Get if the group is only containing zero
+	 * 
+	 * @return true if empty
+	 */
+	public abstract boolean isEmpty();
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -570,7 +593,6 @@ public abstract class AColGroup implements Serializable {
 		sb.append(this.getClass().getSimpleName());
 		sb.append(String.format("\n%15s", "Columns: "));
 		sb.append(Arrays.toString(_colIndexes));
-
 		return sb.toString();
 	}
 }

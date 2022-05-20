@@ -26,6 +26,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap;
@@ -43,6 +44,11 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class BitmapEncoder {
 
 	static Log LOG = LogFactory.getLog(BitmapEncoder.class.getName());
+
+	public static ABitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, int estimatedNumberOfUniques,
+		CompressionSettings cs) {
+		return extractBitmap(colIndices, rawBlock, cs.transposed, estimatedNumberOfUniques, cs.sortTuplesByFrequency);
+	}
 
 	/**
 	 * Generate uncompressed bitmaps for a set of columns in an uncompressed matrix block.

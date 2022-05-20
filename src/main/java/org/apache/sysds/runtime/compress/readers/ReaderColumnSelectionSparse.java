@@ -41,8 +41,7 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 	}
 
 	protected final DblArray getNextRow() {
-		boolean empty = true;
-		while(empty && _rl < _ru) {
+		while(_rl < _ru) {
 			_rl++;
 			if(a.isEmpty(_rl))
 				continue; // if empty easy skip

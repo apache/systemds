@@ -42,24 +42,50 @@ public class CompressedSizeInfoColGroup {
 
 	private final int[] _cols;
 	private final EstimationFactors _facts;
-	private final double _cardinalityRatio;
-	private final long _minSize;
+	private final double _minSize;
 	private final CompressionType _bestCompressionType;
-	private final EnumMap<CompressionType, Long> _sizes;
+	private final EnumMap<CompressionType, Double> _sizes;
 
 	/**
 	 * Map containing a mapping to unique values, but not necessarily the actual values contained in this column group
 	 */
 	private IEncode _map;
 
+	public CompressedSizeInfoColGroup(int[] cols, int nVal, int nRow, CompressionType bestCompressionType) {
+		_cols = cols;
+		_facts = new EstimationFactors(nVal, nRow);
+		_minSize = -1;
+		_bestCompressionType = bestCompressionType;
+		_sizes = new EnumMap<>(CompressionType.class);
+		_sizes.put(bestCompressionType, _minSize);
+	}
+
+	public CompressedSizeInfoColGroup(int[] cols, EstimationFactors facts, CompressionType bestCompressionType) {
+		_cols = cols;
+		_facts = facts;
+		_minSize = -1;
+		_bestCompressionType = bestCompressionType;
+		_sizes = new EnumMap<>(CompressionType.class);
+		_sizes.put(bestCompressionType, _minSize);
+	}
+
+	public CompressedSizeInfoColGroup(int[] cols, EstimationFactors facts, long minSize,
+		CompressionType bestCompressionType) {
+		_cols = cols;
+		_facts = facts;
+		_minSize = minSize;
+		_bestCompressionType = bestCompressionType;
+		_sizes = new EnumMap<>(CompressionType.class);
+		_sizes.put(bestCompressionType, _minSize);
+	}
+
 	protected CompressedSizeInfoColGroup(int[] columns, EstimationFactors facts,
 		Set<CompressionType> validCompressionTypes, IEncode map) {
 		_cols = columns;
 		_facts = facts;
-		_cardinalityRatio = (double) facts.numVals / facts.numRows;
 		_sizes = calculateCompressionSizes(_cols.length, facts, validCompressionTypes);
-		Map.Entry<CompressionType, Long> bestEntry = null;
-		for(Map.Entry<CompressionType, Long> ent : _sizes.entrySet()) {
+		Map.Entry<CompressionType, Double> bestEntry = null;
+		for(Map.Entry<CompressionType, Double> ent : _sizes.entrySet()) {
 			if(bestEntry == null || ent.getValue() < bestEntry.getValue())
 				bestEntry = ent;
 		}
@@ -79,23 +105,23 @@ public class CompressedSizeInfoColGroup {
 	 */
 	public CompressedSizeInfoColGroup(int[] columns, int nRows) {
 		_cols = columns;
-		_facts = new EstimationFactors(columns.length, 0, nRows);
-		_cardinalityRatio = 0;
+		_facts = new EstimationFactors(0, nRows);
+
 		_sizes = new EnumMap<>(CompressionType.class);
 		final CompressionType ct = CompressionType.EMPTY;
-		_sizes.put(ct,  ColGroupSizes.estimateInMemorySizeEMPTY(columns.length));
+		_sizes.put(ct, (double)ColGroupSizes.estimateInMemorySizeEMPTY(columns.length));
 		_bestCompressionType = ct;
 		_minSize = _sizes.get(ct);
 		_map = null;
 
 	}
 
-	public long getCompressionSize(CompressionType ct) {
+	public double getCompressionSize(CompressionType ct) {
 		if(_sizes != null) {
-			Long s = _sizes.get(ct);
+			Double s = _sizes.get(ct);
 			if(s == null)
 				throw new DMLCompressionException("Asked for valid " + ct + " but got null. contains:" + _sizes);
-			return _sizes.get(ct);
+			return s;
 		}
 		else
 			throw new DMLCompressionException("There was no encodings analyzed");
@@ -109,11 +135,11 @@ public class CompressedSizeInfoColGroup {
 		return _bestCompressionType;
 	}
 
-	public Map<CompressionType, Long> getAllCompressionSizes() {
+	public Map<CompressionType, Double> getAllCompressionSizes() {
 		return _sizes;
 	}
 
-	public long getMinSize() {
+	public double getMinSize() {
 		return _minSize;
 	}
 
@@ -143,10 +169,6 @@ public class CompressedSizeInfoColGroup {
 		return _facts.numRows;
 	}
 
-	public double getCardinalityRatio() {
-		return _cardinalityRatio;
-	}
-
 	public double getMostCommonFraction() {
 		return (double) _facts.largestOff / _facts.numRows;
 	}
@@ -167,11 +189,11 @@ public class CompressedSizeInfoColGroup {
 		return _facts.numOffs < _facts.numRows;
 	}
 
-	private static EnumMap<CompressionType, Long> calculateCompressionSizes(int numCols, EstimationFactors fact,
+	private static EnumMap<CompressionType, Double> calculateCompressionSizes(int numCols, EstimationFactors fact,
 		Set<CompressionType> validCompressionTypes) {
-		EnumMap<CompressionType, Long> res = new EnumMap<CompressionType, Long>(CompressionType.class);
+		EnumMap<CompressionType, Double> res = new EnumMap<CompressionType, Double>(CompressionType.class);
 		for(CompressionType ct : validCompressionTypes) {
-			long compSize = getCompressionSize(numCols, ct, fact);
+			double compSize = getCompressionSize(numCols, ct, fact);
 			if(compSize > 0)
 				res.put(ct, compSize);
 		}
@@ -186,21 +208,19 @@ public class CompressedSizeInfoColGroup {
 		return _bestCompressionType == CompressionType.CONST;
 	}
 
-	private static long getCompressionSize(int numCols, CompressionType ct, EstimationFactors fact) {
+	private static double getCompressionSize(int numCols, CompressionType ct, EstimationFactors fact) {
 		int nv;
 		switch(ct) {
 			case LinearFunctional:
 				return ColGroupSizes.estimateInMemorySizeLinearFunctional(numCols);
-			case DeltaDDC: // TODO add proper extraction
+			case DeltaDDC:
+				throw new NotImplementedException();
 			case DDC:
 				nv = fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0);
-				// + 1 if the column contains zero
 				return ColGroupSizes.estimateInMemorySizeDDC(numCols, nv, fact.numRows, fact.tupleSparsity, fact.lossy);
 			case RLE:
-				throw new NotImplementedException();
-			// nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
-			// return ColGroupSizes.estimateInMemorySizeRLE(numCols, nv, fact.numRuns, fact.numRows, fact.tupleSparsity,
-			// fact.lossy);
+				return ColGroupSizes.estimateInMemorySizeRLE(numCols,  fact.numVals, fact.numRuns, fact.numRows, fact.tupleSparsity,
+					fact.lossy);
 			case OLE:
 				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
 				return ColGroupSizes.estimateInMemorySizeOLE(numCols, nv, fact.numOffs + fact.numVals, fact.numRows,
@@ -238,7 +258,7 @@ public class CompressedSizeInfoColGroup {
 		sb.append(" Sizes: ");
 		sb.append(_sizes);
 		sb.append(" facts: " + _facts);
-		sb.append("\n" + _map);
+		// sb.append("\n" + _map);
 		return sb.toString();
 	}
 

@@ -91,7 +91,7 @@ public class PreAggregateSDCZ_SDCZTest {
 	@Test
 	public void preAggregateSDCZ_DDC() {
 		try {
-			Dictionary ret = new Dictionary(new double[expected.length]);
+			Dictionary ret = Dictionary.createNoCheck(new double[expected.length]);
 			m.preAggregateSDCZ_SDCZ(tm, td, tof, of, ret, nCol);
 			compare(ret.getValues(), expected, 0.000001);
 		}
@@ -120,13 +120,13 @@ public class PreAggregateSDCZ_SDCZTest {
 		final AMapToData tm = MappingTestUtil.createRandomMap(tof.getSize(), nUnique2, r);
 
 		double[] dv = new double[nUnique2 * nCol];
-		ADictionary td = new Dictionary(dv);
+		ADictionary td = Dictionary.createNoCheck(dv);
 
 		for(int i = 0; i < dv.length; i++)
 			dv[i] = r.nextDouble();
 
 		double[] exp = new double[nUnique1 * nCol];
-		Dictionary expD = new Dictionary(exp);
+		Dictionary expD = Dictionary.createNoCheck(exp);
 
 		try {
 			// use implementation to get baseline.

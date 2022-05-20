@@ -123,7 +123,6 @@ public class ReadersTest {
 
 	@Test(expected = DMLCompressionException.class)
 	public void testInvalidRange() {
-
 		ReaderColumnSelection.createReader(new MatrixBlock(), new int[] {0, 1}, false, 10, 9);
 	}
 

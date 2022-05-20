@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
@@ -144,9 +145,8 @@ public abstract class EncodeSampleTest {
 	@Test
 	public void toEstimationFactors() {
 		try {
-			int[] cols = new int[t ? m.getNumRows() : m.getNumColumns()];
 			int rows = t ? m.getNumColumns() : m.getNumRows();
-			e.extractFacts(cols, rows, 1.0, 1.0);
+			e.extractFacts(rows, 1.0, 1.0, new CompressionSettingsBuilder().create());
 		}
 		catch(Exception e) {
 			e.printStackTrace();

@@ -62,12 +62,6 @@ public final class Bitmap extends ABitmap {
 	}
 
 	@Override
-	public final int getNumValues() {
-		// Values are guaranteed not to be null.
-		return _values.length;
-	}
-
-	@Override
 	public int getNumColumns() {
 		return 1;
 	}

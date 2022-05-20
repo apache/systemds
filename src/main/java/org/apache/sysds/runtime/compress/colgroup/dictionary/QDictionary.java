@@ -26,9 +26,6 @@ import java.io.IOException;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.Divide;
-import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -68,7 +65,12 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public double getValue(int i) {
-		return (i >= size()) ? 0.0 : _values[i] * _scale;
+		return _values[i] * _scale;
+	}
+
+	@Override
+	public final double getValue(int r, int c, int nCol) {
+		return _values[r * nCol + c] * _scale;
 	}
 
 	public byte getValueByte(int i) {
@@ -135,51 +137,22 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public QDictionary inplaceScalarOp(ScalarOperator op) {
-		if(_values == null)
-			return this;
-
-		if(op.fn instanceof Multiply || op.fn instanceof Divide) {
-			_scale = op.executeScalar(_scale);
-			return this;
-			// return new QDictionary(_values, op.executeScalar(_scale));
-		}
-		else if(op.fn instanceof Plus) {
-			// TODO: find more operations that have the property of larges and smallest value producing the largest or
-			// smallest value from operation
-			double max = Math.max(Math.abs(op.executeScalar(-127 * _scale)), Math.abs(op.executeScalar(127 * _scale)));
-			double oldScale = _scale;
-			_scale = max / 127.0;
-
-			for(int i = 0; i < _values.length; i++) {
-				_values[i] = (byte) Math.round(op.executeScalar(_values[i] * oldScale) / _scale);
-			}
-		}
-		else {
-			double[] temp = new double[_values.length];
-			double max = Math.abs(op.executeScalar(getValue(0)));
-			for(int i = 0; i < _values.length; i++) {
-				temp[i] = op.executeScalar(getValue(i));
-				double absTemp = Math.abs(temp[i]);
-				if(absTemp > max) {
-					max = absTemp;
-				}
-			}
-			_scale = max / (double) (Byte.MAX_VALUE);
-			for(int i = 0; i < _values.length; i++) {
-				_values[i] = (byte) Math.round(temp[i] / _scale);
-			}
-		}
-		return this;
-	}
-
-	@Override
 	public QDictionary applyScalarOp(ScalarOperator op) {
 		throw new NotImplementedException();
 	}
 
 	@Override
+	public ADictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public ADictionary applyUnaryOp(UnaryOperator op) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol) {
 		throw new NotImplementedException();
 	}
 
@@ -273,6 +246,21 @@ public class QDictionary extends ADictionary {
 		throw new NotImplementedException();
 	}
 
+	@Override
+	public double[] productAllRowsToDouble(int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public double[] productAllRowsToDoubleWithDefault(double[] defaultTuple) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public double[] productAllRowsToDoubleWithReference(double[] reference) {
+		throw new NotImplementedException();
+	}
+
 	private double sumRow(int k, int nrColumns) {
 		if(_values == null)
 			return 0;
@@ -302,6 +290,16 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public void colSumSq(double[] c, int[] counts, int[] colIndexes) {
+		throw new NotImplementedException("Not Implemented");
+	}
+
+	@Override
+	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
+		throw new NotImplementedException("Not Implemented");
+	}
+
+	@Override
+	public void colProductWithReference(double[] res, int[] counts, int[] colIndexes, double[] reference) {
 		throw new NotImplementedException("Not Implemented");
 	}
 
@@ -336,7 +334,7 @@ public class QDictionary extends ADictionary {
 
 	public Dictionary makeDoubleDictionary() {
 		double[] doubleValues = getValues();
-		return new Dictionary(doubleValues);
+		return Dictionary.create(doubleValues);
 	}
 
 	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
@@ -470,7 +468,17 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
+	public ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, int[] colIndexes) {
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, int[] colIndexes) {
 		throw new NotImplementedException();
 	}
 
@@ -497,6 +505,12 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
+	public CM_COV_Object centralMomentWithDefault(CM_COV_Object ret, ValueFunction fn, int[] counts, double def,
+		int nRows) {
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public CM_COV_Object centralMomentWithReference(CM_COV_Object ret, ValueFunction fn, int[] counts, double reference,
 		int nRows) {
 		throw new NotImplementedException();
@@ -515,7 +529,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, double reference) {
+	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
 		throw new NotImplementedException();
 	}
 

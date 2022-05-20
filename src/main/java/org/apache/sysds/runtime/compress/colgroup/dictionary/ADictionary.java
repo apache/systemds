@@ -23,7 +23,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -58,6 +57,16 @@ public abstract class ADictionary implements Serializable {
 	 * @return The value contained at the index
 	 */
 	public abstract double getValue(int i);
+
+	/**
+	 * Get Specific value contain in dictionary at index.
+	 * 
+	 * @param r    Row target
+	 * @param col  Col target
+	 * @param nCol nCol in dictionary
+	 * @return value
+	 */
+	public abstract double getValue(int r, int col, int nCol);
 
 	/**
 	 * Returns the memory usage of the dictionary.
@@ -131,15 +140,15 @@ public abstract class ADictionary implements Serializable {
 	 * @param c          The target double array, this contains the full number of columns, therefore the colIndexes for
 	 *                   this specific dictionary is needed.
 	 * @param fn         The function to apply to individual columns
-	 * @param reference  The reference offset values to add to each cell.
 	 * @param colIndexes The mapping to the target columns from the individual columns
+	 * @param reference  The reference offset values to add to each cell.
 	 * @param def        If the reference should be treated as a tuple as well
 	 */
 	public abstract void aggregateColsWithReference(double[] c, Builtin fn, int[] colIndexes, double[] reference,
 		boolean def);
 
 	/**
-	 * Allocate a new dictionary and applies the scalar operation on each cell of the to then return the new dictionary.
+	 * Allocate a new dictionary and applies the scalar operation on each cell of to then return the new dictionary.
 	 * 
 	 * @param op The operator.
 	 * @return The new dictionary to return.
@@ -147,12 +156,33 @@ public abstract class ADictionary implements Serializable {
 	public abstract ADictionary applyScalarOp(ScalarOperator op);
 
 	/**
+	 * Allocate a new dictionary with one extra row and applies the scalar operation on each cell of to then return the
+	 * new dictionary.
+	 * 
+	 * @param op   The operator
+	 * @param v0   The new value to put into each cell in the new row
+	 * @param nCol The number of columns in the dictionary
+	 * @return The new dictionary to return.
+	 */
+	public abstract ADictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol);
+
+	/**
 	 * Allocate a new dictionary and apply the unary operator on each cell.
 	 * 
-	 * @param op the operator.
+	 * @param op The operator.
 	 * @return The new dictionary to return.
 	 */
 	public abstract ADictionary applyUnaryOp(UnaryOperator op);
+
+	/**
+	 * Allocate a new dictionary with one extra row and apply the unary operator on each cell.
+	 * 
+	 * @param op   The operator.
+	 * @param v0   The new value to put into each cell in the new row
+	 * @param nCol The number of columns in the dictionary
+	 * @return The new dictionary to return.
+	 */
+	public abstract ADictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol);
 
 	/**
 	 * Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.
@@ -179,16 +209,7 @@ public abstract class ADictionary implements Serializable {
 	public abstract ADictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference);
 
 	/**
-	 * Applies the scalar operation on the dictionary. Note that this operation modifies the underlying data, and
-	 * normally require a copy of the original Dictionary to preserve old objects.
-	 * 
-	 * @param op The operator to apply to the dictionary values.
-	 * @return this dictionary with modified values.
-	 */
-	public abstract ADictionary inplaceScalarOp(ScalarOperator op);
-
-	/**
-	 * Apply binary row operation on the left side in place
+	 * Apply binary row operation on the left side
 	 * 
 	 * @param op         The operation to this dictionary
 	 * @param v          The values to use on the left hand side.
@@ -196,6 +217,16 @@ public abstract class ADictionary implements Serializable {
 	 * @return A new dictionary containing the updated values.
 	 */
 	public abstract ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes);
+
+	/**
+	 * Apply binary row operation on the left side with one extra row evaluating with zeros.
+	 * 
+	 * @param op         The operation to this dictionary
+	 * @param v          The values to use on the left hand side.
+	 * @param colIndexes The column indexes to consider inside v.
+	 * @return A new dictionary containing the updated values.
+	 */
+	public abstract ADictionary binOpLeftAndAppend(BinaryOperator op, double[] v, int[] colIndexes);
 
 	/**
 	 * Apply the binary operator such that each value is offset by the reference before application. Then put the result
@@ -225,7 +256,17 @@ public abstract class ADictionary implements Serializable {
 	public abstract ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes);
 
 	/**
-	 * Apply binary row operation on the right side.
+	 * Apply binary row operation on the right side with one extra row evaluating with zeros.
+	 * 
+	 * @param op         The operation to this dictionary
+	 * @param v          The values to use on the right hand side.
+	 * @param colIndexes The column indexes to consider inside v.
+	 * @return A new dictionary containing the updated values.
+	 */
+	public abstract ADictionary binOpRightAndAppend(BinaryOperator op, double[] v, int[] colIndexes);
+
+	/**
+	 * Apply binary row operation on the right side as with no columns to extract from v.
 	 * 
 	 * @param op The operation to this dictionary
 	 * @param v  The values to apply on the dictionary (same number of cols as the dictionary)
@@ -338,6 +379,31 @@ public abstract class ADictionary implements Serializable {
 	 * @return a double array containing the row sums from this dictionary.
 	 */
 	public abstract double[] sumAllRowsToDoubleSqWithReference(double[] reference);
+
+	/**
+	 * Method to product all rows to a column vector.
+	 * 
+	 * @param nrColumns The number of columns in the ColGroup to know how to get the values from the dictionary.
+	 * @return A row product
+	 */
+	public abstract double[] productAllRowsToDouble(int nrColumns);
+
+	/**
+	 * Method to product all rows to a column vector with a default value added in the end.
+	 * 
+	 * @param defaultTuple The default row that aggregate to last cell
+	 * @return A row product
+	 */
+	public abstract double[] productAllRowsToDoubleWithDefault(double[] defaultTuple);
+
+	/**
+	 * Method to product all rows to a column vector with a reference values added to all cells, and a reference product
+	 * in the end
+	 * 
+	 * @param reference The reference row
+	 * @return A row product
+	 */
+	public abstract double[] productAllRowsToDoubleWithReference(double[] reference);
 
 	/**
 	 * Get the column sum of the values contained in the dictionary
@@ -570,7 +636,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param ret       The result dense double array (containing one value)
 	 * @param counts    The counts of each entry in the dictionary
 	 * @param reference The reference value.
-	 * @param refCount  The number of occurences of the ref value.
+	 * @param refCount  The number of occurrences of the ref value.
 	 */
 	public abstract void productWithReference(double[] ret, int[] counts, double[] reference, int refCount);
 
@@ -581,9 +647,17 @@ public abstract class ADictionary implements Serializable {
 	 * @param counts     The weighted count of individual tuples
 	 * @param colIndexes The column indexes.
 	 */
-	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
-		throw new NotImplementedException();
-	}
+	public abstract void colProduct(double[] res, int[] counts, int[] colIndexes);
+
+	/**
+	 * Calculate the column product of the dictionary weighted by counts.
+	 * 
+	 * @param res        The result vector to put the result into
+	 * @param counts     The weighted count of individual tuples
+	 * @param colIndexes The column indexes.
+	 * @param reference  The reference value.
+	 */
+	public abstract void colProductWithReference(double[] res, int[] counts, int[] colIndexes, double[] reference);
 
 	/**
 	 * Central moment function to calculate the central moment of this column group. MUST be on a single column
@@ -609,6 +683,34 @@ public abstract class ADictionary implements Serializable {
 	 * @return The central moment Object
 	 */
 	public abstract CM_COV_Object centralMoment(CM_COV_Object ret, ValueFunction fn, int[] counts, int nRows);
+
+	/**
+	 * Central moment function to calculate the central moment of this column group with a default offset on all missing
+	 * tuples. MUST be on a single column dictionary.
+	 * 
+	 * @param fn     The value function to apply
+	 * @param counts The weight of individual tuples
+	 * @param def    The default values to offset the tuples with
+	 * @param nRows  The number of rows in total of the column group
+	 * @return The central moment Object
+	 */
+	public CM_COV_Object centralMomentWithDefault(ValueFunction fn, int[] counts, double def, int nRows) {
+		return centralMomentWithDefault(new CM_COV_Object(), fn, counts, def, nRows);
+	}
+
+	/**
+	 * Central moment function to calculate the central moment of this column group with a default offset on all missing
+	 * tuples. MUST be on a single column dictionary.
+	 * 
+	 * @param ret    The Central Moment object to be modified and returned
+	 * @param fn     The value function to apply
+	 * @param counts The weight of individual tuples
+	 * @param def    The default values to offset the tuples with
+	 * @param nRows  The number of rows in total of the column group
+	 * @return The central moment Object
+	 */
+	public abstract CM_COV_Object centralMomentWithDefault(CM_COV_Object ret, ValueFunction fn, int[] counts, double def,
+		int nRows);
 
 	/**
 	 * Central moment function to calculate the central moment of this column group with a reference offset on each
@@ -658,7 +760,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param reference A reference value to add to all tuples before expanding
 	 * @return A new dictionary
 	 */
-	public abstract ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, double reference);
+	public abstract ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference);
 
 	/**
 	 * Get the sparsity of the dictionary.
@@ -788,4 +890,17 @@ public abstract class ADictionary implements Serializable {
 	protected abstract void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight,
 		int[] scale, MatrixBlock result);
 
+	protected String doubleToString(double v) {
+		if(v == (long) v)
+			return Long.toString(((long) v));
+		else
+			return Double.toString(v);
+	}
+
+	protected static void correctNan(double[] res, int[] colIndexes) {
+		// since there is no nan values every in a dictionary, we exploit that
+		// nan oly occur if we multiplied infinity with 0.
+		for(int j = 0; j < colIndexes.length; j++)
+			res[colIndexes[j]] = Double.isNaN(res[colIndexes[j]]) ? 0 : res[colIndexes[j]];
+	}
 }

@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.compress.cocode;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 
 /**
@@ -44,7 +44,7 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 	 */
 	// private static double BIN_CAPACITY = 0.000032;
 
-	protected CoCodeBinPacking(CompressedSizeEstimator sizeEstimator, ACostEstimate costEstimator,
+	protected CoCodeBinPacking(AComEst sizeEstimator, ACostEstimate costEstimator,
 		CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
 		// mem = new Memorizer(sizeEstimator);

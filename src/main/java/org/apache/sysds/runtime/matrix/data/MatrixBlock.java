@@ -3641,6 +3641,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return result;
 	}
 
+	public final MatrixBlock append(MatrixBlock that) {
+		return append(that, null, true); // default cbind
+	}
+
+	public final MatrixBlock append(MatrixBlock that, boolean cbind) {
+		return append(that, null, cbind);
+	}
+
 	public final MatrixBlock append( MatrixBlock that, MatrixBlock ret ) {
 		return append(that, ret, true); //default cbind
 	}
@@ -4545,10 +4553,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		MatrixBlock ret = prepareAggregateUnaryOutput(op, result, blen);
 		
 		if( LibMatrixAgg.isSupportedUnaryAggregateOperator(op) ) {
-			if( op.getNumThreads() > 1 )
-				LibMatrixAgg.aggregateUnaryMatrix(this, ret, op, op.getNumThreads());
-			else
-				LibMatrixAgg.aggregateUnaryMatrix(this, ret, op);
+			LibMatrixAgg.aggregateUnaryMatrix(this, ret, op, op.getNumThreads());
 			LibMatrixAgg.recomputeIndexes(ret, op, blen, indexesIn);
 		}
 		else if(op.sparseSafe)

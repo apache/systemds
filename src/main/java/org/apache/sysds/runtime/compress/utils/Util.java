@@ -63,6 +63,13 @@ public interface Util {
 		return colIndices;
 	}
 
+	public static int[] genColsIndices(final int cl, final int cu) {
+		final int[] colIndices = new int[cu - cl];
+		for(int i = 0, j = cl; j < cu; i++, j++)
+			colIndices[i] = j;
+		return colIndices;
+	}
+
 	public static int[] genColsIndicesOffset(final int numCols, final int start) {
 		final int[] colIndices = new int[numCols];
 		for(int i = 0, j = start; i < numCols; i++, j++)
@@ -71,11 +78,20 @@ public interface Util {
 	}
 
 	public static MatrixBlock matrixBlockFromDenseArray(double[] values, int nCol) {
+		return matrixBlockFromDenseArray(values, nCol, true);
+	}
+
+	public static MatrixBlock matrixBlockFromDenseArray(double[] values, int nCol, boolean check) {
 		final int nRow = values.length / nCol;
 		DenseBlock dictV = new DenseBlockFP64(new int[] {nRow, nCol}, values);
 		MatrixBlock ret = new MatrixBlock(nRow, nCol, dictV);
-		ret.recomputeNonZeros();
-		ret.examSparsity(true);
+		if(check) {
+			ret.recomputeNonZeros();
+			ret.examSparsity(true);
+		}
+		else
+			ret.setNonZeros(-1);
+
 		return ret;
 	}
 

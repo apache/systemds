@@ -640,6 +640,8 @@
 								<!-- Generated antlr files -->
 								<exclude>src/main/java/*.tokens</exclude>
 								<exclude>**/*.interp</exclude>
+								<!-- Generated antlr files -->
+								<exclude>src/main/java/org/apache/sysds/protobuf/*.java</exclude>
 								<!-- Compiled ptx file from nvcc -->
 								<exclude>src/main/cuda/kernels/SystemDS.ptx</exclude>
 								<exclude>src/main/cuda/kernels/reduction.ptx</exclude>

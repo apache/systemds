@@ -230,7 +230,8 @@ Examples:
 - [Makefile/.proto](./src/main/python/docs/Makefile#L1-L20)
 - Markdown - refer to the top of this file in raw format.
 
-
+> Note: Generated code, like the Java classes generated from the `.proto` file and other such files can be excluded if needed
+> for license checks unless the code generation tools generate a new license header different from the required license.
 ___
 
 Thanks again for taking your time to help improve SystemDS! :+1:

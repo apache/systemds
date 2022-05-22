@@ -291,6 +291,32 @@
 				</executions>
 			</plugin>
 
+			<plugin> <!-- generate .java files from .proto -->
+				<groupId>com.github.os72</groupId>
+				<artifactId>protoc-jar-maven-plugin</artifactId>
+				<version>3.11.4</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<!-- protoc binaries to be picked up from
+							  https://repo.maven.apache.org/maven2/com/google/protobuf/protoc/ -->
+							<protocVersion>3.20.1</protocVersion>
+							<inputDirectories>
+								<include>src/main/resources/protobuf</include>
+							</inputDirectories>
+							<outputDirectory>src/main/java</outputDirectory>
+							<outputDirectories>
+								<include>src/main/java</include>
+							</outputDirectories>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 
 			<plugin> <!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
@@ -616,6 +642,8 @@
 								<!-- Generated antlr files -->
 								<exclude>src/main/java/*.tokens</exclude>
 								<exclude>**/*.interp</exclude>
+								<!-- Generated antlr files -->
+								<exclude>src/main/java/org/apache/sysds/protobuf/*.java</exclude>
 								<!-- Compiled ptx file from nvcc -->
 								<exclude>src/main/cuda/kernels/SystemDS.ptx</exclude>
 								<exclude>src/main/cuda/kernels/reduction.ptx</exclude>
@@ -1138,13 +1166,13 @@
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
-			<version>3.12.2</version>
+			<version>3.20.1</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java-util</artifactId>
-			<version>3.12.2</version>
+			<version>3.20.1</version>
 		</dependency>
 
 		<dependency>

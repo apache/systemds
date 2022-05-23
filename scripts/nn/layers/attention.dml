@@ -21,92 +21,102 @@
 
 source("nn/layers/softmax.dml") as softmax
 
-# 1. Create "calculate_score" function, for the beginning without additional parameters -> calculate with dot product.
-
-calculate_scores = function(matrix[double] query, matrix[double] key)
-    return (matrix[double] scores) {
-    /*
-     * dim(query) = AxB
-     * dim(key) = CxB
-     * dim(scores) = AxC
-     */
-    scores = query %*% t(key)
-}
-
-apply_scores = function(matrix[double] scores, matrix[double] value, int d)
-    return (matrix[double] attention) {
-    /*
-     * dim(scores) = MxM
-     * dim(value) = MxL
-     * dim(weights) =
-     * dim(attention) = AxD
-     */
-    # put MxM matrix into M*Mx1 vector for matrix wise softmax
-    # TODO: check if softmax is matrix wise or column wise or row wise
-    x = matrix(scores / d ^ 0.5, cols=nrow(scores) * ncol(scores), rows=1)
-    weights = matrix(softmax::forward(x), cols=ncol(scores), rows=nrow(scores))
-    attention = weights %*% value
-}
 
 forward = function(matrix[double] query, matrix[double] key, matrix[double] value)
     return (matrix[double] attention) {
     /*
-     * dim(query) = MxN
-     * dim(key) = MxN
-     * dim(value) = MxL
-     * dim(scores) = MxM
-     * dim(attention) = MxL
+     * Computes the forward pass for the attention layer.
+     *
+     * Inputs:
+     * - query: Input query(s) of shape (N,M).
+     * - key: Key(s) for value(s) of shape (N,M).
+     * - value: Value(s) for key(s) of shape (N,L).
+     *
+     * Outputs:
+     * - attention: Attention on value(s) for given query(s), of shape (N,L).
      */
-    scores = calculate_scores(query, key)
-    attention = apply_scores(scores, value, ncol(key))
+    M = ncol(key)
+    key_norm = key / M^0.5
+    scores = query %*% t(key_norm)
+    #column wise softmax
+    probs = t(softmax::forward(t(scores)))
+    attention = probs %*% value
 }
 
 backward = function(matrix[double] dattention, matrix[double] query, matrix[double] key, matrix[double] value)
     return (matrix[double] dquery, matrix[double] dkey, matrix[double] dvalue)
 {
-# We have to derive the attention formulae: softmax ( (Q @ K^T) / (d_K^0.5) ) * V
-#    for each of the return values (dquery, dkey, dvalue)
     /*
-     * attention = weights * value
-     * weights = softmax(v)
-     * v = scores/ncol(value) ^ 0.5
-     * scores = query * t(key)
+     * Computes the backward pass for the attention layer.
+     *
+     * Inputs:
+     * - dattention: Gradient wrt `attention` of shape (N,L).
+     * - query: Query input of shape (N,M).
+     * - key: Keys for values of shape (N,M).
+     * - value: Values for given key of shape (N,L).
+     * 
+     * Outputs:
+     * - dquery: Gradient wrt `query`, of shape (N,M).
+     * - dkey: Gradient wrt `key`, of shape (N,M).
+     * - dvalue: Gradient wrt `value` of shape (N,L).
      */
-    scores = calculate_scores(query, key)
 
-    M = nrow(query)
-    N = ncol(query)
+    N = nrow(query)
+    M = ncol(query)
     L = ncol(value)
 
-    norm = 1/N^0.5
-    x = scores * norm
-    y = matrix(softmax::forward(matrix(x, rows=1, cols=M*M)), rows=M, cols=M)
-    dx = softmax::backward(y,x)
+    norm = 1 / M^0.5
 
-    dvalue = matrix(0, rows=M, cols=L)
-    for (i in 1:M)
+    key_norm = key * norm
+    scores = query %*% t(key_norm)
+    probs = t(softmax::forward(t(scores)))
+
+    #TODO: Obviously inefficient computations, but let's check first if correct.
+    dvalue = matrix(0, rows=N, cols=L)
+    for (a in 1:N)
     {
-        dvalue[,1:L] += t(y[i,])
+        dvalue[a,] = t(probs[,a]) %*% dattention
     }
 
-    #TODO: not sure how to add the derivative of softmax dx
-    dquery = matrix(0, rows=M, cols=N)
-    dquery_i = matrix(t(value) %*% key * norm, rows=M, cols=N)
-    for (j in 1:M)
+    dquery = matrix(0, rows=N, cols=M)
+    for (i in 1:N)
     {
-        dquery[1:M] += dquery_i[j]
-    }
-
-    #TODO: not sure how to add the derivative of softmax dx
-    dkey = matrix(0, rows=M, cols=N)
-    v = matrix(0, rows=M, cols=1)
-    for (i in 1:M)
-    {
-        v[i] = sum(value[i])
-        q = matrix(0, rows=1, cols=N)
-        for(j in 1:N)
+        for (j in 1:L)
         {
-          dkey[i,j] = sum(query[,j] %*% v[i])
+            for (k in 1:N)
+            {
+                for (a in 1:N)
+                {
+                    for (b in 1:M)
+                    {
+                        temp = matrix(0, rows=1, cols=N)
+                        temp[,a] = key_norm[a,b]
+                        dprobs = softmax::backward(temp, t(probs[,k]))
+                        dquery[a,b] += value[k,j] * dprobs[,i] * dattention[i,j]
+                    }
+                }
+            }
+        }
+    }
+
+    dkey = matrix(0, rows=N, cols=M)
+    for (i in 1:N)
+    {
+        for (j in 1:L)
+        {
+            for (k in 1:N)
+            {
+                for (a in 1:N)
+                {
+                    for (b in 1:M)
+                    {
+                        temp = matrix(0, rows=1, cols=N)
+                        temp[,a] = query[a,b]
+                        dprobs = softmax::backward(temp, t(probs[,k]))
+                        dkey[a,b] += value[k,j] * dprobs[,i] * dattention[i,j]
+                    }
+                }
+            }
         }
     }
     dkey = dkey * norm

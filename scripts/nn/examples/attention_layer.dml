@@ -147,6 +147,7 @@ attention_seq = attention::forward(query_seq_encoding, key_seq_encoding, value_s
 # query_value_attention_seq)
 
 # In system DS:
+# systemds/src/test/scripts/applications/nn/grad_check.dml lines 1660 ff sind nice als bsp
 # ------- Experimenting -----
 # out = conv2d(input, filter, padding=[0,pad], stride=[1, stride],
 # input_shape=[numInput,numChannels,1,inputWidth], filter_shape=[numFilters,numChannels,1,filterSize])
@@ -166,9 +167,17 @@ print(toString(attention_seq))
 # stridew = 1
 # padh = 0
 # padw = 1
-# TODO bug, assignment statement cannot return mutiple values
-query_encoding = avg_pool2d::forward(query_seq_encoding, 1, 4, 1, 1, 1, 1, 1, 0, 0)
-query_encoding = avg_pool2d::forward(attention_seq, 1, 4, 1, 1, 1, 1, 1, 0, 0)
+# exmaple with dimension != 1
+  # [testing_, Hout, Wout] = avg_pool2d::forward(query_embeddings, 3, 1, 1, 1, 1, 1, 1, 0, 0)
+  # print(toString(testing_))
+# TODO bug, no change of values - is this fine?
+[query_encoding, Hout, Wout] = avg_pool2d::forward(query_seq_encoding, 1, 1, 1, 1, 1, 1, 1, 0, 0)
+[attention, Hout, Wout] = avg_pool2d::forward(attention_seq, 1, 1, 1, 1, 1, 1, 1, 0, 0)
+
+print("Results:")
+print(toString(query_encoding))
+print(toString(attention))
+
 
 # 6. concatenate query and encodings to produe DNN input layer.
 # input_layer = tf.keras.layers.Concatenate()(

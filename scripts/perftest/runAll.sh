@@ -48,8 +48,8 @@ if [ "$HOSTNAME" = "alpha" ]; then
   export SYSTEMDS_DISTRIBUTED_OPTS="\
         --master yarn \
         --deploy-mode client \
-        --driver-memory 700g \
-        --conf spark.driver.extraJavaOptions=\"-Xms700g -Xmn70g -Dlog4j.configuration=file:$LOG4JPROP\" \
+        --driver-memory 500g \
+        --conf spark.driver.extraJavaOptions=\"-Xms500g -Xmn50g -Dlog4j.configuration=file:$LOG4JPROP\" \
         --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROP\" \
         --conf spark.executor.heartbeatInterval=100s \
         --files $LOG4JPROP \

@@ -58,7 +58,7 @@ if [ "$HOSTNAME" = "alpha" ]; then
         --executor-memory 105g \
         --executor-cores 32 \
         "
-  MAXMEM="8GB"
+  MAXMEM="80GB"
 elif [ "$HOSTNAME" = "charlie" ]; then
   export SYSTEMDS_STANDALONE_OPTS="-Xmx100g -Xms100g -Xmn10g"
   export SYSDS_DISTRIBUTED=1
@@ -105,11 +105,11 @@ echo -e "\n\n" >> results/times.txt
 ## Data Gen
 ./datagen/genBinomialData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genBinomialData.out
 ./datagen/genMultinomialData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genMultinomialData.out
-# ./datagen/genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStatsData.out
-# ./datagen/genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStratStatsData.out
-# ./datagen/genClusteringData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genClusteringData.out
-# ./datagen/genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genDimensionReductionData.out
-# ./datagen/genALSData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genALSData.out
+./datagen/genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStatsData.out
+./datagen/genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStratStatsData.out
+./datagen/genClusteringData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genClusteringData.out
+./datagen/genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genDimensionReductionData.out
+./datagen/genALSData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genALSData.out
 
 ### Micro Benchmarks:
 #./MatrixMult.sh ${CMD}

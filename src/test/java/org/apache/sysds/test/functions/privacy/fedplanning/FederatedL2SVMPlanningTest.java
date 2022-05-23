@@ -98,7 +98,6 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void runL2SVMFunctionCostBasedTest(){
 		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
 			"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};

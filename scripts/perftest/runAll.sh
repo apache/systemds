@@ -65,7 +65,7 @@ elif [ "$HOSTNAME" = "charlie" ]; then
   export SYSTEMDS_DISTRIBUTED_OPTS="\
         --master yarn \
         --deploy-mode client \
-        --driver-memory 700g \
+        --driver-memory 100g \
         --conf spark.driver.extraJavaOptions=\"-Xms100g -Xmn10g -Dlog4j.configuration=file:$LOG4JPROP\" \
         --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROP\" \
         --conf spark.executor.heartbeatInterval=100s \

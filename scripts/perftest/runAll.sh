@@ -103,8 +103,8 @@ echo -e "\n$HOSTNAME" >> results/times.txt
 echo -e "\n\n" >> results/times.txt
 
 ## Data Gen
-# ./datagen/genBinomialData.sh ${COMMAND} ${TEMPFOLDER} ${MAXMEM} &> logs/genBinomialData.out
-# ./datagen/genMultinomialData.sh ${COMMAND} ${TEMPFOLDER} ${MAXMEM} &> logs/genMultinomialData.out
+./datagen/genBinomialData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genBinomialData.out
+./datagen/genMultinomialData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genMultinomialData.out
 # ./datagen/genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStatsData.out
 # ./datagen/genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStratStatsData.out
 # ./datagen/genClusteringData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genClusteringData.out
@@ -112,20 +112,20 @@ echo -e "\n\n" >> results/times.txt
 # ./datagen/genALSData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genALSData.out
 
 ### Micro Benchmarks:
-./MatrixMult.sh ${CMD}
-./MatrixTranspose.sh ${CMD}
+#./MatrixMult.sh ${CMD}
+#./MatrixTranspose.sh ${CMD}
 
 # Federate benchmark
 #./fed/runAllFed.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 
 ### Algorithms Benchmarks:
-./runAllBinomial.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-./runAllMultinomial.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-./runAllRegression.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-./runAllStats.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-./runAllClustering.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-./runAllDimensionReduction.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
-./runAllALS.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+#./runAllBinomial.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+#./runAllMultinomial.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+#./runAllRegression.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+#./runAllStats.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+#./runAllClustering.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+#./runAllDimensionReduction.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+#./runAllALS.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 
 # TODO The following benchmarks have yet to be written. The decision tree algorithms additionally need to be fixed.
 # add stepwise Linear 

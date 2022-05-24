@@ -38,15 +38,16 @@ print("V:\n" + toString(V))
 att = attention::forward(Q, K, V)
 
 # =========== TODO it is bugging here ===========
-# datt = 1
-# [dQ, dK, dV] = attention::backward(datt, Q, K, V)
-#
-# print("dQ")
-# print(toString(dQ))
-# print("dK")
-# print(toString(dK))
-# print("dV")
-# print(toString(dV))
+# datt = 1 # Is it fine to use att instead of datt?
+# also should'nt the results of backward == to results pre forward pass? eg foo = 1, forward = 2, backward = 1 again?
+[dQ, dK, dV] = attention::backward(att, Q, K, V)
+
+print("dQ")
+print(toString(dQ))
+print("dK")
+print(toString(dK))
+print("dV")
+print(toString(dV))
 
 # ============== Simple test case =============================
 # Create training data
@@ -100,6 +101,7 @@ print("attention: \n" + toString(attention))
 # Which is roughly the same result as in the article.
 
 # ================ Practical example =================
+print("================ Practical example =================")
 # Similar to the example from https://keras.io/api/layers/attention_layers/attention/
 # 1. input eg text data
 input = "SystemsDS is cool"
@@ -175,12 +177,18 @@ print(toString(attention_seq))
 [attention, Hout, Wout] = avg_pool2d::forward(attention_seq, 1, 1, 1, 1, 1, 1, 1, 0, 0)
 
 print("Results:")
+print("Dimensions of query_encoding: " + nrow(query_encoding) + " X " + ncol(query_encoding))
 print(toString(query_encoding))
+print("Dimensions of attention: " + nrow(attention) + " X " + ncol(attention))
 print(toString(attention))
 
 
-# 6. concatenate query and encodings to produe DNN input layer.
+# 6. concatenate query and encodings to produe a DNN input layer.
 # input_layer = tf.keras.layers.Concatenate()(
 # [query_encoding, query_value_attention])
+input_layer = t(cbind(t(query_encoding), t(attention)))
+print("Dimensions of input_layer: " + nrow(input_layer) + " X " + ncol(input_layer))
+print(toString(input_layer))
 
-
+# Add DNN layers, and create Model.
+# ...

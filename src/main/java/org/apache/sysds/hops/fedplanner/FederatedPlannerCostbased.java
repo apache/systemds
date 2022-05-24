@@ -351,18 +351,10 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		ArrayList<Hop> inputHops = currentHop.getInput();
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) )
 			inputHops = getTransientInputs(currentHop, paramMap);
-		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE)
-			//|| HopRewriteUtils.isData(currentHop, Types.OpOpData.PERSISTENTREAD)
-			//|| HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD)
-			//|| HopRewriteUtils.isData(currentHop, Types.OpOpData.PERSISTENTWRITE)
-			)
+		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) )
 			transientWrites.put(currentHop.getName(), currentHop);
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.FEDERATED) )
 			hopRels.add(new HopRel(currentHop, FederatedOutput.FOUT, deriveFType((DataOp)currentHop), hopRelMemo, inputHops));
-		//else if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) && inputHops.isEmpty() ){
-		//	hopRels.add(new HopRel(currentHop, FederatedOutput.NONE, null, hopRelMemo, inputHops));
-		//	return hopRels; // Return immediately without adding LOUT
-		//}
 		else
 			hopRels.addAll(generateHopRels(currentHop, inputHops));
 		if ( isLOUTSupported(currentHop) )
@@ -373,7 +365,6 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	/**
 	 * Get transient inputs from either paramMap or transientWrites.
 	 * Inputs from paramMap has higher priority than inputs from transientWrites.
-	 * //TODO: Remove transientWrites map and only use paramMap.
 	 * @param currentHop hop for which inputs are read from maps
 	 * @param paramMap of local parameters
 	 * @return inputs of currentHop

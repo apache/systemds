@@ -269,6 +269,9 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		ColumnEncoderDummycode dc = getEncoder(ColumnEncoderDummycode.class);
 		if(dc != null)
 			dc.updateDomainSizes(_columnEncoders);
+		ColumnEncoderUDF udf = getEncoder(ColumnEncoderUDF.class);
+		if (udf != null && dc != null)
+			udf.updateDomainSizes(_columnEncoders);
 	}
 
 	public void addEncoder(ColumnEncoder other) {
@@ -385,7 +388,10 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	public void setNumPartitions(int nBuild, int nApply) {
 			_columnEncoders.forEach(e -> {
 				e.setBuildRowBlocksPerColumn(nBuild);
-				e.setApplyRowBlocksPerColumn(nApply);
+				if (e.getClass().equals(ColumnEncoderUDF.class))
+					e.setApplyRowBlocksPerColumn(1);
+				else
+					e.setApplyRowBlocksPerColumn(nApply);
 			});
 	}
 

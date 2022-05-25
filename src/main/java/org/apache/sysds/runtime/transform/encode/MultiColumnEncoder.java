@@ -314,11 +314,12 @@ public class MultiColumnEncoder implements Encoder {
 
 	public MatrixBlock apply(CacheBlock in, int k) {
 		// domain sizes are not updated if called from transformapply
+		boolean hasUDF = _columnEncoders.stream().anyMatch(e -> e.hasEncoder(ColumnEncoderUDF.class));
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders)
 			columnEncoder.updateAllDCEncoders();
 		int numCols = in.getNumColumns() + getNumExtraCols();
-		long estNNz = (long) in.getNumColumns() * (long) in.getNumRows();
-		boolean sparse = MatrixBlock.evalSparseFormatInMemory(in.getNumRows(), numCols, estNNz);
+		long estNNz = (long) in.getNumRows() * (hasUDF ? numCols : (long) in.getNumColumns());
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(in.getNumRows(), numCols, estNNz) && !hasUDF;
 		MatrixBlock out = new MatrixBlock(in.getNumRows(), numCols, sparse, estNNz);
 		return apply(in, out, 0, k);
 	}
@@ -379,16 +380,15 @@ public class MultiColumnEncoder implements Encoder {
 	private void applyMT(CacheBlock in, MatrixBlock out, int outputCol, int k) {
 		DependencyThreadPool pool = new DependencyThreadPool(k);
 		try {
-			if(APPLY_ENCODER_SEPARATE_STAGES){
+			if(APPLY_ENCODER_SEPARATE_STAGES) {
 				int offset = outputCol;
 				for (ColumnEncoderComposite e : _columnEncoders) {
 					pool.submitAllAndWait(e.getApplyTasks(in, out, e._colID - 1 + offset));
 					if (e.hasEncoder(ColumnEncoderDummycode.class))
 						offset += e.getEncoder(ColumnEncoderDummycode.class)._domainSize - 1;
 				}
-			}else{
+			} else
 				pool.submitAllAndWait(getApplyTasks(in, out, outputCol));
-			}
 		}
 		catch(ExecutionException | InterruptedException e) {
 			LOG.error("MT Column apply failed");
@@ -455,7 +455,7 @@ public class MultiColumnEncoder implements Encoder {
 			long memBudget = (long) (OptimizerUtils.getLocalMemBudget() - in.getInMemorySize());
 			// Worst case scenario: all partial maps contain all distinct values (if < #rows)
 			long totMemOverhead = getTotalMemOverhead(in, rcdNumBuildBlks, recodeEncoders);
-			// Reduce recode build blocks count till they fit int the memory budget
+			// Reduce recode build blocks count till they fit in the memory budget
 			while (rcdNumBuildBlks > 1 && totMemOverhead > memBudget) {
 				rcdNumBuildBlks--;
 				totMemOverhead = getTotalMemOverhead(in, rcdNumBuildBlks, recodeEncoders);
@@ -1078,10 +1078,11 @@ public class MultiColumnEncoder implements Encoder {
 
 		@Override
 		public Object call() throws Exception {
+			boolean hasUDF = _encoder.getColumnEncoders().stream().anyMatch(e -> e.hasEncoder(ColumnEncoderUDF.class));
 			int numCols = _input.getNumColumns() + _encoder.getNumExtraCols();
 			boolean hasDC = _encoder.getColumnEncoders(ColumnEncoderDummycode.class).size() > 0;
-			long estNNz = (long) _input.getNumColumns() * (long) _input.getNumRows();
-			boolean sparse = MatrixBlock.evalSparseFormatInMemory(_input.getNumRows(), numCols, estNNz);
+			long estNNz = (long) _input.getNumRows() * (hasUDF ? numCols : (long) _input.getNumColumns());
+			boolean sparse = MatrixBlock.evalSparseFormatInMemory(_input.getNumRows(), numCols, estNNz) && !hasUDF;
 			_output.reset(_input.getNumRows(), numCols, sparse, estNNz);
 			outputMatrixPreProcessing(_output, _input, hasDC);
 			return null;

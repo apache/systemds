@@ -35,6 +35,7 @@ public class TransformStatistics {
 	private static final LongAdder passThroughApplyTime = new LongAdder();
 	private static final LongAdder featureHashingApplyTime = new LongAdder();
 	private static final LongAdder binningApplyTime = new LongAdder();
+	private static final LongAdder UDFApplyTime = new LongAdder();
 	private static final LongAdder omitApplyTime = new LongAdder();
 	private static final LongAdder imputeApplyTime = new LongAdder();
 
@@ -56,6 +57,10 @@ public class TransformStatistics {
 
 	public static void incBinningApplyTime(long t) {
 		binningApplyTime.add(t);
+	}
+
+	public static void incUDFApplyTime(long t) {
+		UDFApplyTime.add(t);
 	}
 
 	public static void incPassThroughApplyTime(long t) {
@@ -106,8 +111,8 @@ public class TransformStatistics {
 	public static long getEncodeApplyTime() {
 		return dummyCodeApplyTime.longValue() + binningApplyTime.longValue() +
 				featureHashingApplyTime.longValue() + passThroughApplyTime.longValue() +
-				recodeApplyTime.longValue() + omitApplyTime.longValue() +
-				imputeApplyTime.longValue();
+				recodeApplyTime.longValue() + UDFApplyTime.longValue() +
+				omitApplyTime.longValue() + imputeApplyTime.longValue();
 	}
 
 	public static void reset() {
@@ -122,6 +127,7 @@ public class TransformStatistics {
 		passThroughApplyTime.reset();
 		featureHashingApplyTime.reset();
 		binningApplyTime.reset();
+		UDFApplyTime.reset();
 		omitApplyTime.reset();
 		imputeApplyTime.reset();
 		outMatrixPreProcessingTime.reset();
@@ -163,6 +169,9 @@ public class TransformStatistics {
 			if(passThroughApplyTime.longValue() > 0)
 				sb.append("\tPassThrough apply time:\t").append(String.format("%.3f",
 					passThroughApplyTime.longValue()*1e-9)).append(" sec.\n");
+			if(UDFApplyTime.longValue() > 0)
+				sb.append("\tUDF apply time:\t").append(String.format("%.3f",
+					UDFApplyTime.longValue()*1e-9)).append(" sec.\n");
 			if(omitApplyTime.longValue() > 0)
 				sb.append("\tOmit apply time:\t").append(String.format("%.3f",
 					omitApplyTime.longValue()*1e-9)).append(" sec.\n");

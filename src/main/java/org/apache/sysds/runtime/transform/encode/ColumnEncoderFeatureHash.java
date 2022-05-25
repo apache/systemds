@@ -83,8 +83,11 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 				codes[i-startInd] = Double.NaN;
 			else {
 				// Calculate non-negative modulo
-				double mod = key.hashCode() % _K > 0 ? key.hashCode() % _K : _K + key.hashCode() % _K;
-				codes[i - startInd] = mod + 1;
+				//double mod = key.hashCode() % _K > 0 ? key.hashCode() % _K : _K + key.hashCode() % _K;
+				double mod = (key.hashCode() % _K) + 1;
+				if (mod < 0)
+					mod += _K;
+				codes[i - startInd] = mod;
 			}
 		}
 		return codes;

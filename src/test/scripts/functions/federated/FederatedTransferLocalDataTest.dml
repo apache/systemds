@@ -30,5 +30,5 @@ if ($rP) {
     ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
     list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
 }
-
+print(toString(A))
 write(A, $out_S);

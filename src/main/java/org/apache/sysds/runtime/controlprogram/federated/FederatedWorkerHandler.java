@@ -251,14 +251,15 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse readData(FederatedRequest request, ExecutionContextMap ecm) {
-		checkNumParams(request.getNumParams(), 2);
+		checkNumParams(request.getNumParams(), 2, 3);
 		String filename = (String) request.getParam(0);
 		DataType dt = DataType.valueOf((String) request.getParam(1));
-		return readData(filename, dt, request.getID(), request.getTID(), ecm);
+		return readData(filename, dt, request.getID(), request.getTID(), ecm,
+			request.getNumParams() == 2 ? null : (CacheBlock)request.getParam(2));
 	}
 
 	private FederatedResponse readData(String filename, DataType dataType,
-		long id, long tid, ExecutionContextMap ecm) {
+		long id, long tid, ExecutionContextMap ecm, CacheBlock localBlock) {
 		MatrixCharacteristics mc = new MatrixCharacteristics();
 		mc.setBlocksize(ConfigurationManager.getBlocksize());
 
@@ -278,7 +279,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			cd = _frc.get(filename, !linReuse);
 			try {
 				if(cd == null) { // data is neither in lineage cache nor in read cache
-					cd = readDataNoReuse(filename, dataType, mc); // actual read of the data
+					cd = localBlock == null ? readDataNoReuse(filename, dataType, mc) : ExecutionContext.createCacheableData(localBlock); // actual read of the data
 					if(linReuse) // put the object into the lineage cache
 						LineageCache.putFedReadObject(cd, linItem, ec);
 					else

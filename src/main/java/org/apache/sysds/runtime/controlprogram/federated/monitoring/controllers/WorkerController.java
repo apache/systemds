@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.FullHttpResponse;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
@@ -38,7 +39,7 @@ public class WorkerController implements IController {
 		ObjectMapper mapper = new ObjectMapper();
 
 		try {
-			BaseEntityModel model = mapper.readValue(request.getBody(), BaseEntityModel.class);
+			NodeEntityModel model = mapper.readValue(request.getBody(), NodeEntityModel.class);
 			_workerService.create(model);
 			return Response.ok("Success");
 		}

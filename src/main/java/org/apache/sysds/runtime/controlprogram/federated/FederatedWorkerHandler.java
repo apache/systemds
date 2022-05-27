@@ -95,6 +95,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	/** Federated workload analyzer */
 	private final FederatedWorkloadAnalyzer _fan;
 
+	private String _remoteAddress = FederatedLookupTable.NOHOST;
+
 	/**
 	 * Create a Federated Worker Handler.
 	 * 
@@ -123,6 +125,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse createResponse(Object msg, SocketAddress remoteAddress) {
 		String host;
+		_remoteAddress = remoteAddress.toString();
 		if(remoteAddress instanceof InetSocketAddress) {
 			host = ((InetSocketAddress) remoteAddress).getHostString();
 		}
@@ -194,6 +197,20 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			}
 			else if(response == null && i == requests.length - 1) {
 				response = tmp; // return last
+			}
+
+
+			if(t == RequestType.PUT_VAR || t == RequestType.EXEC_UDF) {
+				for (int paramIndex = 0; paramIndex < request.getNumParams(); paramIndex++) {
+					FederatedStatistics.incFedTransfer(request.getParam(paramIndex), _remoteAddress);
+				}
+			}
+
+			if(t == RequestType.GET_VAR) {
+				var data = response.getData();
+				for (int dataObjIndex = 0; dataObjIndex < Arrays.stream(data).count(); dataObjIndex++) {
+					FederatedStatistics.incFedTransfer(data[dataObjIndex], _remoteAddress);
+				}
 			}
 
 			if(t == RequestType.CLEAR)

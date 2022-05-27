@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.federated.monitoring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
 import org.apache.sysds.test.functions.federated.multitenant.MultiTenantTestBase;
 import org.junit.After;
 
@@ -68,7 +69,7 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 			for (int i = 0; i < numWorkers; i++) {
 				String requestBody = objectMapper
 					.writerWithDefaultPrettyPrinter()
-					.writeValueAsString(new BaseEntityModel((i + 1L), "Worker", "localhost"));
+					.writeValueAsString(new NodeEntityModel((i + 1L), "Worker", "localhost"));
 				var client = HttpClient.newHttpClient();
 				var request = HttpRequest.newBuilder(URI.create(uriStr))
 					.header("accept", "application/json")

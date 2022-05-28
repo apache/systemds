@@ -2545,35 +2545,36 @@ attention = function() {
   */
   print("Grad checking Attention layer with L2 loss.")
   # initialize random Query, Key and Value
-  N = 4 # number of samples
+  N = 5 # number of samples
   M = 3 # query/key size
   L = 5 # value size
+  k = 4
 
-  Q = rand(rows=N, cols=M, min=-5, max=5)
-  K = rand(rows=N, cols=M, min=-5, max=5)
-  V = rand(rows=N, cols=L, min=-5, max=5)
+  Q = rand(rows=N, cols=M*k, min=-5, max=5)
+  K = rand(rows=N, cols=M*k, min=-5, max=5)
+  V = rand(rows=N, cols=L*k, min=-5, max=5)
 
   # initialize random target
-  y = rand(rows=N, cols=L, min=-5, max=5)
+  y = rand(rows=N, cols=L*k, min=-5, max=5)
 
   # compute gradient analytically
-  att = attention::forward(Q, K, V)
+  att = attention::forward(Q, K, V, k)
   datt = l2_loss::backward(att, y)
-  [dQ, dK, dV] = attention::backward(datt, Q, K, V)
+  [dQ, dK, dV] = attention::backward(datt, Q, K, V, k)
 
 
   # check gradient numerically
-  h = 1e-5
+  h = 1e-4
 
   print(" - Grad checking Q.")
   for (i in 1:nrow(Q)){
     for (j in 1:ncol(Q)){
     old = as.scalar(Q[i,j])
     Q[i,j] = old - h
-    outmh = attention::forward(Q, K, V)
+    outmh = attention::forward(Q, K, V, k)
     lossmh = l2_loss::forward(outmh, y)
     Q[i,j] = old + h
-    outph = attention::forward(Q, K, V)
+    outph = attention::forward(Q, K, V, k)
     lossph = l2_loss::forward(outph, y)
     Q[i,j] = old  # reset
     dQ_num = (lossph-lossmh) / (2*h)
@@ -2586,10 +2587,10 @@ attention = function() {
     for (j in 1:ncol(K)){
       old = as.scalar(K[i,j])
       K[i,j] = old - h
-      outmh = attention::forward(Q, K, V)
+      outmh = attention::forward(Q, K, V, k)
       lossmh = l2_loss::forward(outmh, y)
       K[i,j] = old + h
-      outph = attention::forward(Q, K, V)
+      outph = attention::forward(Q, K, V, k)
       lossph = l2_loss::forward(outph, y)
       K[i,j] = old  # reset
       dK_num = (lossph-lossmh) / (2*h)
@@ -2601,10 +2602,10 @@ attention = function() {
     for (j in 1:ncol(V)){
       old = as.scalar(V[i,j])
       V[i,j] = old - h
-      outmh = attention::forward(Q, K, V)
+      outmh = attention::forward(Q, K, V, k)
       lossmh = l2_loss::forward(outmh, y)
       V[i,j] = old + h
-      outph = attention::forward(Q, K, V)
+      outph = attention::forward(Q, K, V, k)
       lossph = l2_loss::forward(outph, y)
       V[i,j] = old  # reset
       dV_num = (lossph-lossmh) / (2*h)

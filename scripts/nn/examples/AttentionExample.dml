@@ -147,12 +147,14 @@ train = function( matrix[double] x_train,
       # 1 Get batch data
       start = ((i-1) * batch_size) %% samples + 1
       end = min(samples, start + batch_size -1)
+      #TODO fix batch size problem
 
       x_batch = x_train[start:end,]
       y_batch = y_train[start:end,]
 
       # 2 predict
-      [y_hat, out5, out4, out3, out2, out1, cache_out_out, cache_c_out, cache_ifog_out] = predict(x_batch, biases, weights, max_sequence_length, token_size, out0, c0)
+      [y_hat, out5, out4, out3, out2, out1, cache_out_out, cache_c_out, cache_ifog_out] =
+          predict(x_batch, biases, weights, max_sequence_length, token_size, out0, c0)
 
       # 3 backpropagation
 
@@ -161,7 +163,7 @@ train = function( matrix[double] x_train,
       [dout_2, dW_2, db_2] = affine::backward(dprobs, out4, W_2, b_2)
       drelu = relu::backward(dout_2, out3)
       [dout_1, dW_1, db_1] = affine::backward(drelu, out2, W_1, b_1)
-      datt = attention::backward(dout_1, out1, out1, out1)
+      datt = attention::backward(dout_1, out1, out1, out1, max_sequence_length)
       dc = matrix(0, rows=nrow(x_batch), cols=lstm_neurons)
       [dout_0, dW_0, db_0, dout0, dc0] = lstm::backward(datt,
                                                         dc,
@@ -171,6 +173,8 @@ train = function( matrix[double] x_train,
                                                         max_sequence_length,
                                                         token_size,
                                                         TRUE,
+                                                        out0,
+                                                        c0,
                                                         cache_out_out,
                                                         cache_c_out,
                                                         cache_ifog_out)
@@ -222,8 +226,9 @@ predict = function( matrix[double] x,
   b_2 = as.matrix(biases[3])
 
   # put input through layers
-  [out1, c_out, cache_out_out, cache_c_out, cache_ifog_out] = lstm::forward(x, W_0, b_0, max_sequence_length, token_size, TRUE, out0, c0)
-  out2 = attention::forward(out1, out1, out1)
+  [out1, c_out, cache_out_out, cache_c_out, cache_ifog_out]=
+    lstm::forward(x, W_0, b_0, max_sequence_length, token_size, TRUE, out0, c0)
+  out2 = attention::forward(out1, out1, out1, max_sequence_length)
   out2 = out1
   out3 = affine::forward(out1, W_1, b_1)
   out4 = relu::forward(out3)

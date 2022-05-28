@@ -858,15 +858,40 @@ public class UtilFunctions {
 		put("^\\d{8}\\s\\d{6}$", "yyyyMMdd HHmmss");
 	}};
 
-	public static long toMillis (String dateString) {
-		long value = 0;
+	public static long toMillis(String dateString) {
+		return toMillis(dateString, getDateFormat(dateString));
+	}
+
+	public static long toMillis(String dateString, String dateFormat) {
 		try {
-			value = new SimpleDateFormat(getDateFormat(dateString)).parse(dateString).getTime();
+			return new SimpleDateFormat(dateFormat).parse(dateString).getTime();
 		}
 		catch(ParseException e) {
 			throw new DMLRuntimeException(e);
 		}
-		return value ;
+	}
+
+	public static String dateFormat(String dateString, String outputFormat) {
+		try {
+			return dateFormat(dateString, getDateFormat(dateString), outputFormat);
+		}
+		catch(NullPointerException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+	
+	public static String dateFormat(String dateString, String inputFormat, String outputFormat) {
+		try {
+			Date value = new SimpleDateFormat(inputFormat).parse(dateString);
+			return new SimpleDateFormat(outputFormat).format(value);
+		}
+		catch(ParseException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	public static String dateFormat(long date, String outputFormat) {
+		return new SimpleDateFormat(outputFormat).format(new Date(date));
 	}
 
 	public static String[] copyAsStringToArray(String[] input, Object value) {

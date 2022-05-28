@@ -67,57 +67,12 @@ backward = function(matrix[double] dattention, matrix[double] query, matrix[doub
 
     norm = 1 / M^0.5
 
-    key_norm = key * norm
     scores = query %*% t(key_norm)
     probs = t(softmax::forward(t(scores)))
 
-    #TODO: Obviously inefficient computations, but let's check first if correct.
-    dvalue = matrix(0, rows=N, cols=L)
-    for (a in 1:N)
-    {
-        dvalue[a,] = t(probs[,a]) %*% dattention
-    }
-
-    dquery = matrix(0, rows=N, cols=M)
-    for (i in 1:N)
-    {
-        for (j in 1:L)
-        {
-            for (k in 1:N)
-            {
-                for (a in 1:N)
-                {
-                    for (b in 1:M)
-                    {
-                        temp = matrix(0, rows=1, cols=N)
-                        temp[,a] = key_norm[a,b]
-                        dprobs = softmax::backward(temp, t(probs[,k]))
-                        dquery[a,b] += value[k,j] * dprobs[,i] * dattention[i,j]
-                    }
-                }
-            }
-        }
-    }
-
-    dkey = matrix(0, rows=N, cols=M)
-    for (i in 1:N)
-    {
-        for (j in 1:L)
-        {
-            for (k in 1:N)
-            {
-                for (a in 1:N)
-                {
-                    for (b in 1:M)
-                    {
-                        temp = matrix(0, rows=1, cols=N)
-                        temp[,a] = query[a,b]
-                        dprobs = softmax::backward(temp, t(probs[,k]))
-                        dkey[a,b] += value[k,j] * dprobs[,i] * dattention[i,j]
-                    }
-                }
-            }
-        }
-    }
-    dkey = dkey * norm
+    dvalue = t(probs) %*% dattention
+    dprobs = t(value %*% t(dattention))
+    dscore = t(softmax::backward(t(dprobs), t(scores)))
+    dquery = dscore %*% key * norm
+    dkey = t(dscore) %*% query * norm
 }

@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.federated.monitoring;
 
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatsEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.StatsService;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.WorkerService;
 import org.apache.sysds.test.TestConfiguration;
@@ -61,5 +62,13 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 		var model = (NodeEntityModel) workerMonitoringService.get(1L);
 
 		Assert.assertNotNull("Stats field of model contains worker statistics", model.getStats());
+	}
+
+	@Test
+	public void testNonExistentWorkerStatistics() {
+		workerMonitoringService.create(new NodeEntityModel(1L, "Worker", "not-running.address"));
+		var model = (NodeEntityModel) workerMonitoringService.get(1L);
+
+		Assert.assertEquals("Stats field of model contains worker statistics", 0, model.getStats().size());
 	}
 }

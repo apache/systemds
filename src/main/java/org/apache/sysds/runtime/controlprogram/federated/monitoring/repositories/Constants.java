@@ -17,22 +17,18 @@
  * under the License.
  */
 
-
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
-
-import java.util.List;
-
-public interface IRepository {
-	Long createEntity(EntityEnum type, BaseEntityModel model);
-
-	BaseEntityModel getEntity(EntityEnum type, Long id);
-
-	List<BaseEntityModel> getAllEntities(EntityEnum type);
-
-	List<BaseEntityModel> getAllEntitiesByField(EntityEnum type, Object fieldValue);
-	void updateEntity(EntityEnum type, BaseEntityModel model);
-
-	void removeEntity(EntityEnum type, Long id);
+public class Constants {
+	public static final String WORKERS_TABLE_NAME= "workers";
+	public static final String COORDINATORS_TABLE_NAME= "coordinators";
+	public static final String STATS_TABLE_NAME= "statistics";
+	public static final String ENTITY_NAME_COL = "name";
+	public static final String ENTITY_ADDR_COL = "address";
+	public static final String ENTITY_CPU_COL = "cpuUsage";
+	public static final String ENTITY_MEM_COL = "memoryUsage";
+	public static final String ENTITY_TRAFFIC_COL = "coordinatorTraffic";
+	public static final String ENTITY_HEAVY_HITTERS_COL = "heavyHitters";
+	public static final String ENTITY_ID_COL = "id";
+	public static final String ENTITY_WORKER_ID_COL = "workerId";
 }

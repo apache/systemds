@@ -51,6 +51,8 @@ public class StatsService {
 						aggFedStats.heavyHitters,
 						aggFedStats.coordinatorsTrafficBytes);
 			}
+		} catch(DMLRuntimeException dre) {
+			// silently ignore -> caused by offline federated workers
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -70,7 +72,8 @@ public class StatsService {
 		try {
 			result = FederatedData.executeFederatedOperation(isa, frUDF);
 		} catch(DMLRuntimeException dre) {
-			// silently ignore this exception --> caused by offline federated workers
+			// caused by offline federated workers
+			throw dre;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

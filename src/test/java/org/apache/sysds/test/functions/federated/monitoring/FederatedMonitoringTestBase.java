@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.federated.monitoring;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum;
 import org.apache.sysds.test.functions.federated.multitenant.MultiTenantTestBase;
 import org.junit.After;
 
@@ -37,7 +38,10 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 	protected Process monitoringProcess;
 	private int monitoringPort;
 
+	private static final String MAIN_URI = "http://localhost";
+
 	private static final String WORKER_MAIN_PATH = "/workers";
+	private static final String COORDINATOR_MAIN_PATH = "/coordinators";
 
 	@Override
 	public abstract void setUp();
@@ -60,16 +64,22 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 		monitoringProcess = startLocalFedMonitoring(monitoringPort, addArgs);
 	}
 
-	protected List<HttpResponse<?>> addWorkers(int numWorkers) {
-		String uriStr = String.format("http://localhost:%d%s", monitoringPort, WORKER_MAIN_PATH);
+	protected List<HttpResponse<?>> addEntities(EntityEnum type, int count) {
+		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH;
+		String name = "Worker";
+
+		if (type == EntityEnum.COORDINATOR) {
+			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH;
+			name = "Coordinator";
+		}
 
 		List<HttpResponse<?>> responses = new ArrayList<>();
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
-			for (int i = 0; i < numWorkers; i++) {
+			for (int i = 0; i < count; i++) {
 				String requestBody = objectMapper
 					.writerWithDefaultPrettyPrinter()
-					.writeValueAsString(new NodeEntityModel((i + 1L), "Worker", "localhost"));
+					.writeValueAsString(new NodeEntityModel((i + 1L), name, "localhost"));
 				var client = HttpClient.newHttpClient();
 				var request = HttpRequest.newBuilder(URI.create(uriStr))
 					.header("accept", "application/json")
@@ -85,8 +95,58 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 		}
 	}
 
-	protected HttpResponse<?> getWorkers() {
-		String uriStr = String.format("http://localhost:%d%s", monitoringPort, WORKER_MAIN_PATH);
+	protected HttpResponse<?> updateEntity(EntityEnum type, NodeEntityModel editModel) {
+		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH;
+
+		if (type == EntityEnum.COORDINATOR) {
+			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH;
+		}
+
+		try {
+			ObjectMapper objectMapper = new ObjectMapper();
+			String requestBody = objectMapper
+					.writerWithDefaultPrettyPrinter()
+					.writeValueAsString(new NodeEntityModel(editModel.getId(), editModel.getName(), editModel.getAddress()));
+			var client = HttpClient.newHttpClient();
+			var request = HttpRequest.newBuilder(URI.create(uriStr))
+					.header("accept", "application/json")
+					.PUT(HttpRequest.BodyPublishers.ofString(requestBody))
+					.build();
+
+			return client.send(request, HttpResponse.BodyHandlers.ofString());
+		}
+		catch (IOException | InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected HttpResponse<?> removeEntity(EntityEnum type, Long id) {
+		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH + "/" + id;
+
+		if (type == EntityEnum.COORDINATOR) {
+			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH + "/" + id;
+		}
+
+		try {
+			var client = HttpClient.newHttpClient();
+			var request = HttpRequest.newBuilder(URI.create(uriStr))
+					.header("accept", "application/json")
+					.DELETE()
+					.build();
+
+			return client.send(request, HttpResponse.BodyHandlers.ofString());
+		}
+		catch (IOException | InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected HttpResponse<?> getEntities(EntityEnum type) {
+		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH;
+
+		if (type == EntityEnum.COORDINATOR) {
+			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH;
+		}
 
 		try {
 			var client = HttpClient.newHttpClient();

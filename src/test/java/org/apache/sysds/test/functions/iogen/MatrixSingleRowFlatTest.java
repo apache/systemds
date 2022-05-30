@@ -160,4 +160,45 @@ public class MatrixSingleRowFlatTest extends GenerateReaderMatrixTest {
 		sampleMatrix = new double[][] {{10,20,30}, {101,201,0}, {0,0,0},{104, 204, 0}, {0, 0, 305}};
 		runGenerateReaderTest();
 	}
+
+
+	//=========================
+	@Test
+	public void test15() {
+		sampleRaw = "0,1,2,3\n" + "10,0,20,30\n" + "100,200,0,300\n"+"1000,2000,3000,0";
+		sampleMatrix = new double[][] {{0,1,2,3}, {10,0,20,30}, {100,200,300,0},{1000,2000,3000,0}};
+		runGenerateReaderTest();
+	}
+
+	//upper-triangular
+	@Test
+	public void test16() {
+		sampleRaw = "1,2,3,4\n" + "0,20,30,40\n" + "0,0,300,400\n"+"0,0,0,4000";
+		sampleMatrix = new double[][] {{1,2,3,4}, {0,20,30,40}, {0,0,300,400},{0,0,0,4000}};
+		runGenerateReaderTest();
+	}
+
+	//lower-triangular
+	@Test
+	public void test17() {
+		sampleRaw = "1,0,0,0\n" + "10,20,0,0\n" + "100,200,300,0\n"+"1000,2000,3000,4000";
+		sampleMatrix = new double[][] {{1,0,0,0}, {10,20,0,0}, {100,200,300,0},{1000,2000,3000,4000}};
+		runGenerateReaderTest();
+	}
+
+	//symmetric
+	@Test
+	public void test19() {
+		sampleRaw = "1,2,3,4\n" + "2,2,4,5\n" + "3,4,3,6\n"+"4,5,6,4";
+		sampleMatrix = new double[][] {{1,2,3,4}, {2,2,4,5}, {3,4,3,6},{4,5,6,4}};
+		runGenerateReaderTest();
+	}
+
+	//symmetric-upper
+	@Test
+	public void test20() {
+		sampleRaw = "1,2,3,4\n" + "0,2,4,5\n" + "0,0,3,6\n"+"0,0,0,4";
+		sampleMatrix = new double[][] {{1,2,3,4}, {2,2,4,5}, {3,4,3,6},{4,5,6,4}};
+		runGenerateReaderTest();
+	}
 }

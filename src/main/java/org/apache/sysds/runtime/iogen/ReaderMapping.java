@@ -37,6 +37,16 @@ public class ReaderMapping {
 	private int[][] mapCol;
 	private int[][] mapLen;
 	private boolean mapped;
+	private boolean fullMap;
+	private boolean upperTriangularMap;
+	private boolean lowerTriangularMap;
+	private boolean symmetricMap;
+	private boolean skewSymmetricMap;
+	private boolean symmetricUpperMap;
+	private boolean skewSymmetricUpperMap;
+	private boolean patternMap;
+	private Double patternValueMap;
+
 	private final int nrows;
 	private final int ncols;
 	private int nlines;
@@ -47,8 +57,7 @@ public class ReaderMapping {
 	private Types.ValueType[] schema;
 	private final boolean isMatrix;
 
-	public ReaderMapping(int nlines, int nrows, int ncols, ArrayList<RawIndex> sampleRawIndexes, MatrixBlock matrix)
-		throws Exception {
+	public ReaderMapping(int nlines, int nrows, int ncols, ArrayList<RawIndex> sampleRawIndexes, MatrixBlock matrix) throws Exception {
 		this.nlines = nlines;
 		this.nrows = nrows;
 		this.ncols = ncols;
@@ -109,14 +118,12 @@ public class ReaderMapping {
 		int itRow = 0;
 		for(int r = 0; r < nrows; r++) {
 			for(int c = 0; c < ncols; c++) {
-				if(isIndexMapping || ((this.isMatrix && this.sampleMatrix.getValue(r,
-					c) != 0) || (!this.isMatrix && ((!schema[c].isNumeric() && this.sampleFrame.get(r,
+				if(isIndexMapping || ((this.isMatrix && this.sampleMatrix.getValue(r, c) != 0) || (!this.isMatrix && ((!schema[c].isNumeric() && this.sampleFrame.get(r,
 					c) != null) || (schema[c].isNumeric() && this.sampleFrame.getDouble(r, c) != 0))))) {
 					HashSet<Integer> checkedLines = new HashSet<>();
 					while(checkedLines.size() < nlines) {
 						RawIndex ri = sampleRawIndexes.get(itRow);
-						Pair<Integer, Integer> pair = this.isMatrix ? ri.findValue(
-							sampleMatrix.getValue(r, c)) : ri.findValue(sampleFrame.get(r, c), schema[c]);
+						Pair<Integer, Integer> pair = this.isMatrix ? ri.findValue(sampleMatrix.getValue(r, c)) : ri.findValue(sampleFrame.get(r, c), schema[c]);
 						if(pair != null) {
 							mapRow[r][c] = itRow;
 							mapCol[r][c] = pair.getKey();
@@ -135,15 +142,104 @@ public class ReaderMapping {
 					NaN++;
 			}
 		}
-		boolean flagMap = true;
-		for(int r = 0; r < nrows && flagMap; r++)
-			for(int c = 0; c < ncols && flagMap; c++)
-				if(mapRow[r][c] == -1 && ((!this.isMatrix && this.sampleFrame.get(r,
-					c) != null) || (!this.isMatrix && ((!schema[c].isNumeric() && this.sampleFrame.get(r,
-					c) != null) || (schema[c].isNumeric() && this.sampleFrame.getDouble(r, c) != 0))))) {
-					flagMap = false;
+
+		// analysis mapping of values
+		// 1. check (exist, partially exist, not exist)
+		// 2. check the records represented in single/multilines
+		// 3. check the Symmetric, Skew-Symmetric, Pattern, and Array
+
+		int fullMap = 0;
+		int upperTriangular = 0;
+		int upperTriangularZeros = 0;
+		int lowerTriangular = 0;
+		int lowerTriangularZeros = 0;
+		boolean singleLineRecord = true;
+
+		// check full map
+		for(int r = 0; r < nrows; r++)
+			for(int c = 0; c < ncols; c++)
+				if(mapRow[r][c] != -1)
+					fullMap++;
+
+		// check for upper and lower triangular
+		if(nrows == ncols) {
+			this.upperTriangularMap = true;
+			this.lowerTriangularMap = true;
+			this.symmetricMap = true;
+			this.symmetricUpperMap = true;
+			this.skewSymmetricMap = true;
+			this.skewSymmetricUpperMap = true;
+			this.patternMap = false;
+			this.patternValueMap = null;
+
+			if(this.isMatrix) {
+				for(int r = 0; r < nrows; r++) {
+					// upper triangular check
+					for(int c = r; c < ncols && this.upperTriangularMap; c++)
+						if(this.sampleMatrix.getValue(r, c) != 0 && mapRow[r][c] == -1)
+							this.upperTriangularMap = false;
+
+					for(int c = 0; c < r && this.upperTriangularMap; c++)
+						if(this.sampleMatrix.getValue(r, c) != 0)
+							this.upperTriangularMap = false;
+
+					// lower triangular check
+					for(int c = 0; c <= r && this.lowerTriangularMap; c++)
+						if(this.sampleMatrix.getValue(r, c) != 0 && mapRow[r][c] == -1)
+							this.lowerTriangularMap = false;
+
+					for(int c = r + 1; c < ncols && this.lowerTriangularMap; c++)
+						if(this.sampleMatrix.getValue(r, c) != 0)
+							this.lowerTriangularMap = false;
+
+					// Symmetric check
+					for(int c = 0; c <= r && this.symmetricMap; c++)
+						if(this.sampleMatrix.getValue(r, c) != this.sampleMatrix.getValue(c, r))
+							this.symmetricMap = false;
+
+					if(this.symmetricMap) {
+						for(int c = 0; c <= r && this.symmetricUpperMap; c++)
+							if(this.sampleMatrix.getValue(r, c) != 0 && mapRow[r][c] != -1) {
+								this.symmetricUpperMap = false;
+								break;
+							}
+					}
+
+					// Skew-Symmetric check
+					for(int c = 0; c <= r && this.skewSymmetricMap; c++)
+						if(this.sampleMatrix.getValue(r, c) != this.sampleMatrix.getValue(c, r) * -1)
+							this.skewSymmetricMap = false;
+
+					if(this.skewSymmetricMap) {
+						for(int c = 0; c <= r && this.skewSymmetricUpperMap; c++)
+							if(this.sampleMatrix.getValue(r, c) != 0 && mapRow[r][c] != -1) {
+								this.skewSymmetricUpperMap = false;
+								break;
+							}
+					}
+					// pattern check
+					HashSet<Double> patternValueSet = new HashSet<>();
+					for(int c = 0; c < ncols; c++)
+						patternValueSet.add(this.sampleMatrix.getValue(r, c));
+					if(patternValueSet.size() == 1) {
+						this.patternMap = true;
+						this.patternValueMap = patternValueSet.iterator().next();
+					}
 				}
-		return flagMap;
+			}
+
+		}
+
+		System.out.println("upperTriangularMap=" + upperTriangularMap);
+		System.out.println("lowerTriangularMap=" + lowerTriangularMap);
+		System.out.println("symmetric=" + symmetricMap);
+		System.out.println("symmetricUpperMap=" + symmetricUpperMap);
+		System.out.println("skewSymmetricMap = " + skewSymmetricMap);
+		System.out.println("skewSymmetricUpperMap=" + skewSymmetricUpperMap);
+		System.out.println("patternMap=" + patternMap);
+		System.out.println("patternValueMap=" + patternValueMap);
+
+		return false;
 	}
 
 	public int getNaN() {

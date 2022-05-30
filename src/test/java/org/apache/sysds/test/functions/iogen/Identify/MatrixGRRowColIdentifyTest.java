@@ -273,7 +273,7 @@ public class MatrixGRRowColIdentifyTest extends GenerateReaderMatrixTest {
 			ArrayList<Types.ValueType> newSampleSchema = new ArrayList<>();
 			ArrayList<ArrayList<String>> newSampleFrame = new ArrayList<>();
 
-			String[][] sampleFrameStrings = util.loadFrameData(sampleFrameFileName, ncols, delimiter);
+			String[][] sampleFrameStrings = util.loadFrameData(sampleFrameFileName, delimiter,ncols);
 
 			for(int c = 0; c < sampleFrameStrings[0].length; c++) {
 				HashSet<String> valueSet = new HashSet<>();

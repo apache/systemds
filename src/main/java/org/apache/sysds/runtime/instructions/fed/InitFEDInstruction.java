@@ -33,12 +33,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.getUniqueFileName;
-import org.apache.sysds.api.DMLScript;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
@@ -47,13 +46,12 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -224,15 +222,14 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		ListObject ranges = ec.getListObject(_ranges.getName());
 		List<Pair<FederatedRange, FederatedData>> feds = new ArrayList<>();
 
-		// FIXME frames
 		CacheableData co = ec.getMatrixObject(_localObject);
 		CacheBlock cb =  co.acquireReadAndRelease();
 
 		if(addresses.getLength() * 2 != ranges.getLength())
-			throw new DMLRuntimeException("Federated read needs twice the amount of addresses as ranges " + "(begin and end): addresses=" + addresses.getLength() + " ranges=" + ranges.getLength());
+			throw new DMLRuntimeException("Federated read needs twice the amount of addresses as ranges "
+				+ "(begin and end): addresses=" + addresses.getLength() + " ranges=" + ranges.getLength());
 
 		//check for duplicate addresses (would lead to overwrite with common variable names)
-		// TODO relax requirement by using different execution contexts per federated data?
 		Set<String> addCheck = new HashSet<>();
 		for(Data dat : addresses.getData())
 			if(dat instanceof StringObject) {
@@ -291,7 +288,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 
 				try {
 					FederatedData federatedData = new FederatedData(fedDataType,
-						new InetSocketAddress(InetAddress.getByName(host), port), filePath); //FIXME
+						new InetSocketAddress(InetAddress.getByName(host), port), filePath);
 					feds.add(new ImmutablePair<>(new FederatedRange(beginDims, endDims), federatedData));
 				}
 				catch(UnknownHostException e) {
@@ -394,7 +391,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 	}
 
 	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers) {
-		federateMatrix(output, workers);
+		federateMatrix(output, workers, null);
 	}
 
 	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers, CacheBlock[] blocks) {
@@ -477,8 +474,6 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 				for(int i = 0; i < dims.length; i++) {
 					dims[i] = endDims[i] - beginDims[i];
 				}
-				idResponses.add(
-					new ImmutablePair<>(value, new ImmutablePair<>((int) beginDims[1], value.initFederatedData(id))));
 				if(blocks == null || blocks.length == 0)
 					idResponses.add(
 						new ImmutablePair<>(value, new ImmutablePair<>((int) beginDims[1], value.initFederatedData(id))));

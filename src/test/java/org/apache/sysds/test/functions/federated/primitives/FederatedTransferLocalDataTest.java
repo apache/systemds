@@ -25,12 +25,9 @@ import java.util.Collection;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -86,7 +83,7 @@ public class FederatedTransferLocalDataTest extends AutomatedTestBase {
 		// write input matrices
 		double[][] X = getRandomMatrix(rows, cols, 1, 5, 1, 3);
 
-		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blocksize, rows * cols);
+		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blocksize, (long) rows * cols);
 		writeInputMatrixWithMTD("X", X, false, mc);
 
 		// empty script name because we don't execute any script, just start the worker
@@ -127,16 +124,9 @@ public class FederatedTransferLocalDataTest extends AutomatedTestBase {
 		// compare via files
 		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
-		// check that federated input files are still existing
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
-
 		TestUtils.shutdownThreads(t1, t2, t3, t4);
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}
-
 }

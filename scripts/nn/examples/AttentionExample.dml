@@ -32,18 +32,21 @@ source("nn/layers/log_loss.dml") as log_loss
 data_loc = "scripts/nn/examples/data/"
 tableschema = "string,int"
 N=32000
-n=32000
+n=8000
 max_length = 32
 data = read(data_loc + "clickbait_data.csv", format="csv", header=TRUE, sep=",", data_type="frame", schema=tableschema, cols=2, rows=N)
 #print(toString(data[1:10]))
 
-[x_train, y_train, vocab_size] = preprocess(data, max_length, n)
+[x_train, y_train, vocab_size] = preprocess(data, max_length, N)
+
+x_train = x_train[1:n]
+y_train = y_train[1:n]
 
 # train network
 # TODO fix: get error when batch size is not always equal
 epochs = 30
-batch_size = 32
-val_size = batch_size * 200
+batch_size = n/200
+val_size = batch_size * 5
 [biases, weights, out0, c0] = train(x_train, y_train, epochs, batch_size, max_length, vocab_size, val_size)
 
 
@@ -80,6 +83,13 @@ preprocess = function(frame[unknown] data, integer max_length, integer n)
   #features = toOneHot(features, num_classes)
   #print(toString(features[1:20,1:20]))
   targets = as.matrix(data[,2])
+
+  #shuffle data
+  r = rand(rows=n, cols=1, min=0, max=1, pdf="uniform")
+  x = order(target=cbind(r,features), by=1)
+  y = order(target=cbind(r,targets), by=1)
+  features = x[,2:ncol(x)]
+  targets = y[,2:ncol(y)]
 }
 
 train = function( matrix[double] x_train,
@@ -93,7 +103,7 @@ train = function( matrix[double] x_train,
   return(List[unknown] biases, List[unknown] weights, matrix[double] out0, matrix[double] c0)
 {
   samples = nrow(x_train)
-
+  print("Start Training")
   #validation split
   x_val = x_train[1:val_size]
   y_val = y_train[1:val_size]
@@ -155,9 +165,11 @@ train = function( matrix[double] x_train,
   iters = ceil(samples/batch_size)
   for (ep in 1:epochs)
   {
+    print("Start ep: " + ep)
     loss = 0
     for (i in 1:iters)
     {
+      print("Iteration: " + i)
       # 1 Get batch data
       start = ((i-1) * batch_size) %% samples + 1
       end = min(samples, start + batch_size -1)
@@ -307,9 +319,15 @@ evaluate = function(matrix[double] x, matrix[double] y,
   loss = 0
   for (i in 1:iters)
   {
+    start = ((i-1) * batch_size) %% samples + 1
+    end = min(samples, start + batch_size -1)
+    x_batch = x[start:end]
+    y_batch = y[start:end]
     [y_hat, out5, out4, out3, out2, out1, emb, cache_out_out, cache_c_out, cache_ifog_out] =
-    predict(x, biases, weights, max_sequence_length, embedding_size, out0, c0)
-    loss = loss + log_loss::forward(y_hat, y)
+    predict(x_batch, biases, weights, max_sequence_length, embedding_size, out0, c0)
+    loss = loss + log_loss::forward(y_hat, y_batch)
   }
   loss = loss / iters
 }
+
+

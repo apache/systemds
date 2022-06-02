@@ -18,6 +18,14 @@
 # under the License.
 #
 #-------------------------------------------------------------
+# We implement a simple example using the basic self-attention
+# mechanism in combination with a LSTM recurrent layer.
+#
+# We use the clickbait dataset
+# (https://www.kaggle.com/datasets/amananandrai/clickbait-dataset?select=clickbait_data.csv)
+# which is a simple binary text classification with 32000 samples.
+#-------------------------------------------------------------
+
 
 source("nn/layers/attention.dml") as attention
 source("nn/layers/affine.dml") as affine
@@ -31,11 +39,15 @@ source("nn/layers/log_loss.dml") as log_loss
 # 1 get data
 data_loc = "scripts/nn/examples/data/"
 tableschema = "string,int"
-N=32000
-n=8000
-max_length = 32
+N=32000 # Samples of whole dataset
+n=8000  # Samples to use for training
+max_length = 32 # maximum sequence length
+epochs = 30
+batch_size = n/200
+val_size = batch_size * 5
+
 data = read(data_loc + "clickbait_data.csv", format="csv", header=TRUE, sep=",", data_type="frame", schema=tableschema, cols=2, rows=N)
-#print(toString(data[1:10]))
+
 
 [x_train, y_train, vocab_size] = preprocess(data, max_length, N)
 
@@ -44,20 +56,32 @@ y_train = y_train[1:n]
 
 # train network
 # TODO fix: get error when batch size is not always equal
-epochs = 30
-batch_size = n/200
-val_size = batch_size * 5
-[biases, weights, out0, c0] = train(x_train, y_train, epochs, batch_size, max_length, vocab_size, val_size)
+
+[biases, weights] = train(x_train, y_train, epochs, batch_size, max_length, vocab_size, val_size)
 
 
 preprocess = function(frame[unknown] data, integer max_length, integer n)
   return (matrix[double] features, matrix[double] targets, integer vocab_size)
 {
+  /*
+   * Preprocess the raw text data into integer tokens, shuffles data and targets.
+   *
+   * Inputs:
+   * - data: dataframe with [string, int] schema and n rows.
+   * - max_length: maximum sequence length we use for training
+   * - n: number of samples.
+   *
+   * Outputs:
+   * - features: feature matrix of shape (n, max_sequence_length)
+   * - targets: labels vector of shape (n,1)
+   * - vocab_size: vocabulary size, used to define size of embedding matrix during training.
+   */
+
   # map to lowercase, remove non alphanumeric characters
   formatted = map(data[,1], "x -> x.toLowerCase().replaceAll(\"[^\\p{Alnum}]+\", \" \").replaceAll(\"[\\s]+\", \" \")")
   ids = as.frame(seq(1,nrow(formatted),1))
   formatted = cbind(ids, formatted)
-  #print(toString(formatted[1:100]))
+
   # prepare feature matrix for lstm into one-hot-encoded sequences
   spec = "{\"algo\" : \"split\", \"out\": \"position\", \"tokenize_col\": 2, \"id_cols\": [1]}"
   tokenized = tokenize(target=formatted, spec=spec, max_tokens=max_length)
@@ -80,8 +104,7 @@ preprocess = function(frame[unknown] data, integer max_length, integer n)
   features = replace(target=features, pattern = NaN, replacement = -1)
   features = features + 2
   vocab_size = as.integer(max(features))
-  #features = toOneHot(features, num_classes)
-  #print(toString(features[1:20,1:20]))
+
   targets = as.matrix(data[,2])
 
   #shuffle data
@@ -100,10 +123,27 @@ train = function( matrix[double] x_train,
                   integer vocab_size,
                   integer val_size
 )
-  return(List[unknown] biases, List[unknown] weights, matrix[double] out0, matrix[double] c0)
+  return(List[unknown] biases, List[unknown] weights)
 {
+  /*
+   * Trains our example model
+   *
+   * Inputs:
+   * - x_train: training features, matrix of shape (N,max_sequence_length).
+   * - y_train: training labels, matrix of shape (N,1).
+   * - epochs: number of epochs to train our model.
+   * - batch_size: batch size we use in each iteration.
+   * - max_length: maximum sequence length of data.
+   * - vocab_size: Size of our considered vocabulary.
+   * - val_size: Size of the validation set, which is subtracted from x_train and y_train.
+   *
+   * Outputs:
+   * - biases: list of biases.
+   * - weights: list of weights.
+   */
   samples = nrow(x_train)
   print("Start Training")
+
   #validation split
   x_val = x_train[1:val_size]
   y_val = y_train[1:val_size]
@@ -112,7 +152,6 @@ train = function( matrix[double] x_train,
   y_train = y_train[val_size+1:samples]
 
   samples = nrow(x_train)
-
   features = ncol(x_train)
   output_size = 1
 
@@ -142,9 +181,6 @@ train = function( matrix[double] x_train,
 
   #optimizer init
   [mW_E, vW_E] = adam::init(W_E)
-
-  [mout0, vout0] = adam::init(out0)
-  [mc0, vc0] = adam::init(c0)
 
   [mW_0, vW_0] = adam::init(W_0)
   [mW_1, vW_1] = adam::init(W_1)
@@ -180,7 +216,7 @@ train = function( matrix[double] x_train,
 
       # 2 predict
       [y_hat, out5, out4, out3, out2, out1, emb, cache_out_out, cache_c_out, cache_ifog_out] =
-          predict(x_batch, biases, weights, max_sequence_length, embedding_size, out0, c0)
+          predict(x_batch, biases, weights, max_sequence_length, embedding_size, lstm_neurons)
 
       # 3 loss
       loss = loss + log_loss::forward(y_hat, y_batch)
@@ -216,16 +252,14 @@ train = function( matrix[double] x_train,
         lr, beta1, beta2, epsilon, t, max_sequence_length, embedding_size)
 
       # lstm
-      [c0 , mc0 , vc0 ] = adam::update(c0 , dc0 , lr, beta1, beta2, epsilon, t, mc0 , vc0 )
-      [out0,mout0,vout0]= adam::update(out0,dout0,lr, beta1, beta2, epsilon, t,mout0,vout0)
       [b_0, mb_0, vb_0] = adam::update(b_0, db_0, lr, beta1, beta2, epsilon, t, mb_0, vb_0)
       [W_0, mW_0, vW_0] = adam::update(W_0, dW_0, lr, beta1, beta2, epsilon, t, mW_0, vW_0)
 
-      #first affine
+      # hidden affine
       [b_1, mb_1, vb_1] = adam::update(b_1, db_1, lr, beta1, beta2, epsilon, t, mb_1, vb_1)
       [W_1, mW_1, vW_1] = adam::update(W_1, dW_1, lr, beta1, beta2, epsilon, t, mW_1, vW_1)
 
-      #second affine
+      # output affine
       [b_2, mb_2, vb_2] = adam::update(b_2, db_2, lr, beta2, beta2, epsilon, t, mb_2, vb_2)
       [W_2, mW_2, vW_2] = adam::update(W_2, dW_2, lr, beta2, beta2, epsilon, t, mW_2, vW_2)
 
@@ -234,7 +268,7 @@ train = function( matrix[double] x_train,
       weights = list(W_0,W_1,W_2,W_E)
 
     }
-    val_loss = evaluate(x_val, y_val, biases, weights, out0, c0, max_sequence_length, embedding_size, batch_size)
+    val_loss = evaluate(x_val, y_val, biases, weights, lstm_neurons, max_sequence_length, embedding_size, batch_size)
     loss = loss / iters
     print("Epoch: " + ep + "; Train Loss: " + loss + "; Val. Loss: " + val_loss)
   }
@@ -245,12 +279,34 @@ predict = function( matrix[double] x,
                     List[unknown] weights,
                     integer max_sequence_length,
                     integer embedding_size,
-                    matrix[double] out0,
-                    matrix[double] c0)
+                    integer lstm_neurons)
   return (matrix[double] y_hat, matrix[double] out5, matrix[double] out4, matrix[double] out3,
           matrix[double] out2, matrix[double] out1, matrix[double] emb, matrix[double] cache_out_out,
           matrix[double] cache_c_out, matrix[double] cache_ifog_out)
 {
+  /*
+   * Predicts an output y_hat for given samples x.
+   *
+   * Inputs:
+   * - x: sample features of shape(batch_size, max_sequence_length)
+   * - biases: list of biases of length 3 (lstm, affine, affine)
+   * - weights: list of weights of length 4 (lstm, affine, affine, embedding)
+   * - max_sequence_length: number of words per sample.
+   * - embedding_size: size of embedding vector for 1 word
+   * - lstm_neurons: number of neurons in lstm layer.
+   *
+   * Outputs:
+   * - y_hat: matrix of shape(batch_size, 1), prediction for log-loss, output of sigmoid layer
+   * - out5: output of final affine layer, shape(batch_size, 1)
+   * - out4: output of relu layer
+   * - out3: output of hidden affine layer
+   * - out2: output of attention layer
+   * - out1: output states from lstm layer, of shape(batch_size, max_sequence_lengt * lstm_neurons)
+   * - cache_out_out: cache_out output from lstm layer
+   * - cahce_c_out: cache_c output from lstm layer
+   * - cache_ifog_out: cahce_ifog output from lstm layer
+   */
+
   # unpack weights & biases
   W_0 = as.matrix(weights[1])
   W_1 = as.matrix(weights[2])
@@ -264,11 +320,13 @@ predict = function( matrix[double] x,
   # fetch embedding
   emb = fetch_embeddings(x, W_E, max_sequence_length, embedding_size)
   # put input through layers
+  batch_size = nrow(x)
+  out0 = matrix(0, batch_size, lstm_neurons)
+  c0 = out0
   [out1, c_out, cache_out_out, cache_c_out, cache_ifog_out]=
     lstm::forward(emb, W_0, b_0, max_sequence_length, embedding_size, TRUE, out0, c0)
   out2 = attention::forward(out1, out1, out1, max_sequence_length)
-  out2 = out1
-  out3 = affine::forward(out1, W_1, b_1)
+  out3 = affine::forward(out2, W_1, b_1)
   out4 = relu::forward(out3)
   out5 = affine::forward(out4, W_2, b_2)
   y_hat = sigmoid::forward(out5)
@@ -278,7 +336,20 @@ fetch_embeddings = function(matrix[double] indexes, matrix[double] W_E,
   integer max_sequence_length, integer embedding_size)
   return(matrix[double] emb)
 {
-emb = matrix(0, rows=nrow(indexes), cols=embedding_size*max_sequence_length)
+  /*
+   * Fetches embeddings for given tokens (indexes).
+   *
+   * Inputs:
+   * - indexes: tokens for fetching embeddings, shape(batch_size, max_sequence_length)
+   * - W_E: trainable embedding matrix of shape(vocab_size, embedding_size)
+   * - max_sequence_lengt: number of words per sample.
+   * - embedding_size: size of an embedding vector for 1 word.
+   *
+   * Outputs:
+   * - emb: embedded version of indexes of shape(batch_size, max_sequence_length * embedding_size)
+   */
+
+  emb = matrix(0, rows=nrow(indexes), cols=embedding_size*max_sequence_length)
   for (i in 1:nrow(indexes))
   {
     for (j in 1:max_sequence_length)
@@ -294,6 +365,28 @@ update_embeddings = function(matrix[double] indexes, matrix[double] dEmb, matrix
   double epsilon, integer t, integer max_sequence_length, integer embedding_size)
   return (matrix[double] W_E, matrix[double] mW_E, matrix[double] vW_E)
 {
+  /*
+   * Updates embedding matrix for given tokens (indexes).
+   *
+   * Inputs:
+   * - indexes: tokens for fetching embeddings, shape(batch_size, max_sequence_length)
+   * - dEmb: gradient from upstream of shape(batch_size, max_sequence_length * embedding_size)
+   * - W_E: trainable embedding matrix of shape(vocab_size, embedding_size)
+   * - mW_E: m variable (1st moment estimate) for adam optimizer
+   * - vW_E: v variable (2nd moment estimate) for adam optimizer
+   * - lr: learning rate
+   * - beta1: exponential decay rate for 1st moment estimate for adam optimizer
+   * - beta2: exponential decay rate for 2nd moment estimate for adam optimizer
+   * - epsilon: for numerical stability of adam optimizer
+   * - t: timestep for adam optimizer
+   * - max_sequence_length: number of words per sample.
+   * - embedding_size: size of an embedding vector for 1 word.
+   *
+   * Outputs:
+   * - W_E: updated trainable embedding matrix of shape(vocab_size, embedding_size)
+   * - mW_E: updated m variable (1st moment estimate) for adam optimizer
+   * - vW_E: updated v variable (2nd moment estimate) for adam optimizer
+   */
   for (i in 1:nrow(indexes))
   {
     for (j in 1:max_sequence_length)
@@ -310,10 +403,26 @@ update_embeddings = function(matrix[double] indexes, matrix[double] dEmb, matrix
 }
 
 evaluate = function(matrix[double] x, matrix[double] y,
-  list[unknown] biases, list[unknown] weights, matrix[double] out0, matrix[double] c0,
+  list[unknown] biases, list[unknown] weights, integer lstm_neurons,
   integer max_sequence_length, integer embedding_size, integer batch_size)
   return(double loss)
 {
+  /*
+  * Evaluate fit by calculating log_loss using predict function.
+  *
+  * Inputs:
+  * - x: feature matrix of shape(batch_size, max_sequence_length)
+  * - y: target matrix for x of shape(batch_size, 1)
+  * - biases: list of biases
+  * - weights: list of weights
+  * - lstm_neurons: number of neurons used in lstm layer
+  * - max_sequence_length: number of words per sample.
+  * - embedding_size: size of an embedding vector for 1 word.
+  * - batch_size: batch size for evaluation
+  *
+  * Outputs:
+  * - loss: log_loss of prediction
+  */
   samples = nrow(x)
   iters = ceil(samples/batch_size)
   loss = 0
@@ -324,7 +433,7 @@ evaluate = function(matrix[double] x, matrix[double] y,
     x_batch = x[start:end]
     y_batch = y[start:end]
     [y_hat, out5, out4, out3, out2, out1, emb, cache_out_out, cache_c_out, cache_ifog_out] =
-    predict(x_batch, biases, weights, max_sequence_length, embedding_size, out0, c0)
+      predict(x_batch, biases, weights, max_sequence_length, embedding_size, lstm_neurons)
     loss = loss + log_loss::forward(y_hat, y_batch)
   }
   loss = loss / iters

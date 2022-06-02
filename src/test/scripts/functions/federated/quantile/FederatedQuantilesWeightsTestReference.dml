@@ -19,10 +19,13 @@
 #
 #-------------------------------------------------------------
 
-A = read($1);
+if($3) {
+  A = rbind(read($5), read($6), read($7), read($8));
+}
+else { A = read($5); }
 P = matrix(0.25, 3, 1);
 P[2,1] = 0.5;
 P[3,1] = 0.75;
-W = read($W);
-s = quantile(X=A, W=W, P=P);
+W = read($4);
+s = quantile(A, W, P);
 write(s, $2);

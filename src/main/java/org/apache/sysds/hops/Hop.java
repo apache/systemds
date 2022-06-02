@@ -93,6 +93,15 @@ public abstract class Hop implements ParseInfo {
 	 */
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
 	protected FederatedCost _federatedCost = new FederatedCost();
+	protected double repetitions = 1;
+
+	/**
+	 * Field defining if prefetch should be activated for operation.
+	 * When prefetch is activated, the output will be transferred from
+	 * remote federated sites to local before one of the subsequent
+	 * local operations.
+	 */
+	protected boolean activatePrefetch;
 	
 	// Estimated size for the output produced from this Hop in bytes
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
@@ -187,6 +196,25 @@ public abstract class Hop implements ParseInfo {
 	public void setFederatedOutput(FederatedOutput federatedOutput){
 		_federatedOutput = federatedOutput;
 	}
+
+	/**
+	 * Activate prefetch of HOP.
+	 */
+	public void activatePrefetch(){
+		activatePrefetch = true;
+	}
+
+	public void deactivatePrefetch(){
+		activatePrefetch = false;
+	}
+
+	/**
+	 * Checks if prefetch is activated for this hop.
+	 * @return true if prefetch is activated
+	 */
+	public boolean prefetchActivated(){
+		return activatePrefetch;
+	}
 	
 	public void resetExecType()
 	{
@@ -200,7 +228,13 @@ public abstract class Hop implements ParseInfo {
 
 	public void setForcedExecType(ExecType etype)
 	{
+		logForcedETCall(etype);
 		_etypeForced = etype;
+	}
+
+	private void logForcedETCall(ExecType newEType){
+		if ( LOG.isDebugEnabled() && _etypeForced != null && newEType != _etypeForced )
+			LOG.debug("Forced ExecType of " + this + " changed from " + _etypeForced + " to " + newEType);
 	}
 
 	public abstract boolean allowsAllExecTypes();
@@ -226,7 +260,7 @@ public abstract class Hop implements ParseInfo {
 	{
 		if(DMLScript.USE_ACCELERATOR && DMLScript.FORCE_ACCELERATOR && isGPUEnabled())
 			_etypeForced = ExecType.GPU; // enabled with -gpu force option
-		else if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE ) {
+		else if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE && _etypeForced != ExecType.FED ) {
 			if(OptimizerUtils.isMemoryBasedOptLevel() && DMLScript.USE_ACCELERATOR && isGPUEnabled()) {
 				// enabled with -exec singlenode -gpu option
 				_etypeForced = findExecTypeByMemEstimate();
@@ -347,11 +381,22 @@ public abstract class Hop implements ParseInfo {
 	public boolean requiresLineageCaching() {
 		return _requiresLineageCaching;
 	}
+
+	public void updateLopFedOut(Lop lop){
+		updateLopFedOut(lop, getExecType(), _federatedOutput);
+	}
+
+	public void updateLopFedOut(Lop lop, ExecType execType, FederatedOutput fedOut){
+		if ( execType == ExecType.FED )
+			lop.setFederatedOutput(fedOut);
+	}
 	
 	public void constructAndSetLopsDataFlowProperties() {
 		//propagate federated output configuration to lops
-		if( isFederated() )
+		if( isFederated() || getLops().getExecType() == ExecType.FED )
 			getLops().setFederatedOutput(_federatedOutput);
+		if ( prefetchActivated() )
+			getLops().activatePrefetch();
 		
 		//Step 1: construct reblock lop if required (output of hop)
 		constructAndSetReblockLopIfRequired();
@@ -865,16 +910,6 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	/**
-	 * Update the execution type if input is federated.
-	 * This method only has an effect if FEDERATED_COMPILATION is activated.
-	 * Federated compilation is activated in OptimizerUtils.
-	 */
-	protected void updateETFed(){
-		if ( someInputFederated() || isFederatedDataOp() )
-			_etype = ExecType.FED;
-	}
-
-	/**
 	 * Checks if ExecType is federated.
 	 * @return true if ExecType is federated
 	 */
@@ -940,6 +975,10 @@ public abstract class Hop implements ParseInfo {
 		return _privacyConstraint;
 	}
 
+	public FederatedOutput getFederatedOutput(){
+		return _federatedOutput;
+	}
+
 	public boolean hasFederatedOutput(){
 		return _federatedOutput == FederatedOutput.FOUT;
 	}
@@ -964,6 +1003,15 @@ public abstract class Hop implements ParseInfo {
 		_federatedCost = cost;
 	}
 
+	/**
+	 * Reset federated cost of this hop and all children of this hop.
+	 */
+	public void resetFederatedCost(){
+		_federatedCost = new FederatedCost();
+		for ( Hop input : getInput() )
+			input.resetFederatedCost();
+	}
+
 	public void setUpdateType(UpdateType update){
 		_updateType = update;
 	}
@@ -975,7 +1023,7 @@ public abstract class Hop implements ParseInfo {
 	public abstract Lop constructLops();
 
 	protected final ExecType optFindExecType() {
-		return optFindExecType(OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE ? true : false);
+		return optFindExecType(OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE);
 	}
 	
 	protected abstract ExecType optFindExecType(boolean transitive);
@@ -1505,6 +1553,18 @@ public abstract class Hop implements ParseInfo {
 		
 		valMemo.put(root.getHopID(), ret);
 		return ret;
+	}
+
+	public void updateRepetitionEstimates(double repetitions){
+		if ( !federatedCostInitialized() ){
+			this.repetitions = repetitions;
+			for ( Hop input : getInput() )
+				input.updateRepetitionEstimates(repetitions);
+		}
+	}
+
+	public double getRepetitions(){
+		return repetitions;
 	}
 
 	/**

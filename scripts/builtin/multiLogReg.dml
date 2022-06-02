@@ -23,28 +23,29 @@
 # (See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)
 # The largest label represents the baseline category; if label -1 or 0 is present, then it is
 # the baseline label (and it is converted to the largest label).
-
-# INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
-# NAME      TYPE        DEFAULT   MEANING
-# --------------------------------------------------------------------------------------------
-# X         Matrix      ---       Location to read the matrix of feature vectors
-# Y         Matrix      ---       Location to read the matrix with category labels
-# icpt      Integer     0         Intercept presence, shifting and rescaling X columns: 0 = no intercept, no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X; 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# tol       Double      0.000001  tolerance ("epsilon")
-# reg       Double      0.0       regularization parameter (lambda = 1/C); intercept is not regularized
-# maxi      Integer     100       max. number of outer (Newton) iterations
-# maxii     Integer     0         max. number of inner (conjugate gradient) iterations, 0 = no max
-# verbose   Boolean     FALSE     flag specifying if logging information should be printed
 #
-# --------------------------------------------------------------------------------------------
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE                DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]      ---       Location to read the matrix of feature vectors
+# Y         Matrix[Double]      ---       Location to read the matrix with category labels
+# icpt      Integer             0         Intercept presence, shifting and rescaling X columns: 0 = no intercept,
+#                                         no shifting, no rescaling; 1 = add intercept, but neither shift nor
+#                                         rescale X; 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# tol       Double              0.000001  tolerance ("epsilon")
+# reg       Double              0.0       regularization parameter (lambda = 1/C); intercept is not regularized
+# maxi      Integer             100       max. number of outer (Newton) iterations
+# maxii     Integer             0         max. number of inner (conjugate gradient) iterations, 0 = no max
+# verbose   Boolean             FALSE     flag specifying if logging information should be printed
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# --------------------------------------------------------------------------------------------
-# NAME  TYPE    DEFAULT   MEANING
-# --------------------------------------------------------------------------------------------
-# betas  Double   regression betas as output for prediction
-# -------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE                         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# betas     Matrix[Double]               regression betas as output for prediction
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2, 
   Double tol=1e-6, Double reg=1.0, Int maxi=100, Int maxii=20, Boolean verbose=TRUE)

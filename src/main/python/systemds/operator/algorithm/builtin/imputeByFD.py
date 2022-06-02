@@ -30,13 +30,24 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def imputeByFD(X: Matrix,
-               sourceAttribute: int,
-               targetAttribute: int,
+               Y: Matrix,
                threshold: float,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
-    params_dict = {'X': X, 'sourceAttribute': sourceAttribute, 'targetAttribute': targetAttribute, 'threshold': threshold}
+    """
+    :param threshold: threshold value in interval [0, 1] for robust FDs
+    :param verbose: flag for printing verbose debug output
+    :return: 'OperationNode' containing  
+    """
+    params_dict = {'X': X, 'Y': Y, 'threshold': threshold}
     params_dict.update(kwargs)
-    return Matrix(X.sds_context,
-        'imputeByFD',
-        named_input_nodes=params_dict)
+    
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
+
+    op = MultiReturn(X.sds_context, 'imputeByFD', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

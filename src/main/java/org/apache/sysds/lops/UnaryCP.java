@@ -28,13 +28,6 @@ import org.apache.sysds.common.Types.ValueType;
 
 public class UnaryCP extends Lop 
 {
-	public static final String CAST_AS_SCALAR_OPCODE = "castdts";
-	public static final String CAST_AS_MATRIX_OPCODE = "castdtm";
-	public static final String CAST_AS_FRAME_OPCODE = "castdtf";
-	public static final String CAST_AS_DOUBLE_OPCODE = "castvtd";
-	public static final String CAST_AS_INT_OPCODE    = "castvti";
-	public static final String CAST_AS_BOOLEAN_OPCODE = "castvtb";
-
 	private OpOp1 operation;
 
 	/**

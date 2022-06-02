@@ -30,10 +30,17 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def gmm(X: Matrix,
-        verbose: bool,
         **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
-    params_dict = {'X': X, 'verbose': verbose}
+    """
+    :param n_components: Number of n_components in the Gaussian mixture model
+    :param model: "VVV": unequal variance (full),each component has its own general covariance matrix
+    :param init_param: initialize weights with "kmeans" or "random"
+    :param iterations: Number of iterations
+    :param reg_covar: regularization parameter for covariance matrix
+    :param tol: tolerance value for convergence
+    :return: 'OperationNode' containing of estimated parameters & information criterion for best iteration & kth class 
+    """
+    params_dict = {'X': X}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')

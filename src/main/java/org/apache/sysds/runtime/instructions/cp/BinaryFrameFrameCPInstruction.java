@@ -49,6 +49,12 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
+		else if(getOpcode().equals("freplicate")) {
+			// Perform computation using input frames, and produce the result frame
+			FrameBlock retBlock = inBlock1.frameRowReplication(inBlock2);
+			// Attach result frame with FrameBlock associated with output_name
+			ec.setFrameOutput(output.getName(), retBlock);
+		}
 		else {
 			// Execute binary operations
 			BinaryOperator dop = (BinaryOperator) _optr;

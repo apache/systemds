@@ -22,6 +22,7 @@ package org.apache.sysds.hops.rewrite;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
@@ -53,7 +54,8 @@ import java.util.ArrayList;
 import java.util.concurrent.Future;
 
 public class RewriteFederatedExecution extends HopRewriteRule {
-
+	private static final Logger LOG = Logger.getLogger(RewriteFederatedExecution.class);
+	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if ( roots != null )
@@ -62,7 +64,8 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 		return roots;
 	}
 
-	@Override public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
+	@Override
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if ( root != null )
 			visitHop(root);
 		return root;
@@ -71,6 +74,8 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 	private void visitHop(Hop hop){
 		if (hop.isVisited())
 			return;
+
+		LOG.debug("RewriteFederatedExecution visitHop + " + hop);
 
 		// Depth first to get to the input
 		for ( Hop input : hop.getInput() )
@@ -98,11 +103,13 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 	private static void loadFederatedPrivacyConstraints(Hop hop){
 		if ( hop.isFederatedDataOp() && hop.getPrivacy() == null){
 			try {
+				LOG.debug("Load privacy constraints of " + hop);
 				PrivacyConstraint privConstraint = unwrapPrivConstraint(sendPrivConstraintRequest(hop));
+				LOG.debug("PrivacyConstraint retrieved: " + privConstraint);
 				hop.setPrivacy(privConstraint);
 			}
 			catch(Exception e) {
-				throw new DMLException(e.getMessage());
+				throw new DMLException(e);
 			}
 		}
 	}

@@ -31,12 +31,11 @@ import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 
 
-public class AggregateUnaryOperator extends Operator {
+public class AggregateUnaryOperator extends MultiThreadedOperator {
 	private static final long serialVersionUID = 6690553323120787735L;
 
 	public final AggregateOperator aggOp;
 	public final IndexFunction indexFn;
-	private final int k; //num threads
 
 	public AggregateUnaryOperator(AggregateOperator aop, IndexFunction iop)
 	{
@@ -54,13 +53,9 @@ public class AggregateUnaryOperator extends Operator {
 			|| aop.increOp.fn instanceof Minus);
 		aggOp = aop;
 		indexFn = iop;
-		k = numThreads;
+		_numThreads = numThreads;
 	}
-	
-	public int getNumThreads(){
-		return k;
-	}
-	
+
 	public boolean isRowAggregate() {
 		return indexFn instanceof ReduceCol;
 	}

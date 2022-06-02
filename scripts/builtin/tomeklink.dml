@@ -18,23 +18,27 @@
 # under the License.
 #
 #-------------------------------------------------------------
-#
-# UNDERSAMPLING TECHNIQUE;
-# COMPUTES TOMEK LINKS AND DROPS THEM FROM DATA MATRIX AND LABEL VECTOR
-# DROPS ONLY THE MAJORITY LABEL AND CORRESPONDING POINT OF TOMEK LINKS
+
+# The tomekLink-function performs undersampling by removing Tomek's links for imbalanced multiclass problems
+# Computes TOMEK links and drops them from data matrix and label vector.
+# Drops only the majarity label and corresponding point of TOMEK links.
 #
 # INPUT  PARAMETERS:
-# ------------------------------------------------------------
-# NAME   TYPE    DEFAULT  MEANING
-# ------------------------------------------------------------
-# X      MATRIX  ---      Data Matrix (nxm)
-# y      MATRIX  ---      Label Matrix (nx1), greater than zero
-# ------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME   TYPE            DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X      Matrix[Double]  ---       Data Matrix (nxm)
+# y      Matrix[Double]  ---       Label Matrix (nx1), greater than zero
+# ----------------------------------------------------------------------------------------------------------------------
+#
 # OUTPUT:
-# X_under  - Data Matrix without Tomek links
-# y_under  - Labels corresponding to undersampled data
-# drop_idx - Indices of dropped rows/labels wrt input
-
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                 MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X_under    Matrix[Double]       Data Matrix without Tomek links
+# y_under    Matrix[Double]       Labels corresponding to undersampled data
+# drop_idx   Matrix[Double]       Indices of dropped rows/labels wrt input
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_tomeklink = function(Matrix[Double] X, Matrix[Double] y)
 return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
@@ -70,7 +74,7 @@ get_nn = function(Matrix[Double] X)
 return (Matrix[Double] nn) {
   # TODO exchange manhatten by euclidean dist()?
   nn = matrix(0, rows = nrow(X), cols = 1)
-  for (i in 1:nrow(X)) {
+  parfor (i in 1:nrow(X)) {
     dists = rowSums((X - X[i,])^2) 
     dists[i,] = NaN; # mask out self-ref
     nn[i, 1] = rowIndexMin(t(dists))

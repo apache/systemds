@@ -807,6 +807,12 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 					case MEAN:
 						val = kv.getValue();
 						break;
+					case MIN:
+						val = kv.getValue();
+						break;
+					case MAX:
+						val = kv.getValue();
+						break;
 					case CM2:
 						val = kv.getValue() / kv.getWeight();
 						break;

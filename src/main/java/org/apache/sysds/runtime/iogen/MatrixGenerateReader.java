@@ -115,7 +115,6 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return ret;
 	}
 
-	@SuppressWarnings("unchecked")
 	private MatrixBlock readMatrixFromHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen,
 		long clen, int blen) throws IOException, DMLRuntimeException {
 		//prepare file paths in alphanumeric order

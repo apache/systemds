@@ -48,9 +48,10 @@ struct SpoofRowwiseOp //%HAS_TEMP_VECT%
 		a.init(A);
 		c.init(C);
 		
-		if(B)
-			for(auto i = 0; i < NUM_B; ++i)
-				b[i].init(&(B[i]));
+		if(B) {
+		    for(auto i = 0; i < NUM_B; ++i)
+		        b[i].init(&(B[i]));
+		}
 	}
 
 	__device__  __forceinline__ void exec_dense(uint32_t ai, uint32_t ci, uint32_t rix) {

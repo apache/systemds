@@ -44,6 +44,7 @@ import org.apache.sysds.lops.PMMJ;
 import org.apache.sysds.lops.PMapMult;
 import org.apache.sysds.lops.Transform;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -433,8 +434,6 @@ public class AggBinaryOp extends MultiThreadedHop {
 			_etype = ExecType.SPARK;
 		}
 
-		updateETFed();
-
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		
@@ -640,7 +639,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		}
 		else {
 			if( isLeftTransposeRewriteApplicable(true) ) {
-				matmultCP = constructCPLopsMMWithLeftTransposeRewrite();
+				matmultCP = constructCPLopsMMWithLeftTransposeRewrite(et);
 			}
 			else { 
 				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
@@ -655,7 +654,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 		setLops(matmultCP);
 	}
 
-	private Lop constructCPLopsMMWithLeftTransposeRewrite() 
+	private Lop constructCPLopsMMWithLeftTransposeRewrite(ExecType et) 
 	{
 		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
 		Hop Y = getInput().get(1);
@@ -663,20 +662,25 @@ public class AggBinaryOp extends MultiThreadedHop {
 		
 		//right vector transpose
 		Lop lY = Y.constructLops();
+		ExecType inputReorgExecType = ( Y.hasFederatedOutput() ) ? ExecType.FED : ExecType.CP;
 		Lop tY = (lY instanceof Transform && ((Transform)lY).getOp()==ReOrgOp.TRANS ) ?
 				lY.getInputs().get(0) : //if input is already a transpose, avoid redundant transpose ops
-				new Transform(lY, ReOrgOp.TRANS, getDataType(), getValueType(), ExecType.CP, k);
+				new Transform(lY, ReOrgOp.TRANS, getDataType(), getValueType(), inputReorgExecType, k);
 		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getBlocksize(), Y.getNnz());
 		setLineNumbers(tY);
+		updateLopFedOut(tY);
 		
 		//matrix mult
-		Lop mult = new MatMultCP(tY, X.constructLops(), getDataType(), getValueType(), ExecType.CP, k);
+		Lop mult = new MatMultCP(tY, X.constructLops(), getDataType(), getValueType(), et, k); //CP or FED
 		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getBlocksize(), getNnz());
+		mult.setFederatedOutput(_federatedOutput);
 		setLineNumbers(mult);
-		
+
 		//result transpose (dimensions set outside)
-		Lop out = new Transform(mult, ReOrgOp.TRANS, getDataType(), getValueType(), ExecType.CP, k);
-		
+		ExecType outTransposeExecType = ( _federatedOutput == FederatedOutput.FOUT ) ?
+			ExecType.FED : ExecType.CP;
+		Lop out = new Transform(mult, ReOrgOp.TRANS, getDataType(), getValueType(), outTransposeExecType, k);
+
 		return out;
 	}
 	

@@ -32,6 +32,14 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def imputeByMode(X: Matrix):
     
     params_dict = {'X': X}
-    return Matrix(X.sds_context,
-        'imputeByMode',
-        named_input_nodes=params_dict)
+    
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
+
+    op = MultiReturn(X.sds_context, 'imputeByMode', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

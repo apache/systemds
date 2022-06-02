@@ -19,7 +19,10 @@
 
 package org.apache.sysds.runtime.codegen;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import jcuda.Pointer;
+
 import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -27,146 +30,114 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
 
-import java.util.ArrayList;
-
+import static jcuda.runtime.cudaError.cudaSuccess;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixCUDA.sizeOfDataType;
 
 public interface SpoofCUDAOperator  {
-	int JNI_MAT_ENTRY_SIZE = 6;
+	// these two constants have equivalences in native code:
+	int JNI_MAT_ENTRY_SIZE = 40;
+	int TRANSFERRED_DATA_HEADER_SIZE = 32;
+
 	abstract class PrecisionProxy {
 		protected final long ctx;
 		
 		public PrecisionProxy() { ctx = SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA);	}
 		
-		public abstract int exec(ExecutionContext ec, SpoofCUDAOperator op, int opID, long[] in, long[] sides, long[] out,
-				ArrayList<ScalarObject> scalarObjects, long grix);
-		
-		protected Pointer transferScalars(ExecutionContext ec, SpoofCUDAOperator op, int sizeOfDataType,
-				ArrayList<ScalarObject> scalarObjects) {
-			double[] s = SpoofOperator.prepInputScalars(scalarObjects);
-			Pointer ptr = ec.getGPUContext(0).allocate(op.getName(), (long) scalarObjects.size() * sizeOfDataType);
-			LibMatrixCUDA.cudaSupportFunctions.hostToDevice(ec.getGPUContext(0), s, ptr, op.getName());
-			return ptr;
-		}
+		public abstract int exec(SpoofCUDAOperator op);
 	}
 	
 	String getName();
-	
-	void setScalarPtr(Pointer ptr);
-	
-	Pointer getScalarPtr();
-	
-	void releaseScalarGPUMemory(ExecutionContext ec);
-	
-	default long [] prepareInputPointers(ExecutionContext ec, ArrayList<MatrixObject> inputs, int offset) {
-		long [] in = new long[offset * JNI_MAT_ENTRY_SIZE];
-		for(int i = 0; i < offset; i++) {
-			int j = i  * JNI_MAT_ENTRY_SIZE;
-			
-			if(inputs.get(i).getGPUObject(ec.getGPUContext(0)).isSparse()) {
-				in[j] = ec.getGPUSparsePointerAddress(inputs.get(i)).nnz;
-				in[j + 1] = inputs.get(i).getNumRows();
-				in[j + 2] = inputs.get(i).getNumColumns();
-				in[j + 3] = GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(inputs.get(i)).rowPtr);
-				in[j + 4] = GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(inputs.get(i)).colInd);
-				in[j + 5] = GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(inputs.get(i)).val);
-			}
-			else {
-				in[j] = inputs.get(i).getNnz();
-				in[j + 1] = inputs.get(i).getNumRows();
-				in[j + 2] = inputs.get(i).getNumColumns();
-				in[j + 5] = ec.getGPUDensePointerAddress(inputs.get(i));
-			}
-		}
-		return in;
-	}
-	
-	default long [] prepareSideInputPointers(ExecutionContext ec, ArrayList<MatrixObject> inputs, int offset, boolean tB1) {
-		long[] sides = new long[(inputs.size() - offset) * JNI_MAT_ENTRY_SIZE];
-		for(int i = offset; i < inputs.size(); i++) {
-			int j = (i - offset)  * JNI_MAT_ENTRY_SIZE;
-			if(inputs.get(i).getGPUObject(ec.getGPUContext(0)).isSparse()) {
-				sides[j] = ec.getGPUSparsePointerAddress(inputs.get(i)).nnz;
-				sides[j + 1] = inputs.get(i).getNumRows();
-				sides[j + 2] = inputs.get(i).getNumColumns();
-				sides[j + 3] = GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(inputs.get(i)).rowPtr);
-				sides[j + 4] = GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(inputs.get(i)).colInd);
-				sides[j + 5] = GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(inputs.get(i)).val);
-			}
-			else {
-				if(tB1 && j == 0) {
-					long rows = inputs.get(i).getNumRows();
-					long cols = inputs.get(i).getNumColumns();
-					Pointer b1 = inputs.get(i).getGPUObject(ec.getGPUContext(0)).getDensePointer();
-					Pointer ptr = ec.getGPUContext(0).allocate(getName(), rows * cols * sizeOfDataType);
-					
-//					double[] tmp1 = new double[(int) (rows * cols)];
-//					LibMatrixCUDA.cudaSupportFunctions.deviceToHost(ec.getGPUContext(0), b1, tmp1, getName(), false);
-//
-//					System.out.println("Mat before transpose: rows=" + rows + " cols=" + cols + "\n");
-//					for(int m = 0; m < rows; m++) {
-//						StringBuilder sb = new StringBuilder();
-//						for(int n = 0; n < cols; n++)
-//							sb.append(" " + tmp1[(int) (cols * m + n)]);
-//						System.out.println(sb.toString());
-//					}
-					
-					LibMatrixCUDA.denseTranspose(ec, ec.getGPUContext(0), getName(),
-						b1, ptr, rows, cols);
-					
-//					double[] tmp2 = new double[(int) (rows * cols)];
-//					LibMatrixCUDA.cudaSupportFunctions.deviceToHost(ec.getGPUContext(0), ptr, tmp2, getName(), false);
-//
-//					System.out.println("Mat after transpose: rows=" + cols + " cols=" + rows + "\n");
-//					for(int m = 0; m < cols; m++) {
-//						StringBuilder sb = new StringBuilder();
-//						for(int n = 0; n < rows; n++)
-//							sb.append(" " + tmp2[(int) (rows * m + n)]);
-//						System.out.println(sb.toString());
-//					}
 
-					sides[j] = inputs.get(i).getNnz();
-					sides[j + 1] = cols;
-					sides[j + 2] = rows;
-					sides[j + 5] = GPUObject.getPointerAddress(ptr);
-					
-				} else {
-					sides[j] = inputs.get(i).getNnz();
-					sides[j + 1] = inputs.get(i).getNumRows();
-					sides[j + 2] = inputs.get(i).getNumColumns();
-					sides[j + 5] = ec.getGPUDensePointerAddress(inputs.get(i));
-				}
-			}
-		}
-		return sides;
+	default void writeMatrixDescriptorToBuffer(ByteBuffer dst, int rows, int cols, long row_ptr,
+		long col_idx_ptr, long data_ptr, long nnz)
+	{
+		dst.putLong(nnz);
+		dst.putInt(rows);
+		dst.putInt(cols);
+		dst.putLong(row_ptr);
+		dst.putLong(col_idx_ptr);
+		dst.putLong(data_ptr);
 	}
-	
-	default long[] prepareOutputPointers(ExecutionContext ec, MatrixObject output, boolean sparseOut) {
-		long[] out = {0,0,0,0,0,0};
 
-		if(sparseOut) {
-			out[0] = ec.getGPUSparsePointerAddress(output).nnz;
-			out[1] = output.getNumRows();
-			out[2] = output.getNumColumns();
-			out[3] = GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(output).rowPtr);
-			out[4] = GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(output).colInd);
-			out[5] = GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(output).val);
+	default void prepareMatrixPointers(ByteBuffer buf, ExecutionContext ec, MatrixObject mo, boolean tB1) {
+		if(mo.getGPUObject(ec.getGPUContext(0)).isSparse()) {
+			writeMatrixDescriptorToBuffer(buf, (int)mo.getNumRows(), (int)mo.getNumColumns(),
+				GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(mo).rowPtr),
+					GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(mo).colInd),
+						GPUObject.getPointerAddress(ec.getGPUSparsePointerAddress(mo).val),
+							ec.getGPUSparsePointerAddress(mo).nnz);
 		}
 		else {
-			out[0] = output.getNnz();
-			out[1] = output.getNumRows();
-			out[2] = output.getNumColumns();
-			out[5] = ec.getGPUDensePointerAddress(output);
+			if(tB1) {
+				int rows = (int)mo.getNumRows();
+				int cols = (int)mo.getNumColumns();
+				Pointer b1 = mo.getGPUObject(ec.getGPUContext(0)).getDensePointer();
+				Pointer ptr = ec.getGPUContext(0).allocate(getName(), (long) rows * cols * sizeOfDataType, false);
+				LibMatrixCUDA.denseTranspose(ec, ec.getGPUContext(0), getName(), b1, ptr, rows, cols);
+				writeMatrixDescriptorToBuffer(buf, rows, cols, 0, 0, GPUObject.getPointerAddress(ptr), mo.getNnz());
+			} else {
+				writeMatrixDescriptorToBuffer(buf, (int)mo.getNumRows(), (int)mo.getNumColumns(), 0, 0,
+					ec.getGPUDensePointerAddress(mo), mo.getNnz());
+			}
 		}
-		return out;
 	}
-	
-	MatrixObject execute(ExecutionContext ec, ArrayList<MatrixObject> inputs, 
+
+	default void packDataForTransfer(ExecutionContext ec, ArrayList<MatrixObject> inputs,
+		ArrayList<ScalarObject> scalarObjects, MatrixObject out_obj, int num_inputs, int ID, long grix, boolean tB1,
+			Pointer[] ptr)
+	{
+		int op_data_size = (inputs.size() + 1) * JNI_MAT_ENTRY_SIZE + scalarObjects.size() * Double.BYTES + TRANSFERRED_DATA_HEADER_SIZE;
+		Pointer staging = new Pointer();
+		if(SpoofOperator.getNativeStagingBuffer(staging, this.getContext(), op_data_size) != cudaSuccess)
+			throw new RuntimeException("Failed to get native staging buffer from spoof operator");
+		ByteBuffer buf = staging.getByteBuffer();
+		buf.putInt(op_data_size);
+		buf.putInt(ID);
+		buf.putInt((int)grix);
+		buf.putInt(num_inputs);
+		buf.putInt(inputs.size() - num_inputs);
+		buf.putInt(out_obj == null ? 0 : 1);
+		buf.putInt(scalarObjects.size());
+		buf.putInt(-1); // padding
+
+		// copy input & side input pointers
+		for(int i=0; i < inputs.size(); i++) {
+			if(i == num_inputs)
+				prepareMatrixPointers(buf, ec, inputs.get(i), tB1);
+			else
+				prepareMatrixPointers(buf, ec, inputs.get(i), false);
+		}
+
+		// copy output pointers or allocate buffer for reduction
+ 		if(out_obj == null) {
+			long num_blocks = 1;
+			if(this instanceof SpoofCUDACellwise) {
+				int NT = 256;
+				long N = inputs.get(0).getNumRows() * inputs.get(0).getNumColumns();
+				num_blocks = ((N + NT * 2 - 1) / (NT * 2));
+				ptr[0] = ec.getGPUContext(0).allocate(getName(), LibMatrixCUDA.sizeOfDataType * num_blocks, false);
+			}
+			else
+				ptr[0] = ec.getGPUContext(0).allocate(getName(), LibMatrixCUDA.sizeOfDataType * num_blocks, true);
+			writeMatrixDescriptorToBuffer(buf, 1, 1, 0, 0, GPUObject.getPointerAddress(ptr[0]), 1);
+		}
+ 		else {
+			prepareMatrixPointers(buf, ec, out_obj, false);
+		}
+
+ 		// copy scalar values (no pointers)
+		for(ScalarObject scalarObject : scalarObjects) {
+			buf.putDouble(scalarObject.getDoubleValue());
+		}
+	}
+
+	MatrixObject execute(ExecutionContext ec, ArrayList<MatrixObject> inputs,
 			ArrayList<ScalarObject> scalarObjects, String outputName);
 	
 	ScalarObject execute(ExecutionContext ec, ArrayList<MatrixObject> inputs,
 		ArrayList<ScalarObject> scalarObjects);
-	
-	int execute_sp(long ctx, long[] meta, long[] in, long[] sides, long[] out, long scalars);
-	int execute_dp(long ctx, long[] meta, long[] in, long[] sides, long[] out, long scalars);
+
+	int execute_dp(long ctx);
+	int execute_sp(long ctx);
+	long getContext();
 }

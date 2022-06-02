@@ -21,19 +21,18 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Arrays;
 
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class OffsetChar extends AOffset {
 
 	private static final long serialVersionUID = -1192266421395964882L;
-
-	private final static int maxV = (int) Character.MAX_VALUE;
+	private static final int maxV = (int) Character.MAX_VALUE;
 
 	private final char[] offsets;
 	private final int offsetToFirst;
+	private final int offsetToLast;
+	private final boolean noZero;
 
 	public OffsetChar(int[] indexes) {
 		this(indexes, 0, indexes.length);
@@ -42,21 +41,20 @@ public class OffsetChar extends AOffset {
 	public OffsetChar(int[] indexes, int apos, int alen) {
 		int endSize = 0;
 		offsetToFirst = indexes[apos];
+		offsetToLast = indexes[alen - 1];
 		int ov = offsetToFirst;
-		for(int i = apos+1; i < alen; i++) {
+		for(int i = apos + 1; i < alen; i++) {
 			final int nv = indexes[i];
-			endSize += 1 + (nv - ov) / maxV;
+			endSize += 1 + (nv - ov - 1) / maxV;
 			ov = nv;
 		}
+		this.noZero = endSize == alen - apos - 1;
 		offsets = new char[endSize];
 		ov = offsetToFirst;
 		int p = 0;
-
-		for(int i =  apos+1; i < alen; i++) {
+		for(int i = apos + 1; i < alen; i++) {
 			final int nv = indexes[i];
 			final int offsetSize = (nv - ov);
-			if(offsetSize == 0)
-				throw new DMLCompressionException("Invalid difference between cells :\n" + Arrays.toString(indexes));
 			final int div = offsetSize / maxV;
 			final int mod = offsetSize % maxV;
 			if(mod == 0) {
@@ -67,19 +65,41 @@ public class OffsetChar extends AOffset {
 				p += div; // skip values
 				offsets[p++] = (char) (mod);
 			}
-
 			ov = nv;
 		}
 	}
 
-	private OffsetChar(char[] offsets, int offsetToFirst) {
+	private OffsetChar(char[] offsets, int offsetToFirst, int offsetToLast) {
 		this.offsets = offsets;
 		this.offsetToFirst = offsetToFirst;
+		this.offsetToLast = offsetToLast;
+		this.noZero = getNoZero();
+	}
+
+	private boolean getNoZero() {
+		boolean noZero = true;
+		for(char b : offsets)
+			if(b == 0) {
+				noZero = false;
+				break;
+			}
+		return noZero;
 	}
 
 	@Override
-	public IterateCharOffset getIterator() {
-		return new IterateCharOffset();
+	public AIterator getIterator() {
+		if(noZero)
+			return new IterateCharOffsetNoZero();
+		else
+			return new IterateCharOffset();
+	}
+
+	@Override
+	public AOffsetIterator getOffsetIterator() {
+		if(noZero)
+			return new OffsetCharIteratorNoZero();
+		else
+			return new OffsetCharIterator();
 	}
 
 	@Override
@@ -87,83 +107,219 @@ public class OffsetChar extends AOffset {
 		out.writeByte(OffsetFactory.OFF_TYPE.CHAR.ordinal());
 		out.writeInt(offsetToFirst);
 		out.writeInt(offsets.length);
+		out.writeInt(offsetToLast);
 		for(char o : offsets)
 			out.writeChar(o);
 	}
 
 	@Override
 	public long getInMemorySize() {
-		return getInMemorySize(offsets.length);
+		return estimateInMemorySize(offsets.length);
+	}
+
+	public static long estimateInMemorySize(int nOffs) {
+		long size = 16 + 4 + 4 + 8; // object header plus int plus reference
+		size += MemoryEstimates.charArrayCost(nOffs);
+		return size;
 	}
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 4 + 4 + offsets.length * 2;
+		return 1 + 4 + 4 + 4 + offsets.length * 2;
 	}
 
 	@Override
 	public int getSize() {
-		int size = 1;
-		for(char b : offsets) {
-			if(b != 0)
-				size++;
+		if(noZero)
+			return offsets.length + 1;
+		else {
+			int size = 1;
+			for(char b : offsets) {
+				if(b != 0)
+					size++;
+			}
+			return size;
 		}
-		return size;
+	}
+
+	@Override
+	public int getOffsetToFirst() {
+		return offsetToFirst;
+	}
+
+	@Override
+	public int getOffsetToLast() {
+		return offsetToLast;
+	}
+
+	@Override
+	public int getOffsetsLength() {
+		return offsets.length;
 	}
 
 	public static OffsetChar readFields(DataInput in) throws IOException {
-		int offsetToFirst = in.readInt();
-		int offsetsLength = in.readInt();
-		char[] offsets = new char[offsetsLength];
-		for(int i = 0; i < offsetsLength; i++) {
-			offsets[i] = in.readChar();
-		}
-		return new OffsetChar(offsets, offsetToFirst);
-	}
+		final int offsetToFirst = in.readInt();
+		final int offsetsLength = in.readInt();
+		final int offsetToLast = in.readInt();
+		final char[] offsets = new char[offsetsLength];
 
-	public static long getInMemorySize(int length) {
-		long size = 16 + 4 + 8; // object header plus int plus reference
-		size += MemoryEstimates.charArrayCost(length - 1);
-		return size;
+		for(int i = 0; i < offsetsLength; i++)
+			offsets[i] = in.readChar();
+
+		return new OffsetChar(offsets, offsetToFirst, offsetToLast);
 	}
 
 	private class IterateCharOffset extends AIterator {
 
+		protected int index;
+		protected int dataIndex;
+
 		private IterateCharOffset() {
-			super(0, 0, offsetToFirst);
+			super(offsetToFirst);
+			index = 0;
+			dataIndex = 0;
 		}
 
 		private IterateCharOffset(int index, int dataIndex, int offset) {
-			super(index, dataIndex, offset);
+			super(offset);
+			this.index = index;
+			this.dataIndex = dataIndex;
+
 		}
 
 		@Override
-		public void next() {
-			if(index >= offsets.length) {
-				index++;
-				dataIndex++;
-				return;
-			}
-			final char v = offsets[index++];
-			if(v == 0) {
+		public int next() {
+			char v = offsets[index];
+			while(v == 0) {
 				offset += maxV;
-				next();
+				index++;
+				v = offsets[index];
 			}
-			else {
-				dataIndex++;
-				offset += v;
-			}
+			offset += v;
+			index++;
+			dataIndex++;
+			return offset;
 		}
 
 		@Override
-		public boolean hasNext() {
-			return index <= offsets.length;
+		public int value() {
+			return offset;
+		}
+
+		@Override
+		public int skipTo(int idx) {
+			while(offset < idx && index < offsets.length)
+				next();
+			return offset;
 		}
 
 		@Override
 		public IterateCharOffset clone() {
 			return new IterateCharOffset(index, dataIndex, offset);
 		}
+
+		@Override
+		public int getDataIndex() {
+			return dataIndex;
+		}
+
+		@Override
+		public int getOffsetsIndex() {
+			return index;
+		}
 	}
 
+	private class IterateCharOffsetNoZero extends AIterator {
+
+		protected int index;
+
+		private IterateCharOffsetNoZero() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		private IterateCharOffsetNoZero(int index, int offset) {
+			super(offset);
+			this.index = index;
+		}
+
+		@Override
+		public int next() {
+			char v = offsets[index];
+			while(v == 0) {
+				offset += maxV;
+				index++;
+				v = offsets[index];
+			}
+			offset += v;
+			index++;
+			return offset;
+		}
+
+		@Override
+		public int value() {
+			return offset;
+		}
+
+		@Override
+		public int skipTo(int idx) {
+			while(offset < idx && index < offsets.length)
+				next();
+			return offset;
+		}
+
+		@Override
+		public IterateCharOffsetNoZero clone() {
+			return new IterateCharOffsetNoZero(index, offset);
+		}
+
+		@Override
+		public int getDataIndex() {
+			return index;
+		}
+
+		@Override
+		public int getOffsetsIndex() {
+			return index;
+		}
+	}
+
+	private class OffsetCharIterator extends AOffsetIterator {
+
+		protected int index;
+
+		private OffsetCharIterator() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		@Override
+		public int next() {
+			char v = offsets[index];
+			while(v == 0) {
+				offset += maxV;
+				index++;
+				v = offsets[index];
+			}
+			index++;
+			return offset += v;
+		}
+	}
+
+	private class OffsetCharIteratorNoZero extends AOffsetIterator {
+
+		protected int index;
+
+		private OffsetCharIteratorNoZero() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		@Override
+		public int next() {
+			char v = offsets[index];
+			index++;
+			return offset += v;
+		}
+	}
 }

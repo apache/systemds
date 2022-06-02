@@ -19,6 +19,26 @@
 #
 #-------------------------------------------------------------
 
+# The naiveBayes-function computes the class conditional probabilities and class priors.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE              DEFAULT    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# D         Matrix[Double]    ---        One dimensional column matrix with N rows.
+# C         Matrix[Double]    ---        One dimensional column matrix with N rows.
+# Laplace   Double            1          Any Double value.
+# Verbose   Boolean           TRUE       Boolean value.
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                TYPE               MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# prior               Matrix[Double]     Class priors, One dimensional column matrix with N rows.
+# classConditionals   Matrix[Double]     Class conditional probabilites, One dimensional column matrix with N rows.
+# ----------------------------------------------------------------------------------------------------------------------
+
 m_naiveBayes = function(Matrix[Double] D,
   Matrix[Double] C, Double laplace = 1, Boolean verbose = TRUE)
   return (Matrix[Double] prior, Matrix[Double] classConditionals)

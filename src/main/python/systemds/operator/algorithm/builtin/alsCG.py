@@ -32,16 +32,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def alsCG(X: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param X: Location to read the input matrix X to be factorized
     :param rank: Rank of the factorization
-    :param reg: Regularization:
-    :param lambda: Regularization parameter, no regularization if 0.0
+    :param regType: Regularization:
+    :param reg: Regularization parameter, no regularization if 0.0
     :param maxi: Maximum number of iterations
     :param check: Check for convergence after every iteration, i.e., updating U and V once
     :param thr: Assuming check is set to TRUE, the algorithm stops and convergence is declared
     :param if: in loss in any two consecutive iterations falls below this threshold;
     :param if: FALSE thr is ignored
-    :return: 'OperationNode' containing x n matrix v 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'X': X}
     params_dict.update(kwargs)

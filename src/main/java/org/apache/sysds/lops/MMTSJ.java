@@ -92,9 +92,13 @@ public class MMTSJ extends Lop
 		sb.append( _type );
 		
 		//append degree of parallelism for matrix multiplications
-		if( getExecType()==ExecType.CP ) {
+		if( getExecType()==ExecType.CP || getExecType()==ExecType.FED ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
+			if ( getExecType()==ExecType.FED ){
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( _fedOutput.name() );
+			}
 		}
 		
 		return sb.toString();

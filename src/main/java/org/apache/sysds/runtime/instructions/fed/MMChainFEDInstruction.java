@@ -19,15 +19,16 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -74,8 +75,8 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
-		MatrixObject mo2 = ec.getMatrixObject(input2);
-		MatrixObject mo3 = _type.isWeighted() ? ec.getMatrixObject(input3) : null;
+		MatrixLineagePair mo2 = ec.getMatrixLineagePair(input2);
+		MatrixLineagePair mo3 = _type.isWeighted() ? ec.getMatrixLineagePair(input3) : null;
 		
 		if( !mo1.isFederated() )
 			throw new DMLRuntimeException("Federated MMChain: Federated main input expected, "

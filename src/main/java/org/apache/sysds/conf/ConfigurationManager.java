@@ -23,8 +23,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.lops.Compression.CompressConfig;
 
-
-
 /**
  * Singleton for accessing the parsed and merged system configuration.
  * 
@@ -199,12 +197,28 @@ public class ConfigurationManager
 		return (getDMLConfig().getBooleanValue(DMLConfig.CODEGEN)
 			|| getCompilerConfigFlag(ConfigType.CODEGEN_ENABLED));
 	}
+	
+	public static boolean isFederatedRuntimePlanner() {
+		return getCompilerConfigFlag(ConfigType.FEDERATED_RUNTIME);
+	}
 
 	public static boolean isCompressionEnabled(){
-		CompressConfig compress = CompressConfig.valueOf(getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());
+		CompressConfig compress = getCompressConfig();
 		return compress.isEnabled();
 	}
+
+	public static CompressConfig getCompressConfig(){
+		return CompressConfig.valueOf(getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());
+	}
 	
+	public static int getFederatedTimeout(){
+		return getDMLConfig().getIntValue(DMLConfig.FEDERATED_TIMEOUT);
+	}
+
+	public static boolean isFederatedSSL(){
+		return getDMLConfig().getBooleanValue(DMLConfig.USE_SSL_FEDERATED_COMMUNICATION);
+	}
+
 	///////////////////////////////////////
 	// Thread-local classes
 	

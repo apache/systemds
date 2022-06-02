@@ -36,6 +36,6 @@ X = t(X);
 UV = V %*% t(U);
 Z3 = X * (1 / (1 + exp(-UV)));
 
-Z = Z1 + Z2 + mean(Z3);
+Z = as.matrix(sum(Z1) - sum(Z2) + sum(Z3));
 
 write(Z, $out_Z);

@@ -33,10 +33,14 @@ def hyperband(X_train: Matrix,
               y_train: Matrix,
               X_val: Matrix,
               y_val: Matrix,
-              params: Iterable,
+              params: List,
               paramRanges: Matrix,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param One: hyper parameter, first column specifies min, second column max value.
+    :param verbose: If TRUE print messages are activated
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X_train': X_train, 'y_train': y_train, 'X_val': X_val, 'y_val': y_val, 'params': params, 'paramRanges': paramRanges}
     params_dict.update(kwargs)
     

@@ -23,29 +23,34 @@
 # ML model debugging technique for finding the top-k data slices where
 # a trained models performs significantly worse than on the overall 
 # dataset. For a detailed description and experimental results, see:
+# Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based Slice Finding for ML Model Debugging.(SIGMOD 2021)
 #
-#  Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast,
-#  Linear-Algebra-based Slice Finding for ML Model Debugging.
-#  In: SIGMOD 2021.
-
-#-------------------------------------------------------------
-# X         Input matrix (integer encoded [1..v])
-# e         error vector (classification accuracy, l2 norm, etc)
-# k         top-K subsets / slices
-# maxL      maximum level L (conjunctions of L predicates), 0 unlimited
-# minSup    minimum support (min number of rows per slice)
-# alpha     weight [0,1]: 0 only size, 1 only error
-# tpEval    flag for task-parallel slice evaluation, 
-#           otherwise data-parallel
-# tpBlksz   block size for task-parallel execution (num slices) 
-# selFeat   flag for removing one-hot-encoded features that don't satisfy 
-#           the initial minimum-support constraint and/or have zero error 
-# verbose   flag for verbose debug output 
-# ------------------------------------------------------------
-# TK        top-k slices (k x ncol(X) if successful) 
-# TKC       score, size, error of slices (k x 3)
-# D         debug matrix, populated with enumeration stats if verbose
-# ------------------------------------------------------------
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE            DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X             Matrix[Double]  ---       Recoded dataset into Matrix
+# e             Matrix[Double]  ---       Trained model
+# k             Integer         1         Number of subsets required
+# maxL          Integer                   maximum level L (conjunctions of L predicates), 0 unlimited
+# minSup        Integer                   minimum support (min number of rows per slice)
+# alpha         Double                    weight [0,1]: 0 only size, 1 only error
+# tpEval        Boolean                   flag for task-parallel slice evaluation,
+#                                         otherwise data-parallel
+# tpBlksz       Integer                   block size for task-parallel execution (num slices)
+# selFeat       Boolean                   flag for removing one-hot-encoded features that don't satisfy
+#                                         the initial minimum-support constraint and/or have zero error
+# verbose       Boolean                   flag for verbose debug output
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE                  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# TK           Matrix[Double]        top-k slices (k x ncol(X) if successful)
+# TKC          Matrix[Double]        score, size, error of slices (k x 3)
+# D            Matrix[Double]        debug matrix, populated with enumeration stats if verbose
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_slicefinder = function(Matrix[Double] X, Matrix[Double] e, Int k = 4, 
     Int maxL = 0, Int minSup = 32, Double alpha = 0.5, Boolean tpEval = TRUE, 

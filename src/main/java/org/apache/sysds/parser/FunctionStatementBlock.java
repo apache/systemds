@@ -258,4 +258,13 @@ public class FunctionStatementBlock extends StatementBlock implements FunctionBl
 		return ProgramConverter
 			.createDeepCopyFunctionStatementBlock(this, new HashSet<>(), new HashSet<>());
 	}
+
+	@Override
+	public void updateRepetitionEstimates(double repetitions){
+		for (Statement stm : getStatements()){
+			for (StatementBlock block : ((FunctionStatement) stm).getBody()){
+				block.updateRepetitionEstimates(repetitions);
+			}
+		}
+	}
 }

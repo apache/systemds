@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":6,"i2":6,"i3":6,"i4":10,"i5":6,"i6":10,"i7":6};
+var data = {"i0":10,"i1":10,"i2":6,"i3":6,"i4":6,"i5":10,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":10,"i12":10,"i13":10,"i14":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.compress.colgroup.offset.AOffset</li>
@@ -132,16 +132,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code></dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
-<dd><code><a href="OffsetByte.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">OffsetByte</a></code>, <code><a href="OffsetChar.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">OffsetChar</a></code></dd>
+<dd><code><a href="OffsetByte.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">OffsetByte</a></code>, <code><a href="OffsetChar.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">OffsetChar</a></code>, <code><a href="OffsetSingle.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">OffsetSingle</a></code>, <code><a href="OffsetTwo.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">OffsetTwo</a></code></dd>
 </dl>
 <hr>
 <pre>public abstract class <span class="typeNameLabel">AOffset</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>
-implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>
+implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></pre>
 <div class="block">Offset list encoder interface.
  
  It is assumed that the input is in sorted order, all values are positive and there are no duplicates.
@@ -203,48 +203,103 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#equals(org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">equals</a></span>&#8203;(<a href="AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;b)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>abstract long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExactSizeOnDisk()">getExactSizeOnDisk</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Remember to include the ordinal of the type of offset list.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>abstract long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInMemorySize()">getInMemorySize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the in memory size of the Offset object</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>abstract <a href="AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getIterator()">getIterator</a></span>()</code></th>
 <td class="colLast">
-<div class="block">Get an iterator of the offsets.</div>
+<div class="block">Get an iterator of the offsets while also maintaining the data index pointer.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getIterator(int)">getIterator</a></span>&#8203;(int&nbsp;row)</code></th>
 <td class="colLast">
 <div class="block">Get an iterator that is pointing at a specific offset.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>abstract <a href="AOffsetIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffsetIterator</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOffsetIterator()">getOffsetIterator</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get an OffsetIterator of current offsets not maintaining the data index.</div>
+</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>abstract int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOffsetsLength()">getOffsetsLength</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get the length of the underlying offsets lists.</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>abstract int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOffsetToFirst()">getOffsetToFirst</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get the offset to the first index</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code>abstract int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOffsetToLast()">getOffsetToLast</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get the offset to the last value</div>
+</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSize()">getSize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of contained elements, This method iterate the entire offset list, so it is not constant lookup.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preAggregateDenseMap(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int,int,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">preAggregateDenseMap</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                    double[]&nbsp;preAV,
+                    int&nbsp;rl,
+                    int&nbsp;ru,
+                    int&nbsp;cl,
+                    int&nbsp;cu,
+                    int&nbsp;nVal,
+                    <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i12" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preAggregateSparseMap(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int,int,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">preAggregateSparseMap</a></span>&#8203;(<a href="../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                     double[]&nbsp;preAV,
+                     int&nbsp;rl,
+                     int&nbsp;ru,
+                     int&nbsp;nVal,
+                     <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i13" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
 <div class="block">Write the offsets to disk.</div>
 </td>
@@ -254,8 +309,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -299,10 +354,24 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList">
 <h4>getIterator</h4>
 <pre class="methodSignature">public abstract&nbsp;<a href="AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a>&nbsp;getIterator()</pre>
-<div class="block">Get an iterator of the offsets.</div>
+<div class="block">Get an iterator of the offsets while also maintaining the data index pointer.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>AIterator that iterate through index and dictionary offset values.</dd>
+</dl>
+</li>
+</ul>
+<a id="getOffsetIterator()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getOffsetIterator</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="AOffsetIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffsetIterator</a>&nbsp;getOffsetIterator()</pre>
+<div class="block">Get an OffsetIterator of current offsets not maintaining the data index.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>AIterator that iterator through the delta offsets.</dd>
 </dl>
 </li>
 </ul>
@@ -344,8 +413,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockList">
 <li class="blockList">
 <h4>write</h4>
-<pre class="methodSignature">public abstract&nbsp;void&nbsp;write&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)
-                    throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public abstract&nbsp;void&nbsp;write&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)
+                    throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Write the offsets to disk.
  
  If you implement another remember to write the ordinal of the new type to disk as well and add it to the
@@ -354,7 +423,35 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>out</code> - The output to write to</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - Exception that happens if the IO fails to write.</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - Exception that happens if the IO fails to write.</dd>
+</dl>
+</li>
+</ul>
+<a id="getOffsetToFirst()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getOffsetToFirst</h4>
+<pre class="methodSignature">public abstract&nbsp;int&nbsp;getOffsetToFirst()</pre>
+<div class="block">Get the offset to the first index</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The first index offset</dd>
+</dl>
+</li>
+</ul>
+<a id="getOffsetToLast()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getOffsetToLast</h4>
+<pre class="methodSignature">public abstract&nbsp;int&nbsp;getOffsetToLast()</pre>
+<div class="block">Get the offset to the last value</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The last values offset</dd>
 </dl>
 </li>
 </ul>
@@ -400,16 +497,69 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </dl>
 </li>
 </ul>
+<a id="getOffsetsLength()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getOffsetsLength</h4>
+<pre class="methodSignature">public abstract&nbsp;int&nbsp;getOffsetsLength()</pre>
+<div class="block">Get the length of the underlying offsets lists.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The number of offsets.</dd>
+</dl>
+</li>
+</ul>
+<a id="preAggregateDenseMap(org.apache.sysds.runtime.matrix.data.MatrixBlock,double[],int,int,int,int,int,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>preAggregateDenseMap</h4>
+<pre class="methodSignature">public final&nbsp;void&nbsp;preAggregateDenseMap&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                                       double[]&nbsp;preAV,
+                                       int&nbsp;rl,
+                                       int&nbsp;ru,
+                                       int&nbsp;cl,
+                                       int&nbsp;cu,
+                                       int&nbsp;nVal,
+                                       <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data)</pre>
+</li>
+</ul>
+<a id="preAggregateSparseMap(org.apache.sysds.runtime.data.SparseBlock,double[],int,int,int,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>preAggregateSparseMap</h4>
+<pre class="methodSignature">public final&nbsp;void&nbsp;preAggregateSparseMap&#8203;(<a href="../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                                        double[]&nbsp;preAV,
+                                        int&nbsp;rl,
+                                        int&nbsp;ru,
+                                        int&nbsp;nVal,
+                                        <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data)</pre>
+</li>
+</ul>
+<a id="equals(org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>equals</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;equals&#8203;(<a href="AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;b)</pre>
+</li>
+</ul>
 <a id="toString()">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -482,7 +632,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

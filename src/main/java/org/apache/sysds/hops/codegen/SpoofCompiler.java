@@ -38,6 +38,7 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeCell;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
 import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
@@ -96,7 +97,7 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.NativeHelper;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.CodegenStatistics;
 
 import java.io.File;
 import java.io.IOException;
@@ -563,7 +564,7 @@ public class SpoofCompiler {
 				}
 				else {
 					if( DMLScript.STATISTICS ) 
-						Statistics.incrementCodegenOpCacheHits();
+						CodegenStatistics.incrementOpCacheHits();
 					if(CodegenUtils.getCUDAopID(cla.getName()) != null) {
 						tmp.getValue().setGeneratorAPI(GeneratorAPI.CUDA);
 						tmp.getValue().setVarName(cla.getName().split("\\.")[1]);
@@ -586,7 +587,7 @@ public class SpoofCompiler {
 					clas.put(cplan.getKey(), new Pair<Hop[], Class<?>>(tmp.getKey(), cla));
 				}
 				if( DMLScript.STATISTICS )
-					Statistics.incrementCodegenOpCacheTotal();
+					CodegenStatistics.incrementOpCacheTotal();
 			}
 			
 			//create modified hop dag (operator replacement and CSE)
@@ -612,8 +613,8 @@ public class SpoofCompiler {
 		}
 		
 		if( DMLScript.STATISTICS ) {
-			Statistics.incrementCodegenDAGCompile();
-			Statistics.incrementCodegenCompileTime(System.nanoTime()-t0);
+			CodegenStatistics.incrementDAGCompile();
+			CodegenStatistics.incrementCompileTime(System.nanoTime()-t0);
 		}
 		
 		Hop.resetVisitStatus(roots);
@@ -738,7 +739,7 @@ public class SpoofCompiler {
 			if( tmp != null ) {
 				cplans.put(hop.getHopID(), tmp);
 				if (DMLScript.STATISTICS)
-					Statistics.incrementCodegenCPlanCompile(1);
+					CodegenStatistics.incrementCPlanCompile(1);
 			}
 		}
 		
@@ -941,13 +942,15 @@ public class SpoofCompiler {
 			}
 			
 			//remove cplan w/ single op and w/o agg
-			if( (tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
-					&& TemplateUtils.hasSingleOperation(tpl) )
-				|| (tpl instanceof CNodeRow && (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
-					|| ((CNodeRow)tpl).getRowType()==RowType.NO_AGG_B1
-					|| ((CNodeRow)tpl).getRowType()==RowType.ROW_AGG )
+			if((tpl instanceof CNodeCell && ((CNodeCell)tpl).getCellType()==CellType.NO_AGG
 					&& TemplateUtils.hasSingleOperation(tpl))
-				|| TemplateUtils.hasNoOperation(tpl) ) 
+				|| (tpl instanceof CNodeRow
+					&& (((CNodeRow)tpl).getRowType()==RowType.NO_AGG
+						|| ((CNodeRow)tpl).getRowType()==RowType.NO_AGG_B1
+						|| (((CNodeRow)tpl).getRowType()==RowType.ROW_AGG  && !TemplateUtils.isBinary(tpl.getOutput(),
+							CNodeBinary.BinType.ROWMAXS_VECTMULT)))
+					&& TemplateUtils.hasSingleOperation(tpl))
+				|| TemplateUtils.hasNoOperation(tpl))
 			{
 				cplans2.remove(e.getKey());
 				if( LOG.isTraceEnabled() )

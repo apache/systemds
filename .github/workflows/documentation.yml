@@ -43,14 +43,14 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         java: ['11']
-        javadist: ['adopt-openj9']
+        javadist: ['adopt']
     name: Java
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
-      uses: actions/setup-java@v2
+      uses: actions/setup-java@v3
       with:
         distribution: ${{ matrix.javadist }}
         java-version: ${{ matrix.java }}
@@ -64,16 +64,16 @@ jobs:
     name: Python
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
         python-version: 3.7
         architecture: 'x64'
 
     - name: Cache Pip Dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-docs-${{ hashFiles('src/main/python/docs/requires-docs.txt') }}

@@ -22,42 +22,75 @@ package org.apache.sysds.runtime.compress.estim;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class CompressedSizeEstimatorFactory {
-	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimatorFactory.class.getName());
+public interface CompressedSizeEstimatorFactory {
+	static final Log LOG = LogFactory.getLog(CompressedSizeEstimatorFactory.class.getName());
 
-	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings cs, int k) {
-
+	/**
+	 * Create an estimator for the input data with the given settings and parallelization degree.
+	 * 
+	 * @param data The matrix to extract compression information from.
+	 * @param cs   The settings for the compression
+	 * @param k    The parallelization degree
+	 * @return A new CompressionSizeEstimator used to extract information of column groups
+	 */
+	public static CompressedSizeEstimator createEstimator(MatrixBlock data, CompressionSettings cs, int k) {
 		final int nRows = cs.transposed ? data.getNumColumns() : data.getNumRows();
 		final int nCols = cs.transposed ? data.getNumRows() : data.getNumColumns();
-		final int nnzRows = Math.min(nRows, (int) Math.ceil(data.getNonZeros() / nCols));
-		final double sampleRatio = cs.samplingRatio;
-		final int minSample = cs.minimumSampleSize;
-		final int maxSample = Math.min(cs.maxSampleSize, nRows);
-		final int sampleSize = getSampleSize(sampleRatio, nRows, nCols, nnzRows, minSample, maxSample);
+		final double sparsity = data.getSparsity();
+		final int sampleSize = getSampleSize(cs, nRows, nCols, sparsity);
+		if(data.isEmpty())
+			return createExactEstimator(data, cs);
+		return createEstimator(data, cs, sampleSize, k, nRows);
+	}
 
-		if(sampleRatio >= 1.0 || sampleSize >= nRows) {
-			if(nRows > 10000 && nCols > 10 && data.isInSparseFormat() && !cs.transposed) {
-				if(!cs.isInSparkInstruction)
-					LOG.debug("Transposing for exact estimator");
-				data = LibMatrixReorg.transpose(data,
-					new MatrixBlock(data.getNumColumns(), data.getNumRows(), data.isInSparseFormat()), k);
-				cs.transposed = true;
-			}
-			if(!cs.isInSparkInstruction)
-				LOG.debug("Using Exact estimator");
-			return new CompressedSizeEstimatorExact(data, cs);
-		}
+	/**
+	 * Create an estimator for the input data with the given settings and parallelization degree.
+	 * 
+	 * @param data       The matrix to extract compression information from.
+	 * @param cs         The settings for the compression
+	 * @param sampleSize The number of rows to extract from the input data to extract information from.
+	 * @param k          The parallelization degree
+	 * @return A new CompressionSizeEstimator used to extract information of column groups
+	 */
+	public static CompressedSizeEstimator createEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize,
+		int k) {
+		final int nRows = cs.transposed ? data.getNumColumns() : data.getNumRows();
+		return createEstimator(data, cs, sampleSize, k, nRows);
+	}
 
-		if(nCols > 1000 && data.getSparsity() < 0.00001)
-			return CompressedSizeEstimatorUltraSparse.create(data, cs, k);
-		else {
-			if(!cs.isInSparkInstruction)
-				LOG.debug("Trying sample size: " + sampleSize);
-			return new CompressedSizeEstimatorSample(data, cs, sampleSize, k);
-		}
+	private static CompressedSizeEstimator createEstimator(MatrixBlock data, CompressionSettings cs, int sampleSize,
+		int k, int nRows) {
+		if(sampleSize >= (double) nRows * 0.8) // if sample size is larger than 80% use entire input as sample.
+			return createExactEstimator(data, cs);
+		else
+			return createSampleEstimator(data, cs, sampleSize, k);
+	}
+
+	private static CompressedSizeEstimatorExact createExactEstimator(MatrixBlock data, CompressionSettings cs) {
+		LOG.debug("Using full sample");
+		return new CompressedSizeEstimatorExact(data, cs);
+	}
+
+	private static CompressedSizeEstimatorSample createSampleEstimator(MatrixBlock data, CompressionSettings cs,
+		int sampleSize, int k) {
+		LOG.debug("Using sample size: " + sampleSize);
+		return new CompressedSizeEstimatorSample(data, cs, sampleSize, k);
+	}
+
+	/**
+	 * Get sampleSize based on compression settings.
+	 * 
+	 * @param cs       The compression settings
+	 * @param nRows    Number of rows in input
+	 * @param nCols    Number of columns in input
+	 * @param sparsity The sparsity of the input
+	 * @return a sample size
+	 */
+	private static int getSampleSize(CompressionSettings cs, int nRows, int nCols, double sparsity) {
+		final int maxSize = Math.min(cs.maxSampleSize, nRows);
+		return getSampleSize(cs.samplePower, nRows, nCols, sparsity, cs.minimumSampleSize, maxSize);
 	}
 
 	/**
@@ -67,25 +100,34 @@ public class CompressedSizeEstimatorFactory {
 	 * 
 	 * The sampling is calculated based on the a power of the number of rows and a sampling fraction
 	 * 
-	 * @param sampleRatio       The sample ratio
+	 * @param samplePower       The sample power
 	 * @param nRows             The number of rows
 	 * @param nCols             The number of columns
-	 * @param nnzRows           The number of nonzero rows
+	 * @param sparsity          The sparsity of the input
 	 * @param minimumSampleSize The minimum sample size
 	 * @param maxSampleSize     The maximum sample size
 	 * @return The sample size to use.
 	 */
-	private static int getSampleSize(double sampleRatio, int nRows, int nCols, int nnzRows, int minSampleSize,
+	private static int getSampleSize(double samplePower, int nRows, int nCols, double sparsity, int minSampleSize,
 		int maxSampleSize) {
-		// Start sample size at the min sample size.
+
+		// Start sample size at the min sample size as the basis sample.
 		int sampleSize = minSampleSize;
-		// Scale the sample size disproportionally with the number of rows in the input.
-		// Since the the number of rows needed to classify the contained values in a population doesn't scale linearly.
-		sampleSize += (int) Math.ceil(Math.pow(nRows, 0.65));
-		// Scale the sample size with the number of nonzero rows.
-		// This tries to make the sample bigger when there is less nonzero values in the matrix.
-		// This is done to increase the likelihood that the sample is big enough to contain some of the values.
-		sampleSize = (int) Math.min((double) sampleSize * ((double) nRows / nnzRows), maxSampleSize);
+
+		// ensure samplePower is in valid range
+		samplePower = Math.max(0, Math.min(1, samplePower));
+
+		// Scale the sample size with the number of rows in the input.
+		// Sub linearly since the the number of rows needed to classify the contained values in a population doesn't scale
+		// linearly.
+		sampleSize += (int) Math.ceil(Math.pow(nRows, samplePower));
+
+		// Scale sample size based on overall sparsity so that if the input is very sparse, increase the sample size.
+		sampleSize = (int) (sampleSize * (1.0 / Math.min(sparsity + 0.2, 1.0)));
+
+		// adhere to maximum sample size.
+		sampleSize = (int) Math.max(minSampleSize, Math.min(sampleSize, maxSampleSize));
+
 		return sampleSize;
 	}
 }

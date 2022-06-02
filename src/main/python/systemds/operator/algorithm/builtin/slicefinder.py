@@ -32,7 +32,18 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def slicefinder(X: Matrix,
                 e: Matrix,
                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param k: Number of subsets required
+    :param maxL: level L (conjunctions of L predicates), 0 unlimited
+    :param minSup: support (min number of rows per slice)
+    :param alpha: [0,1]: 0 only size, 1 only error
+    :param tpEval: for task-parallel slice evaluation,
+    :param tpBlksz: size for task-parallel execution (num slices)
+    :param selFeat: for removing one-hot-encoded features that don't satisfy
+    :param the: constraint and/or have zero error
+    :param verbose: for verbose debug output
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'e': e}
     params_dict.update(kwargs)
     

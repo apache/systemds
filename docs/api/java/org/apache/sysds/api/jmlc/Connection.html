@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.api.jmlc.Connection</li>
@@ -132,12 +132,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.html?is-external=true" title="class or interface in java.io" class="externalLink">Closeable</a></code>, <code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang" class="externalLink">AutoCloseable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Closeable.html?is-external=true" title="class or interface in java.io" class="externalLink">Closeable</a></code>, <code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang" class="externalLink">AutoCloseable</a></code></dd>
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">Connection</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>
-implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.html?is-external=true" title="class or interface in java.io" class="externalLink">Closeable</a></pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>
+implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Closeable.html?is-external=true" title="class or interface in java.io" class="externalLink">Closeable</a></pre>
 <div class="block">Interaction with SystemDS using the JMLC (Java Machine Learning Connector) API is initiated with
  a <a href="Connection.html" title="class in org.apache.sysds.api.jmlc"><code>Connection</code></a> object. The JMLC API is designed after JDBC. A DML script is precompiled by calling
  the <a href="#prepareScript(java.lang.String,java.lang.String%5B%5D,java.lang.String%5B%5D)"><code>prepareScript(String, String[], String[])</code></a>
@@ -227,7 +227,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>double[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToDoubleMatrix(java.io.InputStream,int,int)">convertToDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToDoubleMatrix(java.io.InputStream,int,int)">convertToDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                      int&nbsp;rows,
                      int&nbsp;cols)</code></th>
 <td class="colLast">
@@ -237,10 +237,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>double[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToDoubleMatrix(java.io.InputStream,int,int,java.lang.String)">convertToDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToDoubleMatrix(java.io.InputStream,int,int,java.lang.String)">convertToDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                      int&nbsp;rows,
                      int&nbsp;cols,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)</code></th>
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)</code></th>
 <td class="colLast">
 <div class="block">Converts an input stream of a string matrix in csv or textcell format
  into a dense double array.</div>
@@ -248,7 +248,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>double[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToDoubleMatrix(java.lang.String,int,int)">convertToDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToDoubleMatrix(java.lang.String,int,int)">convertToDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
                      int&nbsp;rows,
                      int&nbsp;cols)</code></th>
 <td class="colLast">
@@ -258,8 +258,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>double[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToDoubleMatrix(java.lang.String,java.lang.String)">convertToDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToDoubleMatrix(java.lang.String,java.lang.String)">convertToDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Converts an input string representation of a matrix in csv or textcell format
  into a dense double array.</div>
@@ -267,7 +267,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrame(java.io.InputStream,int,int)">convertToFrame</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrame(java.io.InputStream,int,int)">convertToFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
               int&nbsp;rows,
               int&nbsp;cols)</code></th>
 <td class="colLast">
@@ -277,10 +277,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrame(java.io.InputStream,int,int,java.lang.String)">convertToFrame</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrame(java.io.InputStream,int,int,java.lang.String)">convertToFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
               int&nbsp;rows,
               int&nbsp;cols,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)</code></th>
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)</code></th>
 <td class="colLast">
 <div class="block">Converts an input stream of a frame in csv or textcell format
  into a frame block.</div>
@@ -288,8 +288,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrame(java.io.InputStream,java.lang.String)">convertToFrame</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrame(java.io.InputStream,java.lang.String)">convertToFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Converts an input stream of a string frame in csv or textcell format
  into a frame block.</div>
@@ -297,7 +297,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrame(java.lang.String,int,int)">convertToFrame</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrame(java.lang.String,int,int)">convertToFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
               int&nbsp;rows,
               int&nbsp;cols)</code></th>
 <td class="colLast">
@@ -307,8 +307,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrame(java.lang.String,java.lang.String)">convertToFrame</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToFrame(java.lang.String,java.lang.String)">convertToFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Converts an input string representation of a frame in csv or textcell format
  into a frame block.</div>
@@ -316,7 +316,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrix(java.io.InputStream,int,int)">convertToMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrix(java.io.InputStream,int,int)">convertToMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                int&nbsp;rows,
                int&nbsp;cols)</code></th>
 <td class="colLast">
@@ -326,10 +326,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrix(java.io.InputStream,int,int,java.lang.String)">convertToMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrix(java.io.InputStream,int,int,java.lang.String)">convertToMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                int&nbsp;rows,
                int&nbsp;cols,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)</code></th>
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)</code></th>
 <td class="colLast">
 <div class="block">Converts an input stream of a string matrix in csv or text format
  into a matrix block.</div>
@@ -337,8 +337,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrix(java.io.InputStream,java.lang.String)">convertToMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrix(java.io.InputStream,java.lang.String)">convertToMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Converts an input stream of a string matrix in csv or textcell format
  into a matrix block.</div>
@@ -346,7 +346,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrix(java.lang.String,int,int)">convertToMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrix(java.lang.String,int,int)">convertToMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
                int&nbsp;rows,
                int&nbsp;cols)</code></th>
 <td class="colLast">
@@ -356,16 +356,16 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrix(java.lang.String,java.lang.String)">convertToMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToMatrix(java.lang.String,java.lang.String)">convertToMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Converts an input string representation of a matrix in csv or textcell format
  into a matrix block.</div>
 </td>
 </tr>
 <tr id="i15" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToStringFrame(java.io.InputStream,int,int)">convertToStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToStringFrame(java.io.InputStream,int,int)">convertToStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                     int&nbsp;rows,
                     int&nbsp;cols)</code></th>
 <td class="colLast">
@@ -374,19 +374,19 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </td>
 </tr>
 <tr id="i16" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToStringFrame(java.io.InputStream,int,int,java.lang.String)">convertToStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToStringFrame(java.io.InputStream,int,int,java.lang.String)">convertToStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                     int&nbsp;rows,
                     int&nbsp;cols,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)</code></th>
+                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)</code></th>
 <td class="colLast">
 <div class="block">Converts an input stream of a string frame in csv or text format
  into a dense string array.</div>
 </td>
 </tr>
 <tr id="i17" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToStringFrame(java.lang.String,int,int)">convertToStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToStringFrame(java.lang.String,int,int)">convertToStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
                     int&nbsp;rows,
                     int&nbsp;cols)</code></th>
 <td class="colLast">
@@ -395,9 +395,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </td>
 </tr>
 <tr id="i18" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToStringFrame(java.lang.String,java.lang.String)">convertToStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#convertToStringFrame(java.lang.String,java.lang.String)">convertToStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Converts an input string representation of a frame in csv or textcell format
  into a dense string array.</div>
@@ -413,44 +413,44 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="PreparedScript.html" title="class in org.apache.sysds.api.jmlc">PreparedScript</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prepareScript(java.lang.String,java.lang.String%5B%5D,java.lang.String%5B%5D)">prepareScript</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prepareScript(java.lang.String,java.lang.String%5B%5D,java.lang.String%5B%5D)">prepareScript</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</code></th>
 <td class="colLast">
 <div class="block">Prepares (precompiles) a script and registers input and output variables.</div>
 </td>
 </tr>
 <tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="PreparedScript.html" title="class in org.apache.sysds.api.jmlc">PreparedScript</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prepareScript(java.lang.String,java.util.Map,java.lang.String%5B%5D,java.lang.String%5B%5D)">prepareScript</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;args,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prepareScript(java.lang.String,java.util.Map,java.lang.String%5B%5D,java.lang.String%5B%5D)">prepareScript</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;args,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</code></th>
 <td class="colLast">
 <div class="block">Prepares (precompiles) a script, sets input parameter values, and registers input and output variables.</div>
 </td>
 </tr>
 <tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="PreparedScript.html" title="class in org.apache.sysds.api.jmlc">PreparedScript</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prepareScript(java.lang.String,java.util.Map,java.util.Map,java.lang.String%5B%5D,java.lang.String%5B%5D)">prepareScript</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;nsscripts,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;args,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prepareScript(java.lang.String,java.util.Map,java.util.Map,java.lang.String%5B%5D,java.lang.String%5B%5D)">prepareScript</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;nsscripts,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;args,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</code></th>
 <td class="colLast">
 <div class="block">Prepares (precompiles) a script, sets input parameter values, and registers input and output variables.</div>
 </td>
 </tr>
 <tr id="i23" class="rowColor">
 <td class="colFirst"><code>double[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readDoubleMatrix(java.lang.String)">readDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readDoubleMatrix(java.lang.String)">readDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)</code></th>
 <td class="colLast">
 <div class="block">Reads an input matrix in arbitrary format from HDFS into a dense double array.</div>
 </td>
 </tr>
 <tr id="i24" class="altColor">
 <td class="colFirst"><code>double[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readDoubleMatrix(java.lang.String,org.apache.sysds.common.Types.FileFormat,long,long,int,long)">readDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readDoubleMatrix(java.lang.String,org.apache.sysds.common.Types.FileFormat,long,long,int,long)">readDoubleMatrix</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
                 <a href="../../common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt,
                 long&nbsp;rows,
                 long&nbsp;cols,
@@ -461,22 +461,22 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </td>
 </tr>
 <tr id="i25" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readScript(java.lang.String)">readScript</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readScript(java.lang.String)">readScript</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)</code></th>
 <td class="colLast">
 <div class="block">Read a DML or PyDML file as a string.</div>
 </td>
 </tr>
 <tr id="i26" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readStringFrame(java.lang.String)">readStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readStringFrame(java.lang.String)">readStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)</code></th>
 <td class="colLast">
 <div class="block">Reads an input frame in arbitrary format from HDFS into a dense string array.</div>
 </td>
 </tr>
 <tr id="i27" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readStringFrame(java.lang.String,org.apache.sysds.common.Types.FileFormat,long,long)">readStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readStringFrame(java.lang.String,org.apache.sysds.common.Types.FileFormat,long,long)">readStringFrame</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
                <a href="../../common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt,
                long&nbsp;rows,
                long&nbsp;cols)</code></th>
@@ -486,7 +486,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromFile(java.lang.String)">readTransformMetaDataFromFile</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromFile(java.lang.String)">readTransformMetaDataFromFile</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)</code></th>
 <td class="colLast">
 <div class="block">Reads transform meta data from an HDFS file path and converts it into an in-memory
  FrameBlock object.</div>
@@ -494,8 +494,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i29" class="rowColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromFile(java.lang.String,java.lang.String)">readTransformMetaDataFromFile</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
-                             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromFile(java.lang.String,java.lang.String)">readTransformMetaDataFromFile</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+                             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)</code></th>
 <td class="colLast">
 <div class="block">Reads transform meta data from an HDFS file path and converts it into an in-memory
  FrameBlock object.</div>
@@ -503,9 +503,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i30" class="altColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromFile(java.lang.String,java.lang.String,java.lang.String)">readTransformMetaDataFromFile</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
-                             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath,
-                             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;colDelim)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromFile(java.lang.String,java.lang.String,java.lang.String)">readTransformMetaDataFromFile</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+                             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath,
+                             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;colDelim)</code></th>
 <td class="colLast">
 <div class="block">Reads transform meta data from an HDFS file path and converts it into an in-memory
  FrameBlock object.</div>
@@ -513,7 +513,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i31" class="rowColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromPath(java.lang.String)">readTransformMetaDataFromPath</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromPath(java.lang.String)">readTransformMetaDataFromPath</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)</code></th>
 <td class="colLast">
 <div class="block">Reads transform meta data from the class path and converts it into an in-memory
  FrameBlock object.</div>
@@ -521,8 +521,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i32" class="altColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromPath(java.lang.String,java.lang.String)">readTransformMetaDataFromPath</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
-                             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromPath(java.lang.String,java.lang.String)">readTransformMetaDataFromPath</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+                             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)</code></th>
 <td class="colLast">
 <div class="block">Reads transform meta data from the class path and converts it into an in-memory
  FrameBlock object.</div>
@@ -530,9 +530,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </tr>
 <tr id="i33" class="rowColor">
 <td class="colFirst"><code><a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromPath(java.lang.String,java.lang.String,java.lang.String)">readTransformMetaDataFromPath</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
-                             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath,
-                             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;colDelim)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readTransformMetaDataFromPath(java.lang.String,java.lang.String,java.lang.String)">readTransformMetaDataFromPath</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+                             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath,
+                             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;colDelim)</code></th>
 <td class="colLast">
 <div class="block">Reads transform meta data from the class path and converts it into an in-memory
  FrameBlock object.</div>
@@ -558,8 +558,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -695,9 +695,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>prepareScript</h4>
-<pre class="methodSignature">public&nbsp;<a href="PreparedScript.html" title="class in org.apache.sysds.api.jmlc">PreparedScript</a>&nbsp;prepareScript&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
-                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
-                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</pre>
+<pre class="methodSignature">public&nbsp;<a href="PreparedScript.html" title="class in org.apache.sysds.api.jmlc">PreparedScript</a>&nbsp;prepareScript&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
+                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
+                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</pre>
 <div class="block">Prepares (precompiles) a script and registers input and output variables.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -715,10 +715,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>prepareScript</h4>
-<pre class="methodSignature">public&nbsp;<a href="PreparedScript.html" title="class in org.apache.sysds.api.jmlc">PreparedScript</a>&nbsp;prepareScript&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
-                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;args,
-                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
-                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</pre>
+<pre class="methodSignature">public&nbsp;<a href="PreparedScript.html" title="class in org.apache.sysds.api.jmlc">PreparedScript</a>&nbsp;prepareScript&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
+                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;args,
+                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
+                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</pre>
 <div class="block">Prepares (precompiles) a script, sets input parameter values, and registers input and output variables.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -737,11 +737,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>prepareScript</h4>
-<pre class="methodSignature">public&nbsp;<a href="PreparedScript.html" title="class in org.apache.sysds.api.jmlc">PreparedScript</a>&nbsp;prepareScript&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
-                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;nsscripts,
-                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;args,
-                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
-                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</pre>
+<pre class="methodSignature">public&nbsp;<a href="PreparedScript.html" title="class in org.apache.sysds.api.jmlc">PreparedScript</a>&nbsp;prepareScript&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;script,
+                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;nsscripts,
+                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;args,
+                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;inputs,
+                                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[]&nbsp;outputs)</pre>
 <div class="block">Prepares (precompiles) a script, sets input parameter values, and registers input and output variables.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -766,9 +766,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
  thread-local DML and compiler configurations.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true#close()" title="class or interface in java.lang" class="externalLink">close</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang" class="externalLink">AutoCloseable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/AutoCloseable.html?is-external=true#close()" title="class or interface in java.lang" class="externalLink">close</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang" class="externalLink">AutoCloseable</a></code></dd>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.html?is-external=true#close()" title="class or interface in java.io" class="externalLink">close</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.html?is-external=true" title="class or interface in java.io" class="externalLink">Closeable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Closeable.html?is-external=true#close()" title="class or interface in java.io" class="externalLink">close</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Closeable.html?is-external=true" title="class or interface in java.io" class="externalLink">Closeable</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -778,8 +778,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>readScript</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;readScript&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)
-                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;readScript&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)
+                  throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Read a DML or PyDML file as a string.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -787,7 +787,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>string content of the script file</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -797,8 +797,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>readDoubleMatrix</h4>
-<pre class="methodSignature">public&nbsp;double[][]&nbsp;readDoubleMatrix&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)
-                            throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;double[][]&nbsp;readDoubleMatrix&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)
+                            throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Reads an input matrix in arbitrary format from HDFS into a dense double array.
  NOTE: this call currently only supports default configurations for CSV.</div>
 <dl>
@@ -807,7 +807,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>matrix as a two-dimensional double array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -817,13 +817,13 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>readDoubleMatrix</h4>
-<pre class="methodSignature">public&nbsp;double[][]&nbsp;readDoubleMatrix&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+<pre class="methodSignature">public&nbsp;double[][]&nbsp;readDoubleMatrix&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
                                    <a href="../../common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt,
                                    long&nbsp;rows,
                                    long&nbsp;cols,
                                    int&nbsp;blen,
                                    long&nbsp;nnz)
-                            throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                            throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Reads an input matrix in arbitrary format from HDFS into a dense double array.
  NOTE: this call currently only supports default configurations for CSV.</div>
 <dl>
@@ -837,7 +837,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>matrix as a two-dimensional double array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -847,9 +847,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToDoubleMatrix</h4>
-<pre class="methodSignature">public&nbsp;double[][]&nbsp;convertToDoubleMatrix&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
-                                        <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
-                                 throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;double[][]&nbsp;convertToDoubleMatrix&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+                                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
+                                 throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input string representation of a matrix in csv or textcell format
  into a dense double array. The meta data string is the SystemDS generated
  .mtd file including the number of rows and columns.</div>
@@ -860,7 +860,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>matrix as a two-dimensional double array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -870,10 +870,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToDoubleMatrix</h4>
-<pre class="methodSignature">public&nbsp;double[][]&nbsp;convertToDoubleMatrix&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;double[][]&nbsp;convertToDoubleMatrix&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
                                         int&nbsp;rows,
                                         int&nbsp;cols)
-                                 throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                                 throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input string representation of a matrix in textcell format
  into a dense double array.</div>
 <dl>
@@ -884,7 +884,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>matrix as a two-dimensional double array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -894,10 +894,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToDoubleMatrix</h4>
-<pre class="methodSignature">public&nbsp;double[][]&nbsp;convertToDoubleMatrix&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;double[][]&nbsp;convertToDoubleMatrix&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                                         int&nbsp;rows,
                                         int&nbsp;cols)
-                                 throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                                 throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input stream of a string matrix in textcell format
  into a dense double array.</div>
 <dl>
@@ -908,7 +908,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>matrix as a two-dimensional double array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -918,11 +918,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToDoubleMatrix</h4>
-<pre class="methodSignature">public&nbsp;double[][]&nbsp;convertToDoubleMatrix&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;double[][]&nbsp;convertToDoubleMatrix&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                                         int&nbsp;rows,
                                         int&nbsp;cols,
-                                        <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)
-                                 throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)
+                                 throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input stream of a string matrix in csv or textcell format
  into a dense double array.</div>
 <dl>
@@ -934,7 +934,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>matrix as a two-dimensional double array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -944,9 +944,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToMatrix</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrix&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
-                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
-                            throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrix&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+                                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
+                            throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input string representation of a matrix in csv or textcell format
  into a matrix block. The meta data string is the SystemDS generated
  .mtd file including the number of rows and columns.</div>
@@ -957,7 +957,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>matrix as a matrix block</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -967,9 +967,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToMatrix</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrix&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
-                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
-                            throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrix&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+                                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
+                            throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input stream of a string matrix in csv or textcell format
  into a matrix block. The meta data string is the SystemDS generated
  .mtd file including the number of rows and columns.</div>
@@ -980,7 +980,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>matrix as a matrix block</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -990,10 +990,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToMatrix</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrix&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrix&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
                                    int&nbsp;rows,
                                    int&nbsp;cols)
-                            throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                            throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input string representation of a matrix in textcell format
  into a matrix block.</div>
 <dl>
@@ -1004,7 +1004,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>matrix as a matrix block</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1014,10 +1014,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToMatrix</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrix&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrix&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                                    int&nbsp;rows,
                                    int&nbsp;cols)
-                            throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                            throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input stream of a string matrix in text format
  into a matrix block.</div>
 <dl>
@@ -1028,7 +1028,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>matrix as a matrix block</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1038,11 +1038,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToMatrix</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrix&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;convertToMatrix&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                                    int&nbsp;rows,
                                    int&nbsp;cols,
-                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)
-                            throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)
+                            throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input stream of a string matrix in csv or text format
  into a matrix block.</div>
 <dl>
@@ -1054,7 +1054,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>matrix as a matrix block</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1064,8 +1064,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>readStringFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;readStringFrame&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)
-                           throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;readStringFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)
+                           throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Reads an input frame in arbitrary format from HDFS into a dense string array.
  NOTE: this call currently only supports default configurations for CSV.</div>
 <dl>
@@ -1074,7 +1074,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>frame as a two-dimensional string array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1084,11 +1084,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>readStringFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;readStringFrame&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;readStringFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname,
                                   <a href="../../common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt,
                                   long&nbsp;rows,
                                   long&nbsp;cols)
-                           throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                           throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Reads an input frame in arbitrary format from HDFS into a dense string array.
  NOTE: this call currently only supports default configurations for CSV.</div>
 <dl>
@@ -1100,7 +1100,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>frame as a two-dimensional string array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1110,9 +1110,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToStringFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;convertToStringFrame&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
-                                       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
-                                throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;convertToStringFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+                                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
+                                throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input string representation of a frame in csv or textcell format
  into a dense string array. The meta data string is the SystemDS generated
  .mtd file including the number of rows and columns.</div>
@@ -1123,7 +1123,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>frame as a two-dimensional string array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1133,10 +1133,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToStringFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;convertToStringFrame&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;convertToStringFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
                                        int&nbsp;rows,
                                        int&nbsp;cols)
-                                throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                                throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input stream of a string frame in textcell format
  into a dense string array.</div>
 <dl>
@@ -1147,7 +1147,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>frame as a two-dimensional string array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1157,10 +1157,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToStringFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;convertToStringFrame&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;convertToStringFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                                        int&nbsp;rows,
                                        int&nbsp;cols)
-                                throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                                throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input stream of a string frame in textcell format
  into a dense string array.</div>
 <dl>
@@ -1171,7 +1171,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>frame as a two-dimensional string array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1181,11 +1181,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToStringFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;convertToStringFrame&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>[][]&nbsp;convertToStringFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                                        int&nbsp;rows,
                                        int&nbsp;cols,
-                                       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)
-                                throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)
+                                throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input stream of a string frame in csv or text format
  into a dense string array.</div>
 <dl>
@@ -1197,7 +1197,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>frame as a two-dimensional string array</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1207,9 +1207,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrame&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
-                                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
-                          throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+                                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
+                          throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input string representation of a frame in csv or textcell format
  into a frame block. The meta data string is the SystemDS generated
  .mtd file including the number of rows and columns.</div>
@@ -1220,7 +1220,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>frame as a frame block</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1230,9 +1230,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrame&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
-                                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
-                          throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+                                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;meta)
+                          throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input stream of a string frame in csv or textcell format
  into a frame block. The meta data string is the SystemDS generated
  .mtd file including the number of rows and columns.</div>
@@ -1243,7 +1243,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>frame as a frame block</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1253,10 +1253,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrame&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;input,
                                  int&nbsp;rows,
                                  int&nbsp;cols)
-                          throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                          throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input string representation of a frame in textcell format
  into a frame block.</div>
 <dl>
@@ -1267,7 +1267,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>frame as a frame block</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1277,10 +1277,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrame&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                                  int&nbsp;rows,
                                  int&nbsp;cols)
-                          throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                          throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input stream of a string frame in textcell format
  into a frame block.</div>
 <dl>
@@ -1291,7 +1291,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>frame as a frame block</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1301,11 +1301,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>convertToFrame</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrame&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;convertToFrame&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/InputStream.html?is-external=true" title="class or interface in java.io" class="externalLink">InputStream</a>&nbsp;input,
                                  int&nbsp;rows,
                                  int&nbsp;cols,
-                                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)
-                          throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+                                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;format)
+                          throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Converts an input stream of a frame in csv or textcell format
  into a frame block.</div>
 <dl>
@@ -1317,7 +1317,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>frame as a frame block</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1327,8 +1327,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>readTransformMetaDataFromFile</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromFile&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)
-                                         throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromFile&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)
+                                         throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Reads transform meta data from an HDFS file path and converts it into an in-memory
  FrameBlock object. The column names in the meta data file 'column.names' is processed
  with default separator ','.</div>
@@ -1338,7 +1338,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>FrameBlock object representing transform metadata</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1348,9 +1348,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>readTransformMetaDataFromFile</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromFile&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
-                                                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)
-                                         throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromFile&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+                                                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)
+                                         throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Reads transform meta data from an HDFS file path and converts it into an in-memory
  FrameBlock object. The column names in the meta data file 'column.names' is processed
  with default separator ','.</div>
@@ -1361,7 +1361,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>FrameBlock object representing transform metadata</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1371,10 +1371,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>readTransformMetaDataFromFile</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromFile&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
-                                                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath,
-                                                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;colDelim)
-                                         throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromFile&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+                                                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath,
+                                                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;colDelim)
+                                         throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Reads transform meta data from an HDFS file path and converts it into an in-memory
  FrameBlock object.</div>
 <dl>
@@ -1385,7 +1385,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>FrameBlock object representing transform metadata</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1395,8 +1395,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>readTransformMetaDataFromPath</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromPath&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)
-                                         throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromPath&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)
+                                         throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Reads transform meta data from the class path and converts it into an in-memory
  FrameBlock object. The column names in the meta data file 'column.names' is processed
  with default separator ','.</div>
@@ -1406,7 +1406,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>FrameBlock object representing transform metadata</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1416,9 +1416,9 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockList">
 <li class="blockList">
 <h4>readTransformMetaDataFromPath</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromPath&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
-                                                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)
-                                         throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromPath&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+                                                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath)
+                                         throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Reads transform meta data from the class path and converts it into an in-memory
  FrameBlock object. The column names in the meta data file 'column.names' is processed
  with default separator ','.</div>
@@ -1429,7 +1429,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>FrameBlock object representing transform metadata</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1439,10 +1439,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <ul class="blockListLast">
 <li class="blockList">
 <h4>readTransformMetaDataFromPath</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromPath&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
-                                                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath,
-                                                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;colDelim)
-                                         throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;<a href="../../runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;readTransformMetaDataFromPath&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;spec,
+                                                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;metapath,
+                                                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;colDelim)
+                                         throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Reads transform meta data from the class path and converts it into an in-memory
  FrameBlock object.</div>
 <dl>
@@ -1453,7 +1453,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>FrameBlock object representing transform metadata</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -1526,7 +1526,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

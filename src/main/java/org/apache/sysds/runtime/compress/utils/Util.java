@@ -26,11 +26,11 @@ import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public class Util {
+public interface Util {
 
-	protected static final Log LOG = LogFactory.getLog(Util.class.getName());
+	static final Log LOG = LogFactory.getLog(Util.class.getName());
 
-	public static int[] join(int[] lhs, int[] rhs) {
+	public static int[] combine(int[] lhs, int[] rhs) {
 		int[] joined = new int[lhs.length + rhs.length];
 		int lp = 0;
 		int rp = 0;
@@ -56,10 +56,17 @@ public class Util {
 		return Math.max(v, 4);
 	}
 
-	public static int[] genColsIndices(int numCols) {
-		int[] colIndices = new int[numCols];
+	public static int[] genColsIndices(final int numCols) {
+		final int[] colIndices = new int[numCols];
 		for(int i = 0; i < numCols; i++)
 			colIndices[i] = i;
+		return colIndices;
+	}
+
+	public static int[] genColsIndicesOffset(final int numCols, final int start) {
+		final int[] colIndices = new int[numCols];
+		for(int i = 0, j = start; i < numCols; i++, j++)
+			colIndices[i] = j;
 		return colIndices;
 	}
 

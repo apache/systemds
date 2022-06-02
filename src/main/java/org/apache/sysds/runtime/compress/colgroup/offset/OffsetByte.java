@@ -21,18 +21,19 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Arrays;
 
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class OffsetByte extends AOffset {
 
 	private static final long serialVersionUID = -4716104973912491790L;
+	private static final int maxV = 255;
 
-	private final static int maxV = 255;
 	private final byte[] offsets;
 	private final int offsetToFirst;
+	private final int offsetToLast;
+	private final boolean noOverHalf;
+	private final boolean noZero;
 
 	public OffsetByte(int[] indexes) {
 		this(indexes, 0, indexes.length);
@@ -41,21 +42,24 @@ public class OffsetByte extends AOffset {
 	public OffsetByte(int[] indexes, int apos, int alen) {
 		int endSize = 0;
 		offsetToFirst = indexes[apos];
+		offsetToLast = indexes[alen - 1];
 		int ov = offsetToFirst;
+		// find the size of the array
 		for(int i = apos + 1; i < alen; i++) {
 			final int nv = indexes[i];
-			endSize += 1 + (nv - ov) / maxV;
+			endSize += 1 + (nv - ov - 1) / maxV;
 			ov = nv;
 		}
+
+		this.noZero = endSize == alen - apos - 1;
 		offsets = new byte[endSize];
 		ov = offsetToFirst;
 		int p = 0;
 
+		// populate the array
 		for(int i = apos + 1; i < alen; i++) {
 			final int nv = indexes[i];
 			final int offsetSize = nv - ov;
-			if(offsetSize == 0)
-				throw new DMLCompressionException("Invalid difference between cells :\n" + Arrays.toString(indexes));
 			final int div = offsetSize / maxV;
 			final int mod = offsetSize % maxV;
 			if(mod == 0) {
@@ -69,16 +73,57 @@ public class OffsetByte extends AOffset {
 
 			ov = nv;
 		}
+
+		this.noOverHalf = getNoOverHalf();
+
 	}
 
-	private OffsetByte(byte[] offsets, int offsetToFirst) {
+	protected OffsetByte(byte[] offsets, int offsetToFirst, int offsetToLast) {
 		this.offsets = offsets;
 		this.offsetToFirst = offsetToFirst;
+		this.offsetToLast = offsetToLast;
+		this.noOverHalf = getNoOverHalf();
+		this.noZero = getNoZero();
+	}
+
+	private boolean getNoOverHalf() {
+		boolean noOverHalf = true;
+		for(byte b : offsets)
+			if(b < 1) {
+				noOverHalf = false;
+				break;
+			}
+		return noOverHalf;
+	}
+
+	private boolean getNoZero() {
+		boolean noZero = true;
+		for(byte b : offsets)
+			if(b == 0) {
+				noZero = false;
+				break;
+			}
+		return noZero;
 	}
 
 	@Override
-	public IterateByteOffset getIterator() {
-		return new IterateByteOffset();
+	public AIterator getIterator() {
+		if(noOverHalf)
+			return new IterateByteOffsetNoOverHalf();
+		else if(noZero)
+			return new IterateByteOffsetNoZero();
+		else
+			return new IterateByteOffset();
+	}
+
+	@Override
+	public AOffsetIterator getOffsetIterator() {
+		if(noOverHalf)
+			return new OffsetByteIteratorNoOverHalf();
+		else if(noZero)
+			return new OffsetByteIteratorNoZero();
+		else
+			return new OffsetByteIterator();
 	}
 
 	@Override
@@ -86,83 +131,254 @@ public class OffsetByte extends AOffset {
 		out.writeByte(OffsetFactory.OFF_TYPE.BYTE.ordinal());
 		out.writeInt(offsetToFirst);
 		out.writeInt(offsets.length);
+		out.writeInt(offsetToLast);
 		for(byte o : offsets)
 			out.writeByte(o);
 	}
 
 	@Override
-	public long getInMemorySize() {
-		return getInMemorySize(offsets.length);
-	}
-
-	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 4 + 4 + offsets.length;
+		return 1 + 4 + 4 + 4 + offsets.length;
 	}
 
 	@Override
 	public int getSize() {
-		int size = 1;
-		for(byte b : offsets) {
-			if(b != 0)
-				size++;
+		if(noZero)
+			return offsets.length + 1;
+		else {
+			int size = 1;
+			for(byte b : offsets)
+				if(b != 0)
+					size++;
+
+			return size;
 		}
-		return size;
 	}
 
-	public static long getInMemorySize(int length) {
-		long size = 16 + 4 + 8; // object header plus int plus reference
-		size += MemoryEstimates.byteArrayCost(length);
+	@Override
+	public int getOffsetToFirst() {
+		return offsetToFirst;
+	}
+
+	@Override
+	public int getOffsetToLast() {
+		return offsetToLast;
+	}
+
+	@Override
+	public int getOffsetsLength() {
+		return offsets.length;
+	}
+
+	@Override
+	public long getInMemorySize() {
+		return estimateInMemorySize(offsets.length);
+	}
+
+	public static long estimateInMemorySize(int nOffs) {
+		long size = 16 + 4 + 4 + 8; // object header plus int plus reference
+		size += MemoryEstimates.byteArrayCost(nOffs);
 		return size;
 	}
 
 	public static OffsetByte readFields(DataInput in) throws IOException {
-		int offsetToFirst = in.readInt();
-		int offsetsLength = in.readInt();
-		byte[] offsets = new byte[offsetsLength];
-		for(int i = 0; i < offsetsLength; i++) {
+		final int offsetToFirst = in.readInt();
+		final int offsetsLength = in.readInt();
+		final int offsetToLast = in.readInt();
+
+		final byte[] offsets = new byte[offsetsLength];
+
+		for(int i = 0; i < offsetsLength; i++)
 			offsets[i] = in.readByte();
-		}
-		return new OffsetByte(offsets, offsetToFirst);
+
+		return new OffsetByte(offsets, offsetToFirst, offsetToLast);
 	}
 
 	private class IterateByteOffset extends AIterator {
 
+		protected int index;
+		protected int dataIndex;
+
 		private IterateByteOffset() {
-			super(0, 0, offsetToFirst);
+			super(offsetToFirst);
+			index = 0;
+			dataIndex = 0;
 		}
 
 		private IterateByteOffset(int index, int dataIndex, int offset) {
-			super(index, dataIndex, offset);
+			super(offset);
+			this.index = index;
+			this.dataIndex = dataIndex;
 		}
 
 		@Override
-		public void next() {
-			if(index >= offsets.length) {
-				index++;
-				dataIndex++;
-				return;
-			}
-
-			final byte v = offsets[index++];
-			if(v == 0) {
+		public int next() {
+			byte v = offsets[index];
+			while(v == 0) {
 				offset += maxV;
-				next();
+				index++;
+				v = offsets[index];
 			}
-			else {
-				dataIndex++;
-				offset += v & 0xFF;
-			}
+			offset += v & 0xFF;
+			index++;
+			dataIndex++;
+			return offset;
 		}
 
 		@Override
-		public boolean hasNext() {
-			return index <= offsets.length;
+		public int skipTo(int idx) {
+			if(idx < offsetToLast)
+				while(offset < idx)
+					next();
+			else
+				while(offset < idx && index < offsets.length)
+					next();
+			return offset;
 		}
 
 		@Override
 		public IterateByteOffset clone() {
 			return new IterateByteOffset(index, dataIndex, offset);
+		}
+
+		@Override
+		public int getDataIndex() {
+			return dataIndex;
+		}
+
+		@Override
+		public int getOffsetsIndex() {
+			return index;
+		}
+	}
+
+	private class IterateByteOffsetNoZero extends AIterator {
+
+		protected int index;
+
+		private IterateByteOffsetNoZero() {
+			super(offsetToFirst);
+		}
+
+		private IterateByteOffsetNoZero(int index, int offset) {
+			super(offset);
+			this.index = index;
+		}
+
+		@Override
+		public int next() {
+			byte v = offsets[index];
+			offset += v & 0xFF;
+			index++;
+			return offset;
+		}
+
+		@Override
+		public int skipTo(int idx) {
+			while(offset < idx && index < offsets.length)
+				next();
+
+			return offset;
+		}
+
+		@Override
+		public IterateByteOffsetNoZero clone() {
+			return new IterateByteOffsetNoZero(index, offset);
+		}
+
+		@Override
+		public int getDataIndex() {
+			return index;
+		}
+
+		@Override
+		public int getOffsetsIndex() {
+			return index;
+		}
+	}
+
+	private class IterateByteOffsetNoOverHalf extends IterateByteOffsetNoZero {
+
+		private IterateByteOffsetNoOverHalf() {
+			super();
+		}
+
+		private IterateByteOffsetNoOverHalf(int index, int offset) {
+			super(index, offset);
+		}
+
+		@Override
+		public final int next() {
+			offset += offsets[index];
+			index++;
+			return offset;
+		}
+
+		@Override
+		public final int skipTo(int idx) {
+			while(offset < idx && index < offsets.length) {
+				offset += offsets[index];
+				index++;
+			}
+
+			return offset;
+		}
+
+		@Override
+		public final IterateByteOffsetNoOverHalf clone() {
+			return new IterateByteOffsetNoOverHalf(index, offset);
+		}
+	}
+
+	private class OffsetByteIteratorNoOverHalf extends AOffsetIterator {
+
+		protected int index;
+
+		private OffsetByteIteratorNoOverHalf() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		@Override
+		public int next() {
+			return offset += offsets[index++];
+		}
+	}
+
+	private class OffsetByteIterator extends AOffsetIterator {
+
+		protected int index;
+
+		private OffsetByteIterator() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		@Override
+		public int next() {
+			byte v = offsets[index];
+			while(v == 0) {
+				offset += maxV;
+				index++;
+				v = offsets[index];
+			}
+			index++;
+			return offset += v & 0xFF;
+		}
+	}
+
+	private class OffsetByteIteratorNoZero extends AOffsetIterator {
+
+		protected int index;
+
+		private OffsetByteIteratorNoZero() {
+			super(offsetToFirst);
+			index = 0;
+		}
+
+		@Override
+		public int next() {
+			return offset += offsets[index++] & 0xFF;
 		}
 	}
 }

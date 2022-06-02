@@ -19,20 +19,29 @@
 #
 #-------------------------------------------------------------
 
-# Scale and center individual features in the input matrix (column wise.) using the input matrices.
-# ---------------------------------------------------------------------------------------------
-# NAME         TYPE      DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# X            Matrix    ---      Input feature matrix
-# Centering    Matrix    ---      The column means to subtract from X (not done if empty)
-# ScaleFactor  Matrix    ---      The column scaling to multiply with X (not done if empty)
-# ---------------------------------------------------------------------------------------------
-# Y            Matrix    ---      Output feature matrix with K columns
-# ---------------------------------------------------------------------------------------------
+# This function scales and center individual features in the input matrix (column wise.) using the input matrices.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE              DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X            Matrix[Double]    ---       Input feature matrix
+# Centering    Matrix[Double]    ---       The column means to subtract from X (not done if empty)
+# ScaleFactor  Matrix[Double]    ---       The column scaling to multiply with X (not done if empty)
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y          Matrix[Double]               Output feature matrix with K columns
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_scaleApply = function(Matrix[Double] X, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
   return (Matrix[Double] Y) 
 {
   centered = ifelse(nrow(Centering) > 0 & ncol(Centering) > 0, X - Centering, X)
-  Y = ifelse(nrow(ScaleFactor) > 0 & ncol(ScaleFactor) > 0,  centered / ScaleFactor, centered)
+  if(nrow(ScaleFactor) > 0 & ncol(ScaleFactor) > 0)
+    Y = centered / ScaleFactor
+  else Y = centered
 }

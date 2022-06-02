@@ -19,12 +19,18 @@
 
 package org.apache.sysds.test;
 
+import static java.lang.Math.ceil;
+import static java.lang.Thread.sleep;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,14 +38,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static java.lang.Math.ceil;
-import static java.lang.Thread.sleep;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -57,6 +59,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DataExpression;
@@ -140,7 +143,7 @@ public abstract class AutomatedTestBase {
 	private static final String DEBUG_TEMP_DIR = "./tmp/";
 
 	/** Directory under which config files shared across tests are located. */
-	private static final String CONFIG_DIR = "./src/test/config/";
+	protected static final String CONFIG_DIR = "./src/test/config/";
 
 	/**
 	 * Location of the SystemDS config file that we use as a template when generating the configs for each test case.
@@ -683,7 +686,7 @@ public abstract class AutomatedTestBase {
 		}
 		
 		federatedMatrixObject.setFedMapping(new FederationMap(FederationUtils.getNextFedDataID(), fedHashMap));
-		federatedMatrixObject.getFedMapping().setType(FederationMap.FType.ROW);
+		federatedMatrixObject.getFedMapping().setType(FType.ROW);
 
 		writeInputFederatedWithMTD(name, federatedMatrixObject, null);
 	}
@@ -1089,18 +1092,19 @@ public abstract class AutomatedTestBase {
 
 			curLocalTempDir.mkdirs();
 			TestUtils.clearDirectory(curLocalTempDir.getPath());
-
-			// Create a SystemDS config file for this test case based on default template
-			// from src/test/config or derive from custom configuration provided by test.
-			String configTemplate = FileUtils.readFileToString(getConfigTemplateFile(), "UTF-8");
-			String localTemp = curLocalTempDir.getPath();
-			String configContents = configTemplate
-				.replace(createXMLElement(DMLConfig.SCRATCH_SPACE, "scratch_space"),
-					createXMLElement(DMLConfig.SCRATCH_SPACE, localTemp + "/target/scratch_space"))
-				.replace(createXMLElement(DMLConfig.LOCAL_TMP_DIR, "/tmp/systemds"),
-					createXMLElement(DMLConfig.LOCAL_TMP_DIR, localTemp + "/localtmp"));
-
+			
 			if(!disableConfigFile){
+				// Create a SystemDS config file for this test case based on default template
+				// from src/test/config or derive from custom configuration provided by test.
+				String configTemplate = FileUtils.readFileToString(getConfigTemplateFile(), "UTF-8");
+				String localTemp = curLocalTempDir.getPath();
+				String testScratchSpace = "\n   "+ createXMLElement(DMLConfig.SCRATCH_SPACE, localTemp + "/target/scratch_space") + "\n   ";
+				String testTempSpace = createXMLElement(DMLConfig.LOCAL_TMP_DIR, localTemp + "/localtmp");
+				String configContents = configTemplate
+					// if the config had a tmp location remove it
+					.replace(createXMLElement(DMLConfig.SCRATCH_SPACE, "scratch_space"),"")
+					.replace(createXMLElement(DMLConfig.LOCAL_TMP_DIR, "/tmp/systemds"),"")
+					.replace("</root>", testScratchSpace + testTempSpace + "\n</root>");
 
 				FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 
@@ -1197,7 +1201,7 @@ public abstract class AutomatedTestBase {
 			// if R < 4.0 on Windows is used, the file separator needs to be Windows style
 			if(System.getProperty("os.name").contains("Windows")) {
 				Process r_ver_cmd = Runtime.getRuntime().exec("RScript --version");
-				String r_ver = IOUtils.toString(r_ver_cmd.getErrorStream());
+				String r_ver = IOUtils.toString(r_ver_cmd.getErrorStream(), Charset.defaultCharset());
 				if(!r_ver.contains("4.0")) {
 					cmd = cmd.replace('/', '\\');
 					executionFile = executionFile.replace('/', '\\');
@@ -1211,8 +1215,8 @@ public abstract class AutomatedTestBase {
 			}
 			Process child = Runtime.getRuntime().exec(cmd);
 
-			outputR = IOUtils.toString(child.getInputStream());
-			errorString = IOUtils.toString(child.getErrorStream());
+			outputR = IOUtils.toString(child.getInputStream(), Charset.defaultCharset());
+			errorString = IOUtils.toString(child.getErrorStream(), Charset.defaultCharset());
 			
 			//
 			// To give any stream enough time to print all data, otherwise there
@@ -1528,31 +1532,64 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
+	/**
+	 * Find a random available port, if none is found, retry up to 10 times. Note that there is a race condition to find
+	 * a port if many processes are looking for ports.
+	 * 
+	 * @return A random port that hopefully is available when you actually use it.
+	 */
 	public static int getRandomAvailablePort() {
 		try(ServerSocket availableSocket = new ServerSocket(0)) {
 			return availableSocket.getLocalPort();
 		}
 		catch(IOException e) {
-			// If no port was found just use 9999
-			return 9990;
+			return getRandomAvailablePortRetry(1);
+		}
+	}
+
+	private static int getRandomAvailablePortRetry(int retry) {
+		try(ServerSocket availableSocket = new ServerSocket(0)) {
+			return availableSocket.getLocalPort();
+		}
+		catch(IOException e) {
+			if(retry == 10)
+				throw new RuntimeException("Failed to find free port");
+			else
+				return getRandomAvailablePortRetry(retry++);
+		}
+	}
+
+	/**
+	 * Method to check if a port is in use. Intended use is to verify that federated workers correctly started up. This
+	 * returning true does not guarantee that it is a federated worker that is using the port. But it is likely.
+	 * 
+	 * @param port The port to check
+	 * @return True if the port is in use otherwise false.
+	 */
+	public static boolean isPortInUse(int port) {
+		try{
+			new ServerSocket(port).close();
+			return false;
+		}
+		catch(IOException e ){
+			return true;
 		}
 	}
 
 	/**
 	 * Start new JVM for a federated worker at the port.
 	 * 
-	 * 
 	 * @param port Port to use for the JVM
 	 * @return the process associated with the worker.
 	 */
-	@Deprecated
-	protected Process startLocalFedWorker(int port) {
+	protected Process startLocalFedWorker(int port, String[] addArgs) {
 		Process process = null;
 		String separator = System.getProperty("file.separator");
 		String classpath = System.getProperty("java.class.path");
 		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-		ProcessBuilder processBuilder = new ProcessBuilder(path, "-cp", classpath, DMLScript.class.getName(), "-w",
-			Integer.toString(port), "-stats");
+		String[] args = ArrayUtils.addAll(new String[]{path, "-cp", classpath, DMLScript.class.getName(),
+			"-w", Integer.toString(port), "-stats"}, addArgs);
+		ProcessBuilder processBuilder = new ProcessBuilder(args);
 
 		try {
 			process = processBuilder.start();
@@ -1566,19 +1603,28 @@ public abstract class AutomatedTestBase {
 	}
 
 	/**
-	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.!
-	 * 
-	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
-	 * 
-	 * @param port Port to use
-	 * @return the thread associated with the worker.
+	 * Start new JVM for a federated monitoring backend at the port.
+	 *
+	 * @param port Port to use for the JVM
+	 * @return the process associated with the worker.
 	 */
-	protected Thread startLocalFedWorkerThread(int port) {
-		return startLocalFedWorkerThread(port, null, FED_WORKER_WAIT);
-	}
+	protected Process startLocalFedMonitoring(int port, String[] addArgs) {
+		Process process = null;
+		String separator = System.getProperty("file.separator");
+		String classpath = System.getProperty("java.class.path");
+		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
+		String[] args = ArrayUtils.addAll(new String[]{path, "-cp", classpath, DMLScript.class.getName(),
+				"-fedMonitor", Integer.toString(port)}, addArgs);
+		ProcessBuilder processBuilder = new ProcessBuilder(args);
 
-	protected Thread startLocalFedWorkerThread(int port, String[] otherArgs) {
-		return startLocalFedWorkerThread(port, otherArgs, FED_WORKER_WAIT);
+		try {
+			process = processBuilder.start();
+			sleep(1000);
+		}
+		catch(IOException | InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+		return process;
 	}
 
 	/**
@@ -1587,44 +1633,82 @@ public abstract class AutomatedTestBase {
 	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
 	 * 
 	 * @param port Port to use
-	 * @param sleep  The amount of time to wait for the worker startup. in Milliseconds
 	 * @return the thread associated with the worker.
 	 */
-	protected Thread startLocalFedWorkerThread(int port, int sleep) {
+	public static Thread startLocalFedWorkerThread(int port) {
+		return startLocalFedWorkerThread(port, null, FED_WORKER_WAIT);
+	}
+
+	/**
+	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.
+	 * 
+	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
+	 *   
+	 * 
+	 * @param port      Port to use
+	 * @param otherArgs The commandline arguments to start the worker with
+	 * @return The thread associated with the worker.
+	 */
+	public static Thread startLocalFedWorkerThread(int port, String[] otherArgs) {
+		return startLocalFedWorkerThread(port, otherArgs, FED_WORKER_WAIT);
+	}
+
+	/**
+	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.!
+	 * 
+	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
+	 * 
+	 * @param port  Port to use
+	 * @param sleep The amount of time to wait for the worker startup. in Milliseconds
+	 * @return The thread associated with the worker.
+	 */
+	public static Thread startLocalFedWorkerThread(int port, int sleep) {
 		return startLocalFedWorkerThread(port, null, sleep);
 	}
-	protected Thread startLocalFedWorkerThread(int port, String[] otherArgs, int sleep) {
-		Thread t = null;
-		String[] fedWorkArgs = {"-w", Integer.toString(port)};
+
+	/**
+	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.!
+	 * 
+	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
+	 * 
+	 * @param port      Port to use
+	 * @param otherArgs The commandline arguments to start the worker with
+	 * @param sleep     The amount of time to wait for the worker startup. in Milliseconds
+	 * @return The thread associated with the worker.
+	 */
+	public static Thread startLocalFedWorkerThread(int port, String[] otherArgs, int sleep) {
+
 		ArrayList<String> args = new ArrayList<>();
-
-		addProgramIndependentArguments(args, otherArgs);
 		
-		if (otherArgs != null)
-			args.addAll(Arrays.stream(otherArgs).collect(Collectors.toList()));
+		args.add("-w");
+		args.add(Integer.toString(port));
 
-		for(int i = 0; i < fedWorkArgs.length; i++)
-			args.add(fedWorkArgs[i]);
+		if(otherArgs != null)
+			for( String s : otherArgs)
+				args.add(s);
 
 		String[] finalArguments = args.toArray(new String[args.size()]);
-
 		Statistics.allowWorkerStatistics = false;
 
 		try {
-			t = new Thread(() -> {
+			Thread t = new Thread(() -> {
 				try {
 					main(finalArguments);
 				}
-				catch(IOException e) {
+				catch(Exception e) {
+					LOG.error("Exception in startup of federated worker", e);
 				}
 			});
 			t.start();
 			java.util.concurrent.TimeUnit.MILLISECONDS.sleep(sleep);
+			return t;
 		}
 		catch(InterruptedException e) {
 			e.printStackTrace();
+			fail("Failed to start federated worker : " + e);
+			// should never happen
+			return null;
 		}
-		return t;
 	}
 
 	/**

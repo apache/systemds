@@ -23,13 +23,14 @@ import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -73,8 +74,8 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
-		MatrixObject mo2 = ec.getMatrixObject(input2);
-		if(getOpcode().startsWith("bcumoff") && mo1.isFederated(FederationMap.FType.ROW))
+		MatrixLineagePair mo2 = ec.getMatrixLineagePair(input2);
+		if(getOpcode().startsWith("bcumoff") && mo1.isFederated(FType.ROW))
 			processCumulativeInstruction(ec);
 		else {
 			//federated execution on arbitrary row/column partitions
@@ -91,7 +92,7 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 
 	public void processCumulativeInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1.getName());
-		MatrixObject mo2 = ec.getMatrixObject(input2.getName());
+		MatrixLineagePair mo2 = ec.getMatrixLineagePair(input2);
 		DataCharacteristics mcOut = ec.getDataCharacteristics(output.getName());
 
 		long id = FederationUtils.getNextFedDataID();
@@ -108,7 +109,7 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), true, fr3, fr4, fr1, fr2);
 			out = setOutputFedMapping(ec, mo1, fr1.getID());
 
-			MatrixBlock scalingValues = getScalars(mo1, mo2, tmp);
+			MatrixBlock scalingValues = getScalars(mo1, tmp);
 			setScalingValues(ec, mo1, out, scalingValues);
 		}
 		else {
@@ -119,7 +120,7 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 				opcode.equalsIgnoreCase("bcumoff*") ? 1.0 :
 					opcode.equalsIgnoreCase("bcumoffmin") ? Double.MAX_VALUE : -Double.MAX_VALUE;
 
-			Future<FederatedResponse>[] tmp = modifyAndGetInstruction(colAgg, mo1, mo2);
+			Future<FederatedResponse>[] tmp = modifyAndGetInstruction(colAgg, mo1);
 			MatrixBlock scalingValues = getResultBlock(tmp, (int)mo1.getNumColumns(), opcode, init, _uop);
 
 			out = ec.getMatrixObject(output);
@@ -128,7 +129,7 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 		processCumulative(out, mo2);
 	}
 
-	private Future<FederatedResponse>[] modifyAndGetInstruction(String newInst, MatrixObject mo1, MatrixObject mo2) {
+	private Future<FederatedResponse>[] modifyAndGetInstruction(String newInst, MatrixObject mo1) {
 		String modifiedInstString = InstructionUtils.replaceOperand(instString, 1, newInst);
 		modifiedInstString = InstructionUtils.removeOperand(modifiedInstString, 3);
 		modifiedInstString = InstructionUtils.removeOperand(modifiedInstString, 4);
@@ -143,7 +144,7 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 		return mo1.getFedMapping().execute(getTID(), true, fr3, fr1, fr2);
 	}
 
-	private void processCumulative(MatrixObject out, MatrixObject mo2) {
+	private void processCumulative(MatrixObject out, MatrixLineagePair mo2) {
 		String modifiedInstString = InstructionUtils.replaceOperand(instString, 2, InstructionUtils.createOperand(output));
 
 		FederatedRequest fr3 = out.getFedMapping().broadcast(mo2);
@@ -181,8 +182,8 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 			new MatrixBlock());
 	}
 
-	private MatrixBlock getScalars(MatrixObject mo1, MatrixObject mo2, Future<FederatedResponse>[] tmp) {
-		MatrixBlock[] aggRes = getAggMatrices(mo1, mo2);
+	private MatrixBlock getScalars(MatrixObject mo1, Future<FederatedResponse>[] tmp) {
+		MatrixBlock[] aggRes = getAggMatrices(mo1);
 		MatrixBlock prod = aggRes[0];
 		MatrixBlock firstValues = aggRes[1];
 		for(int i = 0; i < tmp.length; i++)
@@ -206,8 +207,8 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 		return B.binaryOperationsInPlace(InstructionUtils.parseBinaryOperator("+"), firstValues.slice(0,firstValues.getNumRows()-1,0,0));
 	}
 
-	private MatrixBlock[] getAggMatrices(MatrixObject mo1, MatrixObject mo2) {
-		Future<FederatedResponse>[] tmp = modifyAndGetInstruction("ucum*", mo1, mo2);
+	private MatrixBlock[] getAggMatrices(MatrixObject mo1) {
+		Future<FederatedResponse>[] tmp = modifyAndGetInstruction("ucum*", mo1);
 
 		// slice and return prod and first value
 		MatrixBlock prod = new MatrixBlock(tmp.length, 2, 0.0);

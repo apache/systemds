@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -88,7 +88,7 @@ loadScripts(document, 'script');</script>
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
+<li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.controlprogram.federated.FederationMap</li>
@@ -132,51 +132,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <hr>
 <pre>public class <span class="typeNameLabel">FederationMap</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
 </li>
 </ul>
 </div>
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
-<!-- ======== NESTED CLASS SUMMARY ======== -->
-<section role="region">
-<ul class="blockList">
-<li class="blockList"><a id="nested.class.summary">
-<!--   -->
-</a>
-<h3>Nested Class Summary</h3>
-<table class="memberSummary">
-<caption><span>Nested Classes</span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colSecond" scope="col">Class</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>static class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="FederationMap.AlignType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.AlignType</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="FederationMap.FPartitioning.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FPartitioning</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>static class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="FederationMap.FReplication.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FReplication</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static class&nbsp;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-</table>
-</li>
-</ul>
-</section>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
 <section role="region">
 <ul class="blockList">
@@ -192,17 +154,17 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(long,java.util.List)">FederationMap</a></span>&#8203;(long&nbsp;ID,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap)</code></th>
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(long,java.util.List,org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType)">FederationMap</a></span>&#8203;(long&nbsp;ID,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap,
-             <a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a>&nbsp;type)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(long,java.util.List,org.apache.sysds.hops.fedplanner.FTypes.FType)">FederationMap</a></span>&#8203;(long&nbsp;ID,
+             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap,
+             <a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.util.List)">FederationMap</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap)</code></th>
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(java.util.List)">FederationMap</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -237,50 +199,74 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#broadcast(org.apache.sysds.runtime.instructions.cp.ScalarObject)">broadcast</a></span>&#8203;(<a href="../../instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&nbsp;scalar)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#broadcast(org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair)">broadcast</a></span>&#8203;(<a href="MatrixLineagePair.html" title="class in org.apache.sysds.runtime.controlprogram.federated">MatrixLineagePair</a>&nbsp;moLin)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#broadcast(org.apache.sysds.runtime.instructions.cp.ScalarObject)">broadcast</a></span>&#8203;(<a href="../../instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&nbsp;scalar)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#broadcastSliced(org.apache.sysds.runtime.controlprogram.caching.CacheableData,boolean)">broadcastSliced</a></span>&#8203;(<a href="../caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;data,
                boolean&nbsp;transposed)</code></th>
-<td class="colLast">
-<div class="block">Creates separate slices of an input data object according to the index ranges of federated data.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#broadcastSliced(org.apache.sysds.runtime.controlprogram.caching.CacheableData,boolean,int%5B%5D%5B%5D)">broadcastSliced</a></span>&#8203;(<a href="../caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;data,
                boolean&nbsp;isFrame,
                int[][]&nbsp;ix)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
+<td class="colFirst"><code><a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#broadcastSliced(org.apache.sysds.runtime.controlprogram.caching.CacheableData,org.apache.sysds.runtime.lineage.LineageItem,boolean,int%5B%5D%5B%5D)">broadcastSliced</a></span>&#8203;(<a href="../caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;data,
+               <a href="../../lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;lineageItem,
+               boolean&nbsp;isFrame,
+               int[][]&nbsp;ix)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code><a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#broadcastSliced(org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair,boolean)">broadcastSliced</a></span>&#8203;(<a href="MatrixLineagePair.html" title="class in org.apache.sysds.runtime.controlprogram.federated">MatrixLineagePair</a>&nbsp;moLin,
+               boolean&nbsp;transposed)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code><a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#broadcastSliced(org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair,boolean,int%5B%5D%5B%5D)">broadcastSliced</a></span>&#8203;(<a href="MatrixLineagePair.html" title="class in org.apache.sysds.runtime.controlprogram.federated">MatrixLineagePair</a>&nbsp;moLin,
+               boolean&nbsp;isFrame,
+               int[][]&nbsp;ix)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cleanup(long,long...)">cleanup</a></span>&#8203;(long&nbsp;tid,
        long...&nbsp;id)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clone()">clone</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyWithNewID()">copyWithNewID</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Copy the federation map with the next available federated ID as reference to the federated data.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyWithNewID(long)">copyWithNewID</a></span>&#8203;(long&nbsp;id)</code></th>
 <td class="colLast">
 <div class="block">Copy the federation map with the given ID as reference to the federated data.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyWithNewID(long,long)">copyWithNewID</a></span>&#8203;(long&nbsp;id,
              long&nbsp;clen)</code></th>
@@ -289,14 +275,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  and with given clen as end dimension for the columns in the range.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyWithNewIDAndRange(int%5B%5D%5B%5D,long,org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType)">copyWithNewIDAndRange</a></span>&#8203;(int[][]&nbsp;ix,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyWithNewIDAndRange(int%5B%5D%5B%5D,long,org.apache.sysds.hops.fedplanner.FTypes.FType)">copyWithNewIDAndRange</a></span>&#8203;(int[][]&nbsp;ix,
                      long&nbsp;outputID,
-                     <a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a>&nbsp;type)</code></th>
+                     <a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyWithNewIDAndRange(long,long,long)">copyWithNewIDAndRange</a></span>&#8203;(long&nbsp;rowRangeEnd,
                      long&nbsp;colRangeEnd,
@@ -306,22 +292,22 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  and setting the ranges from zero to row and column ends specified.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyWithNewIDAndRange(long,long,long,org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType)">copyWithNewIDAndRange</a></span>&#8203;(long&nbsp;rowRangeEnd,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copyWithNewIDAndRange(long,long,long,org.apache.sysds.hops.fedplanner.FTypes.FType)">copyWithNewIDAndRange</a></span>&#8203;(long&nbsp;rowRangeEnd,
                      long&nbsp;colRangeEnd,
                      long&nbsp;outputID,
-                     <a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a>&nbsp;type)</code></th>
+                     <a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#execCleanup(long,long...)">execCleanup</a></span>&#8203;(long&nbsp;tid,
            long...&nbsp;id)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
+<tr id="i18" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#execute(long,boolean,org.apache.sysds.runtime.controlprogram.federated.FederatedRange%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...)">execute</a></span>&#8203;(long&nbsp;tid,
        boolean&nbsp;wait,
        <a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>[]&nbsp;fedRange1,
@@ -331,23 +317,23 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
        <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;fr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
+<tr id="i19" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#execute(long,boolean,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...)">execute</a></span>&#8203;(long&nbsp;tid,
        boolean&nbsp;wait,
        <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;fr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
+<tr id="i20" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#execute(long,boolean,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...)">execute</a></span>&#8203;(long&nbsp;tid,
        boolean&nbsp;wait,
        <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;frSlices,
        <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;fr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
+<tr id="i21" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#execute(long,boolean,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...)">execute</a></span>&#8203;(long&nbsp;tid,
        boolean&nbsp;wait,
        <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;frSlices1,
@@ -355,81 +341,81 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
        <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;fr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
+<tr id="i22" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#execute(long,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...)">execute</a></span>&#8203;(long&nbsp;tid,
        <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;fr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
+<tr id="i23" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#execute(long,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...)">execute</a></span>&#8203;(long&nbsp;tid,
        <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;frSlices,
        <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;fr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
+<tr id="i24" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#executeMultipleSlices(long,boolean,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest%5B%5D%5B%5D,org.apache.sysds.runtime.controlprogram.federated.FederatedRequest%5B%5D)">executeMultipleSlices</a></span>&#8203;(long&nbsp;tid,
                      boolean&nbsp;wait,
                      <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[][]&nbsp;frSlices,
                      <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;fr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#filter(org.apache.sysds.runtime.util.IndexRange)">filter</a></span>&#8203;(<a href="../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#forEachParallel(java.util.function.BiFunction)">forEachParallel</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/BiFunction.html?is-external=true" title="class or interface in java.util.function" class="externalLink">BiFunction</a>&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang" class="externalLink">Void</a>&gt;&nbsp;forEachFunction)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#forEachParallel(java.util.function.BiFunction)">forEachParallel</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/function/BiFunction.html?is-external=true" title="class or interface in java.util.function" class="externalLink">BiFunction</a>&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Void.html?is-external=true" title="class or interface in java.lang" class="externalLink">Void</a>&gt;&nbsp;forEachFunction)</code></th>
 <td class="colLast">
 <div class="block">Execute a function for each <code>FederatedRange</code> + <code>FederatedData</code> pair.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code><a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFederatedData()">getFederatedData</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFederatedRanges()">getFederatedRanges</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getID()">getID</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;</code></td>
+<tr id="i30" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMap()">getMap</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMaxIndexInRange(int)">getMaxIndexInRange</a></span>&#8203;(int&nbsp;dim)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSize()">getSize</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
-<td class="colFirst"><code><a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a></code></td>
+<tr id="i33" class="rowColor">
+<td class="colFirst"><code><a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getType()">getType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#identCopy(long,long)">identCopy</a></span>&#8203;(long&nbsp;tid,
          long&nbsp;id)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isAligned(org.apache.sysds.runtime.controlprogram.federated.FederationMap,boolean)">isAligned</a></span>&#8203;(<a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;that,
          boolean&nbsp;transposed)</code></th>
@@ -438,7 +424,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  at the same federated sites (which allows for purely federated operation)</div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isAligned(org.apache.sysds.runtime.controlprogram.federated.FederationMap,boolean,boolean,boolean)">isAligned</a></span>&#8203;(<a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;that,
          boolean&nbsp;transposed,
@@ -449,49 +435,58 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  at the same federated site (which often allows for purely federated operations)</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isAligned(org.apache.sysds.runtime.controlprogram.federated.FederationMap,org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType...)">isAligned</a></span>&#8203;(<a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;that,
-         <a href="FederationMap.AlignType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.AlignType</a>...&nbsp;alignTypes)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isAligned(org.apache.sysds.runtime.controlprogram.federated.FederationMap,org.apache.sysds.hops.fedplanner.FTypes.AlignType...)">isAligned</a></span>&#8203;(<a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;that,
+         <a href="../../../hops/fedplanner/FTypes.AlignType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.AlignType</a>...&nbsp;alignTypes)</code></th>
 <td class="colLast">
 <div class="block">helper function for checking multiple allowed alignment types</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isInitialized()">isInitialized</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mapParallel(long,java.util.function.BiFunction)">mapParallel</a></span>&#8203;(long&nbsp;newVarID,
-           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/BiFunction.html?is-external=true" title="class or interface in java.util.function" class="externalLink">BiFunction</a>&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang" class="externalLink">Void</a>&gt;&nbsp;mappingFunction)</code></th>
+           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/function/BiFunction.html?is-external=true" title="class or interface in java.util.function" class="externalLink">BiFunction</a>&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Void.html?is-external=true" title="class or interface in java.lang" class="externalLink">Void</a>&gt;&nbsp;mappingFunction)</code></th>
 <td class="colLast">
 <div class="block">Execute a function for each <code>FederatedRange</code> + <code>FederatedData</code> pair mapping the pairs to
  their new form by directly changing both <code>FederatedRange</code> and <code>FederatedData</code>.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&gt;&gt;</code></td>
+<tr id="i40" class="altColor">
+<td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#modifyFedRanges(long,int)">modifyFedRanges</a></span>&#8203;(long&nbsp;value,
+               int&nbsp;dim)</code></th>
+<td class="colLast">
+<div class="block">Take the federated mapping and sets one dimension of all federated ranges
+ to the specified value.</div>
+</td>
+</tr>
+<tr id="i41" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#requestFederatedData()">requestFederatedData</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reverseFedMap()">reverseFedMap</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setType(org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType)">setType</a></span>&#8203;(<a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a>&nbsp;type)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setType(org.apache.sysds.hops.fedplanner.FTypes.FType)">setType</a></span>&#8203;(<a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<tr id="i44" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code><a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#transpose()">transpose</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -501,8 +496,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -526,7 +521,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>FederationMap</h4>
-<pre>public&nbsp;FederationMap&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap)</pre>
+<pre>public&nbsp;FederationMap&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap)</pre>
 </li>
 </ul>
 <a id="&lt;init&gt;(long,java.util.List)">
@@ -536,18 +531,18 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>FederationMap</h4>
 <pre>public&nbsp;FederationMap&#8203;(long&nbsp;ID,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap)</pre>
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap)</pre>
 </li>
 </ul>
-<a id="&lt;init&gt;(long,java.util.List,org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType)">
+<a id="&lt;init&gt;(long,java.util.List,org.apache.sysds.hops.fedplanner.FTypes.FType)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>FederationMap</h4>
 <pre>public&nbsp;FederationMap&#8203;(long&nbsp;ID,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap,
-                     <a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a>&nbsp;type)</pre>
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;fedMap,
+                     <a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;type)</pre>
 </li>
 </ul>
 </li>
@@ -575,7 +570,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getType</h4>
-<pre class="methodSignature">public&nbsp;<a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a>&nbsp;getType()</pre>
+<pre class="methodSignature">public&nbsp;<a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;getType()</pre>
 </li>
 </ul>
 <a id="isInitialized()">
@@ -587,13 +582,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isInitialized()</pre>
 </li>
 </ul>
-<a id="setType(org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType)">
+<a id="setType(org.apache.sysds.hops.fedplanner.FTypes.FType)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>setType</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;setType&#8203;(<a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a>&nbsp;type)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;setType&#8203;(<a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;type)</pre>
 </li>
 </ul>
 <a id="getSize()">
@@ -629,7 +624,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getMap</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;getMap()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&gt;&nbsp;getMap()</pre>
 </li>
 </ul>
 <a id="broadcast(org.apache.sysds.runtime.controlprogram.caching.CacheableData)">
@@ -639,6 +634,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>broadcast</h4>
 <pre class="methodSignature">public&nbsp;<a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>&nbsp;broadcast&#8203;(<a href="../caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;data)</pre>
+</li>
+</ul>
+<a id="broadcast(org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>broadcast</h4>
+<pre class="methodSignature">public&nbsp;<a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>&nbsp;broadcast&#8203;(<a href="MatrixLineagePair.html" title="class in org.apache.sysds.runtime.controlprogram.federated">MatrixLineagePair</a>&nbsp;moLin)</pre>
 </li>
 </ul>
 <a id="broadcast(org.apache.sysds.runtime.instructions.cp.ScalarObject)">
@@ -658,15 +662,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>broadcastSliced</h4>
 <pre class="methodSignature">public&nbsp;<a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;broadcastSliced&#8203;(<a href="../caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;data,
                                           boolean&nbsp;transposed)</pre>
-<div class="block">Creates separate slices of an input data object according to the index ranges of federated data. Theses slices
- are then wrapped in separate federated requests for broadcasting.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - input data object (matrix, tensor, frame)</dd>
-<dd><code>transposed</code> - false: slice according to federated data, true: slice according to transposed federated data</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>array of federated requests corresponding to federated data</dd>
-</dl>
+</li>
+</ul>
+<a id="broadcastSliced(org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair,boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>broadcastSliced</h4>
+<pre class="methodSignature">public&nbsp;<a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;broadcastSliced&#8203;(<a href="MatrixLineagePair.html" title="class in org.apache.sysds.runtime.controlprogram.federated">MatrixLineagePair</a>&nbsp;moLin,
+                                          boolean&nbsp;transposed)</pre>
 </li>
 </ul>
 <a id="broadcastSliced(org.apache.sysds.runtime.controlprogram.caching.CacheableData,boolean,int[][])">
@@ -680,14 +685,37 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                           int[][]&nbsp;ix)</pre>
 </li>
 </ul>
-<a id="isAligned(org.apache.sysds.runtime.controlprogram.federated.FederationMap,org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType...)">
+<a id="broadcastSliced(org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair,boolean,int[][])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>broadcastSliced</h4>
+<pre class="methodSignature">public&nbsp;<a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;broadcastSliced&#8203;(<a href="MatrixLineagePair.html" title="class in org.apache.sysds.runtime.controlprogram.federated">MatrixLineagePair</a>&nbsp;moLin,
+                                          boolean&nbsp;isFrame,
+                                          int[][]&nbsp;ix)</pre>
+</li>
+</ul>
+<a id="broadcastSliced(org.apache.sysds.runtime.controlprogram.caching.CacheableData,org.apache.sysds.runtime.lineage.LineageItem,boolean,int[][])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>broadcastSliced</h4>
+<pre class="methodSignature">public&nbsp;<a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;broadcastSliced&#8203;(<a href="../caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;data,
+                                          <a href="../../lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;lineageItem,
+                                          boolean&nbsp;isFrame,
+                                          int[][]&nbsp;ix)</pre>
+</li>
+</ul>
+<a id="isAligned(org.apache.sysds.runtime.controlprogram.federated.FederationMap,org.apache.sysds.hops.fedplanner.FTypes.AlignType...)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>isAligned</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isAligned&#8203;(<a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;that,
-                         <a href="FederationMap.AlignType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.AlignType</a>...&nbsp;alignTypes)</pre>
+                         <a href="../../../hops/fedplanner/FTypes.AlignType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.AlignType</a>...&nbsp;alignTypes)</pre>
 <div class="block">helper function for checking multiple allowed alignment types</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -746,7 +774,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>execute</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
                                            <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;fr)</pre>
 </li>
 </ul>
@@ -756,7 +784,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>execute</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
                                            boolean&nbsp;wait,
                                            <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;fr)</pre>
 </li>
@@ -767,7 +795,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>execute</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
                                            <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;frSlices,
                                            <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;fr)</pre>
 </li>
@@ -778,7 +806,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>execute</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
                                            boolean&nbsp;wait,
                                            <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;frSlices,
                                            <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;fr)</pre>
@@ -790,7 +818,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>execute</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
                                            boolean&nbsp;wait,
                                            <a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>[]&nbsp;fedRange1,
                                            <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>&nbsp;elseFr,
@@ -805,7 +833,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>execute</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;execute&#8203;(long&nbsp;tid,
                                            boolean&nbsp;wait,
                                            <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;frSlices1,
                                            <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;frSlices2,
@@ -818,7 +846,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>executeMultipleSlices</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;executeMultipleSlices&#8203;(long&nbsp;tid,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;[]&nbsp;executeMultipleSlices&#8203;(long&nbsp;tid,
                                                          boolean&nbsp;wait,
                                                          <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[][]&nbsp;frSlices,
                                                          <a href="FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]&nbsp;fr)</pre>
@@ -830,7 +858,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>requestFederatedData</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&gt;&gt;&nbsp;requestFederatedData()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Future</a>&lt;<a href="FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&gt;&gt;&nbsp;requestFederatedData()</pre>
 </li>
 </ul>
 <a id="cleanup(long,long...)">
@@ -938,7 +966,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a id="copyWithNewIDAndRange(long,long,long,org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType)">
+<a id="copyWithNewIDAndRange(long,long,long,org.apache.sysds.hops.fedplanner.FTypes.FType)">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -947,10 +975,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre class="methodSignature">public&nbsp;<a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;copyWithNewIDAndRange&#8203;(long&nbsp;rowRangeEnd,
                                            long&nbsp;colRangeEnd,
                                            long&nbsp;outputID,
-                                           <a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a>&nbsp;type)</pre>
+                                           <a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;type)</pre>
 </li>
 </ul>
-<a id="copyWithNewIDAndRange(int[][],long,org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType)">
+<a id="copyWithNewIDAndRange(int[][],long,org.apache.sysds.hops.fedplanner.FTypes.FType)">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -958,7 +986,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>copyWithNewIDAndRange</h4>
 <pre class="methodSignature">public&nbsp;<a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;copyWithNewIDAndRange&#8203;(int[][]&nbsp;ix,
                                            long&nbsp;outputID,
-                                           <a href="FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a>&nbsp;type)</pre>
+                                           <a href="../../../hops/fedplanner/FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;type)</pre>
 </li>
 </ul>
 <a id="bind(long,long,org.apache.sysds.runtime.controlprogram.federated.FederationMap)">
@@ -970,6 +998,25 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre class="methodSignature">public&nbsp;<a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;bind&#8203;(long&nbsp;rOffset,
                           long&nbsp;cOffset,
                           <a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;that)</pre>
+</li>
+</ul>
+<a id="modifyFedRanges(long,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>modifyFedRanges</h4>
+<pre class="methodSignature">public&nbsp;<a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;modifyFedRanges&#8203;(long&nbsp;value,
+                                     int&nbsp;dim)</pre>
+<div class="block">Take the federated mapping and sets one dimension of all federated ranges
+ to the specified value.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>value</code> - long value for setting the dimension</dd>
+<dd><code>dim</code> - indicates if the row (0) or column (1) dimension should be set to value</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>FederationMap with the modified federated ranges</dd>
+</dl>
 </li>
 </ul>
 <a id="transpose()">
@@ -996,7 +1043,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>forEachParallel</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;forEachParallel&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/BiFunction.html?is-external=true" title="class or interface in java.util.function" class="externalLink">BiFunction</a>&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang" class="externalLink">Void</a>&gt;&nbsp;forEachFunction)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;forEachParallel&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/function/BiFunction.html?is-external=true" title="class or interface in java.util.function" class="externalLink">BiFunction</a>&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Void.html?is-external=true" title="class or interface in java.lang" class="externalLink">Void</a>&gt;&nbsp;forEachFunction)</pre>
 <div class="block">Execute a function for each <code>FederatedRange</code> + <code>FederatedData</code> pair. The function should
  not change any data of the pair and instead use <code>mapParallel</code> if that is a necessity. Note that this
  operation is parallel and necessary synchronisation has to be performed.</div>
@@ -1013,7 +1060,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>mapParallel</h4>
 <pre class="methodSignature">public&nbsp;<a href="FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a>&nbsp;mapParallel&#8203;(long&nbsp;newVarID,
-                                 <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/BiFunction.html?is-external=true" title="class or interface in java.util.function" class="externalLink">BiFunction</a>&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang" class="externalLink">Void</a>&gt;&nbsp;mappingFunction)</pre>
+                                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/function/BiFunction.html?is-external=true" title="class or interface in java.util.function" class="externalLink">BiFunction</a>&lt;<a href="FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,&#8203;<a href="FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Void.html?is-external=true" title="class or interface in java.lang" class="externalLink">Void</a>&gt;&nbsp;mappingFunction)</pre>
 <div class="block">Execute a function for each <code>FederatedRange</code> + <code>FederatedData</code> pair mapping the pairs to
  their new form by directly changing both <code>FederatedRange</code> and <code>FederatedData</code>. The varIDs
  don't have to be changed by the <code>mappingFunction</code> as that will be done by this method. Note that this
@@ -1051,10 +1098,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -1119,7 +1166,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
+<li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
@@ -1136,7 +1183,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

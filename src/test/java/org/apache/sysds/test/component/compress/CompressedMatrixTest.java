@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.component.compress;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -30,6 +29,8 @@ import java.io.DataOutputStream;
 import java.util.Collection;
 import java.util.Random;
 
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -37,6 +38,8 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Minus1Multiply;
@@ -45,14 +48,12 @@ import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
-import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
-import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDistinctTypes;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
@@ -76,8 +77,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	public CompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov,
-		Collection<CompressionType> ct) {
-		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1, ct);
+		Collection<CompressionType> ct, CostEstimatorBuilder csb) {
+		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1, ct, csb);
 	}
 
 	@Test
@@ -114,6 +115,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			Random r = new Random();
 			final int min = r.nextInt(rows);
 			final int max = Math.min(r.nextInt(rows - min) + min, min + 1000);
+
 			for(int i = min; i < max; i++)
 				for(int j = 0; j < cols; j++) {
 					final double ulaVal = mb.quickGetValue(i, j);
@@ -132,43 +134,22 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 	}
 
-	@Test
-	@Ignore
-	public void testCountDistinct() {
-		try {
-			// Counting distinct is potentially wrong in cases with overlapping, resulting in a few to many or few
-			// elements.
-			if(!(cmb instanceof CompressedMatrixBlock) || (overlappingType == OverLapping.MATRIX_MULT_NEGATIVE))
-				return; // Input was not compressed then just pass test
-
-			CountDistinctOperator op = new CountDistinctOperator(CountDistinctTypes.COUNT);
-			int ret1 = LibMatrixCountDistinct.estimateDistinctValues(mb, op);
-			int ret2 = LibMatrixCountDistinct.estimateDistinctValues(cmb, op);
-
-			String base = bufferedToString + "\n";
-			if(_cs != null && _cs.lossy) {
-				// The number of distinct values should be same or lower in lossy mode.
-				// assertTrue(base + "lossy distinct count " +ret2+ "is less than full " + ret1, ret1 >= ret2);
-
-				// above assumption is false, since the distinct count when using multiple different scales becomes
-				// larger due to differences in scale.
-				assertTrue(base + "lossy distinct count " + ret2 + "is greater than 0", 0 < ret2);
-			}
-			else {
-				assertEquals(base, ret1, ret2);
-			}
-
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
-		}
-	}
-
 	@Override
 	public void testUnaryOperators(AggType aggType, boolean inCP) {
 		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, 1);
 		testUnaryOperators(aggType, auop, inCP);
+	}
+
+	@Test
+	public void testNonZeros() {
+		if(!(cmb instanceof CompressedMatrixBlock))
+			return; // Input was not compressed then just pass test
+		if(!(cmb.getNonZeros() >= mb.getNonZeros())) { // guarantee that the nnz is at least the nnz
+			LOG.error(cmb);
+			fail(bufferedToString + "\nIncorrect number of non Zeros should guarantee greater than or equals but are "
+				+ cmb.getNonZeros() + " and should be: " + mb.getNonZeros());
+		}
+
 	}
 
 	@Test
@@ -222,7 +203,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			CompressionStatistics cStat = cmbStats;
 			if(cStat != null) {
 				long colsEstimate = cStat.estimatedSizeCols;
-				long actualSize = cStat.size;
+				long actualSize = cStat.compressedSize;
 				long originalSize = cStat.originalSize;
 				int allowedTolerance = 4096;
 
@@ -262,7 +243,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				return;
 			CompressionStatistics cStat = cmbStats;
 			if(cStat != null) {
-				long actualSize = cStat.size;
+				long actualSize = cStat.compressedSize;
 				long originalSize = cStat.originalSize;
 				long JolEstimatedSize = getJolSize(((CompressedMatrixBlock) cmb), cmbStats);
 
@@ -305,7 +286,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				if(compressRatio > 1000.0) {
 					StringBuilder builder = new StringBuilder();
 					builder.append("Compression Ratio sounds suspiciously good at: " + compressRatio);
-					builder.append("\n\tActual compressed size: " + cStat.size);
+					builder.append("\n\tActual compressed size: " + cStat.compressedSize);
 					builder.append(" original size: " + cStat.originalSize);
 					builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
 					builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
@@ -325,9 +306,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
 				return;
-			boolean ret1 = cmb.containsValue(min);
-			boolean ret2 = mb.containsValue(min);
-			assertTrue(bufferedToString, ret1 == ret2);
+			assertTrue(bufferedToString, cmb.containsValue(min) == mb.containsValue(min));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -705,5 +684,14 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			jolEstimate += cg.estimateInMemorySize();
 		}
 		return jolEstimate;
+	}
+
+	@Test
+	public void toRDDAndBack() {
+		JavaSparkContext sc = SparkExecutionContext.getSparkContextStatic();
+		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = SparkExecutionContext.toMatrixJavaPairRDD(sc, cmb, 200);
+		MatrixBlock back = SparkExecutionContext.toMatrixBlock(rdd, mb.getNumRows(), mb.getNumColumns(), 200,
+			mb.getNonZeros());
+		compareResultMatrices(back, mb, 1);
 	}
 }

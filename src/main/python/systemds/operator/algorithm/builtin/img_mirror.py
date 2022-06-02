@@ -31,7 +31,10 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def img_mirror(img_in: Matrix,
                horizontal_axis: bool):
-    
+    """
+    :param max_value: The maximum value pixels can have
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'img_in': img_in, 'horizontal_axis': horizontal_axis}
     return Matrix(img_in.sds_context,
         'img_mirror',

@@ -47,11 +47,7 @@ size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resourc
 	s1 << "-I" << resource_path << "/cuda/headers";
 	s2 << "-I" << resource_path << "/cuda/spoof";
 	auto ctx = new SpoofCUDAContext(resource_path,{s1.str(), s2.str(), cuda_include_path});
-	// cuda device is handled by jCuda atm
-	//cudaSetDevice(device_id);
-	//cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
-	//cudaDeviceSynchronize();
-	
+
 	CHECK_CUDA(cuModuleLoad(&(ctx->reductions), std::string(ctx->resource_path + std::string("/cuda/kernels/reduction.ptx")).c_str()));
 	
 	CUfunction func;
@@ -77,35 +73,23 @@ size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resourc
 	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_d"));
 	ctx->reduction_kernels_d.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::MAX), func));
 	
+	CHECK_CUDART(cudaMallocHost(reinterpret_cast<void**>(&(ctx->staging_buffer)), ctx->default_mem_size));
+	CHECK_CUDART(cudaMalloc(reinterpret_cast<void**>(&(ctx->device_buffer)), ctx->default_mem_size));
+	ctx->current_mem_size = ctx->default_mem_size;
 	return reinterpret_cast<size_t>(ctx);
 }
 
 void SpoofCUDAContext::destroy_cuda(SpoofCUDAContext *ctx, [[maybe_unused]] uint32_t device_id) {
+	cudaFreeHost(ctx->staging_buffer);
+	cudaFree(ctx->device_buffer);
 	delete ctx;
-	// cuda device is handled by jCuda atm
-	//cudaDeviceReset();
 }
 
 size_t SpoofCUDAContext::compile(std::unique_ptr<SpoofOperator> op, const std::string &src) {
-#ifndef NDEBUG
-//	std::cout << "---=== START source listing of spoof cuda kernel [ " << name << " ]: " << std::endl;
-//    uint32_t line_num = 0;
-//	std::istringstream src_stream(src);
-//    for(std::string line; std::getline(src_stream, line); line_num++)
-//		std::cout << line_num << ": " << line << std::endl;
-//	std::cout << "---=== END source listing of spoof cuda kernel [ " << name << " ]." << std::endl;
-	std::cout << "cwd: " << std::filesystem::current_path() << std::endl;
-	std::cout << "include_paths: ";
-	for_each (include_paths.begin(), include_paths.end(), [](const std::string& line){ std::cout << line << '\n';});
-	std::cout << std::endl;
-#endif
-
-// uncomment all related lines for temporary timing output:
 //	auto compile_start = clk::now();
 	op->program = std::make_unique<jitify::Program>(kernel_cache.program(src, 0, include_paths));
 //	auto compile_end = clk::now();
 //	auto compile_duration = std::chrono::duration_cast<sec>(compile_end - compile_start).count();
-
 	compiled_ops.push_back(std::move(op));
 //	compile_total += compile_duration;
 //	std::cout << name << " compiled in "
@@ -116,15 +100,25 @@ size_t SpoofCUDAContext::compile(std::unique_ptr<SpoofOperator> op, const std::s
 
 template<typename T>
 CUfunction SpoofCUDAContext::getReductionKernel(const std::pair<SpoofOperator::AggType, SpoofOperator::AggOp> &key) {
-	return nullptr;
+	return nullptr; // generic case never used
 }
+
 template<>
 CUfunction SpoofCUDAContext::getReductionKernel<float>(const std::pair<SpoofOperator::AggType,
 		SpoofOperator::AggOp> &key) {
 	return reduction_kernels_f[key];
 }
+
 template<>
 CUfunction SpoofCUDAContext::getReductionKernel<double>(const std::pair<SpoofOperator::AggType,
 		SpoofOperator::AggOp> &key) {
 	return reduction_kernels_d[key];
+}
+
+void SpoofCUDAContext::resize_staging_buffer(size_t size) {
+	cudaFreeHost(staging_buffer);
+	cudaFree(device_buffer);
+	CHECK_CUDART(cudaMallocHost(reinterpret_cast<void**>(&(staging_buffer)), size));
+	CHECK_CUDART(cudaMalloc(reinterpret_cast<void**>(&(device_buffer)), size));
+	current_mem_size = size;
 }

@@ -18,8 +18,6 @@
  */
 
 #pragma once
-#ifndef SPOOF_UTILS_CUH
-#define SPOOF_UTILS_CUH
 
 #include <math_constants.h>
 #include "vector_add.cuh"
@@ -31,12 +29,7 @@ struct TempStorage;
 #include "Matrix.h"
 #include "vector_write.cuh"
 
-// #include "intellisense_cuda_intrinsics.h"
-
 using uint32_t = unsigned int;
-
-//static __device__  bool debug_row() { return blockIdx.x == 0; };
-//static __device__ bool debug_thread() { return threadIdx.x == 0; }
 
 __constant__ double DOUBLE_EPS = 1.11022E-16; // 2 ^ -53
 __constant__ double FLOAT_EPS = 1.49012E-08; // 2 ^ -26
@@ -79,12 +72,6 @@ __device__ Vector<T>& getVector(MatrixAccessor<T>& data, uint32_t n, uint32_t ri
 		c[i] = data.val(rix, i);
 		i += blockDim.x;
 	}
-//	if(debug_thread()) {
-//		printf("getVector: c.len=%d rix=%d\n", c.length, rix);
-//		for(auto j = 0; j < c.length; ++j)
-//			printf("%4.3f ", c[j]);
-//		printf("\n");
-//	}
 	return c;
 }
 
@@ -146,122 +133,147 @@ __device__ T BLOCK_ROW_AGG(T *a, T *b, uint32_t len, AggOp agg_op, LoadOp load_o
 	auto sdata = shared_memory_proxy<T>();
 	uint tid = threadIdx.x;
 
-	// Initalize shared mem and leave if tid > row length. 
-//	if(tid >= len) { return sdata[tid] = AggOp::init();; }
-
-	__syncthreads();
-	
-//			 if(blockIdx.x == 0 && threadIdx.x == 0)
-//		   printf("tid=%d sdata[tid + 128]=%f, len=%d\n", tid, len, sdata[tid+128]);
 	uint i = tid;
 	T v = AggOp::init();
-//			 if(blockIdx.x == 0 && threadIdx.x == 0)
-//		   printf("tid=%d sdata[tid + 128]=%f\n", tid, sdata[tid+128]);
-	while (i < len) {
+	while(i < len) {
 		v = agg_op(v, load_op(a[i], b[i]));
 		i += blockDim.x;
 	}
 
-//		 if(blockIdx.x == 0 && threadIdx.x == 0)
-//	if(debug_row() && debug_thread())
-//		   printf("tid=%d sdata[tid + 128]=%f\n", tid, sdata[tid+128]);
-	
 	// each thread puts its local sum into shared memory
 	sdata[tid] = v;
-	// if(blockIdx.x==0)
-		// printf("tid=%d v=%f, len=%d\n", tid, v, len);
 	__syncthreads();
 
-			// if(blockIdx.x == 0 && threadIdx.x == 0)
-		 //  printf("tid=%d sdata[tid + 128]=%f\n", tid, sdata[tid+128]);
-	
 	// do reduction in shared mem
-	if (blockDim.x >= 1024) {
-		if (tid < 512 && (tid+512) < len) {
-				// if(blockIdx.x == 0 && threadIdx.x == 0)
-		  // printf("tid=%d sdata[tid + 512]=%f\n", tid, sdata[tid+512]);
+	if(blockDim.x >= 1024) {
+		if(tid < 512 && (tid+512) < len) {
 			sdata[tid] = v = agg_op(v, sdata[tid + 512]);
 		}
 		__syncthreads();
 	}
-	if (blockDim.x >= 512) {
-		if (tid < 256 && (tid+256) < len) {
-				// if(blockIdx.x == 0 && threadIdx.x == 0)
-		  // printf("tid=%d sdata[tid + 256]=%f\n", tid, sdata[tid+256]);
+	if(blockDim.x >= 512) {
+		if(tid < 256 && (tid+256) < len) {
 			sdata[tid] = v = agg_op(v, sdata[tid + 256]);
 		}
 		__syncthreads();
 	}
-	if (blockDim.x >= 256) {
-		if (tid < 128 && (tid+128) < len) {
-				// if(blockIdx.x == 0 && threadIdx.x == 0)
-		  // printf("tid=%d sdata[tid + 128]=%f\n", tid, sdata[tid+128]);
+	if(blockDim.x >= 256) {
+		if(tid < 128 && (tid+128) < len) {
 			sdata[tid] = v = agg_op(v, sdata[tid + 128]);
 		}
 		__syncthreads();
 	}
-	if (blockDim.x >= 128) {
-		if (tid < 64 && (tid+64) < len) {
-				// if(blockIdx.x == 0 && threadIdx.x == 0)
-		  // printf("tid=%d sdata[tid + 64]=%f\n", tid, sdata[tid+64]);
+	if(blockDim.x >= 128) {
+if(tid < 64 && (tid+64) < len) {
 			sdata[tid] = v = agg_op(v, sdata[tid + 64]);
 		}
 		__syncthreads();
 	}
- 
-	if (tid < 32) {
+
+	if(tid < 32) {
 		// now that we are using warp-synchronous programming (below)
 		// we need to declare our shared memory volatile so that the compiler
 		// doesn't reorder stores to it and induce incorrect behavior.
 		volatile T *smem = sdata;
-		if (blockDim.x >= 64 && (tid+32) < len) {
+		if(blockDim.x >= 64 && (tid+32) < len) {
 			smem[tid] = v = agg_op(v, smem[tid + 32]);
 		}
-		// if(blockIdx.x==0)
-		  // printf("tid=%d smem[0]=%f\n", tid, smem[0]);
-		if (blockDim.x >= 32 && (tid+16) < len) {
+		if(blockDim.x >= 32 && (tid+16) < len) {
 			smem[tid] = v = agg_op(v, smem[tid + 16]);
 		}
-		// if(blockIdx.x==0)
-		  // printf("tid=%d smem[0]=%f\n", tid, smem[0]);
-		if (blockDim.x >= 16 && (tid+8) < len) {
+		if(blockDim.x >= 16 && (tid+8) < len) {
 			smem[tid] = v = agg_op(v, smem[tid + 8]);
 		}
-		// if(blockIdx.x==0)
-		  // printf("tid=%d smem[0]=%f\n", tid, smem[0]);
-		if (blockDim.x >= 8 && (tid+4) < len) {
+		if(blockDim.x >= 8 && (tid+4) < len) {
 			smem[tid] = v = agg_op(v, smem[tid + 4]);
 		}
-		// if(blockIdx.x==0 && threadIdx.x ==0)
-		  // printf("tid=%d smem[tid + 4]=%f\n", tid, smem[tid+4]);
-		if (blockDim.x >= 4 && (tid+2) < len) {
+		if(blockDim.x >= 4 && (tid+2) < len) {
 			smem[tid] = v = agg_op(v, smem[tid + 2]);
 		}
-		// if(blockIdx.x==0 && threadIdx.x ==0)
-		  // printf("tid=%d smem[0]=%f\n", tid, smem[0]);
-		if (blockDim.x >= 2 && (tid+1) < len) {
-		// if (blockDim.x >= 2) {
+		if(blockDim.x >= 2 && (tid+1) < len) {
 			smem[tid] = v = agg_op(v, smem[tid + 1]);
 		}
-//		 if(blockIdx.x==0 && threadIdx.x ==0)
-//		if(debug_row() && debug_thread())
-//		   printf("tid=%d smem[0]=%f\n", tid, smem[0]);
 	}
-
 	__syncthreads();
 	return sdata[0];
+}
+
+
+template<typename T, typename AggOp, typename LoadOp>
+__device__ T BLOCK_ROW_AGG(T *a, T *b, uint32_t* aix, uint32_t len, AggOp agg_op, LoadOp load_op) {
+    auto sdata = shared_memory_proxy<T>();
+    uint tid = threadIdx.x;
+
+    uint i = tid;
+    T v = AggOp::init();
+    while(i < len) {
+        v = agg_op(v, load_op(a[i], b[aix[i]]));
+        i += blockDim.x;
+    }
+
+    // each thread puts its local sum into shared memory
+    sdata[tid] = v;
+    __syncthreads();
+
+    // do reduction in shared mem
+    if(blockDim.x >= 1024) {
+        if(tid < 512 && (tid+512) < len) {
+            sdata[tid] = v = agg_op(v, sdata[tid + 512]);
+        }
+        __syncthreads();
+    }
+    if(blockDim.x >= 512) {
+        if(tid < 256 && (tid+256) < len) {
+            sdata[tid] = v = agg_op(v, sdata[tid + 256]);
+        }
+        __syncthreads();
+    }
+    if(blockDim.x >= 256) {
+        if(tid < 128 && (tid+128) < len) {
+            sdata[tid] = v = agg_op(v, sdata[tid + 128]);
+        }
+        __syncthreads();
+    }
+    if(blockDim.x >= 128) {
+        if(tid < 64 && (tid+64) < len) {
+            sdata[tid] = v = agg_op(v, sdata[tid + 64]);
+        }
+        __syncthreads();
+    }
+
+    if(tid < 32) {
+        // now that we are using warp-synchronous programming (below)
+        // we need to declare our shared memory volatile so that the compiler
+        // doesn't reorder stores to it and induce incorrect behavior.
+        volatile T *smem = sdata;
+        if(blockDim.x >= 64 && (tid+32) < len) {
+            smem[tid] = v = agg_op(v, smem[tid + 32]);
+        }
+        if(blockDim.x >= 32 && (tid+16) < len) {
+            smem[tid] = v = agg_op(v, smem[tid + 16]);
+        }
+        if(blockDim.x >= 16 && (tid+8) < len) {
+            smem[tid] = v = agg_op(v, smem[tid + 8]);
+        }
+        if(blockDim.x >= 8 && (tid+4) < len) {
+            smem[tid] = v = agg_op(v, smem[tid + 4]);
+        }
+        if(blockDim.x >= 4 && (tid+2) < len) {
+            smem[tid] = v = agg_op(v, smem[tid + 2]);
+        }
+        if(blockDim.x >= 2 && (tid+1) < len) {
+            smem[tid] = v = agg_op(v, smem[tid + 1]);
+        }
+    }
+    __syncthreads();
+    return sdata[0];
 }
 
 template<typename T>
 __device__ T dotProduct(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len) {
 	SumOp<T> agg_op;
 	ProductOp<T> load_op;
-//	if(debug_row() && debug_thread())
-//		printf("dot len = %d\n", len);
-	T ret =  BLOCK_ROW_AGG(&a[ai], &b[bi], len, agg_op, load_op);
-//	if(debug_row() && debug_thread())
-//		printf("bid=%d, ai=%d, dot=%f\n", blockIdx.x, ai, ret);
-	return ret;
+	return BLOCK_ROW_AGG(&a[ai], &b[bi], len, agg_op, load_op);
 }
 
 template<typename T>
@@ -277,8 +289,6 @@ __device__ T vectSum(T* a, uint32_t ai, uint32_t len) {
 	SumOp<T> agg_op;
 	IdentityOp<T> load_op;
 	T result = BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
-//	if(debug_row() && debug_thread())
-//		printf("vectSum: bid=%d, tid=%d ai=%d len=%d result=%4.3f\n", blockIdx.x, threadIdx.x, ai, len, result);
 	return result;
 }
 
@@ -286,10 +296,22 @@ template<typename T>
 __device__ T vectMin(T* a, int ai, int len) {
 	MinOp<T> agg_op;
 	IdentityOp<T> load_op;
-	T result = BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
-//	if(debug_row() && debug_thread())
-//		printf("vectMin: bid=%d, tid=%d ai=%d len=%d result=%4.3f\n", blockIdx.x, threadIdx.x, ai, len, result);
-	return result;
+	return BLOCK_ROW_AGG(&a[ai], &a[ai], len, agg_op, load_op);
+}
+
+template<typename T>
+__device__ T rowMaxsVectMult(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len) {
+    MaxOp<T> agg_op;
+    ProductOp<T> load_op;
+    return BLOCK_ROW_AGG(&a[ai], &b[0], len, agg_op, load_op);
+}
+
+template<typename T>
+__device__ T rowMaxsVectMult(T* a, T* b, uint32_t* aix, uint32_t ai, uint32_t bi, uint32_t len) {
+    MaxOp<T> agg_op;
+    ProductOp<T> load_op;
+
+    return BLOCK_ROW_AGG(&a[ai], &b[0], &aix[ai], len, agg_op, load_op);
 }
 
 template<typename T>
@@ -302,25 +324,7 @@ __device__ T vectMax(T* a, uint32_t ai, uint32_t len) {
 
 template<typename T>
 __device__ T vectMax(T* avals, uint32_t* aix, uint32_t ai, uint32_t alen, uint32_t len) {
-//	if (debug_row() && debug_thread()) {
-//		printf("\naix[i]:\n");
-//		for(auto i = 0; i < alen; ++i)
-//			printf(" %d", aix[i]);
-		
-//		printf("\navals[i]:\n");
-//		for(auto i = 0; i < alen; ++i)
-//			printf(" %4.3f", avals[i]);
-		
-//		printf("\navals[aix[i]]:\n");
-//		for(auto i = 0; i < alen; ++i)
-//			printf(" %4.3f", avals[aix[i]]);
-
-//		printf("\n");
-//	}
-
 	T result = vectMax(avals, ai, alen);
-//	if (blockIdx.x < 5 && debug_thread())
-//		printf("bid=%d, tid=%d, len=%d, alen=%d, ai=%d vectMax=%4.3f\n", blockIdx.x, threadIdx.x, len, alen, ai, result);
 	return alen < len ? MaxOp<T>::exec(result, 0.0) : result;
 }
 
@@ -547,6 +551,12 @@ Vector<T>& vectMultWrite(T* a, T* b, uint32_t ai, uint32_t bi, uint32_t len, Tem
 	return vectWriteBinary<T, ProductOp<T>>(a, b, ai, bi, len, fop, "Mult");
 }
 
+// sparse-dense MxV
+template<typename T>
+Vector<T>& vectMultWrite(T* avals, T* b, uint32_t* aix, uint32_t ai, uint32_t bi, uint32_t alen, uint32_t len, TempStorage<T>* fop) {
+    return vectWriteBinary<T, ProductOp<T>>(avals, b, aix, ai, bi, alen, len, fop, "Mult");
+}
+
 template<typename T>
 Vector<T>& vectDivWrite(T* a, T b, uint32_t ai, uint32_t len, TempStorage<T>* fop) {
 	return vectWriteBinary<T, DivOp<T>>(a, b, ai, len, fop, "Div");
@@ -744,6 +754,3 @@ void vectOuterMultAdd(T* a, T* b, T* c, uint32_t ai, uint32_t bi, uint32_t ci, u
 		i += blockDim.x;
 	}
 }
-
-
-#endif // SPOOF_UTILS_CUH

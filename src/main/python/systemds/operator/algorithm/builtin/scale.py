@@ -30,10 +30,14 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def scale(X: Matrix,
-          center: bool,
-          scale: bool):
-    
-    params_dict = {'X': X, 'center': center, 'scale': scale}
+          **kwargs: Dict[str, VALID_INPUT_TYPES]):
+    """
+    :param center: Indicates whether or not to center the feature matrix
+    :param scale: Indicates whether or not to scale the feature matrix
+    :return: 'OperationNode' containing  
+    """
+    params_dict = {'X': X}
+    params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')

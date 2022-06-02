@@ -21,15 +21,16 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -41,12 +42,14 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.insertionsort.AInsertionSorter;
 import org.apache.sysds.runtime.compress.colgroup.insertionsort.InsertionSorterFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
@@ -55,10 +58,12 @@ import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
-import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 /**
@@ -67,273 +72,299 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 public class ColGroupFactory {
 	static final Log LOG = LogFactory.getLog(ColGroupFactory.class.getName());
 
+	private final MatrixBlock in;
+	private final CompressedSizeInfo csi;
+	private final CompressionSettings cs;
+	private final ACostEstimate ce;
+	private final int k;
+
+	private final int nRow;
+	private final int nCol;
+
+	private final ExecutorService pool;
+
+	private ColGroupFactory(MatrixBlock in, CompressedSizeInfo csi, CompressionSettings cs, ACostEstimate ce, int k) {
+		this.in = in;
+		this.csi = csi;
+		this.cs = cs;
+		this.k = k;
+		this.ce = ce;
+
+		this.nRow = cs.transposed ? in.getNumColumns() : in.getNumRows();
+		this.nCol = cs.transposed ? in.getNumRows() : in.getNumColumns();
+
+		this.pool = (k > 1) ? CommonThreadPool.get(k) : null;
+	}
+
 	/**
 	 * The actual compression method, that handles the logic of compressing multiple columns together.
 	 * 
-	 * @param in           The input matrix, that could have been transposed. If it is transposed the compSettings should
-	 *                     specify this.
-	 * @param csi          The compression information extracted from the estimation, this contains which groups of
-	 *                     columns to compress together.
-	 * @param compSettings The compression settings to specify how to compress.
-	 * @param k            The degree of parallelism to be used in the compression of the column groups.
+	 * @param in  The input matrix, that could have been transposed. If it is transposed the compSettings should specify
+	 *            this.
+	 * @param csi The compression information extracted from the estimation, this contains which groups of columns to
+	 *            compress together.
+	 * @param cs  The compression settings to specify how to compress.
+	 * @param k   The degree of parallelism to be used in the compression of the column groups.
 	 * @return A resulting array of ColGroups, containing the compressed information from the input matrix block.
 	 */
-	public static List<AColGroup> compressColGroups(MatrixBlock in, CompressedSizeInfo csi,
-		CompressionSettings compSettings, int k) {
+	public static List<AColGroup> compressColGroups(MatrixBlock in, CompressedSizeInfo csi, CompressionSettings cs,
+		int k) {
+		return new ColGroupFactory(in, csi, cs, null, k).compress();
+	}
+
+	/**
+	 * 
+	 * @param in  The input matrix, that could have been transposed. If it is transposed the compSettings should specify
+	 *            this.
+	 * @param csi The compression information extracted from the estimation, this contains which groups of columns to
+	 *            compress together.
+	 * @param cs  The compression settings to specify how to compress.
+	 * @param ce  The cost estimator used for the compression
+	 * @param k   The degree of parallelism to be used in the compression of the column groups.
+	 * @return A resulting array of ColGroups, containing the compressed information from the input matrix block.
+	 */
+	public static List<AColGroup> compressColGroups(MatrixBlock in, CompressedSizeInfo csi, CompressionSettings cs,
+		ACostEstimate ce, int k) {
+		return new ColGroupFactory(in, csi, cs, ce, k).compress();
+	}
+
+	private List<AColGroup> compress() {
+		try{
+			List<AColGroup> ret = compressExecute();
+			if(pool != null)
+				pool.shutdown();
+				return ret;
+		}
+		catch(Exception e ){
+			if(pool != null)
+				pool.shutdown();
+			throw new DMLCompressionException("Compression Failed", e);
+		}
+	}
+
+	private List<AColGroup> compressExecute() {
 		for(CompressedSizeInfoColGroup g : csi.getInfo())
 			g.clearMap();
-
-		if(in.isEmpty())
-			return genEmpty(in, compSettings);
+		if(in.isEmpty()) {
+			AColGroup empty = ColGroupEmpty.create(cs.transposed ? in.getNumRows() : in.getNumColumns());
+			return Collections.singletonList(empty);
+		}
 		else if(k <= 1)
-			return compressColGroupsSingleThreaded(in, csi, compSettings);
+			return compressColGroupsSingleThreaded();
 		else
-			return compressColGroupsParallel(in, csi, compSettings, k);
+			return compressColGroupsParallel();
 	}
 
-	/**
-	 * Generate a constant column group.
-	 * 
-	 * @param numCols The number of columns
-	 * @param value   The value contained in all cells.
-	 * @return A Constant column group.
-	 */
-	public static AColGroup genColGroupConst(int numCols, double value) {
-		if(numCols <= 0)
-			throw new DMLCompressionException("Invalid construction of constant column group with cols: " + numCols);
-		final int[] colIndices = Util.genColsIndices(numCols);
-
-		if(value == 0)
-			return new ColGroupEmpty(colIndices);
-		return genColGroupConst(colIndices, value);
-	}
-
-	/**
-	 * Generate a constant column group.
-	 * 
-	 * @param values The value vector that contains all the unique values for each column in the matrix.
-	 * @return A Constant column group.
-	 */
-	public static AColGroup genColGroupConst(double[] values) {
-		final int[] colIndices = Util.genColsIndices(values.length);
-		return genColGroupConst(colIndices, values);
-	}
-
-	/**
-	 * Generate a constant column group.
-	 * 
-	 * It is assumed that the column group is intended for use, therefore zero value is allowed.
-	 * 
-	 * @param cols  The specific column indexes that is contained in this constant group.
-	 * @param value The value contained in all cells.
-	 * @return A Constant column group.
-	 */
-	public static AColGroup genColGroupConst(int[] cols, double value) {
-		final int numCols = cols.length;
-		double[] values = new double[numCols];
-		for(int i = 0; i < numCols; i++)
-			values[i] = value;
-		return genColGroupConst(cols, values);
-	}
-
-	/**
-	 * Generate a constant column group.
-	 * 
-	 * @param cols   The specific column indexes that is contained in this constant group.
-	 * @param values The value vector that contains all the unique values for each column in the matrix.
-	 * @return A Constant column group.
-	 */
-	public static AColGroup genColGroupConst(int[] cols, double[] values) {
-		if(cols.length != values.length)
-			throw new DMLCompressionException("Invalid size of values compared to columns");
-		ADictionary dict = new Dictionary(values);
-		return new ColGroupConst(cols, dict);
-	}
-
-	/**
-	 * Generate a constant column group.
-	 * 
-	 * @param numCols The number of columns.
-	 * @param dict    The dictionary to contain int the Constant group.
-	 * @return A Constant column group.
-	 */
-	public static AColGroup genColGroupConst(int numCols, ADictionary dict) {
-		if(numCols != dict.getValues().length)
-			throw new DMLCompressionException(
-				"Invalid construction of const column group with different number of columns in arguments");
-		final int[] colIndices = Util.genColsIndices(numCols);
-		return new ColGroupConst(colIndices, dict);
-	}
-
-	private static List<AColGroup> genEmpty(MatrixBlock in, CompressionSettings compSettings) {
-		List<AColGroup> ret = new ArrayList<>(1);
-		ret.add(genColGroupConst(compSettings.transposed ? in.getNumRows() : in.getNumColumns(), 0));
-		return ret;
-	}
-
-	private static List<AColGroup> compressColGroupsSingleThreaded(MatrixBlock in, CompressedSizeInfo csi,
-		CompressionSettings compSettings) {
+	private List<AColGroup> compressColGroupsSingleThreaded() {
 		List<AColGroup> ret = new ArrayList<>(csi.getNumberColGroups());
 		List<CompressedSizeInfoColGroup> groups = csi.getInfo();
 
-		Tmp tmpMap = new Tmp();
 		for(CompressedSizeInfoColGroup g : groups)
-			ret.addAll(compressColGroup(in, compSettings, tmpMap, g, 1));
+			ret.add(compressColGroup(g));
 
 		return ret;
 	}
 
-	private static List<AColGroup> compressColGroupsParallel(MatrixBlock in, CompressedSizeInfo csi,
-		CompressionSettings compSettings, int k) {
+	private List<AColGroup> compressColGroupsParallel() {
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
-			List<CompressTask> tasks = new ArrayList<>();
+			final List<CompressedSizeInfoColGroup> groups = csi.getInfo();
+			final int nGroups = groups.size();
+			// final int blkz = nGroups * 10 / k;
+			final int skip = Math.min(k * 10, nGroups);
+			final List<CompressTask> tasks = new ArrayList<>(skip);
 
-			List<List<CompressedSizeInfoColGroup>> threadGroups = makeGroups(csi.getInfo(), k);
-			for(List<CompressedSizeInfoColGroup> tg : threadGroups)
-				if(!tg.isEmpty())
-					tasks.add(new CompressTask(in, tg, compSettings, Math.max(1, k / 2)));
+			// sort to make the "assumed" big jobs first.
+			Collections.sort(groups, Comparator.comparing(g -> -g.getNumVals()));
 
-			List<AColGroup> ret = new ArrayList<>(csi.getNumberColGroups());
-			for(Future<Collection<AColGroup>> t : pool.invokeAll(tasks))
-				ret.addAll(t.get());
-			pool.shutdown();
-			return ret;
+			final AColGroup[] ret = new AColGroup[nGroups];
+
+			for(int i = 0; i < skip; i++)
+				tasks.add(new CompressTask(groups, ret, i, skip));
+
+			for(Future<Object> t : pool.invokeAll(tasks))
+				t.get();
+
+			return Arrays.asList(ret);
 		}
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("Failed compression ", e);
 		}
 	}
 
-	private static List<List<CompressedSizeInfoColGroup>> makeGroups(List<CompressedSizeInfoColGroup> groups, int k) {
-		// sort by number of distinct items
-		Collections.sort(groups, Comparator.comparing(g -> -g.getNumVals()));
-		List<List<CompressedSizeInfoColGroup>> ret = new ArrayList<>();
-		for(int i = 0; i < k; i++)
-			ret.add(new ArrayList<>());
-
-		for(int i = 0; i < groups.size(); i++)
-			ret.get(i % k).add(groups.get(i));
-
-		return ret;
-	}
-
-	static class CompressTask implements Callable<Collection<AColGroup>> {
-		private final MatrixBlock _in;
-		private final List<CompressedSizeInfoColGroup> _groups;
-		private final CompressionSettings _compSettings;
-		private final int _k;
-
-		protected CompressTask(MatrixBlock in, List<CompressedSizeInfoColGroup> groups, CompressionSettings compSettings,
-			int k) {
-			_in = in;
-			_groups = groups;
-			_compSettings = compSettings;
-			_k = k;
-		}
-
-		@Override
-		public Collection<AColGroup> call() {
-			ArrayList<AColGroup> res = new ArrayList<>();
-			Tmp tmpMap = new Tmp();
-			for(CompressedSizeInfoColGroup g : _groups)
-				res.addAll(compressColGroup(_in, _compSettings, tmpMap, g, _k));
-			return res;
-		}
-	}
-
-	private static Collection<AColGroup> compressColGroup(MatrixBlock in, CompressionSettings compSettings, Tmp tmpMap,
-		CompressedSizeInfoColGroup cg, int k) {
-		final int inCols = compSettings.transposed ? in.getNumRows() : in.getNumColumns();
-		if(LOG.isDebugEnabled() && inCols < 1000) {
-			Timing time = new Timing(true);
-			time.start();
-			Collection<AColGroup> ret = compressColGroupExecute(in, compSettings, tmpMap, cg, k);
-			LOG.debug(String.format("time[ms]: %10.2f %25s %s cols:%s", time.stop(), getColumnTypesString(ret),
-				getEstimateVsActualSize(ret, cg), Arrays.toString(cg.getColumns())));
+	protected AColGroup compressColGroup(CompressedSizeInfoColGroup cg) {
+		if(LOG.isDebugEnabled() && nCol < 1000 && ce != null) {
+			final Timing time = new Timing(true);
+			final AColGroup ret = compressColGroupAllSteps(cg);
+			logEstVsActual(time.stop(), ret, cg);
 			return ret;
 		}
-		return compressColGroupExecute(in, compSettings, tmpMap, cg, k);
+		return compressColGroupAllSteps(cg);
 	}
 
-	private static String getColumnTypesString(Collection<AColGroup> ret) {
-		if(ret.size() == 1)
-			return ret.iterator().next().getClass().getSimpleName().toString();
-		else {
+	private void logEstVsActual(double time, AColGroup act, CompressedSizeInfoColGroup est) {
+		final double estC = ce.getCost(est);
+		final double actC = ce.getCost(act, nRow);
+		final String retType = act.getClass().getSimpleName().toString();
+		final String cols = Arrays.toString(est.getColumns());
+		final String wanted = est.getBestCompressionType().toString();
+		if(estC < actC * 0.75) {
 			StringBuilder sb = new StringBuilder();
-			for(AColGroup g : ret) {
-				sb.append(g.getClass().getSimpleName().toString());
-				sb.append(" ");
-			}
-			return sb.toString();
+			sb.append("The estimate cost is significantly off : distinct: ");
+			sb.append(est.getNumVals());
+			sb.append(" ");
+			sb.append(act.getNumValues());
+			sb.append(" estimate offsets:");
+			sb.append(est.getNumOffs());
+			if(act instanceof ColGroupSDCZeros)
+				sb.append("  act:" + ((ColGroupSDCZeros) act).getIndexesSize());
+			String warning = sb.toString();
+
+			LOG.debug(String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f cols:%s wanted:%s\n%s", time, retType,
+				estC, actC, cols, wanted, warning));
 		}
-	}
-
-	private static String getEstimateVsActualSize(Collection<AColGroup> ret, CompressedSizeInfoColGroup cg) {
-		long est = cg.getMinSize();
-		long act = ret.stream().mapToLong(a -> a.estimateInMemorySize()).sum();
-		return String.format("[B] %10d -- %10d", est, act);
-	}
-
-	private static Collection<AColGroup> compressColGroupExecute(MatrixBlock in, CompressionSettings compSettings,
-		Tmp tmpMap, CompressedSizeInfoColGroup cg, int k) {
-		final int[] colIndexes = cg.getColumns();
-		if(in.isInSparseFormat() && compSettings.transposed) {
-			final SparseBlock sb = in.getSparseBlock();
-			for(int col : colIndexes)
-				if(sb.isEmpty(col))
-					return compressColGroupAndExtractEmptyColumns(in, compSettings, tmpMap, cg, k);
-			return Collections.singletonList(compressColGroupForced(in, compSettings, tmpMap, cg, k));
-		}
-		else
-			return Collections.singletonList(compressColGroupForced(in, compSettings, tmpMap, cg, k));
-	}
-
-	private static Collection<AColGroup> compressColGroupAndExtractEmptyColumns(MatrixBlock in,
-		CompressionSettings compSettings, Tmp tmpMap, CompressedSizeInfoColGroup cg, int k) {
-		final IntArrayList e = new IntArrayList();
-		final IntArrayList v = new IntArrayList();
-		final SparseBlock sb = in.getSparseBlock();
-		final int[] colIndexes = cg.getColumns();
-		for(int col : colIndexes) {
-			if(sb.isEmpty(col))
-				e.appendValue(col);
-			else
-				v.appendValue(col);
-		}
-		AColGroup empty = new ColGroupEmpty(e.extractValues(true));
-		if(v.size() > 0) {
-			AColGroup colGroup = compressColGroupForced(in, compSettings, tmpMap, cg, v.extractValues(true), k);
-			return Arrays.asList(empty, colGroup);
-		}
-		else
-			return Collections.singletonList(empty);
-	}
-
-	private static AColGroup compressColGroupForced(MatrixBlock in, CompressionSettings compSettings, Tmp tmpMap,
-		CompressedSizeInfoColGroup cg, int k) {
-		final int[] colIndexes = cg.getColumns();
-		return compressColGroupForced(in, compSettings, tmpMap, cg, colIndexes, k);
-	}
-
-	private static AColGroup compressColGroupForced(MatrixBlock in, CompressionSettings cs, Tmp tmp,
-		CompressedSizeInfoColGroup cg, int[] colIndexes, int k) {
-		final int nrUniqueEstimate = cg.getNumVals();
-		CompressionType estimatedBestCompressionType = cg.getBestCompressionType();
-
-		if(estimatedBestCompressionType == CompressionType.UNCOMPRESSED) // don't construct mapping if uncompressed
-			return new ColGroupUncompressed(colIndexes, in, cs.transposed);
-		else if(estimatedBestCompressionType == CompressionType.SDC && colIndexes.length == 1 && in.isInSparseFormat() &&
-			cs.transposed) // Leverage the Sparse matrix, to construct SDC group
-			return compressSDCFromSparseTransposedBlock(in, colIndexes, in.getNumColumns(),
-				tmp.getDblCountMap(nrUniqueEstimate), cs);
-		else if(colIndexes.length > 1 && estimatedBestCompressionType == CompressionType.DDC)
-			return directCompressDDC(colIndexes, in, cs, cg, k);
 		else {
+			LOG.debug(String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f cols:%s wanted:%s", time, retType,
+				estC, actC, cols, wanted));
+		}
+
+	}
+
+	private AColGroup compressColGroupAllSteps(CompressedSizeInfoColGroup cg) {
+		AColGroup g = compressColGroupInitial(cg);
+		final int nCol = g.getColIndices().length;
+		if(ce != null && ce.shouldSparsify() && nCol >= 4 && isSparsifyingColGroup(g)) {
+
+			double[] constV = null;
+			if(g instanceof ColGroupSDC) {
+				constV = ((ColGroupSDC) g)._defaultTuple;
+				g = ((ColGroupSDC) g).subtractDefaultTuple();
+			}
+
+			final AColGroupValue clg = (AColGroupValue) g;
+			final int nVal = g.getNumValues();
+			final MatrixBlockDictionary mbd = clg._dict.getMBDict(nCol);
+			final MatrixBlock mb = mbd.getMatrixBlock();
+
+			if(mb == null || mb.isEmpty())
+				return g;
+
+			final int[] nnz = LibMatrixReorg.countNnzPerColumn(mb);
+
+			double[] ref = new double[nCol];
+			boolean contains = false;
+			for(int i = 0; i < nCol; i++) {
+				if(nnz[i] > nVal / 2) {
+					contains = true;
+					ref[i] = 1;
+				}
+			}
+			if(contains)
+				getMostCommonValues(mb, ref, nnz);
+			contains = false;
+			for(int i = 0; i < nCol; i++)
+				if(ref[i] != 0) {
+					contains = true;
+					break;
+				}
+
+			if(contains) {
+				// minus overlap on dictionary
+				MatrixBlockDictionary mDict = mbd.binOpRight(new BinaryOperator(Minus.getMinusFnObject()), ref);
+				if(constV != null)
+					for(int i = 0; i < nCol; i++)
+						ref[i] += constV[i]; // plus reference on overlap
+
+				LOG.debug(
+					String.format("Sparsifying colgroup before %1.4f now %1.4f", mb.getSparsity(), mDict.getSparsity()));
+				if(g instanceof ColGroupDDC)
+					g = ColGroupDDCFOR.create(g.getColIndices(), nRow, mDict, ((ColGroupDDC) clg)._data,
+						clg.getCachedCounts(), ref);
+				else if(g instanceof ColGroupSDCZeros) {
+					g = ColGroupSDCFOR.create(g.getColIndices(), nRow, mDict, ((ColGroupSDCZeros) clg)._indexes,
+						((ColGroupSDCZeros) clg)._data, clg.getCachedCounts(), ref);
+
+				}
+			}
+			else {
+				if(g instanceof ColGroupSDCZeros)
+					g = ColGroupSDCFOR.create(g.getColIndices(), nRow, mbd, ((ColGroupSDCZeros) clg)._indexes,
+						((ColGroupSDCZeros) clg)._data, clg.getCachedCounts(), ref);
+			}
+
+		}
+		return g;
+	}
+
+	private void getMostCommonValues(MatrixBlock mb, double[] ref, int[] nnzCols) {
+		// take each column marked by ref and find most common value in that and assign it to ref.
+		// if the columns are
+
+		DoubleCountHashMap[] counters = new DoubleCountHashMap[ref.length];
+
+		if(mb.isInSparseFormat()) {
+			// initialize the counters with zero count.
+			for(int i = 0; i < ref.length; i++) {
+				if(ref[i] != 0) {
+					counters[i] = new DoubleCountHashMap(8);
+					counters[i].increment(0, nnzCols[i]);
+				}
+			}
+			final SparseBlock sb = mb.getSparseBlock();
+			for(int r = 0; r < mb.getNumRows(); r++) {
+				if(sb.isEmpty(r))
+					continue;
+				final int apos = sb.pos(r);
+				final int alen = sb.size(r) + apos;
+				final int[] aix = sb.indexes(r);
+				final double[] aval = sb.values(r);
+				for(int j = apos; j < alen; j++)
+					if(ref[aix[j]] != 0)
+						counters[aix[j]].increment(aval[j]);
+			}
+		}
+		else {
+			for(int i = 0; i < ref.length; i++)
+				if(ref[i] != 0)
+					counters[i] = new DoubleCountHashMap(8);
+			double[] dv = mb.getDenseBlockValues();
+			final int nCol = ref.length;
+			for(int r = 0; r < mb.getNumRows(); r++) {
+				final int rOff = r * nCol;
+				for(int c = 0; c < nCol; c++)
+					if(ref[c] != 0)
+						counters[c].increment(dv[rOff + c]);
+
+			}
+		}
+		for(int i = 0; i < ref.length; i++)
+			if(ref[i] != 0)
+				ref[i] = counters[i].getMostFrequent();
+	}
+
+	private boolean isSparsifyingColGroup(AColGroup g) {
+		return g instanceof ColGroupDDC || g instanceof ColGroupSDC;
+	}
+
+	private AColGroup compressColGroupInitial(CompressedSizeInfoColGroup cg) {
+		final int[] colIndexes = cg.getColumns();
+		final int nrUniqueEstimate = cg.getNumVals();
+		CompressionType ct = cg.getBestCompressionType();
+
+		if(ct == CompressionType.EMPTY && !cs.transposed)
+			return new ColGroupEmpty(colIndexes);
+		else if(ct == CompressionType.UNCOMPRESSED) // don't construct mapping if uncompressed
+			return ColGroupUncompressed.create(colIndexes, in, cs.transposed);
+		else if((ct == CompressionType.SDC || ct == CompressionType.CONST) && in.isInSparseFormat() && cs.transposed &&
+			((colIndexes.length > 1 && cg.getNumOffs() < 0.3 * nRow) || colIndexes.length == 1))
+			return compressSDCFromSparseTransposedBlock(colIndexes, nrUniqueEstimate, cg.getTupleSparsity());
+		else if(ct == CompressionType.DDC)
+			return directCompressDDC(colIndexes, cg);
+		else {
+			LOG.debug("Default slow path: " + ct + "  " + cs.transposed + " " + Arrays.toString(colIndexes));
 			final int numRows = cs.transposed ? in.getNumColumns() : in.getNumRows();
 			final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, cs.transposed, nrUniqueEstimate,
 				cs.sortTuplesByFrequency);
-			return compress(colIndexes, numRows, ubm, estimatedBestCompressionType, cs, cg.getTupleSparsity());
+			return compress(colIndexes, numRows, ubm, ct, cs, cg.getTupleSparsity());
 		}
 	}
 
@@ -347,8 +378,10 @@ public class ColGroupFactory {
 
 		final IntArrayList[] of = ubm.getOffsetList();
 		if(of.length == 1 && of[0].size() == rlen) // If this always constant
-			return new ColGroupConst(colIndexes, DictionaryFactory.create(ubm));
+			return ColGroupConst.create(colIndexes, DictionaryFactory.create(ubm));
 
+		// only consider sparse dictionaries if cocoded more than 4 columns.
+		tupleSparsity = colIndexes.length > 4 ? tupleSparsity : 1.0;
 		switch(compType) {
 			case DDC:
 				return compressDDC(colIndexes, rlen, ubm, cs, tupleSparsity);
@@ -356,41 +389,51 @@ public class ColGroupFactory {
 				return compressRLE(colIndexes, rlen, ubm, cs, tupleSparsity);
 			case OLE:
 				return compressOLE(colIndexes, rlen, ubm, cs, tupleSparsity);
+			case CONST: // in case somehow one requested const, but it was not const fall back to SDC.
+				LOG.warn("Requested const on non constant column, fallback to SDC");
+			case EMPTY:
 			case SDC:
 				return compressSDC(colIndexes, rlen, ubm, cs, tupleSparsity);
-			// CONST and EMPTY are handled above switch statement.
-			// UNCOMPRESSED is handled before extraction of ubm
 			default:
-				throw new DMLCompressionException("Not implemented compression of " + compType + "in factory.");
+				throw new DMLCompressionException("Not implemented compression of " + compType + " in factory.");
 		}
 	}
 
-	private static AColGroup directCompressDDC(int[] colIndexes, MatrixBlock raw, CompressionSettings cs,
-		CompressedSizeInfoColGroup cg, int k) {
-		final int rlen = cs.transposed ? raw.getNumColumns() : raw.getNumRows();
-		// use a Map that is at least char size.
-		final int nVal = Math.max(cg.getNumVals(), 257);
-		return directCompressDDC(colIndexes, raw, cs, cg, MapToFactory.create(rlen, nVal), rlen, k);
+	private AColGroup directCompressDDC(int[] colIndexes, CompressedSizeInfoColGroup cg) {
+		if(colIndexes.length > 1)
+			return directCompressDDCMultiCol(colIndexes, cg);
+		else
+			return directCompressDDCSingleCol(colIndexes, cg);
 	}
 
-	private static AColGroup directCompressDDC(int[] colIndexes, MatrixBlock raw, CompressionSettings cs,
-		CompressedSizeInfoColGroup cg, AMapToData data, int rlen, int k) {
-		final int fill = data.getUpperBoundValue();
-		data.fill(fill);
+	private AColGroup directCompressDDCSingleCol(int[] colIndexes, CompressedSizeInfoColGroup cg) {
+		final int col = colIndexes[0];
+		final AMapToData d = MapToFactory.create(nRow, Math.max(Math.min(cg.getNumOffs() + 1, nRow), 126));
+		final DoubleCountHashMap map = new DoubleCountHashMap(cg.getNumVals());
 
-		DblArrayCountHashMap map = new DblArrayCountHashMap(cg.getNumVals());
-
-		if(rlen < CompressionSettings.PAR_DDC_THRESHOLD || k == 1)
-			readToMapDDC(colIndexes, raw, map, cs, data, 0, rlen);
+		// unlike multi-col no special handling of zero entries are needed.
+		if(cs.transposed)
+			readToMapDDCTransposed(col, map, d);
 		else
-			parallelReadToMapDDC(colIndexes, raw, map, cs, data, rlen, k);
+			readToMapDDC(col, map, d);
 
-		boolean extra = false;
-		for(int i = 0; i < rlen; i++)
-			if(data.getIndex(i) == fill) {
-				extra = true;
-				break;
-			}
+		ADictionary dict = DictionaryFactory.create(map);
+		final int nUnique = map.size();
+		final AMapToData resData = MapToFactory.resize(d, nUnique);
+		return ColGroupDDC.create(colIndexes, nRow, dict, resData, null);
+	}
+
+	private AColGroup directCompressDDCMultiCol(int[] colIndexes, CompressedSizeInfoColGroup cg) {
+		final AMapToData d = MapToFactory.create(nRow, Math.max(Math.min(cg.getNumOffs() + 1, nRow), 126));
+		final int fill = d.getUpperBoundValue();
+		d.fill(fill);
+
+		final DblArrayCountHashMap map = new DblArrayCountHashMap(cg.getNumVals(), colIndexes.length);
+		boolean extra;
+		if(nRow < CompressionSettings.PAR_DDC_THRESHOLD || k == 1)
+			extra = readToMapDDC(colIndexes, map, d, 0, nRow, fill);
+		else
+			extra = parallelReadToMapDDC(colIndexes, map, d, nRow, fill, k);
 
 		if(map.size() == 0)
 			// If the column was empty.
@@ -398,74 +441,134 @@ public class ColGroupFactory {
 			// not transposed column and the estimator says use DDC.
 			return new ColGroupEmpty(colIndexes);
 
-		ADictionary dict = DictionaryFactory.create(map, colIndexes.length, extra);
-		if(extra)
-			data.replace(fill, map.size());
+		ADictionary dict = DictionaryFactory.create(map, colIndexes.length, extra, cg.getTupleSparsity());
+		if(dict == null)
+			// Again highly unlikely but possible.
+			return new ColGroupEmpty(colIndexes);
+		try{
+			if(extra)
+				d.replace(fill, map.size());
+	
+			final int nUnique = map.size() + (extra ? 1 : 0);
+	
+			final AMapToData resData = MapToFactory.resize(d, nUnique);
+			return ColGroupDDC.create(colIndexes, nRow, dict, resData, null);
 
-		AMapToData resData = MapToFactory.resize(data, map.size() + (extra ? 1 : 0));
-		ColGroupDDC res = new ColGroupDDC(colIndexes, rlen, dict, resData, null);
-		return res;
-	}
-
-	private static void readToMapDDC(final int[] colIndexes, final MatrixBlock raw, final DblArrayCountHashMap map,
-		final CompressionSettings cs, final AMapToData data, final int rl, final int ru) {
-		ReaderColumnSelection reader = ReaderColumnSelection.createReader(raw, colIndexes, cs.transposed, rl, ru);
-		DblArray cellVals = null;
-		while((cellVals = reader.nextRow()) != null) {
-			final int id = map.increment(cellVals);
-			final int row = reader.getCurrentRowIndex();
-			data.set(row, id);
+		}
+		catch(Exception e ){
+			ReaderColumnSelection reader = ReaderColumnSelection.createReader(in, colIndexes, cs.transposed, 0, nRow);
+			throw new DMLCompressionException("direct compress DDC Multi col failed extra:" + extra + " with reader type:" + reader.getClass().getSimpleName(), e);
 		}
 	}
 
-	private static void parallelReadToMapDDC(final int[] colIndexes, final MatrixBlock raw,
-		final DblArrayCountHashMap map, final CompressionSettings cs, final AMapToData data, final int rlen,
-		final int k) {
+	private boolean readToMapDDC(int[] colIndexes, DblArrayCountHashMap map, AMapToData data, int rl, int ru, int fill) {
+		ReaderColumnSelection reader = ReaderColumnSelection.createReader(in, colIndexes, cs.transposed, rl, ru);
+		DblArray cellVals = reader.nextRow();
+		boolean extra = false;
+		int r = rl;
+		while(r < ru && cellVals != null) {
+			final int row = reader.getCurrentRowIndex();
+			if(row == r) {
+				final int id = map.increment(cellVals);
+				data.set(row, id);
+				cellVals = reader.nextRow();
+				r++;
+			}
+			else {
+				r = row;
+				extra = true;
+			}
+		}
+
+		if(r < ru)
+			extra = true;
+
+		return extra;
+	}
+
+	private void readToMapDDC(int col, DoubleCountHashMap map, AMapToData data) {
+		if(in.isInSparseFormat()) {
+			// not good but could happen
+			final SparseBlock sb = in.getSparseBlock();
+			for(int r = 0; r < nRow; r++) {
+				if(sb.isEmpty(r))
+					data.set(r, map.increment(0));
+				else {
+					final int apos = sb.pos(r);
+					final int alen = sb.size(r) + apos;
+					final int[] aix = sb.indexes(r);
+					final int idx = Arrays.binarySearch(aix, apos, alen, col);
+					if(idx < 0)
+						data.set(r, map.increment(0));
+					else
+						data.set(r, map.increment(sb.values(r)[idx]));
+				}
+			}
+		}
+		else if(in.getDenseBlock().isContiguous()) {
+			final double[] dv = in.getDenseBlockValues();
+			int off = col;
+			for(int r = 0; r < nRow; r++, off += nCol) {
+				final int id = map.increment(dv[off]);
+				data.set(r, id);
+			}
+		}
+		else {
+			throw new NotImplementedException("");
+		}
+	}
+
+	private void readToMapDDCTransposed(int col, DoubleCountHashMap map, AMapToData data) {
+		if(in.isInSparseFormat()) {
+			// good
+			SparseBlock sb = in.getSparseBlock();
+			if(sb.isEmpty(col))
+				return;
+
+			final int apos = sb.pos(col);
+			final int alen = sb.size(col) + apos;
+			final int[] aix = sb.indexes(col);
+			final double[] aval = sb.values(col);
+			// count zeros
+			map.increment(0, nRow - apos - alen);
+			// insert all other counts
+			for(int j = apos; j < alen; j++) {
+				final int id = map.increment(aval[j]);
+				data.set(aix[j], id);
+			}
+		}
+		else if(in.getDenseBlock().isContiguous()) {
+			double[] dv = in.getDenseBlockValues();
+			int off = col * nRow;
+			for(int r = 0; r < nRow; r++, off++) {
+				final int id = map.increment(dv[off]);
+				data.set(r, id);
+			}
+		}
+		else {
+			throw new NotImplementedException("");
+		}
+	}
+
+	private boolean parallelReadToMapDDC(int[] colIndexes, DblArrayCountHashMap map, AMapToData data, int rlen, int fill,
+		int k) {
 
 		try {
-			final int blk = Math.max(rlen / colIndexes.length / k, 128000 / colIndexes.length);
-			ExecutorService pool = CommonThreadPool.get(Math.min(Math.max(rlen / blk, 1), k));
-			List<readToMapDDCTask> tasks = new ArrayList<>();
+			final int blk = Math.max(rlen / colIndexes.length / k, 64000 / colIndexes.length);
 
+			List<readToMapDDCTask> tasks = new ArrayList<>();
 			for(int i = 0; i < rlen; i += blk) {
 				int end = Math.min(rlen, i + blk);
-				tasks.add(new readToMapDDCTask(colIndexes, raw, map, cs, data, i, end));
+				tasks.add(new readToMapDDCTask(colIndexes, map, data, i, end, fill));
 			}
+			boolean extra = false;
+			for(Future<Boolean> t : pool.invokeAll(tasks))
+				extra |= t.get();
 
-			for(Future<Object> t : pool.invokeAll(tasks))
-				t.get();
-
-			pool.shutdown();
+			return extra;
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException("Failed to parallelize DDC compression");
-		}
-	}
-
-	static class readToMapDDCTask implements Callable<Object> {
-		private final int[] _colIndexes;
-		private final MatrixBlock _raw;
-		private final DblArrayCountHashMap _map;
-		private final CompressionSettings _cs;
-		private final AMapToData _data;
-		private final int _rl;
-		private final int _ru;
-
-		protected readToMapDDCTask(int[] colIndexes, MatrixBlock raw, DblArrayCountHashMap map, CompressionSettings cs,
-			AMapToData data, int rl, int ru) {
-			_colIndexes = colIndexes;
-			_raw = raw;
-			_map = map;
-			_cs = cs;
-			_data = data;
-			_rl = rl;
-			_ru = ru;
-		}
-
-		@Override
-		public Collection<AColGroup> call() {
-			readToMapDDC(_colIndexes, _raw, _map, _cs, _data, _rl, _ru);
-			return null;
 		}
 	}
 
@@ -487,53 +590,50 @@ public class ColGroupFactory {
 			}
 		}
 
-		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
-		if(ubm.getNumValues() == 1) {
-			if(numZeros >= largestOffset) {
-				final AOffset off = OffsetFactory.create(ubm.getOffsetList()[0].extractValues(true));
-				return new ColGroupSDCSingleZeros(colIndexes, rlen, dict, off, null);
-			}
-			else {
-				dict = DictionaryFactory.moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
-				return setupSingleValueSDCColGroup(colIndexes, rlen, ubm, dict);
-			}
+		// Currently not effecient allocation of the dictionary.
+		if(ubm.getNumValues() == 1 && numZeros >= largestOffset) {
+			ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
+			final AOffset off = OffsetFactory.createOffset(ubm.getOffsetList()[0].extractValues(true));
+			return ColGroupSDCSingleZeros.create(colIndexes, rlen, dict, off, null);
 		}
-		else if(numZeros >= largestOffset)
-			return setupMultiValueZeroColGroup(colIndexes, rlen, ubm, dict, cs);
-		else {
-			dict = DictionaryFactory.moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
-			return setupMultiValueColGroup(colIndexes, numZeros, rlen, ubm, largestIndex, dict, cs);
+		else if((ubm.getNumValues() == 2 && numZeros == 0) || (ubm.getNumValues() == 1 && numZeros < largestOffset)) {
+			double[] defaultTuple = new double[colIndexes.length];
+			ADictionary dict = DictionaryFactory.create(ubm, largestIndex, defaultTuple, tupleSparsity, numZeros > 0);
+			return compressSDCSingle(colIndexes, rlen, ubm, dict, defaultTuple);
 		}
+		else if(numZeros >= largestOffset) {
+			ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
+			return compressSDCZero(colIndexes, rlen, ubm, dict, cs);
+		}
+		else
+			return compressSDCNormal(colIndexes, numZeros, rlen, ubm, largestIndex, tupleSparsity, cs);
+
 	}
 
-	private static AColGroup setupMultiValueZeroColGroup(int[] colIndexes, int rlen, ABitmap ubm, ADictionary dict,
+	private static AColGroup compressSDCZero(int[] colIndexes, int rlen, ABitmap ubm, ADictionary dict,
 		CompressionSettings cs) {
 		IntArrayList[] offsets = ubm.getOffsetList();
 		AInsertionSorter s = InsertionSorterFactory.create(rlen, offsets, cs.sdcSortType);
-		AOffset indexes = OffsetFactory.create(s.getIndexes());
+		AOffset indexes = OffsetFactory.createOffset(s.getIndexes());
 		AMapToData data = s.getData();
-		int[] counts = new int[offsets.length + 1];
-		int sum = 0;
-		for(int i = 0; i < offsets.length; i++) {
-			counts[i] = offsets[i].size();
-			sum += counts[i];
-		}
-		counts[offsets.length] = rlen - sum;
-		AColGroupValue ret = new ColGroupSDCZeros(colIndexes, rlen, dict, indexes, data, counts);
-		return ret;
+		data = MapToFactory.resize(data, dict.getNumberOfValues(colIndexes.length));
+		return ColGroupSDCZeros.create(colIndexes, rlen, dict, indexes, data, null);
 	}
 
-	private static AColGroup setupMultiValueColGroup(int[] colIndexes, int numZeros, int rlen, ABitmap ubm,
-		int largestIndex, ADictionary dict, CompressionSettings cs) {
-		IntArrayList[] offsets = ubm.getOffsetList();
-		AInsertionSorter s = InsertionSorterFactory.createNegative(rlen, offsets, largestIndex, cs.sdcSortType);
-		AOffset indexes = OffsetFactory.create(s.getIndexes());
+	private static AColGroup compressSDCNormal(int[] colIndexes, int numZeros, int rlen, ABitmap ubm, int largestIndex,
+		double tupleSparsity, CompressionSettings cs) {
+		final double[] defaultTuple = new double[colIndexes.length];
+		final ADictionary dict = DictionaryFactory.create(ubm, largestIndex, defaultTuple, tupleSparsity, numZeros > 0);
+		AInsertionSorter s = InsertionSorterFactory.createNegative(rlen, ubm.getOffsetList(), largestIndex,
+			cs.sdcSortType);
+		AOffset indexes = OffsetFactory.createOffset(s.getIndexes());
 		AMapToData _data = s.getData();
-		AColGroupValue ret = new ColGroupSDC(colIndexes, rlen, dict, indexes, _data, null);
-		return ret;
+		_data = MapToFactory.resize(_data, dict.getNumberOfValues(colIndexes.length));
+		return ColGroupSDC.create(colIndexes, rlen, dict, defaultTuple, indexes, _data, null);
 	}
 
-	private static AColGroup setupSingleValueSDCColGroup(int[] colIndexes, int rlen, ABitmap ubm, ADictionary dict) {
+	private static AColGroup compressSDCSingle(int[] colIndexes, int rlen, ABitmap ubm, ADictionary dict,
+		double[] defaultTuple) {
 		IntArrayList inv = ubm.getOffsetsList(0);
 		int[] indexes = new int[rlen - inv.size()];
 		int p = 0;
@@ -548,9 +648,9 @@ public class ColGroupFactory {
 
 		while(v < rlen)
 			indexes[p++] = v++;
-		AOffset off = OffsetFactory.create(indexes);
+		AOffset off = OffsetFactory.createOffset(indexes);
 
-		return new ColGroupSDCSingle(colIndexes, rlen, dict, off, null);
+		return ColGroupSDCSingle.create(colIndexes, rlen, dict, defaultTuple, off, null);
 	}
 
 	private static AColGroup compressDDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,
@@ -558,7 +658,7 @@ public class ColGroupFactory {
 		boolean zeros = ubm.getNumOffsets() < rlen;
 		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity, zeros);
 		AMapToData data = MapToFactory.create(rlen, zeros, ubm.getOffsetList());
-		return new ColGroupDDC(colIndexes, rlen, dict, data, null);
+		return ColGroupDDC.create(colIndexes, rlen, dict, data, null);
 	}
 
 	private static AColGroup compressOLE(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,
@@ -568,15 +668,15 @@ public class ColGroupFactory {
 		ColGroupOLE ole = new ColGroupOLE(rlen);
 
 		final int numVals = ubm.getNumValues();
-		char[][] lbitmaps = new char[numVals][];
+		char[][] lBitMaps = new char[numVals][];
 		int totalLen = 0;
 		for(int i = 0; i < numVals; i++) {
-			lbitmaps[i] = ColGroupOLE.genOffsetBitmap(ubm.getOffsetsList(i).extractValues(), ubm.getNumOffsets(i));
-			totalLen += lbitmaps[i].length;
+			lBitMaps[i] = ColGroupOLE.genOffsetBitmap(ubm.getOffsetsList(i).extractValues(), ubm.getNumOffsets(i));
+			totalLen += lBitMaps[i].length;
 		}
 
 		// compact bitmaps to linearized representation
-		ole.createCompressedBitmaps(numVals, totalLen, lbitmaps);
+		ole.createCompressedBitmaps(numVals, totalLen, lBitMaps);
 		ole._dict = dict;
 		ole._zeros = ubm.getNumOffsets() < (long) rlen;
 		ole._colIndexes = colIndexes;
@@ -590,85 +690,211 @@ public class ColGroupFactory {
 		ColGroupRLE rle = new ColGroupRLE(rlen);
 		// compress the bitmaps
 		final int numVals = ubm.getNumValues();
-		char[][] lbitmaps = new char[numVals][];
+		char[][] lBitMaps = new char[numVals][];
 		int totalLen = 0;
 
 		for(int k = 0; k < numVals; k++) {
-			lbitmaps[k] = ColGroupRLE.genRLEBitmap(ubm.getOffsetsList(k).extractValues(), ubm.getNumOffsets(k));
-			totalLen += lbitmaps[k].length;
+			lBitMaps[k] = ColGroupRLE.genRLEBitmap(ubm.getOffsetsList(k).extractValues(), ubm.getNumOffsets(k));
+			totalLen += lBitMaps[k].length;
 		}
 		// compact bitmaps to linearized representation
-		rle.createCompressedBitmaps(numVals, totalLen, lbitmaps);
+		rle.createCompressedBitmaps(numVals, totalLen, lBitMaps);
 		rle._dict = dict;
 		rle._zeros = ubm.getNumOffsets() < (long) rlen;
 		rle._colIndexes = colIndexes;
 		return rle;
 	}
 
-	private static AColGroup compressSDCFromSparseTransposedBlock(MatrixBlock mb, int[] cols, int rlen,
-		DoubleCountHashMap map, CompressionSettings cs) {
+	private AColGroup compressSDCFromSparseTransposedBlock(int[] cols, int nrUniqueEstimate, double tupleSparsity) {
+		if(cols.length > 1)
+			return compressMultiColSDCFromSparseTransposedBlock(cols, nrUniqueEstimate, tupleSparsity);
+		else
+			return compressSingleColSDCFromSparseTransposedBlock(cols, nrUniqueEstimate);
+
+	}
+
+	private AColGroup compressMultiColSDCFromSparseTransposedBlock(int[] cols, int nrUniqueEstimate,
+		double tupleSparsity) {
+
+		HashSet<Integer> offsetsSet = new HashSet<>();
+
+		SparseBlock sb = in.getSparseBlock();
+
+		for(int i = 0; i < cols.length; i++) {
+			if(sb.isEmpty(cols[i]))
+				throw new DMLCompressionException("Empty columns should not be entering here");
+
+			int apos = sb.pos(cols[i]);
+			int alen = sb.size(cols[i]) + apos;
+			int[] aix = sb.indexes(cols[i]);
+			for(int j = apos; j < alen; j++)
+				offsetsSet.add(aix[j]);
+		}
+
+		int[] offsetsInt = offsetsSet.stream().mapToInt(Number::intValue).toArray();
+		Arrays.sort(offsetsInt);
+
+		MatrixBlock sub = new MatrixBlock(offsetsInt.length, cols.length, false);
+		sub.allocateDenseBlock();
+		sub.setNonZeros(offsetsInt.length * cols.length);
+		double[] subV = sub.getDenseBlockValues();
+
+		for(int i = 0; i < cols.length; i++) {
+			int apos = sb.pos(cols[i]);
+			int alen = sb.size(cols[i]) + apos;
+			int[] aix = sb.indexes(cols[i]);
+			double[] aval = sb.values(cols[i]);
+			int offsetsPos = 0;
+			for(int j = apos; j < alen; j++) {
+				while(offsetsInt[offsetsPos] < aix[j])
+					offsetsPos++;
+				if(offsetsInt[offsetsPos] == aix[j])
+					subV[offsetsPos * cols.length + i] = aval[j];
+			}
+		}
+
+		int[] subCols = new int[cols.length];
+		for(int i = 1; i < cols.length; i++)
+			subCols[i] = i;
+		ReaderColumnSelection reader = ReaderColumnSelection.createReader(sub, subCols, false);
+		final int mapStartSize = Math.min(nrUniqueEstimate, offsetsInt.length / 2);
+		DblArrayCountHashMap map = new DblArrayCountHashMap(mapStartSize, subCols.length);
+
+		DblArray cellVals = null;
+		AMapToData data = MapToFactory.create(offsetsInt.length, 257);
+
+		while((cellVals = reader.nextRow()) != null) {
+			final int row = reader.getCurrentRowIndex();
+			data.set(row, map.increment(cellVals));
+		}
+
+		ADictionary dict = DictionaryFactory.create(map, cols.length, false, tupleSparsity);
+		data = MapToFactory.resize(data, map.size());
+
+		AOffset offs = OffsetFactory.createOffset(offsetsInt);
+		return ColGroupSDCZeros.create(cols, in.getNumColumns(), dict, offs, data, null);
+	}
+
+	private AColGroup compressSingleColSDCFromSparseTransposedBlock(int[] cols, int nrUniqueEstimate) {
+
 		// This method should only be called if the cols argument is length 1.
-		final SparseBlock sb = mb.getSparseBlock();
+		final SparseBlock sb = in.getSparseBlock();
 		final int sbRow = cols[0];
 		final int apos = sb.pos(sbRow);
 		final int alen = sb.size(sbRow) + apos;
 		final double[] vals = sb.values(sbRow);
+		final DoubleCountHashMap map = new DoubleCountHashMap(nrUniqueEstimate);
 
 		// count distinct items frequencies
 		for(int j = apos; j < alen; j++)
 			map.increment(vals[j]);
 
-		List<DCounts> entries = map.extractValues();
-		Collections.sort(entries, Comparator.comparing(x -> -x.count));
+		DCounts[] entries = map.extractValues();
+		Arrays.sort(entries, Comparator.comparing(x -> -x.count));
 
-		if(entries.get(0).count < rlen - sb.size(sbRow)) {
+		if(entries[0].count < nRow - sb.size(sbRow)) {
 			// If the zero is the default value.
-			final int[] counts = new int[entries.size() + 1];
-			final double[] dict = new double[entries.size()];
-			int sum = 0;
-			for(int i = 0; i < entries.size(); i++) {
-				final DCounts x = entries.get(i);
+			final int[] counts = new int[entries.length];
+			final double[] dict = new double[entries.length];
+			for(int i = 0; i < entries.length; i++) {
+				final DCounts x = entries[i];
 				counts[i] = x.count;
-				sum += x.count;
 				dict[i] = x.key;
 				x.count = i;
 			}
 
-			counts[entries.size()] = rlen - sum;
-			final AOffset offsets = OffsetFactory.create(sb.indexes(sbRow), apos, alen);
-			if(entries.size() <= 1)
-				return new ColGroupSDCSingleZeros(cols, rlen, new Dictionary(dict), offsets, counts);
+			final AOffset offsets = OffsetFactory.createOffset(sb.indexes(sbRow), apos, alen);
+			if(entries.length <= 1)
+				return ColGroupSDCSingleZeros.create(cols, nRow, new Dictionary(dict), offsets, counts);
 			else {
-				final AMapToData mapToData = MapToFactory.create((alen - apos), entries.size());
+				final AMapToData mapToData = MapToFactory.create((alen - apos), entries.length);
 				for(int j = apos; j < alen; j++)
 					mapToData.set(j - apos, map.get(vals[j]));
-				return new ColGroupSDCZeros(cols, rlen, new Dictionary(dict), offsets, mapToData, counts);
+				return ColGroupSDCZeros.create(cols, nRow, new Dictionary(dict), offsets, mapToData, counts);
 			}
 		}
+		else if(entries.length == 1) {
+			// SDCSingle and we know all values are x or 0
+			final int nonZeros = nRow - entries[0].count;
+			final double x = entries[0].key;
+			final double[] defaultTuple = new double[] {x};
+			final ADictionary zeroDict = new Dictionary(new double[] {0});
+			final int[] counts = new int[] {nonZeros};
+			final int[] notZeroOffsets = new int[nonZeros];
+			final int[] aix = sb.indexes(sbRow);
+			int i = 0;
+			int r = 0;
+			for(int j = apos; r < aix[alen - 1]; r++) {
+				if(r == aix[j])
+					j++;
+				else
+					notZeroOffsets[i++] = r;
+			}
+			r++;
+
+			for(; r < nRow; r++, i++)
+				notZeroOffsets[i] = r;
+
+			final AOffset offsets = OffsetFactory.createOffset(notZeroOffsets);
+
+			return ColGroupSDCSingle.create(cols, nRow, zeroDict, defaultTuple, offsets, counts);
+		}
 		else {
-			final ABitmap ubm = BitmapEncoder.extractBitmap(cols, mb, true, entries.size(), true);
+			final ABitmap ubm = BitmapEncoder.extractBitmap(cols, in, true, entries.length, true);
 			// zero is not the default value fall back to the standard compression path.
-			return compressSDC(cols, rlen, ubm, cs, 1.0);
+			return compressSDC(cols, nRow, ubm, cs, 1.0);
 		}
 	}
 
-	/**
-	 * Temp reuse object, to contain intermediates for compressing column groups that can be used by the same thread
-	 * again for subsequent compressions.
-	 */
-	static class Tmp {
-		private DoubleCountHashMap dblCountMap;
+	private class CompressTask implements Callable<Object> {
 
-		protected Tmp() {
-			dblCountMap = null;
+		private final List<CompressedSizeInfoColGroup> _groups;
+		private final AColGroup[] _ret;
+		private final int _off;
+		private final int _step;
+
+		protected CompressTask(List<CompressedSizeInfoColGroup> groups, AColGroup[] ret, int off, int step) {
+			_groups = groups;
+			_ret = ret;
+			_off = off;
+			_step = step;
 		}
 
-		protected DoubleCountHashMap getDblCountMap(int size) {
-			if(dblCountMap != null)
-				dblCountMap.reset(size);
-			else
-				dblCountMap = new DoubleCountHashMap(size);
-			return dblCountMap;
+		@Override
+		public Object call() {
+			try {
+				for(int i = _off; i < _groups.size(); i += _step)
+					_ret[i] = compressColGroup(_groups.get(i));
+				return null;
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				throw e;
+			}
+		}
+	}
+
+	private class readToMapDDCTask implements Callable<Boolean> {
+		private final int[] _colIndexes;
+		private final DblArrayCountHashMap _map;
+		private final AMapToData _data;
+		private final int _rl;
+		private final int _ru;
+		private final int _fill;
+
+		protected readToMapDDCTask(int[] colIndexes, DblArrayCountHashMap map, AMapToData data, int rl, int ru,
+			int fill) {
+			_colIndexes = colIndexes;
+			_map = map;
+			_data = data;
+			_rl = rl;
+			_ru = ru;
+			_fill = fill;
+		}
+
+		@Override
+		public Boolean call() {
+			return Boolean.valueOf(readToMapDDC(_colIndexes, _map, _data, _rl, _ru, _fill));
 		}
 	}
 }

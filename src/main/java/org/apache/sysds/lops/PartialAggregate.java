@@ -217,7 +217,7 @@ public class PartialAggregate extends Lop
 	}
 
 	/**
-	 * Instruction generation for for CP and Spark
+	 * Instruction generation for CP and Spark
 	 */
 	@Override
 	public String getInstructions(String input1, String output) 
@@ -348,8 +348,11 @@ public class PartialAggregate extends Lop
 			}
 			
 			case COUNT_DISTINCT_APPROX: {
-				if(dir == Direction.RowCol )
-					return "uacdap";
+				switch (dir) {
+					case RowCol: return "uacdap";
+					case Row: return "uacdapr";
+					case Col: return "uacdapc";
+				}
 				break;
 			}
 		}

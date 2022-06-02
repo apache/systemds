@@ -19,36 +19,35 @@
 #
 #-------------------------------------------------------------
 
-# ----------------------------------------------------------------------------
+# Builtin function that computes the MatrixProfile of a time series efficiently
+# using the SCRIMP++ algorithm.
+#
 # References:
 # Yan Zhu et al.. 2018.
 #   Matrix Profile XI: SCRIMP++: Time Series Motif Discovery at Interactive Speeds.
 #   2018 IEEE International Conference on Data Mining (ICDM), 2018, pp. 837-846.
 #   DOI: 10.1109/ICDM.2018.00099.
 #   https://www.cs.ucr.edu/~eamonn/SCRIMP_ICDM_camera_ready_updated.pdf
-# ----------------------------------------------------------------------------
-
-# Builtin function that computes the MatrixProfile of a time series efficiently
-# using the SCRIMP++ algorithm. 
 #
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
-# NAME                              TYPE      DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# ts                                Matrix    ---      Time series to profile
-# window_size                       Integer   4        Sliding window size
-# sample_percent                    Double    1.0      Degree of approximation 
-#                                                      between zero and one (1 
-#                                                      computes the exact solution)
-# is_verbose                        Boolean   False    Print debug information
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                     TYPE              DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# ts                       Matrix[Double]    ---      Time series to profile
+# window_size              Integer           4        Sliding window size
+# sample_percent           Double            1.0      Degree of approximation
+#                                                     between zero and one (1
+#                                                     computes the exact solution)
+# is_verbose               Boolean           False    Print debug information
+# ----------------------------------------------------------------------------------------------------------------------
 #
-#
-# RETURN VALUES
-# ----------------------------------------------------------------------------
-# NAME                              TYPE      DEFAULT  MEANING
-# profile                           Matrix    ---      The computed matrix profile
-# profile_index                     Matrix    ---      Indices of least distances
-
+# OUTPUT
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                    TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# profile                 Matrix[Double]            The computed matrix profile
+# profile_index           Matrix[Double]            Indices of least distances
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_matrixProfile = function(Matrix[Double] ts, Integer window_size=4, Double sample_percent=1.0, Boolean is_verbose=FALSE)
   return(Matrix[Double] profile, Matrix[Double] profile_index)

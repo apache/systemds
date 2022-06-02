@@ -19,68 +19,70 @@
 #
 #-------------------------------------------------------------
 
-
+# The stratstats.dml script computes common bivariate statistics, such as correlation, slope, and their p-value,
+# in parallel for many pairs of input variables in the presence of a confounding categorical variable.
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME  TYPE   DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# X     Double  ---     Matrix X that has all 1-st covariates
-# Y     Double  " "     Matrix Y that has all 2-nd covariates
-#                       the default value " " means "use X in place of Y"
-# S     Double  " "     Matrix S that has the stratum column
-#                       the default value " " means "use X in place of S"
-# Xcid  Double  " "     1-st covariate X-column indices
-#                       the default value " " means "use columns 1 : ncol(X)"
-# Ycid  Double  " "     2-nd covariate Y-column indices
-#                       the default value " " means "use columns 1 : ncol(Y)"
-# Scid  Int      1      Column index of the stratum column in S
-# ---------------------------------------------------------------------------------------------
- 
-
-# OUTPUT MATRIX:
-# ---------------------------------------------------------------------------------------------
-# OutMtx          Double   ---     Output matrix, one row per each distinct pair
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME   TYPE           DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X     Matrix[Double]  ---     Matrix X that has all 1-st covariates
+# Y     Matrix[Double]  empty   Matrix Y that has all 2-nd covariates
+#                               the default value empty means "use X in place of Y"
+# S     Matrix[Double]  empty   Matrix S that has the stratum column
+#                               the default value empty means "use X in place of S"
+# Xcid  Matrix[Double]  empty   1-st covariate X-column indices
+#                               the default value empty means "use columns 1 : ncol(X)"
+# Ycid  Matrix[Double]  empty   2-nd covariate Y-column indices
+#                               the default value empty means "use columns 1 : ncol(Y)"
+# Scid  Int             1       Column index of the stratum column in S
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# OutMtx     Matrix[Double]        Output matrix, one row per each distinct pair
 #                                  (1st covariante, 2nd covariante)
 #                                  40 columns containing the following information:
-#                 Col 01: 1st covariate X-column number
-#                 Col 02: 1st covariate global presence count
-#                 Col 03: 1st covariate global mean
-#                 Col 04: 1st covariate global standard deviation
-#                 Col 05: 1st covariate stratified standard deviation
-#                 Col 06: R-squared, 1st covariate vs. strata
-#                 Col 07: adjusted R-squared, 1st covariate vs. strata
-#                 Col 08: P-value, 1st covariate vs. strata
-#                 Col 09-10: Reserved
-#                 Col 11: 2nd covariate Y-column number
-#                 Col 12: 2nd covariate global presence count
-#                 Col 13: 2nd covariate global mean
-#                 Col 14: 2nd covariate global standard deviation
-#                 Col 15: 2nd covariate stratified standard deviation
-#                 Col 16: R-squared, 2nd covariate vs. strata
-#                 Col 17: adjusted R-squared, 2nd covariate vs. strata
-#                 Col 18: P-value, 2nd covariate vs. strata
-#                 Col 19-20: Reserved
-#                 Col 21: Global 1st & 2nd covariate presence count
-#                 Col 22: Global regression slope (2nd vs. 1st covariate)
-#                 Col 23: Global regression slope standard deviation
-#                 Col 24: Global correlation = +/- sqrt(R-squared)
-#                 Col 25: Global residual standard deviation
-#                 Col 26: Global R-squared
-#                 Col 27: Global adjusted R-squared
-#                 Col 28: Global P-value for hypothesis "slope = 0"
-#                 Col 29-30: Reserved
-#                 Col 31: Stratified 1st & 2nd covariate presence count
-#                 Col 32: Stratified regression slope (2nd vs. 1st covariate)
-#                 Col 33: Stratified regression slope standard deviation
-#                 Col 34: Stratified correlation = +/- sqrt(R-squared)
-#                 Col 35: Stratified residual standard deviation
-#                 Col 36: Stratified R-squared
-#                 Col 37: Stratified adjusted R-squared
-#                 Col 38: Stratified P-value for hypothesis "slope = 0"
-#                 Col 39: Number of strata with at least two counted points
-#                 Col 40: Reserved
-# ---------------------------------------------------------------------------------------------
-
+#                                  Col 01: 1st covariate X-column number
+#                                  Col 02: 1st covariate global presence count
+#                                  Col 03: 1st covariate global mean
+#                                  Col 04: 1st covariate global standard deviation
+#                                  Col 05: 1st covariate stratified standard deviation
+#                                  Col 06: R-squared, 1st covariate vs. strata
+#                                  Col 07: adjusted R-squared, 1st covariate vs. strata
+#                                  Col 08: P-value, 1st covariate vs. strata
+#                                  Col 09-10: Reserved
+#                                  Col 11: 2nd covariate Y-column number
+#                                  Col 12: 2nd covariate global presence count
+#                                  Col 13: 2nd covariate global mean
+#                                  Col 14: 2nd covariate global standard deviation
+#                                  Col 15: 2nd covariate stratified standard deviation
+#                                  Col 16: R-squared, 2nd covariate vs. strata
+#                                  Col 17: adjusted R-squared, 2nd covariate vs. strata
+#                                  Col 18: P-value, 2nd covariate vs. strata
+#                                  Col 19-20: Reserved
+#                                  Col 21: Global 1st & 2nd covariate presence count
+#                                  Col 22: Global regression slope (2nd vs. 1st covariate)
+#                                  Col 23: Global regression slope standard deviation
+#                                  Col 24: Global correlation = +/- sqrt(R-squared)
+#                                  Col 25: Global residual standard deviation
+#                                  Col 26: Global R-squared
+#                                  Col 27: Global adjusted R-squared
+#                                  Col 28: Global P-value for hypothesis "slope = 0"
+#                                  Col 29-30: Reserved
+#                                  Col 31: Stratified 1st & 2nd covariate presence count
+#                                  Col 32: Stratified regression slope (2nd vs. 1st covariate)
+#                                  Col 33: Stratified regression slope standard deviation
+#                                  Col 34: Stratified correlation = +/- sqrt(R-squared)
+#                                  Col 35: Stratified residual standard deviation
+#                                  Col 36: Stratified R-squared
+#                                  Col 37: Stratified adjusted R-squared
+#                                  Col 38: Stratified P-value for hypothesis "slope = 0"
+#                                  Col 39: Number of strata with at least two counted points
+#                                  Col 40: Reserved
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_stratstats = function(Matrix[Double] X, Matrix[Double] Y = matrix(0.0, rows=1,cols=1),
   Matrix[Double] S = matrix(0.0, rows=1,cols=1), Matrix[Double] Xcid = matrix(0.0, rows=1,cols=1),

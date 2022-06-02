@@ -64,7 +64,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
-		final String dir = TEST_CLASS_DIR+ "/Algorithm/";
+		final String dir = TEST_CLASS_DIR + "/Algorithm/";
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(dir, TEST_NAME1, new String[] {"B"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(dir, TEST_NAME2, new String[] {"B"}));
@@ -127,6 +127,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore // invalid now since we count decompress parts
 	public void testLmCGSP() {
 		runWorkloadAnalysisTest(TEST_NAME6, ExecMode.SPARK, 2, false);
 	}
@@ -165,8 +166,8 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 			long actualCompressionCount = (mode == ExecMode.HYBRID || mode == ExecMode.SINGLE_NODE) ? Statistics
 				.getCPHeavyHitterCount("compress") : Statistics.getCPHeavyHitterCount("sp_compress");
 
-			Assert.assertEquals("Assert that the compression counts expeted matches actual: " + compressionCount
-				+ " vs " + actualCompressionCount, compressionCount, actualCompressionCount);
+			Assert.assertEquals("Assert that the compression counts expeted matches actual: " + compressionCount + " vs "
+				+ actualCompressionCount, compressionCount, actualCompressionCount);
 			if(compressionCount > 0)
 				Assert.assertTrue(mode == ExecMode.SINGLE_NODE || mode == ExecMode.HYBRID ? heavyHittersContainsString(
 					"compress") : heavyHittersContainsString("sp_compress"));

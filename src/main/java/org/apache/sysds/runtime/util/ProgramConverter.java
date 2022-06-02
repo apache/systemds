@@ -77,7 +77,6 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
-import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.EvalNaryCPInstruction;
@@ -894,13 +893,11 @@ public class ProgramConverter
 						}
 					}
 					else if(inst instanceof EvalNaryCPInstruction) {
-						CPOperand fname = ((EvalNaryCPInstruction)inst).getInputs()[0];
-						if( fname.isLiteral() )
-							cand.add(DMLProgram.constructFunctionKey(DMLProgram.DEFAULT_NAMESPACE, fname.getName()));
-						else //add all potential targets, other than builtin functions
-							pb.getProgram().getFunctionProgramBlocks().keySet().stream()
-								.filter(s -> !s.startsWith(DMLProgram.BUILTIN_NAMESPACE))
-								.forEach(s -> cand.add(s));
+						//add all potential targets, included loaded builtin functions because other 
+						//functions might call them directly (not through eval and thus cannot be loaded)
+						//(even if fname is a known literal, the target function might call other functions)
+						pb.getProgram().getFunctionProgramBlocks().keySet().stream()
+							.forEach(s -> cand.add(s));
 					}
 				}
 			}
@@ -1160,10 +1157,13 @@ public class ProgramConverter
 	private static String rSerializeProgramBlock( ProgramBlock pb, HashMap<String, byte[]> clsMap ) {
 		StringBuilder sb = new StringBuilder();
 		
+		boolean pbFOR = pb instanceof ForProgramBlock 
+			&& (!(pb instanceof ParForProgramBlock) || ParForProgramBlock.CONVERT_NESTED_REMOTE_PARFOR);
+		
 		//handle header
 		if( pb instanceof WhileProgramBlock ) 
 			sb.append(PB_WHILE);
-		else if ( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock) )
+		else if ( pbFOR )
 			sb.append(PB_FOR);
 		else if ( pb instanceof ParForProgramBlock )
 			sb.append(PB_PARFOR);
@@ -1185,7 +1185,7 @@ public class ProgramConverter
 			sb.append( rSerializeProgramBlocks( wpb.getChildBlocks(), clsMap) );
 			sb.append(PBS_END);
 		}
-		else if ( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock ) ) {
+		else if ( pbFOR ) { // might catch parfor too
 			ForProgramBlock fpb = (ForProgramBlock) pb; 
 			sb.append( fpb.getIterVar() );
 			sb.append( COMPONENTS_DELIM );
@@ -1374,7 +1374,7 @@ public class ProgramConverter
 
 	public static Program parseProgram( String in, int id ) {
 		String lin = in.substring( PROG_BEGIN.length(),in.length()- PROG_END.length()).trim();
-		Program prog = new Program();
+		Program prog = new Program(new DMLProgram());
 		parseFunctionProgramBlocks(lin, prog, id);
 		return prog;
 	}

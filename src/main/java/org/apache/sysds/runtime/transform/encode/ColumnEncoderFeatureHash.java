@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -30,7 +31,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 /**
  * Class used for feature hashing transformation of frames.
@@ -65,10 +66,31 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 
 	@Override
 	protected double getCode(CacheBlock in, int row) {
+		// hash a single row
 		String key = in.getString(row, _colID - 1);
 		if(key == null)
 			return Double.NaN;
 		return (key.hashCode() % _K) + 1;
+	}
+
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+		// hash a block of rows
+		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
+		double codes[] = new double[endInd-startInd];
+		for (int i=startInd; i<endInd; i++) {
+			String key = in.getString(i, _colID - 1);
+			if(key == null || key.isEmpty())
+				codes[i-startInd] = Double.NaN;
+			else {
+				// Calculate non-negative modulo
+				//double mod = key.hashCode() % _K > 0 ? key.hashCode() % _K : _K + key.hashCode() % _K;
+				double mod = (key.hashCode() % _K) + 1;
+				if (mod < 0)
+					mod += _K;
+				codes[i - startInd] = mod;
+			}
+		}
+		return codes;
 	}
 
 	@Override
@@ -152,7 +174,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS)
-				Statistics.incTransformFeatureHashingApplyTime(System.nanoTime()-t0);
+				TransformStatistics.incFeatureHashingApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 	}

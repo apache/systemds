@@ -24,18 +24,17 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 public class ColumnEncoderDummycode extends ColumnEncoder {
 	private static final long serialVersionUID = 5832130477659116489L;
@@ -75,12 +74,19 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		throw new DMLRuntimeException("DummyCoder does not have a code");
 	}
 
+	@Override
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+		throw new DMLRuntimeException("DummyCoder does not have a code");
+	}
+
 	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		if (!(in instanceof MatrixBlock)){
 			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +
 					" and not MatrixBlock");
 		}
-		Set<Integer> sparseRowsWZeros = null;
+		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+		mcsr = false; //force CSR for transformencode
+		ArrayList<Integer> sparseRowsWZeros = null;
 		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
 			// Since the recoded values are already offset in the output matrix (same as input at this point)
@@ -98,19 +104,37 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			//
 			// indexes = [0,2] ===> indexes = [0,3]
 			// values = [1,2] values = [1,1]
-			double val = out.getSparseBlock().get(r).values()[index];
-			if(Double.isNaN(val)){
-				if(sparseRowsWZeros == null)
-					sparseRowsWZeros = new HashSet<>();
-				sparseRowsWZeros.add(r);
-				out.getSparseBlock().get(r).values()[index] = 0;
-				continue;
+			if (mcsr) {
+				double val = out.getSparseBlock().get(r).values()[index];
+				if(Double.isNaN(val)){
+					if(sparseRowsWZeros == null)
+						sparseRowsWZeros = new ArrayList<>();
+					sparseRowsWZeros.add(r);
+					out.getSparseBlock().get(r).values()[index] = 0;
+					continue;
+				}
+				int nCol = outputCol + (int) val - 1;
+				out.getSparseBlock().get(r).indexes()[index] = nCol;
+				out.getSparseBlock().get(r).values()[index] = 1;
 			}
-			int nCol = outputCol + (int) val - 1;
-			out.getSparseBlock().get(r).indexes()[index] = nCol;
-			out.getSparseBlock().get(r).values()[index] = 1;
+			else { //csr
+				SparseBlockCSR csrblock = (SparseBlockCSR)out.getSparseBlock();
+				int rptr[] = csrblock.rowPointers();
+				double val = csrblock.values()[rptr[r]+index];
+				if(Double.isNaN(val)){
+					if(sparseRowsWZeros == null)
+						sparseRowsWZeros = new ArrayList<>();
+					sparseRowsWZeros.add(r);
+					csrblock.values()[rptr[r]+index] = 0; //test
+					continue;
+				}
+				// Manually fill the column-indexes and values array
+				int nCol = outputCol + (int) val - 1;
+				csrblock.indexes()[rptr[r]+index] = nCol;
+				csrblock.values()[rptr[r]+index] = 1;
+			}
 		}
-		if(sparseRowsWZeros != null){
+		if(sparseRowsWZeros != null) {
 			addSparseRowsWZeros(sparseRowsWZeros);
 		}
 	}
@@ -120,19 +144,28 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +
 					" and not MatrixBlock");
 		}
-		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
-			// Using outputCol here as index since we have a MatrixBlock as input where dummycoding could have been
-			// applied in a previous encoder
-			double val = in.getDouble(i, outputCol);
-			if(Double.isNaN(val)){
-				// 0 if NaN
-				out.quickSetValue(i, outputCol, 0);
-				continue;
+		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
+		double vals[] = new double[rowEnd -rowStart];
+		for (int i=rowStart; i<rowEnd; i++)
+			vals[i-rowStart] = in.getDouble(i, outputCol);
+
+		// Using outputCol here as index since we have a MatrixBlock as input where 
+		// dummycoding might have been applied in a previous encoder
+		int B = 32;
+		for(int i=rowStart; i<rowEnd; i+=B) {
+			// Apply loop tiling to exploit CPU caches
+			int lim = Math.min(i+B, rowEnd);
+			for (int ii=i; ii<lim; ii++) {
+				double val = vals[ii-rowStart];
+				if(Double.isNaN(val)) {
+					out.quickSetValue(ii, outputCol, 0); //0 if NaN
+					continue;
+				}
+				int nCol = outputCol + (int) val - 1;
+				if(nCol != outputCol)
+					out.quickSetValue(ii, outputCol, 0);
+				out.quickSetValue(ii, nCol, 1);
 			}
-			int nCol = outputCol + (int) val - 1;
-			if(nCol != outputCol)
-				out.quickSetValue(i, outputCol, 0);
-			out.quickSetValue(i, nCol, 1);
 		}
 	}
 
@@ -256,7 +289,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 				return null;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if (DMLScript.STATISTICS)
-				Statistics.incTransformDummyCodeApplyTime(System.nanoTime()-t0);
+				TransformStatistics.incDummyCodeApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 

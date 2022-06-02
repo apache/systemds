@@ -33,8 +33,10 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageItem;
 
 public class FederatedRequest implements Serializable {
 	private static final long serialVersionUID = 5946781306963870394L;
@@ -56,6 +58,8 @@ public class FederatedRequest implements Serializable {
 	private List<Object> _data;
 	private boolean _checkPrivacy;
 	private List<Long> _checksums;
+	private long _pid;
+	private String _lineageTrace; // the serialized lineage trace of a put object
 
 	public FederatedRequest(RequestType method) {
 		this(method, FederationUtils.getNextFedDataID(), new ArrayList<>());
@@ -69,14 +73,19 @@ public class FederatedRequest implements Serializable {
 		this(method, id, Arrays.asList(data));
 	}
 
+	public FederatedRequest(RequestType method, LineageItem linItem, long id, Object ... data) {
+		this(method, id, Arrays.asList(data));
+		_lineageTrace = (linItem != null) ? Lineage.serializeSingleTrace(linItem) : null;
+	}
+
 	public FederatedRequest(RequestType method, long id, List<Object> data) {
-		Statistics.incFederated(method);
+		if(DMLScript.STATISTICS)
+			FederatedStatistics.incFederated(method, data);
 		_method = method;
 		_id = id;
 		_data = data;
+		_pid = Long.valueOf(IDHandler.obtainProcessID());
 		setCheckPrivacy();
-		if (DMLScript.LINEAGE && method == RequestType.PUT_VAR)
-			setChecksum();
 	}
 
 	public RequestType getType() {
@@ -93,6 +102,10 @@ public class FederatedRequest implements Serializable {
 
 	public void setTID(long tid) {
 		_tid = tid;
+	}
+
+	public long getPID() {
+		return _pid;
 	}
 
 	public Object getParam(int i) {
@@ -143,6 +156,9 @@ public class FederatedRequest implements Serializable {
 	}
 
 	public long getChecksum(int i) {
+		if(_checksums == null)
+			setChecksum();
+
 		return _checksums.get(i);
 	}
 
@@ -175,14 +191,31 @@ public class FederatedRequest implements Serializable {
 		}
 	}
 
+	public String getLineageTrace() {
+		return _lineageTrace;
+	}
+
+	public long estimateSerializationBufferSize() {
+		long minBufferSize = 512; // general offset for the FederatedRequest object
+		if(_data != null) {
+			for(Object obj : _data) {
+				if(obj instanceof CacheBlock)
+					minBufferSize += ((CacheBlock)obj).getExactSerializedSize();
+			}
+		}
+		if(_lineageTrace != null)
+			minBufferSize += _lineageTrace.length();
+		return minBufferSize;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("FederatedRequest[");
 		sb.append(_method); sb.append(";");
+		sb.append(_pid); sb.append(";");
 		sb.append(_id); sb.append(";");
 		sb.append("t"); sb.append(_tid); sb.append(";");
-		if( _method != RequestType.PUT_VAR )
-			sb.append(Arrays.toString(_data.toArray()));
+		sb.append(_data.toString());
 		sb.append("]");
 		return sb.toString();
 	}

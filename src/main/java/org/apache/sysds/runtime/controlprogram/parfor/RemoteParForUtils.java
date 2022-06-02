@@ -26,14 +26,11 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -46,6 +43,9 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.io.ListWriter;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageParser;
@@ -97,62 +97,6 @@ public class RemoteParForUtils
 		}
 	}
 
-	public static void exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<ResultVar> resultVars, OutputCollector<Writable, Writable> out ) throws IOException {
-		exportResultVariables(workerID, vars, resultVars, null, out);
-	}
-	
-	/**
-	 * For remote MR parfor workers.
-	 * 
-	 * @param workerID worker id
-	 * @param vars local variable map
-	 * @param resultVars list of result variables
-	 * @param rvarFnames ?
-	 * @param out output collectors
-	 * @throws IOException if IOException occurs
-	 */
-	public static void exportResultVariables( long workerID, LocalVariableMap vars, ArrayList<ResultVar> resultVars, 
-			HashMap<String,String> rvarFnames, OutputCollector<Writable, Writable> out ) throws IOException
-	{
-		//create key and value for reuse
-		LongWritable okey = new LongWritable( workerID ); 
-		Text ovalue = new Text();
-		
-		//foreach result variables probe if export necessary
-		for( ResultVar rvar : resultVars )
-		{
-			Data dat = vars.get( rvar._name );
-			
-			//export output variable to HDFS (see RunMRJobs)
-			if ( dat != null && dat.getDataType() == DataType.MATRIX ) 
-			{
-				MatrixObject mo = (MatrixObject) dat;
-				if( mo.isDirty() )
-				{
-					if( rvarFnames!=null ) {
-						String fname = rvarFnames.get( rvar._name );
-						if( fname!=null )
-							mo.setFileName( fname );
-							
-						//export result var (iff actually modified in parfor)
-						mo.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)		
-						rvarFnames.put(rvar._name, mo.getFileName());
-					}
-					else {
-						//export result var (iff actually modified in parfor)
-						mo.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)
-					}
-					
-					//pass output vars (scalars by value, matrix by ref) to result
-					//(only if actually exported, hence in check for dirty, otherwise potential problems in result merge)
-					String datStr = ProgramConverter.serializeDataObject(rvar._name, mo);
-					ovalue.set( datStr );
-					out.collect( okey, ovalue );
-				}
-			}
-		}
-	}
-	
 	/**
 	 * For remote Spark parfor workers. This is a simplified version compared to MR.
 	 * 
@@ -170,18 +114,23 @@ public class RemoteParForUtils
 		//foreach result variables probe if export necessary
 		for( ResultVar rvar : resultVars ) {
 			Data dat = vars.get( rvar._name );
-			//export output variable to HDFS (see RunMRJobs)
-			if ( dat != null && dat.getDataType() == DataType.MATRIX )  {
-				MatrixObject mo = (MatrixObject) dat;
-				if( mo.isDirty() ) {
-					//export result var (iff actually modified in parfor)
-					mo.exportData(); 
-					//pass output vars (scalars by value, matrix by ref) to result
-					//(only if actually exported, hence in check for dirty, otherwise potential problems in result merge)
-					ret.add( ProgramConverter.serializeDataObject(rvar._name, mo) );
+			
+			if ( dat != null && dat.getDataType().isMatrixOrFrame() ) {
+				CacheableData<?> cd = (CacheableData<?>) dat;
+				//export result var (iff actually modified in parfor)
+				if( cd.isDirty() ) {
+					cd.exportData();
+					//pass output vars to result (only if actually exported)
+					ret.add( ProgramConverter.serializeDataObject(rvar._name, dat) );
 				}
 				//cleanup pinned result variable from buffer pool
-				mo.freeEvictedBlob();
+				cd.freeEvictedBlob();
+			}
+			else if (dat instanceof ListObject) {
+				String fname = OptimizerUtils.getUniqueTempFileName();
+				ListWriter.writeListToHDFS((ListObject) dat, fname, "binary",
+					new FileFormatProperties(ConfigurationManager.getBlocksize()));
+				ret.add( ProgramConverter.serializeDataObject(rvar._name, dat) );
 			}
 		}
 		
@@ -216,23 +165,13 @@ public class RemoteParForUtils
 	/**
 	 * Cleanup all temporary files created by this SystemDS process.
 	 */
-	public static void cleanupWorkingDirectories()
-	{
-		//use the given job configuration for infrastructure analysis (see configure);
-		//this is important for robustness w/ misconfigured classpath which also contains
-		//core-default.xml and hence hides the actual cluster configuration; otherwise
-		//there is missing cleanup of working directories 
-		JobConf job = ConfigurationManager.getCachedJobConf();
-		
-		if( !InfrastructureAnalyzer.isLocalMode(job) )
-		{
-			//delete cache files
-			CacheableData.cleanupCacheDir();
-			//disable caching (prevent dynamic eviction)
-			CacheableData.disableCaching();
-			//cleanup working dir (e.g., of CP_FILE instructions)
-			LocalFileUtils.cleanupWorkingDirectory();
-		}
+	public static void cleanupWorkingDirectories() {
+		//delete cache files
+		CacheableData.cleanupCacheDir();
+		//disable caching (prevent dynamic eviction)
+		CacheableData.disableCaching();
+		//cleanup working dir (e.g., of CP_FILE instructions)
+		LocalFileUtils.cleanupWorkingDirectory();
 	}
 
 	/**
@@ -292,15 +231,16 @@ public class RemoteParForUtils
 	/**
 	 * Init and register-cleanup of buffer pool
 	 * @param workerID worker id
+	 * @param isLocal in local spark mode (single JVM)
 	 * @throws IOException exception
 	 */
-	public static void setupBufferPool(long workerID) throws IOException {
+	public static void setupBufferPool(long workerID, boolean isLocal) throws IOException {
 		//init and register-cleanup of buffer pool (in spark, multiple tasks might
 		//share the process-local, i.e., per executor, buffer pool; hence we synchronize
 		//the initialization and immediately register the created directory for cleanup
 		//on process exit, i.e., executor exit, including any files created in the future.
 		synchronized(CacheableData.class) {
-			if (!CacheableData.isCachingActive() && !InfrastructureAnalyzer.isLocalMode()) {
+			if (!CacheableData.isCachingActive() && !isLocal) {
 				//create id, executor working dir, and cache dir
 				String uuid = IDHandler.createDistributedUniqueID();
 				LocalFileUtils.createWorkingDirectoryWithUUID(uuid);

@@ -19,43 +19,39 @@
 #
 #-------------------------------------------------------------
 
-# ----------------------------------------------------------------------------
+# Corrects corrupted frames of strings
+# This algorithm operates on the assumption that most strings are correct
+# and simply swaps strings that do not occur often with similar strings that 
+# occur more often
+#
 # References:
 # Fred J. Damerau. 1964. 
 #   A technique for computer detection and correction of spelling errors. 
 #   Commun. ACM 7, 3 (March 1964), 171–176. 
 #   DOI:https://doi.org/10.1145/363958.363994
-# ----------------------------------------------------------------------------
-
-# Builtin function that corrects corrupted frames of strings
-# This algorithm operates on the assumption that most strings are correct
-# and simply swaps strings that do not occur often with similar strings that 
-# occur more often
 #
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
-# NAME                              TYPE      DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# strings                           String    ---      The nx1 input frame of corrupted strings
-# frequency_threshold               Double    0.05     Strings that occur above this frequency level will not be corrected
-# distance_threshold                integer   2        Max distance at which strings are considered similar
-# decapitalize                      Boolean   TRUE     Decapitalize all strings before correction
-# correct                           Boolean   TRUE     Correct strings or only report potential errors
-# is_verbose                        Boolean   FALSE    Print debug information
+# ------------------------------------------------------------------------------------------------------------------------
+# NAME                       TYPE             DEFAULT  MEANING
+# ------------------------------------------------------------------------------------------------------------------------
+# strings                    Frame[String]    ---      The nx1 input frame of corrupted strings
+# frequency_threshold        Double           0.05     Strings that occur above this frequency level will not be corrected
+# distance_threshold         integer          2        Max distance at which strings are considered similar
+# is_verbose                 Boolean          FALSE    Print debug information
 #
+# ------------------------------------------------------------------------------------------------------------------------
 #
-# RETURN VALUES
-# ----------------------------------------------------------------------------
-# NAME     TYPE      DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# Y        Frame        -     Corrected nx1 output frame
-# ----------------------------------------------------------------------------
+# OUTPUT:
+# ------------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE                    MEANING
+# ------------------------------------------------------------------------------------------------------------------------
+# Y        Frame[String]           Corrected nx1 output frame
+# ------------------------------------------------------------------------------------------------------------------------
 
 # TODO: future: add parameter for list of words that are sure to be correct
 
-s_correctTypos = function(Frame[String] strings, Matrix[Double] nullMask, Double frequency_threshold=0.05, Integer distance_threshold=2,
-    Boolean decapitalize=TRUE, Boolean correct=TRUE, Boolean is_verbose=FALSE)
-  return (Frame[String] Y)
+s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05, Integer distance_threshold=2,  Boolean is_verbose=FALSE)
+  return (Frame[String] Y, Double frequency_threshold, Integer distance_threshold, Matrix[Double] distance_matrix, Frame[Unknown] dict)
 {
   if(is_verbose)
     print ("BEGIN CORRECT-TYPOS SCRIPT");
@@ -64,25 +60,19 @@ s_correctTypos = function(Frame[String] strings, Matrix[Double] nullMask, Double
   if(is_verbose)
     print("num strings: " + num_strings + "\n")
 
-  if (decapitalize)
-    strings = map(strings, "s -> s.toLowerCase()");
-    
-  if(nrow(strings) != nrow(nullMask) | ncol(strings) != ncol(nullMask))
-    stop("Dimension mismatch: data dimensions do not match with mask dimensions")
+  strings = map(strings, "s -> s.toLowerCase()");
+
   Y = strings
 
   # build dictionary
   dict = buildDictionary(strings);
   strings = dict[,1];
-  frequencies = as.matrix(dict[,2]) / num_strings;
   lengths = as.matrix(map(strings, "s -> s.length()"));
   
   num_different_strings = nrow(strings);
   if (is_verbose) {
     print("dict:" )
     print(toString(dict));
-    print("frequencies: ");
-    print(toString(frequencies));
     print("lengths:")
     print(toString(lengths))
   }
@@ -95,7 +85,7 @@ s_correctTypos = function(Frame[String] strings, Matrix[Double] nullMask, Double
   # TODO: when proper lambda expressions are supported: rewrite in not so hacky
   ascii_matrix = matrix(0, rows = max_len, cols = num_different_strings)
   parfor (i in 1:num_different_strings) {
-    for (j in 1:as.scalar(lengths[i, 1])) {
+    parfor (j in 1:as.scalar(lengths[i, 1])) {
       tmp = as.matrix(map(strings[i,], "s -> UtilFunctions.getAsciiAtIdx(s, " + j + ")"));
       ascii_matrix[j, i] = tmp[1, 1];
     }
@@ -123,48 +113,7 @@ s_correctTypos = function(Frame[String] strings, Matrix[Double] nullMask, Double
   }
   upper_triangle = upper.tri(target=distance_matrix, values=TRUE);
   distance_matrix = distance_matrix + t(upper_triangle) + diag(matrix(42000, num_different_strings, 1));
-
-  sorted_frequency_idxs = order(target=frequencies, index.return=TRUE);
-  if (is_verbose) {
-    print("DISTANCE MATRIX: ");
-    print(toString(distance_matrix));
-    print("sorted frequency idxs: ");
-    print(toString(sorted_frequency_idxs));
-  }
-  
-  # correct strings
-  for (i in 1:num_different_strings) {
-    idx = as.integer(as.scalar(sorted_frequency_idxs[i])); # lowest frequency idx
-    frequency = as.scalar(frequencies[idx]);
-    if (is_verbose) print("idx: " + idx + " - frequency: " + frequency);
-    if (frequency < frequency_threshold) {
-      min_idxs = t(order(target=t(distance_matrix[idx,]), index.return=TRUE));
-
-      j = 1;
-      break=FALSE;
-      while (j <= num_different_strings & !break) {
-        min_idx = as.integer(as.scalar(min_idxs[,j]));
-        min = as.integer(as.scalar(distance_matrix[idx, min_idx]));
-        replacement_frequency = as.scalar(frequencies[min_idx]);
-
-        # TODO: additional parameter for replacement_frequency?
-        if (min < distance_threshold & replacement_frequency > frequency_threshold/2) {
-          to_replace = as.scalar(strings[idx,]);
-          replacement = as.scalar(strings[min_idx,]);
-          if (is_verbose|!correct) print("Replacement: " + to_replace + "(" + frequency + ")" + " with " + 
-            replacement + "(" + replacement_frequency + ")" + " dist: " + min);
-          if (correct) 
-            Y = replaceStrings(replacement, to_replace, Y);
-          break=TRUE;
-        }
-        j += 1;
-      }
-    }
-  }
-  if (is_verbose) {
-    print("Corrected Strings: ");
-    print(toString(Y));
-  }
+  Y = correctTyposApply(Y, frequency_threshold, distance_threshold, distance_matrix, dict)
 }
 
 replaceStrings = function(String replacement, String to_replace, Frame[String] strings)

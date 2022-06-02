@@ -25,7 +25,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
@@ -41,23 +43,35 @@ public class FederatedResponse implements Serializable {
 	private ResponseType _status;
 	private Object[] _data;
 	private Map<PrivacyLevel,LongAdder> checkedConstraints;
+
+	private transient LineageItem _linItem = null; // not included in serialized object
 	
 	public FederatedResponse(ResponseType status) {
-		this(status, null);
+		this(status, null, null);
 	}
 	
 	public FederatedResponse(ResponseType status, Object[] data) {
+		this(status, data, null);
+	}
+
+	public FederatedResponse(ResponseType status, Object[] data, LineageItem linItem) {
 		_status = status;
 		_data = data;
 		if( _status == ResponseType.SUCCESS && data == null )
 			_status = ResponseType.SUCCESS_EMPTY;
+		_linItem = linItem;
 	}
-	
+
 	public FederatedResponse(FederatedResponse.ResponseType status, Object data) {
+		this(status, data, null);
+	}
+
+	public FederatedResponse(FederatedResponse.ResponseType status, Object data, LineageItem linItem) {
 		_status = status;
 		_data = new Object[] {data};
 		if(_status == ResponseType.SUCCESS && data == null)
 			_status = ResponseType.SUCCESS_EMPTY;
+		_linItem = linItem;
 	}
 	
 	public boolean isSuccessful() {
@@ -77,6 +91,17 @@ public class FederatedResponse implements Serializable {
 		if ( !isSuccessful() )
 			throwExceptionFromResponse(); 
 		return _data;
+	}
+
+	public long estimateSerializationBufferSize() {
+		long minBufferSize = 312; // general offset for the FederatedResponse object
+		if(_data != null) {
+			for(Object obj : _data) {
+				if(obj instanceof CacheBlock)
+					minBufferSize += ((CacheBlock)obj).getExactSerializedSize();
+			}
+		}
+		return minBufferSize;
 	}
 
 	/**
@@ -113,5 +138,9 @@ public class FederatedResponse implements Serializable {
 	public void updateCheckedConstraintsLog(){
 		if ( checkedConstraints != null && !checkedConstraints.isEmpty() )
 			CheckedConstraintsLog.addCheckedConstraints(checkedConstraints);
+	}
+
+	public LineageItem getLineageItem() {
+		return _linItem;
 	}
 }

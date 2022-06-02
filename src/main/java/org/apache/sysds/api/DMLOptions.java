@@ -31,6 +31,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.FEDInstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.utils.Explain;
@@ -71,9 +73,13 @@ public class DMLOptions {
 	public boolean              lineage_debugger = false;         // whether enable lineage debugger
 	public boolean              fedWorker     = false;
 	public int                  fedWorkerPort = -1;
-	public int                  pythonPort    = -1; 
+	public boolean              fedMonitoring = false;
+	public int                  fedMonitoringPort = -1;
+	public int                  pythonPort    = -1;
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
-	public boolean				federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
+	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
+	public boolean              noFedRuntimeConversion = false;   // If activated, no runtime conversion of CP instructions to FED instructions will be performed.
+	public int                  seed          = -1;               // The general seed for the execution, if -1 random (system time).
 
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
@@ -91,6 +97,7 @@ public class DMLOptions {
 			", statsCount=" + statsCount +
 			", fedStats=" + fedStats +
 			", fedStatsCount=" + fedStatsCount +
+			", fedMonitor=" + fedMonitoring +
 			", memStats=" + memStats +
 			", explainType=" + explainType +
 			", execMode=" + execMode +
@@ -103,6 +110,8 @@ public class DMLOptions {
 			", lineage=" + lineage +
 			", w=" + fedWorker +
 			", federatedCompilation=" + federatedCompilation +
+			", noFedRuntimeConversion=" + noFedRuntimeConversion +
+			", seed=" + seed + 
 			'}';
 	}
 	
@@ -211,6 +220,7 @@ public class DMLOptions {
 				}
 			}
 		}
+
 		dmlOptions.memStats = line.hasOption("mem");
 
 		dmlOptions.clean = line.hasOption("clean");
@@ -222,6 +232,11 @@ public class DMLOptions {
 		if (line.hasOption("w")){
 			dmlOptions.fedWorker = true;
 			dmlOptions.fedWorkerPort = Integer.parseInt(line.getOptionValue("w"));
+		}
+
+		if (line.hasOption("fedMonitor")) {
+			dmlOptions.fedMonitoring= true;
+			dmlOptions.fedMonitoringPort = Integer.parseInt(line.getOptionValue("fedMonitor"));
 		}
 
 		if (line.hasOption("f")){
@@ -266,9 +281,31 @@ public class DMLOptions {
 		}
 
 		dmlOptions.checkPrivacy = line.hasOption("checkPrivacy");
+
 		if (line.hasOption("federatedCompilation")){
 			OptimizerUtils.FEDERATED_COMPILATION = true;
 			dmlOptions.federatedCompilation = true;
+			String[] fedCompSpecs = line.getOptionValues("federatedCompilation");
+			if ( fedCompSpecs != null && fedCompSpecs.length > 0 ){
+				for ( String spec : fedCompSpecs ){
+					String[] specPair = spec.split("=");
+					if (specPair.length != 2){
+						throw new org.apache.commons.cli.ParseException("Invalid argument specified for -federatedCompilation option, must be a list of space separated K=V pairs, where K is a line number of the DML script and V is a federated output value");
+					}
+					int dmlLineNum = Integer.parseInt(specPair[0]);
+					FEDInstruction.FederatedOutput fedOutSpec = FEDInstruction.FederatedOutput.valueOf(specPair[1]);
+					OptimizerUtils.FEDERATED_SPECS.put(dmlLineNum,fedOutSpec);
+				}
+			}
+		}
+
+		if ( line.hasOption("noFedRuntimeConversion") ){
+			FEDInstructionUtils.noFedRuntimeConversion = true;
+			dmlOptions.noFedRuntimeConversion = true;
+		}
+
+		if(line.hasOption("seed")){
+			dmlOptions.seed = Integer.parseInt(line.getOptionValue("seed"));
 		}
 
 		return dmlOptions;
@@ -286,7 +323,8 @@ public class DMLOptions {
 		Option configOpt = OptionBuilder.withArgName("filename")
 			.withDescription("uses a given configuration file (can be on local/hdfs/gpfs; default values in SystemDS-config.xml")
 			.hasArg().create("config");
-		Option cleanOpt = OptionBuilder.withDescription("cleans up all SystemDS working directories (FS, DFS); all other flags are ignored in this mode.")
+		Option cleanOpt = OptionBuilder
+			.withDescription("cleans up all SystemDS working directories (FS, DFS); all other flags are ignored in this mode.")
 			.create("clean");
 		Option statsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics; heavy hitter <count> is 10 unless overridden; default off")
@@ -307,7 +345,8 @@ public class DMLOptions {
 			.hasOptionalArg().create("gpu");
 		Option debugOpt = OptionBuilder.withDescription("runs in debug mode; default off")
 			.create("debug");
-		Option pythonOpt = OptionBuilder.withDescription("Python Context start with port argument for communication to python")
+		Option pythonOpt = OptionBuilder
+			.withDescription("Python Context start with port argument for communication to python")
 			.isRequired().hasArg().create("python");
 		Option fileOpt = OptionBuilder.withArgName("filename")
 			.withDescription("specifies dml/pydml file to execute; path can be local/hdfs/gpfs (prefixed with appropriate URI)")
@@ -315,18 +354,32 @@ public class DMLOptions {
 		Option scriptOpt = OptionBuilder.withArgName("script_contents")
 			.withDescription("specified script string to execute directly")
 			.isRequired().hasArg().create("s");
-		Option helpOpt = OptionBuilder.withDescription("shows usage message")
+		Option helpOpt = OptionBuilder
+			.withDescription("shows usage message")
 			.create("help");
-		Option lineageOpt = OptionBuilder.withDescription("computes lineage traces")
+		Option lineageOpt = OptionBuilder
+			.withDescription("computes lineage traces")
 			.hasOptionalArgs().create("lineage");
-		Option fedOpt = OptionBuilder.withDescription("starts a federated worker with the given argument as the port.")
+		Option fedOpt = OptionBuilder
+			.withDescription("starts a federated worker with the given argument as the port.")
 			.hasOptionalArg().create("w");
+		Option monitorOpt = OptionBuilder
+			.withDescription("Starts a federated monitoring backend with the given argument as the port.")
+			.hasOptionalArg().create("fedMonitor");
 		Option checkPrivacy = OptionBuilder
 			.withDescription("Check which privacy constraints are loaded and checked during federated execution")
 			.create("checkPrivacy");
 		Option federatedCompilation = OptionBuilder
+			.withArgName("key=value")
 			.withDescription("Compile federated instructions based on input federation state and privacy constraints.")
+			.hasOptionalArgs()
 			.create("federatedCompilation");
+		Option noFedRuntimeConversion = OptionBuilder
+			.withDescription("If activated, no runtime conversion of CP instructions to FED instructions will be performed.")
+			.create("noFedRuntimeConversion");
+		Option commandlineSeed = OptionBuilder
+			.withDescription("A general seed for the execution through the commandline")
+			.hasArg().create("seed");
 		
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
@@ -339,8 +392,11 @@ public class DMLOptions {
 		options.addOption(debugOpt);
 		options.addOption(lineageOpt);
 		options.addOption(fedOpt);
+		options.addOption(monitorOpt);
 		options.addOption(checkPrivacy);
 		options.addOption(federatedCompilation);
+		options.addOption(noFedRuntimeConversion);
+		options.addOption(commandlineSeed);
 
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()
@@ -349,6 +405,7 @@ public class DMLOptions {
 			.addOption(cleanOpt)
 			.addOption(helpOpt)
 			.addOption(fedOpt)
+			.addOption(monitorOpt)
 			.addOption(pythonOpt);
 		fileOrScriptOpt.setRequired(true);
 		options.addOptionGroup(fileOrScriptOpt);

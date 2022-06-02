@@ -32,12 +32,7 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def xgboostPredictRegression(X: Matrix,
                              M: Matrix,
                              **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    """
-    :param X: Matrix of feature vectors we want to predict (X_test)
-    :param M: The model created at xgboost
-    :param learning_rate: the learning rate used in the model
-    :return: 'OperationNode' containing the predictions of the samples using the given xgboost model. (y_prediction) 
-    """
+    
     params_dict = {'X': X, 'M': M}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

@@ -134,7 +134,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		jcuda.jcudnn.JCudnn.cudnnGetConvolutionForwardWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
 				ret.nchwTensorDesc, ret.filterDesc, ret.convDesc, ret.nkpqTensorDesc, algos[0], sizeInBytesArray);
 		if (sizeInBytesArray[0] != 0)
-			ret.workSpace = gCtx.allocate(instName, sizeInBytesArray[0]);
+			ret.workSpace = gCtx.allocate(instName, sizeInBytesArray[0], false);
 		ret.sizeInBytes = sizeInBytesArray[0];
 		ret.algo = algos[0];
 		return ret;
@@ -168,7 +168,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 				pad_h, pad_w, stride_h, stride_w, P, Q);
 		
 		int[] algos = {-1};
-		long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
+		long[] sizeInBytesArray = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
 		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterAlgorithm(
 				LibMatrixCuDNN.getCudnnHandle(gCtx), 
 				ret.nchwTensorDesc, ret.nkpqTensorDesc, ret.convDesc, ret.filterDesc, 
@@ -176,7 +176,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
 				ret.nchwTensorDesc, ret.nkpqTensorDesc, ret.convDesc, ret.filterDesc, algos[0], sizeInBytesArray);
 		if (sizeInBytesArray[0] != 0)
-			ret.workSpace = gCtx.allocate(instName, sizeInBytesArray[0]);
+			ret.workSpace = gCtx.allocate(instName, sizeInBytesArray[0], false);
 		ret.sizeInBytes = sizeInBytesArray[0];
 		ret.algo = algos[0];
 		
@@ -218,7 +218,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		}
 		else {
 			int[] algos = {-1};
-			long sizeInBytesArray[] = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
+			long[] sizeInBytesArray = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
 			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataAlgorithm(
 					LibMatrixCuDNN.getCudnnHandle(gCtx), 
 					ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc,
@@ -226,7 +226,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
 					ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc, algos[0], sizeInBytesArray);
 			if (sizeInBytesArray[0] != 0)
-				ret.workSpace = gCtx.allocate(instName, sizeInBytesArray[0]);
+				ret.workSpace = gCtx.allocate(instName, sizeInBytesArray[0], false);
 			ret.sizeInBytes = sizeInBytesArray[0];
 			ret.algo = algos[0];
 		}

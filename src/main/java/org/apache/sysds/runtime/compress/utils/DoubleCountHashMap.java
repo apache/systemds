@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.compress.utils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
@@ -30,13 +29,13 @@ public class DoubleCountHashMap {
 	protected static final Log LOG = LogFactory.getLog(DoubleCountHashMap.class.getName());
 	protected static final int RESIZE_FACTOR = 2;
 	protected static final float LOAD_FACTOR = 0.80f;
-	public static int hashMissCount = 0;
 
 	protected int _size = -1;
 	private Bucket[] _data = null;
 
 	public DoubleCountHashMap(int init_capacity) {
-		_data = new Bucket[Util.getPow2(init_capacity)];
+		_data = new Bucket[(Util.getPow2(init_capacity)/2) + 7];
+		// _data = new Bucket[(Util.getPow2(init_capacity)) ];
 		_size = 0;
 	}
 
@@ -46,8 +45,7 @@ public class DoubleCountHashMap {
 
 	private void appendValue(DCounts ent) {
 		// compute entry index position
-		int hash = hash(ent.key);
-		int ix = indexFor(hash, _data.length);
+		int ix = hashIndex(ent.key);
 		Bucket l = _data[ix];
 		if(l == null)
 			_data[ix] = new Bucket(ent);
@@ -62,26 +60,42 @@ public class DoubleCountHashMap {
 
 	}
 
-	public void increment(double key) {
-		int hash = hash(key);
-		int ix = indexFor(hash, _data.length);
+	public final int increment(final double key) {
+		final int ix = hashIndex(key);
 		Bucket l = _data[ix];
-		while(l != null && !(l.v.key == key)){
-			hashMissCount++;
+		while(l != null) {
+			if(l.v.key == key) {
+				l.v.count++;
+				return l.v.id;
+			}
+			else
 			l = l.n;
 		}
+		return addNewBucket(ix, key);
+	}
 
-		if(l == null) {
-			Bucket ob = _data[ix];
-			_data[ix] = new Bucket(new DCounts(key));
-			_data[ix].n = ob;
-			_size++;
+	public final int increment(final double key, final int count) {
+		final int ix = hashIndex(key);
+		Bucket l = _data[ix];
+		while(l != null) {
+			if(l.v.key == key) {
+				l.v.count += count;
+				return l.v.id;
+			}
+			else
+			l = l.n;
 		}
-		else
-			l.v.count++;
+		return addNewBucket(ix, key);
+	}
 
+	private int addNewBucket(final int ix, final double key) {
+		Bucket ob = _data[ix];
+		_data[ix] = new Bucket(new DCounts(key, _size));
+		_data[ix].n = ob;
+		final int id = _size++;
 		if(_size >= LOAD_FACTOR * _data.length)
 			resize();
+		return id;
 	}
 
 	/**
@@ -91,8 +105,7 @@ public class DoubleCountHashMap {
 	 * @return count on key
 	 */
 	public int get(double key) {
-		int hash = hash(key);
-		int ix = indexFor(hash, _data.length);
+		int ix = hashIndex(key);
 		Bucket l = _data[ix];
 		while(!(l.v.key == key))
 			l = l.n;
@@ -100,16 +113,92 @@ public class DoubleCountHashMap {
 		return l.v.count;
 	}
 
-	public ArrayList<DCounts> extractValues() {
-		ArrayList<DCounts> ret = new ArrayList<>(_size);
-		for(Bucket e : _data){
+	public int getOrDefault(double key, int def) {
+		int ix = hashIndex(key);
+		Bucket l = _data[ix];
+		while(l != null && !(l.v.key == key))
+			l = l.n;
+		if(l == null)
+			return def;
+		return l.v.count;
+	}
+
+	public DCounts[] extractValues() {
+		DCounts[] ret = new DCounts[_size];
+		int i = 0;
+		for(Bucket e : _data) {
 			while(e != null) {
-				ret.add(e.v);
+				ret[i++] = e.v;
 				e = e.n;
 			}
 		}
 
 		return ret;
+	}
+
+	public void replaceWithUIDs() {
+		int i = 0;
+		for(Bucket e : _data)
+			while(e != null) {
+				e.v.count = i++;
+				e = e.n;
+			}
+	}
+
+
+	public void replaceWithUIDsNoZero() {
+		int i = 0;
+		for(Bucket e : _data) {
+			while(e != null) {
+				if(e.v.key != 0) 
+					e.v.count = i++;
+				e = e.n;
+			}
+		}
+	}
+
+	public int[] getUnorderedCountsAndReplaceWithUIDs() {
+		final int[] counts = new int[_size];
+		int i = 0;
+		for(Bucket e : _data)
+			while(e != null) {
+				counts[i] = e.v.count;
+				e.v.count = i++;
+				e = e.n;
+			}
+
+		return counts;
+	}
+
+	public int[] getUnorderedCountsAndReplaceWithUIDsWithout0() {
+		final int[] counts = new int[_size];
+		int i = 0;
+		for(Bucket e : _data) {
+			while(e != null) {
+				if(e.v.key != 0) {
+					counts[i] = e.v.count;
+					e.v.count = i++;
+				}
+				e = e.n;
+			}
+		}
+
+		return counts;
+	}
+
+	public double getMostFrequent(){
+		double f = 0;
+		int fq = 0;
+		for(Bucket e: _data){
+			while(e != null){
+				if(e.v.count > fq){
+					fq = e.v.count;
+					f = e.v.key;
+				}
+				e = e.n;
+			}
+		}
+		return f;
 	}
 
 	private void resize() {
@@ -129,26 +218,57 @@ public class DoubleCountHashMap {
 				e = e.n;
 			}
 		}
-
 	}
 
-	private static int hash(double key) {
-		// return (int) key;
+	public double[] getDictionary() {
+		final double[] ret = new double[_size];
+		for(Bucket e : _data)
+			while(e != null) {
+				ret[e.v.id] = e.v.key;
+				e = e.n;
+			}
+		return ret;
+	}
+
+	private final int hashIndex(final double key) {
+		
+		// previous require pow2 size.:
+		// long bits = Double.doubleToRawLongBits(key);
+		// int h =(int)( bits ^ (bits >>> 32));
+		// h = h ^ (h >>> 20) ^ (h >>> 12);
+		// h = h ^ (h >>> 7) ^ (h >>> 4);
+		// return h & (_data.length - 1);
+		// 100.809.414.955      instructions
+
+		// Option 1 ... conflict on 1 vs -1
+		long bits = Double.doubleToLongBits(key);
+		return Math.abs((int)(bits ^ (bits >>> 32)) % _data.length);
+		// 102.356.926.448      instructions
+
+		// Option 2
+		// long bits = Double.doubleToRawLongBits(key);
+		// return (int) ((bits ^ (bits >> 32) % _data.length));
+		
 
 		// basic double hash code (w/o object creation)
-		long bits = Double.doubleToRawLongBits(key);
-		int h = (int) (bits ^ (bits >>> 32));
+		// return Double.hashCode(key) % _data.length;
+		// return (int) ((bits ^ (bits >>> 32)) % _data.length);
+		// long bits = Double.doubleToLongBits(key);
+		// return (int) Long.remainderUnsigned(bits, (long) _data.length);
+		// long bits = Double.doubleToLongBits(key);
+		// long bits = Double.doubleToRawLongBits(key);
+		// return (int) (bits % (long) _data.length);
+		
+		// return h;
 
 		// This function ensures that hashCodes that differ only by
 		// constant multiples at each bit position have a bounded
 		// number of collisions (approximately 8 at default load factor).
-		h ^= (h >>> 20) ^ (h >>> 12);
-		return h ^ (h >>> 7) ^ (h >>> 4);
 	}
 
-	private static int indexFor(int h, int length) {
-		return h & (length - 1);
-	}
+	// private static int indexFor(int h, int length) {
+	// return h & (length - 1);
+	// }
 
 	protected static class Bucket {
 		protected DCounts v;
@@ -177,7 +297,7 @@ public class DoubleCountHashMap {
 		return sb.toString();
 	}
 
-	public void reset(int size){
+	public void reset(int size) {
 		int p2 = Util.getPow2(size);
 		if(_data.length > 2 * p2)
 			_data = new Bucket[p2];

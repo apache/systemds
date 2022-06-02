@@ -1,0 +1,5 @@
+{
+ "recode": [ zipcode, "district", "view" ], "bin": [
+ { "name": "saleprice"  , "method": "equi-width", "numbins": 3 }
+ ,{ "name": "sqft", "method": "equi-width", "numbins": 4 }]
+  }

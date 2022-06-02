@@ -33,9 +33,21 @@ def abstain(X: Matrix,
             Y: Matrix,
             threshold: float,
             **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param threshold: ---
+    :param verbose: flag specifying if logging information should be printed
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'Y': Y, 'threshold': threshold}
     params_dict.update(kwargs)
-    return Matrix(X.sds_context,
-        'abstain',
-        named_input_nodes=params_dict)
+    
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
+
+    op = MultiReturn(X.sds_context, 'abstain', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

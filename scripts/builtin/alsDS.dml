@@ -19,34 +19,37 @@
 #
 #-------------------------------------------------------------
 
-#
-# Alternating-Least-Squares (ALS) algorithm using a direct solve method for 
+# Alternating-Least-Squares (ALS) algorithm using a direct solve method for
 # individual least squares problems (reg="L2"). This script computes an 
 # approximate factorization of a low-rank matrix V into two matrices L and R.
 # Matrices L and R are computed by minimizing a loss function (with regularization).
 #
 # INPUT   PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME    TYPE     DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# V       String   ---      Location to read the input matrix V to be factorized
-# L       String   ---      Location to write the factor matrix L
-# R       String   ---      Location to write the factor matrix R
-# rank    Int      10       Rank of the factorization
-# lambda  Double   0.000001 Regularization parameter, no regularization if 0.0
-# maxi    Int      50       Maximum number of iterations
-# check   Boolean  FALSE    Check for convergence after every iteration, i.e., updating L and R once
-# thr     Double   0.0001   Assuming check is set to TRUE, the algorithm stops and convergence is declared
-#                           if the decrease in loss in any two consecutive iterations falls below this threshold;
-#                           if check is FALSE thr is ignored
-# ---------------------------------------------------------------------------------------------
-# OUTPUT:
-# 1- An m x r matrix L, where r is the factorization rank
-# 2- An r x n matrix R
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME    TYPE             DEFAULT    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X       Matrix[Double]   ---        Location to read the input matrix V to be factorized
+# rank    Integer          10         Rank of the factorization
+# reg     Double           0.000001   Regularization parameter, no regularization if 0.0
+# maxi    Integer          50         Maximum number of iterations
+# check   Boolean          FALSE      Check for convergence after every iteration, i.e., updating L and R once
+# thr     Double           0.0001     Assuming check is set to TRUE, the algorithm stops and convergence is declared
+#                                     if the decrease in loss in any two consecutive iterations falls below this threshold;
+#                                     if check is FALSE thr is ignored
+# seed    Integer          1324521    The seed to random parts of the algorithm
+# verbose Boolean          TRUE       If the algorithm should run verbosely
+# ----------------------------------------------------------------------------------------------------------------------
 #
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME  TYPE               MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# U     Matrix[Double]     An m x r matrix where r is the factorization rank
+# V     Matrix[Double]     An m x r matrix where r is the factorization rank
+# ----------------------------------------------------------------------------------------------------------------------
 
-m_alsDS = function(Matrix[Double] X, Integer rank = 10, Double lambda = 0.000001, 
-  Integer maxi = 50, Boolean check = FALSE, Double thr = 0.0001, Boolean verbose = TRUE)
+m_alsDS = function(Matrix[Double] X, Integer rank = 10, Double reg = 0.000001, 
+  Integer maxi = 50, Boolean check = FALSE, Double thr = 0.0001, Integer seed = 321452, Boolean verbose = TRUE)
   return (Matrix[Double] U, Matrix[Double] V)
 {
   r = rank;
@@ -83,25 +86,25 @@ m_alsDS = function(Matrix[Double] X, Integer rank = 10, Double lambda = 0.000001
   n = ncol (X);
 
   # initializing factor matrices
-  U = rand (rows = m, cols = r, min = -0.5, max = 0.5);
-  V = rand (rows = n, cols = r, min = -0.5, max = 0.5);
+  U = rand (rows = m, cols = r, min = -0.5, max = 0.5, seed=seed);
+  V = rand (rows = n, cols = r, min = -0.5, max = 0.5, seed=seed+1);
 
   # initializing transformed matrices
   Xt = t(X);
 
   # check for regularization
   if ( verbose )
-    print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + L2 WITH LAMBDA - " + lambda);
+    print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + L2 WITH REG - " + reg);
 
   loss_init = 0.0; # only used if check is TRUE
   if (check) {
     loss_init = sum (X_nonzero_ind * (X - (U %*% t(V)))^2) 
-      + lambda * (sum ((U^2) * row_nonzeros) + sum ((V^2) * col_nonzeros));
+      + reg * (sum ((U^2) * row_nonzeros) + sum ((V^2) * col_nonzeros));
     if( verbose )
       print ("----- Initial train loss: " + loss_init + " -----");
   }
 
-  lambda_I = diag (matrix (lambda, rows = r, cols = 1));
+  lambda_I = diag (matrix (reg, rows = r, cols = 1));
   it = 0;
   converged = FALSE;
   while ((it < max_iter) & (!converged)) {
@@ -125,7 +128,7 @@ m_alsDS = function(Matrix[Double] X, Integer rank = 10, Double lambda = 0.000001
     # check for convergence
     if (check) {
       loss_cur = sum (X_nonzero_ind * (X - (U %*% t(V)))^2) 
-        + lambda * (sum ((U^2) * row_nonzeros) + sum ((V^2) * col_nonzeros));
+        + reg * (sum ((U^2) * row_nonzeros) + sum ((V^2) * col_nonzeros));
       loss_dec = (loss_init - loss_cur) / loss_init;
       if( verbose )
         print ("Train loss at iteration (X) " + it + ": " + loss_cur + " loss-dec " + loss_dec);

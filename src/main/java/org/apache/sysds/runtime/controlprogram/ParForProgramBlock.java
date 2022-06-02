@@ -90,7 +90,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.ParForStatistics;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -290,6 +290,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean USE_RANGE_TASKS_IF_USEFUL   = true; // use range tasks whenever size>3, false, otherwise wrong split order in remote 
 	public static final boolean USE_STREAMING_TASK_CREATION = true; // start working while still creating tasks, prevents blocking due to too small task queue
 	public static final boolean ALLOW_NESTED_PARALLELISM    = true; // if not, transparently change parfor to for on program conversions (local,remote)
+	public static final boolean CONVERT_NESTED_REMOTE_PARFOR = true; //convert parfor to for in remote parfor
 	public static final boolean USE_PARALLEL_RESULT_MERGE   = false; // if result merge is run in parallel or serial 
 	public static final boolean USE_PARALLEL_RESULT_MERGE_REMOTE = true; // if remote result merge should be run in parallel for multiple result vars
 	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
@@ -760,7 +761,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			//maintain statistics
 			long tinit = (long) time.stop();
 			if( DMLScript.STATISTICS )
-				Statistics.incrementParForInitTime(tinit);
+				ParForStatistics.incrementInitTime(tinit);
 			if( _monitor ) 
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, tinit);
 			
@@ -818,14 +819,18 @@ public class ParForProgramBlock extends ForProgramBlock
 				numExecutedIterations, numExecutedTasks, localVariables );
 			
 			// Step 5) cleanup local parworkers (e.g., remove created functions)
-			for( int i=0; i<_numThreads; i++ )
-			{
+			for( int i=0; i<_numThreads; i++ ) {
 				Collection<String> fnNames = workers[i].getFunctionNames();
-				if( fnNames!=null && !fnNames.isEmpty() )
-					for( String fn : fnNames ) {
-						String[] parts = DMLProgram.splitFunctionKey(fn);
-						_prog.removeFunctionProgramBlock(parts[0], parts[1]);
-					}
+				if( fnNames!=null ) 
+					fnNames.stream().map(fn -> DMLProgram.splitFunctionKey(fn))
+						.forEach(p -> _prog.removeFunctionProgramBlock(p[0], p[1]));
+				// also cleanup worker-specific functions created via eval on-demand loading
+				workers[i].getExecutionContext().getTmpParforFunctions().stream()
+					.map(fn -> DMLProgram.splitFunctionKey(fn))
+					.forEach(p -> {
+						_prog.getDMLProg().removeFunctionStatementBlock(p[0], p[1]);
+						_prog.removeFunctionProgramBlock(p[0], p[1]);
+					});
 			}
 
 			// Frees up the GPUContexts used in the threaded Parfor and sets
@@ -834,8 +839,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				ec.getGPUContext(0).initializeThread();
 			}
 		}
-		finally 
-		{
+		finally {
 			//remove thread-local memory budget (reset to original budget)
 			//(in finally to prevent error side effects for multiple scripts in one jvm)
 			resetMemoryBudget();
@@ -1141,7 +1145,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			.map(v -> v._name).collect(Collectors.toSet());
 		Set<String> brVars = inputs.keySet().stream()
 			.filter(v -> !retVars.contains(v))
-			.filter(v -> ec.getVariable(v).getDataType().isMatrix())
+			.filter(v -> ec.getVariable(v).getDataType().isMatrixOrFrame())
 			.filter(v -> OptimizerUtils.estimateSize(ec.getDataCharacteristics(v))< 2.14e9)
 			.collect(Collectors.toSet());
 		return brVars;
@@ -1515,7 +1519,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			throw new DMLRuntimeException("PARFOR: Number of executed tasks does not match the number of created tasks: tasks "+numTasks+"/"+expTasks+", iters "+numIters+"/"+expIters+".");
 	
 		if( DMLScript.STATISTICS )
-			Statistics.incrementParForMergeTime((long) time.stop());
+			ParForStatistics.incrementMergeTime((long) time.stop());
 	}
 	
 	/**

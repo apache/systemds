@@ -50,31 +50,32 @@ jobs:
       matrix:
         tests: [
           "**.functions.a**.**,**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
-          "**.functions.blocks.**,**.functions.data.rand.**,**.functions.countDistinct.**,**.functions.data.misc.**",
+          "**.functions.blocks.**,**.functions.data.rand.**,**.functions.countDistinct.**,**.functions.data.misc.**,**.functions.lineage.**",
           "**.functions.compress.**,,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
           "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
-          "**.functions.federated.algorithms.**",
-          "**.functions.federated.io.**,**.functions.federated.paramserv.**,**.functions.federated.primitives.**,**.functions.federated.transform.**",
+          "**.functions.federated.algorithms.**,**.functions.federated.io.**,**.functions.federated.paramserv.**",
+          "**.functions.federated.primitives.**,**.functions.federated.transform.**",
+          "**.functions.federated.codegen.**",
           "**.functions.codegenalg.partone.**",
           "**.functions.builtin.part1.**",
           "**.functions.builtin.part2.**",
-          "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.iogen.**,**.functions.jmlc.**,**.functions.lineage.**",
+          "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.iogen.**",
           "**.functions.dnn.**,**.functions.paramserv.**",
-          "**.functions.misc.**,**.functions.mlcontext.**",
+          "**.functions.recompile.**,**.functions.misc.**,**.functions.mlcontext.**",
           "**.functions.nary.**,**.functions.quaternary.**",
           "**.functions.parfor.**,**.functions.pipelines.**,**.functions.privacy.**",
           "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
-          "**.functions.unary.matrix.**"
+          "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
           ]
         os: [ubuntu-latest]
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Cache Maven Dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}

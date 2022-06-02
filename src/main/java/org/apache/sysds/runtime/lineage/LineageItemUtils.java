@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -43,7 +44,6 @@ import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.hops.codegen.SpoofFusedOp;
 import org.apache.sysds.lops.PartialAggregate;
-import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -76,6 +76,9 @@ import java.util.stream.Collectors;
 public class LineageItemUtils {
 	
 	public static final String LPLACEHOLDER = "IN#";
+
+	// opcode to represent the serialized bytes of a federated response in lineage cache
+	public static final String SERIALIZATION_OPCODE = "serialize";
 	
 	public static LineageItemType getType(String str) {
 		if (str.length() == 1) {
@@ -192,7 +195,7 @@ public class LineageItemUtils {
 			LineageItem out = operands.get(roots[0].getHopID());
 			if( roots.length > 1 ) { //multi-agg
 				LineageItem[] outputs = Arrays.stream(roots)
-					.map(h -> new LineageItem("", UnaryCP.CAST_AS_MATRIX_OPCODE,
+					.map(h -> new LineageItem("", OpOp1.CAST_AS_MATRIX.toString(),
 						new LineageItem[]{operands.get(h.getHopID())}))
 					.toArray(LineageItem[]::new);
 				out = new LineageItem("", "cbind", outputs);
@@ -261,15 +264,8 @@ public class LineageItemUtils {
 		else if (root instanceof SpoofFusedOp)
 			li = LineageCodegenItem.getCodegenLTrace(((SpoofFusedOp) root).getClassName());
 		
-		else if (root instanceof LiteralOp) {  //TODO: remove redundancy
-			StringBuilder sb = new StringBuilder(root.getName());
-			sb.append(Instruction.VALUETYPE_PREFIX);
-			sb.append(root.getDataType().toString());
-			sb.append(Instruction.VALUETYPE_PREFIX);
-			sb.append(root.getValueType().toString());
-			sb.append(Instruction.VALUETYPE_PREFIX);
-			sb.append(true); //isLiteral = true
-			li = new LineageItem(sb.toString());
+		else if (root instanceof LiteralOp) {
+			li = createScalarLineageItem((LiteralOp) root);
 		}
 		else
 			throw new DMLRuntimeException("Unsupported hop: "+root.getOpString());
@@ -421,7 +417,7 @@ public class LineageItemUtils {
 		}
 
 		//fix the hash codes bottom-up, as the inputs have changed
-		root.fixHash();
+		root.resetHash();
 		root.setVisited();
 	}
 
@@ -536,5 +532,20 @@ public class LineageItemUtils {
 				ec.traceLineage(VariableCPInstruction.prepMoveInstruction(fromVar, e.getKey()));
 			}
 		}
+	}
+	
+	public static LineageItem createScalarLineageItem(LiteralOp lop) {
+		StringBuilder sb = new StringBuilder(lop.getName());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(lop.getDataType().toString());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(lop.getValueType().toString());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(true); //isLiteral = true
+		return new LineageItem(sb.toString());
+	}
+
+	public static LineageItem getSerializedFedResponseLineageItem(LineageItem li) {
+		return new LineageItem(SERIALIZATION_OPCODE, new LineageItem[]{li});
 	}
 }

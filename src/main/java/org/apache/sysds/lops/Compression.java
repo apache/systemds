@@ -34,6 +34,10 @@ public class Compression extends Lop {
 		public boolean isEnabled() {
 			return this != FALSE;
 		}
+
+		public boolean isWorkload(){
+			return this == WORKLOAD;
+		}
 	}
 
 	public Compression(Lop input, DataType dt, ValueType vt, ExecType et, int singletonLookupKey) {

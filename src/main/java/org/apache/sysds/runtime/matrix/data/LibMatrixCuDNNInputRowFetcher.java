@@ -47,7 +47,7 @@ public class LibMatrixCuDNNInputRowFetcher extends LibMatrixCUDA implements java
 		numColumns = LibMatrixCUDA.toInt(image.getNumColumns());
 		isInputInSparseFormat = LibMatrixCUDA.isInSparseFormat(gCtx, image);
 		inPointer = isInputInSparseFormat ? LibMatrixCUDA.getSparsePointer(gCtx, image, instName) : LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, image, instName);
-		outPointer = gCtx.allocate(instName, numColumns*sizeOfDataType);
+		outPointer = gCtx.allocate(instName, (long) numColumns *sizeOfDataType, false);
 	}
 	/**
 	 * Copy the nth row and return the dense pointer
@@ -57,7 +57,7 @@ public class LibMatrixCuDNNInputRowFetcher extends LibMatrixCUDA implements java
 	public Pointer getNthRow(int n) {
 		if(isInputInSparseFormat) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
-			cudaMemset(outPointer, 0, numColumns*sizeOfDataType);
+			cudaMemset(outPointer, 0, (long) numColumns *sizeOfDataType);
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			LibMatrixCUDA.sliceSparseDense(gCtx, instName, (CSRPointer)inPointer, outPointer, n, n, 0, LibMatrixCUDA.toInt(numColumns-1), numColumns);
 		}

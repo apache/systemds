@@ -31,11 +31,7 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def tomeklink(X: Matrix,
               y: Matrix):
-    """
-    :param X: Data Matrix (nxm)
-    :param y: Label Matrix (nx1), greater than zero
-    :return: 'OperationNode' containing  
-    """
+    
     params_dict = {'X': X, 'y': y}
     
     vX_0 = Matrix(X.sds_context, '')

@@ -20,6 +20,8 @@
 package org.apache.sysds.hops.rewrite;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
@@ -87,8 +89,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class HopRewriteUtils 
-{
+public class HopRewriteUtils {
+	private static final Log LOG = LogFactory.getLog(HopRewriteUtils.class.getName());
 
 	public static boolean isValueTypeCast( OpOp1 op ) {
 		return op == OpOp1.CAST_AS_BOOLEAN
@@ -773,23 +775,22 @@ public class HopRewriteUtils
 	public static DataGenOp createSeqDataGenOp( Hop input, boolean asc ) {
 		Hop to = input.rowsKnown() ? new LiteralOp(input.getDim1()) : 
 			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT64, OpOp1.NROW, input);
-		
+		if( asc )
+			return createSeqDataGenOp(input, new LiteralOp(1), to, new LiteralOp(1));
+		else
+			return createSeqDataGenOp(input, to, new LiteralOp(1), new LiteralOp(-1));
+	}
+	
+	public static DataGenOp createSeqDataGenOp(Hop proxy, Hop from, Hop to, Hop incr) {
 		HashMap<String, Hop> params = new HashMap<>();
-		if( asc ) {
-			params.put(Statement.SEQ_FROM, new LiteralOp(1));
-			params.put(Statement.SEQ_TO, to);
-			params.put(Statement.SEQ_INCR, new LiteralOp(1));
-		}
-		else {
-			params.put(Statement.SEQ_FROM, to);
-			params.put(Statement.SEQ_TO, new LiteralOp(1));
-			params.put(Statement.SEQ_INCR, new LiteralOp(-1));	
-		}
+		params.put(Statement.SEQ_FROM, from);
+		params.put(Statement.SEQ_TO, to);
+		params.put(Statement.SEQ_INCR, incr);
 		
 		//note internal refresh size information
 		DataGenOp datagen = new DataGenOp(OpOpDG.SEQ, new DataIdentifier("tmp"), params);
-		datagen.setBlocksize(input.getBlocksize());
-		copyLineNumbers(input, datagen);
+		datagen.setBlocksize(proxy.getBlocksize());
+		copyLineNumbers(proxy, datagen);
 		
 		return datagen;
 	}
@@ -1155,6 +1156,20 @@ public class HopRewriteUtils
 	public static boolean isUnary(Hop hop, OpOp1... types) {
 		return ( hop instanceof UnaryOp 
 			&& ArrayUtils.contains(types, ((UnaryOp) hop).getOp()));
+	}
+
+	/**
+	 * Check if given hop is of a terminal type.
+	 * Terminal hops are either of type print or write.
+	 * @param hop for which the type is checked
+	 * @return true if hop is terminal
+	 */
+	public static boolean isTerminalHop(Hop hop){
+		return isUnary(hop, OpOp1.PRINT)
+			|| isNary(hop, OpOpN.PRINTF)
+			|| isData(hop, OpOpData.PERSISTENTWRITE)
+			|| isData(hop, OpOpData.TRANSIENTWRITE)
+			|| hop instanceof FunctionOp;
 	}
 	
 	public static boolean isMatrixMultiply(Hop hop) {
@@ -1637,7 +1652,10 @@ public class HopRewriteUtils
 				&& prog.getFunctionStatementBlock(sagg) != null;
 		}
 		catch(Exception ex) {
-			//robustness invalid function keys
+			// If the function keys are incorrect this exception is caught for robustness in error messages for users.
+			// Intensionally only catching the exception!
+			// For debugging if for some reason the error we encountered was something else we LOG the error.
+			LOG.error(ex);
 			return false;
 		}
 	}

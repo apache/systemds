@@ -31,10 +31,14 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def lmPredict(X: Matrix,
               B: Matrix,
-              ytest: Matrix,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
-    params_dict = {'X': X, 'B': B, 'ytest': ytest}
+    """
+    :param if: is not wanted
+    :param icpt: Intercept presence, shifting and rescaling the columns of X
+    :param verbose: If TRUE print messages are activated
+    :return: 'OperationNode' containing  
+    """
+    params_dict = {'X': X, 'B': B}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,
         'lmPredict',

@@ -30,6 +30,7 @@ import java.util.TreeMap;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -39,8 +40,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -72,7 +73,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		String opcode = parts[0];
 
 		//handle opcode
-		if(!(opcode.equalsIgnoreCase("ctable"))) {
+		if(!(opcode.equalsIgnoreCase("ctable")) && !(opcode.equalsIgnoreCase("ctableexpand"))) {
 			throw new DMLRuntimeException("Unexpected opcode in CtableFEDInstruction: " + inst);
 		}
 
@@ -96,33 +97,34 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		MatrixObject mo1 = ec.getMatrixObject(input1);
-		MatrixObject mo2 = ec.getMatrixObject(input2);
+		MatrixLineagePair mo1 = ec.getMatrixLineagePair(input1);
+		MatrixLineagePair mo2 = ec.getMatrixLineagePair(input2);
 
 		boolean reversed = false;
 		if(!mo1.isFederated() && mo2.isFederated()) {
-			mo1 = ec.getMatrixObject(input2);
-			mo2 = ec.getMatrixObject(input1);
+			mo1 = ec.getMatrixLineagePair(input2);
+			mo2 = ec.getMatrixLineagePair(input1);
 			reversed = true;
 		}
 
 		// get new output dims
-		Long[] dims1 = getOutputDimension(mo1, reversed ? input2 : input1, reversed ? _outDim2 : _outDim1,
+		Long[] dims1 = getOutputDimension(mo1.getMO(), reversed ? input2 : input1, reversed ? _outDim2 : _outDim1,
 			mo1.getFedMapping().getFederatedRanges());
-		Long[] dims2 = getOutputDimension(mo2, reversed ? input1 : input2, reversed ? _outDim1 : _outDim2,
+		Long[] dims2 = getOutputDimension(mo2.getMO(), reversed ? input1 : input2, reversed ? _outDim1 : _outDim2,
 			mo1.getFedMapping().getFederatedRanges());
 
-		MatrixObject mo3 = input3 != null && input3.isMatrix() ? ec.getMatrixObject(input3) : null;
+		MatrixLineagePair mo3 = input3 != null && input3.isMatrix() ? ec.getMatrixLineagePair(input3) : null;
 
-		boolean reversedWeights = mo3 != null && mo3.isFederated() && !(mo1.isFederated() || mo2.isFederated());
+		boolean reversedWeights = (mo3 != null) && mo3.isFederated()
+			&& !(mo1.isFederated() || mo2.isFederated());
 		if(reversedWeights) {
 			mo3 = mo1;
-			mo1 = ec.getMatrixObject(input3);
+			mo1 = ec.getMatrixLineagePair(input3);
 		}
 
 		// static non-partitioned output dimension (same for all federated partitions)
 		long staticDim = Collections.max(Arrays.asList(dims1), Long::compare);
-		boolean fedOutput = isFedOutput(mo1.getFedMapping(), mo2);
+		boolean fedOutput = isFedOutput(mo1.getFedMapping(), mo2.getMO());
 
 		processRequest(ec, mo1, mo2, mo3, reversed, reversedWeights, fedOutput, staticDim, dims2);
 	}
@@ -132,17 +134,17 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 	 * the specified inputs.
 	 *
 	 * @param ec execution context
-	 * @param mo1 input matrix object 1
-	 * @param mo2 input matrix object 2
-	 * @param mo3 input matrix object 3 or null
+	 * @param mo1 pair of input matrix object 1 and its lineage item
+	 * @param mo2 pair of input matrix object 2 and its lineage item
+	 * @param mo3 pair of input matrix object 3 and its lineage or null
 	 * @param reversed boolean indicating if inputs mo1 and mo2 are reversed
 	 * @param reversedWeights boolean indicating if inputs mo1 and mo3 are reversed
 	 * @param fedOutput boolean indicating if output can be kept federated
 	 * @param staticDim static non-partitioned dimension of the output
 	 * @param dims2 dimensions of the partial outputs along the federated partitioning
 	 */
-	private void processRequest(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3,
-		boolean reversed, boolean reversedWeights, boolean fedOutput, long staticDim, Long[] dims2) {
+	private void processRequest(ExecutionContext ec, MatrixLineagePair mo1, MatrixLineagePair mo2,
+		MatrixLineagePair mo3, boolean reversed, boolean reversedWeights, boolean fedOutput, long staticDim, Long[] dims2) {
 
 		FederationMap fedMap = mo1.getFedMapping();
 
@@ -190,7 +192,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			MatrixObject out = ec.getMatrixObject(output);
 			FederationMap newFedMap = modifyFedRanges(fedMap.copyWithNewID(fr3.getID()),
 				staticDim, dims2, reversed);
-			setFedOutput(mo1, out, newFedMap, staticDim, dims2, reversed);
+			setFedOutput(mo1.getMO(), out, newFedMap, staticDim, dims2, reversed);
 		} else {
 			fr4 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr3.getID());
 			fr5 = fedMap.cleanup(getTID(), fr3.getID());
@@ -380,7 +382,11 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 	}
 
 	private String constructMaxInstString(String in, String out) {
-		String maxInstrString = instString.replace("ctable", "uamax");
+		String maxInstrString;
+		if(instString.contains("ctableexpand"))
+			maxInstrString = instString.replace("ctableexpand", "uamax");
+		else
+			maxInstrString = instString.replace("ctable", "uamax");
 		String[] instParts = maxInstrString.split(Lop.OPERAND_DELIMITOR);
 		String[] maxInstParts = new String[] {instParts[0], instParts[1],
 			InstructionUtils.concatOperandParts(in, DataType.MATRIX.name(), (ValueType.FP64).name()),

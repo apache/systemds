@@ -50,6 +50,7 @@ limitations under the License.
     * [`img_brightness`-Function](#img_brightness-function)
     * [`img_crop`-Function](#img_crop-function)
     * [`img_mirror`-Function](#img_mirror-function)
+    * [`impurityMeasures`-Function](#impurityMeasures-function)
     * [`imputeByFD`-Function](#imputeByFD-function)
     * [`intersect`-Function](#intersect-function)
     * [`KMeans`-Function](#KMeans-function)
@@ -69,17 +70,22 @@ limitations under the License.
     * [`naiveBayesPredict`-Function](#naiveBayesPredict-function)
     * [`normalize`-Function](#normalize-function)
     * [`outlier`-Function](#outlier-function)
+    * [`outlierByDB`-Function](#outlierByDB-function)
     * [`pnmf`-Function](#pnmf-function)
     * [`scale`-Function](#scale-function)
+    * [`setdiff`-Function](#setdiff-function)
     * [`sherlock`-Function](#sherlock-function)
     * [`sherlockPredict`-Function](#sherlockPredict-function)
     * [`sigmoid`-Function](#sigmoid-function)
     * [`slicefinder`-Function](#slicefinder-function)
     * [`smote`-Function](#smote-function)
     * [`steplm`-Function](#steplm-function)
+    * [`symmetricDifference`-Function](#symmetricdifference-function)
     * [`tomekLink`-Function](#tomekLink-function)
     * [`toOneHot`-Function](#toOneHOt-function)
     * [`tSNE`-Function](#tSNE-function)
+    * [`union`-Function](#union-function)
+    * [`unique`-Function](#unique-function)
     * [`winsorize`-Function](#winsorize-function)
     * [`xgboost`-Function](#xgboost-function)
 
@@ -418,12 +424,13 @@ Y = dbscan(X = X, eps = 2.5, minPts = 5)
 | Type        | Description |
 | :-----------| :---------- |
 | Matrix[Integer] | The mapping of records to clusters |
+| Matrix[Double]  | The coordinates of all points considered part of a cluster |
 
 ### Example
 
 ```r
 X = rand(rows=1780, cols=180, min=1, max=20) 
-dbscan(X = X, eps = 2.5, minPts = 360)
+[indices, model] = dbscan(X = X, eps = 2.5, minPts = 360)
 ```
 
 
@@ -1011,6 +1018,50 @@ img_mirror(img_in, horizontal_axis)
 ```r
 A = rand(rows = 3, cols = 3, min = 0, max = 255)
 B = img_mirror(img_in = A, horizontal_axis = TRUE)
+```
+
+
+## `impurityMeasures`-Function
+
+`impurityMeasures()` computes the measure of impurity for each feature of the given dataset based on the passed method (gini or entropy).
+
+### Usage
+
+```r
+IM = impurityMeasures(X = X, Y = Y, R = R, n_bins = 20, method = "gini");
+```
+
+### Arguments
+
+| Name       | Type            | Default | Description |
+| :--------- | :-------------- | :------ | :---------- |
+| X          | Matrix[Double]  | ---     | Feature matrix X |
+| Y          | Matrix[Double]  | ---     | Target vector Y containing only 0 or 1 values |
+| R          | Matrix[Double]  | ---     | Row vector R indicating whether a feature is categorical or continuous. 1 denotes a continuous feature, 2 denotes a categorical feature. |
+| n_bins     | Integer         | `20`    | Number of equi-width bins for binning in case of scale features. |
+| method     | String          | ---     | String indicating the method to use; either "entropy" or "gini". |
+
+### Returns
+
+| Name | Type           | Description |
+| :--- | :------------- | :---------- |
+| IM   | Matrix[Double] | (1 x ncol(X)) row vector containing information/gini gain for each feature of the dataset. In case of gini, the values denote the gini gains, i.e. how much impurity was removed with the respective split. The higher the value, the better the split. In case of entropy, the values denote the information gain, i.e. how much entropy was removed. The higher the information gain, the better the split. |
+
+### Example
+
+```r
+X = matrix("4.0 3.0 2.8 3.5
+            2.4 1.0 3.4 2.9
+            1.1 1.0 4.9 3.4
+            5.0 2.0 1.4 1.8
+            1.1 3.0 1.0 1.9", rows=5, cols=4)
+Y = matrix("1.0
+            0.0
+            0.0
+            1.0
+            0.0", rows=5, cols=1)
+R = matrix("1.0 2.0 1.0 1.0", rows=1, cols=4)
+IM = impurityMeasures(X = X, Y = Y, R = R, method = "entropy")
 ```
 
 
@@ -1752,6 +1803,40 @@ X = rand (rows = 50, cols = 10)
 outlier(X=X, opposite=1)
 ```
 
+## `outlierByDB`-Function
+
+The `outlierByDB`-function implements an outlier prediction for a trained dbscan model. The points in the `Xtest` matrix are checked against the model and are considered part of the cluster if at least one member is within `eps` distance. 
+
+### Usage
+
+```r
+outlierByDB(X, model, eps)
+```
+
+### Arguments
+
+| Name     | Type           | Default  | Description |
+| :------- | :------------- | -------- | :---------- |
+| Xtest    | Matrix[Double] | required | Matrix of points for outlier testing |
+| model    | Matrix[Double] | required | Matrix model of the clusters, containing all points that are considered members, returned by the [`dbscan builtin`](#DBSCAN-function) |
+| eps      | Double         | 0.5      | Epsilon distance between points to be considered in their neighborhood |
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Matrix indicating outlier values of the points in Xtest, 0 suggests it being an outlier |
+
+### Example
+
+```r
+eps = 1
+minPts = 5
+X = rand(rows=1780, cols=180, min=1, max=20)
+[indices, model] = dbscan(X=X, eps=eps, minPts=minPts)
+Y = rand(rows=500, cols=180, min=1, max=20)
+Z = outlierByDB(Xtest=Y, clusterModel = model, eps = eps)
+```
 
 ## `pnmf`-Function
 
@@ -1823,6 +1908,36 @@ scale=TRUE;
 Y= scale(X,center,scale)
 ```
 
+## `setdiff`-Function
+
+The `setdiff`-function returns the values of X that are not in Y.
+
+### Usage
+
+```r
+setdiff(X, Y)
+```
+
+### Arguments
+
+| Name | Type   | Default  | Description |
+| :--- | :----- | -------- | :---------- |
+| X    | Matrix[Double] | required | input vector|
+| Y    | Matrix[Double] | required | input vector|
+
+### Returns
+
+| Type   | Description |
+| :----- | :---------- |
+| Matrix[Double] | values of X that are not in Y.|
+
+### Example
+
+```r
+X = matrix("1 2 3 4", rows = 4, cols = 1)
+Y = matrix("2 3", rows = 2, cols = 1)
+R = setdiff(X = X, Y = Y)
+```
 
 ## `sherlock`-Function
 
@@ -2107,6 +2222,37 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 [C, S] = steplm(X = X, y = y, icpt = 1);
 ```
 
+## `symmetricDifference`-Function
+
+The `symmetricDifference`-function returns the symmetric difference of the two input vectors.
+This is done by calculating the `setdiff` (nonsymmetric) between `union` and `intersect` of the two input vectors.
+
+### Usage
+
+```r
+symmetricDifference(X, Y)
+```
+
+### Arguments
+
+| Name | Type   | Default  | Description |
+| :--- | :----- | -------- | :---------- |
+| X    | Matrix[Double] | required | input vector|
+| Y    | Matrix[Double] | required | input vector|
+
+### Returns
+
+| Type   | Description |
+| :----- | :---------- |
+| Matrix[Double] | symmetric difference of the input vectors |
+
+### Example
+
+```r
+X = matrix("1 2 3.1", rows = 3, cols = 1)
+Y = matrix("3.1 4", rows = 2, cols = 1)
+R = symmetricDifference(X = X, Y = Y)
+```
 
 ## `tomekLink`-Function
 
@@ -2212,6 +2358,66 @@ X = rand(rows = 100, cols = 10, min = -10, max = 10))
 Y = tSNE(X)
 ```
 
+## `union`-Function
+
+The `union`-function combines all rows from both input vectors and removes all duplicate rows by calling `unique` on the resulting vector.
+
+### Usage
+
+```r
+union(X, Y)
+```
+
+### Arguments
+
+| Name | Type   | Default  | Description |
+| :--- | :----- | -------- | :---------- |
+| X    | Matrix[Double] | required | input vector|
+| Y    | Matrix[Double] | required | input vector|
+
+### Returns
+
+| Type   | Description |
+| :----- | :---------- |
+| Matrix[Double] | the union of both input vectors.|
+
+### Example
+
+```r
+X = matrix("1 2 3 4", rows = 4, cols = 1)
+Y = matrix("3 4 5 6", rows = 4, cols = 1)
+R = union(X = X, Y = Y)
+```
+
+## `unique`-Function
+
+The `unique`-function returns a set of unique rows from a given input vector.
+
+### Usage
+
+```r
+unique(X)
+```
+
+### Arguments
+
+| Name | Type   | Default  | Description |
+| :--- | :----- | -------- | :---------- |
+| X    | Matrix[Double] | required | input vector|
+
+### Returns
+
+| Type   | Description |
+| :----- | :---------- |
+| Matrix[Double] | a set of unique values from the input vector |
+
+### Example
+
+```r
+X = matrix("1 3.4 7 3.4 -0.9 8 1", rows = 7, cols = 1)
+R = unique(X = X)
+```
+
 ## `winsorize`-Function
 
 The `winsorize`-function removes outliers from the data. It does so by computing upper and lower quartile range
@@ -2258,7 +2464,7 @@ M = xgboost(X = X, y = y, R = R, sml_type = 1, num_trees = 3, learning_rate = 0.
 | NAME                  | TYPE           | DEFAULT  | Description |
 | :------               | :------------- | -------- | :---------- |
 | X                     | Matrix[Double] |   ---    | Feature matrix X; categorical features needs to be one-hot-encoded |
-| Y                     | Matrix[Double] |   ---    | Label matrix Y |
+| y                     | Matrix[Double] |   ---    | Label matrix y |
 | R                     | Matrix[Double] |   ---    | Matrix R; 1xn vector which for each feature in X contains the following information |
 |                       |                |          |   - R[,2]: 1 (scalar feature) |
 |                       |                |          |   - R[,1]: 2 (categorical feature) |
@@ -2287,7 +2493,7 @@ Y = matrix("1.0
             7.0
             8.0", rows=5, cols=1)
 R = matrix("1.0 1.0 1.0 1.0 1.0", rows=1, cols=5)
-M = xgboost(X = X, Y = Y, R = R)
+M = xgboost(X = X, y = Y, R = R)
 ```
 
 
@@ -2338,6 +2544,6 @@ Y = matrix("1.0
             7.0
             8.0", rows=5, cols=1)
 R = matrix("1.0 1.0 1.0 1.0 1.0", rows=1, cols=5)
-M = xgboost(X = X, Y = Y, R = R, num_trees = 10, learning_rate = 0.4)
+M = xgboost(X = X, y = Y, R = R, num_trees = 10, learning_rate = 0.4)
 P = xgboostPredictRegression(X = X, M = M, learning_rate = 0.4)
 ```

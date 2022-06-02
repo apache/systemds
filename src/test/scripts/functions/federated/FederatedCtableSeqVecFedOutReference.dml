@@ -1,0 +1,56 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+X = rbind(read($1), read($2), read($3), read($4));
+
+m = nrow(X);
+n = ncol(X);
+
+# prepare offset vectors and one-hot encoded X
+maxs = colMaxs(X);
+
+if($7) { # matrix input
+  cix = matrix(X + (t(cumsum(t(maxs))) - maxs), m, n);
+}
+else {
+  cix = matrix(X + (t(cumsum(t(maxs))) - maxs), m*n, 1);
+}
+
+rix = seq(1, nrow(cix));
+cix = cix[ , 1] + 1; # slice row partitioned federated vector cix and add 1
+
+W = rix + cix;
+
+if($5)
+  if($6)
+    X2 = table(cix, rix, W);
+  else
+    X2 = table(cix, rix);
+else
+  if($6)
+    X2 = table(rix, cix, W);
+  else
+    X2 = table(rix, cix);
+
+X2 = X2 * (seq(1, nrow(X2)) / nrow(X2));
+Z = as.matrix(sum(X2));
+
+write(Z, $8);

@@ -25,7 +25,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.cert.CertificateException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -57,6 +56,7 @@ import org.apache.sysds.parser.ParserFactory;
 import org.apache.sysds.parser.ParserWrapper;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -64,6 +64,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorker;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.FederatedMonitoringServer;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
@@ -72,50 +73,78 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
-import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.utils.Explain;
-import org.apache.sysds.utils.NativeHelper;
-import org.apache.sysds.utils.Statistics;
 import org.apache.sysds.utils.Explain.ExplainCounts;
 import org.apache.sysds.utils.Explain.ExplainType;
+import org.apache.sysds.utils.NativeHelper;
+import org.apache.sysds.utils.Statistics;
 
 public class DMLScript 
 {
-	private static ExecMode   EXEC_MODE          = DMLOptions.defaultOptions.execMode;           // the execution mode
-	public static boolean     STATISTICS          = DMLOptions.defaultOptions.stats;             // whether to print statistics
-	public static boolean     JMLC_MEM_STATISTICS = false;                                       // whether to gather memory use stats in JMLC
-	public static int         STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;        // statistics maximum heavy hitter count
-	public static int         STATISTICS_MAX_WRAP_LEN = 30;                                      // statistics maximum wrap length
-	public static boolean     FED_STATISTICS        = DMLOptions.defaultOptions.fedStats;        // whether to print federated statistics
-	public static int         FED_STATISTICS_COUNT  = DMLOptions.defaultOptions.fedStatsCount;   // federated statistics maximum heavy hitter count
-	public static ExplainType EXPLAIN             = DMLOptions.defaultOptions.explainType;       // explain type
-	public static String      DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath;   // filename of dml/pydml script
-	public static String      FLOATING_POINT_PRECISION = "double";                               // data type to use internally
-	public static boolean     PRINT_GPU_MEMORY_INFO = false;                                     // whether to print GPU memory-related information
-	public static long        EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;                              // maximum number of bytes to use for shadow buffer
-	public static long        EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                             // number of bytes to use for shadow buffer
-	public static double      GPU_MEMORY_UTILIZATION_FACTOR = 0.9;                               // fraction of available GPU memory to use
-	public static String      GPU_MEMORY_ALLOCATOR = "cuda";                                     // GPU memory allocator to use
-	public static boolean     LINEAGE = DMLOptions.defaultOptions.lineage;                       // whether compute lineage trace
-	public static boolean     LINEAGE_DEDUP = DMLOptions.defaultOptions.lineage_dedup;           // whether deduplicate lineage items
-	public static ReuseCacheType LINEAGE_REUSE = DMLOptions.defaultOptions.linReuseType;         // whether lineage-based reuse
-	public static LineageCachePolicy LINEAGE_POLICY = DMLOptions.defaultOptions.linCachePolicy;  // lineage cache eviction policy
-	public static boolean     LINEAGE_ESTIMATE = DMLOptions.defaultOptions.lineage_estimate;     // whether estimate reuse benefits
-	public static boolean     LINEAGE_DEBUGGER = DMLOptions.defaultOptions.lineage_debugger;     // whether enable lineage debugger
-	public static boolean     CHECK_PRIVACY = DMLOptions.defaultOptions.checkPrivacy;            // Check which privacy constraints are loaded and checked during federated execution
+	// Set the execution mode
+	private static ExecMode   EXEC_MODE                  = DMLOptions.defaultOptions.execMode;
+	// Enable/disable to print statistics
+	public static boolean     STATISTICS                 = DMLOptions.defaultOptions.stats;
+	// Enable/disable to gather memory use stats in JMLC
+	public static boolean     JMLC_MEM_STATISTICS        = false;
+	// Set maximum heavy hitter count
+	public static int         STATISTICS_COUNT           = DMLOptions.defaultOptions.statsCount;
+	// Set statistics maximum wrap length
+	public static int         STATISTICS_MAX_WRAP_LEN    = 30;
+	// Enable/disable to print federated statistics
+	public static boolean     FED_STATISTICS             = DMLOptions.defaultOptions.fedStats;
+	// Set federated statistics maximum heavy hitter count
+	public static int         FED_STATISTICS_COUNT       = DMLOptions.defaultOptions.fedStatsCount;
+	// Enable/disable this instance is a federated worker
+	public static boolean     FED_WORKER                 = DMLOptions.defaultOptions.fedWorker;
+	// Set explain type
+	public static ExplainType EXPLAIN                    = DMLOptions.defaultOptions.explainType;
+	// Set filename of dml script
+	public static String      DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath;
+	// Set data type to use internally
+	public static String      FLOATING_POINT_PRECISION   = "double";
+	// Enable/disable to print GPU memory-related information
+	public static boolean     PRINT_GPU_MEMORY_INFO      = false;
+	// Set maximum number of bytes to use for shadow buffer
+	public static long        EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;
+	// Set number of bytes to use for shadow buffer
+	public static long        EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;
+	// Set fraction of available GPU memory to use
+	public static double      GPU_MEMORY_UTILIZATION_FACTOR = 0.9;
+	// Set GPU memory allocator to use
+	public static String      GPU_MEMORY_ALLOCATOR       = "cuda";
+	// Enable/disable lineage tracing
+	public static boolean     LINEAGE                    = DMLOptions.defaultOptions.lineage;
+	// Enable/disable deduplicate lineage items
+	public static boolean     LINEAGE_DEDUP              = DMLOptions.defaultOptions.lineage_dedup;
+	// Enable/disable lineage-based reuse
+	public static ReuseCacheType LINEAGE_REUSE           = DMLOptions.defaultOptions.linReuseType;
+	// Set lineage cache eviction policy
+	public static LineageCachePolicy LINEAGE_POLICY      = DMLOptions.defaultOptions.linCachePolicy;
+	// Enable/disable estimate reuse benefits
+	public static boolean     LINEAGE_ESTIMATE           = DMLOptions.defaultOptions.lineage_estimate;
+	// Enable/disable lineage debugger
+	public static boolean     LINEAGE_DEBUGGER           = DMLOptions.defaultOptions.lineage_debugger;
+	// Check which privacy constraints are loaded and checked during federated execution
+	public static boolean     CHECK_PRIVACY              = DMLOptions.defaultOptions.checkPrivacy;
+	// Set accelerator
+	public static boolean           USE_ACCELERATOR      = DMLOptions.defaultOptions.gpu;
+	public static boolean           FORCE_ACCELERATOR    = DMLOptions.defaultOptions.forceGPU;
+	// Enable synchronizing GPU after every instruction
+	public static boolean           SYNCHRONIZE_GPU      = true;
+	// Enable eager CUDA free on rmvar
+	public static boolean           EAGER_CUDA_FREE      = false;
 
-	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
-	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
-	// whether to synchronize GPU after every instruction
-	public static boolean           SYNCHRONIZE_GPU     = true;
-	// whether to perform eager CUDA free on rmvar
-	public static boolean           EAGER_CUDA_FREE     = false;
+	// Global seed 
+	public static int               SEED                 = -1;
 
-
-	public static boolean _suppressPrint2Stdout = false;  // flag that indicates whether or not to suppress any prints to stdout
-	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
+	// flag that indicates whether or not to suppress any prints to stdout
+	public static boolean _suppressPrint2Stdout = false;
+	//set default local spark configuration - used for local testing
+	public static boolean USE_LOCAL_SPARK_CONFIG = false; 
 	public static boolean _activeAM = false;
 	/**
 	 * If true, allow DMLProgram to be generated while not halting due to validation errors/warnings
@@ -231,6 +260,7 @@ public class DMLScript
 			LINEAGE_ESTIMATE      = dmlOptions.lineage_estimate;
 			CHECK_PRIVACY         = dmlOptions.checkPrivacy;
 			LINEAGE_DEBUGGER      = dmlOptions.lineage_debugger;
+			SEED                  = dmlOptions.seed; 
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
@@ -251,12 +281,12 @@ public class DMLScript
 			
 			if(dmlOptions.fedWorker) {
 				loadConfiguration(fnameOptConfig);
-				try {
-					new FederatedWorker(dmlOptions.fedWorkerPort).run();
-				}
-				catch(CertificateException e) {
-					e.printStackTrace();
-				}
+				new FederatedWorker(dmlOptions.fedWorkerPort, dmlOptions.debug);
+				return true;
+			}
+
+			if(dmlOptions.fedMonitoring) {
+				new FederatedMonitoringServer(dmlOptions.fedMonitoringPort, dmlOptions.debug);
 				return true;
 			}
 
@@ -433,6 +463,7 @@ public class DMLScript
 		finally {
 			//cleanup scratch_space and all working dirs
 			cleanupHadoopExecution(ConfigurationManager.getDMLConfig());
+			FederatedData.clearWorkGroup();
 			//stop spark context (after cleanup of federated workers and other pools,
 			//otherwise federated spark cleanups in local tests throw errors in same JVM)
 			if(ec != null && ec instanceof SparkExecutionContext)
@@ -449,10 +480,8 @@ public class DMLScript
 	public static void setGlobalFlags(DMLConfig dmlconf) {
 		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
 		GPUContextPool.AVAILABLE_GPUS = dmlconf.getTextValue(DMLConfig.AVAILABLE_GPUS);
-		
 		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);
 		NativeHelper.initialize(dmlconf.getTextValue(DMLConfig.NATIVE_BLAS_DIR), dmlconf.getTextValue(DMLConfig.NATIVE_BLAS).trim());
-		
 		DMLScript.SYNCHRONIZE_GPU = dmlconf.getBooleanValue(DMLConfig.SYNCHRONIZE_GPU);
 		DMLScript.EAGER_CUDA_FREE = dmlconf.getBooleanValue(DMLConfig.EAGER_CUDA_FREE);
 		DMLScript.PRINT_GPU_MEMORY_INFO = dmlconf.getBooleanValue(DMLConfig.PRINT_GPU_MEMORY_INFO);
@@ -461,7 +490,7 @@ public class DMLScript
 		if(DMLScript.GPU_MEMORY_UTILIZATION_FACTOR < 0) {
 			throw new RuntimeException("Incorrect value (" + DMLScript.GPU_MEMORY_UTILIZATION_FACTOR + ") for the configuration:" + DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
 		}
-		
+		DMLScript.USE_LOCAL_SPARK_CONFIG |= dmlconf.getBooleanValue(DMLConfig.USE_LOCAL_SPARK_CONFIG);
 		DMLScript.FLOATING_POINT_PRECISION = dmlconf.getTextValue(DMLConfig.FLOATING_POINT_PRECISION);
 		org.apache.sysds.runtime.matrix.data.LibMatrixCUDA.resetFloatingPointPrecision();
 		if(DMLScript.FLOATING_POINT_PRECISION.equals("double")) {
@@ -624,5 +653,8 @@ public class DMLScript
 				LOG.error("Failed to load native cuda codegen library\n" + e);
 			}
 		}
+		// set the global class loader to make Spark's MutableURLClassLoader
+		// available for all parfor worker threads without pass-through
+		CodegenUtils.setClassLoader(Thread.currentThread().getContextClassLoader());
 	}
 }

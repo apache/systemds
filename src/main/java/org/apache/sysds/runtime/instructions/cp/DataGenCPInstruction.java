@@ -283,12 +283,12 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			CPOperand rows = new CPOperand(s[2]);
 			CPOperand cols = new CPOperand("1", ValueType.INT64, DataType.SCALAR);
 			boolean replace = (!s[3].contains(Lop.VARIABLE_NAME_PLACEHOLDER) && Boolean.valueOf(s[3]));
-
-			long seed = Long.parseLong(s[SEED_POSITION_SAMPLE]);
+			long seed = !s[SEED_POSITION_SAMPLE].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+				Long.parseLong(s[SEED_POSITION_SAMPLE]) : -1;
 			int blen = Integer.parseInt(s[5]);
 
-			return new DataGenCPInstruction(op, method, null, out, rows, cols, null, blen, s[1], replace, seed, opcode,
-				str);
+			return new DataGenCPInstruction(op, method, null,
+				out, rows, cols, null, blen, s[1], replace, seed, opcode, str);
 		}
 		else if(method == OpOpDG.TIME) {
 			return new DataGenCPInstruction(op, method, out, opcode, str);
@@ -355,7 +355,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			}
 			else {
 				String[] data = frame_data.split(DataExpression.DELIM_NA_STRING_SEP);
-				int rowLength = data.length/lrows;
+				int rowLength = (lrows > 0)?data.length/lrows:0;
 				if(data.length != schemaLength && data.length > 1 && rowLength != schemaLength)
 					throw new DMLRuntimeException(
 						"data values should be equal to number of columns," + " or a single values for all columns");

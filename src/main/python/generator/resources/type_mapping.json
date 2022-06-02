@@ -5,9 +5,11 @@
             "frame": "Frame",
             "boolean": "bool",
             "integer": "int",
+            "int": "int",
+            "scalar":"float",
             "double": "float",
             "string": "str",
-            "list": "Iterable"
+            "list": "List"
     },
     "default": {
         "---": "None"

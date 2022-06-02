@@ -20,6 +20,15 @@
 package org.apache.sysds.runtime.controlprogram.caching;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.util.LocalFileUtils;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Unified Memory Manager - Initial Design
@@ -44,7 +53,7 @@ import org.apache.commons.lang.NotImplementedException;
  * they can occupy, meaning that the boundary for the areas can shift dynamically depending
  * on the current load. Most importantly, though, dirty objects must not be counted twice
  * when pinning such an object for an operation. The min/max constraints are not exposed but
- * configured internally. An good starting point are the following constraints (relative to
+ * configured internally. A good starting point are the following constraints (relative to
  * JVM max heap size):
  * ___________________________
  * | operations  | 0%  | 70% | (pin requests always accepted)
@@ -63,94 +72,341 @@ import org.apache.commons.lang.NotImplementedException;
  *      eviction. All pin requests have to be accepted, and once a non-dirty object is released
  *      (unpinned) it can be dropped without persisting it to local FS.
  *
+ * Example Scenarios for an Operation:
+ *  (1) Inputs are available in the UMM, enough space left for the output.
+ *  (2) Some inputs are pre-evicted. Read and pin those in the operational memory.
+ *  (3) Inputs are available in the UMM, not enough space left for the output.
+ *  	Evict cached objects to reserve worst-case output memory.
+ *  (4) Some inputs are pre-evicted and not enough space left for the inputs
+ *  	and output. Evict cached objects to make space for the inputs.
+ *  	Evict cached objects to reserve worst-case output memory.
+ *
  * Thread-safeness:
  * Initially, the UMM will be used in an instance-based manner. For global visibility and
  * use in parallel for loops, the UMM would need to provide a static, synchronized API, but
  * this constitutes a source of severe contention. In the future, we will consider a design
  * with thread-local UMMs for the individual parfor workers.
- *
- * Testing:
- * The UMM will be developed bottom up, and thus initially tested via component tests for
- * evaluating the eviction behavior for sequences of API requests. 
  */
+
 public class UnifiedMemoryManager
 {
-	public UnifiedMemoryManager(long capacity) {
-		//TODO implement
-		throw new NotImplementedException();
+	// Maximum size of UMM in bytes (default 85%)
+	private static long _limit;
+	// Current total size of the cached objects
+	private static long _totCachedSize;
+	// Operational memory limit in bytes (70%)
+	private static long _opMemLimit;
+	// List of pinned entries
+	private static final List<String> _pinnedEntries = new ArrayList<String>();
+
+	// Eviction queue of <filename,buffer> pairs (implemented via linked hash map
+	// for (1) queue semantics and (2) constant time get/insert/delete operations)
+	private static CacheEvictionQueue _mQueue;
+
+	// Maintenance service for synchronous or asynchronous delete of evicted files
+	private static CacheMaintenanceService _fClean;
+
+	// Pinned size of physical memory. Starts from 0 for each operation. Max is 70% of heap
+	// This increases only if the input is not present in the cache and read from FS/rdd/fed/gpu
+	private static long _pinnedPhysicalMemSize = 0;
+	// Size of pinned virtual memory. This tracks the total input size
+	// This increases if the input is available in the cache.
+	private static long _pinnedVirtualMemSize = 0;
+
+	//---------------- OPERATION MEMORY MAINTENANCE -------------------//
+
+	// Make space for and track a cache block to be pinned in operation memory
+	public static void pin(CacheableData<?> cd) {
+		if (!CacheableData.isCachingActive()) {
+			return;
+		}
+
+		// Space accounting based on an estimated size and before reading the blob
+		long estimatedSize = OptimizerUtils.estimateSize(cd.getDataCharacteristics());
+		if (probe(cd))
+			// Availability in the cache means no memory overhead.
+			// We still need to track to derive the worst-case output memory
+			_pinnedVirtualMemSize += estimatedSize;
+		else {
+			// The blob will be restored from local FS, or will be read
+			// from other backends. Make space if not available.
+			makeSpace(estimatedSize);
+			_pinnedPhysicalMemSize += estimatedSize;
+		}
+		// Track the pinned entries to protect from evictions
+		_pinnedEntries.add(cd.getCacheFilePathAndName());
+
+		// Reserve space for output after pinning every input.
+		// This overly conservative approach removes the need to call reserveOutputMem() from
+		// each instruction. Ideally, every instruction first pins all the inputs, followed
+		// by reserving space for the output.
+		reserveOutputMem();
+	}
+
+	// Reserve space for output in the operation memory
+	public static void reserveOutputMem() {
+		if (!OptimizerUtils.isUMMEnabled() || !CacheableData.isCachingActive())
+			return;
+
+		// Worst case upper bound for output = 70% - size(inputs)
+		// FIXME: Parfor splits this 70% into smaller limits
+		long maxOutputSize = _opMemLimit - (_pinnedVirtualMemSize + _pinnedPhysicalMemSize);
+		// Evict cached entries to make space in operation memory if needed
+		makeSpace(maxOutputSize);
 	}
 	
-	/**
-	 * Pins a cache block into operation memory.
-	 * 
-	 * @param key    unique identifier and local FS filename for eviction
-	 * @param block  cache block if not under UMM control, null otherwise
-	 * @param dirty  indicator if block is dirty (subject to buffer pool management)
-	 * @return       pinned cache block, potentially restored from local FS
-	 */
-	public CacheBlock pin(String key, CacheBlock block, boolean dirty) {
-		//TODO implement
-		throw new NotImplementedException();
+	// Unpins (releases) a cache block from operation memory
+	public static void unpin(CacheableData<?> cd) {
+		if (!CacheableData.isCachingActive())
+			return;
+
+		// TODO: Track preserved output memory to protect from concurrent threads
+		if (!_pinnedEntries.contains(cd.getCacheFilePathAndName()))
+			return; //unpinned. output of an instruction
+
+		// We still use the estimated size even though we have the blobs available.
+		// This makes sure we are subtracting exactly what we added during pinning.
+		long estimatedSize = OptimizerUtils.estimateSize(cd.getDataCharacteristics());
+		if (probe(cd))
+			_pinnedVirtualMemSize -= estimatedSize;
+		else
+			_pinnedPhysicalMemSize -= estimatedSize;
+
+		_pinnedEntries.remove(cd.getCacheFilePathAndName());
 	}
-	
-	/**
-	 * Pins a virtual cache block into operation memory, by making a size reservation.
-	 * The provided size is an upper bound of the actual object size, and can be
-	 * updated on unpin (once the actual cache block is provided).
-	 * 
-	 * @param key    unique identifier and local FS filename for eviction
-	 * @param size   memory reservation in operation area
-	 * @param dirty  indicator if block is dirty (subject to buffer pool management)
-	 */
-	public void pin(String key, long size, boolean dirty) {
-		//TODO implement
-		throw new NotImplementedException();
+
+	//---------------- UMM MAINTENANCE & LOOKUP -------------------//
+
+	// Initialize the unified memory manager
+	public static void init() {
+		_mQueue = new CacheEvictionQueue();
+		_fClean = new CacheMaintenanceService();
+		_limit = OptimizerUtils.getBufferPoolLimit();
+		_opMemLimit = (long)(OptimizerUtils.getLocalMemBudget()); //70% of heap
+		_totCachedSize = 0;
+		_pinnedPhysicalMemSize = 0;
+		_pinnedVirtualMemSize = 0;
+		if( CacheableData.CACHING_BUFFER_PAGECACHE )
+			PageCache.init();
 	}
-	
-	/**
-	 * Unpins (releases) a cache block from operation memory. Dirty objects
-	 * are logically moved back to the buffer pool area.
-	 * 
-	 * @param key    unique identifier and local FS filename for eviction
-	 */
-	public void unpin(String key) {
-		//TODO implement
-		throw new NotImplementedException();
+
+	// Cleanup the unified memory manager
+	public static void cleanup() {
+		if( _mQueue != null )
+			_mQueue.clear();
+		if( _fClean != null )
+			_fClean.close();
+		if( CacheableData.CACHING_BUFFER_PAGECACHE )
+			PageCache.clear();
+		_totCachedSize = 0;
+		_pinnedPhysicalMemSize = 0;
+		_pinnedVirtualMemSize = 0;
 	}
-	
-	/**
-	 * Unpins (releases) a cache block from operation memory. If the size of
-	 * the provided cache block differs from the UMM meta data, the UMM meta
-	 * data is updated. Use cases include update-in-place operations and
-	 * size reservations via worst-case upper bound estimates.
-	 * 
-	 * @param key    unique identifier and local FS filename for eviction
-	 * @param block  cache block which may be under UMM control, if null ignored
-	 */
-	public void unpin(String key, CacheBlock block) {
-		//TODO implement
-		throw new NotImplementedException();
+
+	public static void setUMMLimit(long val) {
+		_limit = val;
 	}
-	
-	/**
-	 * Removes a cache block associated with the given key from all memory
-	 * areas, and deletes evicted representations (files in local FS). The
-	 * local file system deletes can happen asynchronously.
-	 * 
-	 * @param key    unique identifier and local FS filename for eviction
-	 */
-	public void delete(String key) {
-		//TODO implement
-		throw new NotImplementedException();
+
+	public static long getUMMSize() {
+		synchronized(_mQueue) {
+			return _limit;
+		}
 	}
-	
+
+	// Get the available memory in UMM
+	public static long getUMMFree() {
+		synchronized(_mQueue) {
+			return _limit - (_totCachedSize + _pinnedPhysicalMemSize);
+		}
+	}
+
+	// Reads a cached object. This is called from cacheabledata implementations
+	public static CacheBlock readBlock(String fname, boolean matrix)
+		throws IOException
+	{
+		CacheBlock cb = null;
+		ByteBuffer ldata = null;
+
+		//probe write buffer
+		synchronized (_mQueue)
+		{
+			ldata = _mQueue.get(fname);
+
+			//modify eviction order (accordingly to access)
+			if (CacheableData.CACHING_BUFFER_POLICY == LazyWriteBuffer.RPolicy.LRU
+				&& ldata != null)
+			{
+				//reinsert entry at end of eviction queue
+				_mQueue.remove (fname);
+				_mQueue.addLast (fname, ldata);
+			}
+		}
+
+		//deserialize or read from FS if required
+		if( ldata != null )
+		{
+			cb = ldata.deserializeBlock();
+			if (DMLScript.STATISTICS)
+				CacheStatistics.incrementFSBuffHits();
+		}
+		else
+		{
+			cb = LocalFileUtils.readCacheBlockFromLocal(fname, matrix);
+			if (DMLScript.STATISTICS)
+				CacheStatistics.incrementFSHits();
+		}
+
+		return cb;
+	}
+
+	public static boolean probe(CacheableData<?> cd) {
+		String filePath = cd.getCacheFilePathAndName();
+		return _mQueue.containsKey(filePath);
+	}
+
+	// Make required space. Evict if needed.
+	public static int makeSpace(long reqSpace) {
+		int numEvicted = 0;
+		// Check if sufficient space is already available
+		if (getUMMFree() > reqSpace)
+			return numEvicted;
+
+		// Evict cached objects to make space
+		try {
+			synchronized(_mQueue) {
+				// Evict blobs to make room (by default FIFO)
+				while (getUMMFree() < reqSpace && !_mQueue.isEmpty()) {
+					//remove first unpinned entry from eviction queue
+					var entry = _mQueue.removeFirstUnpinned(_pinnedEntries);
+					String ftmp = entry.getKey();
+					ByteBuffer bb = entry.getValue();
+
+					if(bb != null) {
+						// Wait for pending serialization
+						bb.checkSerialized();
+						// Evict object
+						bb.evictBuffer(ftmp);
+						bb.freeMemory();
+						_totCachedSize -= bb.getSize();
+						numEvicted++;
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			throw new DMLRuntimeException("Eviction request of size "+(reqSpace-getUMMFree())+ " in the UMM failed.", e);
+		}
+
+		if( DMLScript.STATISTICS )
+			CacheStatistics.incrementFSWrites(numEvicted);
+
+		return numEvicted;
+	}
+
+	// Write an object to the cache
+	public static int writeBlock(String fname, CacheBlock cb)
+		throws IOException
+	{
+		//obtain basic metadata of the cache block
+		long lSize = getCacheBlockSize(cb);
+		boolean requiresWrite = (lSize > _limit        //global buffer limit
+			|| !ByteBuffer.isValidCapacity(lSize, cb)); //local buffer limit
+		int numEvicted = 0;
+
+		// Handle caching/eviction if it fits in UMM
+		if( !requiresWrite )
+		{
+			// Create byte buffer handle (no block allocation yet)
+			ByteBuffer bbuff = new ByteBuffer( lSize );
+
+			// Modify buffer pool
+			synchronized( _mQueue )
+			{
+				// Evict blocks to make room if required
+				numEvicted += makeSpace(lSize);
+				// Put placeholder into buffer pool (reserve mem)
+				_mQueue.addLast(fname, bbuff);
+				_totCachedSize += lSize;
+			}
+
+			// Serialize matrix (outside synchronized critical path)
+			_fClean.serializeData(bbuff, cb);
+
+			if( DMLScript.STATISTICS )
+				CacheStatistics.incrementBPoolWrites();
+		}
+		else
+		{
+			// Write directly to local FS (bypass buffer if too large)
+			LocalFileUtils.writeCacheBlockToLocal(fname, cb);
+			if( DMLScript.STATISTICS ) {
+				CacheStatistics.incrementFSWrites();
+			}
+			numEvicted++;
+		}
+
+		return numEvicted;
+	}
+
+	public static long getCacheBlockSize(CacheBlock cb) {
+		return cb.isShallowSerialize() ?
+			cb.getInMemorySize() : cb.getExactSerializedSize();
+	}
+
+	public static void deleteBlock(String fname)
+	{
+		boolean requiresDelete = true;
+
+		synchronized( _mQueue )
+		{
+			//remove queue entry
+			ByteBuffer ldata = _mQueue.remove(fname);
+			if( ldata != null ) {
+				_totCachedSize -= ldata.getSize();
+				requiresDelete = false;
+				ldata.freeMemory(); //cleanup
+			}
+		}
+
+		//delete from FS if required
+		if( requiresDelete )
+			_fClean.deleteFile(fname);
+	}
+
 	/**
 	 * Removes all cache blocks from all memory areas and deletes all evicted
 	 * representations (files in local FS). All internally thread pools must be
-	 * shut down in a gracefully manner (e.g., wait for pending deletes).
+	 * shut down in a graceful manner (e.g., wait for pending deletes).
 	 */
 	public void deleteAll() {
 		//TODO implement
 		throw new NotImplementedException();
+	}
+
+	/**
+	 * Evicts all buffer pool entries.
+	 * NOTE: use only for debugging or testing.
+	 *
+	 * @throws IOException if IOException occurs
+	 */
+	public static void forceEviction()
+		throws IOException
+	{
+		//evict all matrices and frames
+		while( !_mQueue.isEmpty() )
+		{
+			//remove first entry from eviction queue
+			Map.Entry<String, ByteBuffer> entry = _mQueue.removeFirst();
+			ByteBuffer tmp = entry.getValue();
+
+			if( tmp != null ) {
+				//wait for pending serialization
+				tmp.checkSerialized();
+
+				//evict matrix
+				tmp.evictBuffer(entry.getKey());
+				tmp.freeMemory();
+			}
+		}
 	}
 }

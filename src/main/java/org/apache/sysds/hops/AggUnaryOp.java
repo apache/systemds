@@ -38,7 +38,6 @@ import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
-
 // Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum
 
 public class AggUnaryOp extends MultiThreadedHop
@@ -129,7 +128,7 @@ public class AggUnaryOp extends MultiThreadedHop
 				if( isTernaryAggregateRewriteApplicable() ) {
 					agg1 = constructLopsTernaryAggregateRewrite(et);
 				}
-				else if( isUnaryAggregateOuterCPRewriteApplicable() )
+				else if( et != ExecType.FED && isUnaryAggregateOuterCPRewriteApplicable() )
 				{
 					BinaryOp binput = (BinaryOp)getInput().get(0);
 					agg1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
@@ -386,8 +385,6 @@ public class AggUnaryOp extends MultiThreadedHop
 			_etype = ExecType.SPARK;
 		}
 
-		updateETFed();
-
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		
@@ -553,7 +550,8 @@ public class AggUnaryOp extends MultiThreadedHop
 			in2 = in1;
 			in3 = in1;
 			handled = true;
-		} else if (input11 instanceof BinaryOp ) {
+		}
+		else if (HopRewriteUtils.isBinary(input11, OpOp2.MULT, OpOp2.POW) ) {
 			BinaryOp b11 = (BinaryOp)input11;
 			switch( b11.getOp() ) {
 			case MULT: // A*B*C case
@@ -574,7 +572,8 @@ public class AggUnaryOp extends MultiThreadedHop
 				break;
 			default: break;
 			}
-		} else if( input12 instanceof BinaryOp ) {
+		}
+		else if( HopRewriteUtils.isBinary(input12, OpOp2.MULT, OpOp2.POW) ) {
 			BinaryOp b12 = (BinaryOp)input12;
 			switch (b12.getOp()) {
 			case MULT: // A*B*C case
@@ -609,6 +608,9 @@ public class AggUnaryOp extends MultiThreadedHop
 		ExecType et_input = input1.optFindExecType();
 		// Because ternary aggregate are not supported on GPU
 		et_input = et_input == ExecType.GPU ? ExecType.CP :  et_input;
+		// If forced ExecType is FED, it means that the federated planner updated the ExecType and
+		// execution may fail if ExecType is not FED
+		et_input = (getForcedExecType() == ExecType.FED) ? ExecType.FED : et_input;
 		
 		return new TernaryAggregate(in1, in2, in3, AggOp.SUM, 
 			OpOp2.MULT, _direction, getDataType(), ValueType.FP64, et_input, k);
@@ -668,7 +670,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		if( !(that instanceof AggUnaryOp) )
 			return false;
 		
-		AggUnaryOp that2 = (AggUnaryOp)that;		
+		AggUnaryOp that2 = (AggUnaryOp)that;
 		return (   _op == that2._op
 				&& _direction == that2._direction
 				&& _maxNumThreads == that2._maxNumThreads

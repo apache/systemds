@@ -30,7 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 
 public class DependencyTask<E> implements Comparable<DependencyTask<?>>, Callable<E> {
-	public static final boolean ENABLE_DEBUG_DATA = false;
+	public static final boolean ENABLE_DEBUG_DATA = false; // explain task graph
 	protected static final Log LOG = LogFactory.getLog(DependencyTask.class.getName());
 
 	private final Callable<E> _task;
@@ -68,10 +68,14 @@ public class DependencyTask<E> implements Comparable<DependencyTask<?>>, Callabl
 			return isReady();
 		}
 	}
-
+	
 	public void addDependent(DependencyTask<?> dependencyTask) {
 		_dependantTasks.add(dependencyTask);
 		dependencyTask._rdy += 1;
+	}
+	
+	public boolean hasDependency (DependencyTask<?> dependencyTask) {
+		return _dependantTasks.contains(dependencyTask);
 	}
 
 	@Override

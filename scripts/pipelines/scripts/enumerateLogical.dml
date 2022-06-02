@@ -52,131 +52,169 @@
 source("scripts/builtin/bandit.dml") as bandit;
 
 enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest, Matrix[Double] ytest,
-  Matrix[Double] cmr, Frame[Unknown] cat, Frame[Unknown] population, Integer max_iter=10, List[Unknown] metaList, 
-  String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] primitives, Frame[Unknown] param,
-  Integer num_inst, Integer num_exec, Boolean cv=FALSE, Boolean cvk=3, Boolean verbose, List[Unknown] ctx=list(prefix="----"))
-return (Frame[Unknown] bestLg, Double pre_best)
+  Frame[Unknown] initial_population, Frame[String] refSol = as.frame("NaN"), Integer seed = -1, Integer max_iter=10, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
+  Frame[Unknown] primitives, Frame[Unknown] param, Double dirtyScore = 79, Boolean cv=FALSE, Boolean cvk=3,
+  Boolean verbose, List[Unknown] ctx=list(prefix="----"))
+return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Double refChanges, Frame[Unknown] acc)
 {
+
+  finalOutput = list()
+  finalOutputHp = list()
+  mask = as.matrix(metaList['mask'])
   prefix = as.scalar(ctx["prefix"]);  
-  bestLg = as.frame("")
-  best_score = 0.0
-  pre_best = 0.0
   iter = 1
-  convergedOuter = FALSE
+  populationLength = 0
+  hpLength = 0
+  converged = FALSE
+  start = 1; 
+  end = 0;
+  [allOps, ref] = getOps(param[, 2], refSol, as.scalar(metaList['distY']), nrow(y), min(y))
 
-  while(iter <= max_iter & !convergedOuter)
+  # unrolled by physical pipelines
+  pipelines = frame(0, rows=nrow(primitives)^ncol(primitives), cols=max(ncol(initial_population), ncol(ref)))
+  for(i in 1:nrow(initial_population)) { 
+    pconf = bandit::get_physical_configurations(initial_population[i], 0, primitives)
+    end = end + nrow(pconf)
+    pipelines[start:end, 1:ncol(pconf)] = pconf
+    start = end + 1
+  }
+  pipelines = removeEmpty(target = pipelines, margin="rows") 
+  if(sum(mask) > 0)
   {
+    dummyEncode = frame("dummycoding", rows=nrow(pipelines), cols=1)
+    pipelines[, 2] = dummyEncode
+  }
+  pipelines = rbind(ref, pipelines)
+  population = pipelines
+  populationSize = nrow(pipelines)
+  transitions = sample(4, (populationSize * max_iter), TRUE, seed)
+  opToAdd = sample(nrow(allOps), (populationSize * max_iter), TRUE, seed)
+  # opToRemove = sample(max_iter, (populationSize * max_iter), TRUE, seed)
+  refChangesInternal = 0
+  while(!converged & iter <= max_iter)
+  {
+    populationLength = max(populationLength, ncol(population))
+    id = matrix(seq(1, nrow(population)*2), rows=nrow(population), cols=2)
     print(prefix+" EnumLP iteration "+iter+"/"+as.integer(max_iter)+":" );
-    physicalPipList = list();
-    logicalPipList = list();
-    
-    # get the physical instances from logical ones
-    # unrolled by physical pipelines
-    ppos = list();
-    for(i in 1:nrow(population)) { 
-      lv = as.integer(as.scalar(population[i, 1])) + 1
-      lp = population[i, 2:lv]
-      pconf = bandit::get_physical_configurations(lp, num_inst, primitives)
-      for(j in 1:nrow(pconf)) {
-        physicalPipList = append(physicalPipList, pconf[j,]);
-        ppos = append(ppos, i)
-      }
-      logicalPipList = append(logicalPipList, lp);
-    }
-    
     # # # execute the physical pipelines
-    scores = matrix(0, nrow(physicalPipList), 1)
-    parfor(i in 1:length(physicalPipList)) {
-      lp2 = as.frame(logicalPipList[as.scalar(ppos[i]),])
-      pp2 = as.frame(physicalPipList[i,])
-      # # append configuration keys for extracting the pipeline later on
-      id = seq(1, nrow(pp2))
-      idpp = cbind(as.frame(id), pp2)
-      # # execute the physical instances and store the minimum scores, each pipeline is executed num_exec times
-      [outPip, outHp, feaFrameOuter] = bandit::run_with_hyperparam(lp2, idpp, num_exec, X, y, Xtest, ytest, metaList,
-        evaluationFunc, evalFunHp, param, as.frame(""), cv, cvk, FALSE)
-      # # sort the configurations groupwise
-      max_perf = bandit::getMaxPerConf(outPip, nrow(pp2)) 
-      scores[i,1] = as.matrix(max_perf[1,1])
+    [outPip, outHp, p, refChanges] = bandit::run_with_hyperparam(ph_pip=cbind(as.frame(id), population),
+      X=X, Y=y, Xtest=Xtest, Ytest=ytest, metaList=metaList, evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, param=param, cv=cv, cvk=cvk, seed=seed, default=TRUE)
+    # # sort the configurations score-wise
+    actPip = cbind(as.frame(outPip[, 1]), as.frame(refChanges))
+    actPip = cbind(actPip, population)
+    sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(population)))
+    sortedPipelines = frameSort(actPip, sort_mask, TRUE)
+    sortedHp = order(target = outHp, by = 1, decreasing=TRUE)
+    converged = as.double(as.scalar(sortedPipelines[1, 1])) > dirtyScore
+    hpLength = max(hpLength, ncol(outHp))
+    if(converged)
+      print(prefix+" EnumLP  converged after "+iter+" / "+max_iter+" iterations")  
+    diR = round(nrow(sortedPipelines)/2)
+    if(nrow(sortedPipelines) > 1) {
+      sortedPipelines = sortedPipelines[1:diR]
+      sortedHp = sortedHp[1:diR]
     }
-    
-    # # select parents and best score
-    selected = order(target = scores, by = 1, decreasing=TRUE, index.return=TRUE)
-    idxR = as.scalar(selected[1,1])
-    best_score = as.scalar(scores[idxR])
-    converged =  pre_best > best_score
-    convergedOuter = converged
-    if(converged & (iter > 1)) {
-      print(prefix+"EnumLP: converged after "+iter+" iteration(s)")
-      print(prefix+"EnumLP: best score " + pre_best)
-      print(prefix+"EnumLP: best pipeline " + toString(bestLg))
+    finalOutput = append(finalOutput, sortedPipelines)
+    finalOutputHp = append(finalOutputHp, sortedHp)
+    # # # if converged then stop otherwise generate new population
+    children = frame(0, rows=populationSize, cols=ncol(sortedPipelines)+(ncol(sortedPipelines)/2))
+    sortedPipelines = sortedPipelines[, 3:ncol(sortedPipelines)]
+    start = 1; 
+    end = 0;
+    topk = frame(0, rows=round((populationSize/2)) * length(finalOutput) , cols=populationLength + 2) 
+    for(i in 1:length(finalOutput))
+    {
+      pipFrame = as.frame(finalOutput[i])
+      end = end + nrow(pipFrame)
+      topk[start:end, 1:ncol(pipFrame)] = pipFrame
+      start = end + 1
     }
-    else {
-      pre_best = best_score
-      idxR2 = as.scalar(ppos[idxR]) #logical pipeline ID
-      idxC = as.integer(as.scalar(population[idxR2, 1])) + 1
-      bestLg = population[idxR2, 2:idxC]
+    sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(topk) - 2))
+    topk = removeEmpty(target=topk, margin="rows")
+    topk = frameSort(topk, sort_mask, TRUE)
+    topk = topk[, 3:ncol(topk)]
+    # # randomly pick the pipelines for transitions
+    pipRand = sample(nrow(sortedPipelines), populationSize, TRUE, seed)
+    if(!converged) {
+      parfor(i in 1:nrow(children), check=0) {
+        idxR = (nrow(children) * (iter - 1)) + i
+        idx = as.scalar(pipRand[i])
+        top = removeEmpty(target=topk[idx], margin="cols")
+        # top = removeEmpty(target=sortedPipelines[idx], margin="cols")
+        idx2 = min(max(pipRand), idx + 1)
+        top2 = removeEmpty(target=topk[idx2], margin="cols")
+        # top2 = removeEmpty(target=sortedPipelines[idx2], margin="cols")
+        if(sum(mask) > 0) {
+          tail = top[, ncol(top)]
+          tail2 = top2[, ncol(top2)]
+          top = top[, 1:ncol(top) - 1]
+          top2 = top2[, 1:ncol(top2) - 1]
+        }
+          
+        random = ifelse(ncol(top) <=2, 1, as.scalar(transitions[idxR]))
+        if(random == 1)
+          c1 = addition(top, allOps[as.scalar(opToAdd[idxR])]) 
+        else if(random == 2)
+          c1 = mutation(top, seed) 
+        else if(random == 3)
+          c1 = removal(top, seed) 
+        else if(random == 4)
+          c1 = crossover(top, top2, seed)
+        
+        if(sum(mask) > 0)
+          c1 = cbind(c1, tail)
+        children[i, 1:ncol(c1)] = c1
+      }
     }
-    pipLength = max(as.matrix(population[, 1])) + as.scalar(cmr[1, 1]) + 3
-    # # # if new best is not better than pre_best then no need od generating new population
-    children = frame(0, rows=ceil(nrow(scores)/2), cols=pipLength)
-    i = 1
-
-    while(i <= ceil(nrow(scores)/2) & !converged) {
-      top = population[as.scalar(ppos[as.scalar(selected[i])]), ]
-      length_top = as.integer(as.scalar(top[1, 1]))
-      top = top[, 2:(length_top+1)]
-      
-      # generate children from crossover
-      c1 = addition(top, cat, as.scalar(cmr[1,1]))
-
-      # perform mutation
-      c1 = mutation(c1, as.scalar(cmr[1, 2]))
-
-      # perform removal if non-zero
-      c1 = removal(c1, as.scalar(cmr[1, 3]))
-
-      # # # append length of pipeline and pipeline in frame
-      children[i, 1] = ncol(c1)
-      children[i, 2:(ncol(c1) + 1)] = c1
-      i = i + 1
-    }
-    population = children
+    population = removeEmpty(target=children, margin="cols")
     iter  = iter + 1
   }
-  if(pre_best == best_score) {
-    print(prefix+" EnumLP did not converge after "+max_iter+" iterations")  
+  if(!converged) {
+    print(prefix+" EnumLP did not converge after "+(iter - 1)+" / "+max_iter+" iterations")  
   }
-}
-
-
-addition = function(Frame[Unknown] top, Frame[Unknown] allOps, Integer addCount)
-return (Frame [Unknown] child)
-{
-  for(i in 1:addCount)
+  # # # prepare the final frame outputPip
+  outputPip = frame(0, rows=round((populationSize/2)) * length(finalOutput) , cols=populationLength + 2) 
+  outputHp = matrix(0, rows=round((populationSize/2)) * length(finalOutput) , cols=hpLength) 
+  start = 1; 
+  end = 0;
+  for(i in 1:length(finalOutput))
   {
-    c = as.scalar(sample(ncol(allOps), 1))
-    place_to_add = as.scalar(sample(ncol(top)-2, 1))
-    if(place_to_add == 1)
-      child = cbind(allOps[1, c], top)
-    else if(place_to_add >= ncol(top))
-      child = cbind(top, allOps[1, c])
-    else
-    {
-      start = top[, 1:place_to_add-1]
-      end = top[, place_to_add+1:ncol(top)]
-      child = cbind(cbind(start, allOps[1, c]), end)
-    }
+    pipFrame = as.frame(finalOutput[i])
+    pipHp = as.matrix(finalOutputHp[i])
+    end = end + nrow(pipFrame)
+    outputPip[start:end, 1:ncol(pipFrame)] = pipFrame
+    outputHp[start:end, 1:ncol(pipHp)] = pipHp
+    start = end + 1
   }
+  finalOutputHp = rbind(finalOutputHp)
+  outputHp = order(target = outputHp, by = 1, decreasing=FALSE)
+  sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(outputPip) - 2))
+  outputPip = removeEmpty(target=outputPip, margin="rows")
+  outputPip = frameSort(outputPip, sort_mask, FALSE)
+  
+  refChanges = as.double(as.scalar(outputPip[nrow(outputPip), 2]))
+  acc = outputPip[, 1]
+  print(toString(outputPip))
+  outputPip = outputPip[,3:ncol(outputPip)]
+
 }
 
-mutation = function(Frame[Unknown] child, Double mutationRate)
+addition = function(Frame[Unknown] top, Frame[Unknown] opToAdd)
+return (Frame[Unknown] child)
+{
+  # # # never add same operation adjacent to each other
+  if(as.scalar(top[1,1]) != as.scalar(opToAdd[1,1]))
+    child = cbind(opToAdd, top)
+  else 
+    child = cbind(top, opToAdd)
+}
+
+mutation = function(Frame[Unknown] child, Integer seed)
 return (Frame [Unknown] mChild)
 {
-  random = as.scalar(rand(rows=1, cols=1))
-  if(random > mutationRate & ncol(child) >= 3)
+  if(ncol(child) >= 2)
   {
-    r = sample(ncol(child) - 2, 2)
+    r = sample(ncol(child), 2, FALSE, seed)
     r1 = as.scalar(r[1,1])
     r2 = as.scalar(r[2,1])
     temp = child[1, r1]
@@ -186,22 +224,50 @@ return (Frame [Unknown] mChild)
   mChild = child
 }
 
-removal = function(Frame[Unknown] child, Integer removal)
-return (Frame[Unknown] output)
+removal = function(Frame[Unknown] child, Integer seed)
+return (Frame[Unknown] child)
 {
-  if(ncol(child) > 2 & (ncol(child)-2) > removal & removal > 0)
+  if(ncol(child) >= 2)
   {
-    for(i in 1:removal)
-    {
-      idx = as.scalar(sample(ncol(child)-3, 1))
-      if(idx == 1)
-        ch = child[, 2:ncol(child)]
-      else if (idx == ncol(child))
-        ch = child[, 1:ncol(child)-1]
-      else 
-        ch = cbind(child[, 1:(idx-1)], child[,(idx+1):ncol(child)])
-      child = ch
-    }
+    pos = as.scalar(sample(ncol(child), 1, FALSE, seed))
+    child[1, pos] = as.frame(0)
+    child = removeEmpty(target=child, margin="cols")
   }
-  output = child
+}
+
+crossover = function(Frame[Unknown] p1, Frame[Unknown] p2, Integer seed)
+return(Frame[Unknown] child)
+{
+    # # randomly select the lengths to be append
+    lp1 = as.scalar(sample(ncol(p1), 1, FALSE, seed))
+    lp2 = as.scalar(sample(ncol(p2), 1, FALSE, seed))
+    child = cbind(p1[, 1:lp1], p2[, lp2:ncol(p2)])
+    print("p1 "+toString(p1))
+    print("p2 "+toString(p2))
+    print("child "+toString(child))
+}
+
+
+getOps = function( Frame[string] allOps, Frame[String] refSol, Integer dist, Integer n, Integer minValue)
+ return (Frame[String] allOps, Frame[String] refSol) {
+ 
+  # # # TODO fix the following hard-coded condition by taking a file input
+  # # allOps are the operation which are randomly added to a population, for now I am reusing param file
+  # # so map condition with remove the operations which should not be added twice in a pipeline i.e., dummycoding
+  # # for regression class imbalance operators are also removed
+  if(n > 0 & minValue >= 1 & dist <= 15) {
+    allOps = map(allOps, "x -> (!x.equals(\"dummycoding\") & !x.equals(\"frequencyEncode\")
+    & !x.equals(\"dbscan\") & !x.equals(\"WoE\") & !x.equals(\"pca\") & !x.equals(\"ppca\"))?x:\"0\"")
+    ref = frame(["imputeByMean", "winsorize", "scale", "dummycoding"], rows=1, cols=4)
+  }
+  else {
+    allOps = map(allOps, "x -> (!x.equals(\"dummycoding\") & !x.equals(\"frequencyEncode\") & !x.equals(\"tomeklink\")
+      & !x.equals(\"dbscan\") & !x.equals(\"WoE\") & !x.equals(\"pca\") & !x.equals(\"ppca\") &
+      !x.equals(\"abstain\") & !x.equals(\"underSampling\") & !x.equals(\"flipLabels\") & !x.equals(\"SMOTE\"))?x:\"0\"")
+    # & !x.equals(\"mice\") & !x.equals(\"dbscan\")
+    ref = frame(["imputeByMean", "winsorize", "scale"], rows=1, cols=3)
+  }
+  if(as.scalar(refSol[1,1]) == "NaN")
+    refSol = ref
+  allOps = removeEmpty(target=allOps, margin="rows")
 }

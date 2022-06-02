@@ -285,14 +285,11 @@ public class RandSPInstruction extends UnarySPInstruction {
 				null, null, blen, from, to, incr, opcode, str);
 		}
 		else if ( method == OpOpDG.SAMPLE) {
-			String max = !s[1].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				s[1] : "0";
+			String max = !s[1].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ? s[1] : "0";
 			CPOperand rows = new CPOperand(s[2]);
 			CPOperand cols = new CPOperand("1", ValueType.INT64, DataType.SCALAR);
-			boolean replace = (!s[3].contains(Lop.VARIABLE_NAME_PLACEHOLDER) 
-				&& Boolean.valueOf(s[3]));
-			
-			long seed = Long.parseLong(s[4]);
+			boolean replace = !s[3].contains(Lop.VARIABLE_NAME_PLACEHOLDER) && Boolean.valueOf(s[3]);
+			long seed = !s[4].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ? Long.parseLong(s[4]) : -1;
 			int blen = Integer.parseInt(s[5]);
 			
 			return new RandSPInstruction(op, method, null, out, rows, cols,
@@ -993,7 +990,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			}
 			else {
 				String[] data = _data.split(DataExpression.DELIM_NA_STRING_SEP);
-				int rowLength = data.length/(int)_rlen;
+				int rowLength = ((int)_rlen > 0)?data.length/(int)_rlen:0;
 				if(data.length != _schema.length && data.length > 1 && rowLength != _schema.length)
 					throw new DMLRuntimeException("data values should be equal "
 						+ "to number of columns, or a single values for all columns");

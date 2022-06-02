@@ -21,6 +21,7 @@
 package org.apache.sysds.runtime.data;
 
 import org.apache.sysds.common.Warnings;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -54,6 +55,11 @@ public class DenseBlockLString extends DenseBlockLDRB
 
 	@Override
 	public boolean isNumeric() {
+		return false;
+	}
+	
+	@Override
+	public boolean isNumeric(ValueType vt) {
 		return false;
 	}
 

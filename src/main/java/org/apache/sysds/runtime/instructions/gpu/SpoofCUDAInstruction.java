@@ -35,12 +35,9 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.utils.GPUStatistics;
-
-import jcuda.Sizeof;
 
 public class SpoofCUDAInstruction extends GPUInstruction {
 	private static final Log LOG = LogFactory.getLog(SpoofCUDAInstruction.class.getName());
@@ -52,21 +49,14 @@ public class SpoofCUDAInstruction extends GPUInstruction {
 	public final CPOperand _out;
 	
 	public static class SinglePrecision extends SpoofCUDAOperator.PrecisionProxy {
-		public int exec(ExecutionContext ec, SpoofCUDAOperator op, int opID, long[] in, long[] sides, long[] out,
-				ArrayList<ScalarObject> scalarObjects, long grix) {
-			op.setScalarPtr(transferScalars(ec, op, Sizeof.FLOAT, scalarObjects));
-			long[] _metadata = { opID, grix, in.length, sides.length, out.length, scalarObjects.size() };
-			return op.execute_sp(ctx, _metadata, in, sides, out, GPUObject.getPointerAddress(op.getScalarPtr()));
+		public int exec(SpoofCUDAOperator op) {
+			return op.execute_sp(ctx);
 		}
 	}
 	
 	public static class DoublePrecision extends SpoofCUDAOperator.PrecisionProxy {
-		public int exec(ExecutionContext ec, SpoofCUDAOperator op, int opID, long[] in, long[] sides, long[] out,
-				ArrayList<ScalarObject> scalarObjects, long grix) {
-			if(!scalarObjects.isEmpty())
-				op.setScalarPtr(transferScalars(ec, op, Sizeof.DOUBLE, scalarObjects));
-			long[] _metadata = { opID, grix, in.length, sides.length, out.length, scalarObjects.size() };
-			return op.execute_dp(ctx, _metadata, in, sides, out, GPUObject.getPointerAddress(op.getScalarPtr()));
+		public int exec(SpoofCUDAOperator op) {
+			return op.execute_dp(ctx);
 		}
 	}
 	
@@ -101,7 +91,6 @@ public class SpoofCUDAInstruction extends GPUInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 
 		ArrayList<CPOperand> inlist = new ArrayList<>();
-//		Integer op_id =  CodegenUtils.getCUDAopID(parts[2].split("\\.")[1]);
 		Integer op_id = CodegenUtils.getCUDAopID(parts[2]);
 		Class<?> cla = CodegenUtils.getClass(parts[2]);
 		SpoofOperator fallback_java_op = CodegenUtils.createInstance(cla);
@@ -141,11 +130,9 @@ public class SpoofCUDAInstruction extends GPUInstruction {
 				ScalarObject out = _op.execute(ec, inputs, scalars);
 				ec.setScalarOutput(_out.getName(), out);
 			}
-			
-			_op.releaseScalarGPUMemory(ec);
 		}
 		catch(Exception ex) {
-			LOG.error("SpoofCUDAInstruction: " + _op.getName() + " operator failed to execute. Trying Java fallback.(ToDo)\n");
+			LOG.error("SpoofCUDAInstruction: " + _op.getName() + " operator failed to execute :(\n");
 			
 			throw new DMLRuntimeException(ex);
 		}

@@ -30,7 +30,14 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -48,7 +55,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.api.DMLException;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
@@ -66,6 +72,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
+import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.EMAUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -2320,7 +2327,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			}
 	}
 
-	public FrameBlock map (String lambdaExpr){
+	public FrameBlock map (String lambdaExpr, long margin){
 		if(!lambdaExpr.contains("->")) {
 			String args = lambdaExpr.substring(lambdaExpr.indexOf('(') + 1, lambdaExpr.indexOf(')'));
 			if(args.contains(",")) {
@@ -2333,10 +2340,21 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			}
 		}
 		if(lambdaExpr.contains("jaccardSim"))
-			return mapDist(getCompiledFunction(lambdaExpr));
-		return map(getCompiledFunction(lambdaExpr));
+			return mapDist(getCompiledFunction(lambdaExpr, margin));
+		return map(getCompiledFunction(lambdaExpr, margin), margin);
 	}
 
+	public FrameBlock frameRowReplication(FrameBlock rowToreplicate) {
+		FrameBlock out = new FrameBlock(this);
+		if(this.getNumColumns() != rowToreplicate.getNumColumns())
+			throw new DMLRuntimeException("Mismatch number of columns");
+		if(rowToreplicate.getNumRows() > 1)
+			throw  new DMLRuntimeException("only supported single rows frames to replicate");
+		for(int i=0; i<this.getNumRows(); i++)
+			for(int j=0; j<this.getNumColumns(); j++)
+				out.set(i, j, rowToreplicate.get(0, j));
+		return out;
+	}
 	public FrameBlock valueSwap(FrameBlock schema) {
 		String[] schemaString = schema.getStringRowIterator().next();
 		String dataValue2 = null;
@@ -2397,7 +2415,9 @@ public class FrameBlock implements CacheBlock, Externalizable {
 							}
 
 							// compute distance between sample and invalid value
-							double simScore = StringUtils.getLevenshteinDistance(dataValue, dataValue2);
+							double simScore = 0;
+							if(!(dataValue == null) && !(dataValue2 == null))
+								simScore = StringUtils.getLevenshteinDistance(dataValue, dataValue2);
 							if(simScore < minSimScore) {
 								minSimScore = simScore;
 								bestIdx = w;
@@ -2416,17 +2436,38 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		return this;
 	}
 
-	public FrameBlock map (FrameMapFunction lambdaExpr) {
+	public FrameBlock map (FrameMapFunction lambdaExpr, long margin) {
 		// Prepare temporary output array
 		String[][] output = new String[getNumRows()][getNumColumns()];
-		// Execute map function on all cells
-		for(int j = 0; j < getNumColumns(); j++) {
-			Array input = getColumn(j);
-			for(int i = 0; i < input._size; i++)
-				if(input.get(i) != null)
-					output[i][j] = lambdaExpr.apply(String.valueOf(input.get(i)));
-		}
 
+		if (margin == 1) {
+			// Execute map function on rows
+			for(int i = 0; i < getNumRows(); i++) {
+				String[] row = new String[getNumColumns()];
+				for(int j = 0; j < getNumColumns(); j++) {
+					Array input = getColumn(j);
+					row[j] = String.valueOf(input.get(i));
+				}
+				output[i] = lambdaExpr.apply(row);
+			}
+		} else if (margin == 2) {
+			// Execute map function on columns
+			for(int j = 0; j < getNumColumns(); j++) {
+				String[] actualColumn = Arrays.copyOfRange((String[]) getColumnData(j), 0, getNumRows()); // since more rows can be allocated, mutable array
+				String[] outColumn = lambdaExpr.apply(actualColumn);
+
+				for(int i = 0; i < getNumRows(); i++)
+					output[i][j] = outColumn[i];
+			}
+		} else {
+			// Execute map function on all cells
+			for(int j = 0; j < getNumColumns(); j++) {
+				Array input = getColumn(j);
+				for(int i = 0; i < input._size; i++)
+					if(input.get(i) != null)
+						output[i][j] = lambdaExpr.apply(String.valueOf(input.get(i)));
+			}
+		}
 		return new FrameBlock(UtilFunctions.nCopies(getNumColumns(), ValueType.STRING), output);
 	}
 
@@ -2439,13 +2480,12 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			for(int i = j + 1; i < input._size; i++)
 				if(input.get(i) != null && input.get(j) != null) {
 					output[j][i] = lambdaExpr.apply(String.valueOf(input.get(j)), String.valueOf(input.get(i)));
-					//					output[i][j] = output[j][i];
 				}
 		}
 		return new FrameBlock(UtilFunctions.nCopies(getNumRows(), ValueType.STRING), output);
 	}
 
-	public static FrameMapFunction getCompiledFunction (String lambdaExpr) {
+	public static FrameMapFunction getCompiledFunction (String lambdaExpr, long margin) {
 		String cname = "StringProcessing" + CLASS_ID.getNextID();
 		StringBuilder sb = new StringBuilder();
 		String[] parts = lambdaExpr.split("->");
@@ -2458,14 +2498,20 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
 		sb.append("import org.apache.sysds.runtime.util.PorterStemmer;\n");
 		sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction;\n");
+		sb.append("import java.util.Arrays;\n");
 		sb.append("public class " + cname + " extends FrameMapFunction {\n");
-		if(varname.length == 1) {
-			sb.append("public String apply(String " + varname[0].trim() + ") {\n");
-			sb.append("  return String.valueOf(" + expr + "); }}\n");
-		}
-		else if(varname.length == 2) {
-			sb.append("public String apply(String " + varname[0].trim() + ", String " + varname[1].trim() + ") {\n");
-			sb.append("  return String.valueOf(" + expr + "); }}\n");
+		if(margin != 0) {
+			sb.append("public String[] apply(String[] " + varname[0].trim() + ") {\n");
+			sb.append("  return UtilFunctions.toStringArray(" + expr + "); }}\n");
+		} else {
+			if(varname.length == 1) {
+				sb.append("public String apply(String " + varname[0].trim() + ") {\n");
+				sb.append("  return String.valueOf(" + expr + "); }}\n");
+			}
+			else if(varname.length == 2) {
+				sb.append("public String apply(String " + varname[0].trim() + ", String " + varname[1].trim() + ") {\n");
+				sb.append("  return String.valueOf(" + expr + "); }}\n");
+			}
 		}
 		// compile class, and create FrameMapFunction object
 		try {
@@ -2483,18 +2529,21 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		private static final long serialVersionUID = -8398572153616520873L;
 		public String apply(String input) {return null;}
 		public String apply(String input1, String input2) {	return null;}
+		public String[] apply(String[] input1) {	return null;}
 	}
 
 	public <T> FrameBlock replaceOperations(String pattern, String replacement) {
 		FrameBlock ret = new FrameBlock(this);
 
-		ValueType patternType = UtilFunctions.isBoolean(pattern) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(pattern) ?
+		boolean NaNp = "NaN".equals(pattern);
+		boolean NaNr = "NaN".equals(replacement);
+		ValueType patternType = UtilFunctions.isBoolean(pattern) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(pattern) | NaNp ?
 			(UtilFunctions.isIntegerNumber(pattern) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
-		ValueType replacementType = UtilFunctions.isBoolean(replacement) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(replacement) ?
+		ValueType replacementType = UtilFunctions.isBoolean(replacement) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(replacement) | NaNr ?
 			(UtilFunctions.isIntegerNumber(replacement) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
 
 		if(patternType != replacementType || !ValueType.isSameTypeString(patternType, replacementType))
-			throw new DMLRuntimeException("Pattern and replacement types should be same.");
+			throw new DMLRuntimeException("Pattern and replacement types should be same: "+patternType+" "+replacementType);
 
 		for(int i = 0; i < ret.getNumColumns(); i++){
 			Array colData = ret._coldata[i];
@@ -2520,25 +2569,39 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	}
 
 	private FrameBlock removeEmptyRows(MatrixBlock select, boolean emptyReturn) {
+		if(select != null && (select.getNumRows() != getNumRows() && select.getNumColumns() != getNumRows()))
+			throw new DMLRuntimeException("Frame rmempty: Incorrect select vector dimensions.");
+
 		FrameBlock ret = new FrameBlock(_schema, _colnames);
 
-		for(int i = 0; i < _numRows; i++) {
-			boolean isEmpty = true;
+		if (select == null) {
 			Object[] row = new Object[getNumColumns()];
-
-			for(int j = 0; j < getNumColumns(); j++) {
-				Array colData = _coldata[j].clone();
-				row[j] = colData.get(i);
-				ValueType type = _schema[j];
-				isEmpty = isEmpty && (ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, colData.get(i))));
+			for(int i = 0; i < _numRows; i++) {
+				boolean isEmpty = true;
+				for(int j = 0; j < getNumColumns(); j++) {
+					row[j] = _coldata[j].get(i);
+					isEmpty &= ArrayUtils.contains(new double[]{0.0, Double.NaN},
+						UtilFunctions.objectToDoubleSafe(_schema[j], row[j]));
+				}
+				if(!isEmpty)
+					ret.appendRow(row);
 			}
+		}
+		else {
+			if(select.getNonZeros() == getNumRows())
+				return this;
 
-			if((!isEmpty && select == null) || (select != null && select.getValue(i, 0) == 1)) {
+			int[] indices = DataConverter.convertVectorToIndexList(select);
+			
+			Object[] row = new Object[getNumColumns()];
+			for(int i : indices) {
+				for(int j = 0; j < getNumColumns(); j++)
+					row[j] = _coldata[j].get(i);
 				ret.appendRow(row);
 			}
 		}
 
-		if(ret.getNumRows() == 0 && emptyReturn) {
+		if (ret.getNumRows() == 0 && emptyReturn) {
 			String[][] arr = new String[1][getNumColumns()];
 			Arrays.fill(arr, new String[]{null});
 			ValueType[] schema = new ValueType[getNumColumns()];
@@ -2550,23 +2613,37 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	}
 
 	private FrameBlock removeEmptyColumns(MatrixBlock select, boolean emptyReturn) {
+		if(select != null && (select.getNumRows() != getNumColumns() && select.getNumColumns() != getNumColumns())) {
+			throw new DMLRuntimeException("Frame rmempty: Incorrect select vector dimensions.");
+		}
+
 		FrameBlock ret = new FrameBlock();
 		List<ColumnMetadata> columnMetadata = new ArrayList<>();
 
-		for(int i = 0; i < getNumColumns(); i++) {
-			Array colData = _coldata[i];
-
-			boolean isEmpty = false;
-			if(select == null) {
+		if (select == null) {
+			for(int i = 0; i < getNumColumns(); i++) {
+				Array colData = _coldata[i];
 				ValueType type = _schema[i];
-				isEmpty = IntStream.range(0, colData._size).mapToObj((IntFunction<Object>) colData::get)
+				boolean isEmpty = IntStream.range(0, colData._size)
+					.mapToObj((IntFunction<Object>) colData::get)
 					.allMatch(e -> ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, e)));
-			}
 
-			if((select != null && select.getValue(0, i) == 1) || (!isEmpty && select == null)) {
-				Types.ValueType vt = _schema[i];
-				ret.appendColumn(vt, _coldata[i].clone());
+				if(!isEmpty) {
+					ret.appendColumn(_schema[i], _coldata[i]);
+					columnMetadata.add(new ColumnMetadata(_colmeta[i]));
+				}
+			}
+		} else {
+			if(select.getNonZeros() == getNumColumns())
+				return new FrameBlock(this);
+
+			int[] indices = DataConverter.convertVectorToIndexList(select);
+			int k = 0;
+			for(int i : indices) {
+				ret.appendColumn(_schema[i], _coldata[i]);
 				columnMetadata.add(new ColumnMetadata(_colmeta[i]));
+				if(_colnames != null)
+					ret._colnames[k++] = _colnames[i];
 			}
 		}
 

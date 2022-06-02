@@ -50,7 +50,7 @@ RUN apt-get update -qq \
 	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn \
 	&& git clone --depth 1 https://github.com/apache/systemds.git systemds && \
 	cd /usr/src/systemds/ && \
-	mvn clean package -P distribution && \
+	mvn --no-transfer-progress clean package -P distribution && \
 	cd /usr/src/systemds/src/main/python && \
 	apt-get install -y --no-install-recommends \
 	python3 python3-pip && \

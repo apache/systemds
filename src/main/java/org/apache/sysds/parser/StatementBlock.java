@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.rewrite.StatementBlockRewriteRule;
@@ -63,6 +64,9 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	private boolean _requiresRecompile = false;
 	private boolean _splitDag = false;
 	private boolean _nondeterministic = false;
+
+	protected double repetitions = 1;
+	public final static double DEFAULT_LOOP_REPETITIONS = 10;
 
 	public StatementBlock() {
 		_ID = getNextSBID();
@@ -610,7 +614,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				{
 					fdict = prog.createNamespace(DMLProgram.BUILTIN_NAMESPACE);
 					Map<String,FunctionStatementBlock> fsbs = DmlSyntacticValidator
-						.loadAndParseBuiltinFunction(fexpr.getName(), DMLProgram.BUILTIN_NAMESPACE);
+						.loadAndParseBuiltinFunction(fexpr.getName(), DMLProgram.BUILTIN_NAMESPACE, false);
 					for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
 						if( !fdict.containsFunction(fsb.getKey()) )
 							fdict.addFunction(fsb.getKey(), fsb.getValue());
@@ -994,19 +998,21 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			
 			// validate that size of LHS index ranges is being assigned:
 			//	(a) a matrix value of same size as LHS
-			//	(b) singleton value (semantics: initialize enitre submatrix with this value)
+			//	(b) singleton value (semantics: initialize entire submatrix with this value)
 			IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(ids.getVariables(), currConstVars, conditional);
 			
-			if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
-				target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
-						+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
-						+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
-			}
-			
-			if (targetSize._col >= 1 && source.getOutput().getDim2() > 1 && targetSize._col != source.getOutput().getDim2()){
-				target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
-						+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
-						+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
+			if( target.getDataType().isMatrixOrFrame() ) {
+				if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
+					target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
+							+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
+							+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
+				}
+				
+				if (targetSize._col >= 1 && source.getOutput().getDim2() > 1 && targetSize._col != source.getOutput().getDim2()){
+					target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
+							+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
+							+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
+				}
 			}
 			((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);
 		}
@@ -1051,12 +1057,13 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				DataIdentifier target = targetList.get(j);
 				// set target properties (based on type info in function call statement return params)
 				FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
-				FunctionStatement fstmt = (FunctionStatement)_dmlProg
-					.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
-				if (fstmt == null){
+				FunctionStatementBlock fblock = _dmlProg.getFunctionStatementBlock(fci.getNamespace(), fci.getName());
+				if (fblock == null){
 					fci.raiseValidateError(" function " + fci.getName() 
 						+ " is undefined in namespace " + fci.getNamespace(), conditional);
+					return;
 				}
+				FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
 				if (!(target instanceof IndexedIdentifier)){
 					target.setProperties(fstmt.getOutputParams().get(j));
 				}
@@ -1234,6 +1241,35 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		VariableSet liveInReturn = new VariableSet();
 		liveInReturn.addVariables(_liveIn);
 		return liveInReturn;
+	}
+
+	public boolean hasHops(){
+		return getHops() != null && !getHops().isEmpty();
+	}
+
+	/**
+	 * Updates the repetition estimate for this statement block
+	 * and all contained hops. FunctionStatementBlocks are loaded
+	 * from the function dictionary and repetitions are estimated
+	 * for the contained statement blocks.
+	 *
+	 * This method is overridden in the subclasses of StatementBlock.
+	 * @param repetitions estimated for this statement block
+	 */
+	public void updateRepetitionEstimates(double repetitions){
+		this.repetitions = repetitions;
+		if ( hasHops() ){
+			for ( Hop root : getHops() ){
+				// Set repetitionNum for hops recursively
+				if(root instanceof FunctionOp) {
+					String funcName = ((FunctionOp) root).getFunctionName();
+					FunctionStatementBlock sbFuncBlock = getDMLProg().getBuiltinFunctionDictionary().getFunction(funcName);
+					sbFuncBlock.updateRepetitionEstimates(repetitions);
+				}
+				else
+					root.updateRepetitionEstimates(repetitions);
+			}
+		}
 	}
 
 	///////////////////////////////////////////////////////////////

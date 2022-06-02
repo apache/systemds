@@ -267,9 +267,9 @@ fetch_embeddings = function(matrix[double] indexes, matrix[double] W_E,
   return(matrix[double] emb)
 {
 emb = matrix(0, rows=nrow(indexes), cols=embedding_size*max_sequence_length)
-  parfor (i in 1:nrow(indexes))
+  for (i in 1:nrow(indexes))
   {
-    parfor (j in 1:max_sequence_length)
+    for (j in 1:max_sequence_length)
     {
       index = as.integer(as.scalar(indexes[i,j]))
       emb[i,(j-1)*embedding_size+1:j*embedding_size] = W_E[index]

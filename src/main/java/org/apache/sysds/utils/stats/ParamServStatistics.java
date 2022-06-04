@@ -21,7 +21,6 @@ package org.apache.sysds.utils.stats;
 
 import java.util.concurrent.atomic.LongAdder;
 
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 
 public class ParamServStatistics {

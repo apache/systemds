@@ -813,7 +813,7 @@ public abstract class Hop implements ParseInfo {
 				
 				break;
 			}
-			case UNKNOWN: {
+			default: {
 				//memory estimate always unknown
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 				break;

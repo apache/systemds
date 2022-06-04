@@ -23,76 +23,70 @@
 # 
 # Grzegorz Malewicz, Matthew H. Austern, Aart J. C. Bilk, 
 # James C. Dehnert, Ikkan Horn, Naty Leiser and Grzegorz Czajkowski:
-# Pregel: A System for Large-Scale Graph Processing
+# Pregel: A System for Large-Scale Graph Processing, SIGMOD 2010
 #
 # INPUT PARAMETERS:
 # ----------------------------------------------------------------------------------------------------------------------
 # NAME        TYPE              DEFAULT  MEANING
 # ----------------------------------------------------------------------------------------------------------------------
 # G           Matrix[Double]    ---      adjacency matrix of the labeled graph: Such graph can be directed
-#                                         (G is symmetric) or undirected (G is not symmetric).
-#                                         The values of G can be 0/1 (just specifying whether the nodes
-#                                         are connected or not) or integer values (representing the weight
-#                                         of the edges or the distances between nodes, 0 if not connected).
+#                                        (G is symmetric) or undirected (G is not symmetric).
+#                                        The values of G can be 0/1 (just specifying whether the nodes
+#                                        are connected or not) or integer values (representing the weight
+#                                        of the edges or the distances between nodes, 0 if not connected).
 # maxi        Integer           0        Integer max number of iterations accepted (0 for FALSE, i.e.
-#                                         max number of iterations not defined)
-# sourceNode  Integer                     node index to calculate the shortest paths to all other nodes.
+#                                        max number of iterations not defined)
+# sourceNode  Integer                    node index to calculate the shortest paths to all other nodes.
 # verbose     Boolean           FALSE    flag for verbose debug output
 #
 # ----------------------------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ----------------------------------------------------------------------------------------------------------------------
-# NAME       TYPE                         MEANING
+# NAME        TYPE                       MEANING
 # ----------------------------------------------------------------------------------------------------------------------
-# C          Matrix[Double]               Output matrix (double) of minimum distances (shortest-path) between
-#                                         vertices: The value of the ith row and the jth column of the output
-#                                         matrix is the minimum distance shortest-path from vertex i to vertex j.
-#                                         When the value of the minimum distance is infinity, the two nodes are
-#                                         not connected.
+# C           Matrix[Double]             Output matrix (double) of minimum distances (shortest-path) between
+#                                        vertices: The value of the ith row and the jth column of the output
+#                                        matrix is the minimum distance shortest-path from vertex i to vertex j.
+#                                        When the value of the minimum distance is infinity, the two nodes are
+#                                        not connected.
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_shortestPath = function(Matrix[Double] G, Integer maxi = 0, Integer sourceNode, Boolean verbose = FALSE) 
   return (Matrix[Double] C) 
 {
-  if(verbose) {
-    print("SHORTEST PATH CALCULATION");
-  }
+  if(verbose)
+    print("SHORTEST PATH CALCULATION:");
 
-  if(min(G) < 0){
-    stop("All values in G must be positive")
-  }
-
-  if(ncol(G) != nrow(G)){
-    stop("Not correct matrix dimensions")
-  }
-
-  matrixSize = nrow(G)
-
-  G = replace(target=G, pattern=0, replacement=Inf)
+  if(min(G) < 0)
+    stop("Shortest Path: All values in G must be positive.")
+  if(ncol(G) != nrow(G))
+    stop("Shortest Path: input graph G must be a squared matrix.")
 
   # initialize the matrix of minimum distances with "infinity" values:
-  minDistVector = matrix(Inf,rows=matrixSize,cols=1)
+  minDist = matrix(Inf, rows=nrow(G), cols=1);
 
   # update minimum distance from the sourceNode to itself to 0:
-  minDistVector[sourceNode,1] = 0
+  minDist[sourceNode, 1] = 0;
 
   iter = 1
   diff = Inf;
   while( diff > 0 & (maxi==0 | iter<=maxi) ) {
-    w = t(colMins(G + minDistVector))
-    u = min(w, minDistVector);
-    diff = sum(u != minDistVector)
-    minDistVector = u; # update assignment
-    if( verbose ){
+    # avoid densification of 'colMins(G + minDist)' via colMin-colMax transform
+    # (we exploit here that ^x with x!=0 is treated as sparse-safe and otherwise
+    # Inf or NaN and replaced with 0, which keeps large sparse graphs sparse) 
+    Gp = (G + (G!=0) * minDist)^(-1);
+    Gp = replace(target=Gp, pattern=Inf, replacement=0);
+    Gp = replace(target=Gp, pattern=NaN, replacement=0);
+    u = min(t(1/colMaxs(Gp)), minDist);
+    diff = sum(u != minDist);
+    minDist = u; # update assignment
+    if( verbose )
       print("Shortest Path: iter = "+iter+", #diff = "+diff);
-    }
     iter = iter + 1;
   }
 
-  C=minDistVector
-  if(verbose) {
-    print("SHORTEST PATH CALCULATION FINISHED, CHECK OUTPUT MATRIX OF MINIMUM DISTANCES:");
-    print(toString(C))
-  }
+  C = minDist;
+  if(verbose)
+    print("Shortest Path: \n"+toString(C));
 }

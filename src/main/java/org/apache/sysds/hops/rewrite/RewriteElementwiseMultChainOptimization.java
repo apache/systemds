@@ -262,8 +262,8 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 					case MATRIX: orderDataType[i] = 1; break;
 					case TENSOR: orderDataType[i] = 2; break;
 					case FRAME:  orderDataType[i] = 3; break;
-					case UNKNOWN:orderDataType[i] = 4; break;
 					case LIST:   orderDataType[i] = 5; break;
+					default:     orderDataType[i] = 4; break;
 				}
 		}
 

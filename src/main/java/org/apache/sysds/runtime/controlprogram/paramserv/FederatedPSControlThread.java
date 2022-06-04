@@ -378,7 +378,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	@Override
 	public Void call() throws Exception {
 		try {
-			Timing tTotal = new Timing(true);
 			switch (_freq) {
 				case BATCH:
 					computeWithBatchUpdates();

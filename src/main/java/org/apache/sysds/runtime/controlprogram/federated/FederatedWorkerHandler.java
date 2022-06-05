@@ -89,15 +89,14 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private static final Log LOG = LogFactory.getLog(FederatedWorkerHandler.class.getName());
 
 	/** The Federated Lookup Table of the current Federated Worker. */
-	private FederatedLookupTable _flt;
+	private final FederatedLookupTable _flt;
 
 	/** Read cache shared by all worker handlers */
-	private FederatedReadCache _frc;
+	private final FederatedReadCache _frc;
 	private Timing _timing = null;
-
-
+	
 	/** Federated workload analyzer */
-	private FederatedWorkloadAnalyzer _fan;
+	private final FederatedWorkloadAnalyzer _fan;
 
 	/**
 	 * Create a Federated Worker Handler.
@@ -114,12 +113,12 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		_frc = frc;
 		_fan = fan;
 	}
-
+	
 	public FederatedWorkerHandler(FederatedLookupTable flt, FederatedReadCache frc, FederatedWorkloadAnalyzer fan, Timing timing) {
 		this(flt, frc, fan);
 		_timing = timing;
 	}
-
+	
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) {
 		ctx.writeAndFlush(createResponse(msg, ctx.channel().remoteAddress()))
@@ -138,7 +137,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		} catch (RuntimeException ignored) {
 			// ignore timing if it wasn't started yet
 		}
-
+		
 		String host;
 		if(remoteAddress instanceof InetSocketAddress) {
 			host = ((InetSocketAddress) remoteAddress).getHostString();
@@ -183,7 +182,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse createResponse(FederatedRequest[] requests, String remoteHost)
 		throws DMLPrivacyException, FederatedWorkerHandlerException, Exception {
-
+			
 		FederatedResponse response = null; // last response
 		boolean containsCLEAR = false;
 		for(int i = 0; i < requests.length; i++) {
@@ -272,14 +271,15 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse readData(FederatedRequest request, ExecutionContextMap ecm) {
-		checkNumParams(request.getNumParams(), 2);
+		checkNumParams(request.getNumParams(), 2, 3);
 		String filename = (String) request.getParam(0);
 		DataType dt = DataType.valueOf((String) request.getParam(1));
-		return readData(filename, dt, request.getID(), request.getTID(), ecm);
+		return readData(filename, dt, request.getID(), request.getTID(), ecm,
+			request.getNumParams() == 2 ? null : (CacheBlock)request.getParam(2));
 	}
 
 	private FederatedResponse readData(String filename, DataType dataType,
-		long id, long tid, ExecutionContextMap ecm) {
+		long id, long tid, ExecutionContextMap ecm, CacheBlock localBlock) {
 		MatrixCharacteristics mc = new MatrixCharacteristics();
 		mc.setBlocksize(ConfigurationManager.getBlocksize());
 
@@ -299,7 +299,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			cd = _frc.get(filename, !linReuse);
 			try {
 				if(cd == null) { // data is neither in lineage cache nor in read cache
-					cd = readDataNoReuse(filename, dataType, mc); // actual read of the data
+					cd = localBlock == null ? readDataNoReuse(filename, dataType, mc) : ExecutionContext.createCacheableData(localBlock); // actual read of the data
 					if(linReuse) // put the object into the lineage cache
 						LineageCache.putFedReadObject(cd, linItem, ec);
 					else
@@ -315,7 +315,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				throw ex;
 			}
 		}
-
+		
 		if(shouldTryAsyncCompress()) // TODO: replace the reused object
 			CompressedMatrixBlockFactory.compressAsync(ec, sId);
 
@@ -426,7 +426,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			throw new FederatedWorkerHandlerException(
 				"Unsupported object type, has to be of type CacheBlock or ScalarObject");
 
-
+				
 		// set variable and construct empty response
 		ec.setVariable(varName, data);
 
@@ -450,12 +450,13 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse getVariable(FederatedRequest request, ExecutionContextMap ecm) {
 		try{
+
 			checkNumParams(request.getNumParams(), 0);
 			ExecutionContext ec = ecm.get(request.getTID());
 			if(!ec.containsVariable(String.valueOf(request.getID())))
 				throw new FederatedWorkerHandlerException(
 					"Variable " + request.getID() + " does not exist at federated worker.");
-
+	
 			// get variable and construct response
 			Data dataObject = ec.getVariable(String.valueOf(request.getID()));
 			dataObject = PrivacyMonitor.handlePrivacy(dataObject);
@@ -487,7 +488,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		adaptToWorkload(ec, _fan, tid, ins);
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
-
+	
 	private static ExecutionContext getContextForInstruction(long id, Instruction ins, ExecutionContextMap ecm){
 		final ExecutionContext ec = ecm.get(id);
 		//handle missing spark execution context

@@ -99,3 +99,29 @@ The print should look like
   that you have:
   
   a csv file, mtd file, and SystemDS Environment is set correctly.
+
+Multi-tenant Federated Learning
+-------------------------------
+
+SystemDS supports Multi-tenant Federated Learning, meaning that multiple
+coordinators learn on shared federated workers. From another perspective,
+the federated worker allows multiple coordinators to perform model training
+simultaneously using the data from the respective federated site. This
+approach enables the worker to operate in a server-like mode, providing
+multiple tenants with the ability to learn on the federated data at the same
+time. Tenant isolation ensures that tenant-specific intermediate results are
+only accessible by the respective tenant.
+
+Limitations
+~~~~~~~~~~~
+
+Since the coordinators are differentiated by their IP address in combination
+with their process ID, the worker is not able to isolate coordinators which
+share the same IP address and the same process ID. This occurs, for example,
+when two coordinators are running behind a proxy (same IP address), where
+both coordinators coincidentally have the same process ID.
+
+A second limitation is showing up in networks using the Dynamic Host Protocol
+(DHCP). Since the federated worker identifies the coordinator based on the
+IP address, the worker does not re-identify the coordinator when its IP address
+has changed, i.e., when DHCP renews its IP address.

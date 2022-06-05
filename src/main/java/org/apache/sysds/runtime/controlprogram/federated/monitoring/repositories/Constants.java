@@ -19,8 +19,16 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories;
 
-public enum EntityEnum {
-	WORKER,
-	WORKER_STATS,
-	COORDINATOR
+public class Constants {
+	public static final String WORKERS_TABLE_NAME= "workers";
+	public static final String COORDINATORS_TABLE_NAME= "coordinators";
+	public static final String STATS_TABLE_NAME= "statistics";
+	public static final String ENTITY_NAME_COL = "name";
+	public static final String ENTITY_ADDR_COL = "address";
+	public static final String ENTITY_CPU_COL = "cpuUsage";
+	public static final String ENTITY_MEM_COL = "memoryUsage";
+	public static final String ENTITY_TRAFFIC_COL = "coordinatorTraffic";
+	public static final String ENTITY_HEAVY_HITTERS_COL = "heavyHitters";
+	public static final String ENTITY_ID_COL = "id";
+	public static final String ENTITY_WORKER_ID_COL = "workerId";
 }

@@ -22,30 +22,57 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers
 import io.netty.handler.codec.http.FullHttpResponse;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.CoordinatorService;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
 
 public class CoordinatorController implements IController {
+	private final CoordinatorService _coordinatorService = new CoordinatorService();
+
 	@Override
 	public FullHttpResponse create(Request request) {
-		return null;
+
+		var model = MapperService.getModelFromBody(request);
+
+		_coordinatorService.create(model);
+
+		return Response.ok("Success");
 	}
 
 	@Override
 	public FullHttpResponse update(Request request, Long objectId) {
-		return null;
+		var model = MapperService.getModelFromBody(request);
+
+		_coordinatorService.update(model);
+
+		return Response.ok("Success");
 	}
 
 	@Override
 	public FullHttpResponse delete(Request request, Long objectId) {
-		return null;
+		_coordinatorService.remove(objectId);
+
+		return Response.ok("Success");
 	}
 
 	@Override
 	public FullHttpResponse get(Request request, Long objectId) {
-		return Response.ok("Success");
+		var result = _coordinatorService.get(objectId);
+
+		if (result == null) {
+			return Response.notFound("No such coordinator can be found");
+		}
+
+		return Response.ok(result.toString());
 	}
 
 	@Override
 	public FullHttpResponse getAll(Request request) {
-		return Response.ok("Success");
+		var coordinators = _coordinatorService.getAll();
+
+		if (coordinators.isEmpty()) {
+			return Response.notFound("No coordinators can be found");
+		}
+
+		return Response.ok(coordinators.toString());
 	}
 }

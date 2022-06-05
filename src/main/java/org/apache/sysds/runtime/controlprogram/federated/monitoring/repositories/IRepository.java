@@ -25,9 +25,14 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseE
 import java.util.List;
 
 public interface IRepository {
-	void createEntity(EntityEnum type, BaseEntityModel model);
+	Long createEntity(EntityEnum type, BaseEntityModel model);
 
 	BaseEntityModel getEntity(EntityEnum type, Long id);
 
 	List<BaseEntityModel> getAllEntities(EntityEnum type);
+
+	List<BaseEntityModel> getAllEntitiesByField(EntityEnum type, Object fieldValue);
+	void updateEntity(EntityEnum type, BaseEntityModel model);
+
+	void removeEntity(EntityEnum type, Long id);
 }

@@ -20,8 +20,13 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -34,7 +39,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -89,6 +96,9 @@ public class FederatedStatistics {
 	private static final LongAdder fedPutLineageItems = new LongAdder();
 	private static final LongAdder fedSerializationReuseCount = new LongAdder();
 	private static final LongAdder fedSerializationReuseBytes = new LongAdder();
+	// Traffic between federated worker and a coordinator site
+	// in the form of [{ datetime, coordinatorAddress, transferredBytes }, { ... }] }
+	private static List<Triple<LocalDateTime, String, Long>> coordinatorsTrafficBytes = new ArrayList<>();
 
 	public static void logServerTraffic(long read, long written) {
 		bytesReceived.add(read);
@@ -131,13 +141,20 @@ public class FederatedStatistics {
 	}
 
 	private static void incFedTransfer(Object dataObj) {
+		incFedTransfer(dataObj, null);
+	}
+
+	public static void incFedTransfer(Object dataObj, String host) {
+		long byteAmount = 0;
 		if(dataObj instanceof MatrixBlock) {
 			transferredMatrixCount.increment();
-			transferredMatrixBytes.add(((MatrixBlock)dataObj).getInMemorySize());
+			byteAmount = ((MatrixBlock)dataObj).getInMemorySize();
+			transferredMatrixBytes.add(byteAmount);
 		}
 		else if(dataObj instanceof FrameBlock) {
 			transferredFrameCount.increment();
-			transferredFrameBytes.add(((FrameBlock)dataObj).getInMemorySize());
+			byteAmount = ((FrameBlock)dataObj).getInMemorySize();
+			transferredFrameBytes.add(byteAmount);
 		}
 		else if(dataObj instanceof ScalarObject)
 			transferredScalarCount.increment();
@@ -145,6 +162,10 @@ public class FederatedStatistics {
 			transferredListCount.increment();
 		else if(dataObj instanceof MatrixCharacteristics)
 			transferredMatCharCount.increment();
+
+		if (host != null && byteAmount > 0) {
+			coordinatorsTrafficBytes.add(new ImmutableTriple<>(LocalDateTime.now(), host, byteAmount));
+		}
 	}
 
 	public static void incAsyncPrefetchCount(long c) {
@@ -184,6 +205,8 @@ public class FederatedStatistics {
 		bytesReceived.reset();
 		fedBytesSent.reset();
 		fedBytesReceived.reset();
+		//TODO merge with existing
+		coordinatorsTrafficBytes.clear();
 	}
 
 	public static String displayFedIOExecStatistics() {
@@ -248,6 +271,9 @@ public class FederatedStatistics {
 		sb.append(displayFedReuseReadStats());
 		sb.append(displayFedPutLineageStats());
 		sb.append(displayFedSerializationReuseStats());
+		sb.append(displayFedTransfer());
+		sb.append(displayCPUUsage());
+		sb.append(displayMemoryUsage());
 		return sb.toString();
 	}
 
@@ -264,6 +290,9 @@ public class FederatedStatistics {
 		sb.append(displayGCStats(fedStats.gcStats));
 		sb.append(displayLinCacheStats(fedStats.linCacheStats));
 		sb.append(displayMultiTenantStats(fedStats.mtStats));
+		sb.append(displayCPUUsage());
+		sb.append(displayMemoryUsage());
+		sb.append(displayFedTransfer());
 		sb.append(displayHeavyHitters(fedStats.heavyHitters, numHeavyHitters));
 		sb.append(displayNetworkTrafficStatistics());
 		return sb.toString();
@@ -310,6 +339,38 @@ public class FederatedStatistics {
 	@SuppressWarnings("unused")
 	private static String displayHeavyHitters(HashMap<String, Pair<Long, Double>> heavyHitters) {
 		return displayHeavyHitters(heavyHitters, 10);
+	}
+
+	private static String displayFedTransfer() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Transferred bytes (Host/Datetime/ByteAmount):\n");
+
+		for (var entry: coordinatorsTrafficBytes) {
+			sb.append(String.format("%s/%s/%d.\n",
+					entry.getLeft().format(DateTimeFormatter.ISO_DATE_TIME), entry.getMiddle(), entry.getRight()));
+		}
+
+		return sb.toString();
+	}
+
+	private static String displayCPUUsage() {
+		StringBuilder sb = new StringBuilder();
+
+		double cpuUsage = getCPUUsage();
+
+		sb.append(String.format("CPU usage %%: %.2f\n", cpuUsage));
+
+		return sb.toString();
+	}
+
+	private static String displayMemoryUsage() {
+		StringBuilder sb = new StringBuilder();
+
+		double memoryUsage = getMemoryUsage();
+
+		sb.append(String.format("Memory usage %%: %.2f\n", memoryUsage));
+
+		return sb.toString();
 	}
 
 	private static String displayHeavyHitters(HashMap<String, Pair<Long, Double>> heavyHitters, int num) {
@@ -412,6 +473,32 @@ public class FederatedStatistics {
 
 	public static long getFedLookupTableGetCount() {
 		return fedLookupTableGetCount.longValue();
+	}
+
+	public static List<Triple<LocalDateTime, String, Long>> getCoordinatorsTrafficBytes() {
+		return coordinatorsTrafficBytes;
+	}
+
+	public static double getCPUUsage() {
+		ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+		double cpuUsage = 0.0f;
+
+		for(Long threadID : threadMXBean.getAllThreadIds()) {
+			cpuUsage += threadMXBean.getThreadCpuTime(threadID);
+		}
+
+		cpuUsage /= 1000000000; // nanoseconds to seconds
+
+		return cpuUsage;
+	}
+
+	public static double getMemoryUsage() {
+		MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+
+		double maxMemory = (double)memoryMXBean.getHeapMemoryUsage().getMax() / 1073741824;
+		double usedMemory = (double)memoryMXBean.getHeapMemoryUsage().getUsed() / 1073741824;
+
+		return (usedMemory / maxMemory) * 100;
 	}
 
 	public static long getFedLookupTableGetTime() {
@@ -563,15 +650,20 @@ public class FederatedStatistics {
 		private void collectStats() {
 			cacheStats.collectStats();
 			jitCompileTime = ((double)Statistics.getJITCompileTime()) / 1000; // in sec
+			cpuUsage = getCPUUsage();
+			memoryUsage = getMemoryUsage();
 			gcStats.collectStats();
 			linCacheStats.collectStats();
 			mtStats.collectStats();
 			heavyHitters = Statistics.getHeavyHittersHashMap();
+			coordinatorsTrafficBytes = getCoordinatorsTrafficBytes();
 		}
 		
 		public void aggregate(FedStatsCollection that) {
 			cacheStats.aggregate(that.cacheStats);
 			jitCompileTime += that.jitCompileTime;
+			cpuUsage += that.cpuUsage;
+			memoryUsage += that.memoryUsage;
 			gcStats.aggregate(that.gcStats);
 			linCacheStats.aggregate(that.linCacheStats);
 			mtStats.aggregate(that.mtStats);
@@ -579,6 +671,7 @@ public class FederatedStatistics {
 				(key, value) -> heavyHitters.merge(key, value, (v1, v2) ->
 					new ImmutablePair<>(v1.getLeft() + v2.getLeft(), v1.getRight() + v2.getRight()))
 			);
+			that.coordinatorsTrafficBytes.addAll(coordinatorsTrafficBytes);
 		}
 
 		protected static class CacheStatsCollection implements Serializable {
@@ -725,10 +818,13 @@ public class FederatedStatistics {
 		}
 
 		private CacheStatsCollection cacheStats = new CacheStatsCollection();
-		private double jitCompileTime = 0;
+		public double jitCompileTime = 0;
+		public double cpuUsage = 0;
+		public double memoryUsage = 0;
 		private GCStatsCollection gcStats = new GCStatsCollection();
 		private LineageCacheStatsCollection linCacheStats = new LineageCacheStatsCollection();
 		private MultiTenantStatsCollection mtStats = new MultiTenantStatsCollection();
-		private HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
+		public HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
+		public List<Triple<LocalDateTime, String, Long>> coordinatorsTrafficBytes = new ArrayList<>();
 	}
 }

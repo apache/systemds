@@ -34,5 +34,3 @@ B = read($5)
 
 A[from:to, from2:to2] = B;
 write(A, $11);
-
-print(toString(A))

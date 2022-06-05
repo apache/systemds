@@ -126,19 +126,26 @@ public class FederationUtils {
 		String[] linst = inst;
 		FederatedRequest[] fr = new FederatedRequest[inst.length];
 		for(int j=0; j<inst.length; j++) {
+			linst[j] = InstructionUtils.replaceOperand(linst[j], 0, type == null ?
+				InstructionUtils.getExecType(linst[j]).name() : type.name());
+			// replace inputs before before outputs in order to prevent conflicts
+			// on outputId matching input literals (due to a mix of input instructions,
+			// have to apply this replacement even for literal inputs)
 			for(int i = 0; i < varOldIn.length; i++) {
-				linst[j] = InstructionUtils.replaceOperand(linst[j], 0, type == null ? InstructionUtils.getExecType(linst[j]).name() : type.name());
-				linst[j] = linst[j].replace(
-					Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX,
-					Lop.OPERAND_DELIMITOR + String.valueOf(outputId) + Lop.DATATYPE_PREFIX);
-
-				if(varOldIn[i] != null) {
+				if( varOldIn[i] != null ) {
 					linst[j] = linst[j].replace(
 						Lop.OPERAND_DELIMITOR + varOldIn[i].getName() + Lop.DATATYPE_PREFIX,
 						Lop.OPERAND_DELIMITOR + String.valueOf(varNewIn[i]) + Lop.DATATYPE_PREFIX);
-					linst[j] = linst[j].replace("=" + varOldIn[i].getName(), "=" + String.valueOf(varNewIn[i])); //parameterized
+					// handle parameterized builtin functions
+					linst[j] = linst[j].replace("=" + varOldIn[i].getName(), "=" + String.valueOf(varNewIn[i]));
 				}
 			}
+			for(int i = 0; i < varOldIn.length; i++) {
+				linst[j] = linst[j].replace(
+					Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX,
+					Lop.OPERAND_DELIMITOR + String.valueOf(outputId) + Lop.DATATYPE_PREFIX);
+			}
+			
 			fr[j] = new FederatedRequest(RequestType.EXEC_INST, outputId, (Object) linst[j]);
 		}
 		return fr;

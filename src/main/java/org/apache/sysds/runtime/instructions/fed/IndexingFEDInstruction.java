@@ -25,8 +25,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.LeftIndex;
@@ -44,6 +46,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
@@ -150,7 +153,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		List<Types.ValueType> schema = new ArrayList<>();
 		// replace old reshape values for each worker
 		int i = 0;
-		for(org.apache.commons.lang3.tuple.Pair<FederatedRange, FederatedData> e : fedMap.getMap()) {
+		for(Pair<FederatedRange, FederatedData> e : fedMap.getMap()) {
 			FederatedRange range = e.getKey();
 			long rs = range.getBeginDims()[0], re = range.getEndDims()[0],
 				cs = range.getBeginDims()[1], ce = range.getEndDims()[1];
@@ -204,7 +207,8 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 	{
 		//get input and requested index range
 		CacheableData<?> in1 = ec.getCacheableData(input1);
-		CacheableData<?> in2 = ec.getCacheableData(input2);
+		CacheableData<?> in2 = null; // either in2 or scalar is set
+		ScalarObject scalar = null;
 		IndexRange ixrange = getIndexRange(ec);
 
 		//check bounds
@@ -213,11 +217,21 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 			throw new DMLRuntimeException("Invalid values for matrix indexing: ["+(ixrange.rowStart+1)+":"+(ixrange.rowEnd+1)+","
 				+ (ixrange.colStart+1)+":"+(ixrange.colEnd+1)+"] " + "must be within matrix dimensions ["+in1.getNumRows()+","+in1.getNumColumns()+"].");
 		}
-		if( (ixrange.rowEnd-ixrange.rowStart+1) != in2.getNumRows() || (ixrange.colEnd-ixrange.colStart+1) != in2.getNumColumns()) {
-			throw new DMLRuntimeException("Invalid values for matrix indexing: " +
-				"dimensions of the source matrix ["+in2.getNumRows()+"x" + in2.getNumColumns() + "] " +
-				"do not match the shape of the matrix specified by indices [" +
-				(ixrange.rowStart+1) +":" + (ixrange.rowEnd+1) + ", " + (ixrange.colStart+1) + ":" + (ixrange.colEnd+1) + "].");
+
+		if(input2.getDataType() == DataType.SCALAR) {
+			if(!ixrange.isScalar())
+				throw new DMLRuntimeException("Invalid index range for leftindexing with scalar: " + ixrange.toString() + ".");
+
+			scalar = ec.getScalarInput(input2);
+		}
+		else {
+			in2 = ec.getCacheableData(input2);
+			if( (ixrange.rowEnd-ixrange.rowStart+1) != in2.getNumRows() || (ixrange.colEnd-ixrange.colStart+1) != in2.getNumColumns()) {
+				throw new DMLRuntimeException("Invalid values for matrix indexing: " +
+					"dimensions of the source matrix ["+in2.getNumRows()+"x" + in2.getNumColumns() + "] " +
+					"do not match the shape of the matrix specified by indices [" +
+					(ixrange.rowStart+1) +":" + (ixrange.rowEnd+1) + ", " + (ixrange.colStart+1) + ":" + (ixrange.colEnd+1) + "].");
+			}
 		}
 
 		FederationMap fedMap = in1.getFedMapping();
@@ -226,9 +240,13 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		int[][] sliceIxs = new int[fedMap.getSize()][];
 		FederatedRange[] ranges = new FederatedRange[fedMap.getSize()];
 
+		// instruction string for copying a partition at the federated site
+		int cpVarInstIx = fedMap.getSize();
+		String cpVarInstString = createCopyInstString();
+
 		// replace old reshape values for each worker
 		int i = 0, prev = 0, from = fedMap.getSize();
-		for(org.apache.commons.lang3.tuple.Pair<FederatedRange, FederatedData> e : fedMap.getMap()) {
+		for(Pair<FederatedRange, FederatedData> e : fedMap.getMap()) {
 			FederatedRange range = e.getKey();
 			long rs = range.getBeginDims()[0], re = range.getEndDims()[0],
 				cs = range.getBeginDims()[1], ce = range.getEndDims()[1];
@@ -239,29 +257,46 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 
 			long[] newIx = new long[]{(int) rsn, (int) ren, (int) csn, (int) cen};
 
-			// find ranges where to apply  leftIndex
-			long to;
-			if(in1.isFederated(FType.ROW) && (to = (prev + ren - rsn)) >= 0 &&
-				to < in2.getNumRows() && ixrange.rowStart <= re) {
-				sliceIxs[i] = new int[] { prev, (int) to, 0, (int) in2.getNumColumns()-1};
-				prev = (int) (to + 1);
+			if(in2 != null) { // matrix, frame
+				// find ranges where to apply leftIndex
+				long to;
+				if(in1.isFederated(FType.ROW) && (to = (prev + ren - rsn)) >= 0 &&
+					to < in2.getNumRows() && ixrange.rowStart <= re) {
+					sliceIxs[i] = new int[] { prev, (int) to, 0, (int) in2.getNumColumns()-1};
+					prev = (int) (to + 1);
 
-				instStrings[i] = modifyIndices(newIx, 4, 8);
-				ranges[i] = range;
-				from = Math.min(i, from);
-			}
-			else if(in1.isFederated(FType.COL) && (to = (prev + cen - csn)) >= 0 &&
-				to < in2.getNumColumns() && ixrange.colStart <= ce) {
-				sliceIxs[i] = new int[] {0, (int) in2.getNumRows() - 1, prev, (int) to};
-				prev = (int) (to + 1);
+					instStrings[i] = modifyIndices(newIx, 4, 8);
+					ranges[i] = range;
+					from = Math.min(i, from);
+				}
+				else if(in1.isFederated(FType.COL) && (to = (prev + cen - csn)) >= 0 &&
+					to < in2.getNumColumns() && ixrange.colStart <= ce) {
+					sliceIxs[i] = new int[] {0, (int) in2.getNumRows() - 1, prev, (int) to};
+					prev = (int) (to + 1);
 
-				instStrings[i] = modifyIndices(newIx, 4, 8);
-				ranges[i] = range;
-				from = Math.min(i, from);
+					instStrings[i] = modifyIndices(newIx, 4, 8);
+					ranges[i] = range;
+					from = Math.min(i, from);
+				}
+				else {
+					// TODO shallow copy, add more advanced update in place for federated
+					cpVarInstIx = Math.min(i, cpVarInstIx);
+					instStrings[i] = cpVarInstString;
+				}
 			}
-			else
-				// TODO shallow copy, add more advanced update in place for federated
-				instStrings[i] = createCopyInstString();
+			else { // scalar
+				if(ixrange.rowStart >= rs && ixrange.rowEnd < re
+					&& ixrange.colStart >= cs && ixrange.colEnd < ce) {
+					instStrings[i] = modifyIndices(newIx, 4, 8);
+					instStrings[i] = changeScalarLiteralFlag(instStrings[i], 3);
+					ranges[i] = range;
+					from = Math.min(i, from);
+				}
+				else {
+					cpVarInstIx = Math.min(i, cpVarInstIx);
+					instStrings[i] = cpVarInstString;
+				}
+			}
 
 			i++;
 		}
@@ -269,35 +304,44 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		sliceIxs = Arrays.stream(sliceIxs).filter(Objects::nonNull).toArray(int[][] :: new);
 
 		long id = FederationUtils.getNextFedDataID();
+		//TODO remove explicit put (unnecessary in CP, only spark which is about to be cleaned up)
 		FederatedRequest tmp = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in1.getDataType());
 		fedMap.execute(getTID(), true, tmp);
 
-		FederatedRequest[] fr1 = fedMap.broadcastSliced(in2, DMLScript.LINEAGE ? ec.getLineageItem(input2) : null,
-			input2.isFrame(), sliceIxs);
-		FederatedRequest[] fr2 = FederationUtils.callInstruction(instStrings, output, id, new CPOperand[]{input1, input2},
-			new long[]{fedMap.getID(), fr1[0].getID()}, null);
-		FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1[0].getID());
+		if(in2 != null) { // matrix, frame
+			FederatedRequest[] fr1 = fedMap.broadcastSliced(in2, DMLScript.LINEAGE ? ec.getLineageItem(input2) : null,
+				input2.isFrame(), sliceIxs);
+			FederatedRequest[] fr2 = FederationUtils.callInstruction(instStrings, output, id, new CPOperand[]{input1, input2},
+				new long[]{fedMap.getID(), fr1[0].getID()}, null);
+			FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1[0].getID());
 
-		//execute federated instruction and cleanup intermediates
-		if(sliceIxs.length == fedMap.getSize())
-			fedMap.execute(getTID(), true, fr2, fr1, fr3);
-		else {
-			// get index of cpvar request
-			for(i = 0; i < fr2.length; i++)
-				if(i < from || i >= from + sliceIxs.length)
-					break;
-			fedMap.execute(getTID(), true, ranges, (fr2[i]), Arrays.copyOfRange(fr2, from, from + sliceIxs.length), fr1, fr3);
+			//execute federated instruction and cleanup intermediates
+			if(sliceIxs.length == fedMap.getSize())
+				fedMap.execute(getTID(), true, fr2, fr1, fr3);
+			else
+				fedMap.execute(getTID(), true, ranges, fr2[cpVarInstIx], Arrays.copyOfRange(fr2, from, from + sliceIxs.length), fr1, fr3);
+		}
+		else { // scalar
+			FederatedRequest fr1 = fedMap.broadcast(scalar);
+			FederatedRequest[] fr2 = FederationUtils.callInstruction(instStrings, output, id, new CPOperand[]{input1, input2},
+				new long[]{fedMap.getID(), fr1.getID()}, null);
+			FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1.getID());
+
+			if(fr2.length == 1)
+				fedMap.execute(getTID(), true, fr2, fr1, fr3);
+			else
+				fedMap.execute(getTID(), true, ranges, fr2[cpVarInstIx], fr2[from], fr1, fr3);
 		}
 
 		if(input1.isFrame()) {
 			FrameObject out = ec.getFrameObject(output);
 			out.setSchema(((FrameObject) in1).getSchema());
 			out.getDataCharacteristics().set(in1.getDataCharacteristics());
-			out.setFedMapping(fedMap.copyWithNewID(fr2[0].getID()));
+			out.setFedMapping(fedMap.copyWithNewID(id));
 		} else {
 			MatrixObject out = ec.getMatrixObject(output);
-			out.getDataCharacteristics().set(in1.getDataCharacteristics());;
-			out.setFedMapping(fedMap.copyWithNewID(fr2[0].getID()));
+			out.getDataCharacteristics().set(in1.getDataCharacteristics());
+			out.setFedMapping(fedMap.copyWithNewID(id));
 		}
 	}
 
@@ -306,6 +350,13 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		String[] instParts = instString.split(Lop.OPERAND_DELIMITOR);
 		for(int j = from; j < to; j++)
 			instParts[j] = InstructionUtils.createLiteralOperand(String.valueOf(newIx[j-from]+1), ValueType.INT64);
+		return String.join(Lop.OPERAND_DELIMITOR, instParts);
+	}
+
+	private String changeScalarLiteralFlag(String inst, int partIx) {
+		// change the literal flag of the broadcast scalar
+		String[] instParts = inst.split(Lop.OPERAND_DELIMITOR);
+		instParts[partIx] = instParts[partIx].replace("true", "false");
 		return String.join(Lop.OPERAND_DELIMITOR, instParts);
 	}
 

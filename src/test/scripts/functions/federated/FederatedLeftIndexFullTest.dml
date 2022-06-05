@@ -38,5 +38,3 @@ B = read($in_Y)
 
 A[from:to, from2:to2] = B;
 write(A, $out_S);
-
-print(toString(A))

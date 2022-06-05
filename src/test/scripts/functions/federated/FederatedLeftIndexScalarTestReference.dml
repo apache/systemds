@@ -19,10 +19,10 @@
 #
 #-------------------------------------------------------------
 
-from = $6;
-to = $7;
-from2 = $8;
-to2 = $9;
+row1 = $6;
+row2 = $7;
+col1 = $8;
+col2 = $9;
 if($10) {
   A = rbind(read($1), read($2), read($3), read($4));
 }
@@ -30,10 +30,11 @@ else {
   A = cbind(read($1), read($2), read($3), read($4));
 }
 
-B = read($5)
+b = 13;
+c = as.scalar(rand(rows=1, cols=1, seed=456));
 
-B = as.frame(B)
-A = as.frame(A)
+A[row1, col1] = b;
+A[row2, col2] = c;
 
-A[from:to, from2:to2] = B;
 write(A, $11);
+

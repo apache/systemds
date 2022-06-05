@@ -47,6 +47,10 @@ public class FederatedLookupTable {
 		_lookup_table = new ConcurrentHashMap<>();
 	}
 
+	public void clear() {
+		_lookup_table.clear();
+	}
+	
 	/**
 	 * Get the ExecutionContextMap corresponding to the given host and pid of the
 	 * requesting coordinator from the lookup table. Create a new

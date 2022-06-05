@@ -19,21 +19,26 @@
 #
 #-------------------------------------------------------------
 
-from = $6;
-to = $7;
-from2 = $8;
-to2 = $9;
-if($10) {
-  A = rbind(read($1), read($2), read($3), read($4));
+row1 = $from;
+row2 = $to;
+col1 = $from2;
+col2 = $to2;
+
+if ($rP) {
+  A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+    ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+    list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+} else {
+  A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+    ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
+    list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
 }
-else {
-  A = cbind(read($1), read($2), read($3), read($4));
-}
 
-B = read($5)
+b = 13;
+c = as.scalar(rand(rows=1, cols=1, seed=456));
 
-B = as.frame(B)
-A = as.frame(A)
+A[row1, col1] = b;
+A[row2, col2] = c;
 
-A[from:to, from2:to2] = B;
-write(A, $11);
+write(A, $out_S);
+

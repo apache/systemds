@@ -220,8 +220,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				containsCLEAR = true;
 		}
 
-		if(containsCLEAR)
+		if(containsCLEAR) {
+			_flt.clear();
 			printStatistics();
+		}
 
 		return response;
 	}
@@ -398,7 +400,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		checkNumParams(request.getNumParams(), 1, 2);
 		final String varName = String.valueOf(request.getID());
 		ExecutionContext ec = ecm.get(request.getTID());
-
+		
 		if(ec.containsVariable(varName)) {
 			final Data tgtData = ec.removeVariable(varName);
 			if(tgtData != null)
@@ -450,7 +452,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse getVariable(FederatedRequest request, ExecutionContextMap ecm) {
 		try{
-
 			checkNumParams(request.getNumParams(), 0);
 			ExecutionContext ec = ecm.get(request.getTID());
 			if(!ec.containsVariable(String.valueOf(request.getID())))
@@ -494,7 +495,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		//handle missing spark execution context
 		//TODO handling of spark instructions should be under control of federated site not coordinator
 		if(ins.getType() == IType.SPARK
-		&& !(ec instanceof SparkExecutionContext) ) {
+			&& !(ec instanceof SparkExecutionContext) )
+		{
 			ecm.convertToSparkCtx();
 			return ecm.get(id);
 		}

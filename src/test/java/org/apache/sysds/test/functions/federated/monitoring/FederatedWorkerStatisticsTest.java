@@ -19,7 +19,9 @@
 
 package org.apache.sysds.test.functions.federated.monitoring;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatsEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.StatsService;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.WorkerService;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -43,14 +45,29 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 	}
 
 	@Test
+	public void testWorkerStatisticsParsedCorrectly() {
+
+		var model = (StatsEntityModel) StatsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0]);
+
+		Assert.assertNotNull("Stats parsed correctly", model);
+		Assert.assertNotEquals("CPU stats parsed correctly", 0, model.getCPUUsage());
+		Assert.assertNotEquals("Memory Stats parsed correctly", 0, model.getMemoryUsage());
+	}
+
+	@Test
 	public void testWorkerStatisticsReturnedForMonitoring() {
-		workerMonitoringService.create(new BaseEntityModel(1L, "Worker", "localhost:" + workerPorts[0]));
+		workerMonitoringService.create(new NodeEntityModel(1L, "Worker", "localhost:" + workerPorts[0]));
 
-		var model = workerMonitoringService.get(1L);
-		var modelData = model.getData();
+		var model = (NodeEntityModel) workerMonitoringService.get(1L);
 
-		Assert.assertNotNull("Data field of model contains worker statistics", model.getData());
-		Assert.assertNotEquals("Data field of model contains worker statistics",0, modelData.length());
-		Assert.assertTrue("Data field of model contains worker statistics", modelData.contains("JVM"));
+		Assert.assertNotNull("Stats field of model contains worker statistics", model.getStats());
+	}
+
+	@Test
+	public void testNonExistentWorkerStatistics() {
+		workerMonitoringService.create(new NodeEntityModel(1L, "Worker", "not-running.address"));
+		var model = (NodeEntityModel) workerMonitoringService.get(1L);
+
+		Assert.assertEquals("Stats field of model contains worker statistics", 0, model.getStats().size());
 	}
 }

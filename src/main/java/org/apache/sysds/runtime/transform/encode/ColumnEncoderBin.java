@@ -112,21 +112,8 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		}
 		else if(_binMethod == BinMethod.EQUI_HEIGHT) {
 			double[] sortedCol = prepareDataForEqualHeightBins(in, _colID, 0, -1);
-			computeEqualHeightBins(sortedCol);
+			computeEqualHeightBins(sortedCol, false);
 		}
-
-		if(DMLScript.STATISTICS)
-			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
-	}
-
-	//TODO move federated things outside the location-agnostic encoder,
-	// and/or generalize to fit the existing mergeAt and similar methods
-	public void buildEquiHeight(double[] equiHeightMaxs) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		if(!isApplicable())
-			return;
-		if(_binMethod == BinMethod.EQUI_HEIGHT)
-			computeFedEqualHeightBins(equiHeightMaxs);
 
 		if(DMLScript.STATISTICS)
 			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
@@ -141,7 +128,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			computeBins(pairMinMax[0], pairMinMax[1]);
 		}
 		else if(_binMethod == BinMethod.EQUI_HEIGHT) {
-			computeFedEqualHeightBins(equiHeightMaxs);
+			computeEqualHeightBins(equiHeightMaxs, true);
 		}
 
 		if(DMLScript.STATISTICS)
@@ -264,30 +251,25 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		}
 	}
 
-	private void computeEqualHeightBins(double[] sortedCol) {
+	private void computeEqualHeightBins(double[] sortedCol, boolean isSorted) {
 		if(_binMins == null || _binMaxs == null) {
 			_binMins = new double[_numBin];
 			_binMaxs = new double[_numBin];
 		}
-		int n = sortedCol.length;
-		for(int i = 0; i < _numBin; i++) {
-			double pos = n * (i + 1d) / _numBin;
-			_binMaxs[i] = (pos % 1 == 0) ? // pos is integer
-				sortedCol[(int) pos-1] :
-				sortedCol[(int) Math.floor(pos)];
-		}
-		_binMaxs[_numBin-1] = sortedCol[n-1];
-		_binMins[0] = sortedCol[0];
-		System.arraycopy(_binMaxs, 0, _binMins, 1, _numBin - 1);
-	}
+		if(!isSorted) {
+			int n = sortedCol.length;
+			for(int i = 0; i < _numBin; i++) {
+				double pos = n * (i + 1d) / _numBin;
+				_binMaxs[i] = (pos % 1 == 0) ? // pos is integer
+					sortedCol[(int) pos - 1] : sortedCol[(int) Math.floor(pos)];
+			}
+			_binMaxs[_numBin - 1] = sortedCol[n - 1];
 
-	private void computeFedEqualHeightBins(double[] binMaxs) {
-		if(_binMins == null || _binMaxs == null) {
-			_binMins = new double[_numBin];
-			_binMaxs = new double[_numBin];
+		} else {
+			System.arraycopy(sortedCol, 1, _binMaxs, 0, _numBin);
 		}
-		System.arraycopy(binMaxs, 1, _binMaxs, 0, _numBin);
-		_binMins[0] = binMaxs[0];
+
+		_binMins[0] = sortedCol[0];
 		System.arraycopy(_binMaxs, 0, _binMins, 1, _numBin - 1);
 	}
 
@@ -539,7 +521,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 				// TODO: Derive bin boundaries from partial aggregates, avoiding
 				// materializing the sorted arrays (e.g. federated quantile)
 				double[] sortedRes = mergeKSortedArrays(allParts);
-				_encoder.computeEqualHeightBins(sortedRes);
+				_encoder.computeEqualHeightBins(sortedRes, false);
 			}
 
 			if(DMLScript.STATISTICS)

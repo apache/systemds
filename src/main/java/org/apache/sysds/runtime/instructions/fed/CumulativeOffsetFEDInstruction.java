@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.spark.CumulativeOffsetSPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
@@ -57,6 +58,11 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummin"));
 		else if ("bcumoffmax".equals(opcode))
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummax"));
+	}
+
+	public static CumulativeOffsetFEDInstruction parseInstruction(CumulativeOffsetSPInstruction instr) {
+		return new CumulativeOffsetFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
+			instr.getInitValue(), instr.getBroadcast(), instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static CumulativeOffsetFEDInstruction parseInstruction ( String str ) {

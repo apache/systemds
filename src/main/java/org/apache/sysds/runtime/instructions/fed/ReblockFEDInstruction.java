@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.spark.ReblockSPInstruction;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -36,11 +37,15 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 public class ReblockFEDInstruction extends UnaryFEDInstruction {
 	private int blen;
 
-	private ReblockFEDInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
+	private ReblockFEDInstruction(Operator op, CPOperand in, CPOperand out, int blen, boolean emptyBlocks,
 		String opcode, String instr) {
 		super(FEDInstruction.FEDType.Reblock, op, in, out, opcode, instr);
-		blen = br;
-		blen = bc;
+		this.blen = blen;
+	}
+
+	public static ReblockFEDInstruction parseInstruction(ReblockSPInstruction instr) {
+		return new ReblockFEDInstruction(instr.getOperator(), instr.input1, instr.output, instr.getBlockLength(),
+			instr.getOutputEmptyBlocks(), instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static ReblockFEDInstruction parseInstruction(String str) {
@@ -57,7 +62,7 @@ public class ReblockFEDInstruction extends UnaryFEDInstruction {
 		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[4]);
 
 		Operator op = null; // no operator for ReblockFEDInstruction
-		return new ReblockFEDInstruction(op, in, out, blen, blen, outputEmptyBlocks, opcode, str);
+		return new ReblockFEDInstruction(op, in, out, blen, outputEmptyBlocks, opcode, str);
 	}
 
 	@Override

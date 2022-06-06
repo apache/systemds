@@ -35,6 +35,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.ReshapeCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.MatrixReshapeSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -52,6 +54,17 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 		_opCols = in3;
 		_opDims = in4;
 		_opByRow = in5;
+	}
+
+	public static ReshapeFEDInstruction parseInstruction(ReshapeCPInstruction instr) {
+		return new ReshapeFEDInstruction(instr.getOperator(), instr.input1, instr.getOpRows(), instr.getOpCols(),
+			instr.getOpDims(), instr.getOpByRow(), instr.output, instr.getOpcode(), instr.getInstructionString());
+	}
+
+	public static ReshapeFEDInstruction parseInstruction(MatrixReshapeSPInstruction instr) {
+		// TODO: add dims argument (for tensors) to MatrixReshapeSPInstruction
+		return new ReshapeFEDInstruction(instr.getOperator(), instr.input1, instr.getOpRows(), instr.getOpCols(), null,
+			instr.getOpByRow(), instr.output, instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static ReshapeFEDInstruction parseInstruction(String str) {

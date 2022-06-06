@@ -53,6 +53,22 @@ public abstract class IndexingSPInstruction extends UnarySPInstruction {
 		colLower = cl;
 		colUpper = cu;
 	}
+	
+	public CPOperand getRowLower() {
+		return rowLower;
+	}
+	
+	public CPOperand getRowUpper() {
+		return rowUpper;
+	}
+	
+	public CPOperand getColLower() {
+		return colLower;
+	}
+	
+	public CPOperand getColUpper() {
+		return colUpper;
+	}
 
 	public static IndexingSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);

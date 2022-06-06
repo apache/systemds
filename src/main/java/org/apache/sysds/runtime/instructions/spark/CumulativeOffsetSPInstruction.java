@@ -122,6 +122,14 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		sec.addLineage(output.getName(), input2.getName(), broadcast);
 	}
 
+	public double getInitValue() {
+		return _initValue;
+	}
+
+	public boolean getBroadcast() {
+		return _broadcast;
+	}
+
 	private static class RDDCumSplitFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -8407407527406576965L;

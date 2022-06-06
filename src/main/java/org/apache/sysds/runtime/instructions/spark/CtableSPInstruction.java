@@ -23,6 +23,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Ctable;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -193,6 +194,22 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 		
 		//post-processing to obtain sparsity of ultra-sparse outputs
 		SparkUtils.postprocessUltraSparseOutput(sec.getMatrixObject(output), mcOut);
+	}
+
+	public CPOperand getOutDim1() {
+		return new CPOperand(_outDim1, ValueType.FP64, Types.DataType.SCALAR, _dim1Literal);
+	}
+
+	public CPOperand getOutDim2() {
+		return new CPOperand(_outDim1, ValueType.FP64, Types.DataType.SCALAR, _dim1Literal);
+	}
+
+	public boolean getIsExpand() {
+		return _isExpand;
+	}
+
+	public boolean getIgnoreZeros() {
+		return _ignoreZeros;
 	}
 
 	private static class CTableFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock[]>>, MatrixIndexes, MatrixBlock> 

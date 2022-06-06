@@ -32,7 +32,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -40,7 +39,7 @@ import org.apache.sysds.runtime.instructions.cp.CentralMomentCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.spark.SPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -64,18 +63,13 @@ public class CentralMomentFEDInstruction extends AggregateUnaryFEDInstruction {
 		return fedInst;
 	}
 
-	public static CentralMomentFEDInstruction parseInstruction(Instruction inst){
-		if ( inst instanceof CentralMomentCPInstruction)
-			return parseInstruction((CentralMomentCPInstruction) inst);
-		else if ( inst instanceof SPInstruction )
-			return parseInstruction(CentralMomentCPInstruction.parseInstruction(inst.getInstructionString()));
-		else
-			return parseInstruction(inst.getInstructionString());
+	public static CentralMomentFEDInstruction parseInstruction(CentralMomentCPInstruction inst) {
+		return new CentralMomentFEDInstruction(inst.getOperator(), inst.input1, inst.input2, inst.input3, inst.output,
+			inst.getOpcode(), inst.getInstructionString());
 	}
 
-	public static CentralMomentFEDInstruction parseInstruction(CentralMomentCPInstruction inst) { 
-		return new CentralMomentFEDInstruction(inst.getOperator(),
-			inst.input1, inst.input2, inst.input3, inst.output,
+	public static CentralMomentFEDInstruction parseInstruction(CentralMomentSPInstruction inst) {
+		return new CentralMomentFEDInstruction(inst.getOperator(), inst.input1, inst.input2, inst.input3, inst.output,
 			inst.getOpcode(), inst.getInstructionString());
 	}
 

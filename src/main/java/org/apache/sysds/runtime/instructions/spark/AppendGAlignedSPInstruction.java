@@ -34,13 +34,10 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
 
-public class AppendGAlignedSPInstruction extends BinarySPInstruction {
-	private boolean _cbind = true;
-
+public class AppendGAlignedSPInstruction extends AppendSPInstruction {
 	private AppendGAlignedSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			boolean cbind, String opcode, String istr) {
-		super(SPType.GAppend, op, in1, in2, out, opcode, istr);
-		_cbind = cbind;
+		boolean cbind, String opcode, String istr) {
+		super(SPType.GAppend, op, in1, in2, out, cbind, opcode, istr);
 	}
 
 	public static AppendGAlignedSPInstruction parseInstruction ( String str ) {

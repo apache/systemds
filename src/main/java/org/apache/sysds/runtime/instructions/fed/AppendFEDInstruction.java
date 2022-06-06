@@ -30,11 +30,10 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.functionobjects.OffsetColumnIndex;
-import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CPInstruction;
+import org.apache.sysds.runtime.instructions.cp.AppendCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.spark.SPInstruction;
+import org.apache.sysds.runtime.instructions.spark.AppendSPInstruction;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -56,22 +55,15 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 		_cbind = cbind;
 	}
 
-	public static AppendFEDInstruction parseInstruction(Instruction inst){
-		if ( inst instanceof CPInstruction || inst instanceof SPInstruction ){
-			String instStr = inst.getInstructionString();
-			String[] parts = InstructionUtils.getInstructionPartsWithValueType(instStr);
-			InstructionUtils.checkNumFields(parts, 6, 5, 4);
+	public static AppendFEDInstruction parseInstruction(AppendCPInstruction instr) {
+		return new AppendFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
+			instr.getAppendType().equals(AppendCPInstruction.AppendType.CBIND), instr.getOpcode(),
+			instr.getInstructionString(), FederatedOutput.NONE);
+	}
 
-			String opcode = parts[0];
-			CPOperand in1 = new CPOperand(parts[1]);
-			CPOperand in2 = new CPOperand(parts[2]);
-			CPOperand out = new CPOperand(parts[parts.length - 2]);
-			boolean cbind = Boolean.parseBoolean(parts[parts.length - 1]);
-
-			Operator op = new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1));
-			return new AppendFEDInstruction(op, in1, in2, out, cbind, opcode, instStr);
-		}
-		else return parseInstruction(inst.getInstructionString());
+	public static AppendFEDInstruction parseInstruction(AppendSPInstruction instr) {
+		return new AppendFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output, instr.getCBind(),
+			instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
 	}
 
 	public static AppendFEDInstruction parseInstruction(String str) {

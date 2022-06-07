@@ -24,6 +24,7 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -42,10 +43,9 @@ public class ReaderMapping {
 	private boolean lowerTriangularMap;
 	private boolean symmetricMap;
 	private boolean skewSymmetricMap;
-	private boolean symmetricUpperMap;
-	private boolean skewSymmetricUpperMap;
 	private boolean patternMap;
-	private Double patternValueMap;
+	private Object patternValueMap;
+	private Types.ValueType patternValueType;
 
 	private final int nrows;
 	private final int ncols;
@@ -166,80 +166,108 @@ public class ReaderMapping {
 			this.upperTriangularMap = true;
 			this.lowerTriangularMap = true;
 			this.symmetricMap = true;
-			this.symmetricUpperMap = true;
 			this.skewSymmetricMap = true;
-			this.skewSymmetricUpperMap = true;
 			this.patternMap = false;
 			this.patternValueMap = null;
 
-			if(this.isMatrix) {
-				for(int r = 0; r < nrows; r++) {
-					// upper triangular check
-					for(int c = r; c < ncols && this.upperTriangularMap; c++)
-						if(this.sampleMatrix.getValue(r, c) != 0 && mapRow[r][c] == -1)
-							this.upperTriangularMap = false;
+			// pattern check for Frame: in Frame the schema must be same for all columns
+			boolean homoSchema = true;
+			Types.ValueType vtc0 = null;
+			if(!this.isMatrix) {
+				vtc0 = this.sampleFrame.getSchema()[0];
+				for(int c = 1; c < ncols && homoSchema; c++)
+					homoSchema = this.sampleFrame.getSchema()[c] == vtc0;
+			}
 
-					for(int c = 0; c < r && this.upperTriangularMap; c++)
-						if(this.sampleMatrix.getValue(r, c) != 0)
-							this.upperTriangularMap = false;
+			for(int r = 0; r < nrows; r++) {
+				// upper triangular check
+				for(int c = r; c < ncols && this.upperTriangularMap; c++)
+					if(this.checkValueIsNotNullZero(r, c) && mapRow[r][c] == -1)
+						this.upperTriangularMap = false;
 
-					// lower triangular check
-					for(int c = 0; c <= r && this.lowerTriangularMap; c++)
-						if(this.sampleMatrix.getValue(r, c) != 0 && mapRow[r][c] == -1)
-							this.lowerTriangularMap = false;
+				for(int c = 0; c < r && this.upperTriangularMap; c++)
+					if(this.checkValueIsNotNullZero(r, c))
+						this.upperTriangularMap = false;
 
-					for(int c = r + 1; c < ncols && this.lowerTriangularMap; c++)
-						if(this.sampleMatrix.getValue(r, c) != 0)
-							this.lowerTriangularMap = false;
+				// lower triangular check
+				for(int c = 0; c <= r && this.lowerTriangularMap; c++)
+					if(this.checkValueIsNotNullZero(r, c) && mapRow[r][c] == -1)
+						this.lowerTriangularMap = false;
 
-					// Symmetric check
-					for(int c = 0; c <= r && this.symmetricMap; c++)
-						if(this.sampleMatrix.getValue(r, c) != this.sampleMatrix.getValue(c, r))
-							this.symmetricMap = false;
+				for(int c = r + 1; c < ncols && this.lowerTriangularMap; c++)
+					if(this.checkValueIsNotNullZero(r, c))
+						this.lowerTriangularMap = false;
 
-					if(this.symmetricMap) {
-						for(int c = 0; c <= r && this.symmetricUpperMap; c++)
-							if(this.sampleMatrix.getValue(r, c) != 0 && mapRow[r][c] != -1) {
-								this.symmetricUpperMap = false;
-								break;
-							}
-					}
+				// Symmetric check
+				for(int c = 0; c <= r && this.symmetricMap; c++)
+					this.symmetricMap = this.checkSymmetricValue(r, c, 1);
 
-					// Skew-Symmetric check
-					for(int c = 0; c <= r && this.skewSymmetricMap; c++)
-						if(this.sampleMatrix.getValue(r, c) != this.sampleMatrix.getValue(c, r) * -1)
-							this.skewSymmetricMap = false;
+				// Skew-Symmetric check
+				for(int c = 0; c <= r && this.skewSymmetricMap; c++)
+					this.skewSymmetricMap = this.checkSymmetricValue(r, c, -1);
 
-					if(this.skewSymmetricMap) {
-						for(int c = 0; c <= r && this.skewSymmetricUpperMap; c++)
-							if(this.sampleMatrix.getValue(r, c) != 0 && mapRow[r][c] != -1) {
-								this.skewSymmetricUpperMap = false;
-								break;
-							}
-					}
-					// pattern check
+				// pattern check for Matrix
+				if(this.isMatrix) {
 					HashSet<Double> patternValueSet = new HashSet<>();
 					for(int c = 0; c < ncols; c++)
 						patternValueSet.add(this.sampleMatrix.getValue(r, c));
 					if(patternValueSet.size() == 1) {
+						this.patternValueType = Types.ValueType.FP64;
 						this.patternMap = true;
 						this.patternValueMap = patternValueSet.iterator().next();
 					}
 				}
+				else {
+					if(homoSchema) {
+						HashSet<Object> patternValueSet = new HashSet<>();
+						for(int c = 0; c < ncols; c++)
+							patternValueSet.add(this.sampleFrame.get(r, c));
+						if(patternValueSet.size() == 1) {
+							this.patternValueType = vtc0;
+							this.patternMap = true;
+							this.patternValueMap = patternValueSet.iterator().next();
+						}
+					}
+				}
 			}
-
 		}
 
 		System.out.println("upperTriangularMap=" + upperTriangularMap);
 		System.out.println("lowerTriangularMap=" + lowerTriangularMap);
 		System.out.println("symmetric=" + symmetricMap);
-		System.out.println("symmetricUpperMap=" + symmetricUpperMap);
 		System.out.println("skewSymmetricMap = " + skewSymmetricMap);
-		System.out.println("skewSymmetricUpperMap=" + skewSymmetricUpperMap);
 		System.out.println("patternMap=" + patternMap);
-		System.out.println("patternValueMap=" + patternValueMap);
+		System.out.println("patternValueType = "+patternValueType);
+		System.out.println("patternValueMap=" + UtilFunctions.objectToString(patternValueType));
+
 
 		return false;
+	}
+
+	private boolean checkValueIsNotNullZero(int r, int c) {
+		boolean result;
+		if(this.isMatrix)
+			result = this.sampleMatrix.getValue(r, c) != 0;
+		else {
+			if(this.sampleFrame.getSchema()[c].isNumeric())
+				result = this.sampleFrame.getDouble(r, c) != 0;
+			else
+				result = this.sampleFrame.get(r, c) != null;
+		}
+		return result;
+	}
+
+	// Symmetric checks just available for numeric values in the frame representations
+	private boolean checkSymmetricValue(int r, int c, int a) {
+		boolean result;
+		if(this.isMatrix)
+			result = this.sampleMatrix.getValue(r, c) == this.sampleMatrix.getValue(c, r) * a;
+		else if(this.sampleFrame.getSchema()[c].isNumeric())
+			result = this.sampleFrame.getDouble(r, c) == this.sampleFrame.getDouble(c, r) * a;
+		else
+			result = this.sampleFrame.get(r, c).equals(this.sampleFrame.get(c, r));
+
+		return result;
 	}
 
 	public int getNaN() {

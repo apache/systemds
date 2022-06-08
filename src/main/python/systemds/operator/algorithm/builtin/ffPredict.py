@@ -33,8 +33,14 @@ def ffPredict(model: List,
               X: Matrix,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    This builtin function makes prediction given data and trained feedforward neural network model
+    
+    
+    :param Model: Trained ff neural network model
+    :param X: Data used for making predictions
     :param batch_size: Batch size
-    :return: 'OperationNode' containing value 
+    :return: 'OperationNode' containing 
+        predicted value 
     """
     params_dict = {'model': model, 'X': X}
     params_dict.update(kwargs)

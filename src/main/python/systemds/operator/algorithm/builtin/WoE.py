@@ -32,7 +32,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def WoE(X: Matrix,
         Y: Matrix,
         mask: Matrix):
+    """
+    function Weight of evidence / information gain
     
+    
+    :param X: ---
+    :param Y: ---
+    :param mask: ---
+    :return: 'OperationNode' containing 
+        --------- 
+    """
     params_dict = {'X': X, 'Y': Y, 'mask': mask}
     
     vX_0 = Matrix(X.sds_context, '')

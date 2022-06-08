@@ -32,10 +32,27 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def statsNA(X: Matrix,
             **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    The statsNA-function Print summary stats about the distribution of missing values in a univariate time series.
+    result matrix contains the following:
+     1. Length of time series (including NAs)
+     2. Number of Missing Values (NAs)
+     3. Percentage of Missing Values (#2/#1)
+     4. Number of Gaps (consisting of one or more consecutive NAs)
+     5. Average Gap Size - Average size of consecutive NAs for the NA gaps
+     6. Longest NA gap - Longest series of consecutive missing values
+     7. Most frequent gap size - Most frequently occurring gap size
+     8. Gap size accounting for most NAs
+    
+    
+    :param X: Numeric Vector ('vector') object containing NAs
     :param bins: Split number for bin stats. Number of bins the time series gets
-    :param missing: printed.
+        divided into. For each bin information about amount/percentage of
+        missing values is printed.
     :param verbose: Print detailed information.
-    :return: 'OperationNode' containing  
+        For print_only = TRUE, the missing value stats are printed with
+        more information ("Stats for Bins" and "overview NA series").
+    :return: 'OperationNode' containing 
+        column vector where each row correspond to described values 
     """
     params_dict = {'X': X}
     params_dict.update(kwargs)

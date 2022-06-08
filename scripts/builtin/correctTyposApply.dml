@@ -30,27 +30,23 @@
 #   Commun. ACM 7, 3 (March 1964), 171–176. 
 #   DOI:https://doi.org/10.1145/363958.363994
 #
-# INPUT PARAMETERS:
-# ------------------------------------------------------------------------------------------------------------------------
-# NAME                       TYPE             DEFAULT  MEANING
-# ------------------------------------------------------------------------------------------------------------------------
-# strings                    Frame[String]    ---      The nx1 input frame of corrupted strings
-# nullMask                   Matrix[Double]   ---      ---
-# frequency_threshold        Double           0.05     Strings that occur above this frequency level will not be corrected
-# distance_threshold         integer          2        Max distance at which strings are considered similar
-# distance matrix            Matrix[Double]         
-# dict                       Frame[String]        
+# TODO: future: add parameter for list of words that are sure to be correct
 #
-# ------------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# ----------------------------------------------------------------------------------------
+# strings              The nx1 input frame of corrupted strings
+# nullMask             ---
+# frequency_threshold  Strings that occur above this frequency level will not be corrected
+# distance_threshold   Max distance at which strings are considered similar
+# distance matrix      ---
+# dict                 ---
+# ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ------------------------------------------------------------------------------------------------------------------------
-# NAME     TYPE                    MEANING
-# ------------------------------------------------------------------------------------------------------------------------
-# Y        Frame[String]           Corrected nx1 output frame
-# ------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
+# Y     Corrected nx1 output frame
+# ---------------------------------------------------------------------------------------------
 
-# TODO: future: add parameter for list of words that are sure to be correct
 
 s_correctTyposApply = function(Frame[String] strings, Double frequency_threshold = 0.05, Integer distance_threshold = 2, Matrix[Double] distance_matrix, Frame[Unknown] dict)
   return (Frame[String] Y)

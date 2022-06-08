@@ -30,7 +30,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def imputeByMode(X: Matrix):
+    """
+    This function impute the data by mode value
+    Related to [SYSTEMDS-2902] dependency function for cleaning pipelines
     
+    
+    :param X: Data Matrix (Recoded Matrix for categorical features)
+    :return: 'OperationNode' containing 
+        imputed dataset 
+    """
     params_dict = {'X': X}
     
     vX_0 = Matrix(X.sds_context, '')

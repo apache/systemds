@@ -19,12 +19,21 @@
 #
 #-------------------------------------------------------------
 
-
-#######################################################################
 # function Weight of evidence / information gain
-# Inputs: The input dataset X, and  mask of the columns
-# Output: categorical columns are replaced with their frequencies
-#######################################################################
+#
+# INPUT:
+# --------------------------------------------------
+# X       ---
+# Y       ---
+# mask    ---
+# --------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------
+# X              ---
+# Y              ---
+# entropyMatrix  ---
+# ------------------------------------------------
 
 m_WoE = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask)
 return (Matrix[Double] X, Matrix[Double] Y, Matrix[Double] entropyMatrix) {

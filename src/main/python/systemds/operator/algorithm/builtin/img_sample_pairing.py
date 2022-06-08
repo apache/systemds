@@ -33,9 +33,15 @@ def img_sample_pairing(img_in1: Matrix,
                        img_in2: Matrix,
                        weight: float):
     """
+    The image sample pairing function blends two images together.
+    
+    
+    :param img_in1: First input image
+    :param img_in2: Second input image
     :param weight: The weight given to the second image.
-    :param 0: img_in1, 1 means only img_in2 will be visible
-    :return: 'OperationNode' containing  
+        0 means only img_in1, 1 means only img_in2 will be visible
+    :return: 'OperationNode' containing 
+        output image 
     """
     params_dict = {'img_in1': img_in1, 'img_in2': img_in2, 'weight': weight}
     return Matrix(img_in1.sds_context,

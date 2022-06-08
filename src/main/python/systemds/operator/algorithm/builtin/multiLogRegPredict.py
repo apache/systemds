@@ -34,8 +34,16 @@ def multiLogRegPredict(X: Matrix,
                        Y: Matrix,
                        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    THIS SCRIPT APPLIES THE ESTIMATED PARAMETERS OF MULTINOMIAL LOGISTIC REGRESSION TO A NEW (TEST) DATASET
+    Matrix M of predicted means/probabilities, some statistics in CSV format (see below)
+    
+    
+    :param X: Data Matrix X
+    :param B: Regression parameters betas
+    :param Y: Response vector Y
     :param verbose: flag specifying if logging information should be printed
-    :return: 'OperationNode' containing value of accuracy 
+    :return: 'OperationNode' containing 
+        matrix m of predicted means/probabilitiespredicted response vectorscalar value of accuracy 
     """
     params_dict = {'X': X, 'B': B, 'Y': Y}
     params_dict.update(kwargs)

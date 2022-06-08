@@ -33,7 +33,19 @@ def alsPredict(userIDs: Matrix,
                I: Matrix,
                L: Matrix,
                R: Matrix):
+    """
+    This script computes the rating/scores for a given list of userIDs 
+    using 2 factor matrices L and R. We assume that all users have rates 
+    at least once and all items have been rates at least once.
     
+    
+    :param userIDs: Column vector of user-ids (n x 1)
+    :param I: Indicator matrix user-id x user-id to exclude from scoring
+    :param L: The factor matrix L: user-id x feature-id
+    :param R: The factor matrix R: feature-id x item-id
+    :return: 'OperationNode' containing 
+        the output user-id/item-id/score# 
+    """
     params_dict = {'userIDs': userIDs, 'I': I, 'L': L, 'R': R}
     return Matrix(userIDs.sds_context,
         'alsPredict',

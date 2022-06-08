@@ -30,7 +30,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def normalize(X: Matrix):
+    """
+    Min-max normalization (a.k.a. min-max scaling) to range [0,1]. For matrices 
+    of positive values, this normalization preserves the input sparsity.
     
+    
+    :param X: Input feature matrix of shape n-by-m
+    :return: 'OperationNode' containing 
+        modified output feature matrix of shape n-by-mcolumn minima of shape 1-by-mcolumn maxima of shape 1-by-m 
+    """
     params_dict = {'X': X}
     
     vX_0 = Matrix(X.sds_context, '')

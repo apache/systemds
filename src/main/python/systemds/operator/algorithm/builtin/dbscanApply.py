@@ -33,8 +33,15 @@ def dbscanApply(X: Matrix,
                 clusterModel: Matrix,
                 eps: float):
     """
+    Implements the outlier detection/prediction algorithm using a DBScan model
+    
+    
+    :param NAME: MEANING
+    :param X: The input Matrix to do outlier detection on.
+    :param clusterModel: Model of clusters to predict outliers against.
     :param eps: Maximum distance between two points for one to be considered reachable for the other.
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing 
+        meaningpredicted outliers 
     """
     params_dict = {'X': X, 'clusterModel': clusterModel, 'eps': eps}
     

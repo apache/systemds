@@ -33,12 +33,21 @@ def mice(X: Matrix,
          cMask: Matrix,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    This Builtin function implements multiple imputation using Chained Equations (MICE)
+    Assumption missing value are represented with empty string i.e ",," in CSV file  
+    variables with suffix n are storing continuos/numeric data and variables with 
+    suffix c are storing categorical data
+    
+    
+    :param X: Data Matrix (Recoded Matrix for categorical features)
+    :param cMask: A 0/1 row vector for identifying numeric (0) and categorical features (1)
     :param iter: Number of iteration for multiple imputations
     :param threshold: confidence value [0, 1] for robust imputation, values will only be imputed
-    :param if: value has probability greater than threshold,
-    :param only: categorical data
+        if the predicted value has probability greater than threshold,
+        only applicable for categorical data
     :param verbose: Boolean value.
-    :return: 'OperationNode' containing are represented with empty string i.e ",," in csv file   & n are storing continuos/numeric data and variables with  & storing categorical data 
+    :return: 'OperationNode' containing 
+        imputed dataset 
     """
     params_dict = {'X': X, 'cMask': cMask}
     params_dict.update(kwargs)

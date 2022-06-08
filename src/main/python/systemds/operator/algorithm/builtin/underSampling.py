@@ -33,8 +33,14 @@ def underSampling(X: Matrix,
                   Y: Matrix,
                   ratio: float):
     """
+    Builtin to perform random under sampling on data.
+    
+    
+    :param X: X data to sample from
+    :param Y: Y data to sample from it will sample the same rows from x.
     :param ratio: The ratio to sample
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing 
+        the under sample data xthe under sample data y 
     """
     params_dict = {'X': X, 'Y': Y, 'ratio': ratio}
     

@@ -882,21 +882,20 @@ public class SparseBlockCSR extends SparseBlock
 		sb.append(", nnz=");
 		sb.append(size());
 		sb.append("\n");
+		final int rowDigits = (int)Math.max(Math.ceil(Math.log10(numRows())),1) ;
 		for(int i = 0; i < numRows(); i++) {
 			// append row
 			final int pos = pos(i);
 			final int len = size(i);
 			if(pos < pos + len) {
-
-				sb.append("row +");
-				sb.append(i);
-				sb.append(": ");
-
+				sb.append(String.format("row %0"+rowDigits+"d -- ", i));
 				for(int j = pos; j < pos + len; j++) {
-					sb.append(_indexes[j]);
-					sb.append(": ");
-					sb.append(_values[j]);
-					sb.append("\t");
+					if(_values[j] == (long) _values[j])
+						sb.append(String.format("%"+rowDigits+"d:%d", _indexes[j], (long)_values[j]));
+					else
+						sb.append(String.format("%"+rowDigits+"d:%s", _indexes[j], Double.toString(_values[j])));
+					if(j + 1 < pos + len)
+						sb.append(", ");
 				}
 				sb.append("\n");
 			}

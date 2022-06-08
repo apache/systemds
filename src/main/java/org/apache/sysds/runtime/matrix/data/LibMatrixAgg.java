@@ -3081,9 +3081,9 @@ public class LibMatrixAgg
 	/**
 	 * PROD, opcode: ua*, sparse input.
 	 * 
-	 * @param a ?
-	 * @param c ?
-	 * @param n ?
+	 * @param a Sparse block to process
+	 * @param c Dense result block
+	 * @param n Number of columns
 	 * @param rl row lower index
 	 * @param ru row upper index
 	 */
@@ -3107,9 +3107,9 @@ public class LibMatrixAgg
 	/**
 	 * ROWPROD, opcode: uar*, sparse input.
 	 * 
-	 * @param a ?
-	 * @param c ?
-	 * @param n ?
+	 * @param a Sparse block to process
+	 * @param c Dense result block
+	 * @param n Number of columns
 	 * @param rl row lower index
 	 * @param ru row upper index
 	 */
@@ -3117,9 +3117,14 @@ public class LibMatrixAgg
 		double[] lc = c.valuesAt(0);
 		for( int i=rl; i<ru; i++ ) {
 			if( !a.isEmpty(i) ) {
-				int alen = a.size(i);
-				double tmp = product(a.values(i), 0, alen);
-				lc[i] = tmp * ((alen<n) ? 0 : 1);
+				final int alen = a.size(i);
+				if(alen < n)
+					lc[i] = 0;
+				else{
+					final int apos = a.pos(i);
+					double tmp = product(a.values(i), apos, alen);
+					lc[i] = tmp * ((alen<n) ? 0 : 1);
+				}
 			}
 			else
 				lc[i] = (n==0) ? 1 : 0;
@@ -3129,27 +3134,23 @@ public class LibMatrixAgg
 	/**
 	 * COLPROD, opcode: uac*, sparse input.
 	 * 
-	 * @param a ?
-	 * @param c ?
-	 * @param n ?
+	 * @param a Sparse block to process
+	 * @param c Dense result block
+	 * @param n Number of columns
 	 * @param rl row lower index
 	 * @param ru row upper index
 	 */
 	private static void s_uacm( SparseBlock a, DenseBlock c, int n, int rl, int ru ) {
 		double[] lc = c.set(1).valuesAt(0);
-		int[] cnt = new int[ n ]; 
-		for( int i=rl; i<ru; i++ ) {
-			if( a.isEmpty(i) ){
-
-				countAgg(a.values(i), cnt, a.indexes(i), a.pos(i), a.size(i));
-				LibMatrixMult.vectMultiplyWrite(lc, a.values(i), lc, 0, a.pos(i), 0, a.size(i));
-			}
-			else if(n != 0)
-				for(int j = 0; j < n; j++)
-					lc[j] *= 0;
+		int[] cnt = new int[n];
+		for(int i = rl; i < ru; i++) {
+			if(a.isEmpty(i)) // if there is a empty row then stop processing since it is equivalient to multiplying with zero on all columns
+				continue;
+			countAgg(a.values(i), cnt, a.indexes(i), a.pos(i), a.size(i));
+			LibMatrixMult.vectMultiplyWrite(lc, a.values(i), lc, a.indexes(i), 0, a.pos(i), 0, a.size(i));
 		}
-		for( int j=0; j<n; j++ )
-			if( cnt[j] < ru-rl )
+		for(int j = 0; j < n; j++)
+			if(cnt[j] < ru - rl)
 				lc[j] *= 0;
 	}
 	

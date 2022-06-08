@@ -665,17 +665,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 
-	public void denseSuperQuickSetValue(int r, int c, double v)
-	{
-		//early abort
-		if( denseBlock==null && v==0 )
-			return;
-
-		denseBlock.set(r, c, v);
-		if( v==0 )
-			nonZeros--;
-	}
-
 	public double quickGetValueThreadSafe(int r, int c) {
 		if(sparse) {
 			if(!(sparseBlock instanceof SparseBlockMCSR))

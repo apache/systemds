@@ -103,6 +103,11 @@ public final class SparseRowScalar extends SparseRow{
 		index = (value!=0) ? index : -1;
 	}
 
+	@Override
+	public void compact(double eps) {
+		index = (Math.abs(value) < eps) ? -1: index;
+	}
+
 	public int getIndex(){
 		return index;
 	}

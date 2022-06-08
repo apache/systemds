@@ -650,7 +650,11 @@ public abstract class DenseBlock implements Serializable
 			double[] data = values(i);
 			int ix = pos(i);
 			for(int j=0; j<_odims[0]; j++) {
-				sb.append(data[ix+j]);
+				double v = data[ix+j];
+				if(v == (long) v)
+					sb.append((long)v);
+				else
+					sb.append(data[ix+j]);
 				sb.append("\t");
 			}
 			sb.append("\n");

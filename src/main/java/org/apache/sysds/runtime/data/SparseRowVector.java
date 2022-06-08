@@ -58,6 +58,27 @@ public final class SparseRowVector extends SparseRow{
 			}
 		size = nnz;
 	}
+
+	/**
+	 * Sparse row vector constructor that take a dense array, and allocate sparsely by ignoring zero values
+	 * @param v The dense row
+	 */
+	public SparseRowVector(double[] v){
+		int nnz = 0;
+		for(double vv: v)
+			if(vv != 0)
+				nnz++;
+
+		values = new double[nnz];
+		indexes = new int[nnz];
+		for(int i=0, pos=0; i<v.length; i++)
+			if( v[i] != 0 ) {
+				values[pos] = v[i];
+				indexes[pos] = i;
+				pos++;
+			}
+		size = nnz;
+	}
 	
 	public SparseRowVector(int estnnz, int maxnnz) {
 		if( estnnz > initialCapacity )
@@ -71,7 +92,7 @@ public final class SparseRowVector extends SparseRow{
 	
 	public SparseRowVector(SparseRow that) {
 		size = that.size();
-		int cap = Math.max(initialCapacity, that.size());
+		int cap = Math.max(initialCapacity, size);
 		
 		//allocate arrays and copy new values
 		values = Arrays.copyOf(that.values(), cap);
@@ -427,7 +448,19 @@ public final class SparseRowVector extends SparseRow{
 	public void compact() {
 		int nnz = 0;
 		for( int i=0; i<size; i++ ) 
-			if( values[i] != 0 ){
+			if( values[i] != 0.0 ){
+				values[nnz] = values[i];
+				indexes[nnz] = indexes[i];
+				nnz++;
+			}
+		size = nnz; //adjust row size
+	}
+
+	@Override
+	public void compact(double eps) {
+		int nnz = 0;
+		for( int i=0; i<size; i++ ) 
+			if( Math.abs(values[i]) > eps ){
 				values[nnz] = values[i];
 				indexes[nnz] = indexes[i];
 				nnz++;

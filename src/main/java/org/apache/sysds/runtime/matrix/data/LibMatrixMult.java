@@ -431,7 +431,15 @@ public class LibMatrixMult
 		//System.out.println("TSMM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
 	}
 
-	public static void matrixMultTransposeSelf( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int k ) {
+	/**
+	 * TSMM with optional transposed left side or not (Transposed self matrix multiplication)
+	 * 
+	 * @param m1            The matrix to do tsmm
+	 * @param ret           The output matrix to allocate the result to
+	 * @param leftTranspose If the left side should be considered transposed
+	 * @param k             the number of threads to use
+	 */
+	public static void matrixMultTransposeSelf(MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int k) {
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) ) {
 			ret.examSparsity(); //turn empty dense into sparse
@@ -451,20 +459,21 @@ public class LibMatrixMult
 		ret.allocateDenseBlock();
 	
 		//core multi-threaded matrix mult computation
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<>();
 			//load balance via #tasks=2k due to triangular shape 
-			int blklen = (int)(Math.ceil((double)ret.rlen/(2*k)));
-			for( int i=0; i<2*k & i*blklen<ret.rlen; i++ )
-				tasks.add(new MatrixMultTransposeTask(m1, ret, leftTranspose, i*blklen, Math.min((i+1)*blklen, ret.rlen)));
-			List<Future<Object>> rtasks = pool.invokeAll(tasks);
-			pool.shutdown();
-			for( Future<Object> rtask : rtasks )
-				rtask.get(); //error handling
+			int blklen = (int)(Math.ceil((double)ret.rlen / (2 * k)));
+			for(int i = 0; i < ret.rlen; i += blklen)
+				tasks.add(new MatrixMultTransposeTask(m1, ret, leftTranspose, i, Math.min(i+blklen, ret.rlen)));
+			for( Future<Object> rtask :  pool.invokeAll(tasks) )
+				rtask.get();
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
+		}
+		finally{
+			pool.shutdown();
 		}
 		
 		//post-processing
@@ -2069,32 +2078,25 @@ public class LibMatrixMult
 				final int arlen = a.numRows();
 				for( int r=0; r<arlen; r++ ) {
 					if( a.isEmpty(r) ) continue;
-					int alen = a.size(r);
-					double[] avals = a.values(r);
+					final int alen = a.size(r);
+					final double[] avals = a.values(r);
+					final int apos = a.pos(r);
 					if( alen == n ) { //dense row
-						final int apos = a.pos(r);
 						for (int i = rl; i < ru; i++){
 							double[] cvals = c.values(i);
 							int cix = c.pos(i);
 							double val = avals[i + apos];
-							for(int j = i ; j < ru; j++){
-								double d = val * avals[j + apos];
-								cvals[cix + j] +=d;
-							}
+							for(int j = i; j < m1.clen; j++)
+								cvals[cix + j] +=val * avals[j + apos];
 						}
 					}
 					else { //non-full sparse row
-						int apos = a.pos(r);
 						int[] aix = a.indexes(r);
 						int rlix = (rl==0) ? 0 : a.posFIndexGTE(r, rl);
 						rlix = (rlix>=0) ? apos+rlix : apos+alen;
 						int len = apos + alen;
-						for(int i = rlix; i < len && aix[i]<ru; i++) {
-							double val = avals[i];
-							if( val != 0 )
-								vectMultiplyAdd(val, avals, c.values(aix[i]),
-									aix, i, c.pos(aix[i]), len-i);
-						}
+						for(int i = rlix; i < len && aix[i] < ru; i++)
+							vectMultiplyAdd(avals[i], avals, c.values(aix[i]), aix, i, c.pos(aix[i]), len - i);
 					}
 				}
 			}

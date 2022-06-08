@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -50,9 +51,9 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	/**
-	 * Constructs an Constant Colum Group, that contains only one tuple, with the given value.
+	 * Constructs a Column Group that compresses its content using a linear functional.
 	 *
-	 * @param colIndices  The Colum indexes for the column group.
+	 * @param colIndices  The Column indexes for the column group.
 	 * @param coefficents The dictionary containing one tuple for the entire compression.
 	 */
 	private ColGroupLinearFunctional(int[] colIndices, double[][] coefficents, int numRows) {
@@ -254,8 +255,22 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	public void tsmm(double[] result, int numColumns, int nRows) {
-		throw new NotImplementedException();
+	public void tsmm(double[] ret, int numColumns, int nRows) {
+		final int tCol = _colIndexes.length;
+
+		final double sumIndices = nRows * (nRows + 1)/2.0;
+		final double sumSquaredIndices = nRows * (nRows + 1) * (2*nRows + 1)/6.0;
+		for(int row = 0, offTmp = 0; row < tCol; row++, offTmp += tCol) {
+			final int rowIdx = _colIndexes[row];
+			final double alpha1 = nRows * _coefficents[0][rowIdx] + sumIndices * _coefficents[1][rowIdx];
+			final double alpha2 = sumIndices * _coefficents[0][rowIdx] + sumSquaredIndices * _coefficents[1][rowIdx];
+			final int offRet = _colIndexes[row] * numColumns;
+			for(int col = row; col < tCol; col++) {
+				final int colIdx = _colIndexes[col];
+				ret[offRet + _colIndexes[col]] = alpha1 * _coefficents[0][colIdx] + alpha2 * _coefficents[1][colIdx];
+			}
+
+		}
 	}
 
 	@Override

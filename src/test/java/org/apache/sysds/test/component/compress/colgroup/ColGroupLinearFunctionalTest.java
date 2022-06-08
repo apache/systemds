@@ -56,6 +56,32 @@ public class ColGroupLinearFunctionalTest {
 	}
 
 	@Test
+	public void testTsmm() {
+		boolean isTransposed = true;
+		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, -2, 0, 2, 4}};
+		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+
+		final int numCols = isTransposed ? mbt.getNumRows() : mbt.getNumColumns();
+		final int numRows = isTransposed ? mbt.getNumColumns() : mbt.getNumRows();
+		int[] colIndexes = new int[numCols];
+		for(int x = 0; x < numCols; x++)
+			colIndexes[x] = x;
+
+		AColGroup cgCompressed = createCompressedColGroup(mbt, colIndexes, isTransposed);
+		AColGroup cgUncompressed = createUncompressedColGroup(mbt, colIndexes, isTransposed);
+
+		final MatrixBlock resultUncompressed = new MatrixBlock(numCols, numCols, false);
+		resultUncompressed.allocateDenseBlock();
+		cgUncompressed.tsmm(resultUncompressed, numRows);
+
+		final MatrixBlock resultCompressed = new MatrixBlock(numCols, numCols, false);
+		resultCompressed.allocateDenseBlock();
+		cgCompressed.tsmm(resultCompressed, numRows);
+
+		Assert.assertArrayEquals(resultUncompressed.getDenseBlockValues(), resultCompressed.getDenseBlockValues(), 0.001);
+	}
+
+	@Test
 	public void testColSumsSq() {
 		boolean isTransposed = false;
 		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 53, -100}};
@@ -284,6 +310,20 @@ public class ColGroupLinearFunctionalTest {
 		return cg;
 	}
 
+	public AColGroup createUncompressedColGroup(MatrixBlock mbt, int[] colIndexes, boolean isTransposed) {
+		CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
+			.setValidCompressions(EnumSet.of(AColGroup.CompressionType.UNCOMPRESSED)).create();
+		cs.transposed = isTransposed;
+
+		final CompressedSizeInfoColGroup cgi = new CompressedSizeEstimatorExact(mbt, cs)
+			.getColGroupInfo(colIndexes);
+		CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
+		AColGroup cg = ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
+
+		Assert.assertSame(cg.getCompType(), AColGroup.CompressionType.UNCOMPRESSED);
+		return cg;
+	}
+
 	@Test
 	public void testRandomColumnCompression() {
 		double intercept = random.nextInt(1000) - 500 + random.nextDouble();
@@ -319,7 +359,7 @@ public class ColGroupLinearFunctionalTest {
 		testDecompressToDenseBlock(new double[][] {{1, 2, 3, 4, 5}, {1, 1, 1, 1, 1}}, true);
 	}
 
-	@Test
+	@Test(expected = AssertionError.class)
 	public void testDecompressToDenseBlockTwoColumnsNonLinearTransposed() {
 		testDecompressToDenseBlock(new double[][] {{1, 2, 3, 4, 5, 0}, {1, 1, 1, 1, 1, 2}}, true);
 	}

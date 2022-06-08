@@ -34,19 +34,43 @@ def randomForest(X: Matrix,
                  R: Matrix,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param If: not provided by default all variables are assumed to be scale
+    This script implement classification random forest with both scale and categorical features.
+    
+    
+    :param X: Feature matrix X; note that X needs to be both recoded and dummy coded
+    :param Y: Label matrix Y; note that Y needs to be both recoded and dummy coded
+    :param R: Matrix which for each feature in X contains the following information
+        - R[,1]: column ids       TODO pass recorded and binned
+        - R[,2]: start indices
+        - R[,3]: end indices
+        If R is not provided by default all variables are assumed to be scale
     :param bins: Number of equiheight bins per scale feature to choose thresholds
     :param depth: Maximum depth of the learned tree
     :param num_leaf: Number of samples when splitting stops and a leaf node is added
     :param num_samples: Number of samples at which point we switch to in-memory subtree building
     :param num_trees: Number of trees to be learned in the random forest model
     :param subsamp_rate: Parameter controlling the size of each tree in the forest; samples are selected from a
-    :param Poisson: parameter subsamp_rate (the default value is 1.0)
+        Poisson distribution with parameter subsamp_rate (the default value is 1.0)
     :param feature_subset: Parameter that controls the number of feature used as candidates for splitting at each tree node
-    :param as: of number of features in the dataset;
-    :param by: root of features (i.e., feature_subset = 0.5) are used at each tree node
+        as a power of number of features in the dataset;
+        by default square root of features (i.e., feature_subset = 0.5) are used at each tree node
     :param impurity: Impurity measure: entropy or Gini (the default)
-    :return: 'OperationNode' containing tree and each row contains the following information: & that leaf node j is supposed to predict & subset of values & 7,8,... if j is categorical & stored at m[7,j] if the feature chosen for j is scale; & chosen for j is categorical rows 7,8,... depict the value subset chosen for j 
+    :return: 'OperationNode' containing 
+        matrix m containing the learned tree, where each column corresponds to a node
+        in the learned tree and each row contains the following information:
+        m[1,j]: id of node j (in a complete binary tree)
+        m[2,j]: tree id to which node j belongs
+        m[3,j]: offset (no. of columns) to left child of j
+        m[4,j]: feature index of the feature that node j looks at if j is an internal node, otherwise 0
+        m[5,j]: type of the feature that node j looks at if j is an internal node: 1 for scale and 2
+        for categorical features,
+        otherwise the label that leaf node j is supposed to predict
+        m[6,j]: 1 if j is an internal node and the feature chosen for j is scale, otherwise the
+        size of the subset of values
+        stored in rows 7,8,... if j is categorical
+        m[7:,j]: only applicable for internal nodes. threshold the example's feature value is
+        compared to is stored at m[7,j] if the feature chosen for j is scale;
+        if the feature chosen for j is categorical rows 7,8,... depict the value subset chosen for jmatrix c containing the number of times samples are chosen in each tree of the random forestmappings from scale feature ids to global feature idsmappings from categorical feature ids to global feature ids 
     """
     params_dict = {'X': X, 'Y': Y, 'R': R}
     params_dict.update(kwargs)

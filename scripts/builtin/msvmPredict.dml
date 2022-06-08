@@ -21,22 +21,18 @@
 
 # This Scripts helps in applying an trained MSVM
 #
-# INPUT PARAMETERS:
-#-----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE               DEFAULT     MEANING
-#-----------------------------------------------------------------------------------------------------------------------
-# X               Matrix[Double]     ---         matrix X of feature vectors to classify
-# W               Matrix[Double]     ---         matrix of the trained variables
-#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+#------------------------------------------------------------------------------
+# X     matrix X of feature vectors to classify
+# W     matrix of the trained variables
+#------------------------------------------------------------------------------
 #
 # OUTPUT:
-#-----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE                          MEANING
-#-----------------------------------------------------------------------------------------------------------------------
-# YRaw            Matrix[Double]                Classification Labels Raw, meaning not modified to clean
-#                                               Labeles of 1's and -1's
-# Y               Matrix[Double]                Classification Labels Maxed to ones and zeros.
-#-----------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+# YRaw  Classification Labels Raw, meaning not modified to clean
+#       Labeles of 1's and -1's
+# Y     Classification Labels Maxed to ones and zeros.
+#-------------------------------------------------------------------------------
 
 m_msvmPredict = function(Matrix[Double] X, Matrix[Double] W)
   return(Matrix[Double] YRaw, Matrix[Double] Y)

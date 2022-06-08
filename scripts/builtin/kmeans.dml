@@ -21,28 +21,24 @@
 
 # Builtin function that implements the k-Means clustering algorithm
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME                              TYPE              DEFAULT  MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X                                 Matrix[Double]    ---      The input Matrix to do KMeans on.
-# k                                 Int               10       Number of centroids
-# runs                              Int               10       Number of runs (with different initial centroids)
-# max_iter                          Int               1000     Maximum number of iterations per run
-# eps                               Double            0.000001 Tolerance (epsilon) for WCSS change ratio
-# is_verbose                        Boolean           FALSE    do not print per-iteration stats
-# avg_sample_size_per_centroid      Int               50       Average number of records per centroid in data samples
-# seed                              Int               -1       The seed used for initial sampling. If set to -1
-#                                                              random seeds are selected.
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# ---------------------------------------------------------------------------------------
+# X                             The input Matrix to do KMeans on.
+# k                             Number of centroids
+# runs                          Number of runs (with different initial centroids)
+# max_iter                      Maximum number of iterations per run
+# eps                           Tolerance (epsilon) for WCSS change ratio
+# is_verbose                    do not print per-iteration stats
+# avg_sample_size_per_centroid  Average number of records per centroid in data samples
+# seed                          The seed used for initial sampling. If set to -1
+#                               random seeds are selected.
+# ---------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME                              TYPE                       MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# Y                                 Matrix[Double]             The mapping of records to centroids
-# C                                 Matrix[Double]             The output matrix with the centroids
-# ----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------
+# Y     The mapping of records to centroids
+# C     The output matrix with the centroids
+# ---------------------------------------------------------------
 
 m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer max_iter = 1000,
     Double eps = 0.000001, Boolean is_verbose = FALSE, Integer avg_sample_size_per_centroid = 50,

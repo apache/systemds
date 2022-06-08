@@ -30,7 +30,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def vectorToCsv(mask: Matrix):
+    """
+    This builtin function  convert vector into csv string such as [1 0 0 1 1 0 1] = "1,4,5,7"
+    Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
     
+    
+    :param mask: Data vector (having 0 for excluded indexes)
+    :return: 'OperationNode' containing 
+        indexes 
+    """
     params_dict = {'mask': mask}
     return Matrix(mask.sds_context,
         'vectorToCsv',

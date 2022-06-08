@@ -32,15 +32,31 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def alsCG(X: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    This script computes an approximate factorization of a low-rank matrix X into two matrices U and V
+    using the Alternating-Least-Squares (ALS) algorithm with conjugate gradient.
+    Matrices U and V are computed by minimizing a loss function (with regularization).
+    
+    
+    :param X: Location to read the input matrix X to be factorized
     :param rank: Rank of the factorization
     :param regType: Regularization:
+        "L2" = L2 regularization;
+        f (U, V) = 0.5 * sum (W * (U %*% V - X) ^ 2)
+        + 0.5 * reg * (sum (U ^ 2) + sum (V ^ 2))
+        "wL2" = weighted L2 regularization
+        f (U, V) = 0.5 * sum (W * (U %*% V - X) ^ 2)
+        + 0.5 * reg * (sum (U ^ 2 * row_nonzeros)
+        + sum (V ^ 2 * col_nonzeros))
     :param reg: Regularization parameter, no regularization if 0.0
     :param maxi: Maximum number of iterations
     :param check: Check for convergence after every iteration, i.e., updating U and V once
     :param thr: Assuming check is set to TRUE, the algorithm stops and convergence is declared
-    :param if: in loss in any two consecutive iterations falls below this threshold;
-    :param if: FALSE thr is ignored
-    :return: 'OperationNode' containing  
+        if the decrease in loss in any two consecutive iterations falls below this threshold;
+        if check is FALSE thr is ignored
+    :param seed: The seed to random parts of the algorithm
+    :param verbose: If the algorithm should run verbosely
+    :return: 'OperationNode' containing 
+        an m x r matrix where r is the factorization rankan m x r matrix where r is the factorization rank 
     """
     params_dict = {'X': X}
     params_dict.update(kwargs)

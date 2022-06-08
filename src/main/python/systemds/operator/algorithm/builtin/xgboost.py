@@ -33,14 +33,40 @@ def xgboost(X: Matrix,
             y: Matrix,
             **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param Feature: a scalar feature and features 2 is a categorical feature
-    :param If: not provided by default all variables are assumed to be scale (1)
+    XGBoost is a decision-tree-based ensemble Machine Learning algorithm that uses a gradient boosting. This xgboost
+    implementation supports classification and regression and is capable of working with categorical and scalar features.
+    Output explained:
+    (the first node is the init prediction) and each row contains
+    the following information:
+    M[1,j]: id of node j (in a complete binary tree)
+    M[2,j]: tree id to which node j belongs
+    M[3,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
+    M[4,j]: Feature index of the feature (scale feature id if the feature is
+    scale or categorical feature id if the feature is categorical)
+    that node j looks at if j is an internal node, otherwise 0
+    M[5,j]: Type of the feature that node j looks at if j is an internal node.
+    if leaf = 0, if scalar = 1, if categorical = 2
+    M[6:,j]: If j is an internal node: Threshold the example's feature value is
+    compared to is stored at M[6,j] if the feature chosen for j is scale,
+    otherwise if the feature chosen for j is categorical rows 6,7,... depict
+    the value subset chosen for j
+    If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
+    
+    
+    :param X: Feature matrix X; note that X needs to be both recoded and dummy coded
+    :param y: Label matrix y; note that y needs to be both recoded and dummy coded
+    :param R: Matrix R; 1xn vector which for each feature in X contains the following information
+        - R[,1]: 1 (scalar feature)
+        - R[,2]: 2 (categorical feature)
+        Feature 1 is a scalar feature and features 2 is a categorical feature
+        If R is not provided by default all variables are assumed to be scale (1)
     :param sml_type: Supervised machine learning type: 1 = Regression(default), 2 = Classification
     :param num_trees: Number of trees to be created in the xgboost model
     :param learning_rate: Alias: eta. After each boosting step the learning rate controls the weights of the new predictions
     :param max_depth: Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit
     :param lambda: L2 regularization term on weights. Increasing this value will make model more conservative and reduce amount of leaves of a tree
-    :return: 'OperationNode' containing feature id if the feature is categorical) & looks at if j is an internal node, otherwise 0 & stored at m[6,j] if the feature chosen for j is scale, & feature chosen for j is categorical rows 6,7,... depict & chosen for j & a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0 
+    :return: 'OperationNode' containing 
+        matrix m where each column corresponds to a node in the learned tree 
     """
     params_dict = {'X': X, 'y': y}
     params_dict.update(kwargs)

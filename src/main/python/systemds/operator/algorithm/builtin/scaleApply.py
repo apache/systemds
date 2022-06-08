@@ -32,7 +32,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def scaleApply(X: Matrix,
                Centering: Matrix,
                ScaleFactor: Matrix):
+    """
+    This function scales and center individual features in the input matrix (column wise.) using the input matrices.
     
+    
+    :param X: Input feature matrix
+    :param Centering: The column means to subtract from X (not done if empty)
+    :param ScaleFactor: The column scaling to multiply with X (not done if empty)
+    :return: 'OperationNode' containing 
+        output feature matrix with k columns 
+    """
     params_dict = {'X': X, 'Centering': Centering, 'ScaleFactor': ScaleFactor}
     return Matrix(X.sds_context,
         'scaleApply',

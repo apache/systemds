@@ -21,33 +21,6 @@
 
 # This script computes a solution for the hospital residency match problem.
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME                  TYPE            DEFAULT MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# R                     Matrix[Double]  ---     Residents matrix R.
-#                                               It must be an ORDERED  matrix.
-# H                     Matrix[Double]  ---     Hospitals matrix H.
-#                                               It must be an UNORDRED matrix.
-# capacity              Matrix[Double]  ---     capacity of Hospitals matrix C.
-#                                               It must be a [n*1] matrix with non zero values.
-#                                               i.e. the leftmost value in a row is the most preferred partner's index.
-#                                               i.e. the leftmost value in a row in P is the preference value for the acceptor
-#                                               with index 1 and vice-versa (higher is better).
-# verbose               Boolean         False   If the operation is verbose
-# OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME                  TYPE                    MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# residencyMatch        Matrix[Double]          Result Matrix
-#                                               If cell [i,j] is non-zero, it means that Resident i has matched with Hospital j.
-#                                               Further, if cell [i,j] is non-zero, it holds the preference value that led to the match.
-# hospitalMatch         Matrix[Double]          Result Matrix
-#                                               If cell [i,j] is non-zero, it means that Resident i has matched with Hospital j.
-#                                               Further, if cell [i,j] is non-zero, it holds the preference value that led to the match.
-#
-#
-# ----------------------------------------------------------------------------------------------------------------------
 # Residents.mtx:
 # 2.0,1.0,3.0
 # 1.0,2.0,3.0
@@ -82,7 +55,30 @@
 # Resident 1 has matched with Hospital 3 (since [1,3] is non-zero) at a preference level of 2.0.
 # Resident 2 has matched with Hospital 1 (since [2,1] is non-zero) at a preference level of 1.0.
 # Resident 3 has matched with Hospital 2 (since [3,2] is non-zero) at a preference level of 2.0.
-# ----------------------------------------------------------------------------------------------------------------------
+#
+# INPUT:
+# ----------------------------------------------------------------------------------
+# R         Residents matrix R.
+#           It must be an ORDERED  matrix.
+# H         Hospitals matrix H.
+#           It must be an UNORDRED matrix.
+# capacity  capacity of Hospitals matrix C.
+#           It must be a [n*1] matrix with non zero values.
+#           i.e. the leftmost value in a row is the most preferred partner's index.
+#           i.e. the leftmost value in a row in P is the preference value for the acceptor
+#           with index 1 and vice-versa (higher is better).
+# verbose   If the operation is verbose
+# ----------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------------------
+# residencyMatch   Result Matrix
+#                  If cell [i,j] is non-zero, it means that Resident i has matched with Hospital j.
+#                  Further, if cell [i,j] is non-zero, it holds the preference value that led to the match.
+# hospitalMatch    Result Matrix
+#                  If cell [i,j] is non-zero, it means that Resident i has matched with Hospital j.
+#                  Further, if cell [i,j] is non-zero, it holds the preference value that led to the match.
+# -----------------------------------------------------------------------------------------
 
 m_hospitalResidencyMatch = function(Matrix[Double] R, Matrix[Double] H, Matrix[Double] capacity, Boolean verbose = FALSE)
   return (Matrix[Double] residencyMatch, Matrix[Double] hospitalMatch)

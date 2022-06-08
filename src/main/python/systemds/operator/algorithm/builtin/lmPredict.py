@@ -33,10 +33,17 @@ def lmPredict(X: Matrix,
               B: Matrix,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param if: is not wanted
+    The lmPredict-function predicts the class of a feature vector
+    
+    
+    :param X: Matrix of feature vectors
+    :param B: 1-column matrix of weights.
+    :param ytest: test labels, used only for verbose output. can be set to matrix(0,1,1)
+        if verbose output is not wanted
     :param icpt: Intercept presence, shifting and rescaling the columns of X
     :param verbose: If TRUE print messages are activated
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing 
+        1-column matrix of classes 
     """
     params_dict = {'X': X, 'B': B}
     params_dict.update(kwargs)

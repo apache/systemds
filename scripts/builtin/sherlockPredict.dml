@@ -26,30 +26,26 @@
 # [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
 # Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining.
 # 2019.]
-
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME       TYPE        DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X     Matrix[Double]   ---       matrix of values which are to be classified
-# cW    Matrix[Double]   ---       weights (parameters) matrices for character distribtions
-# cb    Matrix[Double]   ---       biases vectors for character distribtions
-# wW    Matrix[Double]   ---       weights (parameters) matrices for word embeddings
-# wb    Matrix[Double]   ---       biases vectors for word embeddings
-# pW    Matrix[Double]   ---       weights (parameters) matrices for paragraph vectors
-# pb    Matrix[Double]   ---       biases vectors for paragraph vectors
-# sW    Matrix[Double]   ---       weights (parameters) matrices for global statistics
-# sb    Matrix[Double]   ---       biases vectors for global statistics
-# fW    Matrix[Double]   ---       weights (parameters) matrices for  combining all trained features (final)
-# fb    Matrix[Double]   ---       biases vectors for combining all trained features (final)
-# ----------------------------------------------------------------------------------------------------------------------
+#
+# INPUT:
+# -------------------------------------------------------------------------------------------
+# X     matrix of values which are to be classified
+# cW    weights (parameters) matrices for character distribtions
+# cb    biases vectors for character distribtions
+# wW    weights (parameters) matrices for word embeddings
+# wb    biases vectors for word embeddings
+# pW    weights (parameters) matrices for paragraph vectors
+# pb    biases vectors for paragraph vectors
+# sW    weights (parameters) matrices for global statistics
+# sb    biases vectors for global statistics
+# fW    weights (parameters) matrices for  combining all trained features (final)
+# fb    biases vectors for combining all trained features (final)
+# -------------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME   TYPE                        MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# probs  Matrix[Double]              class probabilities of shape (N, K)
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
+# probs  class probabilities of shape (N, K)
+# ------------------------------------------------------------------------------------------
 
 source("scripts/nn/examples/sherlockNet.dml") as sherlockNet
 

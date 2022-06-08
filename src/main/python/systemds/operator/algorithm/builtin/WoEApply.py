@@ -32,7 +32,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def WoEApply(X: Matrix,
              Y: Matrix,
              entropyMatrix: Matrix):
+    """
+    function Weight of evidence / information gain apply on new data
     
+    
+    :param X: ---
+    :param Y: ---
+    :param entropyMatrix: ---
+    :return: 'OperationNode' containing 
+        --- 
+    """
     params_dict = {'X': X, 'Y': Y, 'entropyMatrix': entropyMatrix}
     return Matrix(X.sds_context,
         'WoEApply',

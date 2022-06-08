@@ -32,7 +32,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def knnbf(X: Matrix,
           T: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
+    """
+    This script implements KNN (K Nearest Neighbor) algorithm.
     
+    
+    :param X: ---
+    :param T: ---
+    :param k_value: ---
+    :return: 'OperationNode' containing 
+        --- 
+    """
     params_dict = {'X': X, 'T': T}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

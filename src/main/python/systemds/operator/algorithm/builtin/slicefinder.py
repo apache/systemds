@@ -33,16 +33,27 @@ def slicefinder(X: Matrix,
                 e: Matrix,
                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    This builtin function implements SliceLine, a linear-algebra-based
+    ML model debugging technique for finding the top-k data slices where
+    a trained models performs significantly worse than on the overall 
+    dataset. For a detailed description and experimental results, see:
+    Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based Slice Finding for ML Model Debugging.(SIGMOD 2021)
+    
+    
+    :param X: Recoded dataset into Matrix
+    :param e: Trained model
     :param k: Number of subsets required
-    :param maxL: level L (conjunctions of L predicates), 0 unlimited
-    :param minSup: support (min number of rows per slice)
-    :param alpha: [0,1]: 0 only size, 1 only error
-    :param tpEval: for task-parallel slice evaluation,
-    :param tpBlksz: size for task-parallel execution (num slices)
-    :param selFeat: for removing one-hot-encoded features that don't satisfy
-    :param the: constraint and/or have zero error
-    :param verbose: for verbose debug output
-    :return: 'OperationNode' containing  
+    :param maxL: maximum level L (conjunctions of L predicates), 0 unlimited
+    :param minSup: minimum support (min number of rows per slice)
+    :param alpha: weight [0,1]: 0 only size, 1 only error
+    :param tpEval: flag for task-parallel slice evaluation,
+        otherwise data-parallel
+    :param tpBlksz: block size for task-parallel execution (num slices)
+    :param selFeat: flag for removing one-hot-encoded features that don't satisfy
+        the initial minimum-support constraint and/or have zero error
+    :param verbose: flag for verbose debug output
+    :return: 'OperationNode' containing 
+        top-k slices (k x ncol(x) if successful)score, size, error of slices (k x 3)debug matrix, populated with enumeration stats if verbose 
     """
     params_dict = {'X': X, 'e': e}
     params_dict.update(kwargs)

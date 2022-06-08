@@ -19,6 +19,20 @@
 #
 #-------------------------------------------------------------
 
+# function Weight of evidence / information gain apply on new data
+#
+# INPUT:
+# --------------------------------------------------
+# X              ---
+# Y              ---
+# entropyMatrix  ---
+# --------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------
+# X              ---
+# ------------------------------------------------
+
 m_WoEApply = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] entropyMatrix)
 return (Matrix[Double] X) {
   

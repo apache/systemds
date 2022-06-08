@@ -33,10 +33,17 @@ def outlierBySd(X: Matrix,
                 max_iterations: int,
                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    Builtin function for detecting and repairing outliers using standard deviation
+    
+    
+    :param X: Matrix X
     :param k: threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
     :param repairMethod: values: 0 = delete rows having outliers, 1 = replace outliers as  zeros
+        2 = replace outliers as missing values
     :param max_iterations: values: 0 = arbitrary number of iteration until all outliers are removed,
-    :return: 'OperationNode' containing  
+        n = any constant defined by user
+    :return: 'OperationNode' containing 
+        matrix x with no outliers 
     """
     params_dict = {'X': X, 'max_iterations': max_iterations}
     params_dict.update(kwargs)

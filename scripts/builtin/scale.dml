@@ -21,23 +21,19 @@
 
 # This function scales and center individual features in the input matrix (column wise.) using z-score to scale the values.
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME         TYPE              DEFAULT  MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X            Matrix[Double]    ---      Input feature matrix
-# center       Boolean           TRUE     Indicates whether or not to center the feature matrix
-# scale        Boolean           TRUE     Indicates whether or not to scale the feature matrix
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# --------------------------------------------------------------------------------------
+# X       Input feature matrix
+# center  Indicates whether or not to center the feature matrix
+# scale   Indicates whether or not to scale the feature matrix
+# --------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME         TYPE                       MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# Y            Matrix[Double]             Output feature matrix with K columns
-# Centering    Matrix[Double]             The column means of the input, subtracted if Center was TRUE
-# ScaleFactor  Matrix[Double]             The Scaling of the values, to make each dimension have similar value ranges
-# ----------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------
+# Y            Output feature matrix with K columns
+# Centering    The column means of the input, subtracted if Center was TRUE
+# ScaleFactor  The Scaling of the values, to make each dimension have similar value ranges
+# -------------------------------------------------------------------------------------------
 
 m_scale = function(Matrix[Double] X, Boolean center=TRUE, Boolean scale=TRUE) 
   return (Matrix[Double] out, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 

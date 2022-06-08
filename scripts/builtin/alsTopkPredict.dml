@@ -23,25 +23,20 @@
 # using 2 factor matrices L and R. We assume that all users have rates 
 # at least once and all items have been rates at least once.
 #
-# INPUT   PARAMETERS:
-# -----------------------------------------------------------------------------------------------------------------------------
-# NAME    TYPE             DEFAULT  MEANING
-# -----------------------------------------------------------------------------------------------------------------------------
-# userIDs Matrix[Double]   ---      Column vector of user-ids (n x 1)
-# I       Matrix[Double]   ---      Indicator matrix user-id x user-id to exclude from scoring
-# L       Matrix[Double]   ---      The factor matrix L: user-id x feature-id
-# R       Matrix[Double]   ---      The factor matrix R: feature-id x item-id
-# K       Int              5        The number of top-K items
-#
-# ------------------------------------------------------------------------------------------------------------------------------
+# INPUT:   
+# ----------------------------------------------------------------------------------------------------
+# userIDs  Column vector of user-ids (n x 1)
+# I        Indicator matrix user-id x user-id to exclude from scoring
+# L        The factor matrix L: user-id x feature-id
+# R        The factor matrix R: feature-id x item-id
+# K        The number of top-K items
+# -----------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ------------------------------------------------------------------------------------------------------------------------------
-# NAME    TYPE             MEANING
-# ------------------------------------------------------------------------------------------------------------------------------
-# TopIxs  Matrix[Double]   A matrix containing the top-K item-ids with highest predicted ratings for the specified users (rows)
-# TopVals Matrix[Double]   A matrix containing the top-K predicted ratings for the specified users (rows)
-# ------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------
+# TopIxs   A matrix containing the top-K item-ids with highest predicted ratings for the specified users (rows)
+# TopVals  A matrix containing the top-K predicted ratings for the specified users (rows)
+# --------------------------------------------------------------------------------------------------------------
 
 m_alsTopkPredict = function(Matrix[Double] userIDs, Matrix[Double] I, Matrix[Double] L, Matrix[Double] R, Integer K = 5)
   return (Matrix[Double] TopIxs, Matrix[Double] TopVals)

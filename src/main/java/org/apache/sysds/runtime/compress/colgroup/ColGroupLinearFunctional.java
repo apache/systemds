@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.util.DataConverter;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -256,6 +257,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public void tsmm(double[] ret, int numColumns, int nRows) {
+		// runs in O(nRows^2) since dot-products take O(1) time to compute when both vectors are linearly compressed
 		final int tCol = _colIndexes.length;
 
 		final double sumIndices = nRows * (nRows + 1)/2.0;
@@ -267,9 +269,8 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 			final int offRet = _colIndexes[row] * numColumns;
 			for(int col = row; col < tCol; col++) {
 				final int colIdx = _colIndexes[col];
-				ret[offRet + _colIndexes[col]] = alpha1 * _coefficents[0][colIdx] + alpha2 * _coefficents[1][colIdx];
+				ret[offRet + _colIndexes[col]] += alpha1 * _coefficents[0][colIdx] + alpha2 * _coefficents[1][colIdx];
 			}
-
 		}
 	}
 
@@ -280,7 +281,25 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
-		throw new DMLCompressionException("Should not be called");
+		if(lhs instanceof ColGroupEmpty)
+			return;
+		else if(lhs instanceof ColGroupUncompressed) {
+			ColGroupUncompressed lhsUC = (ColGroupUncompressed) lhs;
+			int numRowsLeft = lhsUC.getData().getNumRows();
+
+			double[] colSumsAndWeightedColSums = new double[2 * lhs.getNumCols()];
+			for(int j = 0, offTmp = 0; j < lhs.getNumCols(); j++, offTmp += 2) {
+				for(int i = 0; i < numRowsLeft; i++) {
+					colSumsAndWeightedColSums[offTmp] += lhs.get(i, j);
+					colSumsAndWeightedColSums[offTmp + 1] += (i+1) * lhs.get(i, j);
+				}
+			}
+
+			MatrixBlock sumMatrix = new MatrixBlock(lhs.getNumCols(), 2, colSumsAndWeightedColSums);
+			MatrixBlock coefficientMatrix = DataConverter.convertToMatrixBlock(_coefficents);
+
+			LibMatrixMult.matrixMult(sumMatrix, coefficientMatrix, result);
+		}
 	}
 
 	@Override

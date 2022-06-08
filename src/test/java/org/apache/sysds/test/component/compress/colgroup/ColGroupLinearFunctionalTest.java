@@ -29,7 +29,9 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.functionobjects.*;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
@@ -79,6 +81,50 @@ public class ColGroupLinearFunctionalTest {
 		cgCompressed.tsmm(resultCompressed, numRows);
 
 		Assert.assertArrayEquals(resultUncompressed.getDenseBlockValues(), resultCompressed.getDenseBlockValues(), 0.001);
+	}
+
+	@Test
+	public void testLeftMultByAColGroup() {
+		boolean transposedRight = true;
+		boolean transposedLeft = true;
+		double[][] dataRight = new double[][] {{1, 2, 3, 4, 5}, {-4, -2, 0, 2, 4}};
+		double[][] dataLeft = new double[][] {{8, 3, 7, -4, -2}, {-1, 8, 4, 12, -4}};
+
+		MatrixBlock mbtLeft = DataConverter.convertToMatrixBlock(dataLeft);
+		MatrixBlock mbtRight = DataConverter.convertToMatrixBlock(dataRight);
+
+		final int numColsRight = transposedRight ? mbtRight.getNumRows() : mbtRight.getNumColumns();
+		final int numRowsRight = transposedRight ? mbtRight.getNumColumns() : mbtRight.getNumRows();
+		int[] colIndexesRight = new int[numColsRight];
+		for(int x = 0; x < numColsRight; x++)
+			colIndexesRight[x] = x;
+
+		final int numColsLeft = transposedLeft ? mbtLeft.getNumRows() : mbtLeft.getNumColumns();
+		final int numRowsLeft = transposedLeft ? mbtLeft.getNumColumns() : mbtLeft.getNumRows();
+		int[] colIndexesLeft = new int[numColsLeft];
+		for(int x = 0; x < numColsLeft; x++)
+			colIndexesLeft[x] = x;
+
+		AColGroup cgCompressedRight = createCompressedColGroup(mbtRight, colIndexesRight, transposedRight);
+		AColGroup cgUncompressedLeft = createUncompressedColGroup(mbtLeft, colIndexesLeft, transposedLeft);
+
+		final MatrixBlock result = new MatrixBlock(numRowsLeft, numColsRight, false);
+//		result.allocateDenseBlock();
+		cgCompressedRight.leftMultByAColGroup(cgUncompressedLeft, result);
+
+		// since left matrix is transposed in leftMultByAColGroup, we simulate this behaviour here
+		if(!transposedLeft) {
+			mbtLeft = LibMatrixReorg.transpose(mbtLeft, InfrastructureAnalyzer.getLocalParallelism());
+		}
+
+		if(transposedRight) {
+			mbtRight = LibMatrixReorg.transpose(mbtRight, InfrastructureAnalyzer.getLocalParallelism());
+		}
+
+		final MatrixBlock resultExpected = new MatrixBlock(numRowsLeft, numColsRight, false);
+		LibMatrixMult.matrixMult(mbtLeft, mbtRight, resultExpected);
+
+		Assert.assertArrayEquals(resultExpected.getDenseBlockValues(), result.getDenseBlockValues(), 0.001);
 	}
 
 	@Test

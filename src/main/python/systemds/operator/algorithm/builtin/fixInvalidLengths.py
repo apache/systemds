@@ -32,7 +32,17 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def fixInvalidLengths(F1: Frame,
                       mask: Matrix,
                       **kwargs: Dict[str, VALID_INPUT_TYPES]):
+    """
+    Fix invalid lengths
     
+    
+    :param F1: ---
+    :param mask: ---
+    :param ql: ---
+    :param qu: ---
+    :return: 'OperationNode' containing 
+        ------ 
+    """
     params_dict = {'F1': F1, 'mask': mask}
     params_dict.update(kwargs)
     

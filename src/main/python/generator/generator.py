@@ -155,30 +155,21 @@ class PythonAPIFunctionGenerator(object):
             newline_spacing = "\n" + " " * (nameLength + 5)
 
             for param in parameters:
-                # map data types
-                # pattern = self.__class__.type_mapping_pattern
-                # print(param)
+         
                 param[1] = self.replace_types(param[1])
-                # print(param)
+    
                 if "[" in param[1] or "[" in param[0]:
                     raise AttributeError(
                         "Failed parsing param" + str(param) + "\n" + str(parameters))
                 if param[2] is not None:
                     has_optional = True
-                    # result.append("{nl}{name}: {typ},".format(
-                    #     result=result, name=param[0], typ=param[1],
-                    #     nl=newline_spacing))
+               
                 else:
-                    # has_optional = False
                     result.append("{nl}{name}: {typ},".format(
                         result=result, name=param[0], typ=param[1],
                         nl=newline_spacing))
             if len(result) == 0:
                 result = ""
-                # if has_optional:
-                # result = u"{kwargs}".format(
-                #     result=result, kwargs=self.__class__.kwargs_parameter_string,
-                #     nl=newline_spacing)
             else:
                 result[0] = result[0][len(newline_spacing):]
                 result[-1] = result[-1][:-1]
@@ -188,7 +179,6 @@ class PythonAPIFunctionGenerator(object):
                         result=result, kwargs=self.__class__.kwargs_parameter_string,
                         nl=newline_spacing)
 
-            # print("\n\n" +str(parameters) + "\n\n " +result)
             return result
         except Exception as e:
             raise AttributeError("Failed Formatting parameter strings: " +
@@ -264,7 +254,7 @@ class PythonAPIFunctionGenerator(object):
         output_nodes = "\n    output_nodes = ["
         for idx, value in enumerate(return_values):
             output_type = re.search(pattern, value[1])[0].upper()
-            # print(output_type)
+
             output_type = output_type.lower()
 
             if output_type == "matrix":
@@ -306,7 +296,7 @@ class PythonAPIDocumentationGenerator(object):
     def __init__(self):
         super(PythonAPIDocumentationGenerator, self).__init__()
 
-    def generate_documentation(self, data: dict) -> str:
+    def generate_documentation(self, header_data: dict, data: dict):
         """
         Generates function header for PythonAPI
         @param data:
@@ -317,31 +307,36 @@ class PythonAPIDocumentationGenerator(object):
             }
         @return: function header including '\"\"\"' at start and end
         """
-        input_param = self.header_parameter_string(data["parameters"])
-        output_param = self.header_return_string(data["return_values"])
+        description = header_data["description"].replace("\n", "\n    ")
+        input_param = self.header_parameter_string(header_data["parameters"])
+        output_param = self.header_return_string(header_data["return_values"])
 
-        if(len(input_param) < 1 and len(output_param) < 1):
-            return ""
-        return '"""' + \
-            input_param + self.__class__.return_str.format(meaning=output_param.lower()) + \
-            "    " + '"""'
+        if description == "":
+            data['function_header'] = ""
+        elif header_data["return_values"] == []:
+            data['function_header'] = '"""\n    ' + description + '"""'
+        else:
+            res_str = "\n    :return: \'OperationNode\' containing {meaning} \n".format(
+                meaning=output_param.lower())
+            data['function_header'] = '"""\n    ' + description + \
+                input_param + res_str + '    """'
 
     def header_parameter_string(self, parameter: dict) -> str:
-        parameter_str = ""
+        parameter_str = "\n    "
         for param in parameter:
             parameter_str += self.__class__.param_str.format(
-                pname=param[0], meaning=param[3])
+                pname=param[0], meaning=param[1])
 
         return parameter_str
 
     def header_return_string(self, parameter: dict) -> str:
-        meaning_str = ""
-
+        meaning_str = "\n        "
+        first = True
         for param in parameter:
-            if len(meaning_str) > 0:
-                meaning_str += " & " + param[3]
+            if first:
+                meaning_str += param[1]
             else:
-                meaning_str += param[3]
+                meaning_str += "\n        & " + param[1]
 
         return meaning_str
 
@@ -377,8 +372,12 @@ if __name__ == "__main__":
             header_data = f_parser.parse_header(dml_file)
             data = f_parser.parse_function(dml_file)
             f_parser.check_parameters(header_data, data)
-            data['function_header'] = doc_generator.generate_documentation(
-                header_data)
+            doc_generator.generate_documentation(header_data, data)
+
+            if data['function_header'] == "":
+                print("[WARNING] in : \'{file_name}\' failed parsing docs.".format(
+                    file_name=dml_file))
+
             script_content = fun_generator.generate_function(data)
         except Exception as e:
             print("[ERROR] error in : \'{file_name}\' \n{err} \n{trace}.".format(

@@ -22,28 +22,24 @@
 # Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
 # Built-in for sorting frames
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME      TYPE             DEFAULT     MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# F         Frame[String]     ---       Data frame of string values
-# mask      Matrix[Double]   ---        matrix for identifying string columns
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# -------------------------------------------------------------------------------------
+# F     Data frame of string values
+# mask  matrix for identifying string columns
+# -------------------------------------------------------------------------------------
 #
 # OUTPUT:
-#----------------------------------------------------------------------------------------------------------------------
-# NAME      TYPE                         MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# f_odered  Frame[String]                sorted dataset by column 1 in decreasing order
-# ----------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------
+# f_ordered  sorted dataset by column 1 in decreasing order
+# -----------------------------------------------------------------------------------------
 
 s_frameSort = function(Frame[String] F, Matrix[Double] mask, Boolean orderDesc = TRUE)
-return (Frame[String] f_odered)
+return (Frame[String] f_ordered)
 {
   index = vectorToCsv(mask)
   # recode logical pipelines for easy handling
   jspecR = "{ids:true, recode:["+index+"]}";
   [X, M] = transformencode(target=F, spec=jspecR);
   ordered = order(target = X, by = 1, decreasing=orderDesc, index.return=FALSE)
-  f_odered = transformdecode(target=ordered, spec=jspecR, meta=M);
+  f_ordered = transformdecode(target=ordered, spec=jspecR, meta=M);
 }

@@ -19,26 +19,22 @@
 #
 #-------------------------------------------------------------
 
-# The tomekLink-function performs undersampling by removing Tomek's links for imbalanced multiclass problems
+# The tomekLink-function performs under sampling by removing Tomek's links for imbalanced multi-class problems
 # Computes TOMEK links and drops them from data matrix and label vector.
-# Drops only the majarity label and corresponding point of TOMEK links.
+# Drops only the majority label and corresponding point of TOMEK links.
 #
-# INPUT  PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME   TYPE            DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X      Matrix[Double]  ---       Data Matrix (nxm)
-# y      Matrix[Double]  ---       Label Matrix (nx1), greater than zero
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# -------------------------------------------------------------------------------------------
+# X     Data Matrix (nxm)
+# y     Label Matrix (nx1), greater than zero
+# -------------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME       TYPE                 MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X_under    Matrix[Double]       Data Matrix without Tomek links
-# y_under    Matrix[Double]       Labels corresponding to undersampled data
-# drop_idx   Matrix[Double]       Indices of dropped rows/labels wrt input
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
+# X_under   Data Matrix without Tomek links
+# y_under   Labels corresponding to under sampled data
+# drop_idx  Indices of dropped rows/labels wrt input
+# ------------------------------------------------------------------------------------------------
 
 m_tomeklink = function(Matrix[Double] X, Matrix[Double] y)
 return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)

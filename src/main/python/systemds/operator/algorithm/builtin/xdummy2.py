@@ -30,7 +30,14 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def xdummy2(X: Matrix):
+    """
+    This builtin function is here for debugging purposes
     
+    
+    :param X: Debug input
+    :return: 'OperationNode' containing 
+        ------ 
+    """
     params_dict = {'X': X}
     
     vX_0 = Matrix(X.sds_context, '')

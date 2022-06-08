@@ -36,12 +36,17 @@ def img_cutout(img_in: Matrix,
                height: int,
                fill_value: float):
     """
+    Image Cutout function replaces a rectangular section of an image with a constant value.
+    
+    
+    :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param x: Column index of the top left corner of the rectangle (starting at 1)
     :param y: Row index of the top left corner of the rectangle (starting at 1)
     :param width: Width of the rectangle (must be positive)
     :param height: Height of the rectangle (must be positive)
     :param fill_value: The value to set for the rectangle
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing 
+        output image as 2d matrix with top left corner at [1, 1] 
     """
     params_dict = {'img_in': img_in, 'x': x, 'y': y, 'width': width, 'height': height, 'fill_value': fill_value}
     return Matrix(img_in.sds_context,

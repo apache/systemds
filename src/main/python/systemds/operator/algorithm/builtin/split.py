@@ -33,10 +33,16 @@ def split(X: Matrix,
           Y: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    This function split input data X and Y into contiguous or samples train/test sets
+    
+    
+    :param X: Input feature matrix
+    :param Y: Input Labels
     :param f: Train set fraction [0,1]
-    :param cont: contiuous splits, otherwise sampled
-    :param seed: The seed to reandomly select rows in sampled mode
-    :return: 'OperationNode' containing  
+    :param cont: contiguous splits, otherwise sampled
+    :param seed: The seed to randomly select rows in sampled mode
+    :return: 'OperationNode' containing 
+        train split of feature matrixtest split of feature matrixtrain split of label matrixtest split of label matrix 
     """
     params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)

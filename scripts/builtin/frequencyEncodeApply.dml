@@ -19,6 +19,20 @@
 #
 #-------------------------------------------------------------
 
+# frequency code apply
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+# X          dataset x
+# freqCount  the frequency counts for the different categoricals
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------------------
+# X          categorical columns are replaced with their frequencies given
+# -----------------------------------------------------------------------------------------
+
+
 m_frequencyEncodeApply = function(Matrix[Double] X, Matrix[Double] freqCount)
 return (Matrix[Double] X) {
 

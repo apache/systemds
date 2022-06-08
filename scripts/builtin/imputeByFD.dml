@@ -20,24 +20,20 @@
 #-------------------------------------------------------------
 
 # Implements builtin for imputing missing values from observed values (if exist) using robust functional dependencies
-
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE             DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X               Matrix[Double]   ---       Vector X, source attribute of functional dependency
-# Y               Matrix[Double]   ---       Vector Y, target attribute of functional dependency and imputation
-# threshold       Double           ---       threshold value in interval [0, 1] for robust FDs
-# verbose         Boolean          FALSE     flag for printing verbose debug output
-# ----------------------------------------------------------------------------------------------------------------------
+#
+# INPUT:
+# --------------------------------------------------------------------------------------
+# X          Vector X, source attribute of functional dependency
+# Y          Vector Y, target attribute of functional dependency and imputation
+# threshold  threshold value in interval [0, 1] for robust FDs
+# verbose    flag for printing verbose debug output
+# --------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE                       MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# Y               Matrix[Double]             Vector Y, with missing values mapped to a new max value
-# Y_imp           Matrix[Double]             Vector Y, with imputed missing values
-# ----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------
+# Y      Vector Y, with missing values mapped to a new max value
+# Y_imp  Vector Y, with imputed missing values
+# ----------------------------------------------------------------------------------
 
 m_imputeByFD = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Boolean verbose = FALSE)
   return(Matrix[Double] Y, Matrix[Double] Y_imp)

@@ -21,20 +21,16 @@
 
 # This builtin function is here for debugging purposes
 #
-# INPUT PARAMETERS:
-# ------------------------------------------------------
-# NAME        TYPE              DEFAULT  MEANING
-# ------------------------------------------------------
-# X           Matrix[Double]    ---      Debug input
-# ------------------------------------------------------
+# INPUT:
+# ----------------------
+# X      Debug input
+# ----------------------
 #
 # OUTPUT:
-# ------------------------------------------------------
-# NAME       TYPE             MEANING
-# ------------------------------------------------------
-# Y          Matrix[Double]   ---
-# Z          Matrix[Double]   ---
-# ------------------------------------------------------
+# --------------------------------
+# Y     ---
+# Z     ---
+# --------------------------------
 
 m_xdummyTypo = function(Matrix[Double] X) return (Matrix[Double] Y, Matrix[Double] Z) {
   Y = cor(X);

@@ -33,7 +33,19 @@ def pcaTransform(X: Matrix,
                  Clusters: Matrix,
                  Centering: Matrix,
                  ScaleFactor: Matrix):
+    """
+    Principal Component Analysis (PCA) for dimensionality reduction prediction
+    This method is used to transpose data, which the PCA model was not trained on. To validate how good
+    The PCA is, and to apply in production. 
     
+    
+    :param X: Input feature matrix
+    :param Clusters: The previously computed principal components
+    :param Centering: The column means of the PCA model, subtracted to construct the PCA
+    :param ScaleFactor: The scaling of each dimension in the PCA model
+    :return: 'OperationNode' containing 
+        output feature matrix dimensionally reduced by pca 
+    """
     params_dict = {'X': X, 'Clusters': Clusters, 'Centering': Centering, 'ScaleFactor': ScaleFactor}
     return Matrix(X.sds_context,
         'pcaTransform',

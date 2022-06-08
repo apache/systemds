@@ -20,23 +20,19 @@
 #-------------------------------------------------------------
 
 # Implements builtin for imputing missing values from observed values (if exist) using robust functional dependencies
-
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE             DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X               Matrix[Double]   ---       Matrix X
-# source          Integer          ---       source attribute to use for imputation and error correction
-# target          Integer          ---       attribute to be fixed
-# threshold       Double           ---       threshold value in interval [0, 1] for robust FDs
-# ----------------------------------------------------------------------------------------------------------------------
+#
+# INPUT:
+# --------------------------------------------------------------------------------------
+# X          Matrix X
+# source     source attribute to use for imputation and error correction
+# target     attribute to be fixed
+# threshold  threshold value in interval [0, 1] for robust FDs
+# --------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE                       MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X               Matrix[Double]             Matrix with possible imputations
-# ----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------
+# X     Matrix with possible imputations
+# ---------------------------------------------------------------------------------
 
 m_imputeByFDApply = function(Matrix[Double] X, Matrix[Double] Y_imp)
   return(Matrix[Double] imputed_Y)

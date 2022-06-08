@@ -19,13 +19,19 @@
 #
 #-------------------------------------------------------------
 
-#######################################################################
 # function frequency conversion
-# Inputs: The input dataset X, and  mask of the columns
-# Output: categorical columns are replaced with their frequencies
-#######################################################################
-
-
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+# X     dataset x
+# mask  mask of the columns for frequency conversion
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------------------
+# X          categorical columns are replaced with their frequencies
+# freqCount  the frequency counts for the different categoricals
+# -----------------------------------------------------------------------------------------
 
 m_frequencyEncode = function(Matrix[Double] X, Matrix[Double] mask)
 return (Matrix[Double] X, Matrix[Double] freqCount) {

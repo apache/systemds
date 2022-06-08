@@ -22,21 +22,17 @@
 # XGBoost is a decision-tree-based ensemble Machine Learning algorithm that uses a gradient boosting. This xgboost
 # implementation supports classification  and is capable of working with categorical features.
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME                 TYPE             DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X                    Matrix[Double]   ---       Matrix of feature vectors we want to predict (X_test)
-# M                    Matrix[Double]   ---       The model created at xgboost
-# learning_rate        Matrix[Double]   0.3       The learning rate used in the model
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# -------------------------------------------------------------------------------------
+# X              Matrix of feature vectors we want to predict (X_test)
+# M              The model created at xgboost
+# learning_rate  The learning rate used in the model
+# -------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME                TYPE                       MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# P                   Matrix[Double]             The predictions of the samples using the given xgboost model. (y_prediction)
-# ----------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# P     The predictions of the samples using the given xgboost model. (y_prediction)
+# -----------------------------------------------------------------------------
 
 m_xgboostPredictClassification = function(Matrix[Double] X, Matrix[Double] M, Double learning_rate = 0.3)
   return (Matrix[Double] P) {

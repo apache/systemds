@@ -20,23 +20,19 @@
 #-------------------------------------------------------------
 
 # Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
-
+#
 # impute the data by median value and if the feature is categorical then by mode value
-
-# INPUT PARAMETERS:
+#
+# INPUT:
+# ---------------------------------------------------------------
+# X     Data Matrix (Recoded Matrix for categorical features)
+# mask  A 0/1 row vector for identifying numeric (0) and categorical features (1)
+# ---------------------------------------------------------------
+#
+# OUTPUT:
+# ---------------------------------------------------------------
+# X     imputed dataset
 # ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double    ---        Data Matrix (Recoded Matrix for categorical features)
-# mask           Double    ---        A 0/1 row vector for identifying numeric (0) and categorical features (1)
-# ---------------------------------------------------------------------------------------------
- 
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME                  TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double   ---        imputed dataset
 
 
 

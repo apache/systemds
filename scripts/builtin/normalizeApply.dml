@@ -24,21 +24,17 @@
 # preserves the input sparsity. The validity of the provided min-max range
 # and post-processing is under control of the caller. 
 #
-# INPUT PARAMETERS:
-# ------------------------------------------------------------------------------
-# NAME     TYPE     DEFAULT   MEANING
-# ------------------------------------------------------------------------------
-# X        Matrix[Double]    ---      Input feature matrix of shape n-by-m
-# cmin     Matrix[Double]    ---      Colunm minima of shape 1-by-m
-# cmax     Matrix[Double]    ---      Column maxima of shape 1-by-m
-# ------------------------------------------------------------------------------
+# INPUT:
+# ------------------------------------------------
+# X     Input feature matrix of shape n-by-m
+# cmin  Colunm minima of shape 1-by-m
+# cmax  Column maxima of shape 1-by-m
+# ------------------------------------------------
 #
 # OUTPUT:
-# ------------------------------------------------------------------------------
-# NAME     TYPE                       MEANING
-# ------------------------------------------------------------------------------
-# Y        Matrix[Double]             Modified output feature matrix of shape n-by-m
-# ------------------------------------------------------------------------------
+# ------------------------------------------------
+# Y     Modified output feature matrix of shape n-by-m
+# ------------------------------------------------
 
 
 m_normalizeApply = function(Matrix[Double] X, Matrix[Double] cmin, Matrix[Double] cmax)

@@ -23,22 +23,18 @@
 # using 2 factor matrices L and R. We assume that all users have rates 
 # at least once and all items have been rates at least once.
 #
-# INPUT   PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME    TYPE             DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# userIDs Matrix[Double]   ---      Column vector of user-ids (n x 1)
-# I       Matrix[Double]   ---      Indicator matrix user-id x user-id to exclude from scoring
-# L       Matrix[Double]   ---      The factor matrix L: user-id x feature-id
-# R       Matrix[Double]   ---      The factor matrix R: feature-id x item-id
-# ---------------------------------------------------------------------------------------------
+# INPUT: 
+# --------------------------------------------------------------------
+# userIDs  Column vector of user-ids (n x 1)
+# I        Indicator matrix user-id x user-id to exclude from scoring
+# L        The factor matrix L: user-id x feature-id
+# R        The factor matrix R: feature-id x item-id
+# --------------------------------------------------------------------
 #
 # OUTPUT:
-# ---------------------------------------------------------------------------------------------
-# NAME  TYPE             MEANING
-# ---------------------------------------------------------------------------------------------
-# Y     Matrix[Double]   The output user-id/item-id/score#
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Y     The output user-id/item-id/score#
+# ----------------------------------------------------------------------------
 
 m_alsPredict = function(Matrix[Double] userIDs, Matrix[Double] I, Matrix[Double] L, Matrix[Double] R)
   return (Matrix[Double] Y)

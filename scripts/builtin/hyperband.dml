@@ -27,30 +27,25 @@
 #    hyperband is hard-coded to use the number of iterations as a resource
 #    hyperband can only optimize continuous hyperparameters
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME        TYPE              DEFAULT    MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X_train     Matrix[Double]    ---        Input Matrix of training vectors
-# y_train     Matrix[Double]    ---        Labels for training vectors
-# X_val       Matrix[Double]    ---        Input Matrix of validation vectors
-# y_val       Matrix[Double]    ---        Labels for validation vectors
-# params      List[String]      ---        List of parameters to optimize
-# paramRanges Matrix[Double]    ---        The min and max values for the uniform distributions to draw from.
-#                                          One row per hyper parameter, first column specifies min, second column max value.
-# R           Scalar[int]       81         Controls number of candidates evaluated
-# eta         Scalar[int]       3          Determines fraction of candidates to keep after each trial
-# verbose     Boolean           TRUE       If TRUE print messages are activated
-#
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# ------------------------------------------------------------------------------------------
+# X_train      Input Matrix of training vectors
+# y_train      Labels for training vectors
+# X_val        Input Matrix of validation vectors
+# y_val        Labels for validation vectors
+# params       List of parameters to optimize
+# paramRanges  The min and max values for the uniform distributions to draw from.
+#              One row per hyper parameter, first column specifies min, second column max value.
+# R            Controls number of candidates evaluated
+# eta          Determines fraction of candidates to keep after each trial
+# verbose      If TRUE print messages are activated
+# ------------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME                TYPE                 MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# bestWeights         Matrix[Double]       1-column matrix of weights of best performing candidate
-# bestHyperParams     Frame[Unknown]       hyper parameters of best performing candidate
-# ----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+# bestWeights      1-column matrix of weights of best performing candidate
+# bestHyperParams  hyper parameters of best performing candidate
+# ----------------------------------------------------------------------------------------------
 
 m_hyperband = function(Matrix[Double] X_train, Matrix[Double] y_train,
   Matrix[Double] X_val, Matrix[Double] y_val, List[String] params, 

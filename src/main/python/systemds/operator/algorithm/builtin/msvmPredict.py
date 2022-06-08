@@ -31,7 +31,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def msvmPredict(X: Matrix,
                 W: Matrix):
+    """
+    This Scripts helps in applying an trained MSVM
     
+    
+    :param X: matrix X of feature vectors to classify
+    :param W: matrix of the trained variables
+    :return: 'OperationNode' containing 
+        classification labels raw, meaning not modified to clean
+        labeles of 1's and -1'sclassification labels maxed to ones and zeros. 
+    """
     params_dict = {'X': X, 'W': W}
     
     vX_0 = Matrix(X.sds_context, '')

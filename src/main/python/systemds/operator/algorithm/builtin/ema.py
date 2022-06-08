@@ -37,14 +37,19 @@ def ema(X: Frame,
         beta: float,
         gamma: float):
     """
-    :param search_iterations: Budget iterations for parameter optimisation,
-    :param used: weren't set
+    This function imputes values with exponential moving average (single, double or triple).
+    
+    
+    :param X: Frame that contains time series data that needs to be imputed
+        search_iterations	Integer	--	Budget iterations for parameter optimization,
+        used if parameters weren't set
     :param mode: Type of EMA method. Either "single", "double" or "triple"
     :param freq: Seasonality when using triple EMA.
     :param alpha: alpha- value for EMA
     :param beta: beta- value for EMA
     :param gamma: gamma- value for EMA
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing 
+        frame with ema results 
     """
     params_dict = {'X': X, 'search_iterations': search_iterations, 'mode': mode, 'freq': freq, 'alpha': alpha, 'beta': beta, 'gamma': gamma}
     return Matrix(X.sds_context,

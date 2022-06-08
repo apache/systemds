@@ -32,7 +32,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def naiveBayesPredict(X: Matrix,
                       P: Matrix,
                       C: Matrix):
+    """
+    The naiveBaysePredict-function predicts the scoring with a naive Bayes model.
     
+    
+    :param X: Matrix of test data with N rows.
+    :param P: Class priors, One dimensional column matrix with N rows.
+    :param C: Class conditional probabilities, matrix with N rows
+    :return: 'OperationNode' containing 
+        a matrix containing the top-k item-ids with highest predicted ratings.a matrix containing predicted ratings. 
+    """
     params_dict = {'X': X, 'P': P, 'C': C}
     
     vX_0 = Matrix(X.sds_context, '')

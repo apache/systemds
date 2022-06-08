@@ -21,37 +21,33 @@
 
 # This function execute pipeline.
 #
-# INPUT   PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME                TYPE               DEFAULT  MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# logical             Frame[String]      NULL     ---
-# pipeline            Frame[String]      ---      ---
-# X                   Matrix[Double]     ---      ---
-# Y                   Matrix[Double]     ---      ---
-# Xtest               Matrix[Double]     ---      ---
-# Ytest               Matrix[Double]     ---      ---
-# metaList            List[Unknown]      ---      ---
-# hyperParameters     Matrix[Double]     ---      ---
-# hpForPruning        Matrix[Double]      0       ---
-# changesByOp         Matrix[Double]      0       ---
-# flagsCount          Integer            ---      ---
-# test                Boolean             FALSE   ---
-# verbose             Boolean            ---      ---
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# ----------------------------------------------------------------------------------------
+# logical           ---
+# pipeline          ---
+# X                 ---
+# Y                 ---
+# Xtest             ---
+# Ytest             ---
+# metaList          ---
+# hyperParameters   ---
+# hpForPruning      ---
+# changesByOp       ---
+# flagsCount        ---
+# test              ---
+# verbose           ---
+# ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME                TYPE                       MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X                   Matrix[Double]             ---
-# Y                   Matrix[Double]             ---
-# Xtest               Matrix[Double]             ---
-# Ytest               Matrix[Double]             ---
-# t2                  Double                     ---
-# hpForPruning        Matrix[Double]             ---
-# changesByOp         Matrix[Double]             ---
-# ----------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
+# X              ---
+# Y              ---
+# Xtest          ---
+# Ytest          ---
+# t2             ---
+# hpForPruning   ---
+# changesByOp    ---
+# --------------------------------------------------------------------------------------
 
 s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Matrix[Double] Ytrain, 
   Matrix[Double] Xtest,  Matrix[Double] Ytest, List[Unknown] metaList, Matrix[Double] hyperParameters, Matrix[Double] hpForPruning = as.matrix(0),

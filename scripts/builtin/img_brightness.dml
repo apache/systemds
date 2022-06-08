@@ -19,17 +19,15 @@
 #
 #-------------------------------------------------------------
 
-# The img_brightness-function is an image data augumentation function. It changes the brightness of the image.
+# The img_brightness-function is an image data augmentation function. It changes the brightness of the image.
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME         TYPE              DEFAULT    MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# img_in       Matrix[Double]    ---        Input matrix/image
-# value        Double            ---        The amount of brightness to be changed for the image
-# channel_max  Integer           ---        Maximum value of the brightness of the image
-#
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+
+# -----------------------------------------------------------------------------------------
+# img_in       Input matrix/image
+# value        The amount of brightness to be changed for the image
+# channel_max  Maximum value of the brightness of the image
+# -----------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ----------------------------------------------------------------------------------------------------------------------

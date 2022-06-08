@@ -24,27 +24,23 @@
 # Algorithms: implement https://en.wikipedia.org/wiki/Spline_interpolation#Algorithm_to_find_the_interpolating_cubic_spline
 # It use natural spline with q1''(x0) == qn''(xn) == 0.0
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME  TYPE           DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X      Matrix[Double]  ---       1-column matrix of x values knots. It is assumed that x values are
-#                                  monotonically increasing and there is no duplicates points in X
-# Y      Matrix[Double]  ---       1-column matrix of corresponding y values knots
-# inp_x  Double          ---       the given input x, for which the cspline will find predicted y
-# mode   String          "DS"      Specifies the method for cspline (DS - Direct Solve, CG - Conjugate Gradient)
-# tol    Double          -1.0      Tolerance (epsilon); conjugate graduent procedure terminates early if
-#                                  L2 norm of the beta-residual is less than tolerance * its initial norm
-# maxi   Integer         -1        Maximum number of conjugate gradient iterations, 0 = no maximum
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# ---------------------------------------------------------------------------------------------
+# X      1-column matrix of x values knots. It is assumed that x values are
+#        monotonically increasing and there is no duplicates points in X
+# Y      1-column matrix of corresponding y values knots
+# inp_x  the given input x, for which the cspline will find predicted y
+# mode   Specifies the method for cspline (DS - Direct Solve, CG - Conjugate Gradient)
+# tol    Tolerance (epsilon); conjugate graduent procedure terminates early if
+#        L2 norm of the beta-residual is less than tolerance * its initial norm
+# maxi   Maximum number of conjugate gradient iterations, 0 = no maximum
+# ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME      TYPE             MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# pred_Y Matrix[Double]      Predicted value
-# K      Matrix[Double]      Matrix of k parameters
-# ----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
+# pred_Y  Predicted value
+# K       Matrix of k parameters
+# ---------------------------------------------------------------------------------------------------
 
 m_cspline = function(Matrix[Double] X, Matrix[Double] Y, Double inp_x, 
 String mode = "DS", Double tol = -1.0, Integer maxi = -1)

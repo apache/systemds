@@ -40,9 +40,24 @@ def executePipeline(pipeline: Frame,
                     verbose: bool,
                     **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    This function execute pipeline.
+    
+    
+    :param logical: ---
+    :param pipeline: ---
+    :param X: ---
+    :param Y: ---
+    :param Xtest: ---
+    :param Ytest: ---
+    :param metaList: ---
+    :param hyperParameters: ---
+    :param hpForPruning: ---
+    :param changesByOp: ---
     :param flagsCount: ---
     :param test: ---
-    :return: 'OperationNode' containing  
+    :param verbose: ---
+    :return: 'OperationNode' containing 
+        --------------------- 
     """
     params_dict = {'pipeline': pipeline, 'Xtrain': Xtrain, 'Ytrain': Ytrain, 'Xtest': Xtest, 'Ytest': Ytest, 'metaList': metaList, 'hyperParameters': hyperParameters, 'flagsCount': flagsCount, 'verbose': verbose}
     params_dict.update(kwargs)

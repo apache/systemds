@@ -33,9 +33,14 @@ def img_brightness(img_in: Matrix,
                    value: float,
                    channel_max: int):
     """
+    The img_brightness-function is an image data augmentation function. It changes the brightness of the image.
+    
+    
+    :param img_in: Input matrix/image
     :param value: The amount of brightness to be changed for the image
     :param channel_max: Maximum value of the brightness of the image
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing 
+        type                         meaningmatrix[double]               output matrix/image 
     """
     params_dict = {'img_in': img_in, 'value': value, 'channel_max': channel_max}
     return Matrix(img_in.sds_context,

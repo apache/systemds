@@ -33,9 +33,15 @@ def csplineDS(X: Matrix,
               Y: Matrix,
               inp_x: float):
     """
-    :param monotonically: there is no duplicates points in X
+    Builtin that solves cubic spline interpolation using a direct solver.
+    
+    
+    :param X: 1-column matrix of x values knots. It is assumed that x values are
+        monotonically increasing and there is no duplicates points in X
+    :param Y: 1-column matrix of corresponding y values knots
     :param inp_x: the given input x, for which the cspline will find predicted y.
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing 
+        predicted valuematrix of k parameters 
     """
     params_dict = {'X': X, 'Y': Y, 'inp_x': inp_x}
     

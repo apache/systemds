@@ -38,6 +38,15 @@ def lenetTrain(X: Matrix,
                Win: int,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    This builtin function trains LeNet CNN. The architecture of the
+    networks is:conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 ->
+    affine3 -> relu3 -> affine4 -> softmax
+    
+    
+    :param X: Input data matrix, of shape (N, C*Hin*Win)
+    :param Y: Target matrix, of shape (N, K)
+    :param X_val: Validation data matrix, of shape (N, C*Hin*Win)
+    :param Y_val: Validation target matrix, of shape (N, K)
     :param C: Number of input channels (dimensionality of input depth)
     :param Hin: Input width
     :param Win: Input height
@@ -49,7 +58,8 @@ def lenetTrain(X: Matrix,
     :param reg: Regularization strength
     :param seed: Seed for model initialization
     :param verbose: Flag indicates if function should print to stdout
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing 
+        trained model which can be used in lenetpredict 
     """
     params_dict = {'X': X, 'Y': Y, 'X_val': X_val, 'Y_val': Y_val, 'C': C, 'Hin': Hin, 'Win': Win}
     params_dict.update(kwargs)

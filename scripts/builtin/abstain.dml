@@ -19,25 +19,22 @@
 #
 #-------------------------------------------------------------
 
-# This function calls the multiLogReg-function in which solves Multinomial Logistic Regression using Trust Region method
+# This function calls the multiLogReg-function in which solves Multinomial
+# Logistic Regression using Trust Region method
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE                DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X               Matrix[Double]      ---       Location to read the matrix of feature vectors
-# Y               Matrix[Double]      ---       Location to read the matrix with category labels
-# threshold       Double              0.0       ---
-# verbose         Boolean             FALSE     flag specifying if logging information should be printed
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# -------------------------------------------------------------------------------------
+# X            Location to read the matrix of feature vectors
+# Y            Location to read the matrix with category labels
+# threshold    ---
+# verbose      flag specifying if logging information should be printed
+# -------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME      TYPE             MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# Xout   Matrix[Double]   ---
-# Yout   Matrix[Double]   ---
-# ----------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------
+# Xout     ---
+# Yout     ---
+# -------------------------------------------------------------------------------------
 
 m_abstain = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Boolean verbose = FALSE)
 return (Matrix[Double] Xout, Matrix[Double] Yout)

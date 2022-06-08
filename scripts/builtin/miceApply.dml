@@ -21,32 +21,28 @@
 
 # This Builtin function implements multiple imputation using Chained Equations (MICE)
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE              DEFAULT    MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X              Matrix[Double]    ---       Data Matrix (Recoded Matrix for categorical features)
-# mtea           Matrix[Double]    ---       A meta matrix with each rows storing values 1) mask of original matrix, 
-#                                              2) information of columns with missing values on  original data 0 for no missing value in column and 1 otherwise
-#                                              3) dist values in each columns in original data 1 for continuous columns and colMax for categorical
-# threshold      Double            0.8       confidence value [0, 1] for robust imputation, values will only be imputed
-#                                              if the predicted value has probability greater than threshold,
-#                                              only applicable for categorical data
-# dM             Frame[Unknown]                meta frame from OHE on original data
-# betaList       List[Unknown]    --         List of machine learning models trained for each column imputation
-# verbose        Boolean           FALSE     Boolean value.
-# ----------------------------------------------------------------------------------------------------------------------
-#
-# OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE                         MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# output          Matrix[Double]               imputed dataset
-# ----------------------------------------------------------------------------------------------------------------------
-#
 # Assumption missing value are represented with empty string i.e ",," in CSV file  
 # variables with suffix n are storing continuos/numeric data and variables with 
 # suffix c are storing categorical data
+#
+# INPUT:
+# --------------------------------------------------------------------------------------
+# X          Data Matrix (Recoded Matrix for categorical features)
+# mtea       A meta matrix with each rows storing values 1) mask of original matrix, 
+#              2) information of columns with missing values on  original data 0 for no missing value in column and 1 otherwise
+#              3) dist values in each columns in original data 1 for continuous columns and colMax for categorical
+# threshold  confidence value [0, 1] for robust imputation, values will only be imputed
+#              if the predicted value has probability greater than threshold,
+#              only applicable for categorical data
+# dM           meta frame from OHE on original data
+# betaList   List of machine learning models trained for each column imputation
+# verbose    Boolean value.
+# --------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ---------------------------------------------------------------------------------
+# output  imputed dataset
+# ---------------------------------------------------------------------------------
 
 m_miceApply = function(Matrix[Double] X, Matrix[Double] meta, Double threshold, Frame[String] dM, List[Unknown] betaList)
   return(Matrix[Double] output)

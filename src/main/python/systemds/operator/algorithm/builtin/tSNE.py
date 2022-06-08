@@ -32,15 +32,22 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def tSNE(X: Matrix,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    This function performs dimensionality reduction using tSNE algorithm based on
+    the paper: Visualizing Data using t-SNE, Maaten et. al.
+    
+    
+    :param X: Data Matrix of shape
+        (number of data points, input dimensionality)
     :param reduced_dims: Output dimensionality
     :param perplexity: Perplexity Parameter
     :param lr: Learning rate
     :param momentum: Momentum Parameter
     :param max_iter: Number of iterations
     :param seed: The seed used for initial values.
-    :param If: -1 random seeds are selected.
+        If set to -1 random seeds are selected.
     :param is_verbose: Print debug information
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing 
+        data matrix of shape (number of data points, reduced_dims) 
     """
     params_dict = {'X': X}
     params_dict.update(kwargs)

@@ -34,9 +34,15 @@ def imputeByFD(X: Matrix,
                threshold: float,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+    Implements builtin for imputing missing values from observed values (if exist) using robust functional dependencies
+    
+    
+    :param X: Vector X, source attribute of functional dependency
+    :param Y: Vector Y, target attribute of functional dependency and imputation
     :param threshold: threshold value in interval [0, 1] for robust FDs
     :param verbose: flag for printing verbose debug output
-    :return: 'OperationNode' containing  
+    :return: 'OperationNode' containing 
+        vector y, with missing values mapped to a new max valuevector y, with imputed missing values 
     """
     params_dict = {'X': X, 'Y': Y, 'threshold': threshold}
     params_dict.update(kwargs)

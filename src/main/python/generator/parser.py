@@ -145,23 +145,6 @@ class FunctionParser(object):
         #     import generator
         #     raise AttributeError("Failed parsing " + param + " " + generator.format_exception(e))
 
-    def get_header_parameters(self, param_str: str):
-        parameters = list()
-        pattern = re.compile(
-            self.__class__.header_parameter_pattern, flags=re.I)
-
-        for param_line in [s for s in param_str.split("\n") if s]:
-            match = pattern.match(param_line)
-            try:
-                parameters.append((match.group(1), match.group(
-                    2), match.group(3), match.group(4)))
-            except Exception as e:
-                if re.search(pattern=self.__class__.divider_pattern, string=param_line, flags=re.I | re.M) is not None:
-                    continue
-                return parameters
-
-        return parameters
-
     def parse_header(self, path: str):
         """
         @param path: path of file to parse
@@ -173,41 +156,74 @@ class FunctionParser(object):
                 'return_values': [('retval1', 'description'),...]
             }
         """
-        try:
-            h_input = self.find_header_input_params(path)
-            input_parameters = self.get_header_parameters(h_input)
 
-            h_output = self.find_header_output_params(path)
-            output_parameters = self.get_header_parameters(h_output)
-        except AttributeError as e:
+        description = ""
+        h_input = ""
+        h_output = ""
+        in_input = False
+        in_output = False
+        with open(path, 'r') as f:
+            for _ in range(22):
+                line = f.readline()
+            while line[0] == '#':
+                if "# INPUT:" in line:
+                    in_input = True
+                    # skip two lines
+                    line = f.readline()
+                    line = f.readline()
+                elif "# OUTPUT:" in line:
+                    in_input = False
+                    in_output = True
+                    # skip two lines
+                    line = f.readline()
+                    line = f.readline()
+
+                if in_output:
+                    if "----------" not in line:
+                        h_output += line[2:]
+                elif in_input:
+                    if "----------" not in line:
+                        h_input += line[2:]
+                else:
+                    description += line[2:]
+                line = f.readline()
+
+        if description == "" or h_input == "" or h_output == "":
             file_name = os.path.basename(path)
             print("[WARNING] Could not parse header in file \'{file_name}\'.".format(
                 file_name=file_name))
             input_parameters = []
             output_parameters = []
-        data = {'function_name': None, 'parameters': input_parameters,
+        else:
+            input_parameters = self.parse_input_output_string(h_input)
+            output_parameters = self.parse_input_output_string(h_output)
+       
+
+        data = {'description': description,
+                'parameters': input_parameters,
                 'return_values': output_parameters}
         return data
 
-    def find_header_input_params(self, path: str):
-        with open(path, 'r') as f:
-            content = f.read()
-        start = re.search(pattern=self.__class__.header_input_pattern,
-                          string=content, flags=re.I | re.M).end()
-        end = re.search(pattern=self.__class__.header_output_pattern,
-                        string=content, flags=re.I | re.M).start()
-        header = content[start:end]
-        return header
+    def parse_input_output_string(self, data: str):
+        """
+            parse the data into a list of tuples containing
+            a parameter and a description
+        """
+        ret = []
+        for line in data.split("\n"):
+            if line:
+                if line[0] == " ":
+                    prev = ret[-1]
+                    n = (prev[0], prev[1] +"\n        " + line.strip())
+                    ret[-1] = n
+                    # ret[-1][1] += line.strip()
+                else:
+                    vd = line.split("  ", 1)
+                    ret.append((vd[0].strip(),vd[1].strip()))                
+        
+        return ret
 
-    def find_header_output_params(self, path: str):
-        with open(path, 'r') as f:
-            content = f.read()
-        start = re.search(pattern=self.__class__.header_output_pattern,
-                          string=content, flags=re.I | re.M).end()
-        end = re.search(pattern=self.__class__.function_pattern,
-                        string=content, flags=re.I | re.M).start()
-        header = content[start:end]
-        return header
+
 
     def find_function_definition(self, path: str):
         with open(path, 'r') as f:

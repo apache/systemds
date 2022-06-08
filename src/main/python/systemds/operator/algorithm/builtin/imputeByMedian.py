@@ -31,7 +31,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def imputeByMedian(X: Matrix,
                    mask: Matrix):
+    """
+    Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
+    impute the data by median value and if the feature is categorical then by mode value
     
+    
+    :param X: Data Matrix (Recoded Matrix for categorical features)
+    :param mask: A 0/1 row vector for identifying numeric (0) and categorical features (1)
+    :return: 'OperationNode' containing 
+        imputed dataset 
+    """
     params_dict = {'X': X, 'mask': mask}
     
     vX_0 = Matrix(X.sds_context, '')

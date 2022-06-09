@@ -40,10 +40,11 @@ import org.apache.sysds.runtime.util.DataConverter;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class ColGroupLinearFunctional extends AColGroupCompressed {
 
-	private static final long serialVersionUID = -2534788786668777356L;
+	private static final long serialVersionUID = -2811822570758221975L;
 
 	protected double[][] _coefficents;
 
@@ -55,10 +56,11 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	/**
-	 * Constructs a Column Group that compresses its content using a linear functional.
+	 * Constructs a Linear Functional Column Group that compresses its content using a linear functional.
 	 *
 	 * @param colIndices  The Column indexes for the column group.
-	 * @param coefficents The dictionary containing one tuple for the entire compression.
+	 * @param coefficents 2D-Array where coefficients[0] is the list of intercepts and coefficients[1] the list of slopes.
+	 * @param numRows Number of rows encoded within this column group.
 	 */
 	private ColGroupLinearFunctional(int[] colIndices, double[][] coefficents, int numRows) {
 		super(colIndices);
@@ -67,10 +69,11 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	/**
-	 * Generate a constant column group.
+	 * Generate a linear functional column group.
 	 *
 	 * @param colIndices   The specific column indexes that is contained in this column group.
-	 * @param coefficents  The coefficents vector
+	 * @param coefficents 2D-Array where coefficients[0] is the list of intercepts and coefficients[1] the list of slopes.
+	 * @param numRows Number of rows encoded within this column group.
 	 * @return A LinearFunctional column group.
 	 */
 	public static AColGroup create(int[] colIndices, double[][] coefficents, int numRows) {
@@ -161,25 +164,21 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
 		throw new NotImplementedException();
-//		return create(_colIndexes, _dict.applyScalarOp(op));
 	}
 
 	@Override
 	public AColGroup unaryOperation(UnaryOperator op) {
 		throw new NotImplementedException();
-//		return create(_colIndexes, _dict.applyUnaryOp(op));
 	}
 
 	@Override
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
 		throw new NotImplementedException();
-//		return create(_colIndexes, _dict.binOpLeft(op, v, _colIndexes));
 	}
 
 	@Override
 	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
 		throw new NotImplementedException();
-//		return create(_colIndexes, _dict.binOpRight(op, v, _colIndexes));
 	}
 
 	@Override
@@ -246,10 +245,6 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public int getNumValues() {
-		throw new NotImplementedException();
-	}
-
-	private synchronized MatrixBlock forceValuesToMatrixBlock() {
 		throw new NotImplementedException();
 	}
 
@@ -339,11 +334,14 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 			// We simply compute a matrix multiplication chain in coefficient space, i.e.,
 			// 					t(L) %*% R = t(coeff(L)) %*% W %*% coeff(R)
 			// where W is a weight matrix capturing the size of the shared dimension (weightMatrix above)
-			// and coeff(X) denotes the 2xn matrix of the mxn matrix X.
+			// and coeff(X) denotes the 2 x n matrix of the m x n matrix X.
 			MatrixBlock tmp = new MatrixBlock(lhs.getNumCols(), 2, false);
 			LibMatrixMult.matrixMult(coefficientMatrixLhs, weightMatrix, tmp);
 			LibMatrixMult.matrixMult(tmp, coefficientMatrixRhs, tmpRet);
 		} else if(lhs instanceof APreAgg) {
+			// TODO: implement
+			throw new NotImplementedException();
+		} else {
 			throw new NotImplementedException();
 		}
 
@@ -425,6 +423,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	public long getExactSizeOnDisk() {
 		long ret = super.getExactSizeOnDisk();
 		ret += _coefficents[0].length * _coefficents.length * 8L;
+		ret += 4L; // _numRows
 		return ret;
 	}
 
@@ -492,34 +491,26 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	@Override
 	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
 		throw new NotImplementedException();
-//		CM_COV_Object ret = new CM_COV_Object();
-//		op.fn.execute(ret, _dict.getValue(0), nRows);
-//		return ret;
 	}
 
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		throw new NotImplementedException();
-//		ADictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.length);
-//		if(d == null)
-//			return ColGroupEmpty.create(max);
-//		else
-//			return create(max, d);
 	}
 
 	@Override
 	public double getCost(ComputationCostEstimator e, int nRows) {
-		throw new NotImplementedException();
-//		final int nCols = getNumCols();
-//		return e.getCost(nRows, 1, nCols, 1, 1.0);
+		final int nCols = getNumCols();
+		// We store 2 tuples in this column group, namely intercepts and slopes
+		return e.getCost(nRows, nRows, nCols, 2, 1.0);
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append(String.format("\n%15s", "Coefficents: " + _coefficents.toString()));
-		sb.append(_coefficents.length);
+		sb.append(String.format("\n%15s", " Intercepts: \t" + Arrays.toString(_coefficents[0])));
+		sb.append(String.format("\n%15s", " Slopes: \t" + Arrays.toString(_coefficents[1])));
 		return sb.toString();
 	}
 }

@@ -44,7 +44,7 @@ import org.apache.sysds.utils.MemoryEstimates;
  * Abstract Class that is the lowest class type for the Compression framework.
  * 
  * AColGroup store information about a number of columns.
- * 
+ *
  */
 public abstract class AColGroup implements Serializable {
 	protected static final Log LOG = LogFactory.getLog(AColGroup.class.getName());
@@ -111,7 +111,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Shift all column indexes contained by an offset.
-	 * 
+	 *
 	 * This is used for rbind to combine compressed matrices.
 	 * 
 	 * Since column indexes are reused between operations, we allocate a new list here to be safe

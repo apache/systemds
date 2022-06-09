@@ -255,25 +255,23 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public AColGroup rightMultByMatrix(MatrixBlock right) {
-//		right.colSum()
 		final int nColR = right.getNumColumns();
-		final int nRowR = right.getNumRows();
-
 		final int[] outputCols = Util.genColsIndices(nColR);
-		double[] colSumsAndWeightedColSums = new double[2 * nColR];
-		for(int j = 0, offTmp = 0; j < nColR; j++, offTmp += 2) {
-			for(int i = 0; i < nRowR; i++) {
-				colSumsAndWeightedColSums[j] += right.getValue(i, j);
-				colSumsAndWeightedColSums[j + nColR] += (i+1) * right.getValue(i, j);
-			}
-		}
 
 		MatrixBlock result = new MatrixBlock(_numRows, nColR, false);
-		MatrixBlock sumMatrix = new MatrixBlock(2, nColR, colSumsAndWeightedColSums);
-		MatrixBlock coeffMatrix = DataConverter.convertToMatrixBlock(_coefficents);
-		coeffMatrix = LibMatrixReorg.transposeInPlace(coeffMatrix, InfrastructureAnalyzer.getLocalParallelism());
+		for(int j = 0; j < nColR; j++) {
+			double bias_accum = 0.0;
+			double slope_accum = 0.0;
 
-		LibMatrixMult.matrixMult(coeffMatrix, sumMatrix, result);
+			for(int c = 0; c < _colIndexes.length; c++) {
+				bias_accum += right.getValue(_colIndexes[c], j) * _coefficents[0][c];
+				slope_accum += right.getValue(_colIndexes[c], j) * _coefficents[1][c];
+			}
+
+			for(int r = 0; r < _numRows; r++) {
+				result.setValue(r, j, bias_accum + (r+1) * slope_accum);
+			}
+		}
 
 		// returns an uncompressed ColGroup
 		return ColGroupUncompressed.create(result, outputCols);

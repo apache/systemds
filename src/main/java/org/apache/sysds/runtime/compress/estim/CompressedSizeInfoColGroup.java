@@ -190,7 +190,7 @@ public class CompressedSizeInfoColGroup {
 		int nv;
 		switch(ct) {
 			case LinearFunctional: // TODO add proper extraction
-				return 2;
+				return ColGroupSizes.estimateInMemorySizeLinearFunctional(numCols);
 			case DeltaDDC: // TODO add proper extraction
 			case DDC:
 				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);

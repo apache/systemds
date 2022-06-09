@@ -114,6 +114,7 @@ public final class ColGroupSizes {
 		size += estimateInMemorySizeGroup(nrColumns);
 		size += 2L * 8L * nrColumns; // coefficients; per column, we store 2 doubles (slope & intercept)
 		size += 8; // reference to coefficients array
+		size += 4; // _numRows
 		return size;
 	}
 }

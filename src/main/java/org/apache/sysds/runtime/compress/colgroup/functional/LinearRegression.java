@@ -17,14 +17,12 @@ public class LinearRegression {
 			throw new DMLCompressionException("At least 1 column must be specified for compression.");
 		}
 
-//		final int nCols = transposed ? rawBlock.getNumRows() : rawBlock.getNumColumns();
 		double[] beta0 = new double[colIndexes.length];
 		double[] beta1 = new double[colIndexes.length];
 
 		double s_xx = (Math.pow(nRows, 3) - nRows) / 12;
 		double x_bar = (double) (nRows + 1) / 2;
 
-//		MatrixBlock colSums = transposed ? rawBlock.rowSum() : rawBlock.colSum();
 		double[] colSums = new double[colIndexes.length];
 		double[] weightedColSums = new double[colIndexes.length];
 
@@ -50,8 +48,6 @@ public class LinearRegression {
 		}
 
 		for(int i = 0; i < colIndexes.length; i++) {
-//			double colSumValue = transposed ? colSums.getValue(i, 0) : colSums.getValue(0, i);
-
 			beta1[i] = (-x_bar * colSums[i] + weightedColSums[i]) / s_xx;
 			beta0[i] = (colSums[i] / nRows) - beta1[i] * x_bar;
 		}

@@ -45,16 +45,22 @@ public class WorkerService {
 		executor.scheduleAtFixedRate(syncWorkerStatisticsWithDB(), 0, 3, TimeUnit.SECONDS);
 	}
 
-	public void create(BaseEntityModel model) {
+	public Long create(BaseEntityModel model) {
 		long id = _entityRepository.createEntity(EntityEnum.WORKER, model);
 
 		var modelEntity = (NodeEntityModel) model;
 
 		_cachedWorkers.putIfAbsent(id, modelEntity.getAddress());
+
+		return id;
 	}
 
 	public void update(BaseEntityModel model) {
 		_entityRepository.updateEntity(EntityEnum.WORKER, model);
+
+		NodeEntityModel editModel = (NodeEntityModel) model;
+
+		_cachedWorkers.replace(editModel.getId(), editModel.getAddress());
 	}
 
 	public void remove(Long id) {
@@ -69,6 +75,9 @@ public class WorkerService {
 
 		updateCachedWorkers(null);
 
+		var statusOnline = StatsService.getWorkerStatistics(model.getId(), model.getAddress());
+
+		model.setOnlineStatus(statusOnline != null);
 		model.setStats(stats);
 
 		return model;
@@ -84,6 +93,9 @@ public class WorkerService {
 			var workerModel = (NodeEntityModel) worker;
 			var stats = (List<BaseEntityModel>) _entityRepository.getAllEntitiesByField(EntityEnum.WORKER_STATS, workerModel.getId());
 
+			var statusOnline = StatsService.getWorkerStatistics(workerModel.getId(), workerModel.getAddress());
+
+			workerModel.setOnlineStatus(statusOnline != null);
 			workerModel.setStats(stats);
 
 			workersResult.add(workerModel);
@@ -108,7 +120,6 @@ public class WorkerService {
 
 	private static Runnable syncWorkerStatisticsWithDB() {
 		return () -> {
-
 			for(Map.Entry<Long, String> entry : _cachedWorkers.entrySet()) {
 				Long id = entry.getKey();
 				String address = entry.getValue();

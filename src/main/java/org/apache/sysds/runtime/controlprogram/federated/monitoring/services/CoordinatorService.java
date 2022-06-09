@@ -29,8 +29,8 @@ import java.util.List;
 public class CoordinatorService {
 	private static final IRepository _entityRepository = new DerbyRepository();
 
-	public void create(BaseEntityModel model) {
-		_entityRepository.createEntity(EntityEnum.COORDINATOR, model);
+	public Long create(BaseEntityModel model) {
+		return _entityRepository.createEntity(EntityEnum.COORDINATOR, model);
 	}
 
 	public void update(BaseEntityModel model) {

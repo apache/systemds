@@ -1,0 +1,25 @@
+
+<h1 mat-dialog-title>Choose which coordinators and workers to show</h1>
+<div mat-dialog-content>
+  <h4>Coordinators:</h4>
+  <section *ngFor="let coordinator of data.coordinators" class="dialog-dashboard-section">
+    <span class="dialog-dashboard-list-section">
+      <mat-checkbox class="dialog-dashboard-margin" (change)="changeSelectedCoordinators(coordinator.id)">
+        {{coordinator.name}}
+      </mat-checkbox>
+    </span>
+  </section>
+  <hr />
+  <h4>Workers:</h4>
+  <section *ngFor="let worker of data.workers" class="dialog-dashboard-section">
+    <span class="dialog-dashboard-list-section">
+      <mat-checkbox class="dialog-dashboard-margin" (change)="changeSelectedWorkers(worker.id)">
+        {{worker.name}}
+      </mat-checkbox>
+    </span>
+  </section>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onCancelClick()">Cancel</button>
+  <button mat-button (click)="onSaveClick()" cdkFocusInitial>Save</button>
+</div>

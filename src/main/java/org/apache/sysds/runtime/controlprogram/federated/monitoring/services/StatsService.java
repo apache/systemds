@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
+import org.apache.log4j.Logger;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -28,14 +29,18 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseE
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatsEntityModel;
 
 import java.net.InetSocketAddress;
+import java.sql.Timestamp;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class StatsService {
+	protected static Logger log = Logger.getLogger(StatsService.class);
+
 	public static BaseEntityModel getWorkerStatistics(Long id, String address) {
 		StatsEntityModel parsedStats = null;
 
 		try {
-			var statisticsResponse = sendStatisticsRequest(address).get();
+			var statisticsResponse = sendStatisticsRequest(address).get(5, TimeUnit.SECONDS);
 
 			if (statisticsResponse.isSuccessful()) {
 				FederatedStatistics.FedStatsCollection aggFedStats = new FederatedStatistics.FedStatsCollection();
@@ -45,13 +50,15 @@ public class StatsService {
 					aggFedStats.aggregate((FederatedStatistics.FedStatsCollection)tmp[0]);
 
 				parsedStats = new StatsEntityModel(
-					id, aggFedStats.cpuUsage, aggFedStats.memoryUsage,
+					id, new Timestamp(System.currentTimeMillis()), aggFedStats.cpuUsage, aggFedStats.memoryUsage,
 					aggFedStats.heavyHitters, aggFedStats.coordinatorsTrafficBytes);
+				System.out.println(parsedStats);
 			}
-		} catch(DMLRuntimeException dre) {
+		} catch (DMLRuntimeException dre) {
 			// silently ignore -> caused by offline federated workers
+			log.error("Worker offline: " + dre.getMessage());
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			log.error("Error: " + e.getMessage());
 		}
 
 		return parsedStats;

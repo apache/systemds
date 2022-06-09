@@ -1,0 +1,10 @@
+<div class="coordinator-container mat-elevation-z8">
+    <div class="coordinator-loading-shade"
+         *ngIf="isLoadingResults">
+      <mat-spinner *ngIf="isLoadingResults"></mat-spinner>
+    </div>
+    <h2 class="requests-table-title">Executed Requests</h2>
+
+
+    <mat-paginator [length]="resultsLength" [pageSize]="30" aria-label="Select page of GitHub search results"></mat-paginator>
+  </div>

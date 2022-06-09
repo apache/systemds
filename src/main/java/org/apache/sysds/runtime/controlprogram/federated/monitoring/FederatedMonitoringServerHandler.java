@@ -23,6 +23,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -46,29 +47,35 @@ public class FederatedMonitoringServerHandler extends SimpleChannelInboundHandle
 		_allControllers.put("/workers", new WorkerController());
 	}
 
-	private final static ThreadLocal<Request> _currentRequest = new ThreadLocal<>();
+	private static Request _currentRequest = new Request();
+	private static final StringBuilder _requestData = new StringBuilder();
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) {
 
-		if (msg instanceof LastHttpContent) {
-			ByteBuf jsonBuf = ((LastHttpContent) msg).content();
-			Request request = _currentRequest.get();
-			request.setBody(jsonBuf.toString(CharsetUtil.UTF_8));
+		if (msg instanceof HttpRequest) {
 
-			_currentRequest.remove();
-
-			final FullHttpResponse response = processRequest(request);
-			ctx.write(response);
-
-		} else if (msg instanceof HttpRequest) {
 			HttpRequest httpRequest = (HttpRequest) msg;
 			Request request = new Request();
 			request.setContext(httpRequest);
 
-			_currentRequest.set(request);
+			_currentRequest = request;
 		}
 
+		if (msg instanceof HttpContent) {
+			ByteBuf jsonBuf = ((HttpContent) msg).content();
+			_requestData.append(jsonBuf.toString(CharsetUtil.UTF_8));
+
+			if (msg instanceof LastHttpContent) {
+				Request request = _currentRequest;
+
+				request.setBody(_requestData.toString());
+				_requestData.setLength(0);
+
+				final FullHttpResponse response = processRequest(request);
+				ctx.write(response);
+			}
+		}
 	}
 
 	@Override
@@ -83,30 +90,26 @@ public class FederatedMonitoringServerHandler extends SimpleChannelInboundHandle
 	}
 
 	private FullHttpResponse processRequest(final Request request) {
-		try {
-			final IController controller = parseController(request.getContext().uri());
-			final String method = request.getContext().method().name();
+		final IController controller = parseController(request.getContext().uri());
+		final String method = request.getContext().method().name();
 
-			switch (method) {
-				case "GET":
-					final Long id = parseId(request.getContext().uri());
+		switch (method) {
+			case "GET":
+				final Long id = parseId(request.getContext().uri());
 
-					if (id != null) {
-						return controller.get(request, id);
-					}
+				if (id != null) {
+					return controller.get(request, id);
+				}
 
-					return controller.getAll(request);
-				case "PUT":
+				return controller.getAll(request);
+			case "PUT":
 				return controller.update(request, parseId(request.getContext().uri()));
-				case "POST":
-					return controller.create(request);
-				case "DELETE":
-					return controller.delete(request, parseId(request.getContext().uri()));
-				default:
-					throw new IllegalArgumentException("Method is not supported!");
-			}
-		} catch (RuntimeException ex) {
-			throw ex;
+			case "POST":
+				return controller.create(request);
+			case "DELETE":
+				return controller.delete(request, parseId(request.getContext().uri()));
+			default:
+				throw new IllegalArgumentException("Method is not supported!");
 		}
 	}
 

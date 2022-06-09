@@ -33,9 +33,9 @@ public class CoordinatorController implements IController {
 
 		var model = MapperService.getModelFromBody(request);
 
-		_coordinatorService.create(model);
+		long id = _coordinatorService.create(model);
 
-		return Response.ok("Success");
+		return Response.ok(String.format("{\"id\": %d}", id));
 	}
 
 	@Override
@@ -44,14 +44,14 @@ public class CoordinatorController implements IController {
 
 		_coordinatorService.update(model);
 
-		return Response.ok("Success");
+		return Response.ok(Constants.GENERIC_SUCCESS_MSG);
 	}
 
 	@Override
 	public FullHttpResponse delete(Request request, Long objectId) {
 		_coordinatorService.remove(objectId);
 
-		return Response.ok("Success");
+		return Response.ok(Constants.GENERIC_SUCCESS_MSG);
 	}
 
 	@Override
@@ -59,7 +59,7 @@ public class CoordinatorController implements IController {
 		var result = _coordinatorService.get(objectId);
 
 		if (result == null) {
-			return Response.notFound("No such coordinator can be found");
+			return Response.notFound(Constants.NOT_FOUND_MSG);
 		}
 
 		return Response.ok(result.toString());
@@ -68,10 +68,6 @@ public class CoordinatorController implements IController {
 	@Override
 	public FullHttpResponse getAll(Request request) {
 		var coordinators = _coordinatorService.getAll();
-
-		if (coordinators.isEmpty()) {
-			return Response.notFound("No coordinators can be found");
-		}
 
 		return Response.ok(coordinators.toString());
 	}

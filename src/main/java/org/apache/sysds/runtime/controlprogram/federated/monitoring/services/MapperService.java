@@ -19,7 +19,9 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
@@ -36,8 +38,14 @@ public class MapperService {
 	public static BaseEntityModel getModelFromBody(Request request) {
 		ObjectMapper mapper = new ObjectMapper();
 
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
 		try {
-			return mapper.readValue(request.getBody(), NodeEntityModel.class);
+			if (!request.getBody().isBlank() && !request.getBody().isEmpty()) {
+				return mapper.readValue(request.getBody(), NodeEntityModel.class);
+			}
+
+			return null;
 		}
 		catch (IOException e) {
 			throw new RuntimeException(e);
@@ -74,11 +82,15 @@ public class MapperService {
 						} else if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(Constants.ENTITY_HEAVY_HITTERS_COL)) {
 							tmpModel.setHeavyHitterInstructions(resultSet.getString(column));
 						}
-					} else {
+					} else if (resultSet.getMetaData().getColumnType(column) == Types.DOUBLE) {
 						if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(Constants.ENTITY_CPU_COL)) {
 							tmpModel.setCPUUsage(resultSet.getDouble(column));
 						} else if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(Constants.ENTITY_MEM_COL)) {
 							tmpModel.setMemoryUsage(resultSet.getDouble(column));
+						}
+					} else {
+						if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(Constants.ENTITY_TIMESTAMP_COL)) {
+							tmpModel.setTimestamp(resultSet.getTimestamp(column));
 						}
 					}
 				}

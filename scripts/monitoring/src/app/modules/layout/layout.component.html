@@ -1,0 +1,86 @@
+<div class="navbar-container" [class.example-is-mobile]="mobileQuery.matches">
+
+  <!-- Top navbar -->
+  <mat-toolbar class="navbar" color="primary">
+
+    <button mat-icon-button (click)="snav.toggle()">
+      <mat-icon>menu</mat-icon>
+    </button>
+
+    <a class="navbar-brand" [routerLink]="['/']" matTooltip="Home">
+      <h1>
+        Monitoring
+      </h1>
+    </a>
+
+    <span class="navbar-spacer"></span>
+
+    <button mat-fab color="accent" color="warn" [matMenuTriggerFor]="addItemMenu">
+      <mat-icon>add</mat-icon>
+    </button>
+
+    <mat-menu #addItemMenu="matMenu" xPosition="before" yPosition="above" [overlapTrigger]="false">
+
+      <a mat-menu-item (click)="openNewEntityDialog('coordinator')">
+        <span>Add new coordinator</span>
+      </a>
+      <a mat-menu-item (click)="openNewEntityDialog('worker')">
+        <span>Add new worker</span>
+      </a>
+
+    </mat-menu>
+
+
+  </mat-toolbar>
+
+  <mat-sidenav-container class="navbar-sidenav-container">
+    <!-- Side nav -->
+    <mat-sidenav #snav [opened]="!mobileQuery.matches" [mode]="mobileQuery.matches ? 'over' : 'side'"
+      [fixedInViewport]="mobileQuery.matches" fixedTopGap="56" class="sidenav">
+
+      <mat-nav-list>
+        <h3 mat-subheader>Home</h3>
+
+        <a mat-list-item [routerLink]="['/dashboard']" routerLinkActive="active">
+          <mat-icon mat-list-icon>
+            dashboard
+          </mat-icon>
+          <p mat-line> Dashboard </p>
+        </a>
+
+        <a mat-list-item [routerLink]="['/coordinators']" routerLinkActive="active">
+          <mat-icon mat-list-icon>
+            supervisor_account
+          </mat-icon>
+          <p mat-line> Coordinators </p>
+        </a>
+
+        <a mat-list-item [routerLink]="['/workers']" routerLinkActive="active">
+          <mat-icon mat-list-icon>
+            engineering
+          </mat-icon>
+          <p mat-line> Workers </p>
+        </a>
+
+        <mat-divider></mat-divider>
+
+        <a id="push-bottom" target="_blank" mat-list-item href="https://systemds.apache.org/" routerLinkActive="active">
+          <mat-icon mat-list-icon>
+            info_outline
+          </mat-icon>
+          <p mat-line> About </p>
+        </a>
+      </mat-nav-list>
+
+    </mat-sidenav>
+
+    <!-- Main content -->
+    <mat-sidenav-content class="sidenav-content">
+
+
+      <router-outlet></router-outlet>
+
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+
+</div>

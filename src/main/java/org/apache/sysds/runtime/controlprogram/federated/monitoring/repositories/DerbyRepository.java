@@ -43,16 +43,20 @@ public class DerbyRepository implements IRepository {
 	private static final String ENTITY_SCHEMA_CREATE_STATS_STMT = "CREATE TABLE %s " +
 			"(id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1), " +
 			"%s INTEGER, " +
+			"%s TIMESTAMP, " +
 			"%s DOUBLE, " +
 			"%s DOUBLE," +
 			"%s VARCHAR(1000)," +
 			"%s VARCHAR(1000))";
 	private static final String ENTITY_INSERT_STMT = "INSERT INTO %s (%s, %s) VALUES (?, ?)";
-	private static final String ENTITY_STATS_INSERT_STMT = "INSERT INTO %s (%s, %s, %s, %s, %s) VALUES (?, ?, ?, ?, ?)";
+	private static final String ENTITY_STATS_INSERT_STMT = "INSERT INTO %s (%s, %s, %s, %s, %s, %s) VALUES (?, ?, ?, ?, ?, ?)";
 	private static final String GET_ENTITY_WITH_COL_STMT = "SELECT * FROM %s WHERE %s = ?";
+	private static final String GET_ENTITY_STATS_WITH_COL_STMT = "SELECT * FROM %s WHERE %s = ? ORDER BY %s DESC FETCH FIRST %d ROWS ONLY";
 	private static final String DELETE_ENTITY_WITH_COL_STMT = "DELETE FROM %s WHERE %s = ?";
 	private static final String UPDATE_ENTITY_WITH_COL_STMT = "UPDATE %s SET %s = ?, %s = ? WHERE %s = ?";
 	private static final String GET_ALL_ENTITIES_STMT = "SELECT * FROM %s";
+
+	private static final Integer AMOUNT_DATA_POINTS = 20;
 
 	public DerbyRepository() {
 		_db = createMonitoringDatabase();
@@ -90,6 +94,7 @@ public class DerbyRepository implements IRepository {
 				PreparedStatement st = db.prepareStatement(
 					String.format(ENTITY_SCHEMA_CREATE_STATS_STMT, Constants.STATS_TABLE_NAME,
 						Constants.ENTITY_WORKER_ID_COL,
+						Constants.ENTITY_TIMESTAMP_COL,
 						Constants.ENTITY_CPU_COL,
 						Constants.ENTITY_MEM_COL,
 						Constants.ENTITY_TRAFFIC_COL,
@@ -119,6 +124,7 @@ public class DerbyRepository implements IRepository {
 				st = _db.prepareStatement(
 					String.format(ENTITY_STATS_INSERT_STMT, Constants.STATS_TABLE_NAME,
 						Constants.ENTITY_WORKER_ID_COL,
+						Constants.ENTITY_TIMESTAMP_COL,
 						Constants.ENTITY_CPU_COL,
 						Constants.ENTITY_MEM_COL,
 						Constants.ENTITY_TRAFFIC_COL,
@@ -127,10 +133,11 @@ public class DerbyRepository implements IRepository {
 				StatsEntityModel newModel = (StatsEntityModel) model;
 
 				st.setLong(1, newModel.getWorkerId());
-				st.setDouble(2, newModel.getCPUUsage());
-				st.setDouble(3, newModel.getMemoryUsage());
-				st.setString(4, newModel.getTransferredBytes());
-				st.setString(5, newModel.getHeavyHitterInstructions());
+				st.setTimestamp(2, newModel.getTimestamp());
+				st.setDouble(3, newModel.getCPUUsage());
+				st.setDouble(4, newModel.getMemoryUsage());
+				st.setString(5, newModel.getTransferredBytes());
+				st.setString(6, newModel.getHeavyHitterInstructions());
 			} else {
 				st = _db.prepareStatement(
 					String.format(ENTITY_INSERT_STMT, Constants.WORKERS_TABLE_NAME, Constants.ENTITY_NAME_COL, Constants.ENTITY_ADDR_COL),
@@ -173,7 +180,9 @@ public class DerbyRepository implements IRepository {
 					String.format(GET_ENTITY_WITH_COL_STMT, Constants.COORDINATORS_TABLE_NAME, Constants.ENTITY_ID_COL));
 			} else if (type == EntityEnum.WORKER_STATS) {
 				st = _db.prepareStatement(
-					String.format(GET_ENTITY_WITH_COL_STMT, Constants.STATS_TABLE_NAME, Constants.ENTITY_WORKER_ID_COL));
+					String.format(GET_ENTITY_STATS_WITH_COL_STMT, Constants.STATS_TABLE_NAME, Constants.ENTITY_WORKER_ID_COL,
+							Constants.ENTITY_TIMESTAMP_COL,
+							AMOUNT_DATA_POINTS));
 			}
 
 			st.setLong(1, id);
@@ -219,7 +228,9 @@ public class DerbyRepository implements IRepository {
 		try {
 			if (type == EntityEnum.WORKER_STATS) {
 				st = _db.prepareStatement(
-						String.format(GET_ENTITY_WITH_COL_STMT, Constants.STATS_TABLE_NAME, Constants.ENTITY_WORKER_ID_COL));
+						String.format(GET_ENTITY_STATS_WITH_COL_STMT, Constants.STATS_TABLE_NAME, Constants.ENTITY_WORKER_ID_COL,
+								Constants.ENTITY_TIMESTAMP_COL,
+								AMOUNT_DATA_POINTS));
 				st.setLong(1, (Long) fieldValue);
 			} else {
 				throw new NotImplementedException();

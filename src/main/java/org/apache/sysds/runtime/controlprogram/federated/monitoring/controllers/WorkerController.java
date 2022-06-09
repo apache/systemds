@@ -26,7 +26,6 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.Map
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.WorkerService;
 
 public class WorkerController implements IController {
-
 	private final WorkerService _workerService = new WorkerService();
 
 	@Override
@@ -34,9 +33,9 @@ public class WorkerController implements IController {
 
 		var model = MapperService.getModelFromBody(request);
 
-		_workerService.create(model);
+		long id = _workerService.create(model);
 
-		return Response.ok("Success");
+		return Response.ok(String.format("{\"id\": %d}", id));
 	}
 
 	@Override
@@ -45,14 +44,14 @@ public class WorkerController implements IController {
 
 		_workerService.update(model);
 
-		return Response.ok("Success");
+		return Response.ok(Constants.GENERIC_SUCCESS_MSG);
 	}
 
 	@Override
 	public FullHttpResponse delete(Request request, Long objectId) {
 		_workerService.remove(objectId);
 
-		return Response.ok("Success");
+		return Response.ok(Constants.GENERIC_SUCCESS_MSG);
 	}
 
 	@Override
@@ -60,7 +59,7 @@ public class WorkerController implements IController {
 		var result = _workerService.get(objectId);
 
 		if (result == null) {
-			return Response.notFound("No such worker can be found");
+			return Response.notFound(Constants.NOT_FOUND_MSG);
 		}
 
 		return Response.ok(result.toString());
@@ -69,10 +68,6 @@ public class WorkerController implements IController {
 	@Override
 	public FullHttpResponse getAll(Request request) {
 		var workers = _workerService.getAll();
-
-		if (workers.isEmpty()) {
-			return Response.notFound("No workers can be found");
-		}
 
 		return Response.ok(workers.toString());
 	}

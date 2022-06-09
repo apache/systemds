@@ -1,0 +1,52 @@
+<mat-card class="worker-card">
+    <mat-card-title>{{ model.name }}</mat-card-title>
+    <mat-divider inset></mat-divider>
+    <mat-card-content>
+      <p>Address: {{ model.address }}</p>
+      <p>Status:
+        <span class="online-worker" *ngIf="model.isOnline">
+        Online
+      </span>
+        <span class="offline-worker" *ngIf="!model.isOnline">
+        Offline
+      </span>
+      </p>
+
+    </mat-card-content>
+
+    <mat-divider inset></mat-divider>
+    <mat-card-content>
+      <div echarts [options]="optionsMemory" [merge]="updateOptionsMemory" class="worker-chart"></div>
+    </mat-card-content>
+
+    <mat-divider inset></mat-divider>
+    <mat-card-content>
+      <table mat-table [dataSource]="dataSource" class="table-info">
+        <!--- Note that these columns can be defined in any order.
+              The actual rendered columns are set as a property on the row definition" -->
+
+        <!-- Type Column -->
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef> Type </th>
+          <td mat-cell *matCellDef="let element"> {{element.type}} </td>
+        </ng-container>
+
+        <!-- Time Column -->
+        <ng-container matColumnDef="time">
+          <th mat-header-cell *matHeaderCellDef> Time(s) </th>
+          <td mat-cell *matCellDef="let element"> {{element.time}} </td>
+        </ng-container>
+
+        <!-- Frequency Column -->
+        <ng-container matColumnDef="frequency">
+          <th mat-header-cell *matHeaderCellDef> Freq. </th>
+          <td mat-cell *matCellDef="let element"> {{element.frequency}} </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+
+    </mat-card-content>
+  </mat-card>

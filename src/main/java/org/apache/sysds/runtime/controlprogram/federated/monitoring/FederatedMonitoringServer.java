@@ -27,7 +27,11 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.cors.CorsConfig;
+import io.netty.handler.codec.http.cors.CorsConfigBuilder;
+import io.netty.handler.codec.http.cors.CorsHandler;
 import org.apache.log4j.Logger;
 
 public class FederatedMonitoringServer {
@@ -50,6 +54,16 @@ public class FederatedMonitoringServer {
 		EventLoopGroup workerGroup = new NioEventLoopGroup();
 
 		try {
+			var corsConfig = CorsConfigBuilder.forAnyOrigin()
+					.allowedRequestHeaders("*")
+					.allowedRequestMethods(
+							HttpMethod.DELETE,
+							HttpMethod.GET,
+							HttpMethod.PUT,
+							HttpMethod.POST,
+							HttpMethod.OPTIONS)
+					.build();
+
 			ServerBootstrap server = new ServerBootstrap();
 			server.group(bossGroup, workerGroup)
 				.channel(NioServerSocketChannel.class)
@@ -59,6 +73,7 @@ public class FederatedMonitoringServer {
 					ChannelPipeline pipeline = ch.pipeline();
 
 					pipeline.addLast(new HttpServerCodec());
+					pipeline.addLast(new CorsHandler(corsConfig));
 					pipeline.addLast(new FederatedMonitoringServerHandler());
 					}
 				});

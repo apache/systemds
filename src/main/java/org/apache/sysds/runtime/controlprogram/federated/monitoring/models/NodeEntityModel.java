@@ -25,7 +25,7 @@ public class NodeEntityModel extends BaseEntityModel {
 	private Long _id;
 	private String _name;
 	private String _address;
-
+	private boolean _isOnline = false;
 	private List<BaseEntityModel> _stats;
 
 	public NodeEntityModel() { }
@@ -42,6 +42,14 @@ public class NodeEntityModel extends BaseEntityModel {
 
 	public void setId(final Long id) {
 		_id = id;
+	}
+
+	public Boolean getOnlineStatus() {
+		return _isOnline;
+	}
+
+	public void setOnlineStatus(final Boolean isOnline) {
+		_isOnline = isOnline;
 	}
 
 	public String getName() {
@@ -74,7 +82,8 @@ public class NodeEntityModel extends BaseEntityModel {
 				"\"id\": %d," +
 				"\"name\": \"%s\"," +
 				"\"address\": \"%s\"," +
+				"\"isOnline\": %b," +
 				"\"stats\": %s" +
-				"}", _id, _name, _address, _stats);
+				"}", _id, _name, _address, _isOnline, _stats);
 	}
 }

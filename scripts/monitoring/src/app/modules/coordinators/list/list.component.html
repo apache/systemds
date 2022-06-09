@@ -1,0 +1,44 @@
+<div class="container" fxLayout="row" fxLayoutAlign="center none">
+    <div fxFlex="95%">
+
+      <mat-card>
+        <mat-card-content>
+          <h2>Coordinators</h2>
+
+          <table mat-table [dataSource]="dataSource" matSort>
+
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header> Name </th>
+              <td mat-cell *matCellDef="let element"> {{element.name}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="address">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Address </th>
+                <td mat-cell *matCellDef="let element"> {{element.address}} </td>
+              </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef> Actions </th>
+              <td mat-cell *matCellDef="let element">
+                <button mat-mini-fab color="primary" (click)="viewCoordinator(element.id)">
+                  <mat-icon aria-hidden="false" aria-label="visibility">visibility</mat-icon>
+                </button>
+                <button mat-mini-fab color="accent" (click)="editCoordinator(element.id)">
+                  <mat-icon aria-hidden="false" aria-label="edit">edit</mat-icon>
+                </button>
+                <button mat-mini-fab color="warn" (click)="deleteCoordinator(element.id)">
+                  <mat-icon aria-hidden="false" aria-label="delete">delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+          </table>
+
+        </mat-card-content>
+      </mat-card>
+
+    </div>
+  </div>

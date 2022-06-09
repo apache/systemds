@@ -1,0 +1,41 @@
+<div id="metrics">
+  <mat-card class="worker-metrics-card">
+    <div echarts [options]="optionsCPU" [merge]="updateOptionsCPU" class="demo-chart"></div>
+  </mat-card>
+
+  <mat-card class="worker-metrics-card">
+    <div echarts [options]="optionsMemory" [merge]="updateOptionsMemory" class="demo-chart"></div>
+  </mat-card>
+</div>
+
+
+
+<div class="worker-container mat-elevation-z8">
+    <div class="worker-loading-shade"
+         *ngIf="isLoadingResults">
+      <mat-spinner *ngIf="isLoadingResults"></mat-spinner>
+    </div>
+    <h2 class="requests-table-title">Executed Requests</h2>
+    <div class="worker-table-container">
+
+      <table mat-table *ngIf="!isLoadingResults" [dataSource]="model.stats!" class="worker-table"
+             matSort matSortActive="type" matSortDisableClear matSortDirection="desc">
+
+        <!-- Title Column -->
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef>Type</th>
+          <td mat-cell *matCellDef="let row">{{row.type}}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="executionTime">
+            <th mat-header-cell *matHeaderCellDef>Execution Time</th>
+            <td mat-cell *matCellDef="let row">{{row.executionTime}} s</td>
+          </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+
+    <mat-paginator [length]="resultsLength" [pageSize]="30" aria-label="Select page of GitHub search results"></mat-paginator>
+  </div>

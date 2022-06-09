@@ -26,8 +26,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.sql.Timestamp;
 
 public class StatsEntityModel extends BaseEntityModel {
+	private Timestamp _timeStamp;
 	private Long _workerId;
 	private double _cpuUsage;
 	private double _memoryUsage;
@@ -38,11 +40,12 @@ public class StatsEntityModel extends BaseEntityModel {
 
 	public StatsEntityModel() { }
 
-	public StatsEntityModel(Long workerId, double cpuUsage, double memoryUsage,
+	public StatsEntityModel(Long workerId, Timestamp timestamp, double cpuUsage, double memoryUsage,
 		Map<String, Pair<Long, Double>> heavyHitterInstructionsObj,
 		List<Triple<LocalDateTime, String, Long>> transferredBytesObj)
 	{
 		_workerId = workerId;
+		_timeStamp = timestamp;
 		_cpuUsage = cpuUsage;
 		_memoryUsage = memoryUsage;
 		_heavyHitterInstructionsObj = heavyHitterInstructionsObj;
@@ -57,6 +60,14 @@ public class StatsEntityModel extends BaseEntityModel {
 
 	public void setWorkerId(final Long workerId) {
 		_workerId = workerId;
+	}
+
+	public Timestamp getTimestamp() {
+		return _timeStamp;
+	}
+
+	public void setTimestamp(Timestamp timestamp) {
+		_timeStamp = timestamp;
 	}
 
 	public double getCPUUsage() {
@@ -130,10 +141,11 @@ public class StatsEntityModel extends BaseEntityModel {
 	@Override
 	public String toString() {
 		return String.format("{" +
+			"\"timestamp\": \"%s\"," +
 			"\"cpuUsage\": %.2f," +
 			"\"memoryUsage\": %.2f," +
 			"\"coordinatorTraffic\": %s," +
 			"\"heavyHitters\": %s" +
-			"}", _cpuUsage, _memoryUsage, getTransferredBytes(), getHeavyHitterInstructions());
+			"}", _timeStamp.toString(), _cpuUsage, _memoryUsage, getTransferredBytes(), getHeavyHitterInstructions());
 	}
 }

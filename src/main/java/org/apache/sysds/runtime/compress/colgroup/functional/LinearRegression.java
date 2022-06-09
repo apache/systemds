@@ -24,12 +24,14 @@ public class LinearRegression {
 		double s_xx = (Math.pow(nRows, 3) - nRows) / 12;
 		double x_bar = (double) (nRows + 1) / 2;
 
-		MatrixBlock colSums = transposed ? rawBlock.rowSum() : rawBlock.colSum();
+//		MatrixBlock colSums = transposed ? rawBlock.rowSum() : rawBlock.colSum();
+		double[] colSums = new double[colIndexes.length];
 		double[] weightedColSums = new double[colIndexes.length];
 
 		if(colIndexes.length == 1) {
 			for (int rowIdx = 0; rowIdx < nRows; rowIdx++) {
 				double value = transposed ? rawBlock.getValue(colIndexes[0], rowIdx) : rawBlock.getValue(rowIdx, colIndexes[0]);
+				colSums[0] += value;
 				weightedColSums[0] += (rowIdx + 1) * value;
 			}
 		} else {
@@ -41,16 +43,17 @@ public class LinearRegression {
 				double[] row = cellVals.getData();
 
 				for(int i = 0; i < colIndexes.length; i++) {
-					weightedColSums[i] += rowIdx * row[colIndexes[i]];
+					colSums[i] += row[i];
+					weightedColSums[i] += rowIdx * row[i];
 				}
 			}
 		}
 
 		for(int i = 0; i < colIndexes.length; i++) {
-			double colSumValue = transposed ? colSums.getValue(i, 0) : colSums.getValue(0, i);
+//			double colSumValue = transposed ? colSums.getValue(i, 0) : colSums.getValue(0, i);
 
-			beta1[i] = (-x_bar * colSumValue + weightedColSums[i]) / s_xx;
-			beta0[i] = (colSumValue / nRows) - beta1[i] * x_bar;
+			beta1[i] = (-x_bar * colSums[i] + weightedColSums[i]) / s_xx;
+			beta0[i] = (colSums[i] / nRows) - beta1[i] * x_bar;
 		}
 
 		return new double[][] {beta0, beta1};

@@ -351,7 +351,7 @@ public class ColGroupUncompressed extends AColGroup {
 		}
 	}
 
-	// @Override
+//	 @Override
 	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
 
 		final MatrixBlock tmpRet = new MatrixBlock(ru - rl, _data.getNumColumns(), false);
@@ -579,10 +579,10 @@ public class ColGroupUncompressed extends AColGroup {
 			}
 			else {
 				double[] tmpRetV = tmpRet.getDenseBlockValues();
-				for(int row = 0; row < lhs._colIndexes.length; row++) {
+				for(int row = 0; row < lhs.getNumCols(); row++) {
 					final int offRes = lhs._colIndexes[row] * result.getNumColumns();
-					final int offTmp = lhs._colIndexes.length * row;
-					for(int col = 0; col < _colIndexes.length; col++) {
+					final int offTmp = row * getNumCols();
+					for(int col = 0; col < getNumCols(); col++) {
 						resV[offRes + _colIndexes[col]] += tmpRetV[offTmp + col];
 					}
 				}

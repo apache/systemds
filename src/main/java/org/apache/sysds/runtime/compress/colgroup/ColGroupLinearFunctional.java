@@ -22,11 +22,14 @@ package org.apache.sysds.runtime.compress.colgroup;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -96,9 +99,9 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	public double getMin() {
 		double min = Double.POSITIVE_INFINITY;
 
-		for(int colIndex : _colIndexes) {
-			double intercept = _coefficents[0][colIndex];
-			double slope = _coefficents[1][colIndex];
+		for(int col = 0; col < getNumCols(); col++) {
+			double intercept = _coefficents[0][col];
+			double slope = _coefficents[1][col];
 			if(slope >= 0 && (intercept + slope) < min) {
 				min = intercept + slope;
 			}
@@ -114,9 +117,9 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	public double getMax() {
 		double max = Double.NEGATIVE_INFINITY;
 
-		for(int colIndex : _colIndexes) {
-			double intercept = _coefficents[0][colIndex];
-			double slope = _coefficents[1][colIndex];
+		for(int col = 0; col < getNumCols(); col++) {
+			double intercept = _coefficents[0][col];
+			double slope = _coefficents[1][col];
 			if(slope >= 0 && (intercept + _numRows * slope) > max) {
 				max = intercept + _numRows * slope;
 			}
@@ -191,27 +194,27 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	protected void computeSum(double[] c, int nRows) {
-		for(int colIndex : _colIndexes) {
-			double intercept = _coefficents[0][colIndex];
-			double slope = _coefficents[1][colIndex];
+		for(int col = 0; col < getNumCols(); col++) {
+			double intercept = _coefficents[0][col];
+			double slope = _coefficents[1][col];
 			c[0] += nRows * (intercept + (nRows + 1) * slope / 2);
 		}
 	}
 
 	@Override
 	public void computeColSums(double[] c, int nRows) {
-		for(int colIndex : _colIndexes) {
-			double intercept = _coefficents[0][colIndex];
-			double slope = _coefficents[1][colIndex];
-			c[colIndex] += nRows * (intercept + (nRows + 1) * slope / 2);
+		for(int col = 0; col < getNumCols(); col++) {
+			double intercept = _coefficents[0][col];
+			double slope = _coefficents[1][col];
+			c[_colIndexes[col]] += nRows * (intercept + (nRows + 1) * slope / 2);
 		}
 	}
 
 	@Override
 	protected void computeSumSq(double[] c, int nRows) {
-		for(int colIndex : _colIndexes) {
-			double intercept = _coefficents[0][colIndex];
-			double slope = _coefficents[1][colIndex];
+		for(int col = 0; col < getNumCols(); col++) {
+			double intercept = _coefficents[0][col];
+			double slope = _coefficents[1][col];
 			c[0] += nRows * (Math.pow(intercept, 2) + (nRows + 1) * slope * intercept +
 				(nRows + 1) * (2 * nRows + 1) * Math.pow(slope, 2) / 6);
 		}
@@ -219,10 +222,10 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	protected void computeColSumsSq(double[] c, int nRows) {
-		for(int colIndex : _colIndexes) {
-			double intercept = _coefficents[0][colIndex];
-			double slope = _coefficents[1][colIndex];
-			c[colIndex] += nRows * (Math.pow(intercept, 2) + (nRows + 1) * slope * intercept +
+		for(int col = 0; col < getNumCols(); col++) {
+			double intercept = _coefficents[0][col];
+			double slope = _coefficents[1][col];
+			c[_colIndexes[col]] += nRows * (Math.pow(intercept, 2) + (nRows + 1) * slope * intercept +
 				(nRows + 1) * (2 * nRows + 1) * Math.pow(slope, 2) / 6);
 		}
 	}
@@ -252,7 +255,28 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public AColGroup rightMultByMatrix(MatrixBlock right) {
-		throw new NotImplementedException();
+//		right.colSum()
+		final int nColR = right.getNumColumns();
+		final int nRowR = right.getNumRows();
+
+		final int[] outputCols = Util.genColsIndices(nColR);
+		double[] colSumsAndWeightedColSums = new double[2 * nColR];
+		for(int j = 0, offTmp = 0; j < nColR; j++, offTmp += 2) {
+			for(int i = 0; i < nRowR; i++) {
+				colSumsAndWeightedColSums[j] += right.getValue(i, j);
+				colSumsAndWeightedColSums[j + nColR] += (i+1) * right.getValue(i, j);
+			}
+		}
+
+		MatrixBlock result = new MatrixBlock(_numRows, nColR, false);
+		MatrixBlock sumMatrix = new MatrixBlock(2, nColR, colSumsAndWeightedColSums);
+		MatrixBlock coeffMatrix = DataConverter.convertToMatrixBlock(_coefficents);
+		coeffMatrix = LibMatrixReorg.transposeInPlace(coeffMatrix, InfrastructureAnalyzer.getLocalParallelism());
+
+		LibMatrixMult.matrixMult(coeffMatrix, sumMatrix, result);
+
+		// returns an uncompressed ColGroup
+		return ColGroupUncompressed.create(result, outputCols);
 	}
 
 	@Override
@@ -263,13 +287,11 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		final double sumIndices = nRows * (nRows + 1)/2.0;
 		final double sumSquaredIndices = nRows * (nRows + 1) * (2*nRows + 1)/6.0;
 		for(int row = 0, offTmp = 0; row < tCol; row++, offTmp += tCol) {
-			final int rowIdx = _colIndexes[row];
-			final double alpha1 = nRows * _coefficents[0][rowIdx] + sumIndices * _coefficents[1][rowIdx];
-			final double alpha2 = sumIndices * _coefficents[0][rowIdx] + sumSquaredIndices * _coefficents[1][rowIdx];
+			final double alpha1 = nRows * _coefficents[0][row] + sumIndices * _coefficents[1][row];
+			final double alpha2 = sumIndices * _coefficents[0][row] + sumSquaredIndices * _coefficents[1][row];
 			final int offRet = _colIndexes[row] * numColumns;
 			for(int col = row; col < tCol; col++) {
-				final int colIdx = _colIndexes[col];
-				ret[offRet + _colIndexes[col]] += alpha1 * _coefficents[0][colIdx] + alpha2 * _coefficents[1][colIdx];
+				ret[offRet + _colIndexes[col]] += alpha1 * _coefficents[0][col] + alpha2 * _coefficents[1][col];
 			}
 		}
 	}
@@ -281,24 +303,78 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
-		if(lhs instanceof ColGroupEmpty)
+		if(lhs instanceof ColGroupEmpty) {
 			return;
-		else if(lhs instanceof ColGroupUncompressed) {
+		}
+
+		MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.length, 0);
+
+		if(lhs instanceof ColGroupUncompressed) {
 			ColGroupUncompressed lhsUC = (ColGroupUncompressed) lhs;
 			int numRowsLeft = lhsUC.getData().getNumRows();
 
 			double[] colSumsAndWeightedColSums = new double[2 * lhs.getNumCols()];
 			for(int j = 0, offTmp = 0; j < lhs.getNumCols(); j++, offTmp += 2) {
 				for(int i = 0; i < numRowsLeft; i++) {
-					colSumsAndWeightedColSums[offTmp] += lhs.get(i, j);
-					colSumsAndWeightedColSums[offTmp + 1] += (i+1) * lhs.get(i, j);
+					colSumsAndWeightedColSums[offTmp] += lhs.getIdx(i, j);
+					colSumsAndWeightedColSums[offTmp + 1] += (i+1) * lhs.getIdx(i, j);
 				}
 			}
 
 			MatrixBlock sumMatrix = new MatrixBlock(lhs.getNumCols(), 2, colSumsAndWeightedColSums);
 			MatrixBlock coefficientMatrix = DataConverter.convertToMatrixBlock(_coefficents);
 
-			LibMatrixMult.matrixMult(sumMatrix, coefficientMatrix, result);
+			LibMatrixMult.matrixMult(sumMatrix, coefficientMatrix, tmpRet);
+		} else if(lhs instanceof ColGroupLinearFunctional) {
+			ColGroupLinearFunctional lhsLF = (ColGroupLinearFunctional) lhs;
+
+			final double sumIndices = _numRows * (_numRows + 1)/2.0;
+			final double sumSquaredIndices = _numRows * (_numRows + 1) * (2*_numRows + 1)/6.0;
+
+			MatrixBlock weightMatrix = new MatrixBlock(2, 2, new double[] {_numRows, sumIndices, sumIndices, sumSquaredIndices});
+			MatrixBlock coefficientMatrixLhs = DataConverter.convertToMatrixBlock(lhsLF._coefficents);
+			MatrixBlock coefficientMatrixRhs = DataConverter.convertToMatrixBlock(_coefficents);
+
+			coefficientMatrixLhs = LibMatrixReorg.transposeInPlace(coefficientMatrixLhs,
+				InfrastructureAnalyzer.getLocalParallelism());
+
+			// We simply compute a matrix multiplication chain in coefficient space, i.e.,
+			// 					t(L) %*% R = t(coeff(L)) %*% W %*% coeff(R)
+			// where W is a weight matrix capturing the size of the shared dimension (weightMatrix above)
+			// and coeff(X) denotes the 2xn matrix of the mxn matrix X.
+			MatrixBlock tmp = new MatrixBlock(lhs.getNumCols(), 2, false);
+			LibMatrixMult.matrixMult(coefficientMatrixLhs, weightMatrix, tmp);
+			LibMatrixMult.matrixMult(tmp, coefficientMatrixRhs, tmpRet);
+		} else if(lhs instanceof APreAgg) {
+			throw new NotImplementedException();
+		}
+
+		final double[] resV = result.getDenseBlockValues();
+		if(tmpRet.isEmpty())
+			return;
+		else if(tmpRet.isInSparseFormat()) {
+			SparseBlock sb = tmpRet.getSparseBlock();
+			for(int row = 0; row < lhs._colIndexes.length; row++) {
+				if(sb.isEmpty(row))
+					continue;
+				final int apos = sb.pos(row);
+				final int alen = sb.size(row) + apos;
+				final int[] aix = sb.indexes(row);
+				final double[] avals = sb.values(row);
+				final int offRes = lhs._colIndexes[row] * result.getNumColumns();
+				for(int col = apos; col < alen; col++)
+					resV[offRes + _colIndexes[aix[col]]] += avals[col];
+			}
+		}
+		else {
+			double[] tmpRetV = tmpRet.getDenseBlockValues();
+			for(int row = 0; row < lhs.getNumCols(); row++) {
+				final int offRes = lhs._colIndexes[row] * result.getNumColumns();
+				final int offTmp = row * getNumCols();
+				for(int col = 0; col < getNumCols(); col++) {
+					resV[offRes + _colIndexes[col]] += tmpRetV[offTmp + col];
+				}
+			}
 		}
 	}
 

@@ -42,9 +42,9 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 /**
  * Abstract Class that is the lowest class type for the Compression framework.
- *
+ * 
  * AColGroup store information about a number of columns.
- *
+ * 
  */
 public abstract class AColGroup implements Serializable {
 	protected static final Log LOG = LogFactory.getLog(AColGroup.class.getName());
@@ -57,7 +57,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Concrete ColGroupType
-	 *
+	 * 
 	 * Protected such that outside the ColGroup package it should be unknown which specific subtype is used.
 	 */
 	protected enum ColGroupType {
@@ -75,7 +75,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Main constructor.
-	 *
+	 * 
 	 * @param colIndices offsets of the columns in the matrix block that make up the group
 	 */
 	protected AColGroup(int[] colIndices) {
@@ -84,7 +84,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Obtain the offsets of the columns in the matrix block that make up the group
-	 *
+	 * 
 	 * @return offsets of the columns in the matrix block that make up the group
 	 */
 	public final int[] getColIndices() {
@@ -93,7 +93,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Set the column indexes of the column group.
-	 *
+	 * 
 	 * @param colIndexes
 	 */
 	protected final void setColIndices(int[] colIndexes) {
@@ -102,7 +102,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Obtain the number of columns in this column group.
-	 *
+	 * 
 	 * @return number of columns in this column group
 	 */
 	public final int getNumCols() {
@@ -111,11 +111,11 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Shift all column indexes contained by an offset.
-	 *
+	 * 
 	 * This is used for rbind to combine compressed matrices.
-	 *
+	 * 
 	 * Since column indexes are reused between operations, we allocate a new list here to be safe
-	 *
+	 * 
 	 * @param offset The offset to move all columns
 	 */
 	public final void shiftColIndices(int offset) {
@@ -127,7 +127,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Get the upper bound estimate of in memory allocation for the column group.
-	 *
+	 * 
 	 * @return an upper bound on the number of bytes used to store this ColGroup in memory.
 	 */
 	public long estimateInMemorySize() {
@@ -138,9 +138,9 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Decompress a range of rows into a sparse block
-	 *
+	 * 
 	 * Note that this is using append, so the sparse column indexes need to be sorted afterwards.
-	 *
+	 * 
 	 * @param sb Sparse Target block
 	 * @param rl Row to start at
 	 * @param ru Row to end at
@@ -151,7 +151,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Decompress a range of rows into a dense block
-	 *
+	 * 
 	 * @param db Sparse Target block
 	 * @param rl Row to start at
 	 * @param ru Row to end at
@@ -162,7 +162,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Serializes column group to data output.
-	 *
+	 * 
 	 * @param out data output
 	 * @throws IOException if IOException occurs
 	 */
@@ -176,7 +176,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Deserialize column group from data input.
-	 *
+	 * 
 	 * @param in data input
 	 * @throws IOException if IOException occurs
 	 */
@@ -190,7 +190,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Returns the exact serialized size of column group. This can be used for example for buffer preallocation.
-	 *
+	 * 
 	 * @return exact serialized size for column group
 	 */
 	public long getExactSizeOnDisk() {
@@ -204,7 +204,7 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Slice out the columns within the range of cl and cu to remove the dictionary values related to these columns. If
 	 * the ColGroup slicing from does not contain any columns within the range null is returned.
-	 *
+	 * 
 	 * @param cl The lower bound of the columns to select
 	 * @param cu The upper bound of the columns to select (not inclusive).
 	 * @return A cloned Column Group, with a copied pointer to the old column groups index structure, but reduced
@@ -217,7 +217,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Slice out a single column from the column group.
-	 *
+	 * 
 	 * @param col The column to slice, the column could potentially not be inside the column group
 	 * @return A new column group that is a single column, if the column requested is not in this column group null is
 	 *         returned.
@@ -232,7 +232,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Slice out multiple columns within the interval between the given indexes.
-	 *
+	 * 
 	 * @param cl The lower column index to slice from
 	 * @param cu The upper column index to slice to, (not included)
 	 * @return A column group of this containing the columns specified, returns null if the columns specified is not
@@ -263,7 +263,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Compute the column sum of the given list of groups
-	 *
+	 * 
 	 * @param groups The Groups to sum
 	 * @param res    The result to put the values into
 	 * @param nRows  The number of rows in the groups
@@ -277,9 +277,9 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Get the value at a global row/column position.
-	 *
+	 * 
 	 * In general this performs since a binary search of colIndexes is performed for each lookup.
-	 *
+	 * 
 	 * @param r row
 	 * @param c column
 	 * @return value at the row/column position
@@ -294,7 +294,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Get the value at a colGroup specific row/column index position.
-	 *
+	 * 
 	 * @param r      row
 	 * @param colIdx column index in the _colIndexes.
 	 * @return value at the row/column index position
@@ -303,16 +303,16 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Obtain number of distinct tuples in contained sets of values associated with this column group.
-	 *
+	 * 
 	 * If the column group is uncompressed the number or rows is returned.
-	 *
+	 * 
 	 * @return the number of distinct sets of values associated with the bitmaps in this column group
 	 */
 	public abstract int getNumValues();
 
 	/**
 	 * Obtain the compression type.
-	 *
+	 * 
 	 * @return How the elements of the column group are compressed.
 	 */
 	public abstract CompressionType getCompType();
@@ -320,14 +320,14 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Internally get the specific type of ColGroup, this could be extracted from the object but that does not allow for
 	 * nice switches in the code.
-	 *
+	 * 
 	 * @return ColGroupType of the object.
 	 */
 	protected abstract ColGroupType getColGroupType();
 
 	/**
 	 * Decompress into the DenseBlock. (no NNZ handling)
-	 *
+	 * 
 	 * @param db   Target DenseBlock
 	 * @param rl   Row to start decompression from
 	 * @param ru   Row to end decompression at
@@ -338,10 +338,10 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Decompress into the SparseBlock. (no NNZ handling)
-	 *
+	 * 
 	 * Note this method is allowing to calls to append since it is assumed that the sparse column indexes are sorted
 	 * afterwards
-	 *
+	 * 
 	 * @param sb   Target SparseBlock
 	 * @param rl   Row to start decompression from
 	 * @param ru   Row to end decompression at
@@ -352,9 +352,9 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Right matrix multiplication with this column group.
-	 *
+	 * 
 	 * This method can return null, meaning that the output overlapping group would have been empty.
-	 *
+	 * 
 	 * @param right The MatrixBlock on the right of this matrix multiplication
 	 * @return The new Column Group or null that is the result of the matrix multiplication.
 	 */
@@ -362,12 +362,12 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group.
-	 *
+	 * 
 	 * This gives better performance since there is no need to iterate through all the rows of the matrix, but the
 	 * execution can be limited to its number of distinct values.
-	 *
+	 * 
 	 * Note it only calculate the upper triangle
-	 *
+	 * 
 	 * @param ret   The return matrix block [numColumns x numColumns]
 	 * @param nRows The number of rows in the column group
 	 */
@@ -375,7 +375,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Left multiply with this column group.
-	 *
+	 * 
 	 * @param matrix The matrix to multiply with on the left
 	 * @param result The result to output the values into, always dense for the purpose of the column groups
 	 *               parallelizing
@@ -389,7 +389,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Left side matrix multiplication with a column group that is transposed.
-	 *
+	 * 
 	 * @param lhs    The left hand side Column group to multiply with, the left hand side should be considered
 	 *               transposed.
 	 * @param result The result matrix to insert the result of the multiplication into
@@ -398,16 +398,16 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Matrix multiply with this other column group, but:
-	 *
+	 * 
 	 * 1. Only output upper triangle values.
-	 *
+	 * 
 	 * 2. Multiply both ways with "this" being on the left and on the right.
-	 *
+	 * 
 	 * It should be guaranteed that the input is not the same as the caller of the method.
-	 *
+	 * 
 	 * The second step is achievable by treating the initial multiplied matrix, and adding its values to the correct
 	 * locations in the output.
-	 *
+	 * 
 	 * @param other  The other Column group to multiply with
 	 * @param result The result matrix to put the results into
 	 */
@@ -416,7 +416,7 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Perform the specified scalar operation directly on the compressed column group, without decompressing individual
 	 * cells if possible.
-	 *
+	 * 
 	 * @param op operation to perform
 	 * @return version of this column group with the operation applied
 	 */
@@ -424,7 +424,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Perform a binary row operation.
-	 *
+	 * 
 	 * @param op        The operation to execute
 	 * @param v         The vector of values to apply, should be same length as dictionary length.
 	 * @param isRowSafe True if the binary op is applied to an entire zero row and all results are zero
@@ -434,7 +434,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Perform a binary row operation.
-	 *
+	 * 
 	 * @param op        The operation to execute
 	 * @param v         The vector of values to apply, should be same length as dictionary length.
 	 * @param isRowSafe True if the binary op is applied to an entire zero row and all results are zero
@@ -445,7 +445,7 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed
 	 * matrix.
-	 *
+	 * 
 	 * @param op    The operator used
 	 * @param c     The output matrix block
 	 * @param nRows The total number of rows in the Column Group
@@ -456,9 +456,9 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Slice out column at specific index of this column group.
-	 *
+	 * 
 	 * It is guaranteed that the column to slice is contained in this columnGroup.
-	 *
+	 * 
 	 * @param idx The column index to slice out.
 	 * @return A new column group containing the columns inside. (never null)
 	 */
@@ -466,9 +466,9 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Slice range of columns inside this column group.
-	 *
+	 * 
 	 * It is guaranteed that the columns to slice is contained in this columnGroup.
-	 *
+	 * 
 	 * @param idStart    The column index to start at
 	 * @param idEnd      The column index to end at
 	 * @param outputCols The output columns to extract materialized for ease of implementation
@@ -478,14 +478,14 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Short hand method for getting minimum value contained in this column group.
-	 *
+	 * 
 	 * @return The minimum value contained in this ColumnGroup
 	 */
 	public abstract double getMin();
 
 	/**
 	 * Short hand method for getting maximum value contained in this column group.
-	 *
+	 * 
 	 * @return The maximum value contained in this ColumnGroup
 	 */
 	public abstract double getMax();
@@ -493,14 +493,14 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Get a copy of this column group note this is only a shallow copy. Meaning only the object wrapping index
 	 * structures, column indexes and dictionaries are copied.
-	 *
+	 * 
 	 * @return Get a copy of this column group.
 	 */
 	public abstract AColGroup copy();
 
 	/**
 	 * Detect if the column group contains a specific value.
-	 *
+	 * 
 	 * @param pattern The value to look for.
 	 * @return boolean saying true if the value is contained.
 	 */
@@ -508,7 +508,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Get the number of nonZeros contained in this column group.
-	 *
+	 * 
 	 * @param nRows The number of rows in the column group, this is used for groups that does not contain information
 	 *              about how many rows they have.
 	 * @return The nnz.
@@ -517,7 +517,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Make a copy of the column group values, and replace all values that match pattern with replacement value.
-	 *
+	 * 
 	 * @param pattern The value to look for
 	 * @param replace The value to replace the other value with
 	 * @return A new Column Group, reusing the index structure but with new values.
@@ -526,7 +526,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Compute the column sum
-	 *
+	 * 
 	 * @param c     The array to add the column sum to.
 	 * @param nRows The number of rows in the column group.
 	 */
@@ -534,7 +534,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Central Moment instruction executed on a column group.
-	 *
+	 * 
 	 * @param op    The Operator to use.
 	 * @param nRows The number of rows contained in the ColumnGroup.
 	 * @return A Central Moment object.
@@ -543,7 +543,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Expand the column group to multiple columns. (one hot encode the column group)
-	 *
+	 * 
 	 * @param max    The number of columns to expand to and cutoff values at.
 	 * @param ignore If zero and negative values should be ignored.
 	 * @param cast   If the double values contained should be cast to whole numbers.
@@ -554,7 +554,7 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Get the computation cost associated with this column group.
-	 *
+	 * 
 	 * @param e     The computation cost estimator
 	 * @param nRows the number of rows in the column group
 	 * @return The cost of this column group

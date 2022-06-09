@@ -20,89 +20,122 @@
 #-------------------------------------------------------------
 
 source("nn/layers/softmax.dml") as softmax
+source("scripts/nn/util.dml") as util
 
 
-forward = function(matrix[double] query, matrix[double] key, matrix[double] value, integer K)
+forward = function(matrix[double] query, matrix[double] value,
+       matrix[double] key = matrix("",rows=0, cols=0), integer D,
+       matrix[double] attention)
     return (matrix[double] attention) {
   /*
    * Computes the forward pass for the attention layer.
    *
    * Inputs:
-   * - query: Input querys of shape (N,K*M).
-   * - key: Key(s) for value(s) of shape (N,K*M).
-   * - value: Value(s) for key(s) of shape (N,K*L).
-   * - K: Sequence length / number of timesteps.
+   * - query: Input querys of shape (N,J*D).
+   * - value: Values for keys of shape (N,K*D).
+   * - key: *optional* Keys for values of shape (N,K*D).
+   * -      If key is a matrix of length 0 value will be used as key.
+   * - D: Dimensionality of single query, value, key,
+   * - attention: Matrix of shape (N,J*D) on which to put the output.
+   * -
    * Outputs:
-   * - attention: Attention on value(s) for given query(s), of shape (N,K*L).
+   * - attention: Attention on value(s) for given query(s), of shape (N,J*D).
    */
-  N = nrow(key)
-  M = ncol(query) / K
-  L = ncol(value) / K
-  norm = 1/M^0.5
+  N = nrow(value)
+  K = ncol(value) / D
+  J = ncol(query) / D
+
+  norm = 1/D^0.5
+  if (!length(key))
+  {
+    key = value
+  }
   key_norm = key * norm
-  attention = matrix(0, rows=N, cols=K*L)
+  attention = matrix(0, rows=N, cols=J*D)
+  query_n = matrix(0, rows=J, cols=D)
+  key_norm_n = matrix(0, rows=K, cols=D)
+  value_n = matrix(0, rows=K, cols=D)
+  probs = matrix(0, rows=J, cols=K)
+  scores = matrix(0, rows=J, cols=K)
   for (n in 1:N)
   {
-    query_n = matrix(query[n], rows=K, cols=M)
-    key_norm_n = matrix(key_norm[n],rows=K, cols=M)
-    value_n = matrix(value[n], rows=K, cols=L)
+    #reshape
+    query_n = matrix(query[n], rows=J, cols=D)
+    key_norm_n = matrix(key_norm[n],rows=K, cols=D)
+    value_n = matrix(value[n], rows=K, cols=D)
+
     scores = query_n %*% t(key_norm_n)
     #column wise softmax
     probs = t(softmax::forward(t(scores)))
-    attention_n = probs %*% value_n
-    attention[n] = matrix(attention_n, rows=1, cols=K*L)
+    attention[n] = matrix(probs %*% value_n, rows=1, cols=J*D)
   }
 }
 
 backward = function(matrix[double] dattention,
-                  matrix[double] query, matrix[double] key, matrix[double] value,
-                  integer K)
-    return (matrix[double] dquery, matrix[double] dkey, matrix[double] dvalue)
+                  matrix[double] query, matrix[double] value, matrix[double] key=matrix("0",rows=0,cols=0),
+                  integer D, matrix[double] dquery, matrix[double] dvalue, matrix[double] dkey)
+    return (matrix[double] dquery, matrix[double] dvalue, matrix[double] dkey)
 {
   /*
    * Computes the backward pass for the attention layer.
    *
    * Inputs:
-   * - dattention: Gradient wrt `attention` of shape (N,K*L).
-   * - query: Query input of shape (N,K*M).
-   * - key: Keys for values of shape (N,K*M).
-   * - value: Values for given key of shape (N,K*L).
-   * - K: Sequence length / number of timesteps.
-   *
+   * - dattention: Gradient wrt `attention` of shape (N,J*D).
+   * - query: *optional* Query input of shape (N,J*D).
+   * - key: Keys for values of shape (N,K*D).
+   * -      If key is of length 0, the gradient dkey will be added to dvalue and dkey is 0.
+   * - value: Values for given key of shape (N,K*D).
+   * - D: Dimensionality of single query, key, value.
+   * - dquery: Matrix of shape (N,J*D) for output allocation.
+   * - dvalue: Matrix of shape (N,K*D) for output allocation.
+   * - dkey: Matrix of shape (N,K*D) for output allocation
+   * -
    * Outputs:
-   * - dquery: Gradient wrt `query`, of shape (N,M).
-   * - dkey: Gradient wrt `key`, of shape (N,M).
-   * - dvalue: Gradient wrt `value` of shape (N,L).
+   * - dquery: Gradient wrt `query`, of shape (N, J*D).
+   * - dkey: Gradient wrt `key`, of shape (N,K*D).
+   * - dvalue: Gradient wrt `value` of shape (N,K*D).
    */
 
-  N = nrow(key)
-  M = ncol(query) / K
-  L = ncol(value) / K
+  N = nrow(value)
+  K = ncol(value) / D
+  J = ncol(query) / D
 
-  norm = 1 / M^0.5
+  norm = 1 / D^0.5
+  if (!length(key)){
+    key = value
+  }
   key_norm = key * norm
 
-  dquery = matrix(0, rows=N, cols=K*M)
-  dkey = matrix(0, rows=N, cols=K*M)
-  dvalue = matrix(0, rows=N, cols=K*L)
+  dquery = matrix(0, rows=N, cols=J*D)
+  dkey = matrix(0, rows=N, cols=K*D)
+  dvalue = matrix(0, rows=N, cols=K*D)
 
+  query_n = matrix(0, rows=J, cols=D)
+  key_norm_n = matrix(0, rows=K, cols=D)
+  value_n = matrix(0, rows=K, cols=D)
+  dvalue_n = matrix(0, rows=K, cols=D)
+  probs = matrix(0, rows=J, cols=K)
+  scores = matrix(0, rows=J, cols=K)
   for (n in 1:N)
   {
-    query_n = matrix(query[n], rows=K, cols=M)
-    key_norm_n = matrix(key_norm[n], rows=K, cols=M)
-    value_n = matrix(value[n], rows=K, cols=L)
-    dattention_n = matrix(dattention[n], rows=K, cols=L)
+    #reshape
+    query_n = matrix(query[n], rows=J, cols=D)
+    key_norm_n = matrix(key_norm[n], rows=K, cols=D)
+    value_n = matrix(value[n], rows=K, cols=D)
+    dattention_n = matrix(dattention[n], rows=J, cols=D)
 
     scores = query_n %*% t(key_norm_n)
     probs = t(softmax::forward(t(scores)))
 
-    dvalue_n = t(probs) %*% dattention_n
-    dprobs = t(value_n %*% t(dattention_n))
-    dscore = t(softmax::backward(t(dprobs), t(scores)))
-    dquery_n = dscore %*% key_norm_n
-    dkey_n = t(dscore) %*% query_n * norm
-    dquery[n] = matrix(dquery_n, rows=1, cols=K*M)
-    dkey[n] = matrix(dkey_n, rows=1, cols=K*M)
-    dvalue[n] = matrix(dvalue_n, rows=1, cols=K*L)
+    dscore = t(softmax::backward(value_n %*% t(dattention_n), t(scores)))
+    dquery[n] = matrix(dscore %*% key_norm_n, rows=1, cols=J*D)
+    if (length(key)){
+      dkey[n] = matrix(t(dscore) %*% query_n * norm, rows=1, cols=K*D)
+      dvalue[n] = matrix(t(probs) %*% dattention_n, rows=1, cols=K*D)
+    }
+    else{
+      dvalue[n] = matrix(t(probs) %*% dattention_n + t(dscore) %*% query_n * norm, rows=1, cols=K*D)
+    }
+
   }
 }

@@ -274,7 +274,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	@Override
 	public void tsmm(double[] ret, int numColumns, int nRows) {
-		// runs in O(nRows^2) since dot-products take O(1) time to compute when both vectors are linearly compressed
+		// runs in O(tCol^2) since dot-products take O(1) time to compute when both vectors are linearly compressed
 		final int tCol = _colIndexes.length;
 
 		final double sumIndices = nRows * (nRows + 1)/2.0;

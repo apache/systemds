@@ -30,20 +30,14 @@ public class LinearRegressionTests {
 
 	@Test
 	public void testLinearRegression() {
-		double[][] data = new double[][] {{1, 1, 3, 4, 5}, {2, 2, 3, 4, 5}};
+		double[][] data = new double[][] {{1, 1, -3, 4, 5}, {2, 2, 3, 4, 5}, {3, 3, 3, 4, 5}};
+		int[] colIndexes = new int[]{0, 1, 3, 4};
 		boolean isTransposed = false;
 
 		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
-
-		final int numCols = isTransposed ? mbt.getNumRows() : mbt.getNumColumns();
-		final int numRows = isTransposed ? mbt.getNumColumns() : mbt.getNumRows();
-		int[] colIndexes = new int[numCols];
-		for(int x = 0; x < numCols; x++)
-			colIndexes[x] = x;
-
 		double[][] coefficients = LinearRegression.regressMatrixBlock(mbt, colIndexes, isTransposed);
 
-		assertArrayEquals(coefficients, new double[][] {{0, 0, 3, 4, 5}, {1, 1, 0, 0, 0}});
+		assertArrayEquals(coefficients, new double[][] {{0, 0, 4, 5}, {1, 1, 0, 0}});
 	}
 
 }

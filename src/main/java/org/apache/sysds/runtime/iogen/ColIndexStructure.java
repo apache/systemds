@@ -19,29 +19,30 @@
 
 package org.apache.sysds.runtime.iogen;
 
-public class RowIndexStructure {
+public class ColIndexStructure {
 
 	public enum IndexProperties {
-		Identity, // line number of sample raw data equal to the row index of matrix/frame
-		CellWiseExist, // row index of every cell values are in the sample raw data
-		CellWiseExistPatternLess, // ?
-		RowWiseExist, // index of every record in matrix/frame has an index in sample raw
-		SeqScatter; // the row index is not exist but the record scattered sequentially in multi lines
+		Identity, // col number of sample raw data equal to the row index of matrix/frame
+		CellWiseExist; // col index of every cell values are in the sample raw data
 		@Override
 		public String toString() {
 			return this.name().toUpperCase();
 		}
 	}
 
-	public RowIndexStructure() {
+	public ColIndexStructure() {
 		this.properties = null;
 		this.keyPattern = null;
-		this.rowIndexBegin = "0";
+		this.colIndexBegin = "0";
 	}
 
 	private IndexProperties properties;
 	private KeyTrie keyPattern;
-	private String rowIndexBegin;
+	private String colIndexBegin;
+
+	// when the index properties is CellWiseExist:
+	private String indexDelim;
+	private String valueDelim;
 
 	public IndexProperties getProperties() {
 		return properties;
@@ -59,13 +60,27 @@ public class RowIndexStructure {
 		this.keyPattern = keyPattern;
 	}
 
-	public String getRowIndexBegin() {
-		return rowIndexBegin;
+	public String getColIndexBegin() {
+		return colIndexBegin;
 	}
 
-	public void setRowIndexBegin(int rowIndexBegin) {
-		this.rowIndexBegin = rowIndexBegin+"";
+	public void setColIndexBegin(int colIndexBegin) {
+		this.colIndexBegin = colIndexBegin + "";
 	}
 
+	public String getIndexDelim() {
+		return indexDelim;
+	}
 
+	public void setIndexDelim(String indexDelim) {
+		this.indexDelim = indexDelim;
+	}
+
+	public String getValueDelim() {
+		return valueDelim;
+	}
+
+	public void setValueDelim(String valueDelim) {
+		this.valueDelim = valueDelim;
+	}
 }

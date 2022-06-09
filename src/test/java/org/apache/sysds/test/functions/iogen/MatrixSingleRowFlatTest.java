@@ -19,7 +19,12 @@
 
 package org.apache.sysds.test.functions.iogen;
 
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
+
+import java.io.IOException;
 
 public class MatrixSingleRowFlatTest extends GenerateReaderMatrixTest {
 
@@ -163,50 +168,82 @@ public class MatrixSingleRowFlatTest extends GenerateReaderMatrixTest {
 
 
 	//=========================
-	@Test
-	public void test15() {
-		sampleRaw = "0,1,2,3\n" + "10,0,20,30\n" + "100,200,0,300\n"+"1000,2000,3000,0";
-		sampleMatrix = new double[][] {{0,1,2,3}, {10,0,20,30}, {100,200,300,0},{1000,2000,3000,0}};
+
+	@Test public void test15() {
+		sampleRaw = "1,2,3,4\n" + "5,6,7,8\n" + "9,10,11,12\n" + "13,14,15,16";
+		sampleMatrix = new double[][] {{1,2,3,4}, {5,6,7,8}, {9,10,11,12}, {13,14,15,16}};
 		runGenerateReaderTest();
 	}
 
-	//upper-triangular
-	@Test
-	public void test16() {
-		sampleRaw = "1,2,3,4\n" + "0,20,30,40\n" + "0,0,300,400\n"+"0,0,0,4000";
-		sampleMatrix = new double[][] {{1,2,3,4}, {0,20,30,40}, {0,0,300,400},{0,0,0,4000}};
+	@Test public void test16() {
+		sampleRaw = "1,2,3,0\n" + "5,0,7,8\n" + "9,0,0,12\n" + "13,14,0,0";
+		sampleMatrix = new double[][] {{1,2,3,0}, {5,0,7,8}, {9,0,0,12}, {13,14,0,0}};
 		runGenerateReaderTest();
 	}
 
-	//lower-triangular
-	@Test
-	public void test17() {
-		sampleRaw = "1,0,0,0\n" + "10,20,0,0\n" + "100,200,300,0\n"+"1000,2000,3000,4000";
-		sampleMatrix = new double[][] {{1,0,0,0}, {10,20,0,0}, {100,200,300,0},{1000,2000,3000,4000}};
+	@Test public void test17() {
+		sampleRaw = "1:10 2:20 3:30\n" + "4:40 5:50\n" + "1:60 2:70 3:80\n" + "4:90 5:100";
+		sampleMatrix = new double[][] {{10,20,30,0,0}, {0,0,0,40,50}, {60,70,80,0,0}, {0,0,0,90,100}};
 		runGenerateReaderTest();
 	}
 
-	//symmetric
-	@Test
-	public void test19() {
-		sampleRaw = "1,2,3,4\n" + "2,2,4,5\n" + "3,4,3,6\n"+"4,5,6,4";
-		sampleMatrix = new double[][] {{1,2,3,4}, {2,2,4,5}, {3,4,3,6},{4,5,6,4}};
-		runGenerateReaderTest();
+	@Test public void test18() {
+		String jsonInString = "{\"a\":1, \"b\":2}\n" + "{\"d\":1, \"e\":2}";
+		try {
+			final ObjectMapper mapper = new ObjectMapper();
+			mapper.readTree(jsonInString);
+			System.out.println("Yes");
+		} catch (IOException e) {
+			System.out.println("No");
+		}
 	}
 
-	//symmetric-upper
-	@Test
-	public void test20() {
-		sampleRaw = "1,2,3,4\n" + "0,2,4,5\n" + "0,0,3,6\n"+"0,0,0,4";
-		sampleMatrix = new double[][] {{1,2,3,4}, {2,2,4,5}, {3,4,3,6},{4,5,6,4}};
-		runGenerateReaderTest();
-	}
 
-	//symmetric-lower
-	@Test
-	public void test21() {
-		sampleRaw = "1,0,0,0\n" + "2,2,0,0\n" + "3,4,3,0\n"+"4,5,6,4";
-		sampleMatrix = new double[][] {{1,2,3,4}, {2,2,4,5}, {3,4,3,6},{4,5,6,4}};
-		runGenerateReaderTest();
-	}
+
+//	@Test
+//	public void test15() {
+//		sampleRaw = "0,1,2,3\n" + "10,0,20,30\n" + "100,200,0,300\n"+"1000,2000,3000,0";
+//		sampleMatrix = new double[][] {{0,1,2,3}, {10,0,20,30}, {100,200,300,0},{1000,2000,3000,0}};
+//		runGenerateReaderTest();
+//	}
+//
+//	//upper-triangular
+//	@Test
+//	public void test16() {
+//		sampleRaw = "1,2,3,4\n" + "0,20,30,40\n" + "0,0,300,400\n"+"0,0,0,4000";
+//		sampleMatrix = new double[][] {{1,2,3,4}, {0,20,30,40}, {0,0,300,400},{0,0,0,4000}};
+//		runGenerateReaderTest();
+//	}
+//
+//	//lower-triangular
+//	@Test
+//	public void test17() {
+//		sampleRaw = "1,0,0,0\n" + "10,20,0,0\n" + "100,200,300,0\n"+"1000,2000,3000,4000";
+//		sampleMatrix = new double[][] {{1,0,0,0}, {10,20,0,0}, {100,200,300,0},{1000,2000,3000,4000}};
+//		runGenerateReaderTest();
+//	}
+//
+//	//symmetric
+//	@Test
+//	public void test19() {
+//		sampleRaw = "1,2,3,4\n" + "2,2,4,5\n" + "3,4,3,6\n"+"4,5,6,4";
+//		sampleMatrix = new double[][] {{1,2,3,4}, {2,2,4,5}, {3,4,3,6},{4,5,6,4}};
+//		runGenerateReaderTest();
+//	}
+//
+//	//symmetric-upper
+//	@Test
+//	public void test20() {
+//		sampleRaw = "1,2,3,4\n" + "0,2,4,5\n" + "0,0,3,6\n"+"0,0,0,4";
+//		sampleMatrix = new double[][] {{1,2,3,4}, {2,2,4,5}, {3,4,3,6},{4,5,6,4}};
+//		runGenerateReaderTest();
+//	}
+//
+//	//symmetric-lower
+//	@Test
+//	public void test21() {
+//		sampleRaw = "1,0,0,0\n" + "2,2,0,0\n" + "3,4,3,0\n"+"4,5,6,4";
+//		sampleMatrix = new double[][] {{1,2,3,4}, {2,2,4,5}, {3,4,3,6},{4,5,6,4}};
+//		runGenerateReaderTest();
+//	}
 }

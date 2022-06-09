@@ -35,12 +35,14 @@ public class FormatIdentifying {
 	private int[][] mapRow;
 	private int[][] mapCol;
 	private int[][] mapLen;
-	private int NaN;
+	private int actualValueCount;
+	private MappingProperties mappingProperties;
 	private ArrayList<RawIndex> sampleRawIndexes;
 
 	private static int nrows;
 	private static int ncols;
 	private int nlines;
+
 	private int windowSize = 20;
 	private int suffixStringLength = 50;
 	private ReaderMapping mappingValues;
@@ -64,19 +66,19 @@ public class FormatIdentifying {
 		 3. Sequential Scattered:
 		 4. Array:
 
-		supported formats by row and column indexes:
+		Table 1: supported formats by row and column indexes:
 		 #  |  row      |  col     | Value |  example
 		 --------------------------------------
-		 1  | Identity  | Identity | Exist                   | csv, JSON/XML L
-		 2  | Identity  | Exist    | Exist                   | LibSVM
-		 3  | Identity  | Exist    | Not-Exist               | LibSVM+Pattern
-		 4  | Exist     | Exist    | Exist                   | MM Coordinate General
-		 5  | Array     | Array    | Exist                   | MM Array
-		 6  | Exist     | Exist    | Partially-Exist         | MM Coordinate Symmetric
-		 7  | Exist     | Exist    | Partially-Exist+Pattern | MM Coordinate Skew-Symmetric
-		 8  | Exist     | Exist    | Not-Exist               | MM Coordinate Pattern
-		 9  | Exist     | Exist    | Not-Exist+Pattern       | MM Coordinate Symmetric Pattern
-		 10 | SEQSCATTER| Identity | Exist                   | JSON/XML Multi Line, AMiner
+		 1  | Identity  | Identity | Exist                   | csv, JSON/XML L                 single-line
+		 2  | Identity  | Exist    | Exist                   | LibSVM                          single
+		 3  | Identity  | Exist    | Not-Exist               | LibSVM+Pattern                  single
+		 4  | Exist     | Exist    | Exist                   | MM Coordinate General           multi
+		 5  | Array     | Array    | Exist                   | MM Array                        multi
+		 6  | Exist     | Exist    | Partially-Exist         | MM Coordinate Symmetric         multi
+		 7  | Exist     | Exist    | Partially-Exist+Pattern | MM Coordinate Skew-Symmetric    multi
+		 8  | Exist     | Exist    | Not-Exist               | MM Coordinate Pattern           multi
+		 9  | Exist     | Exist    | Not-Exist+Pattern       | MM Coordinate Symmetric Pattern multi
+		 10 | SEQSCATTER| Identity | Exist                   | JSON/XML Multi Line, AMiner     multi
 
 		strategy for checking the structure of indexes and values:
 			1. map values:
@@ -92,6 +94,7 @@ public class FormatIdentifying {
 		mapRow = mappingValues.getMapRow();
 		mapCol = mappingValues.getMapCol();
 		mapLen = mappingValues.getMapLen();
+		mappingProperties = mappingValues.getMappingProperties();
 
 		// save line by line index of string(index for Int, Long, float, Double, String, Boolean)
 		sampleRawIndexes = mappingValues.getSampleRawIndexes();
@@ -100,222 +103,319 @@ public class FormatIdentifying {
 		nrows = mappingValues.getNrows();
 		ncols = mappingValues.getNcols();
 		nlines = mappingValues.getNlines();
-		NaN = (ncols * nrows) - mappingValues.getNaN();
+		actualValueCount = mappingValues.getActualValueCount();
 
-		// analysis mapping of values
-		// 1. check (exist, partially exist, not exist)
-		// 2. check the records represented in single/multilines
-		// 3. check the Symmetric, Skew-Symmetric, Pattern, and Array
+		// collect custom properties
+		// 1. properties of row-index
+		RowIndexStructure rowIndexStructure = getRowIndexStructure();
 
+		// 2. properties of column-index
+		ColIndexStructure colIndexStructure = getColIndexStructure();
 
+		properties = new CustomProperties(mappingProperties, rowIndexStructure, colIndexStructure);
 
-		// First, check the properties of row-index
-		boolean identity = isRowIndexIdentity();
-		if(identity) {
-			KeyTrie[] colKeyPattern;
+		// ref to Table 1:
+		if(mappingProperties.getRecordProperties() == MappingProperties.RecordProperties.SINGLELINE) {
 
-			// TODO: change method name from buildColsKeyPatternSingleRow to buildColPatternRowIdentity
-			colKeyPattern = buildColsKeyPatternSingleRow();
-			properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.IDENTITY);
-		}
-
-		// Check the map row:
-		// If all cells of a row mapped to a single line of sample raw, it is a single row mapping
-		// If all cells of a row mapped to multiple lines of sample raw, it is a multi row mapping
-
-		boolean isSingleRow = false;
-		int missedCount = 0;
-		for(int r = 0; r < nrows; r++)
-			missedCount += ncols - mostCommonScore(mapRow[r]);
-		if((float) missedCount / NaN < 0.07)
-			isSingleRow = true;
-
-		KeyTrie[] colKeyPattern;
-
-		if(isSingleRow) {
-			colKeyPattern = buildColsKeyPatternSingleRow();
-			properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.IDENTIFY);
-		}
-		else {
-
-			// Check the row index is a prefix string in sample raw
-			// if the row indexes are in the prefix of values, so we need to build a key pattern
-			// to extract row indexes
-			// for understanding row indexes are in sample raw we check just 3 column of data
-			// for build a key pattern related to row indexes we just selected a row
-			boolean flag;
-			int numberOfSelectedCols = 3;
-			int begin = 0;
-			boolean check, flagReconstruct;
-			int[] selectedRowIndex = new int[2];
-			HashSet<Integer> beginPos = new HashSet<>();
-			KeyTrie rowKeyPattern = null;
-
-			// Select two none zero row as a row index candidate
-
-			int index = 0;
-			for(int r = 1; r < nrows; r++) {
-				for(int c = 0; c < ncols; c++)
-					if(mapRow[r][c] != -1) {
-						selectedRowIndex[index++] = r;
-						break;
-					}
-				if(index > 1)
-					break;
+			// #1
+			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.Identity && colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.Identity) {
+				KeyTrie[] colKeyPattern;
+				// TODO: change method name from buildColsKeyPatternSingleRow to buildColPatternRowIdentity
+				colKeyPattern = buildColsKeyPatternSingleRow();
+				properties.setColKeyPattern(colKeyPattern);
 			}
 
-			for(int c = 0; c < Math.min(numberOfSelectedCols, ncols); c++) {
-				Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
-				ArrayList<String> prefixStrings = colPrefixString.getKey();
-				ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
-				ArrayList<RawIndex> prefixRawIndex = new ArrayList<>();
-
-				MappingTrie trie = new MappingTrie();
-				int ri = 0;
-				for(String ps : prefixStrings)
-					trie.reverseInsert(ps, prefixStringRowIndexes.get(ri++));
-
-				do {
-					flag = trie.reConstruct();
-				}
-				while(flag);
-
-				ArrayList<ArrayList<String>> keyPatterns = trie.getAllSequentialKeys();
-				for(ArrayList<String> kp : keyPatterns) {
-					for(String ps : prefixStrings) {
-						StringBuilder sb = new StringBuilder();
-						int currPos = 0;
-						for(String k : kp) {
-							sb.append(ps.substring(currPos, ps.indexOf(k, currPos)));
-							currPos += sb.length() + k.length();
-						}
-						prefixRawIndex.add(new RawIndex(sb.toString()));
+			// #2
+			else if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.Identity && colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
+				// find cell-index and value separators
+				RawIndex raw = null;
+				for(int c = 0; c < ncols; c++) {
+					if(mapCol[0][c] != -1) {
+						raw = sampleRawIndexes.get(mapRow[0][c]);
+						raw.cloneReservedPositions();
+						break;
 					}
 				}
-
-				flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
-				if(!flag) {
-					begin = 1;
-					flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
-				}
-				if(!flag) {
-					beginPos.clear();
-					break;
-				}
-				else
-					beginPos.add(begin);
-				if(c == numberOfSelectedCols - 1) {
-					ArrayList<String> rowPrefixStrings = new ArrayList<>();
-					MappingTrie rowTrie = new MappingTrie();
-					rowKeyPattern = new KeyTrie();
-					for(int si : selectedRowIndex) {
-						for(int ci = 0; ci < ncols; ci++) {
-							int cri = mapRow[si][ci];
-							if(cri != -1) {
-								String str = sampleRawIndexes.get(cri).getSubString(0, mapCol[si][ci]);
-								RawIndex rawIndex = new RawIndex(str);
-								Pair<Integer, Integer> pair = rawIndex.findValue(si + begin);
-								if(pair != null) {
-									String pstr = str.substring(0, pair.getKey());
-									if(pstr.length() > 0) {
-										rowPrefixStrings.add(pstr);
-										rowTrie.insert(pstr, 1);
-									}
-									rowKeyPattern.insertSuffixKeys(str.substring(pair.getKey() + pair.getValue()).toCharArray());
-								}
+				HashMap<String, Long> indexDelimCount = new HashMap<>();
+				String valueDelim = null;
+				String indexDelim = null;
+				Long maxCount = 0L;
+				int begin = Integer.parseInt(colIndexStructure.getColIndexBegin());
+				for(int c = 0; c < ncols; c++) {
+					if(mapCol[0][c] != -1) {
+						Pair<Integer, Integer> pair = raw.findValue(c + begin);
+						String tmpIndexDelim = raw.getSubString(pair.getKey() + pair.getValue(), mapCol[0][c]);
+						if(indexDelimCount.containsKey(tmpIndexDelim))
+							indexDelimCount.put(tmpIndexDelim, indexDelimCount.get(tmpIndexDelim) + 1);
+						else
+							indexDelimCount.put(tmpIndexDelim, 1L);
+						if(maxCount < indexDelimCount.get(tmpIndexDelim)) {
+							maxCount = indexDelimCount.get(tmpIndexDelim);
+							indexDelim = tmpIndexDelim;
+						}
+						if(valueDelim == null) {
+							int nextPos = raw.getNextNumericPosition(mapCol[0][c] + mapLen[0][c]);
+							if(nextPos < raw.getRawLength()) {
+								valueDelim = raw.getSubString(mapCol[0][c] + mapLen[0][c], nextPos);
 							}
 						}
 					}
+				}
+				// update properties
+				colIndexStructure.setIndexDelim(indexDelim);
+				colIndexStructure.setValueDelim(valueDelim);
+			}
+
+		}
+		else {
+			// # 4, 6, 7, 8, 9
+			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist && colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
+
+				// build key pattern for row index
+				int numberOfSelectedCols = 3;
+				int begin = Integer.parseInt(rowIndexStructure.getRowIndexBegin());
+				boolean check, flagReconstruct;
+				int[] selectedRowIndex = new int[2];
+				KeyTrie rowKeyPattern = null;
+
+				// Select two none zero row as a row index candidate
+				int index = 0;
+				for(int r = 1; r < nrows; r++) {
+					for(int c = 0; c < ncols; c++)
+						if(mapRow[r][c] != -1) {
+							selectedRowIndex[index++] = r;
+							break;
+						}
+					if(index > 1)
+						break;
+				}
+
+				for(int c = 0; c < Math.min(numberOfSelectedCols, ncols); c++) {
+					Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
+					ArrayList<String> prefixStrings = colPrefixString.getKey();
+					ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
+					ArrayList<RawIndex> prefixRawIndex = new ArrayList<>();
+
+					MappingTrie trie = new MappingTrie();
+					int ri = 0;
+					for(String ps : prefixStrings)
+						trie.reverseInsert(ps, prefixStringRowIndexes.get(ri++));
 
 					do {
-						ArrayList<ArrayList<String>> selectedKeyPatterns = new ArrayList<>();
-						keyPatterns = rowTrie.getAllSequentialKeys();
-						check = false;
-						for(ArrayList<String> keyPattern : keyPatterns) {
-							boolean newCheck = checkKeyPatternIsUnique(rowPrefixStrings, keyPattern);
-							check |= newCheck;
-							if(newCheck)
-								selectedKeyPatterns.add(keyPattern);
-						}
-						if(check)
-							keyPatterns = selectedKeyPatterns;
-						else {
-							flagReconstruct = rowTrie.reConstruct();
-							if(!flagReconstruct)
-								break;
-						}
+						flagReconstruct = trie.reConstruct();
 					}
-					while(!check);
+					while(flagReconstruct);
 
-					if(keyPatterns.size() == 0) {
-						ArrayList<ArrayList<String>> kpl = new ArrayList<>();
-						ArrayList<String> kpli = new ArrayList<>();
-						kpli.add("");
-						kpl.add(kpli);
-						keyPatterns = kpl;
+					ArrayList<ArrayList<String>> keyPatterns = trie.getAllSequentialKeys();
+					for(ArrayList<String> kp : keyPatterns) {
+						for(String ps : prefixStrings) {
+							StringBuilder sb = new StringBuilder();
+							int currPos = 0;
+							for(String k : kp) {
+								sb.append(ps.substring(currPos, ps.indexOf(k, currPos)));
+								currPos += sb.length() + k.length();
+							}
+							prefixRawIndex.add(new RawIndex(sb.toString()));
+						}
 					}
-					rowKeyPattern.setPrefixKeyPattern(keyPatterns);
+					if(c == numberOfSelectedCols - 1) {
+						ArrayList<String> rowPrefixStrings = new ArrayList<>();
+						MappingTrie rowTrie = new MappingTrie();
+						rowKeyPattern = new KeyTrie();
+						for(int si : selectedRowIndex) {
+							for(int ci = 0; ci < ncols; ci++) {
+								int cri = mapRow[si][ci];
+								if(cri != -1) {
+									String str = sampleRawIndexes.get(cri).getSubString(0, mapCol[si][ci]);
+									RawIndex rawIndex = new RawIndex(str);
+									Pair<Integer, Integer> pair = rawIndex.findValue(si + begin);
+									if(pair != null) {
+										String pstr = str.substring(0, pair.getKey());
+										if(pstr.length() > 0) {
+											rowPrefixStrings.add(pstr);
+											rowTrie.insert(pstr, 1);
+										}
+										rowKeyPattern.insertSuffixKeys(str.substring(pair.getKey() + pair.getValue()).toCharArray());
+									}
+								}
+							}
+						}
+
+						do {
+							ArrayList<ArrayList<String>> selectedKeyPatterns = new ArrayList<>();
+							keyPatterns = rowTrie.getAllSequentialKeys();
+							check = false;
+							for(ArrayList<String> keyPattern : keyPatterns) {
+								boolean newCheck = checkKeyPatternIsUnique(rowPrefixStrings, keyPattern);
+								check |= newCheck;
+								if(newCheck)
+									selectedKeyPatterns.add(keyPattern);
+							}
+							if(check)
+								keyPatterns = selectedKeyPatterns;
+							else {
+								flagReconstruct = rowTrie.reConstruct();
+								if(!flagReconstruct)
+									break;
+							}
+						}
+						while(!check);
+
+						if(keyPatterns.size() == 0) {
+							ArrayList<ArrayList<String>> kpl = new ArrayList<>();
+							ArrayList<String> kpli = new ArrayList<>();
+							kpli.add("");
+							kpl.add(kpli);
+							keyPatterns = kpl;
+						}
+						rowKeyPattern.setPrefixKeyPattern(keyPatterns);
+					}
 				}
-			}
+				rowIndexStructure.setKeyPattern(rowKeyPattern);
 
-			if(beginPos.size() == 1) {
-				colKeyPattern = buildColsKeyPatternSingleRow();
-				properties = new CustomProperties(colKeyPattern, CustomProperties.IndexProperties.PREFIX, rowKeyPattern);
-				Integer bpos = beginPos.iterator().next();
-				if(bpos > 0)
-					properties.setRowIndexBegin("-" + bpos);
-				else
-					properties.setRowIndexBegin("");
-			}
-			else {
-				KeyTrie rowDelimPattern = new KeyTrie(findRowDelimiters());
-				colKeyPattern = buildColsKeyPatternMultiRow();
-				properties = new CustomProperties(colKeyPattern, rowDelimPattern);
+				// build key pattern for column index
+				begin = Integer.parseInt(colIndexStructure.getColIndexBegin());
+				int[] selectedColIndex = new int[2];
+				KeyTrie colKeyPattern = null;
+
+				// Select two none zero row as a row index candidate
+				index = 0;
+				for(int c = 0; c < ncols; c++) {
+					for(int r = 1; r < nrows; r++)
+						if(mapRow[r][c] != -1) {
+							selectedColIndex[index++] = c;
+							break;
+						}
+					if(index > 1)
+						break;
+				}
+
+				for(int c = 0; c < Math.min(numberOfSelectedCols, ncols); c++) {
+					Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
+					ArrayList<String> prefixStrings = colPrefixString.getKey();
+					ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
+					ArrayList<RawIndex> prefixRawIndex = new ArrayList<>();
+
+					MappingTrie trie = new MappingTrie();
+					int ri = 0;
+					for(String ps : prefixStrings)
+						trie.reverseInsert(ps, prefixStringRowIndexes.get(ri++));
+
+					do {
+						flagReconstruct = trie.reConstruct();
+					}
+					while(flagReconstruct);
+
+					ArrayList<ArrayList<String>> keyPatterns = trie.getAllSequentialKeys();
+					for(ArrayList<String> kp : keyPatterns) {
+						for(String ps : prefixStrings) {
+							StringBuilder sb = new StringBuilder();
+							int currPos = 0;
+							for(String k : kp) {
+								sb.append(ps.substring(currPos, ps.indexOf(k, currPos)));
+								currPos += sb.length() + k.length();
+							}
+							prefixRawIndex.add(new RawIndex(sb.toString()));
+						}
+					}
+					if(c == numberOfSelectedCols - 1) {
+						ArrayList<String> colPrefixStrings = new ArrayList<>();
+						MappingTrie colTrie = new MappingTrie();
+						colKeyPattern = new KeyTrie();
+						for(int si : selectedColIndex) {
+							for(int ir = 0; ir < nrows; ir++) {
+								int cri = mapRow[ir][si];
+								if(cri != -1) {
+									String str = sampleRawIndexes.get(cri).getSubString(0, mapCol[ir][si]);
+									RawIndex rawIndex = new RawIndex(str);
+									Pair<Integer, Integer> pair = rawIndex.findValue(si + begin);
+									if(pair != null) {
+										String pstr = str.substring(0, pair.getKey());
+										if(pstr.length() > 0) {
+											colPrefixStrings.add(pstr);
+											colTrie.insert(pstr, 1);
+										}
+										colKeyPattern.insertSuffixKeys(str.substring(pair.getKey() + pair.getValue()).toCharArray());
+									}
+								}
+							}
+						}
+
+						do {
+							ArrayList<ArrayList<String>> selectedKeyPatterns = new ArrayList<>();
+							keyPatterns = colTrie.getAllSequentialKeys();
+							check = false;
+							for(ArrayList<String> keyPattern : keyPatterns) {
+								boolean newCheck = checkKeyPatternIsUnique(colPrefixStrings, keyPattern);
+								check |= newCheck;
+								if(newCheck)
+									selectedKeyPatterns.add(keyPattern);
+							}
+							if(check)
+								keyPatterns = selectedKeyPatterns;
+							else {
+								flagReconstruct = colTrie.reConstruct();
+								if(!flagReconstruct)
+									break;
+							}
+						}
+						while(!check);
+
+						if(keyPatterns.size() == 0) {
+							ArrayList<ArrayList<String>> kpl = new ArrayList<>();
+							ArrayList<String> kpli = new ArrayList<>();
+							kpli.add("");
+							kpl.add(kpli);
+							keyPatterns = kpl;
+						}
+						colKeyPattern.setPrefixKeyPattern(keyPatterns);
+					}
+				}
+				colIndexStructure.setKeyPattern(colKeyPattern);
 			}
 		}
 	}
 
-	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	// check row-index Identity
-	private boolean isRowIndexIdentity() {
-		boolean identity = false;
-		int missedCount = 0;
-		for(int r = 0; r < nrows; r++)
-			missedCount += ncols - mostCommonScore(mapRow[r]);
-		if((float) missedCount / NaN < 0.07)
-			identity = true;
-		return identity;
-	}
-
-	// check roe-index Exist
+	// check row-index Exist
 	// 1. row-index exist and can be reachable with a pattern
 	// 2. row-index exist but there is no pattern for it
 	// 3. row-index exist but just not for all cells! row-index appeared when the text broken newline="\n"
-	private RowIndexStructure isRowIndexExist() {
-		// Check the row index is a prefix string in sample raw
+	private RowIndexStructure getRowIndexStructure() {
+		// check the row index is a prefix string in sample raw, or the sample data line number equal to the sample matrix/frame row index
 		// if the row indexes are in the prefix of values, so we need to build a key pattern to extract row indexes
-		// for understanding row indexes are in sample raw we check just 3 column of data
-		// for build a key pattern related to row indexes we just selected a row
+		// to understanding row indexes are in sample raw we check just 3 column of data
+		// to build a key pattern related to row indexes we just selected a row
+		// TODO: decrease the number of row/col indexes want to check(3 or 5)
 
-		//public enum IndexProperties {
-		//		IDENTITY,
-		//		CELLWISEEXIST,
-		//		CELLWISEEXISTPATTERNLESS,
-		//		ROWWISEEXIST, ***
-		//		SEQSCATTER,
-		//		ARRAY;
-		//		@Override
-		//		public String toString() {
-		//			return this.name().toUpperCase();
-		//		}
-		//	}
 		RowIndexStructure rowIndexStructure = new RowIndexStructure();
+
+		// check row-index Identity, the identity properties available just for
+		// exist and partially exist mapped values
+		if(mappingProperties.getDataProperties() != MappingProperties.DataProperties.NOTEXIST) {
+			boolean identity = false;
+			int missedCount = 0;
+			for(int r = 0; r < nrows; r++)
+				missedCount += ncols - mostCommonScore(mapRow[r]);
+
+			if(mappingProperties.getRepresentationProperties() == MappingProperties.RepresentationProperties.SYMMETRIC || mappingProperties.getRepresentationProperties() == MappingProperties.RepresentationProperties.SKEWSYMMETRIC)
+				missedCount -= (nrows - 1) * (ncols - 1);
+
+			if((float) missedCount / actualValueCount < 0.07)
+				identity = true;
+
+			if(identity) {
+				rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.Identity);
+				return rowIndexStructure;
+			}
+		}
+
 		BitSet[] bitSets = new BitSet[nrows];
 		int[] rowCardinality = new int[nrows];
 		int[] rowNZ = new int[nrows];
 		boolean isCellWise = true;
 		boolean isSeqScatter = true;
 		boolean isExist = true;
+
 		for(int r = 0; r < nrows; r++) {
 			bitSets[r] = new BitSet(nlines);
 			rowNZ[r] = 0;
@@ -327,10 +427,6 @@ public class FormatIdentifying {
 			}
 			rowCardinality[r] = bitSets[r].cardinality();
 		}
-		// check for Cell Wise
-		for(int r = 0; r < nrows && isCellWise; r++)
-			isCellWise = rowCardinality[r] == rowNZ[r];
-
 		// check for Sequential:
 		for(int r = 0; r < nrows && isSeqScatter; r++) {
 			BitSet bitSet = bitSets[r];
@@ -339,8 +435,12 @@ public class FormatIdentifying {
 				isSeqScatter = i == ++beginIndex;
 		}
 
+		// check for Cell Wise
+		for(int r = 0; r < nrows && isCellWise; r++)
+			isCellWise = rowCardinality[r] == rowNZ[r];
+
 		// check exist:
-		int begin;
+		int begin = 0;
 		if(isCellWise) {
 			for(int c = 0; c < ncols; c++) {
 				begin = checkRowIndexesOnColumnRaw(c, 0);
@@ -349,12 +449,17 @@ public class FormatIdentifying {
 					break;
 				}
 			}
+			if(isExist) {
+				rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.CellWiseExist);
+				rowIndexStructure.setRowIndexBegin(begin);
+				return rowIndexStructure;
+			}
 		}
 		else {
 			ArrayList<RawIndex> list = new ArrayList<>();
 			for(int r = 0; r < nrows; r++) {
 				BitSet bitSet = bitSets[r];
-				for(int i = bitSet.nextSetBit(0); i != -1 && isSeqScatter; i = bitSet.nextSetBit(i + 1))
+				for(int i = bitSet.nextSetBit(0); i != -1; i = bitSet.nextSetBit(i + 1))
 					list.add(sampleRawIndexes.get(i));
 				begin = checkRowIndexOnRaws(r, 0, list);
 				if(begin == -1) {
@@ -362,17 +467,27 @@ public class FormatIdentifying {
 					break;
 				}
 			}
+
+			if(isExist) {
+				rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.RowWiseExist);
+				rowIndexStructure.setRowIndexBegin(begin);
+				return rowIndexStructure;
+			}
+			else if(isSeqScatter) {
+				rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.SeqScatter);
+				return rowIndexStructure;
+			}
 		}
 
-//		if(isCellWise && isExist) {
-//			rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.CELLWISEEXIST);
-//		}
-//		else if(!isCellWise && isExist) {
-//			rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.ROWWISEEXIST);
-//		}
-//		else if(isCellWise && !isExist) {
-//
-//		}
+		//		if(isCellWise && isExist) {
+		//			rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.CELLWISEEXIST);
+		//		}
+		//		else if(!isCellWise && isExist) {
+		//			rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.ROWWISEEXIST);
+		//		}
+		//		else if(isCellWise && !isExist) {
+		//
+		//		}
 
 		//		RowIndexStructure rowIndexStructure = null;
 		//		int numberOfSelectedCols = 3;
@@ -392,121 +507,121 @@ public class FormatIdentifying {
 		//
 		//
 		//		///////////////////////////////////////////////////////////////////////
-//		boolean flag;
-//		int numberOfSelectedCols = 3;
-//		int begin = 0;
-//		boolean check, flagReconstruct;
-//		int[] selectedRowIndex = new int[2];
-//		HashSet<Integer> beginPos = new HashSet<>();
-//		KeyTrie rowPattern = null;
-//
-//		// Select two none zero row as a row index candidate
-//		int index = 0;
-//		for(int r = 1; r < nrows; r++) {
-//			for(int c = 0; c < ncols; c++)
-//				if(mapRow[r][c] != -1) {
-//					selectedRowIndex[index++] = r;
-//					break;
-//				}
-//			if(index > 1)
-//				break;
-//		}
+		//		boolean flag;
+		//		int numberOfSelectedCols = 3;
+		//		int begin = 0;
+		//		boolean check, flagReconstruct;
+		//		int[] selectedRowIndex = new int[2];
+		//		HashSet<Integer> beginPos = new HashSet<>();
+		//		KeyTrie rowPattern = null;
+		//
+		//		// Select two none zero row as a row index candidate
+		//		int index = 0;
+		//		for(int r = 1; r < nrows; r++) {
+		//			for(int c = 0; c < ncols; c++)
+		//				if(mapRow[r][c] != -1) {
+		//					selectedRowIndex[index++] = r;
+		//					break;
+		//				}
+		//			if(index > 1)
+		//				break;
+		//		}
 
-//		// CELLWISEEXIST: when row index exist in each cell value
-//		for(int c = 0; c < Math.min(numberOfSelectedCols, ncols); c++) {
-//
-//			Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
-//			ArrayList<String> prefixStrings = colPrefixString.getKey();
-//			ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
-//			ArrayList<RawIndex> prefixRawIndex = new ArrayList<>();
-//
-//			MappingTrie trie = new MappingTrie();
-//			int ri = 0;
-//			for(String ps : prefixStrings)
-//				trie.reverseInsert(ps, prefixStringRowIndexes.get(ri++));
-//
-//			do {
-//				flag = trie.reConstruct();
-//			}
-//			while(flag);
-//
-//			ArrayList<ArrayList<String>> keyPatterns = trie.getAllSequentialKeys();
-//			for(ArrayList<String> kp : keyPatterns) {
-//				for(String ps : prefixStrings) {
-//					StringBuilder sb = new StringBuilder();
-//					int currPos = 0;
-//					for(String k : kp) {
-//						sb.append(ps.substring(currPos, ps.indexOf(k, currPos)));
-//						currPos += sb.length() + k.length();
-//					}
-//					prefixRawIndex.add(new RawIndex(sb.toString()));
-//				}
-//			}
-//
-//			flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
-//			if(!flag) {
-//				begin = 1;
-//				flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
-//			}
-//			if(!flag) {
-//				beginPos.clear();
-//				break;
-//			}
-//			else
-//				beginPos.add(begin);
-//			if(c == numberOfSelectedCols - 1) {
-//				ArrayList<String> rowPrefixStrings = new ArrayList<>();
-//				MappingTrie rowTrie = new MappingTrie();
-//				rowPattern = new KeyTrie();
-//				for(int si : selectedRowIndex) {
-//					for(int ci = 0; ci < ncols; ci++) {
-//						int cri = mapRow[si][ci];
-//						if(cri != -1) {
-//							String str = sampleRawIndexes.get(cri).getSubString(0, mapCol[si][ci]);
-//							RawIndex rawIndex = new RawIndex(str);
-//							Pair<Integer, Integer> pair = rawIndex.findValue(si + begin);
-//							if(pair != null) {
-//								String pstr = str.substring(0, pair.getKey());
-//								if(pstr.length() > 0) {
-//									rowPrefixStrings.add(pstr);
-//									rowTrie.insert(pstr, 1);
-//								}
-//								rowPattern.insertSuffixKeys(str.substring(pair.getKey() + pair.getValue()).toCharArray());
-//							}
-//						}
-//					}
-//				}
-//
-//				do {
-//					ArrayList<ArrayList<String>> selectedKeyPatterns = new ArrayList<>();
-//					keyPatterns = rowTrie.getAllSequentialKeys();
-//					check = false;
-//					for(ArrayList<String> keyPattern : keyPatterns) {
-//						boolean newCheck = checkKeyPatternIsUnique(rowPrefixStrings, keyPattern);
-//						check |= newCheck;
-//						if(newCheck)
-//							selectedKeyPatterns.add(keyPattern);
-//					}
-//					if(check)
-//						keyPatterns = selectedKeyPatterns;
-//					else {
-//						flagReconstruct = rowTrie.reConstruct();
-//						if(!flagReconstruct)
-//							break;
-//					}
-//				}
-//				while(!check);
-//
-//				if(keyPatterns.size() == 0) {
-//					ArrayList<ArrayList<String>> kpl = new ArrayList<>();
-//					ArrayList<String> kpli = new ArrayList<>();
-//					kpli.add("");
-//					kpl.add(kpli);
-//					keyPatterns = kpl;
-//				}
-//				rowPattern.setPrefixKeyPattern(keyPatterns);
-//			}
-//		}
+		//		// CELLWISEEXIST: when row index exist in each cell value
+		//		for(int c = 0; c < Math.min(numberOfSelectedCols, ncols); c++) {
+		//
+		//			Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
+		//			ArrayList<String> prefixStrings = colPrefixString.getKey();
+		//			ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
+		//			ArrayList<RawIndex> prefixRawIndex = new ArrayList<>();
+		//
+		//			MappingTrie trie = new MappingTrie();
+		//			int ri = 0;
+		//			for(String ps : prefixStrings)
+		//				trie.reverseInsert(ps, prefixStringRowIndexes.get(ri++));
+		//
+		//			do {
+		//				flag = trie.reConstruct();
+		//			}
+		//			while(flag);
+		//
+		//			ArrayList<ArrayList<String>> keyPatterns = trie.getAllSequentialKeys();
+		//			for(ArrayList<String> kp : keyPatterns) {
+		//				for(String ps : prefixStrings) {
+		//					StringBuilder sb = new StringBuilder();
+		//					int currPos = 0;
+		//					for(String k : kp) {
+		//						sb.append(ps.substring(currPos, ps.indexOf(k, currPos)));
+		//						currPos += sb.length() + k.length();
+		//					}
+		//					prefixRawIndex.add(new RawIndex(sb.toString()));
+		//				}
+		//			}
+		//
+		//			flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
+		//			if(!flag) {
+		//				begin = 1;
+		//				flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
+		//			}
+		//			if(!flag) {
+		//				beginPos.clear();
+		//				break;
+		//			}
+		//			else
+		//				beginPos.add(begin);
+		//			if(c == numberOfSelectedCols - 1) {
+		//				ArrayList<String> rowPrefixStrings = new ArrayList<>();
+		//				MappingTrie rowTrie = new MappingTrie();
+		//				rowPattern = new KeyTrie();
+		//				for(int si : selectedRowIndex) {
+		//					for(int ci = 0; ci < ncols; ci++) {
+		//						int cri = mapRow[si][ci];
+		//						if(cri != -1) {
+		//							String str = sampleRawIndexes.get(cri).getSubString(0, mapCol[si][ci]);
+		//							RawIndex rawIndex = new RawIndex(str);
+		//							Pair<Integer, Integer> pair = rawIndex.findValue(si + begin);
+		//							if(pair != null) {
+		//								String pstr = str.substring(0, pair.getKey());
+		//								if(pstr.length() > 0) {
+		//									rowPrefixStrings.add(pstr);
+		//									rowTrie.insert(pstr, 1);
+		//								}
+		//								rowPattern.insertSuffixKeys(str.substring(pair.getKey() + pair.getValue()).toCharArray());
+		//							}
+		//						}
+		//					}
+		//				}
+		//
+		//				do {
+		//					ArrayList<ArrayList<String>> selectedKeyPatterns = new ArrayList<>();
+		//					keyPatterns = rowTrie.getAllSequentialKeys();
+		//					check = false;
+		//					for(ArrayList<String> keyPattern : keyPatterns) {
+		//						boolean newCheck = checkKeyPatternIsUnique(rowPrefixStrings, keyPattern);
+		//						check |= newCheck;
+		//						if(newCheck)
+		//							selectedKeyPatterns.add(keyPattern);
+		//					}
+		//					if(check)
+		//						keyPatterns = selectedKeyPatterns;
+		//					else {
+		//						flagReconstruct = rowTrie.reConstruct();
+		//						if(!flagReconstruct)
+		//							break;
+		//					}
+		//				}
+		//				while(!check);
+		//
+		//				if(keyPatterns.size() == 0) {
+		//					ArrayList<ArrayList<String>> kpl = new ArrayList<>();
+		//					ArrayList<String> kpli = new ArrayList<>();
+		//					kpli.add("");
+		//					kpl.add(kpli);
+		//					keyPatterns = kpl;
+		//				}
+		//				rowPattern.setPrefixKeyPattern(keyPatterns);
+		//			}
+		//		}
 		//		if(beginPos.size() == 1) {
 		//			rowIndexStructure = new RowIndexStructure();
 		//			rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.CELLWISEEXIST);
@@ -518,18 +633,73 @@ public class FormatIdentifying {
 		//				rowIndexStructure.setRowIndexBegin("");
 		//		}
 		//		return rowIndexStructure;
-		return null;
+		return rowIndexStructure;
+	}
+
+	private ColIndexStructure getColIndexStructure() {
+		ColIndexStructure colIndexStructure = new ColIndexStructure();
+		int begin = 0;
+		boolean colIndexExist = true;
+		if(mappingProperties.getRecordProperties() == MappingProperties.RecordProperties.SINGLELINE) {
+			// 1. check for column index are in the record
+			for(int r = 0; r < Math.min(10, nrows); r++) {
+				int rowIndex = -1;
+				for(int c = 0; c < ncols; c++) {
+					rowIndex = mapRow[r][c];
+					if(rowIndex != -1)
+						break;
+				}
+				begin = checkColIndexesOnRowRaw(rowIndex, 0);
+				if(begin == -1) {
+					colIndexExist = false;
+					break;
+				}
+			}
+			if(colIndexExist) {
+				colIndexStructure.setColIndexBegin(begin);
+				colIndexStructure.setProperties(ColIndexStructure.IndexProperties.CellWiseExist);
+				return colIndexStructure;
+			}
+			// 2. check the column index are identity
+			else {
+				colIndexStructure.setProperties(ColIndexStructure.IndexProperties.Identity);
+				return colIndexStructure;
+			}
+		}
+		else {
+			for(int r = 0; r < nrows && colIndexExist; r++) {
+				for(int c = 0; c < Math.min(10, ncols) && colIndexExist; c++) {
+					if(mapRow[r][c] != -1) {
+						begin = checkColIndexOnRowRaw(mapRow[r][c], c, begin);
+						colIndexExist = begin != -1;
+						if(begin == -1) {
+							int a = 100;
+						}
+					}
+				}
+			}
+
+			if(colIndexExist) {
+				colIndexStructure.setColIndexBegin(begin);
+				colIndexStructure.setProperties(ColIndexStructure.IndexProperties.CellWiseExist);
+				return colIndexStructure;
+			}
+		}
+
+		return colIndexStructure;
 	}
 
 	private int checkRowIndexesOnColumnRaw(int colIndex, int beginPos) {
 		int nne = 0;
 		for(int r = 0; r < nrows; r++) {
-			RawIndex raw = sampleRawIndexes.get(mapRow[r][colIndex]);
-			raw.cloneReservedPositions();
-			Pair<Integer, Integer> pair = raw.findValue(r + beginPos);
-			raw.restoreReservedPositions();
-			if(pair == null)
-				nne++;
+			if(mapRow[r][colIndex] != -1) {
+				RawIndex raw = sampleRawIndexes.get(mapRow[r][colIndex]);
+				raw.cloneReservedPositions();
+				Pair<Integer, Integer> pair = raw.findValue(r + beginPos);
+				raw.restoreReservedPositions();
+				if(pair == null)
+					nne++;
+			}
 		}
 
 		if(nne > nrows * 0.3) {
@@ -557,6 +727,44 @@ public class FormatIdentifying {
 				return -1;
 			else
 				return checkRowIndexOnRaws(rowIndex, 1, list);
+		}
+		else
+			return beginPos;
+	}
+
+	private int checkColIndexesOnRowRaw(int rowIndex, int beginPos) {
+		int nne = 0;
+		RawIndex raw = sampleRawIndexes.get(rowIndex);
+		raw.cloneReservedPositions();
+		for(int c = 0; c < ncols; c++) {
+			if(mapCol[rowIndex][c] != -1) {
+				Pair<Integer, Integer> pair = raw.findValue(c + beginPos);
+				if(pair == null || pair.getKey() > mapCol[rowIndex][c])
+					nne++;
+			}
+		}
+		raw.restoreReservedPositions();
+		if(nne > ncols * 0.05) {
+			if(beginPos == 1)
+				return -1;
+			else
+				return checkColIndexesOnRowRaw(rowIndex, 1);
+		}
+		else
+			return beginPos;
+	}
+
+	private int checkColIndexOnRowRaw(int rowIndex, int colIndex, int beginPos) {
+		RawIndex raw = sampleRawIndexes.get(rowIndex);
+		raw.cloneReservedPositions();
+		Pair<Integer, Integer> pair = raw.findValue(colIndex + beginPos);
+		raw.restoreReservedPositions();
+
+		if(pair == null) {
+			if(beginPos == 1)
+				return -1;
+			else
+				return checkColIndexOnRowRaw(rowIndex, colIndex, 1);
 		}
 		else
 			return beginPos;

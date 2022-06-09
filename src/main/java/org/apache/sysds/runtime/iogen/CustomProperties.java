@@ -28,8 +28,46 @@ import java.util.HashSet;
 
 public class CustomProperties extends FileFormatProperties implements Serializable {
 
+	private MappingProperties mappingProperties;
+	private RowIndexStructure rowIndexStructure;
+	private ColIndexStructure colIndexStructure;
+
+	public CustomProperties(MappingProperties mappingProperties, RowIndexStructure rowIndexStructure, ColIndexStructure colIndexStructure) {
+		this.mappingProperties = mappingProperties;
+		this.rowIndexStructure = rowIndexStructure;
+		this.colIndexStructure = colIndexStructure;
+	}
+
+	public MappingProperties getMappingProperties() {
+		return mappingProperties;
+	}
+
+	public void setMappingProperties(MappingProperties mappingProperties) {
+		this.mappingProperties = mappingProperties;
+	}
+
+	public RowIndexStructure getRowIndexStructure() {
+		return rowIndexStructure;
+	}
+
+	public void setRowIndexStructure(RowIndexStructure rowIndexStructure) {
+		this.rowIndexStructure = rowIndexStructure;
+	}
+
+	public ColIndexStructure getColIndexStructure() {
+		return colIndexStructure;
+	}
+
+	public void setColIndexStructure(ColIndexStructure colIndexStructure) {
+		this.colIndexStructure = colIndexStructure;
+	}
+
+
+
+	//--------------------------------------
+
 	public enum IndexProperties {
-		IDENTITY, EXIST,SEQSCATTER,ARRAY,
+		IDENTITY, EXIST, SEQSCATTER, XARRAY, YARRAY,
 		IDENTIFY, PREFIX, KEY;
 		@Override
 		public String toString() {
@@ -37,8 +75,8 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		}
 	}
 
-	private IndexProperties rowIndexProperties;
-	private IndexProperties colIndexProperties;
+
+
 
 
 	private KeyTrie[] colKeyPattern;

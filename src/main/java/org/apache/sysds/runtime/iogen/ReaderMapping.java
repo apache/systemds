@@ -24,7 +24,6 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -37,20 +36,12 @@ public class ReaderMapping {
 	private int[][] mapRow;
 	private int[][] mapCol;
 	private int[][] mapLen;
-	private boolean mapped;
-	private boolean fullMap;
-	private boolean upperTriangularMap;
-	private boolean lowerTriangularMap;
-	private boolean symmetricMap;
-	private boolean skewSymmetricMap;
-	private boolean patternMap;
-	private Object patternValueMap;
-	private Types.ValueType patternValueType;
 
+	private MappingProperties mappingProperties;
 	private final int nrows;
 	private final int ncols;
 	private int nlines;
-	private int NaN;
+	private int actualValueCount;
 	private ArrayList<RawIndex> sampleRawIndexes;
 	private MatrixBlock sampleMatrix;
 	private FrameBlock sampleFrame;
@@ -101,33 +92,29 @@ public class ReaderMapping {
 	}
 
 	private void runMapping(boolean isIndexMapping) {
-		mapped = findMapping(isIndexMapping);
-	}
 
-	protected boolean findMapping(boolean isIndexMapping) {
-		mapRow = new int[nrows][ncols];
-		mapCol = new int[nrows][ncols];
-		mapLen = new int[nrows][ncols];
-		NaN = 0;
+		this.mapRow = new int[nrows][ncols];
+		this.mapCol = new int[nrows][ncols];
+		this.mapLen = new int[nrows][ncols];
+		this.mappingProperties = new MappingProperties();
 
 		// Set "-1" as default value for all defined matrix
 		for(int r = 0; r < nrows; r++)
 			for(int c = 0; c < ncols; c++)
-				mapRow[r][c] = mapCol[r][c] = mapLen[r][c] = -1;
+				this.mapRow[r][c] = this.mapCol[r][c] = this.mapLen[r][c] = -1;
 
 		int itRow = 0;
 		for(int r = 0; r < nrows; r++) {
 			for(int c = 0; c < ncols; c++) {
-				if(isIndexMapping || ((this.isMatrix && this.sampleMatrix.getValue(r, c) != 0) || (!this.isMatrix && ((!schema[c].isNumeric() && this.sampleFrame.get(r,
-					c) != null) || (schema[c].isNumeric() && this.sampleFrame.getDouble(r, c) != 0))))) {
+				if(isIndexMapping || checkValueIsNotNullZero(r, c)) {
 					HashSet<Integer> checkedLines = new HashSet<>();
 					while(checkedLines.size() < nlines) {
-						RawIndex ri = sampleRawIndexes.get(itRow);
-						Pair<Integer, Integer> pair = this.isMatrix ? ri.findValue(sampleMatrix.getValue(r, c)) : ri.findValue(sampleFrame.get(r, c), schema[c]);
+						RawIndex ri = this.sampleRawIndexes.get(itRow);
+						Pair<Integer, Integer> pair = this.isMatrix ? ri.findValue(this.sampleMatrix.getValue(r, c)) : ri.findValue(this.sampleFrame.get(r, c), this.schema[c]);
 						if(pair != null) {
-							mapRow[r][c] = itRow;
-							mapCol[r][c] = pair.getKey();
-							mapLen[r][c] = pair.getValue();
+							this.mapRow[r][c] = itRow;
+							this.mapCol[r][c] = pair.getKey();
+							this.mapLen[r][c] = pair.getValue();
 							break;
 						}
 						else {
@@ -138,110 +125,151 @@ public class ReaderMapping {
 						}
 					}
 				}
-				else
-					NaN++;
 			}
 		}
 
 		// analysis mapping of values
 		// 1. check (exist, partially exist, not exist)
-		// 2. check the records represented in single/multilines
-		// 3. check the Symmetric, Skew-Symmetric, Pattern, and Array
-
-		int fullMap = 0;
-		int upperTriangular = 0;
-		int upperTriangularZeros = 0;
-		int lowerTriangular = 0;
-		int lowerTriangularZeros = 0;
-		boolean singleLineRecord = true;
-
-		// check full map
-		for(int r = 0; r < nrows; r++)
-			for(int c = 0; c < ncols; c++)
-				if(mapRow[r][c] != -1)
-					fullMap++;
-
-		// check for upper and lower triangular
-		if(nrows == ncols) {
-			this.upperTriangularMap = true;
-			this.lowerTriangularMap = true;
-			this.symmetricMap = true;
-			this.skewSymmetricMap = true;
-			this.patternMap = false;
-			this.patternValueMap = null;
-
-			// pattern check for Frame: in Frame the schema must be same for all columns
-			boolean homoSchema = true;
-			Types.ValueType vtc0 = null;
-			if(!this.isMatrix) {
-				vtc0 = this.sampleFrame.getSchema()[0];
-				for(int c = 1; c < ncols && homoSchema; c++)
-					homoSchema = this.sampleFrame.getSchema()[c] == vtc0;
-			}
-
-			for(int r = 0; r < nrows; r++) {
-				// upper triangular check
-				for(int c = r; c < ncols && this.upperTriangularMap; c++)
-					if(this.checkValueIsNotNullZero(r, c) && mapRow[r][c] == -1)
-						this.upperTriangularMap = false;
-
-				for(int c = 0; c < r && this.upperTriangularMap; c++)
-					if(this.checkValueIsNotNullZero(r, c))
-						this.upperTriangularMap = false;
-
-				// lower triangular check
-				for(int c = 0; c <= r && this.lowerTriangularMap; c++)
-					if(this.checkValueIsNotNullZero(r, c) && mapRow[r][c] == -1)
-						this.lowerTriangularMap = false;
-
-				for(int c = r + 1; c < ncols && this.lowerTriangularMap; c++)
-					if(this.checkValueIsNotNullZero(r, c))
-						this.lowerTriangularMap = false;
-
-				// Symmetric check
-				for(int c = 0; c <= r && this.symmetricMap; c++)
-					this.symmetricMap = this.checkSymmetricValue(r, c, 1);
-
-				// Skew-Symmetric check
-				for(int c = 0; c <= r && this.skewSymmetricMap; c++)
-					this.skewSymmetricMap = this.checkSymmetricValue(r, c, -1);
-
-				// pattern check for Matrix
-				if(this.isMatrix) {
-					HashSet<Double> patternValueSet = new HashSet<>();
-					for(int c = 0; c < ncols; c++)
-						patternValueSet.add(this.sampleMatrix.getValue(r, c));
-					if(patternValueSet.size() == 1) {
-						this.patternValueType = Types.ValueType.FP64;
-						this.patternMap = true;
-						this.patternValueMap = patternValueSet.iterator().next();
-					}
-				}
-				else {
-					if(homoSchema) {
-						HashSet<Object> patternValueSet = new HashSet<>();
-						for(int c = 0; c < ncols; c++)
-							patternValueSet.add(this.sampleFrame.get(r, c));
-						if(patternValueSet.size() == 1) {
-							this.patternValueType = vtc0;
-							this.patternMap = true;
-							this.patternValueMap = patternValueSet.iterator().next();
-						}
-					}
+		actualValueCount = 0;
+		int mappedValueCount = 0;
+		for(int r = 0; r < nrows; r++) {
+			for(int c = 0; c < ncols; c++) {
+				if(checkValueIsNotNullZero(r, c)) {
+					actualValueCount++;
+					if(this.mapRow[r][c] != -1)
+						mappedValueCount++;
 				}
 			}
 		}
+		if(actualValueCount == mappedValueCount) {
+			this.mappingProperties.setTypicalRepresentation();
+			this.mappingProperties.setDataFullExist();
+		}
+		else if(actualValueCount > 0 && mappedValueCount == 0)
+			this.mappingProperties.setDataNotExist();
 
-		System.out.println("upperTriangularMap=" + upperTriangularMap);
-		System.out.println("lowerTriangularMap=" + lowerTriangularMap);
-		System.out.println("symmetric=" + symmetricMap);
-		System.out.println("skewSymmetricMap = " + skewSymmetricMap);
-		System.out.println("patternMap=" + patternMap);
-		System.out.println("patternValueType = "+patternValueType);
-		System.out.println("patternValueMap=" + UtilFunctions.objectToString(patternValueType));
+		else if(mappedValueCount > 0 && mappedValueCount < actualValueCount)
+			this.mappingProperties.setDataPartiallyExist();
 
+		// 2. check the records represented in single/multilines
+		boolean singleLine = true;
 
-		return false;
+		// first mapped value
+		int firstLineNumber = -1;
+		for(int r = 0; r < nrows; r++) {
+			int c = 0;
+			firstLineNumber = -1;
+			for(; c < ncols && firstLineNumber == -1; c++)
+				firstLineNumber = mapRow[r][c];
+			// other mapped 
+			for(; c < ncols && singleLine; c++)
+				if(mapRow[r][c] != -1)
+					singleLine = firstLineNumber == mapRow[r][c];
+		}
+		if(singleLine) {
+			mappingProperties.setRecordSingleLine();
+			// 3.a check for array representation
+			boolean allValuesInALine = true;
+			for(int r=0; r<nrows && allValuesInALine; r++){
+				for(int c=0; c<ncols; c++){
+					if(mapRow[r][c] != -1 && mapRow[r][c] != firstLineNumber) {
+						allValuesInALine = false;
+						break;
+					}
+				}
+			}
+
+			// when all values are continuously are in a single line it is an Array representation
+			if(allValuesInALine){
+				// check the Array is in Row or Col wise
+				int t = 0;
+				for(int c = 0; c<ncols; c++){
+					for(int r=0; r<nrows-1; r++){
+						if(mapCol[r][c] != -1)
+							continue;
+						if(mapCol[r][c] > mapCol[r+1][c])
+							t++;
+					}
+				}
+
+				if((float)t/actualValueCount <0.03)
+					this.mappingProperties.setArrayRowWiseRepresentation();
+				else
+					this.mappingProperties.setArrayColWiseRepresentation();
+			}
+		}
+		else {
+			mappingProperties.setRecordMultiLine();
+			// 3.a check for array representation
+			// TODO: array properties for multi-line
+		}
+
+		// 3.b check the Typical, Symmetric, Skew-Symmetric, Pattern, and Array
+		// check for upper and lower triangular
+		if(nrows == ncols && !this.mappingProperties.isRepresentation()) {
+			boolean symmetricMap = true;
+
+			// Symmetric check
+			for(int r = 0; r < nrows && symmetricMap; r++) {
+				for(int c = 0; c <= r && symmetricMap; c++)
+					symmetricMap = this.checkSymmetricValue(r, c, 1);
+			}
+			if(symmetricMap)
+				mappingProperties.setSymmetricRepresentation();
+
+			// Skew-Symmetric check
+			if(!mappingProperties.isRepresentation()) {
+				boolean skewSymmetricMap = true;
+				for(int r = 0; r < nrows && skewSymmetricMap; r++) {
+					for(int c = 0; c <= r && skewSymmetricMap; c++)
+						skewSymmetricMap = this.checkSymmetricValue(r, c, -1);
+				}
+				if(skewSymmetricMap)
+					mappingProperties.setSkewSymmetricRepresentation();
+			}
+
+			// Pattern check
+			if(!mappingProperties.isRepresentation()) {
+				boolean patternMap = false;
+				Object patternValueMap = null;
+
+				// pattern check for Frame: in Frame the schema must be same for all columns
+				boolean homoSchema = true;
+				Types.ValueType vtc0 = null;
+				if(!this.isMatrix) {
+					vtc0 = this.sampleFrame.getSchema()[0];
+					for(int c = 1; c < ncols && homoSchema; c++)
+						homoSchema = this.sampleFrame.getSchema()[c] == vtc0;
+				}
+				// pattern check for Matrix representation
+				for(int r = 0; r < nrows; r++) {
+					if(this.isMatrix) {
+						HashSet<Double> patternValueSet = new HashSet<>();
+						for(int c = 0; c < ncols; c++)
+							patternValueSet.add(this.sampleMatrix.getValue(r, c));
+						if(patternValueSet.size() == 1) {
+							vtc0 = Types.ValueType.FP64;
+							patternMap = true;
+							patternValueMap = patternValueSet.iterator().next();
+						}
+					}
+					else { // pattern check for Frame representation
+						if(homoSchema) {
+							HashSet<Object> patternValueSet = new HashSet<>();
+							for(int c = 0; c < ncols; c++)
+								patternValueSet.add(this.sampleFrame.get(r, c));
+							if(patternValueSet.size() == 1) {
+								patternMap = true;
+								patternValueMap = patternValueSet.iterator().next();
+							}
+						}
+					}
+				}
+
+				if(patternMap)
+					mappingProperties.setPatternRepresentation(vtc0, patternValueMap);
+			}
+		}
 	}
 
 	private boolean checkValueIsNotNullZero(int r, int c) {
@@ -268,10 +296,6 @@ public class ReaderMapping {
 			result = this.sampleFrame.get(r, c).equals(this.sampleFrame.get(c, r));
 
 		return result;
-	}
-
-	public int getNaN() {
-		return NaN;
 	}
 
 	public int[][] getMapRow() {
@@ -302,7 +326,11 @@ public class ReaderMapping {
 		return nlines;
 	}
 
-	public boolean isMapped() {
-		return mapped;
+	public MappingProperties getMappingProperties() {
+		return mappingProperties;
+	}
+
+	public int getActualValueCount() {
+		return actualValueCount;
 	}
 }

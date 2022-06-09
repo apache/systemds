@@ -188,6 +188,20 @@ public class MatrixSingleRowFlatTest extends GenerateReaderMatrixTest {
 	}
 
 	@Test public void test18() {
+		sampleRaw = "1,1,10\n" + "1,2,20\n" + "1,3,30\n" + "1,4,40\n" + "2,2,20\n"+ "2,3,30\n"+ "2,4,40\n"+ "3,3,30\n"+ "3,4,40\n"+ "4,4,40\n";
+		sampleMatrix = new double[][] {{10,20,30,40}, {0,20,30,40}, {0,0,30,40}, {0,0,0,40}};
+		runGenerateReaderTest();
+	}
+
+	@Test public void test19() {
+		sampleRaw = "1,1,10\n" + "1,2,20\n" + "1,3,30\n" + "1,4,40\n" + "2,2,50\n"+ "2,3,60\n"+ "2,4,70\n"+ "3,3,80\n"+ "3,4,90\n"+ "4,4,100\n";
+		sampleMatrix = new double[][] {{10,20,30,40}, {20,50,60,70}, {30,60,80,90}, {40,70,90,10}};
+		runGenerateReaderTest();
+	}
+
+
+
+	@Test public void test180() {
 		String jsonInString = "{\"a\":1, \"b\":2}\n" + "{\"d\":1, \"e\":2}";
 		try {
 			final ObjectMapper mapper = new ObjectMapper();

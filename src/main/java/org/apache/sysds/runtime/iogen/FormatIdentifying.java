@@ -394,12 +394,12 @@ public class FormatIdentifying {
 		if(mappingProperties.getDataProperties() != MappingProperties.DataProperties.NOTEXIST) {
 			boolean identity = false;
 			int missedCount = 0;
+
 			for(int r = 0; r < nrows; r++)
-				missedCount += ncols - mostCommonScore(mapRow[r]);
-
-			if(mappingProperties.getRepresentationProperties() == MappingProperties.RepresentationProperties.SYMMETRIC || mappingProperties.getRepresentationProperties() == MappingProperties.RepresentationProperties.SKEWSYMMETRIC)
-				missedCount -= (nrows - 1) * (ncols - 1);
-
+				for(int c=0; c<ncols; c++)
+					if(mapRow[r][c] !=-1 && mapRow[r][c] !=r){
+						missedCount++;
+					}
 			if((float) missedCount / actualValueCount < 0.07)
 				identity = true;
 
@@ -672,9 +672,6 @@ public class FormatIdentifying {
 					if(mapRow[r][c] != -1) {
 						begin = checkColIndexOnRowRaw(mapRow[r][c], c, begin);
 						colIndexExist = begin != -1;
-						if(begin == -1) {
-							int a = 100;
-						}
 					}
 				}
 			}

@@ -19,7 +19,9 @@
 
 package org.apache.sysds.runtime.iogen.codegen;
 
+import org.apache.sysds.runtime.iogen.ColIndexStructure;
 import org.apache.sysds.runtime.iogen.CustomProperties;
+import org.apache.sysds.runtime.iogen.RowIndexStructure;
 import org.apache.sysds.runtime.iogen.template.TemplateCodeGenBase;
 
 public class MatrixCodeGen extends TemplateCodeGenBase {
@@ -28,50 +30,44 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 		super(properties, className);
 
 		// 1. set java code template
-		javaTemplate = "import org.apache.commons.lang.mutable.MutableInt;\n" +
-					"import org.apache.sysds.runtime.io.IOUtilFunctions;\n" +
-					"import java.util.HashMap;\n" +
-					"import java.util.HashSet;\n" +
-					"import java.util.regex.Matcher;\n" +
-					"import java.util.regex.Pattern; \n"+
-					"import org.apache.sysds.runtime.iogen.CustomProperties;\n" +
-					"import org.apache.sysds.runtime.matrix.data.MatrixBlock;\n" +
-					"import org.apache.sysds.runtime.iogen.template.MatrixGenerateReader; \n" +
-					"import java.io.BufferedReader;\n" +
-					"import java.io.IOException;\n" +
-					"import java.io.InputStream;\n" +
-					"import java.io.InputStreamReader;\n" +
-					"public class "+className+" extends MatrixGenerateReader {\n"+
+		javaTemplate = "import org.apache.commons.lang.mutable.MutableInt;\n" + "import org.apache.sysds.runtime.io.IOUtilFunctions;\n" + "import java.util.HashMap;\n" + "import java.util.HashSet;\n" + "import java.util.regex.Matcher;\n" + "import java.util.regex.Pattern; \n" + "import org.apache.sysds.runtime.iogen.CustomProperties;\n" + "import org.apache.sysds.runtime.matrix.data.MatrixBlock;\n" + "import org.apache.sysds.runtime.iogen.template.MatrixGenerateReader; \n" + "import java.io.BufferedReader;\n" + "import java.io.IOException;\n" + "import java.io.InputStream;\n" + "import java.io.InputStreamReader;\n" + "public class " + className + " extends MatrixGenerateReader {\n" +
 
-					"	public "+className+"(CustomProperties _props) {\n"+
-					"		super(_props);\n"+
-					"	}\n"+
+			"	public " + className + "(CustomProperties _props) {\n" + "		super(_props);\n" + "	}\n" +
 
-					"	@Override protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,\n"+
-					"		MutableInt rowPos, long rlen, long clen, int blen) throws IOException {\n"+
-					code+
-					"}}\n";
+			"	@Override protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,\n" + "		MutableInt rowPos, long rlen, long clen, int blen) throws IOException {\n" + code + "}}\n";
 		// 2. set cpp code template
 	}
 
-	@Override
-	public String generateCodeJava() {
+	@Override public String generateCodeJava() {
 		StringBuilder src = new StringBuilder();
-		CodeGenTrie trie= new CodeGenTrie(properties, "dest.appendValue");
+		CodeGenTrie trie = new CodeGenTrie(properties, "dest.appendValue", true);
 		trie.setMatrix(true);
 		src.append("String str; \n");
 		src.append("int row = rowPos.intValue(); \n");
+		src.append("int col = -1; \n");
 		src.append("long lnnz = 0; \n");
 		src.append("int index, endPos, strLen; \n");
-		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
 		src.append("BufferedReader br = new BufferedReader(new InputStreamReader(is)); \n");
-		if(trie.isRegexBase()) {
-			properties.setColKeyPatternMap(trie.getColKeyPatternMap());
-			src.append(
-				"HashMap<String, Integer> colKeyPatternMap = _props.getColKeyPatternMap(); \n");
+
+		boolean flag1 = false;
+		boolean flag2 = false;
+
+		if(properties.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.RowWiseExist || properties.getRowIndexStructure()
+			.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist) {
+			src.append("HashSet<String> endWithValueStringRow = _props.getRowIndexStructure().endWithValueStrings(); \n");
+			flag1 = true;
 		}
-		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX)
-			src.append("HashSet<String> endWithValueStringRow = _props.endWithValueStringsRow(); \n");
+
+		if(properties.getColIndexStructure().getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
+			src.append("HashSet<String> endWithValueStringCol = _props.getColIndexStructure().endWithValueStrings(); \n");
+			flag2 = true;
+		}
+
+		if(flag1 && flag2)
+			src.append("HashSet<String> endWithValueStringVal = _props.getValueKeyPattern().getFirstSuffixKeyPatterns(); \n");
+		else
+			src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
+
 		src.append("try { \n");
 		src.append("while((str = br.readLine()) != null){ \n");
 		src.append("strLen = str.length(); \n");
@@ -89,8 +85,7 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 		return javaTemplate.replace(code, src.toString());
 	}
 
-	@Override
-	public String generateCodeCPP() {
+	@Override public String generateCodeCPP() {
 		return null;
 	}
 }

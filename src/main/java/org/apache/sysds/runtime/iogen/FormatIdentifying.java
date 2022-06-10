@@ -116,13 +116,11 @@ public class FormatIdentifying {
 
 		// ref to Table 1:
 		if(mappingProperties.getRecordProperties() == MappingProperties.RecordProperties.SINGLELINE) {
-
 			// #1
 			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.Identity && colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.Identity) {
-				KeyTrie[] colKeyPattern;
-				// TODO: change method name from buildColsKeyPatternSingleRow to buildColPatternRowIdentity
-				colKeyPattern = buildColsKeyPatternSingleRow();
-				properties.setColKeyPattern(colKeyPattern);
+				KeyTrie[] colKeyPatterns;
+				colKeyPatterns = buildColsKeyPatternSingleRow();
+				properties.setColKeyPatterns(colKeyPatterns);
 			}
 
 			// #2
@@ -140,7 +138,7 @@ public class FormatIdentifying {
 				String valueDelim = null;
 				String indexDelim = null;
 				Long maxCount = 0L;
-				int begin = Integer.parseInt(colIndexStructure.getColIndexBegin());
+				int begin = colIndexStructure.getColIndexBegin();
 				for(int c = 0; c < ncols; c++) {
 					if(mapCol[0][c] != -1) {
 						Pair<Integer, Integer> pair = raw.findValue(c + begin);
@@ -171,9 +169,14 @@ public class FormatIdentifying {
 			// # 4, 6, 7, 8, 9
 			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist && colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
 
+				if(mappingProperties.getDataProperties() != MappingProperties.DataProperties.NOTEXIST) {
+					KeyTrie valueKeyPattern = buildValueKeyPattern();
+					properties.setValueKeyPattern(valueKeyPattern);
+				}
+
 				// build key pattern for row index
 				int numberOfSelectedCols = 3;
-				int begin = Integer.parseInt(rowIndexStructure.getRowIndexBegin());
+				int begin = rowIndexStructure.getRowIndexBegin();
 				boolean check, flagReconstruct;
 				int[] selectedRowIndex = new int[2];
 				KeyTrie rowKeyPattern = null;
@@ -274,7 +277,7 @@ public class FormatIdentifying {
 				rowIndexStructure.setKeyPattern(rowKeyPattern);
 
 				// build key pattern for column index
-				begin = Integer.parseInt(colIndexStructure.getColIndexBegin());
+				begin = colIndexStructure.getColIndexBegin();
 				int[] selectedColIndex = new int[2];
 				KeyTrie colKeyPattern = null;
 
@@ -396,8 +399,8 @@ public class FormatIdentifying {
 			int missedCount = 0;
 
 			for(int r = 0; r < nrows; r++)
-				for(int c=0; c<ncols; c++)
-					if(mapRow[r][c] !=-1 && mapRow[r][c] !=r){
+				for(int c = 0; c < ncols; c++)
+					if(mapRow[r][c] != -1 && mapRow[r][c] != r) {
 						missedCount++;
 					}
 			if((float) missedCount / actualValueCount < 0.07)
@@ -965,6 +968,96 @@ public class FormatIdentifying {
 			}
 		}
 		return colKeyPattens;
+	}
+
+	private KeyTrie buildValueKeyPattern() {
+		int minSelectCols = Math.min(10, ncols);
+		ArrayList<String> prefixStrings = new ArrayList<>();
+		ArrayList<Integer> rowIndexes = new ArrayList<>();
+		ArrayList<String> suffixStrings = new ArrayList<>();
+
+		for(int c = 0; c < minSelectCols; c++) {
+			Pair<ArrayList<String>, ArrayList<Integer>> pair = extractAllPrefixStringsOfAColSingleLine(c, false);
+			prefixStrings.addAll(pair.getKey());
+			rowIndexes.addAll(pair.getValue());
+		}
+
+		for(int c = 0; c < minSelectCols; c++) {
+			for(int r = 0; r < nrows; r++) {
+				int rowIndex = mapRow[r][c];
+				if(rowIndex == -1)
+					continue;
+				String str = sampleRawIndexes.get(rowIndex).getRaw().substring(mapCol[r][c] + mapLen[r][c]);
+				suffixStrings.add(str);
+			}
+		}
+
+		KeyTrie valueKeyPatten = new KeyTrie();
+		for(int c = 0; c < ncols; c++) {
+			MappingTrie trie = new MappingTrie();
+			int ri = 0;
+			boolean check;
+			boolean flagReconstruct;
+			ArrayList<ArrayList<String>> keyPatterns = null;
+
+			int psIndex = 0;
+			for(String ps : prefixStrings)
+				trie.reverseInsert(ps, rowIndexes.get(psIndex++));
+
+			if(trie.getRoot().getChildren().size() == 1) {
+				String[] splitPattern = prefixStrings.get(0).split(Lop.OPERAND_DELIMITOR);
+				ArrayList<String> reverseSplitPattern = new ArrayList<>();
+				for(String ps : splitPattern)
+					if(ps.length() > 0)
+						reverseSplitPattern.add(ps);
+				if(reverseSplitPattern.size() == 0)
+					reverseSplitPattern.add("");
+
+				int maxPatternLength = reverseSplitPattern.size();
+				check = false;
+				for(int sp = 0; sp < maxPatternLength; sp++) {
+					ArrayList<String> shortPattern = new ArrayList<>();
+					for(int spi = maxPatternLength - sp - 1; spi < maxPatternLength; spi++) {
+						shortPattern.add(reverseSplitPattern.get(spi));
+					}
+					check = checkKeyPatternIsUnique(prefixStrings, shortPattern);
+					if(check) {
+						keyPatterns = new ArrayList<>();
+						keyPatterns.add(shortPattern);
+						break;
+					}
+				}
+			}
+			else {
+				do {
+					ArrayList<ArrayList<String>> selectedKeyPatterns = new ArrayList<>();
+					keyPatterns = trie.getAllSequentialKeys();
+					check = false;
+					for(ArrayList<String> keyPattern : keyPatterns) {
+						boolean newCheck = checkKeyPatternIsUnique(prefixStrings, keyPattern);
+						check |= newCheck;
+						if(newCheck)
+							selectedKeyPatterns.add(keyPattern);
+					}
+					if(check)
+						keyPatterns = selectedKeyPatterns;
+					else {
+						flagReconstruct = trie.reConstruct();
+						if(!flagReconstruct)
+							break;
+					}
+				}
+				while(!check);
+			}
+
+			if(check) {
+				valueKeyPatten = new KeyTrie(keyPatterns);
+				for(String suffix : suffixStrings) {
+					valueKeyPatten.insertSuffixKeys(suffix.substring(0, Math.min(suffixStringLength, suffix.length())).toCharArray());
+				}
+			}
+		}
+		return valueKeyPatten;
 	}
 
 	// Get all prefix strings of a column

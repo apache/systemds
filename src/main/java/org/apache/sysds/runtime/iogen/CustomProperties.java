@@ -21,9 +21,7 @@ package org.apache.sysds.runtime.iogen;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatProperties;
-
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.HashSet;
 
 public class CustomProperties extends FileFormatProperties implements Serializable {
@@ -31,6 +29,9 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private MappingProperties mappingProperties;
 	private RowIndexStructure rowIndexStructure;
 	private ColIndexStructure colIndexStructure;
+	private KeyTrie[] colKeyPatterns;
+	private KeyTrie valueKeyPattern;
+	private Types.ValueType[] schema;
 
 	public CustomProperties(MappingProperties mappingProperties, RowIndexStructure rowIndexStructure, ColIndexStructure colIndexStructure) {
 		this.mappingProperties = mappingProperties;
@@ -62,65 +63,12 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		this.colIndexStructure = colIndexStructure;
 	}
 
-
-
-	//--------------------------------------
-
-	public enum IndexProperties {
-		IDENTITY, EXIST, SEQSCATTER, XARRAY, YARRAY,
-		IDENTIFY, PREFIX, KEY;
-		@Override
-		public String toString() {
-			return this.name().toUpperCase();
-		}
+	public KeyTrie[] getColKeyPatterns() {
+		return colKeyPatterns;
 	}
 
-
-
-
-
-	private KeyTrie[] colKeyPattern;
-	private Types.ValueType[] schema;
-	private IndexProperties rowIndex;
-	private KeyTrie rowKeyPattern;
-	private String rowIndexBegin;
-	private HashMap<String, Integer> colKeyPatternMap;
-
-	public CustomProperties(KeyTrie[] colKeyPattern, IndexProperties rowIndex) {
-		this.colKeyPattern = colKeyPattern;
-		this.rowIndex = rowIndex;
-	}
-
-	public CustomProperties(KeyTrie[] colKeyPattern, KeyTrie rowKeyPattern) {
-		this.colKeyPattern = colKeyPattern;
-		this.rowIndex = IndexProperties.KEY;
-		this.rowKeyPattern = rowKeyPattern;
-	}
-
-	public CustomProperties(KeyTrie[] colKeyPattern, IndexProperties rowIndex, KeyTrie rowKeyPattern) {
-		this.colKeyPattern = colKeyPattern;
-		this.rowIndex = rowIndex;
-		this.rowKeyPattern = rowKeyPattern;
-	}
-
-	public KeyTrie[] getColKeyPattern() {
-		return colKeyPattern;
-	}
-
-	public HashSet<String>[] endWithValueStrings() {
-		HashSet<String>[] endWithValueString = new HashSet[colKeyPattern.length];
-		for(int i = 0; i < colKeyPattern.length; i++)
-			if(colKeyPattern[i] != null)
-				endWithValueString[i] = colKeyPattern[i].getFirstSuffixKeyPatterns();
-		return endWithValueString;
-	}
-
-	public HashSet<String> endWithValueStringsRow() {
-		return rowKeyPattern.getFirstSuffixKeyPatterns();
-	}
-
-	public void setColKeyPattern(KeyTrie[] colKeyPattern) {
-		this.colKeyPattern = colKeyPattern;
+	public void setColKeyPatterns(KeyTrie[] colKeyPatterns) {
+		this.colKeyPatterns = colKeyPatterns;
 	}
 
 	public Types.ValueType[] getSchema() {
@@ -131,35 +79,19 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		this.schema = schema;
 	}
 
-	public IndexProperties getRowIndex() {
-		return rowIndex;
+	public HashSet<String>[] endWithValueStrings() {
+		HashSet<String>[] endWithValueString = new HashSet[colKeyPatterns.length];
+		for(int i = 0; i < colKeyPatterns.length; i++)
+			if(colKeyPatterns[i] != null)
+				endWithValueString[i] = colKeyPatterns[i].getFirstSuffixKeyPatterns();
+		return endWithValueString;
 	}
 
-	public void setRowIndex(IndexProperties rowIndex) {
-		this.rowIndex = rowIndex;
+	public KeyTrie getValueKeyPattern() {
+		return valueKeyPattern;
 	}
 
-	public KeyTrie getRowKeyPattern() {
-		return rowKeyPattern;
-	}
-
-	public void setRowKeyPattern(KeyTrie rowKeyPattern) {
-		this.rowKeyPattern = rowKeyPattern;
-	}
-
-	public String getRowIndexBegin() {
-		return rowIndexBegin;
-	}
-
-	public void setRowIndexBegin(String rowIndexBegin) {
-		this.rowIndexBegin = rowIndexBegin;
-	}
-
-	public HashMap<String, Integer> getColKeyPatternMap() {
-		return colKeyPatternMap;
-	}
-
-	public void setColKeyPatternMap(HashMap<String, Integer> colKeyPatternMap) {
-		this.colKeyPatternMap = colKeyPatternMap;
+	public void setValueKeyPattern(KeyTrie valueKeyPattern) {
+		this.valueKeyPattern = valueKeyPattern;
 	}
 }

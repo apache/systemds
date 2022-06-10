@@ -19,12 +19,13 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import java.util.HashSet;
+
 public class RowIndexStructure {
 
 	public enum IndexProperties {
 		Identity, // line number of sample raw data equal to the row index of matrix/frame
 		CellWiseExist, // row index of every cell values are in the sample raw data
-		CellWiseExistPatternLess, // ?
 		RowWiseExist, // index of every record in matrix/frame has an index in sample raw
 		SeqScatter; // the row index is not exist but the record scattered sequentially in multi lines
 		@Override
@@ -36,12 +37,17 @@ public class RowIndexStructure {
 	public RowIndexStructure() {
 		this.properties = null;
 		this.keyPattern = null;
-		this.rowIndexBegin = "0";
+		this.rowIndexBegin = 0;
 	}
 
 	private IndexProperties properties;
 	private KeyTrie keyPattern;
-	private String rowIndexBegin;
+	private int rowIndexBegin;
+
+	public HashSet<String> endWithValueStrings() {
+		HashSet<String> endWithValueString = keyPattern.getFirstSuffixKeyPatterns();
+		return endWithValueString;
+	}
 
 	public IndexProperties getProperties() {
 		return properties;
@@ -59,12 +65,12 @@ public class RowIndexStructure {
 		this.keyPattern = keyPattern;
 	}
 
-	public String getRowIndexBegin() {
+	public int getRowIndexBegin() {
 		return rowIndexBegin;
 	}
 
 	public void setRowIndexBegin(int rowIndexBegin) {
-		this.rowIndexBegin = rowIndexBegin+"";
+		this.rowIndexBegin = rowIndexBegin;
 	}
 
 

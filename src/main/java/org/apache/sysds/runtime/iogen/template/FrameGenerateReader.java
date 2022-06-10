@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.iogen.CustomProperties;
+import org.apache.sysds.runtime.iogen.RowIndexStructure;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.InputStreamInputFormat;
 
@@ -55,7 +56,7 @@ public abstract class FrameGenerateReader extends FrameReader {
 			BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
 			try {
 				// Row Identify
-				if(_props.getRowIndex().equals(CustomProperties.IndexProperties.IDENTIFY)) {
+				if(_props.getRowIndexStructure().getProperties().equals(RowIndexStructure.IndexProperties.Identity)) {
 					while(br.readLine() != null)
 						rows++;
 				}

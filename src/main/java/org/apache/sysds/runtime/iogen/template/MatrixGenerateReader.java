@@ -25,6 +25,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.iogen.CustomProperties;
+import org.apache.sysds.runtime.iogen.RowIndexStructure;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -68,7 +69,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 			BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
 			try {
 				// Row Identify
-				if(_props.getRowIndex().equals(CustomProperties.IndexProperties.IDENTIFY)) {
+				if(_props.getRowIndexStructure().getProperties().equals(RowIndexStructure.IndexProperties.Identity)) {
 					while(br.readLine() != null)
 						rows++;
 				}

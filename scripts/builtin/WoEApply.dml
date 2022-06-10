@@ -35,7 +35,7 @@
 
 m_WoEApply = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] entropyMatrix)
 return (Matrix[Double] F) {
-  F = matrix(1, nRow(X), nCol(X)) # allocate dense output matrix
+  F = matrix(1, nrow(X), ncol(X)) # allocate dense output matrix
   for(i in 1:ncol(X))
   {
     if(sum(abs(entropyMatrix[i])) > 0)

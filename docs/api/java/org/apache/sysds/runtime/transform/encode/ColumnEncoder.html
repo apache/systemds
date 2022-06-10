@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -238,51 +238,68 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,double%5B%5D)">build</a></span>&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
+     double[]&nbsp;equiHeightMaxs)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,java.util.Map)">build</a></span>&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
+     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;double[]&gt;&nbsp;equiHeightMaxs)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#buildPartial(org.apache.sysds.runtime.matrix.data.FrameBlock)">buildPartial</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Partial build of internal data structures (e.g., in distributed spark operations).</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compareTo(org.apache.sysds.runtime.transform.encode.ColumnEncoder)">compareTo</a></span>&#8203;(<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&nbsp;o)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getApplyTasks(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">getApplyTasks</a></span>&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
              <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
              int&nbsp;outputCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBuildTask(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">getBuildTask</a></span>&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBuildTasks(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">getBuildTasks</a></span>&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getColID()">getColID</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getColMapping(org.apache.sysds.runtime.matrix.data.FrameBlock)">getColMapping</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">
 <div class="block">Obtain the column mapping of encoded frames based on the passed meta data frame.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEstMetaSize()">getEstMetaSize</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEstNumDistincts()">getEstNumDistincts</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPartialBuildTask(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,int,int,java.util.HashMap)">getPartialBuildTask</a></span>&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
                    int&nbsp;startRow,
@@ -290,45 +307,45 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPartialMergeBuildTask(java.util.HashMap)">getPartialMergeBuildTask</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;?&gt;&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Set.html?is-external=true" title="class or interface in java.util" class="externalLink">Set</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSparseRowsWZeros()">getSparseRowsWZeros</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isApplicable()">isApplicable</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Indicates if this encoder is applicable, i.e, if there is a column to encode.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isApplicable(int)">isApplicable</a></span>&#8203;(int&nbsp;colID)</code></th>
 <td class="colLast">
 <div class="block">Indicates if this encoder is applicable for the given column ID, i.e., if it is subject to this transformation.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mergeAt(org.apache.sysds.runtime.transform.encode.ColumnEncoder)">mergeAt</a></span>&#8203;(<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&nbsp;other)</code></th>
 <td class="colLast">
 <div class="block">Merges another encoder, of a compatible type, in after a certain position.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prepareBuildPartial()">prepareBuildPartial</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Allocates internal data structures for partial build.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readExternal(java.io.ObjectInput)">readExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)</code></th>
 <td class="colLast">
@@ -336,22 +353,27 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
  efficient broadcast/rdd deserialization.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setColID(int)">setColID</a></span>&#8203;(int&nbsp;colID)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setEstMetaSize(long)">setEstMetaSize</a></span>&#8203;(long&nbsp;estSize)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i23" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setEstNumDistincts(int)">setEstNumDistincts</a></span>&#8203;(int&nbsp;numDistincts)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shiftCol(int)">shiftCol</a></span>&#8203;(int&nbsp;columnOffset)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#updateIndexRanges(long%5B%5D,long%5B%5D,int)">updateIndexRanges</a></span>&#8203;(long[]&nbsp;beginDims,
                  long[]&nbsp;endDims,
@@ -360,7 +382,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <div class="block">Update index-ranges to after encoding.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeExternal(java.io.ObjectOutput)">writeExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;os)</code></th>
 <td class="colLast">
@@ -523,6 +545,26 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 </dl>
 </li>
 </ul>
+<a id="build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>build</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;build&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
+                  double[]&nbsp;equiHeightMaxs)</pre>
+</li>
+</ul>
+<a id="build(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,java.util.Map)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>build</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;build&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
+                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;double[]&gt;&nbsp;equiHeightMaxs)</pre>
+</li>
+</ul>
 <a id="mergeAt(org.apache.sysds.runtime.transform.encode.ColumnEncoder)">
 <!--   -->
 </a>
@@ -658,6 +700,24 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <li class="blockList">
 <h4>getEstMetaSize</h4>
 <pre class="methodSignature">public&nbsp;long&nbsp;getEstMetaSize()</pre>
+</li>
+</ul>
+<a id="setEstNumDistincts(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setEstNumDistincts</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setEstNumDistincts&#8203;(int&nbsp;numDistincts)</pre>
+</li>
+</ul>
+<a id="getEstNumDistincts()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getEstNumDistincts</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getEstNumDistincts()</pre>
 </li>
 </ul>
 <a id="compareTo(org.apache.sysds.runtime.transform.encode.ColumnEncoder)">

@@ -23,9 +23,9 @@
 # elimination. Through multiple parallel brackets and consecutive trials it will return the hyper parameter combination
 # which performed best on a validation dataset. A set of hyper parameter combinations is drawn from uniform distributions
 # with given ranges; Those make up the candidates for hyperband. Notes:
-#    hyperband is hard-coded for lmCG, and uses lmPredict for validation
-#    hyperband is hard-coded to use the number of iterations as a resource
-#    hyperband can only optimize continuous hyperparameters
+# hyperband is hard-coded for lmCG, and uses lmPredict for validation
+# hyperband is hard-coded to use the number of iterations as a resource
+# hyperband can only optimize continuous hyperparameters
 #
 # INPUT:
 # ------------------------------------------------------------------------------------------

@@ -30,13 +30,12 @@
 #
 # OUTPUT:
 # ------------------------------------------------
-# X              ---
-# Y              ---
-# entropyMatrix  ---
+# F              Weighted X matrix where the entropy mask is applied
+# entropyMatrix  A entropy matrix to apply to data
 # ------------------------------------------------
 
 m_WoE = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask)
-return (Matrix[Double] X, Matrix[Double] Y, Matrix[Double] entropyMatrix) {
+return (Matrix[Double] F, Matrix[Double] entropyMatrix) {
   
   tempX = replace(target=X, pattern=NaN, replacement=1)
   entropyMatrix = matrix(0, rows=ncol(tempX), cols = max((tempX*mask)))
@@ -53,7 +52,7 @@ return (Matrix[Double] X, Matrix[Double] Y, Matrix[Double] entropyMatrix) {
     
     }
   }
-  X = WoEApply(X, Y, entropyMatrix)
+  F = WoEApply(X, Y, entropyMatrix)
 }
 
 

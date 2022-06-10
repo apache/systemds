@@ -47,8 +47,8 @@
 #
 # OUTPUT:
 # ---------------------------------------------------------------------------------------------
-# NNR_matrix            ---
-# CL_matrix             ---
+# NNR_matrix            Applied clusters to X
+# CL_matrix             Cluster matrix
 # m_feature_importance  Feature importance value
 # ---------------------------------------------------------------------------------------------
 

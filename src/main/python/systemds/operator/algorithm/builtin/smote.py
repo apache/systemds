@@ -33,8 +33,9 @@ def smote(X: Matrix,
           mask: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Builtin function for handing class imbalance using Synthetic Minority Over-sampling Technique (SMOTE)
-    by Nitesh V. Chawla et. al. In Journal of Artificial Intelligence Research 16 (2002). 321–357
+     Builtin function for handing class imbalance using Synthetic Minority Over-sampling Technique (SMOTE)
+     by Nitesh V. Chawla et. al. In Journal of Artificial Intelligence Research 16 (2002). 321–357
+    
     
     
     :param X: Matrix of minority class samples
@@ -42,9 +43,9 @@ def smote(X: Matrix,
     :param s: Amount of SMOTE (percentage of oversampling), integral multiple of 100
     :param k: Number of nearest neighbor
     :param verbose: if the algorithm should be verbose
-    :return: 'OperationNode' containing 
-        matrix of (n/100)-1 * nrow(x) synthetic minority class samples 
+    :return: Matrix of (N/100)-1 * nrow(X) synthetic minority class samples
     """
+
     params_dict = {'X': X, 'mask': mask}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

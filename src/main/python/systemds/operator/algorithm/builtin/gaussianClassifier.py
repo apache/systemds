@@ -33,21 +33,25 @@ def gaussianClassifier(D: Matrix,
                        C: Matrix,
                        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Computes the parameters needed for Gaussian Classification.
-    Thus it computes the following per class: the prior probability,
-    the inverse covariance matrix, the mean per feature and the determinant
-    of the covariance matrix. Furthermore (if not explicitly defined), it
-    adds some small smoothing value along the variances, to prevent
-    numerical errors / instabilities.
+     Computes the parameters needed for Gaussian Classification.
+     Thus it computes the following per class: the prior probability,
+     the inverse covariance matrix, the mean per feature and the determinant
+     of the covariance matrix. Furthermore (if not explicitly defined), it
+     adds some small smoothing value along the variances, to prevent
+     numerical errors / instabilities.
+    
     
     
     :param D: Input matrix (training set)
     :param C: Target vector
     :param varSmoothing: Smoothing factor for variances
     :param verbose: Print accuracy of the training set
-    :return: 'OperationNode' containing 
-        vector storing the class prior probabilitiesmatrix storing the means of the classeslist of inverse covariance matricesvector storing the determinants of the classes 
+    :return: Vector storing the class prior probabilities
+    :return: Matrix storing the means of the classes
+    :return: List of inverse covariance matrices
+    :return: Vector storing the determinants of the classes
     """
+
     params_dict = {'D': D, 'C': C}
     params_dict.update(kwargs)
     

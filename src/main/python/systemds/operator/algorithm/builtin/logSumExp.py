@@ -32,16 +32,17 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def logSumExp(M: Matrix,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Built-in LOGSUMEXP
+     Built-in LOGSUMEXP
+    
     
     
     :param M: matrix to perform Log sum exp on.
     :param margin: if the logsumexp of rows is required set margin = "row"
         if the logsumexp of columns is required set margin = "col"
         if set to "none" then a single scalar is returned computing logsumexp of matrix
-    :return: 'OperationNode' containing 
-        a 1*1 matrix, row vector or column vector depends on margin value 
+    :return: a 1*1 matrix, row vector or column vector depends on margin value
     """
+
     params_dict = {'M': M}
     params_dict.update(kwargs)
     return Matrix(M.sds_context,

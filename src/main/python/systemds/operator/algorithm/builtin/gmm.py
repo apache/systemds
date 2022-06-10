@@ -32,8 +32,9 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def gmm(X: Matrix,
         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    The gmm-function implements builtin Gaussian Mixture Model with four different types of covariance matrices
-    i.e., VVV, EEE, VVI, VII and two initialization methods namely "kmeans" and "random".
+     The gmm-function implements builtin Gaussian Mixture Model with four different types of covariance matrices
+     i.e., VVV, EEE, VVI, VII and two initialization methods namely "kmeans" and "random".
+    
     
     
     :param X: Matrix X
@@ -47,10 +48,15 @@ def gmm(X: Matrix,
     :param iterations: Number of iterations
     :param reg_covar: regularization parameter for covariance matrix
     :param tol: tolerance value for convergence
-    :return: 'OperationNode' containing 
-        prediction matrixprobability of the predictionsnumber of estimated parametersbayesian information criterion for best iterationfitted clusters meana matrix whose [i,k]th entry is the probability that observation i in the test data
-        belongs to the kth class 
+    :return: Prediction matrix
+    :return: Probability of the predictions
+    :return: Number of estimated parameters
+    :return: Bayesian information criterion for best iteration
+    :return: fitted clusters mean
+    :return: A matrix whose [i,k]th entry is the probability that observation i in the test data
+        belongs to the kth class
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     

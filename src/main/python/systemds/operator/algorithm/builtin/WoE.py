@@ -33,26 +33,26 @@ def WoE(X: Matrix,
         Y: Matrix,
         mask: Matrix):
     """
-    function Weight of evidence / information gain
+     function Weight of evidence / information gain
+    
     
     
     :param X: ---
     :param Y: ---
     :param mask: ---
-    :return: 'OperationNode' containing 
-        --------- 
+    :return: Weighted X matrix where the entropy mask is applied
+    :return: A entropy matrix to apply to data
     """
+
     params_dict = {'X': X, 'Y': Y, 'mask': mask}
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')
-    vX_2 = Matrix(X.sds_context, '')
-    output_nodes = [vX_0, vX_1, vX_2, ]
+    output_nodes = [vX_0, vX_1, ]
 
     op = MultiReturn(X.sds_context, 'WoE', output_nodes, named_input_nodes=params_dict)
 
     vX_0._unnamed_input_nodes = [op]
     vX_1._unnamed_input_nodes = [op]
-    vX_2._unnamed_input_nodes = [op]
 
     return op

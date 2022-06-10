@@ -39,12 +39,14 @@ def garch(X: Matrix,
           sim_seed: int,
           verbose: bool):
     """
-    This is a builtin function that implements GARCH(1,1), a statistical model used in analyzing time-series data where the variance
-    error is believed to be serially autocorrelated
-    COMMENTS
-    This has some drawbacks: slow convergence of optimization (sort of simulated annealing/gradient descent)
-    TODO: use BFGS or BHHH if it is available (this are go to methods)
-    TODO: (only then) extend to garch(p,q); otherwise the search space is way too big for the current method
+     This is a builtin function that implements GARCH(1,1), a statistical model used in analyzing time-series data where the variance
+     error is believed to be serially autocorrelated
+    
+     COMMENTS
+     This has some drawbacks: slow convergence of optimization (sort of simulated annealing/gradient descent)
+     TODO: use BFGS or BHHH if it is available (this are go to methods)
+     TODO: (only then) extend to garch(p,q); otherwise the search space is way too big for the current method
+    
     
     
     :param X: The input Matrix to apply Arima on.
@@ -56,9 +58,13 @@ def garch(X: Matrix,
     :param end_vicinity: same at end (linear decay)
     :param sim_seed: seed for simulation of process on fitted coefficients
     :param verbose: verbosity, comments during fitting
-    :return: 'OperationNode' containing 
-        simulated garch(1,1) process on fitted coefficientsvariances of simulated fitted processonstant term of fitted process1-st arch-coefficient of fitted process1-st garch-coefficient of fitted process 
+    :return: simulated garch(1,1) process on fitted coefficients
+    :return: variances of simulated fitted process
+    :return: onstant term of fitted process
+    :return: 1-st arch-coefficient of fitted process
+    :return: 1-st garch-coefficient of fitted process
     """
+
     params_dict = {'X': X, 'kmax': kmax, 'momentum': momentum, 'start_stepsize': start_stepsize, 'end_stepsize': end_stepsize, 'start_vicinity': start_vicinity, 'end_vicinity': end_vicinity, 'sim_seed': sim_seed, 'verbose': verbose}
     
     vX_0 = Matrix(X.sds_context, '')

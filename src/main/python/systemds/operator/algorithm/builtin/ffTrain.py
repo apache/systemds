@@ -35,9 +35,10 @@ def ffTrain(X: Matrix,
             loss_fcn: str,
             **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This builtin function trains simple feed-forward neural network. The architecture of the
-    networks is: affine1 -> relu -> dropout -> affine2 -> configurable output activation function.
-    Hidden layer has 128 neurons. Dropout rate is 0.35. Input and output sizes are inferred from X and Y.
+     This builtin function trains simple feed-forward neural network. The architecture of the
+     networks is: affine1 -> relu -> dropout -> affine2 -> configurable output activation function.
+     Hidden layer has 128 neurons. Dropout rate is 0.35. Input and output sizes are inferred from X and Y.
+    
     
     
     :param X: Training data
@@ -53,9 +54,9 @@ def ffTrain(X: Matrix,
     :param validation_split: Fraction of training set used as validation set
     :param seed: Seed for model initialization
     :param verbose: Flag which indicates if function should print to stdout
-    :return: 'OperationNode' containing 
-        trained model which can be used in ffpredict 
+    :return: Trained model which can be used in ffPredict
     """
+
     params_dict = {'X': X, 'Y': Y, 'out_activation': out_activation, 'loss_fcn': loss_fcn}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

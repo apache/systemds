@@ -33,15 +33,16 @@ def knnbf(X: Matrix,
           T: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This script implements KNN (K Nearest Neighbor) algorithm.
+     This script implements KNN (K Nearest Neighbor) algorithm.
+    
     
     
     :param X: ---
     :param T: ---
     :param k_value: ---
-    :return: 'OperationNode' containing 
-        --- 
+    :return: ---
     """
+
     params_dict = {'X': X, 'T': T}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

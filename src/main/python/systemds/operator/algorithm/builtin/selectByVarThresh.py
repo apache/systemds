@@ -32,14 +32,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def selectByVarThresh(X: Matrix,
                       **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This function drops feature with <= thresh variance (by default drop constants).
+     This function drops feature with <= thresh variance (by default drop constants).
+    
     
     
     :param X: Matrix of feature vectors.
     :param thresh: The threshold for to drop
-    :return: 'OperationNode' containing 
-        matrix of feature vectors with <= thresh variance. 
+    :return: Matrix of feature vectors with <= thresh variance.
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     

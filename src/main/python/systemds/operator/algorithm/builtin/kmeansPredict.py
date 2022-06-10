@@ -32,14 +32,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def kmeansPredict(X: Matrix,
                   C: Matrix):
     """
-    Builtin function that does predictions based on a set of centroids provided.
+     Builtin function that does predictions based on a set of centroids provided.
+    
     
     
     :param X: The input Matrix to do KMeans on.
     :param C: The input Centroids to map X onto.
-    :return: 'OperationNode' containing 
-        the mapping of records to centroids 
+    :return: The mapping of records to centroids
     """
+
     params_dict = {'X': X, 'C': C}
     return Matrix(X.sds_context,
         'kmeansPredict',

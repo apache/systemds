@@ -35,7 +35,8 @@ def knn(Train: Matrix,
         START_SELECTED: Matrix,
         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This script implements KNN (K Nearest Neighbor) algorithm.
+     This script implements KNN (K Nearest Neighbor) algorithm.
+    
     
     
     :param Train: The input matrix as features
@@ -58,9 +59,11 @@ def knn(Train: Matrix,
         (TRUE means yes)
     :param predict_con_tg: Continuous  target predict function: mean(=0) or median(=1)
     :param START_SELECTED: feature selection initial value
-    :return: 'OperationNode' containing 
-        ------feature importance value 
+    :return: Applied clusters to X
+    :return: Cluster matrix
+    :return: Feature importance value
     """
+
     params_dict = {'Train': Train, 'Test': Test, 'CL': CL, 'START_SELECTED': START_SELECTED}
     params_dict.update(kwargs)
     

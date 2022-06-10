@@ -33,11 +33,12 @@ def shortestPath(G: Matrix,
                  sourceNode: int,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Computes the minimum distances (shortest-path) between a single source vertex and every other vertex in the graph.
+     Computes the minimum distances (shortest-path) between a single source vertex and every other vertex in the graph.
+     
+     Grzegorz Malewicz, Matthew H. Austern, Aart J. C. Bilk, 
+     James C. Dehnert, Ikkan Horn, Naty Leiser and Grzegorz Czajkowski:
+     Pregel: A System for Large-Scale Graph Processing, SIGMOD 2010
     
-    Grzegorz Malewicz, Matthew H. Austern, Aart J. C. Bilk, 
-    James C. Dehnert, Ikkan Horn, Naty Leiser and Grzegorz Czajkowski:
-    Pregel: A System for Large-Scale Graph Processing, SIGMOD 2010
     
     
     :param G: adjacency matrix of the labeled graph: Such graph can be directed
@@ -49,13 +50,13 @@ def shortestPath(G: Matrix,
         max number of iterations not defined)
     :param sourceNode: node index to calculate the shortest paths to all other nodes.
     :param verbose: flag for verbose debug output
-    :return: 'OperationNode' containing 
-        output matrix (double) of minimum distances (shortest-path) between
-        vertices: the value of the ith row and the jth column of the output
+    :return: Output matrix (double) of minimum distances (shortest-path) between
+        vertices: The value of the ith row and the jth column of the output
         matrix is the minimum distance shortest-path from vertex i to vertex j.
-        when the value of the minimum distance is infinity, the two nodes are
-        not connected. 
+        When the value of the minimum distance is infinity, the two nodes are
+        not connected.
     """
+
     params_dict = {'G': G, 'sourceNode': sourceNode}
     params_dict.update(kwargs)
     return Matrix(G.sds_context,

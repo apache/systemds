@@ -35,9 +35,10 @@ def alsTopkPredict(userIDs: Matrix,
                    R: Matrix,
                    **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This script computes the top-K rating/scores for a given list of userIDs 
-    using 2 factor matrices L and R. We assume that all users have rates 
-    at least once and all items have been rates at least once.
+     This script computes the top-K rating/scores for a given list of userIDs 
+     using 2 factor matrices L and R. We assume that all users have rates 
+     at least once and all items have been rates at least once.
+    
     
     
     :param userIDs: Column vector of user-ids (n x 1)
@@ -45,9 +46,10 @@ def alsTopkPredict(userIDs: Matrix,
     :param L: The factor matrix L: user-id x feature-id
     :param R: The factor matrix R: feature-id x item-id
     :param K: The number of top-K items
-    :return: 'OperationNode' containing 
-        a matrix containing the top-k item-ids with highest predicted ratings for the specified users (rows)a matrix containing the top-k predicted ratings for the specified users (rows) 
+    :return: A matrix containing the top-K item-ids with highest predicted ratings for the specified users (rows)
+    :return: A matrix containing the top-K predicted ratings for the specified users (rows)
     """
+
     params_dict = {'userIDs': userIDs, 'I': I, 'L': L, 'R': R}
     params_dict.update(kwargs)
     

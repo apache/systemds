@@ -37,9 +37,10 @@ def apply_pipeline(testData: Frame,
                    iState: List,
                    **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This script will read the dirty and clean data, then it will apply the best pipeline on dirty data
-    and then will classify both cleaned dataset and check if the cleaned dataset is performing same as original dataset
-    in terms of classification accuracy
+     This script will read the dirty and clean data, then it will apply the best pipeline on dirty data
+     and then will classify both cleaned dataset and check if the cleaned dataset is performing same as original dataset
+     in terms of classification accuracy
+    
     
     
     :param trainData: ---
@@ -52,9 +53,9 @@ def apply_pipeline(testData: Frame,
     :param evalFunHp: ---
     :param isLastLabel: ---
     :param correctTypos: ---
-    :return: 'OperationNode' containing 
-        --- 
+    :return: ---
     """
+
     params_dict = {'testData': testData, 'pip': pip, 'applyFunc': applyFunc, 'hp': hp, 'exState': exState, 'iState': iState}
     params_dict.update(kwargs)
     return Matrix(testData.sds_context,

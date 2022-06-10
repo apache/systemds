@@ -34,7 +34,8 @@ def csplineCG(X: Matrix,
               inp_x: float,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Builtin that solves cubic spline interpolation using conjugate gradient algorithm
+     Builtin that solves cubic spline interpolation using conjugate gradient algorithm
+    
     
     
     :param X: 1-column matrix of x values knots. It is assumed that x values are
@@ -44,9 +45,10 @@ def csplineCG(X: Matrix,
     :param tol: Tolerance (epsilon); conjugate graduent procedure terminates early if
         L2 norm of the beta-residual is less than tolerance * its initial norm
     :param maxi: Maximum number of conjugate gradient iterations, 0 = no maximum
-    :return: 'OperationNode' containing 
-        predicted valuematrix of k parameters 
+    :return: Predicted value
+    :return: Matrix of k parameters
     """
+
     params_dict = {'X': X, 'Y': Y, 'inp_x': inp_x}
     params_dict.update(kwargs)
     

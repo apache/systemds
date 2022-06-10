@@ -34,17 +34,18 @@ def img_shear(img_in: Matrix,
               shear_y: float,
               fill_value: float):
     """
-    This function applies a shearing transformation to an image.
-    Uses nearest neighbor sampling.
+     This function applies a shearing transformation to an image.
+     Uses nearest neighbor sampling.
+    
     
     
     :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param shear_x: Shearing factor for horizontal shearing
     :param shear_y: Shearing factor for vertical shearing
     :param fill_value: The background color revealed by the shearing
-    :return: 'OperationNode' containing 
-        output image as 2d matrix with top left corner at [1, 1] 
+    :return: Output image as 2D matrix with top left corner at [1, 1]
     """
+
     params_dict = {'img_in': img_in, 'shear_x': shear_x, 'shear_y': shear_y, 'fill_value': fill_value}
     return Matrix(img_in.sds_context,
         'img_shear',

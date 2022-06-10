@@ -33,8 +33,9 @@ def lm(X: Matrix,
        y: Matrix,
        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    The lm-function solves linear regression using either the direct solve method or the conjugate gradient
-    algorithm depending on the input size of the matrices (See lmDS-function and lmCG-function respectively).
+     The lm-function solves linear regression using either the direct solve method or the conjugate gradient
+     algorithm depending on the input size of the matrices (See lmDS-function and lmCG-function respectively).
+    
     
     
     :param X: Matrix of feature vectors.
@@ -46,9 +47,9 @@ def lm(X: Matrix,
         norm of the beta-residual is less than tolerance * its initial norm
     :param maxi: Maximum number of conjugate gradient iterations. 0 = no maximum
     :param verbose: If TRUE print messages are activated
-    :return: 'OperationNode' containing 
-        the model fit 
+    :return: The model fit
     """
+
     params_dict = {'X': X, 'y': y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

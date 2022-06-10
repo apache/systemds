@@ -34,16 +34,21 @@ def correctTyposApply(strings: Frame,
                       dict: Frame,
                       **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Corrects corrupted frames of strings
-    This algorithm operates on the assumption that most strings are correct
-    and simply swaps strings that do not occur often with similar strings that 
-    occur more often
-    References:
-    Fred J. Damerau. 1964. 
-      A technique for computer detection and correction of spelling errors. 
-      Commun. ACM 7, 3 (March 1964), 171–176. 
-      DOI:https://doi.org/10.1145/363958.363994
-    TODO: future: add parameter for list of words that are sure to be correct
+     Corrects corrupted frames of strings
+     This algorithm operates on the assumption that most strings are correct
+     and simply swaps strings that do not occur often with similar strings that 
+     occur more often
+    
+     .. code-block:: txt
+    
+       References:
+       Fred J. Damerau. 1964. 
+         A technique for computer detection and correction of spelling errors. 
+         Commun. ACM 7, 3 (March 1964), 171–176. 
+         DOI:https://doi.org/10.1145/363958.363994
+    
+     TODO: future: add parameter for list of words that are sure to be correct
+    
     
     
     :param strings: The nx1 input frame of corrupted strings
@@ -52,9 +57,9 @@ def correctTyposApply(strings: Frame,
     :param distance_threshold: Max distance at which strings are considered similar
     :param distance matrix: ---
     :param dict: ---
-    :return: 'OperationNode' containing 
-        corrected nx1 output frame 
+    :return: Corrected nx1 output frame
     """
+
     params_dict = {'strings': strings, 'distance_matrix': distance_matrix, 'dict': dict}
     params_dict.update(kwargs)
     return Matrix(strings.sds_context,

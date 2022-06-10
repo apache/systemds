@@ -37,7 +37,8 @@ def ema(X: Frame,
         beta: float,
         gamma: float):
     """
-    This function imputes values with exponential moving average (single, double or triple).
+     This function imputes values with exponential moving average (single, double or triple).
+    
     
     
     :param X: Frame that contains time series data that needs to be imputed
@@ -48,9 +49,9 @@ def ema(X: Frame,
     :param alpha: alpha- value for EMA
     :param beta: beta- value for EMA
     :param gamma: gamma- value for EMA
-    :return: 'OperationNode' containing 
-        frame with ema results 
+    :return: Frame with EMA results
     """
+
     params_dict = {'X': X, 'search_iterations': search_iterations, 'mode': mode, 'freq': freq, 'alpha': alpha, 'beta': beta, 'gamma': gamma}
     return Matrix(X.sds_context,
         'ema',

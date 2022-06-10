@@ -33,7 +33,8 @@ def lmCG(X: Matrix,
          y: Matrix,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    The lmCG function solves linear regression using the conjugate gradient algorithm
+     The lmCG function solves linear regression using the conjugate gradient algorithm
+    
     
     
     :param X: Matrix of feature vectors.
@@ -45,9 +46,9 @@ def lmCG(X: Matrix,
         norm of the beta-residual is less than tolerance * its initial norm
     :param maxi: Maximum number of conjugate gradient iterations. 0 = no maximum
     :param verbose: If TRUE print messages are activated
-    :return: 'OperationNode' containing 
-        the model fit 
+    :return: The model fit
     """
+
     params_dict = {'X': X, 'y': y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

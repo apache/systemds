@@ -33,37 +33,45 @@ def glmPredict(X: Matrix,
                B: Matrix,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Applies the estimated parameters of a GLM type regression to a new dataset
-    Additional statistics are printed one per each line, in the following 
-    CSV format: NAME,[COLUMN],[SCALED],VALUE
-    ---
-    NAME   is the string identifier for the statistic, see the table below.
-    COLUMN is an optional integer value that specifies the Y-column for per-column statistics;
-           note that a Binomial/Multinomial one-column Y input is converted into multi-column.
-    SCALED is an optional Boolean value (TRUE or FALSE) that tells us whether or not the input
-             dispersion parameter (disp) scaling has been applied to this statistic.
-    VALUE  is the value of the statistic.
-    ---
-    NAME                  COLUMN  SCALED  MEANING
-    ---------------------------------------------------------------------------------------------
-    LOGLHOOD_Z                      +     Log-Likelihood Z-score (in st.dev's from mean)
-    LOGLHOOD_Z_PVAL                 +     Log-Likelihood Z-score p-value
-    PEARSON_X2                      +     Pearson residual X^2 statistic
-    PEARSON_X2_BY_DF                +     Pearson X^2 divided by degrees of freedom
-    PEARSON_X2_PVAL                 +     Pearson X^2 p-value
-    DEVIANCE_G2                     +     Deviance from saturated model G^2 statistic
-    DEVIANCE_G2_BY_DF               +     Deviance G^2 divided by degrees of freedom
-    DEVIANCE_G2_PVAL                +     Deviance G^2 p-value
-    AVG_TOT_Y               +             Average of Y column for a single response value
-    STDEV_TOT_Y             +             St.Dev. of Y column for a single response value
-    AVG_RES_Y               +             Average of column residual, i.e. of Y - mean(Y|X)
-    STDEV_RES_Y             +             St.Dev. of column residual, i.e. of Y - mean(Y|X)
-    PRED_STDEV_RES          +       +     Model-predicted St.Dev. of column residual
-    R2                      +             R^2 of Y column residual with bias included
-    ADJUSTED_R2             +             Adjusted R^2 of Y column residual with bias included
-    R2_NOBIAS               +             R^2 of Y column residual with bias subtracted
-    ADJUSTED_R2_NOBIAS      +             Adjusted R^2 of Y column residual with bias subtracted
-    ---------------------------------------------------------------------------------------------
+     Applies the estimated parameters of a GLM type regression to a new dataset
+    
+     Additional statistics are printed one per each line, in the following 
+    
+     .. code-block:: txt
+    
+       CSV format: NAME,[COLUMN],[SCALED],VALUE
+       ---
+       NAME   is the string identifier for the statistic, see the table below.
+       COLUMN is an optional integer value that specifies the Y-column for per-column statistics;
+              note that a Binomial/Multinomial one-column Y input is converted into multi-column.
+       SCALED is an optional Boolean value (TRUE or FALSE) that tells us whether or not the input
+                dispersion parameter (disp) scaling has been applied to this statistic.
+       VALUE  is the value of the statistic.
+       ---
+    
+     .. code-block:: txt
+    
+       NAME                  COLUMN  SCALED  MEANING
+       ---------------------------------------------------------------------------------------------
+       LOGLHOOD_Z                      +     Log-Likelihood Z-score (in st.dev's from mean)
+       LOGLHOOD_Z_PVAL                 +     Log-Likelihood Z-score p-value
+       PEARSON_X2                      +     Pearson residual X^2 statistic
+       PEARSON_X2_BY_DF                +     Pearson X^2 divided by degrees of freedom
+       PEARSON_X2_PVAL                 +     Pearson X^2 p-value
+       DEVIANCE_G2                     +     Deviance from saturated model G^2 statistic
+       DEVIANCE_G2_BY_DF               +     Deviance G^2 divided by degrees of freedom
+       DEVIANCE_G2_PVAL                +     Deviance G^2 p-value
+       AVG_TOT_Y               +             Average of Y column for a single response value
+       STDEV_TOT_Y             +             St.Dev. of Y column for a single response value
+       AVG_RES_Y               +             Average of column residual, i.e. of Y - mean(Y|X)
+       STDEV_RES_Y             +             St.Dev. of column residual, i.e. of Y - mean(Y|X)
+       PRED_STDEV_RES          +       +     Model-predicted St.Dev. of column residual
+       R2                      +             R^2 of Y column residual with bias included
+       ADJUSTED_R2             +             Adjusted R^2 of Y column residual with bias included
+       R2_NOBIAS               +             R^2 of Y column residual with bias subtracted
+       ADJUSTED_R2_NOBIAS      +             Adjusted R^2 of Y column residual with bias subtracted
+       ---------------------------------------------------------------------------------------------
+    
     
     
     :param X: Matrix X of records (feature vectors)
@@ -84,12 +92,12 @@ def glmPredict(X: Matrix,
         -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity
     :param disp: Dispersion value, when available
     :param verbose: Print statistics to stdout
-    :return: 'OperationNode' containing 
-        matrix m of predicted means/probabilities:
-        nrow(x) x 1  : for power-type distributions (dfam=1)
-        nrow(x) x 2  : for binomial distribution (dfam=2), column 2 is "no"
-        nrow(x) x k+1: for multinomial logit (dfam=3), col# k+1 is baseline 
+    :return: Matrix M of predicted means/probabilities:
+        nrow(X) x 1  : for Power-type distributions (dfam=1)
+        nrow(X) x 2  : for Binomial distribution (dfam=2), column 2 is "No"
+        nrow(X) x k+1: for Multinomial Logit (dfam=3), col# k+1 is baseline
     """
+
     params_dict = {'X': X, 'B': B}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

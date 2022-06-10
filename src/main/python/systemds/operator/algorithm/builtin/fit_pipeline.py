@@ -38,12 +38,12 @@ def fit_pipeline(trainData: Frame,
                  evalFunHp: Matrix,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This script will read the dirty and clean data, then it will apply the best pipeline on dirty data
-    and then will classify both cleaned dataset and check if the cleaned dataset is performing same as original dataset
-    in terms of classification accuracy
+     This script will read the dirty and clean data, then it will apply the best pipeline on dirty data
+     and then will classify both cleaned dataset and check if the cleaned dataset is performing same as original dataset
+     in terms of classification accuracy
     
     
-    :param NAME: MEANING
+    
     :param trainData: ---
     :param testData: ---
     :param metaData: ---
@@ -54,9 +54,9 @@ def fit_pipeline(trainData: Frame,
     :param evalFunHp: ---
     :param isLastLabel: ---
     :param correctTypos: ---
-    :return: 'OperationNode' containing 
-        meaning--- 
+    :return: ---
     """
+
     params_dict = {'trainData': trainData, 'testData': testData, 'pip': pip, 'applyFunc': applyFunc, 'hp': hp, 'evaluationFunc': evaluationFunc, 'evalFunHp': evalFunHp}
     params_dict.update(kwargs)
     

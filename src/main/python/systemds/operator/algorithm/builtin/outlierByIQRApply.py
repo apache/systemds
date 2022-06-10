@@ -36,7 +36,8 @@ def outlierByIQRApply(X: Matrix,
                       k: float,
                       repairMethod: int):
     """
-    Builtin function for repairing outliers by IQR 
+     Builtin function for repairing outliers by IQR 
+    
     
     
     :param X: Matrix X
@@ -47,9 +48,9 @@ def outlierByIQRApply(X: Matrix,
     :param repairMethod: values: 0 = delete rows having outliers,
         1 = replace outliers with zeros
         2 = replace outliers as missing values
-    :return: 'OperationNode' containing 
-        matrix x with no outliers 
+    :return: Matrix X with no outliers
     """
+
     params_dict = {'X': X, 'Q1': Q1, 'Q3': Q3, 'IQR': IQR, 'k': k, 'repairMethod': repairMethod}
     return Matrix(X.sds_context,
         'outlierByIQRApply',

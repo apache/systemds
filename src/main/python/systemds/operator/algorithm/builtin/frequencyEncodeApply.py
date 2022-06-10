@@ -32,14 +32,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def frequencyEncodeApply(X: Matrix,
                          freqCount: Matrix):
     """
-    frequency code apply
+     frequency code apply
+    
     
     
     :param X: dataset x
     :param freqCount: the frequency counts for the different categoricals
-    :return: 'OperationNode' containing 
-        categorical columns are replaced with their frequencies given 
+    :return: categorical columns are replaced with their frequencies given
     """
+
     params_dict = {'X': X, 'freqCount': freqCount}
     return Matrix(X.sds_context,
         'frequencyEncodeApply',

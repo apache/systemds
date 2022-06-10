@@ -291,7 +291,6 @@ class PythonAPIFunctionGenerator(object):
 class PythonAPIDocumentationGenerator(object):
 
     param_str = "\n    :param {pname}: {meaning}"
-    return_str = "\n    :return: \'OperationNode\' containing {meaning} \n"
 
     def __init__(self):
         super(PythonAPIDocumentationGenerator, self).__init__()
@@ -314,12 +313,10 @@ class PythonAPIDocumentationGenerator(object):
         if description == "":
             data['function_header'] = ""
         elif header_data["return_values"] == []:
-            data['function_header'] = '"""\n    ' + description + '"""'
+            data['function_header'] = '"""\n    ' + description + '"""\n'
         else:
-            res_str = "\n    :return: \'OperationNode\' containing {meaning} \n".format(
-                meaning=output_param.lower())
             data['function_header'] = '"""\n    ' + description + \
-                input_param + res_str + '    """'
+                input_param + output_param + '\n    """\n'
 
     def header_parameter_string(self, parameter: dict) -> str:
         parameter_str = "\n    "
@@ -330,14 +327,9 @@ class PythonAPIDocumentationGenerator(object):
         return parameter_str
 
     def header_return_string(self, parameter: dict) -> str:
-        meaning_str = "\n        "
-        first = True
+        meaning_str = ""
         for param in parameter:
-            if first:
-                meaning_str += param[1]
-            else:
-                meaning_str += "\n        & " + param[1]
-
+            meaning_str +=  "\n    :return: " +  param[1]
         return meaning_str
 
 

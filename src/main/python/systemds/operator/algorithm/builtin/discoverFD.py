@@ -33,17 +33,17 @@ def discoverFD(X: Matrix,
                Mask: Matrix,
                threshold: float):
     """
-    Implements builtin for finding functional dependencies
-    
+     Implements builtin for finding functional dependencies
+     
     
     
     :param X: Input Matrix X, encoded Matrix if data is categorical
     :param Mask: A row vector for interested features i.e. Mask =[1, 0, 1]
         will exclude the second column from processing
     :param threshold: threshold value in interval [0, 1] for robust FDs
-    :return: 'OperationNode' containing 
-        matrix of functional dependencies 
+    :return: matrix of functional dependencies
     """
+
     params_dict = {'X': X, 'Mask': Mask, 'threshold': threshold}
     return Matrix(X.sds_context,
         'discoverFD',

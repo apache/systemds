@@ -35,7 +35,8 @@ def km(X: Matrix,
        SI: Matrix,
        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Builtin function that implements the analysis of survival data with KAPLAN-MEIER estimates
+     Builtin function that implements the analysis of survival data with KAPLAN-MEIER estimates
+    
     
     
     :param X: Input matrix X containing the survival data:
@@ -55,43 +56,45 @@ def km(X: Matrix,
     :param test_type: If survival data for multiple groups is available specifies which test to
         perform for comparing survival data across multiple groups: "none" (the default)
         "log-rank" or "wilcoxon" test
-    :return: 'OperationNode' containing 
-        matrix km whose dimension depends on the number of groups (denoted by g) and
+    :return: Matrix KM whose dimension depends on the number of groups (denoted by g) and
         strata (denoted by s) in the data:
-        each collection of 7 consecutive columns in km corresponds to a unique
+        each collection of 7 consecutive columns in KM corresponds to a unique
         combination of groups and strata in the data with the following schema
         1. col: timestamp
         2. col: no. at risk
         3. col: no. of events
-        4. col: kaplan-meier estimate of survivor function surv
+        4. col: Kaplan-Meier estimate of survivor function surv
         5. col: standard error of surv
         6. col: lower 100*(1-alpha)% confidence interval for surv
-        7. col: upper 100*(1-alpha)% confidence interval for survmatrix m whose dimension depends on the number of groups (g) and strata (s) in
-        the data (k denotes the number of factors used for grouping  ,i.e., ncol(gi) and
-        l denotes the number of factors used for stratifying, i.e., ncol(si))
-        m[,1:k]: unique combination of values in the k factors used for grouping
-        m[,(k+1):(k+l)]: unique combination of values in the l factors used for stratifying
-        m[,k+l+1]: total number of records
-        m[,k+l+2]: total number of events
-        m[,k+l+3]: median of surv
-        m[,k+l+4]: lower 100*(1-alpha)% confidence interval of the median of surv
-        m[,k+l+5]: upper 100*(1-alpha)% confidence interval of the median of surv
-        if the number of groups and strata is equal to 1, m will have 4 columns with
-        m[,1]: total number of events
-        m[,2]: median of surv
-        m[,3]: lower 100*(1-alpha)% confidence interval of the median of surv
-        m[,4]: upper 100*(1-alpha)% confidence interval of the median of survif survival data from multiple groups available and ttype=log-rank or wilcoxon,
-        a 1 x 4 matrix t and an g x 5 matrix t_groups_oe with
-        t_groups_oe[,1] = no. of events
-        t_groups_oe[,2] = observed value (o)
-        t_groups_oe[,3] = expected value (e)
-        t_groups_oe[,4] = (o-e)^2/e
-        t_groups_oe[,5] = (o-e)^2/v
-        t[1,1] = no. of groups
-        t[1,2] = degree of freedom for chi-squared distributed test statistic
-        t[1,3] = test statistic
-        t[1,4] = p-value 
+        7. col: upper 100*(1-alpha)% confidence interval for surv
+    :return: Matrix M whose dimension depends on the number of groups (g) and strata (s) in
+        the data (k denotes the number of factors used for grouping  ,i.e., ncol(GI) and
+        l denotes the number of factors used for stratifying, i.e., ncol(SI))
+        M[,1:k]: unique combination of values in the k factors used for grouping
+        M[,(k+1):(k+l)]: unique combination of values in the l factors used for stratifying
+        M[,k+l+1]: total number of records
+        M[,k+l+2]: total number of events
+        M[,k+l+3]: median of surv
+        M[,k+l+4]: lower 100*(1-alpha)% confidence interval of the median of surv
+        M[,k+l+5]: upper 100*(1-alpha)% confidence interval of the median of surv
+        If the number of groups and strata is equal to 1, M will have 4 columns with
+        M[,1]: total number of events
+        M[,2]: median of surv
+        M[,3]: lower 100*(1-alpha)% confidence interval of the median of surv
+        M[,4]: upper 100*(1-alpha)% confidence interval of the median of surv
+    :return: If survival data from multiple groups available and ttype=log-rank or wilcoxon,
+        a 1 x 4 matrix T and an g x 5 matrix T_GROUPS_OE with
+        T_GROUPS_OE[,1] = no. of events
+        T_GROUPS_OE[,2] = observed value (O)
+        T_GROUPS_OE[,3] = expected value (E)
+        T_GROUPS_OE[,4] = (O-E)^2/E
+        T_GROUPS_OE[,5] = (O-E)^2/V
+        T[1,1] = no. of groups
+        T[1,2] = degree of freedom for Chi-squared distributed test statistic
+        T[1,3] = test statistic
+        T[1,4] = P-value
     """
+
     params_dict = {'X': X, 'TE': TE, 'GI': GI, 'SI': SI}
     params_dict.update(kwargs)
     

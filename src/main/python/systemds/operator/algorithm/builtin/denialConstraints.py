@@ -32,31 +32,39 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def denialConstraints(dataFrame: Frame,
                       constraintsFrame: Frame):
     """
-    This function considers some constraints indicating statements that can NOT happen in the data (denial constraints).
-      EXAMPLE:
-      dataFrame:
-           rank       discipline   yrs.since.phd   yrs.service   sex      salary
-      1    Prof       B            19              18            Male     139750
-      2    Prof       B            20              16            Male     173200
-      3    AsstProf   B            3               3             Male     79750.56
-      4    Prof       B            45              39            Male     115000
-      5    Prof       B            40              40            Male     141500
-      6    AssocProf  B            6               6             Male     97000
-      7    Prof       B            30              23            Male     175000
-      8    Prof       B            45              45            Male     147765
-      9    Prof       B            21              20            Male     119250
-      10   Prof       B            18              18            Female   129000
-      11   AssocProf  B            12              8             Male     119800
-      12   AsstProf   B            7               2             Male     79800
-      13   AsstProf   B            1               1             Male     77700
-      constraintsFrame:
-         
-      idx   constraint.type   group.by   group.variable      group.option   variable1      relation   variable2
-      1     variableCompare   FALSE                                         yrs.since.phd  <          yrs.service
-      2     instanceCompare   TRUE       rank                Prof           yrs.service    ><         salary
-      3     valueCompare      FALSE                                         salary         =          78182
-      4     variableCompare   TRUE       discipline          B              yrs.service    >          yrs.since.phd
-      Example: explanation of constraint 2 --> it can't happen that one professor of rank Prof has more years of service than other, but lower salary.
+     This function considers some constraints indicating statements that can NOT happen in the data (denial constraints).
+    
+     .. code-block:: txt
+    
+       EXAMPLE:
+       dataFrame:
+    
+            rank       discipline   yrs.since.phd   yrs.service   sex      salary
+       1    Prof       B            19              18            Male     139750
+       2    Prof       B            20              16            Male     173200
+       3    AsstProf   B            3               3             Male     79750.56
+       4    Prof       B            45              39            Male     115000
+       5    Prof       B            40              40            Male     141500
+       6    AssocProf  B            6               6             Male     97000
+       7    Prof       B            30              23            Male     175000
+       8    Prof       B            45              45            Male     147765
+       9    Prof       B            21              20            Male     119250
+       10   Prof       B            18              18            Female   129000
+       11   AssocProf  B            12              8             Male     119800
+       12   AsstProf   B            7               2             Male     79800
+       13   AsstProf   B            1               1             Male     77700
+    
+       constraintsFrame:
+          
+       idx   constraint.type   group.by   group.variable      group.option   variable1      relation   variable2
+       1     variableCompare   FALSE                                         yrs.since.phd  <          yrs.service
+       2     instanceCompare   TRUE       rank                Prof           yrs.service    ><         salary
+       3     valueCompare      FALSE                                         salary         =          78182
+       4     variableCompare   TRUE       discipline          B              yrs.service    >          yrs.since.phd
+    
+    
+     Example: explanation of constraint 2 --> it can't happen that one professor of rank Prof has more years of service than other, but lower salary.
+    
     
     
     :param dataFrame: frame which columns represent the variables of the data and the rows correspond
@@ -77,12 +85,12 @@ def denialConstraints(dataFrame: Frame,
         7. relation: (string) can be < , > or = in the case of variableCompare and valueCompare, and < >, < < , > < or > >
         in the case of instanceCompare
         8. variable2: (string) second variable to compare (name of column in dataFrame) or fixed value for the case of valueCompare.
-    :return: 'OperationNode' containing 
-        matrix of 2 columns.
-        - first column shows the indexes of dataframe that are wrong.
-        - second column shows the index of the denial constraint that is fulfilled
-        if there are no wrong instances to show (0 constrains fulfilled) --> wronginstances=matrix(0,1,2) 
+    :return: Matrix of 2 columns.
+        - First column shows the indexes of dataFrame that are wrong.
+        - Second column shows the index of the denial constraint that is fulfilled
+        If there are no wrong instances to show (0 constrains fulfilled) --> WrongInstances=matrix(0,1,2)
     """
+
     params_dict = {'dataFrame': dataFrame, 'constraintsFrame': constraintsFrame}
     return Matrix(dataFrame.sds_context,
         'denialConstraints',

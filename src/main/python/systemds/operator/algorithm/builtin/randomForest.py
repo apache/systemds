@@ -34,7 +34,8 @@ def randomForest(X: Matrix,
                  R: Matrix,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This script implement classification random forest with both scale and categorical features.
+     This script implement classification random forest with both scale and categorical features.
+    
     
     
     :param X: Feature matrix X; note that X needs to be both recoded and dummy coded
@@ -55,23 +56,26 @@ def randomForest(X: Matrix,
         as a power of number of features in the dataset;
         by default square root of features (i.e., feature_subset = 0.5) are used at each tree node
     :param impurity: Impurity measure: entropy or Gini (the default)
-    :return: 'OperationNode' containing 
-        matrix m containing the learned tree, where each column corresponds to a node
+    :return: Matrix M containing the learned tree, where each column corresponds to a node
         in the learned tree and each row contains the following information:
-        m[1,j]: id of node j (in a complete binary tree)
-        m[2,j]: tree id to which node j belongs
-        m[3,j]: offset (no. of columns) to left child of j
-        m[4,j]: feature index of the feature that node j looks at if j is an internal node, otherwise 0
-        m[5,j]: type of the feature that node j looks at if j is an internal node: 1 for scale and 2
+        M[1,j]: id of node j (in a complete binary tree)
+        M[2,j]: tree id to which node j belongs
+        M[3,j]: Offset (no. of columns) to left child of j
+        M[4,j]: Feature index of the feature that node j looks at if j is an internal node, otherwise 0
+        M[5,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2
         for categorical features,
         otherwise the label that leaf node j is supposed to predict
-        m[6,j]: 1 if j is an internal node and the feature chosen for j is scale, otherwise the
+        M[6,j]: 1 if j is an internal node and the feature chosen for j is scale, otherwise the
         size of the subset of values
         stored in rows 7,8,... if j is categorical
-        m[7:,j]: only applicable for internal nodes. threshold the example's feature value is
-        compared to is stored at m[7,j] if the feature chosen for j is scale;
-        if the feature chosen for j is categorical rows 7,8,... depict the value subset chosen for jmatrix c containing the number of times samples are chosen in each tree of the random forestmappings from scale feature ids to global feature idsmappings from categorical feature ids to global feature ids 
+        M[7:,j]: Only applicable for internal nodes. Threshold the example's feature value is
+        compared to is stored at M[7,j] if the feature chosen for j is scale;
+        If the feature chosen for j is categorical rows 7,8,... depict the value subset chosen for j
+    :return: Matrix C containing the number of times samples are chosen in each tree of the random forest
+    :return: Mappings from scale feature ids to global feature ids
+    :return: Mappings from categorical feature ids to global feature ids
     """
+
     params_dict = {'X': X, 'Y': Y, 'R': R}
     params_dict.update(kwargs)
     

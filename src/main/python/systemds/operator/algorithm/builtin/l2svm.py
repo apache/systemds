@@ -33,7 +33,8 @@ def l2svm(X: Matrix,
           Y: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Builtin function Implements binary-class SVM with squared slack variables
+     Builtin function Implements binary-class SVM with squared slack variables
+    
     
     
     :param X: matrix X of feature vectors
@@ -47,9 +48,9 @@ def l2svm(X: Matrix,
     :param verbose: Set to true if one wants print statements updating on loss.
     :param columnId: The column Id used if one wants to add a ID to the print statement,
         eg. used when L2SVM is used in MSVM.
-    :return: 'OperationNode' containing 
-        the trained model 
+    :return: the trained model
     """
+
     params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

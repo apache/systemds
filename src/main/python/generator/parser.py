@@ -177,15 +177,15 @@ class FunctionParser(object):
                     # skip two lines
                     line = f.readline()
                     line = f.readline()
-
+                
                 if in_output:
                     if "----------" not in line:
-                        h_output += line[2:]
+                        h_output += line[1:]
                 elif in_input:
                     if "----------" not in line:
-                        h_input += line[2:]
+                        h_input += line[1:]
                 else:
-                    description += line[2:]
+                    description += line[1:]
                 line = f.readline()
 
         if description == "" or h_input == "" or h_output == "":
@@ -212,7 +212,7 @@ class FunctionParser(object):
         ret = []
         for line in data.split("\n"):
             if line:
-                if line[0] == " ":
+                if line[1] == " ":
                     prev = ret[-1]
                     n = (prev[0], prev[1] +"\n        " + line.strip())
                     ret[-1] = n

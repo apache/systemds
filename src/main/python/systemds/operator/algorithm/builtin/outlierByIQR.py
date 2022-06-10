@@ -34,7 +34,8 @@ def outlierByIQR(X: Matrix,
                  max_iterations: int,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Builtin function for detecting and repairing outliers using standard deviation 
+     Builtin function for detecting and repairing outliers using standard deviation 
+    
     
     
     :param X: Matrix X
@@ -46,9 +47,9 @@ def outlierByIQR(X: Matrix,
     :param max_iterations: values: 0 = arbitrary number of iteraition until all outliers are removed,
         n = any constant defined by user
     :param verbose: flag specifying if logging information should be printed
-    :return: 'OperationNode' containing 
-        matrix x with no outliers 
+    :return: Matrix X with no outliers
     """
+
     params_dict = {'X': X, 'k': k, 'max_iterations': max_iterations}
     params_dict.update(kwargs)
     

@@ -32,10 +32,11 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def components(G: Matrix,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Computes the connected components of a graph and returns a
-    vector indicating the assignment of vertices to components,
-    where each component is identified by the maximum vertex ID
-    (i.e., row/column position of the input graph) 
+     Computes the connected components of a graph and returns a
+     vector indicating the assignment of vertices to components,
+     where each component is identified by the maximum vertex ID
+     (i.e., row/column position of the input graph) 
+    
     
     
     :param X: Location to read the matrix of feature vectors
@@ -48,9 +49,9 @@ def components(G: Matrix,
     :param maxi: max. number of outer (Newton) iterations
     :param maxii: max. number of inner (conjugate gradient) iterations, 0 = no max
     :param verbose: flag specifying if logging information should be printed
-    :return: 'OperationNode' containing 
-        regression betas as output for prediction 
+    :return: regression betas as output for prediction
     """
+
     params_dict = {'G': G}
     params_dict.update(kwargs)
     return Matrix(G.sds_context,

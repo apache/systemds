@@ -31,13 +31,14 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def softmax(S: Matrix):
     """
-    Performs softmax on the given input matrix.
+     Performs softmax on the given input matrix.
+    
     
     
     :param S: Inputs of shape (N, D).
-    :return: 'OperationNode' containing 
-        outputs of shape (n, d). 
+    :return: Outputs of shape (N, D).
     """
+
     params_dict = {'S': S}
     return Matrix(S.sds_context,
         'softmax',

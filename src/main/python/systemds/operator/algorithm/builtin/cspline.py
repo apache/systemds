@@ -34,9 +34,11 @@ def cspline(X: Matrix,
             inp_x: float,
             **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Solves Cubic Spline Interpolation
-    Algorithms: implement https://en.wikipedia.org/wiki/Spline_interpolation#Algorithm_to_find_the_interpolating_cubic_spline
-    It use natural spline with q1''(x0) == qn''(xn) == 0.0
+     Solves Cubic Spline Interpolation
+    
+     Algorithms: implement https://en.wikipedia.org/wiki/Spline_interpolation#Algorithm_to_find_the_interpolating_cubic_spline
+     It use natural spline with q1''(x0) == qn''(xn) == 0.0
+    
     
     
     :param X: 1-column matrix of x values knots. It is assumed that x values are
@@ -47,9 +49,10 @@ def cspline(X: Matrix,
     :param tol: Tolerance (epsilon); conjugate graduent procedure terminates early if
         L2 norm of the beta-residual is less than tolerance * its initial norm
     :param maxi: Maximum number of conjugate gradient iterations, 0 = no maximum
-    :return: 'OperationNode' containing 
-        predicted valuematrix of k parameters 
+    :return: Predicted value
+    :return: Matrix of k parameters
     """
+
     params_dict = {'X': X, 'Y': Y, 'inp_x': inp_x}
     params_dict.update(kwargs)
     

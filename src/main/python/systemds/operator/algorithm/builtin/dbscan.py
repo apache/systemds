@@ -32,16 +32,17 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def dbscan(X: Matrix,
            **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Implements the DBSCAN clustering algorithm using Euclidian distance matrix
+     Implements the DBSCAN clustering algorithm using Euclidian distance matrix
+    
     
     
     :param X: The input Matrix to do DBSCAN on.
     :param eps: Maximum distance between two points for one to be considered reachable for the other.
     :param minPts: Number of points in a neighborhood for a point to be considered as a core point
         (includes the point itself).
-    :return: 'OperationNode' containing 
-        clustering matrix 
+    :return: clustering Matrix
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     

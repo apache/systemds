@@ -25,7 +25,7 @@
 		<version>18</version>
 	</parent>
 	<groupId>org.apache.systemds</groupId>
-	<version>2.2.1</version>
+	<version>2.3.0-SNAPSHOT</version>
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemDS</name>
@@ -69,7 +69,7 @@
 
 	<scm>
 		<developerConnection>scm:git:https://github.com/apache/systemds.git</developerConnection>
-	  <tag>2.2.1-rc3</tag>
+	  <tag>HEAD</tag>
   </scm>
 
 	<build>

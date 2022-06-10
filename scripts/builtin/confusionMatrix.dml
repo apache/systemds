@@ -24,16 +24,13 @@
 # After which, it calculates and returns the sum of classifications
 # and the average of each true class.
 #
+# .. code-block:: txt
+#
 #                   True Labels
 #                     1    2
 #                 1   TP | FP
 #   Predictions      ----+----
 #                 2   FN | TN
-#
-# TP = True Positives
-# FP = False Positives
-# FN = False Negatives
-# TN = True Negatives
 #
 # INPUT:
 # --------------------------------------------------------------------------------

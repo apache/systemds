@@ -21,6 +21,8 @@
 
 # This function considers some constraints indicating statements that can NOT happen in the data (denial constraints).
 #
+# .. code-block:: txt
+#
 #   EXAMPLE:
 #   dataFrame:
 #
@@ -48,7 +50,7 @@
 #   4     variableCompare   TRUE       discipline          B              yrs.service    >          yrs.since.phd
 #
 #
-#   Example: explanation of constraint 2 --> it can't happen that one professor of rank Prof has more years of service than other, but lower salary.
+# Example: explanation of constraint 2 --> it can't happen that one professor of rank Prof has more years of service than other, but lower salary.
 #
 # INPUT:
 # ----------------------------------------------------------------------------------------------------

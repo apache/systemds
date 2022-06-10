@@ -23,16 +23,12 @@
 #
 # INPUT:
 # ---------------------------------------------
-# NAME           MEANING
-# ---------------------------------------------
 # X              The input Matrix to do outlier detection on.
 # clusterModel   Model of clusters to predict outliers against.
 # eps            Maximum distance between two points for one to be considered reachable for the other.
 # ---------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------
-# NAME            MEANING
 # ----------------------------------------------
 # outlierPoints   Predicted outliers
 # ----------------------------------------------

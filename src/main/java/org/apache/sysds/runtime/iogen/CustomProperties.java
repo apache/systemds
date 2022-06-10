@@ -32,6 +32,7 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private KeyTrie[] colKeyPatterns;
 	private KeyTrie valueKeyPattern;
 	private Types.ValueType[] schema;
+	private int ncols;
 
 	public CustomProperties(MappingProperties mappingProperties, RowIndexStructure rowIndexStructure, ColIndexStructure colIndexStructure) {
 		this.mappingProperties = mappingProperties;
@@ -93,5 +94,13 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public void setValueKeyPattern(KeyTrie valueKeyPattern) {
 		this.valueKeyPattern = valueKeyPattern;
+	}
+
+	public int getNcols() {
+		return ncols;
+	}
+
+	public void setNcols(int ncols) {
+		this.ncols = ncols;
 	}
 }

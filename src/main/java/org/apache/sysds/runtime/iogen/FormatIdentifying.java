@@ -113,18 +113,21 @@ public class FormatIdentifying {
 		ColIndexStructure colIndexStructure = getColIndexStructure();
 
 		properties = new CustomProperties(mappingProperties, rowIndexStructure, colIndexStructure);
+		properties.setNcols(ncols);
 
 		// ref to Table 1:
 		if(mappingProperties.getRecordProperties() == MappingProperties.RecordProperties.SINGLELINE) {
 			// #1
-			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.Identity && colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.Identity) {
+			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.Identity &&
+				colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.Identity) {
 				KeyTrie[] colKeyPatterns;
 				colKeyPatterns = buildColsKeyPatternSingleRow();
 				properties.setColKeyPatterns(colKeyPatterns);
 			}
 
 			// #2
-			else if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.Identity && colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
+			else if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.Identity &&
+				colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
 				// find cell-index and value separators
 				RawIndex raw = null;
 				for(int c = 0; c < ncols; c++) {
@@ -392,6 +395,14 @@ public class FormatIdentifying {
 
 		RowIndexStructure rowIndexStructure = new RowIndexStructure();
 
+		if(mappingProperties.getDataProperties() == MappingProperties.DataProperties.NOTEXIST){
+			if(nlines >= this.actualValueCount) {
+				rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.CellWiseExist);
+				rowIndexStructure.setRowIndexBegin(0);
+				return rowIndexStructure;
+			}
+		}
+
 		// check row-index Identity, the identity properties available just for
 		// exist and partially exist mapped values
 		if(mappingProperties.getDataProperties() != MappingProperties.DataProperties.NOTEXIST) {
@@ -481,161 +492,6 @@ public class FormatIdentifying {
 				return rowIndexStructure;
 			}
 		}
-
-		//		if(isCellWise && isExist) {
-		//			rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.CELLWISEEXIST);
-		//		}
-		//		else if(!isCellWise && isExist) {
-		//			rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.ROWWISEEXIST);
-		//		}
-		//		else if(isCellWise && !isExist) {
-		//
-		//		}
-
-		//		RowIndexStructure rowIndexStructure = null;
-		//		int numberOfSelectedCols = 3;
-		//		MatrixBlock rowIndexMB = new MatrixBlock(nrows, ncols, false);
-		//		int scol = Math.min(ncols - numberOfSelectedCols, ncols);
-		//		for(int r=0; r<nrows; r++)
-		//			for(int c=scol; c<ncols;c++){
-		//				if(mapRow)
-		//			}
-		//
-		//
-		//
-		//
-		//
-		//
-		//
-		//
-		//
-		//		///////////////////////////////////////////////////////////////////////
-		//		boolean flag;
-		//		int numberOfSelectedCols = 3;
-		//		int begin = 0;
-		//		boolean check, flagReconstruct;
-		//		int[] selectedRowIndex = new int[2];
-		//		HashSet<Integer> beginPos = new HashSet<>();
-		//		KeyTrie rowPattern = null;
-		//
-		//		// Select two none zero row as a row index candidate
-		//		int index = 0;
-		//		for(int r = 1; r < nrows; r++) {
-		//			for(int c = 0; c < ncols; c++)
-		//				if(mapRow[r][c] != -1) {
-		//					selectedRowIndex[index++] = r;
-		//					break;
-		//				}
-		//			if(index > 1)
-		//				break;
-		//		}
-
-		//		// CELLWISEEXIST: when row index exist in each cell value
-		//		for(int c = 0; c < Math.min(numberOfSelectedCols, ncols); c++) {
-		//
-		//			Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
-		//			ArrayList<String> prefixStrings = colPrefixString.getKey();
-		//			ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
-		//			ArrayList<RawIndex> prefixRawIndex = new ArrayList<>();
-		//
-		//			MappingTrie trie = new MappingTrie();
-		//			int ri = 0;
-		//			for(String ps : prefixStrings)
-		//				trie.reverseInsert(ps, prefixStringRowIndexes.get(ri++));
-		//
-		//			do {
-		//				flag = trie.reConstruct();
-		//			}
-		//			while(flag);
-		//
-		//			ArrayList<ArrayList<String>> keyPatterns = trie.getAllSequentialKeys();
-		//			for(ArrayList<String> kp : keyPatterns) {
-		//				for(String ps : prefixStrings) {
-		//					StringBuilder sb = new StringBuilder();
-		//					int currPos = 0;
-		//					for(String k : kp) {
-		//						sb.append(ps.substring(currPos, ps.indexOf(k, currPos)));
-		//						currPos += sb.length() + k.length();
-		//					}
-		//					prefixRawIndex.add(new RawIndex(sb.toString()));
-		//				}
-		//			}
-		//
-		//			flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
-		//			if(!flag) {
-		//				begin = 1;
-		//				flag = checkPrefixRowIndex(c, begin, prefixRawIndex);
-		//			}
-		//			if(!flag) {
-		//				beginPos.clear();
-		//				break;
-		//			}
-		//			else
-		//				beginPos.add(begin);
-		//			if(c == numberOfSelectedCols - 1) {
-		//				ArrayList<String> rowPrefixStrings = new ArrayList<>();
-		//				MappingTrie rowTrie = new MappingTrie();
-		//				rowPattern = new KeyTrie();
-		//				for(int si : selectedRowIndex) {
-		//					for(int ci = 0; ci < ncols; ci++) {
-		//						int cri = mapRow[si][ci];
-		//						if(cri != -1) {
-		//							String str = sampleRawIndexes.get(cri).getSubString(0, mapCol[si][ci]);
-		//							RawIndex rawIndex = new RawIndex(str);
-		//							Pair<Integer, Integer> pair = rawIndex.findValue(si + begin);
-		//							if(pair != null) {
-		//								String pstr = str.substring(0, pair.getKey());
-		//								if(pstr.length() > 0) {
-		//									rowPrefixStrings.add(pstr);
-		//									rowTrie.insert(pstr, 1);
-		//								}
-		//								rowPattern.insertSuffixKeys(str.substring(pair.getKey() + pair.getValue()).toCharArray());
-		//							}
-		//						}
-		//					}
-		//				}
-		//
-		//				do {
-		//					ArrayList<ArrayList<String>> selectedKeyPatterns = new ArrayList<>();
-		//					keyPatterns = rowTrie.getAllSequentialKeys();
-		//					check = false;
-		//					for(ArrayList<String> keyPattern : keyPatterns) {
-		//						boolean newCheck = checkKeyPatternIsUnique(rowPrefixStrings, keyPattern);
-		//						check |= newCheck;
-		//						if(newCheck)
-		//							selectedKeyPatterns.add(keyPattern);
-		//					}
-		//					if(check)
-		//						keyPatterns = selectedKeyPatterns;
-		//					else {
-		//						flagReconstruct = rowTrie.reConstruct();
-		//						if(!flagReconstruct)
-		//							break;
-		//					}
-		//				}
-		//				while(!check);
-		//
-		//				if(keyPatterns.size() == 0) {
-		//					ArrayList<ArrayList<String>> kpl = new ArrayList<>();
-		//					ArrayList<String> kpli = new ArrayList<>();
-		//					kpli.add("");
-		//					kpl.add(kpli);
-		//					keyPatterns = kpl;
-		//				}
-		//				rowPattern.setPrefixKeyPattern(keyPatterns);
-		//			}
-		//		}
-		//		if(beginPos.size() == 1) {
-		//			rowIndexStructure = new RowIndexStructure();
-		//			rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.CELLWISEEXIST);
-		//			rowIndexStructure.setKeyPattern(rowPattern);
-		//			Integer bpos = beginPos.iterator().next();
-		//			if(bpos > 0)
-		//				rowIndexStructure.setRowIndexBegin("-" + bpos);
-		//			else
-		//				rowIndexStructure.setRowIndexBegin("");
-		//		}
-		//		return rowIndexStructure;
 		return rowIndexStructure;
 	}
 
@@ -643,6 +499,15 @@ public class FormatIdentifying {
 		ColIndexStructure colIndexStructure = new ColIndexStructure();
 		int begin = 0;
 		boolean colIndexExist = true;
+
+		if(mappingProperties.getDataProperties() == MappingProperties.DataProperties.NOTEXIST){
+			if(nlines >= this.actualValueCount) {
+				colIndexStructure.setProperties(ColIndexStructure.IndexProperties.CellWiseExist);
+				colIndexStructure.setColIndexBegin(0);
+				return colIndexStructure;
+			}
+		}
+
 		if(mappingProperties.getRecordProperties() == MappingProperties.RecordProperties.SINGLELINE) {
 			// 1. check for column index are in the record
 			for(int r = 0; r < Math.min(10, nrows); r++) {

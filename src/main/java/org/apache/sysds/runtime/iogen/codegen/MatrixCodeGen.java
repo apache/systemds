@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.iogen.codegen;
 
 import org.apache.sysds.runtime.iogen.ColIndexStructure;
 import org.apache.sysds.runtime.iogen.CustomProperties;
+import org.apache.sysds.runtime.iogen.MappingProperties;
 import org.apache.sysds.runtime.iogen.RowIndexStructure;
 import org.apache.sysds.runtime.iogen.template.TemplateCodeGenBase;
 
@@ -30,11 +31,25 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 		super(properties, className);
 
 		// 1. set java code template
-		javaTemplate = "import org.apache.commons.lang.mutable.MutableInt;\n" + "import org.apache.sysds.runtime.io.IOUtilFunctions;\n" + "import java.util.HashMap;\n" + "import java.util.HashSet;\n" + "import java.util.regex.Matcher;\n" + "import java.util.regex.Pattern; \n" + "import org.apache.sysds.runtime.iogen.CustomProperties;\n" + "import org.apache.sysds.runtime.matrix.data.MatrixBlock;\n" + "import org.apache.sysds.runtime.iogen.template.MatrixGenerateReader; \n" + "import java.io.BufferedReader;\n" + "import java.io.IOException;\n" + "import java.io.InputStream;\n" + "import java.io.InputStreamReader;\n" + "public class " + className + " extends MatrixGenerateReader {\n" +
-
-			"	public " + className + "(CustomProperties _props) {\n" + "		super(_props);\n" + "	}\n" +
-
-			"	@Override protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,\n" + "		MutableInt rowPos, long rlen, long clen, int blen) throws IOException {\n" + code + "}}\n";
+		javaTemplate = "import org.apache.commons.lang.mutable.MutableInt;\n" +
+						"import org.apache.sysds.runtime.io.IOUtilFunctions;\n" +
+						"import java.util.HashMap;\n" +
+						"import java.util.HashSet;\n" +
+						"import java.util.regex.Matcher;\n" +
+						"import java.util.regex.Pattern; \n" +
+						"import org.apache.sysds.runtime.iogen.CustomProperties;\n" +
+						"import org.apache.sysds.runtime.matrix.data.MatrixBlock;\n" +
+						"import org.apache.sysds.runtime.iogen.template.MatrixGenerateReader; \n" +
+						"import java.io.BufferedReader;\n" +
+						"import java.io.IOException;\n" +
+						"import java.io.InputStream;\n" +
+						"import java.io.InputStreamReader;\n" +
+						"public class " + className + " extends MatrixGenerateReader {\n" +
+						"	public " + className + "(CustomProperties _props) {\n" + "		super(_props);\n" + "	}\n" +
+						"	@Override protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,\n" +
+						"		MutableInt rowPos, long rlen, long clen, int blen) throws IOException {\n" +
+							code +
+						"}}\n";
 		// 2. set cpp code template
 	}
 
@@ -48,6 +63,9 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 		src.append("long lnnz = 0; \n");
 		src.append("int index, endPos, strLen; \n");
 		src.append("BufferedReader br = new BufferedReader(new InputStreamReader(is)); \n");
+		if(properties.getMappingProperties().getDataProperties() == MappingProperties.DataProperties.NOTEXIST) {
+			src.append("double cellValue = "+ properties.getMappingProperties().getPatternValue() +"; \n");
+		}
 
 		boolean flag1 = false;
 		boolean flag2 = false;

@@ -199,6 +199,12 @@ public class MatrixSingleRowFlatTest extends GenerateReaderMatrixTest {
 		runGenerateReaderTest();
 	}
 
+	@Test public void test20() {
+		sampleRaw = "1,1\n" + "1,2\n" + "1,3\n" + "1,4\n" + "2,2\n"+ "2,3\n"+ "2,4\n"+ "3,3\n"+ "3,4\n"+ "4,4\n";
+		sampleMatrix = new double[][] {{10,10,10,10}, {0,10,10,10}, {0,0,10,10}, {0,0,0,10}};
+		runGenerateReaderTest();
+	}
+
 
 
 	@Test public void test180() {

@@ -70,13 +70,14 @@ public class CodeGenTrie {
 			}
 		}
 
-		if(properties.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.RowWiseExist || properties.getRowIndexStructure()
-			.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist) {
+		if(properties.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.RowWiseExist ||
+			properties.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.CellWiseExist) {
 			for(ArrayList<String> keys : properties.getRowIndexStructure().getKeyPattern().getPrefixKeyPatterns())
 				this.insert(ctnIndexes, "0", Types.ValueType.INT32, keys);
 		}
 
-		if(properties.getColIndexStructure().getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
+		if(properties.getColIndexStructure().getProperties() == ColIndexStructure.IndexProperties.CellWiseExist &&
+			properties.getColIndexStructure().getKeyPattern() !=null) {
 			for(ArrayList<String> keys : properties.getColIndexStructure().getKeyPattern().getPrefixKeyPatterns())
 				this.insert(ctnIndexes, "1", Types.ValueType.INT32, keys);
 		}
@@ -111,6 +112,7 @@ public class CodeGenTrie {
 
 	public String getJavaCode() {
 		StringBuilder src = new StringBuilder();
+		int ncols = properties.getNcols();
 
 		MappingProperties.RepresentationProperties representation = properties.getMappingProperties().getRepresentationProperties();
 		MappingProperties.DataProperties data = properties.getMappingProperties().getDataProperties();
@@ -119,18 +121,45 @@ public class CodeGenTrie {
 		RowIndexStructure.IndexProperties rowIndex = properties.getRowIndexStructure().getProperties();
 		ColIndexStructure.IndexProperties colIndex = properties.getColIndexStructure().getProperties();
 
-		if(data != MappingProperties.DataProperties.NOTEXIST && rowIndex == RowIndexStructure.IndexProperties.Identity && colIndex == ColIndexStructure.IndexProperties.Identity) {
+		// example: csv
+		if(data != MappingProperties.DataProperties.NOTEXIST &&
+			rowIndex == RowIndexStructure.IndexProperties.Identity &&
+			colIndex == ColIndexStructure.IndexProperties.Identity) {
 			getJavaCode(ctnValue, src, "0");
 			src.append("row++; \n");
 		}
-		else if(rowIndex == RowIndexStructure.IndexProperties.CellWiseExist && colIndex == ColIndexStructure.IndexProperties.CellWiseExist) {
+		// example: MM
+		else if(rowIndex == RowIndexStructure.IndexProperties.CellWiseExist &&
+			colIndex == ColIndexStructure.IndexProperties.CellWiseExist) {
+			getJavaCode(ctnIndexes, src, "0");
+			src.append("if(col < " + ncols + "){ \n");
 			if(data != MappingProperties.DataProperties.NOTEXIST) {
-				src.append("/* ++++++++++++++++++++++ INDEXES +++++++++++++++++++++++++++++++++++++ */\n");
-				getJavaCode(ctnIndexes, src, "0");
-				src.append("/* ++++++++++++++++++++++ END INDEXES +++++++++++++++++++++++++++++++++++++ */\n");
 				getJavaCode(ctnValue, src, "0");
 			}
-
+			else
+				src.append(destination).append("(row, col, cellValue); \n");
+			src.append("} \n");
+		}
+		// example: LibSVM
+		else if(rowIndex == RowIndexStructure.IndexProperties.Identity &&
+			colIndex == ColIndexStructure.IndexProperties.CellWiseExist){
+			src.append("String strValues[] = str.split(\""+ properties.getColIndexStructure().getValueDelim()+"\"); \n");
+			src.append("for(String si: strValues){ \n");
+			src.append("String strIndexValue[] = si.split(\""+ properties.getColIndexStructure().getIndexDelim()+"\", -1); \n");
+			src.append("if(strIndexValue.length == 2){ \n");
+			src.append("col = UtilFunctions.parseToInt(strIndexValue[0]); \n");
+			src.append("if(col < "+ncols+"){ \n");
+			if(this.isMatrix){
+				src.append("try{ \n");
+				src.append(destination).append("(row, col, Double.parseDouble(strIndexValue[1]); \n");
+				src.append("} catch(Exception e){"+destination+".append(row, col, 0d);} \n");
+			}
+			else {
+				src.append(destination).append("(row, col, UtilFunctions.stringToObject(_props.getSchema()[col], strIndexValue[1]); \n");
+			}
+			src.append("} \n");
+			src.append("} \n");
+			src.append("} \n");
 		}
 		return src.toString();
 	}
@@ -170,27 +199,6 @@ public class CodeGenTrie {
 					src.append("} \n");
 			}
 		}
-	}
-
-	private void getJavaRowCode(StringBuilder src, ArrayList<ArrayList<String>> rowBeginPattern, ArrayList<ArrayList<String>> rowEndPattern) {
-
-		// TODO: we have to extend it to multi patterns
-		// now, we assumed each row can have single pattern for begin and end
-
-		for(ArrayList<String> kb : rowBeginPattern) {
-			for(String k : kb) {
-				src.append("recordIndex = strChunk.indexOf(\"" + k + "\", recordIndex); \n");
-				src.append("if(recordIndex == -1) break; \n");
-			}
-			src.append("recordIndex +=" + kb.get(kb.size() - 1).length() + "; \n");
-			break;
-		}
-		src.append("int recordBeginPos = recordIndex; \n");
-		String endKey = rowEndPattern.get(0).get(0);
-		src.append("recordIndex = strChunk.indexOf(\"" + endKey + "\", recordBeginPos);");
-		src.append("if(recordIndex == -1) break; \n");
-		src.append("str = strChunk.substring(recordBeginPos, recordIndex); \n");
-		src.append("strLen = str.length(); \n");
 	}
 
 	public void setMatrix(boolean matrix) {

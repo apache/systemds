@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -207,38 +207,46 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedOutAlternatives(org.apache.sysds.hops.Hop)">getFedOutAlternatives</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root)</code></th>
+<td class="colLast">
+<div class="block">Get list of strings representing the different
+ hopRel federated outputs related to root hop.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFTypes(org.apache.sysds.hops.Hop)">getFTypes</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root)</code></th>
 <td class="colLast">
 <div class="block">Get all output FTypes of given root from HopRels stored in memo.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../cost/HopRel.html" title="class in org.apache.sysds.hops.cost">HopRel</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getHopRel(org.apache.sysds.hops.Hop,org.apache.sysds.hops.fedplanner.FTypes.FType)">getHopRel</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root,
          <a href="FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;fType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../cost/HopRel.html" title="class in org.apache.sysds.hops.cost">HopRel</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLOUTOrNONEAlternative(org.apache.sysds.hops.Hop)">getLOUTOrNONEAlternative</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../cost/HopRel.html" title="class in org.apache.sysds.hops.cost">HopRel</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMinCostAlternative(org.apache.sysds.hops.Hop)">getMinCostAlternative</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root)</code></th>
 <td class="colLast">
 <div class="block">Get the HopRel with minimum cost for given root hop</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hasFederatedOutputAlternative(org.apache.sysds.hops.Hop)">hasFederatedOutputAlternative</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root)</code></th>
 <td class="colLast">
 <div class="block">Checks if any of the federated execution alternatives for the given root hop has federated output.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#put(org.apache.sysds.hops.Hop,java.util.List)">put</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root,
    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../cost/HopRel.html" title="class in org.apache.sysds.hops.cost">HopRel</a>&gt;&nbsp;hopRels)</code></th>
@@ -246,7 +254,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="block">Memoize hopRels related to given root.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -294,6 +302,23 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="getFedOutAlternatives(org.apache.sysds.hops.Hop)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getFedOutAlternatives</h4>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;getFedOutAlternatives&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root)</pre>
+<div class="block">Get list of strings representing the different
+ hopRel federated outputs related to root hop.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>root</code> - for which HopRel fedouts are found</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>federated output values as strings</dd>
+</dl>
+</li>
+</ul>
 <a id="getMinCostAlternative(org.apache.sysds.hops.Hop)">
 <!--   -->
 </a>

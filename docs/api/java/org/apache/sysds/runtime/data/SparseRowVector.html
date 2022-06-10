@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -193,21 +193,27 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(double%5B%5D)">SparseRowVector</a></span>&#8203;(double[]&nbsp;v)</code></th>
+<td class="colLast">
+<div class="block">Sparse row vector constructor that take a dense array, and allocate sparsely by ignoring zero values</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int)">SparseRowVector</a></span>&#8203;(int&nbsp;capacity)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,double%5B%5D,int)">SparseRowVector</a></span>&#8203;(int&nbsp;nnz,
                double[]&nbsp;v,
                int&nbsp;vlen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int)">SparseRowVector</a></span>&#8203;(int&nbsp;estnnz,
                int&nbsp;maxnnz)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.data.SparseRow)">SparseRowVector</a></span>&#8203;(<a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a>&nbsp;that)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -261,28 +267,36 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compact(double)">compact</a></span>&#8203;(double&nbsp;eps)</code></th>
+<td class="colLast">
+<div class="block">In-place compaction of values over eps away from zero;
+ and shifts non-zero entries to the left if necessary.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#copy(org.apache.sysds.runtime.data.SparseRow)">copy</a></span>&#8203;(<a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a>&nbsp;that)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#deleteIndexRange(int,int)">deleteIndexRange</a></span>&#8203;(int&nbsp;lowerCol,
                 int&nbsp;upperCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(int)">get</a></span>&#8203;(int&nbsp;col)</code></th>
 <td class="colLast">
 <div class="block">Gets the value of a specified column.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getIndex(int)">getIndex</a></span>&#8203;(int&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#indexes()">indexes</a></span>()</code></th>
 <td class="colLast">
@@ -290,7 +304,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
  with the array of values.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isEmpty()">isEmpty</a></span>()</code></th>
 <td class="colLast">
@@ -298,7 +312,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
  size zero.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset(int,int)">reset</a></span>&#8203;(int&nbsp;estnns,
      int&nbsp;maxnns)</code></th>
@@ -307,22 +321,22 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
  isEmpty are guaranteed to return 0 and true, respectively.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#searchIndexesFirstGT(int)">searchIndexesFirstGT</a></span>&#8203;(int&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#searchIndexesFirstGTE(int)">searchIndexesFirstGTE</a></span>&#8203;(int&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#searchIndexesFirstLTE(int)">searchIndexesFirstLTE</a></span>&#8203;(int&nbsp;col)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,double)">set</a></span>&#8203;(int&nbsp;col,
    double&nbsp;v)</code></th>
@@ -331,19 +345,19 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
  potential overwrites or deletes (set to value zero).</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setAtPos(int,int,double)">setAtPos</a></span>&#8203;(int&nbsp;pos,
         int&nbsp;col,
         double&nbsp;v)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setIndexes(int%5B%5D)">setIndexes</a></span>&#8203;(int[]&nbsp;i)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setIndexRange(int,int,double%5B%5D,int%5B%5D,int,int)">setIndexRange</a></span>&#8203;(int&nbsp;cl,
              int&nbsp;cu,
@@ -353,7 +367,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
              int&nbsp;vlen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setIndexRange(int,int,double%5B%5D,int,int)">setIndexRange</a></span>&#8203;(int&nbsp;cl,
              int&nbsp;cu,
@@ -362,24 +376,24 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
              int&nbsp;vlen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setSize(int)">setSize</a></span>&#8203;(int&nbsp;newsize)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setValues(double%5B%5D)">setValues</a></span>&#8203;(double[]&nbsp;d)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size()">size</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of non-zero values of the sparse row.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sort()">sort</a></span>()</code></th>
 <td class="colLast">
@@ -387,7 +401,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
  after constant-time append was used for reading unordered sparse rows.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#values()">values</a></span>()</code></th>
 <td class="colLast">
@@ -476,6 +490,20 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <pre>public&nbsp;SparseRowVector&#8203;(int&nbsp;nnz,
                        double[]&nbsp;v,
                        int&nbsp;vlen)</pre>
+</li>
+</ul>
+<a id="&lt;init&gt;(double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>SparseRowVector</h4>
+<pre>public&nbsp;SparseRowVector&#8203;(double[]&nbsp;v)</pre>
+<div class="block">Sparse row vector constructor that take a dense array, and allocate sparsely by ignoring zero values</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>v</code> - The dense row</dd>
+</dl>
 </li>
 </ul>
 <a id="&lt;init&gt;(int,int)">
@@ -835,7 +863,7 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <a id="compact()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>compact</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;compact()</pre>
@@ -845,6 +873,24 @@ extends <a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="SparseRow.html#compact()">compact</a></code>&nbsp;in class&nbsp;<code><a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="compact(double)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>compact</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;compact&#8203;(double&nbsp;eps)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="SparseRow.html#compact(double)">SparseRow</a></code></span></div>
+<div class="block">In-place compaction of values over eps away from zero;
+ and shifts non-zero entries to the left if necessary.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="SparseRow.html#compact(double)">compact</a></code>&nbsp;in class&nbsp;<code><a href="SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>eps</code> - epsilon value</dd>
 </dl>
 </li>
 </ul>

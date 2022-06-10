@@ -45,8 +45,12 @@ org.apache.sysds.runtime.controlprogram.context
 org.apache.sysds.runtime.controlprogram.federated
 org.apache.sysds.runtime.controlprogram.federated.monitoring
 org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers
+org.apache.sysds.runtime.controlprogram.federated.monitoring.models
+org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories
+org.apache.sysds.runtime.controlprogram.federated.monitoring.services
 org.apache.sysds.runtime.controlprogram.paramserv
 org.apache.sysds.runtime.controlprogram.paramserv.dp
+org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption
 org.apache.sysds.runtime.controlprogram.paramserv.rpc
 org.apache.sysds.runtime.controlprogram.parfor
 org.apache.sysds.runtime.controlprogram.parfor.opt

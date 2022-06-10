@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":41,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":41,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"],32:["t6","Deprecated Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -158,6 +158,11 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#LPLACEHOLDER">LPLACEHOLDER</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#SERIALIZATION_OPCODE">SERIALIZATION_OPCODE</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -222,35 +227,45 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code>static <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createScalarLineageItem(org.apache.sysds.hops.LiteralOp)">createScalarLineageItem</a></span>&#8203;(<a href="../../hops/LiteralOp.html" title="class in org.apache.sysds.hops">LiteralOp</a>&nbsp;lop)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#explainSingleLineageItem(org.apache.sysds.runtime.lineage.LineageItem)">explainSingleLineageItem</a></span>&#8203;(<a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLineage(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.instructions.cp.CPOperand...)">getLineage</a></span>&#8203;(<a href="../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
           <a href="../instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>...&nbsp;operands)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>static <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLineageItemInputstoSB(java.util.ArrayList,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItemInputstoSB</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&gt;&nbsp;inputs,
                         <a href="../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>static <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSerializedFedResponseLineageItem(org.apache.sysds.runtime.lineage.LineageItem)">getSerializedFedResponseLineageItem</a></span>&#8203;(<a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static <a href="LineageItem.LineageItemType.html" title="enum in org.apache.sysds.runtime.lineage">LineageItem.LineageItemType</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getType(java.lang.String)">getType</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;str)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rCheckCycles(org.apache.sysds.runtime.lineage.LineageItem,java.util.Set,boolean)">rCheckCycles</a></span>&#8203;(<a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;current,
             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Set.html?is-external=true" title="class or interface in java.util" class="externalLink">Set</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&gt;&nbsp;probe,
             boolean&nbsp;useObjIdent)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rConstructLineageFromHops(org.apache.sysds.hops.Hop,org.apache.sysds.hops.Hop%5B%5D,java.util.Map,java.util.HashMap)">rConstructLineageFromHops</a></span>&#8203;(<a href="../../hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root,
                          <a href="../../hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>[]&nbsp;inputs,
@@ -258,40 +273,40 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="../../hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;spoofmap)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>static <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rDecompress(org.apache.sysds.runtime.lineage.LineageItem)">rDecompress</a></span>&#8203;(<a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;item)</code></th>
 <td class="colLast">
 <div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replace(org.apache.sysds.runtime.lineage.LineageItem,org.apache.sysds.runtime.lineage.LineageItem,org.apache.sysds.runtime.lineage.LineageItem)">replace</a></span>&#8203;(<a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;root,
        <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;liOld,
        <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;liNew)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceDagLeaves(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.lineage.LineageItem,org.apache.sysds.runtime.instructions.cp.CPOperand%5B%5D)">replaceDagLeaves</a></span>&#8203;(<a href="../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                 <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;root,
                 <a href="../instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>[]&nbsp;newLeaves)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rGetDagLeaves(java.util.HashSet,org.apache.sysds.runtime.lineage.LineageItem)">rGetDagLeaves</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashSet.html?is-external=true" title="class or interface in java.util" class="externalLink">HashSet</a>&lt;<a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;&nbsp;leaves,
              <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;root)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rReplaceDagLeaves(org.apache.sysds.runtime.lineage.LineageItem,org.apache.sysds.runtime.lineage.LineageItem%5B%5D)">rReplaceDagLeaves</a></span>&#8203;(<a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;root,
                  <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>[]&nbsp;newleaves)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rReplaceNR(org.apache.sysds.runtime.lineage.LineageItem,org.apache.sysds.runtime.lineage.LineageItem,org.apache.sysds.runtime.lineage.LineageItem)">rReplaceNR</a></span>&#8203;(<a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;current,
           <a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;liOld,
@@ -301,19 +316,19 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
  for robustness with regard to stack overflow errors.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>static <a href="../controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setUDFResponse(org.apache.sysds.runtime.controlprogram.federated.FederatedUDF,org.apache.sysds.runtime.controlprogram.caching.MatrixObject)">setUDFResponse</a></span>&#8203;(<a href="../controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedUDF</a>&nbsp;udf,
               <a href="../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#traceFedUDF(org.apache.sysds.runtime.controlprogram.context.ExecutionContext,org.apache.sysds.runtime.controlprogram.federated.FederatedUDF)">traceFedUDF</a></span>&#8203;(<a href="../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
            <a href="../controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedUDF</a>&nbsp;udf)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeTraceToHDFS(java.lang.String,java.lang.String)">writeTraceToHDFS</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;trace,
                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fname)</code></th>
@@ -346,13 +361,26 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <a id="LPLACEHOLDER">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>LPLACEHOLDER</h4>
 <pre>public static final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> LPLACEHOLDER</pre>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../constant-values.html#org.apache.sysds.runtime.lineage.LineageItemUtils.LPLACEHOLDER">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a id="SERIALIZATION_OPCODE">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>SERIALIZATION_OPCODE</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> SERIALIZATION_OPCODE</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../constant-values.html#org.apache.sysds.runtime.lineage.LineageItemUtils.SERIALIZATION_OPCODE">Constant Field Values</a></dd>
 </dl>
 </li>
 </ul>
@@ -582,10 +610,28 @@ public static&nbsp;<a href="LineageItem.html" title="class in org.apache.sysds.r
 <a id="addAllDataLineage(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>addAllDataLineage</h4>
 <pre class="methodSignature">public static&nbsp;void&nbsp;addAllDataLineage&#8203;(<a href="../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
+</li>
+</ul>
+<a id="createScalarLineageItem(org.apache.sysds.hops.LiteralOp)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>createScalarLineageItem</h4>
+<pre class="methodSignature">public static&nbsp;<a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;createScalarLineageItem&#8203;(<a href="../../hops/LiteralOp.html" title="class in org.apache.sysds.hops">LiteralOp</a>&nbsp;lop)</pre>
+</li>
+</ul>
+<a id="getSerializedFedResponseLineageItem(org.apache.sysds.runtime.lineage.LineageItem)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getSerializedFedResponseLineageItem</h4>
+<pre class="methodSignature">public static&nbsp;<a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;getSerializedFedResponseLineageItem&#8203;(<a href="LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;li)</pre>
 </li>
 </ul>
 </li>

@@ -193,6 +193,13 @@ extends io.netty.channel.ChannelInboundHandlerAdapter</pre>
 <div class="block">Create a Federated Worker Handler.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(org.apache.sysds.runtime.controlprogram.federated.FederatedLookupTable,org.apache.sysds.runtime.controlprogram.federated.FederatedReadCache,org.apache.sysds.runtime.controlprogram.federated.FederatedWorkloadAnalyzer,org.apache.sysds.runtime.controlprogram.parfor.stat.Timing)">FederatedWorkerHandler</a></span>&#8203;(<a href="FederatedLookupTable.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedLookupTable</a>&nbsp;flt,
+                      <a href="FederatedReadCache.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedReadCache</a>&nbsp;frc,
+                      <a href="FederatedWorkloadAnalyzer.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedWorkloadAnalyzer</a>&nbsp;fan,
+                      <a href="../parfor/stat/Timing.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.stat">Timing</a>&nbsp;timing)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -271,7 +278,7 @@ extends io.netty.channel.ChannelInboundHandlerAdapter</pre>
 <a id="&lt;init&gt;(org.apache.sysds.runtime.controlprogram.federated.FederatedLookupTable,org.apache.sysds.runtime.controlprogram.federated.FederatedReadCache,org.apache.sysds.runtime.controlprogram.federated.FederatedWorkloadAnalyzer)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>FederatedWorkerHandler</h4>
 <pre>public&nbsp;FederatedWorkerHandler&#8203;(<a href="FederatedLookupTable.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedLookupTable</a>&nbsp;flt,
@@ -287,6 +294,18 @@ extends io.netty.channel.ChannelInboundHandlerAdapter</pre>
 <dd><code>frc</code> - Read cache shared by all worker handlers.</dd>
 <dd><code>fan</code> - A Workload analyzer object (should be null if not used).</dd>
 </dl>
+</li>
+</ul>
+<a id="&lt;init&gt;(org.apache.sysds.runtime.controlprogram.federated.FederatedLookupTable,org.apache.sysds.runtime.controlprogram.federated.FederatedReadCache,org.apache.sysds.runtime.controlprogram.federated.FederatedWorkloadAnalyzer,org.apache.sysds.runtime.controlprogram.parfor.stat.Timing)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>FederatedWorkerHandler</h4>
+<pre>public&nbsp;FederatedWorkerHandler&#8203;(<a href="FederatedLookupTable.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedLookupTable</a>&nbsp;flt,
+                              <a href="FederatedReadCache.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedReadCache</a>&nbsp;frc,
+                              <a href="FederatedWorkloadAnalyzer.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedWorkloadAnalyzer</a>&nbsp;fan,
+                              <a href="../parfor/stat/Timing.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.stat">Timing</a>&nbsp;timing)</pre>
 </li>
 </ul>
 </li>

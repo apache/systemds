@@ -32,16 +32,17 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def outlier(X: Matrix,
             opposite: bool):
     """
-    This outlier-function takes a matrix data set as input from where it determines
-    which point(s) have the largest difference from mean.
+     This outlier-function takes a matrix data set as input from where it determines
+     which point(s) have the largest difference from mean.
+    
     
     
     :param X: Matrix of Recoded dataset for outlier evaluation
     :param opposite: (1)TRUE for evaluating outlier from upper quartile range,
         (0)FALSE for evaluating outlier from lower quartile range
-    :return: 'OperationNode' containing 
-        matrix indicating outlier values 
+    :return: matrix indicating outlier values
     """
+
     params_dict = {'X': X, 'opposite': opposite}
     return Matrix(X.sds_context,
         'outlier',

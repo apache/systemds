@@ -32,14 +32,18 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def matrixProfile(ts: Matrix,
                   **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Builtin function that computes the MatrixProfile of a time series efficiently
-    using the SCRIMP++ algorithm.
-    References:
-    Yan Zhu et al.. 2018.
-      Matrix Profile XI: SCRIMP++: Time Series Motif Discovery at Interactive Speeds.
-      2018 IEEE International Conference on Data Mining (ICDM), 2018, pp. 837-846.
-      DOI: 10.1109/ICDM.2018.00099.
-      https://www.cs.ucr.edu/~eamonn/SCRIMP_ICDM_camera_ready_updated.pdf
+     Builtin function that computes the MatrixProfile of a time series efficiently
+     using the SCRIMP++ algorithm.
+    
+     .. code-block:: txt
+    
+       References:
+       Yan Zhu et al.. 2018.
+         Matrix Profile XI: SCRIMP++: Time Series Motif Discovery at Interactive Speeds.
+         2018 IEEE International Conference on Data Mining (ICDM), 2018, pp. 837-846.
+         DOI: 10.1109/ICDM.2018.00099.
+         https://www.cs.ucr.edu/~eamonn/SCRIMP_ICDM_camera_ready_updated.pdf
+    
     
     
     :param ts: Time series to profile
@@ -48,9 +52,10 @@ def matrixProfile(ts: Matrix,
         between zero and one (1
         computes the exact solution)
     :param is_verbose: Print debug information
-    :return: 'OperationNode' containing 
-        the computed matrix profileindices of least distances 
+    :return: The computed matrix profile
+    :return: Indices of least distances
     """
+
     params_dict = {'ts': ts}
     params_dict.update(kwargs)
     

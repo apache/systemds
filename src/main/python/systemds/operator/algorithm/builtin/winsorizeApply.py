@@ -33,16 +33,17 @@ def winsorizeApply(X: Matrix,
                    qLower: Matrix,
                    qUpper: Matrix):
     """
-    winsorizeApply takes the upper and lower quantile values per column, and
-    remove outliers by replacing them with these upper and lower bound values.
+     winsorizeApply takes the upper and lower quantile values per column, and
+     remove outliers by replacing them with these upper and lower bound values.
+    
     
     
     :param X: Input feature matrix
     :param qLower: row vector of upper bounds per column
     :param qUpper: row vector of lower bounds per column
-    :return: 'OperationNode' containing 
-        matrix without outlier values 
+    :return: Matrix without outlier values
     """
+
     params_dict = {'X': X, 'qLower': qLower, 'qUpper': qUpper}
     return Matrix(X.sds_context,
         'winsorizeApply',

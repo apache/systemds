@@ -32,9 +32,10 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def als(X: Matrix,
         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This script computes an approximate factorization of a low-rank matrix X into two matrices U and V
-    using different implementations of the Alternating-Least-Squares (ALS) algorithm.
-    Matrices U and V are computed by minimizing a loss function (with regularization).
+     This script computes an approximate factorization of a low-rank matrix X into two matrices U and V
+     using different implementations of the Alternating-Least-Squares (ALS) algorithm.
+     Matrices U and V are computed by minimizing a loss function (with regularization).
+    
     
     
     :param X: Location to read the input matrix X to be factorized
@@ -55,9 +56,10 @@ def als(X: Matrix,
         if check is FALSE thr is ignored
     :param seed: The seed to random parts of the algorithm
     :param verbose: If the algorithm should run verbosely
-    :return: 'OperationNode' containing 
-        an m x r matrix where r is the factorization rankan m x r matrix where r is the factorization rank 
+    :return: An m x r matrix where r is the factorization rank
+    :return: An m x r matrix where r is the factorization rank
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     

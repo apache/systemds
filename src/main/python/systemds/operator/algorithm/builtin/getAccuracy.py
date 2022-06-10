@@ -33,15 +33,16 @@ def getAccuracy(y: Matrix,
                 yhat: Matrix,
                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This builtin function compute the weighted and simple accuracy for given predictions
+     This builtin function compute the weighted and simple accuracy for given predictions
+    
     
     
     :param y: Ground truth (Actual Labels)
     :param yhat: Predictions (Predicted labels)
     :param isWeighted: Flag for weighted or non-weighted accuracy calculation
-    :return: 'OperationNode' containing 
-        accuracy of the predicted labels 
+    :return: accuracy of the predicted labels
     """
+
     params_dict = {'y': y, 'yhat': yhat}
     params_dict.update(kwargs)
     return Matrix(y.sds_context,

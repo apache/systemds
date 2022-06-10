@@ -34,17 +34,19 @@ def abstain(X: Matrix,
             threshold: float,
             **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This function calls the multiLogReg-function in which solves Multinomial
-    Logistic Regression using Trust Region method
+     This function calls the multiLogReg-function in which solves Multinomial
+     Logistic Regression using Trust Region method
     
     
-    :param X: Location to read the matrix of feature vectors
-    :param Y: Location to read the matrix with category labels
-    :param threshold: ---
+    
+    :param X: matrix of feature vectors
+    :param Y: matrix with category labels
+    :param threshold: threshold to clear otherwise return X and Y unmodified
     :param verbose: flag specifying if logging information should be printed
-    :return: 'OperationNode' containing 
-        ------ 
+    :return: abstained output X
+    :return: abstained output Y
     """
+
     params_dict = {'X': X, 'Y': Y, 'threshold': threshold}
     params_dict.update(kwargs)
     

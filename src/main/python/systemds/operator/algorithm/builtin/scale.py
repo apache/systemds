@@ -32,15 +32,18 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def scale(X: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This function scales and center individual features in the input matrix (column wise.) using z-score to scale the values.
+     This function scales and center individual features in the input matrix (column wise.) using z-score to scale the values.
+    
     
     
     :param X: Input feature matrix
     :param center: Indicates whether or not to center the feature matrix
     :param scale: Indicates whether or not to scale the feature matrix
-    :return: 'OperationNode' containing 
-        output feature matrix with k columnsthe column means of the input, subtracted if center was truethe scaling of the values, to make each dimension have similar value ranges 
+    :return: Output feature matrix with K columns
+    :return: The column means of the input, subtracted if Center was TRUE
+    :return: The Scaling of the values, to make each dimension have similar value ranges
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     

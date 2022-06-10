@@ -36,9 +36,10 @@ def img_translate(img_in: Matrix,
                   out_h: int,
                   fill_value: float):
     """
-    The Image Translate function translates the image.
-    Optionally resizes the image (without scaling).
-    Uses nearest neighbor sampling.
+     The Image Translate function translates the image.
+     Optionally resizes the image (without scaling).
+     Uses nearest neighbor sampling.
+    
     
     
     :param img_in: Input image as 2D matrix with top left corner at [1, 1]
@@ -47,9 +48,9 @@ def img_translate(img_in: Matrix,
     :param out_w: Width of the output image
     :param out_h: Height of the output image
     :param fill_value: The background of the image
-    :return: 'OperationNode' containing 
-        output image as 2d matrix with top left corner at [1, 1] 
+    :return: Output image as 2D matrix with top left corner at [1, 1]
     """
+
     params_dict = {'img_in': img_in, 'offset_x': offset_x, 'offset_y': offset_y, 'out_w': out_w, 'out_h': out_h, 'fill_value': fill_value}
     return Matrix(img_in.sds_context,
         'img_translate',

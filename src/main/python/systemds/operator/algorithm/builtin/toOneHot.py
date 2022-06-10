@@ -32,14 +32,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def toOneHot(X: Matrix,
              numClasses: int):
     """
-    The toOneHot-function encodes unordered categorical vector to multiple binary vectors.
+     The toOneHot-function encodes unordered categorical vector to multiple binary vectors.
+    
     
     
     :param X: Vector with N integer entries between 1 and numClasses
     :param numclasses: Number of columns, must be be greater than or equal to largest value in X
-    :return: 'OperationNode' containing 
-        one-hot-encoded matrix with shape (n, numclasses) 
+    :return: One-hot-encoded matrix with shape (N, numClasses)
     """
+
     params_dict = {'X': X, 'numClasses': numClasses}
     return Matrix(X.sds_context,
         'toOneHot',

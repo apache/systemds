@@ -35,10 +35,10 @@ def cox(X: Matrix,
         R: Matrix,
         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This script fits a cox Proportional hazard regression model.
-    The Breslow method is used for handling ties and the regression parameters 
-    are computed using trust region newton method with conjugate gradient 
-    
+     This script fits a cox Proportional hazard regression model.
+     The Breslow method is used for handling ties and the regression parameters 
+     are computed using trust region newton method with conjugate gradient 
+     
     
     
     :param X: Location to read the input matrix X containing the survival data
@@ -63,31 +63,33 @@ def cox(X: Matrix,
     :param tol: Tolerance ("epsilon")
     :param moi: Max. number of outer (Newton) iterations
     :param mii: Max. number of inner (conjugate gradient) iterations, 0 = no max
-    :return: 'OperationNode' containing 
-        a d x 7 matrix m, where d denotes the number of covariates, with the following schema:
-        m[,1]: betas
-        m[,2]: exp(betas)
-        m[,3]: standard error of betas
-        m[,4]: z
-        m[,5]: p-value
-        m[,6]: lower 100*(1-alpha)% confidence interval of betas
-        m[,7]: upper 100*(1-alpha)% confidence interval of betastwo matrices containing a summary of some statistics of the fitted model:
-        1 - file s with the following format
+    :return: A D x 7 matrix M, where D denotes the number of covariates, with the following schema:
+        M[,1]: betas
+        M[,2]: exp(betas)
+        M[,3]: standard error of betas
+        M[,4]: Z
+        M[,5]: P-value
+        M[,6]: lower 100*(1-alpha)% confidence interval of betas
+        M[,7]: upper 100*(1-alpha)% confidence interval of betas
+    :return: Two matrices containing a summary of some statistics of the fitted model:
+        1 - File S with the following format
         - row 1: no. of observations
         - row 2: no. of events
         - row 3: log-likelihood
-        - row 4: aic
-        - row 5: rsquare (cox & snell)
-        - row 6: max possible rsquare
-        2 - file t with the following format
-        - row 1: likelihood ratio test statistic, degree of freedom, p-value
-        - row 2: wald test statistic, degree of freedom, p-value
-        - row 3: score (log-rank) test statistic, degree of freedom, p-valueadditionally, the following matrices are stored (needed for prediction)
-        1- a column matrix rt that contains the order-preserving recoded timestamps from x
-        2- matrix xo which is matrix x with sorted timestamps
-        3- variance-covariance matrix of the betas cov
-        4- a column matrix mf that contains the column indices of x with the baseline factors removed (if available) 
+        - row 4: AIC
+        - row 5: Rsquare (Cox & Snell)
+        - row 6: max possible Rsquare
+        2 - File T with the following format
+        - row 1: Likelihood ratio test statistic, degree of freedom, P-value
+        - row 2: Wald test statistic, degree of freedom, P-value
+        - row 3: Score (log-rank) test statistic, degree of freedom, P-value
+    :return: Additionally, the following matrices are stored (needed for prediction)
+        1- A column matrix RT that contains the order-preserving recoded timestamps from X
+        2- Matrix XO which is matrix X with sorted timestamps
+        3- Variance-covariance matrix of the betas COV
+        4- A column matrix MF that contains the column indices of X with the baseline factors removed (if available)
     """
+
     params_dict = {'X': X, 'TE': TE, 'F': F, 'R': R}
     params_dict.update(kwargs)
     

@@ -32,15 +32,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def univar(X: Matrix,
            types: Matrix):
     """
-    Computes univariate statistics for all attributes in a given data set
+     Computes univariate statistics for all attributes in a given data set
+    
     
     
     :param X: Input matrix of the shape (N, D)
     :param TYPES: Matrix of the shape (1, D) with features types:
         1 for scale, 2 for nominal, 3 for ordinal
-    :return: 'OperationNode' containing 
-        univariate statistics for all attributes 
+    :return: univariate statistics for all attributes
     """
+
     params_dict = {'X': X, 'types': types}
     return Matrix(X.sds_context,
         'univar',

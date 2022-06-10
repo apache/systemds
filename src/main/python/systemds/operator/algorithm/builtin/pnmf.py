@@ -33,12 +33,14 @@ def pnmf(X: Matrix,
          rnk: int,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    The pnmf-function implements Poisson Non-negative Matrix Factorization (PNMF). Matrix X is factorized into two
-    non-negative matrices, W and H based on Poisson probabilistic assumption. This non-negativity makes the resulting
-    matrices easier to inspect.
-    [Chao Liu, Hung-chih Yang, Jinliang Fan, Li-Wei He, Yi-Min Wang:
-    Distributed nonnegative matrix factorization for web-scale dyadic 
-    data analysis on mapreduce. WWW 2010: 681-690]
+     The pnmf-function implements Poisson Non-negative Matrix Factorization (PNMF). Matrix X is factorized into two
+     non-negative matrices, W and H based on Poisson probabilistic assumption. This non-negativity makes the resulting
+     matrices easier to inspect.
+    
+     [Chao Liu, Hung-chih Yang, Jinliang Fan, Li-Wei He, Yi-Min Wang:
+     Distributed nonnegative matrix factorization for web-scale dyadic 
+     data analysis on mapreduce. WWW 2010: 681-690]
+    
     
     
     :param X: Matrix of feature vectors.
@@ -46,9 +48,10 @@ def pnmf(X: Matrix,
     :param eps: Tolerance
     :param maxi: Maximum number of conjugate gradient iterations.
     :param verbose: If TRUE, 'iter' and 'obj' are printed.
-    :return: 'OperationNode' containing 
-        list of pattern matrices, one for each repetition.list of amplitude matrices, one for each repetition. 
+    :return: List of pattern matrices, one for each repetition.
+    :return: List of amplitude matrices, one for each repetition.
     """
+
     params_dict = {'X': X, 'rnk': rnk}
     params_dict.update(kwargs)
     

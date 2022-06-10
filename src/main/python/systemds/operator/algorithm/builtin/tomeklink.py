@@ -32,16 +32,19 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def tomeklink(X: Matrix,
               y: Matrix):
     """
-    The tomekLink-function performs under sampling by removing Tomek's links for imbalanced multi-class problems
-    Computes TOMEK links and drops them from data matrix and label vector.
-    Drops only the majority label and corresponding point of TOMEK links.
+     The tomekLink-function performs under sampling by removing Tomek's links for imbalanced multi-class problems
+     Computes TOMEK links and drops them from data matrix and label vector.
+     Drops only the majority label and corresponding point of TOMEK links.
+    
     
     
     :param X: Data Matrix (nxm)
     :param y: Label Matrix (nx1), greater than zero
-    :return: 'OperationNode' containing 
-        data matrix without tomek linkslabels corresponding to under sampled dataindices of dropped rows/labels wrt input 
+    :return: Data Matrix without Tomek links
+    :return: Labels corresponding to under sampled data
+    :return: Indices of dropped rows/labels wrt input
     """
+
     params_dict = {'X': X, 'y': y}
     
     vX_0 = Matrix(X.sds_context, '')

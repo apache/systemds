@@ -31,13 +31,14 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def scaleMinMax(X: Matrix):
     """
-    This function performs min-max normalization (rescaling to [0,1]).
+     This function performs min-max normalization (rescaling to [0,1]).
+    
     
     
     :param X: Input feature matrix
-    :return: 'OperationNode' containing 
-        scaled output matrix 
+    :return: Scaled output matrix
     """
+
     params_dict = {'X': X}
     return Matrix(X.sds_context,
         'scaleMinMax',

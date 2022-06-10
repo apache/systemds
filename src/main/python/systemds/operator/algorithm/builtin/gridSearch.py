@@ -37,8 +37,9 @@ def gridSearch(X: Matrix,
                paramValues: List,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    The gridSearch-function is used to find the optimal hyper-parameters of a model which results in the most
-    accurate predictions. This function takes train and eval functions by name.
+     The gridSearch-function is used to find the optimal hyper-parameters of a model which results in the most
+     accurate predictions. This function takes train and eval functions by name.
+    
     
     
     :param X: Input feature matrix
@@ -60,10 +61,11 @@ def gridSearch(X: Matrix,
     :param cv: flag enabling k-fold cross validation, otherwise training loss
     :param cvk: if cv=TRUE, specifies the the number of folds, otherwise ignored
     :param verbose: flag for verbose debug output
-    :return: 'OperationNode' containing 
-        matrix[double]the trained model with minimal loss (by the 'predict' function)
-        multi-column models are returned as a column-major linearized column vectorone-row frame w/ optimal hyper-parameters (by 'params' position) 
+    :return: Matrix[Double]the trained model with minimal loss (by the 'predict' function)
+        Multi-column models are returned as a column-major linearized column vector
+    :return: one-row frame w/ optimal hyper-parameters (by 'params' position)
     """
+
     params_dict = {'X': X, 'y': y, 'train': train, 'predict': predict, 'params': params, 'paramValues': paramValues}
     params_dict.update(kwargs)
     

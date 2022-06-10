@@ -35,10 +35,12 @@ def miceApply(X: Matrix,
               dM: Frame,
               betaList: List):
     """
-    This Builtin function implements multiple imputation using Chained Equations (MICE)
-    Assumption missing value are represented with empty string i.e ",," in CSV file  
-    variables with suffix n are storing continuos/numeric data and variables with 
-    suffix c are storing categorical data
+     This Builtin function implements multiple imputation using Chained Equations (MICE)
+    
+     Assumption missing value are represented with empty string i.e ",," in CSV file  
+     variables with suffix n are storing continuos/numeric data and variables with 
+     suffix c are storing categorical data
+    
     
     
     :param X: Data Matrix (Recoded Matrix for categorical features)
@@ -51,9 +53,9 @@ def miceApply(X: Matrix,
     :param dM: meta frame from OHE on original data
     :param betaList: List of machine learning models trained for each column imputation
     :param verbose: Boolean value.
-    :return: 'OperationNode' containing 
-        imputed dataset 
+    :return: imputed dataset
     """
+
     params_dict = {'X': X, 'meta': meta, 'threshold': threshold, 'dM': dM, 'betaList': betaList}
     return Matrix(X.sds_context,
         'miceApply',

@@ -33,10 +33,11 @@ def multiLogReg(X: Matrix,
                 Y: Matrix,
                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Solves Multinomial Logistic Regression using Trust Region method.
-    (See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)
-    The largest label represents the baseline category; if label -1 or 0 is present, then it is
-    the baseline label (and it is converted to the largest label).
+     Solves Multinomial Logistic Regression using Trust Region method.
+     (See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)
+     The largest label represents the baseline category; if label -1 or 0 is present, then it is
+     the baseline label (and it is converted to the largest label).
+    
     
     
     :param X: Location to read the matrix of feature vectors
@@ -49,9 +50,9 @@ def multiLogReg(X: Matrix,
     :param maxi: max. number of outer (Newton) iterations
     :param maxii: max. number of inner (conjugate gradient) iterations, 0 = no max
     :param verbose: flag specifying if logging information should be printed
-    :return: 'OperationNode' containing 
-        regression betas as output for prediction 
+    :return: regression betas as output for prediction
     """
+
     params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

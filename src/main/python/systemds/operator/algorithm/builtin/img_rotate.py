@@ -33,16 +33,17 @@ def img_rotate(img_in: Matrix,
                radians: float,
                fill_value: float):
     """
-    The Image Rotate function rotates the input image counter-clockwise around the center.
-    Uses nearest neighbor sampling.
+     The Image Rotate function rotates the input image counter-clockwise around the center.
+     Uses nearest neighbor sampling.
+    
     
     
     :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param radians: The value by which to rotate in radian.
     :param fill_value: The background color revealed by the rotation
-    :return: 'OperationNode' containing 
-        output image as 2d matrix with top left corner at [1, 1] 
+    :return: Output image as 2D matrix with top left corner at [1, 1]
     """
+
     params_dict = {'img_in': img_in, 'radians': radians, 'fill_value': fill_value}
     return Matrix(img_in.sds_context,
         'img_rotate',

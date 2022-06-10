@@ -33,16 +33,17 @@ def winsorize(X: Matrix,
               verbose: bool,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    The winsorize-function removes outliers from the data. It does so by computing upper and
-    lower quartile range of the given data then it replaces any value that falls outside this range
-    (less than lower quartile range or more than upper quartile range).
+     The winsorize-function removes outliers from the data. It does so by computing upper and
+     lower quartile range of the given data then it replaces any value that falls outside this range
+     (less than lower quartile range or more than upper quartile range).
+    
     
     
     :param X: Input feature matrix
     :param verbose: To print output on screen
-    :return: 'OperationNode' containing 
-        matrix without outlier values 
+    :return: Matrix without outlier values
     """
+
     params_dict = {'X': X, 'verbose': verbose}
     params_dict.update(kwargs)
     

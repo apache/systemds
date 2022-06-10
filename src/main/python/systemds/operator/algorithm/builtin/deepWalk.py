@@ -36,7 +36,8 @@ def deepWalk(Graph: Matrix,
              t: int,
              **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This script performs DeepWalk on a given graph (https://arxiv.org/pdf/1403.6652.pdf)
+     This script performs DeepWalk on a given graph (https://arxiv.org/pdf/1403.6652.pdf)
+    
     
     
     :param Graph: adjacency matrix of a graph (n x n)
@@ -46,9 +47,9 @@ def deepWalk(Graph: Matrix,
     :param t: walk length
     :param alpha: learning rate
     :param beta: factor for decreasing learning rate
-    :return: 'OperationNode' containing 
-        matrix of vertex/word representation (n x d) 
+    :return: matrix of vertex/word representation (n x d)
     """
+
     params_dict = {'Graph': Graph, 'w': w, 'd': d, 'gamma': gamma, 't': t}
     params_dict.update(kwargs)
     return Matrix(Graph.sds_context,

@@ -32,7 +32,8 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def arima(X: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Builtin function that implements ARIMA
+     Builtin function that implements ARIMA
+    
     
     
     :param X: The input Matrix to apply Arima on.
@@ -46,9 +47,9 @@ def arima(X: Matrix,
     :param s: period in terms of number of time-steps
     :param include_mean: center to mean 0, and include in result
     :param solver: solver, is either "cg" or "jacobi"
-    :return: 'OperationNode' containing 
-        the calculated coefficients 
+    :return: The calculated coefficients
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

@@ -32,8 +32,9 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def outlierByArima(X: Matrix,
                    **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Built-in function for detecting and repairing outliers in time series, by training an ARIMA model
-    and classifying values that are more than k standard-deviations away from the predicated values as outliers.
+     Built-in function for detecting and repairing outliers in time series, by training an ARIMA model
+     and classifying values that are more than k standard-deviations away from the predicated values as outliers.
+    
     
     
     :param X: Matrix X
@@ -49,9 +50,9 @@ def outlierByArima(X: Matrix,
     :param s: period in terms of number of time-steps
     :param include_mean: If the mean should be included
     :param solver: solver, is either "cg" or "jacobi"
-    :return: 'OperationNode' containing 
-        matrix x with no outliers 
+    :return: Matrix X with no outliers
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

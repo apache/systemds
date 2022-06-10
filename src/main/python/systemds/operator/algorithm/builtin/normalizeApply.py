@@ -33,18 +33,19 @@ def normalizeApply(X: Matrix,
                    cmin: Matrix,
                    cmax: Matrix):
     """
-    Min-max normalization (a.k.a. min-max scaling) to range [0,1], given 
-    existing min-max ranges. For matrices of positive values, this normalization 
-    preserves the input sparsity. The validity of the provided min-max range
-    and post-processing is under control of the caller. 
+     Min-max normalization (a.k.a. min-max scaling) to range [0,1], given 
+     existing min-max ranges. For matrices of positive values, this normalization 
+     preserves the input sparsity. The validity of the provided min-max range
+     and post-processing is under control of the caller. 
+    
     
     
     :param X: Input feature matrix of shape n-by-m
     :param cmin: Colunm minima of shape 1-by-m
     :param cmax: Column maxima of shape 1-by-m
-    :return: 'OperationNode' containing 
-        modified output feature matrix of shape n-by-m 
+    :return: Modified output feature matrix of shape n-by-m
     """
+
     params_dict = {'X': X, 'cmin': cmin, 'cmax': cmax}
     return Matrix(X.sds_context,
         'normalizeApply',

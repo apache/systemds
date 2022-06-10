@@ -32,16 +32,17 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def dmv(X: Frame,
         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    The dmv-function is used to find disguised missing values utilising syntactical pattern recognition.
+     The dmv-function is used to find disguised missing values utilising syntactical pattern recognition.
+    
     
     
     :param X: Input Frame
     :param threshold: Threshold value in interval [0, 1] for dominant pattern per column (e.g., 0.8 means
         that 80% of the entries per column must adhere this pattern to be dominant)
     :param replace: The string disguised missing values are replaced with
-    :return: 'OperationNode' containing 
-        frame x including detected disguised missing values 
+    :return: Frame X including detected disguised missing values
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

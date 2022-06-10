@@ -33,8 +33,9 @@ def msvm(X: Matrix,
          Y: Matrix,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    Implements builtin multi-class SVM with squared slack variables, 
-    learns one-against-the-rest binary-class classifiers by making a function call to l2SVM
+     Implements builtin multi-class SVM with squared slack variables, 
+     learns one-against-the-rest binary-class classifiers by making a function call to l2SVM
+    
     
     
     :param X: matrix X of feature vectors
@@ -46,9 +47,9 @@ def msvm(X: Matrix,
     :param reg: Regularization parameter (lambda) for L2 regularization
     :param maxIterations: Maximum number of conjugate gradient iterations
     :param verbose: Set to true to print while training.
-    :return: 'OperationNode' containing 
-        model matrix 
+    :return: model matrix
     """
+
     params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

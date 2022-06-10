@@ -34,34 +34,43 @@ def hospitalResidencyMatch(R: Matrix,
                            capacity: Matrix,
                            **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    This script computes a solution for the hospital residency match problem.
-    Residents.mtx:
-    2.0,1.0,3.0
-    1.0,2.0,3.0
-    1.0,2.0,0.0
-    Since it is an ORDERED  matrix, this means that Resident 1 (row 1) likes hospital 2 the most, followed by hospital 1 and hospital 3.
-    If it was UNORDERED, this would mean that resident 1 (row 1) likes hospital 3 the most (since the value at [1,3] is the row max),
-    followed by hospital 1 (2.0 preference value) and hospital 2 (1.0 preference value).
-    Hospitals.mtx:
-    2.0,1.0,0.0
-    0.0,1.0,2.0
-    1.0,2.0,0.0
-    Since it is an UNORDERED matrix this means that Hospital 1 (row 1) likes Resident 1 the most (since the value at [1,1] is the row max).
-    capacity.mtx
-    1.0
-    1.0
-    1.0
-    residencyMatch.mtx
-    2.0,0.0,0.0
-    1.0,0.0,0.0
-    0.0,2.0,0.0
-    hospitalMatch.mtx
-    0.0,1.0,0.0
-    0.0,0.0,2.0
-    1.0,0.0,0.0
-    Resident 1 has matched with Hospital 3 (since [1,3] is non-zero) at a preference level of 2.0.
-    Resident 2 has matched with Hospital 1 (since [2,1] is non-zero) at a preference level of 1.0.
-    Resident 3 has matched with Hospital 2 (since [3,2] is non-zero) at a preference level of 2.0.
+     This script computes a solution for the hospital residency match problem.
+    
+     Residents.mtx:
+     2.0,1.0,3.0
+     1.0,2.0,3.0
+     1.0,2.0,0.0
+    
+     Since it is an ORDERED  matrix, this means that Resident 1 (row 1) likes hospital 2 the most, followed by hospital 1 and hospital 3.
+     If it was UNORDERED, this would mean that resident 1 (row 1) likes hospital 3 the most (since the value at [1,3] is the row max),
+     followed by hospital 1 (2.0 preference value) and hospital 2 (1.0 preference value).
+    
+     Hospitals.mtx:
+     2.0,1.0,0.0
+     0.0,1.0,2.0
+     1.0,2.0,0.0
+    
+     Since it is an UNORDERED matrix this means that Hospital 1 (row 1) likes Resident 1 the most (since the value at [1,1] is the row max).
+    
+     capacity.mtx
+     1.0
+     1.0
+     1.0
+    
+     residencyMatch.mtx
+     2.0,0.0,0.0
+     1.0,0.0,0.0
+     0.0,2.0,0.0
+    
+     hospitalMatch.mtx
+     0.0,1.0,0.0
+     0.0,0.0,2.0
+     1.0,0.0,0.0
+    
+     Resident 1 has matched with Hospital 3 (since [1,3] is non-zero) at a preference level of 2.0.
+     Resident 2 has matched with Hospital 1 (since [2,1] is non-zero) at a preference level of 1.0.
+     Resident 3 has matched with Hospital 2 (since [3,2] is non-zero) at a preference level of 2.0.
+    
     
     
     :param R: Residents matrix R.
@@ -74,13 +83,14 @@ def hospitalResidencyMatch(R: Matrix,
         i.e. the leftmost value in a row in P is the preference value for the acceptor
         with index 1 and vice-versa (higher is better).
     :param verbose: If the operation is verbose
-    :return: 'OperationNode' containing 
-        result matrix
-        if cell [i,j] is non-zero, it means that resident i has matched with hospital j.
-        further, if cell [i,j] is non-zero, it holds the preference value that led to the match.result matrix
-        if cell [i,j] is non-zero, it means that resident i has matched with hospital j.
-        further, if cell [i,j] is non-zero, it holds the preference value that led to the match. 
+    :return: Result Matrix
+        If cell [i,j] is non-zero, it means that Resident i has matched with Hospital j.
+        Further, if cell [i,j] is non-zero, it holds the preference value that led to the match.
+    :return: Result Matrix
+        If cell [i,j] is non-zero, it means that Resident i has matched with Hospital j.
+        Further, if cell [i,j] is non-zero, it holds the preference value that led to the match.
     """
+
     params_dict = {'R': R, 'H': H, 'capacity': capacity}
     params_dict.update(kwargs)
     

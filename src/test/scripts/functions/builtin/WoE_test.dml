@@ -23,6 +23,6 @@ X = matrix("1 1 1 2 2 3 3 3 4 4 4 3 3 3 3", rows=15, cols =1)
 Y = matrix("1 3 1 3 1 1 1 2 2 2 1 1 1 3 2", rows=15, cols =1)
 E = matrix("0 0 0 0 0 1.379 1.379 1.379 0 0 0 1.379 1.379 1.379 1.379", rows=15, cols = 1)
 
-[F, Y, entropyMatrix] = WoE(X, Y, as.matrix(1))
+[F, entropyMatrix] = WoE(X, Y, as.matrix(1))
 res = (sum((E - F) < 0.001) == 15)
 print(res)

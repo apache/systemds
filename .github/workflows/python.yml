@@ -31,7 +31,7 @@ on:
       - 'src/assembly/**'
       - 'dev/**'
     branches:
-      - branch-2.2.0
+      - branch-2.2.1
   pull_request:
     paths-ignore:
       - 'docs/**'
@@ -40,7 +40,7 @@ on:
       - 'src/test/**'
       - 'dev/**'
     branches:
-      - branch-2.2.0
+      - branch-2.2.1
 
 jobs:
   test:

@@ -24,13 +24,13 @@ name: Documentation
 on:
   push:
     branches:
-      - branch-2.2.0
+      - branch-2.2.1
   pull_request:
     paths-ignore:
       - 'docs/**'
       - '*.md'
     branches:
-      - branch-2.2.0
+      - branch-2.2.1
 
 jobs:
   documentation1:

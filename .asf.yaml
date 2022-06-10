@@ -35,7 +35,7 @@ github:
     
 
   protected_branches:
-    branch-2.2.0:
+    branch-2.2.1:
       # Do not allow merge commits
       # by allowing linear history
       required_linear_history: true

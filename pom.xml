@@ -30,7 +30,7 @@
 	<packaging>jar</packaging>
 	<name>SystemDS</name>
 	<url>https://github.com/apache/systemds</url>
-	<description>Declarative End-to-End Data Science</description>
+	<description>An open source ML system for the end-to-end data science lifecycle</description>
 	<licenses>
 		<license>
 			<name>Apache 2.0 License</name>

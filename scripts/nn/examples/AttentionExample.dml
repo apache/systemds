@@ -46,7 +46,7 @@ epochs = 30
 batch_size = n/200
 val_size = batch_size * 5
 
-data = read(data_loc + "clickbait_data.csv", format="csv", header=TRUE, sep=",", data_type="frame", schema=tableschema, cols=2, rows=N)
+data = read(data_loc + "clickbait.csv", format="csv", header=TRUE, sep=",", data_type="frame", schema=tableschema, cols=2, rows=N)
 
 
 [x_train, y_train, vocab_size] = preprocess(data, max_length, N)

@@ -26,7 +26,7 @@
     margin: 2em;
   }
 
-  #metrics {
+  .metrics-cards {
     display: flex;
     mat-card {
       width: 100%;
@@ -75,3 +75,31 @@
   .requests-table-title {
     padding: 1em;
   }
+
+.online-worker {
+  color: green;
+}
+
+.offline-worker {
+  color: darkred;
+}
+
+#cpu-metric-card {
+  margin-top: 0.5em;
+  margin-right: 0.5em;
+}
+
+#memory-metric-card {
+  margin-top: 0.5em;
+  margin-left: 0.5em;
+}
+
+#data-metric-card {
+  margin-bottom: 0.5em;
+  margin-right: 0.5em;
+}
+
+#requests-metric-card {
+  margin-bottom: 0.5em;
+  margin-left: 0.5em;
+}

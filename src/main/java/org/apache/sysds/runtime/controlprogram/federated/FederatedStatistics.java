@@ -479,6 +479,18 @@ public class FederatedStatistics {
 		return coordinatorsTrafficBytes;
 	}
 
+	public static List<Pair<RequestType, Long>> getRequestTypeCount() {
+		var requestTypeCount = new ArrayList<Pair<RequestType, Long>>();
+
+		requestTypeCount.add(new ImmutablePair<RequestType, Long>(RequestType.GET_VAR, getCount.longValue()));
+		requestTypeCount.add(new ImmutablePair<RequestType, Long>(RequestType.PUT_VAR, putCount.longValue()));
+		requestTypeCount.add(new ImmutablePair<RequestType, Long>(RequestType.READ_VAR, readCount.longValue()));
+		requestTypeCount.add(new ImmutablePair<RequestType, Long>(RequestType.EXEC_UDF, executeUDFCount.longValue()));
+		requestTypeCount.add(new ImmutablePair<RequestType, Long>(RequestType.EXEC_INST, executeInstructionCount.longValue()));
+
+		return requestTypeCount;
+	}
+
 	public static double getCPUUsage() {
 		ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
 		double cpuUsage = 0.0f;
@@ -657,6 +669,7 @@ public class FederatedStatistics {
 			mtStats.collectStats();
 			heavyHitters = Statistics.getHeavyHittersHashMap();
 			coordinatorsTrafficBytes = getCoordinatorsTrafficBytes();
+			requestTypeCount = getRequestTypeCount();
 		}
 		
 		public void aggregate(FedStatsCollection that) {
@@ -671,7 +684,8 @@ public class FederatedStatistics {
 				(key, value) -> heavyHitters.merge(key, value, (v1, v2) ->
 					new ImmutablePair<>(v1.getLeft() + v2.getLeft(), v1.getRight() + v2.getRight()))
 			);
-			that.coordinatorsTrafficBytes.addAll(coordinatorsTrafficBytes);
+			coordinatorsTrafficBytes.addAll(that.coordinatorsTrafficBytes);
+			requestTypeCount.addAll(that.requestTypeCount);
 		}
 
 		protected static class CacheStatsCollection implements Serializable {
@@ -826,5 +840,6 @@ public class FederatedStatistics {
 		private MultiTenantStatsCollection mtStats = new MultiTenantStatsCollection();
 		public HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
 		public List<Triple<LocalDateTime, String, Long>> coordinatorsTrafficBytes = new ArrayList<>();
+		public List<Pair<RequestType, Long>> requestTypeCount = new ArrayList<>();
 	}
 }

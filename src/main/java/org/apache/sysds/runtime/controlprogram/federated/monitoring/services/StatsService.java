@@ -50,9 +50,14 @@ public class StatsService {
 					aggFedStats.aggregate((FederatedStatistics.FedStatsCollection)tmp[0]);
 
 				parsedStats = new StatsEntityModel(
-					id, new Timestamp(System.currentTimeMillis()), aggFedStats.cpuUsage, aggFedStats.memoryUsage,
-					aggFedStats.heavyHitters, aggFedStats.coordinatorsTrafficBytes);
-				System.out.println(parsedStats);
+						id,
+						new Timestamp(System.currentTimeMillis()),
+						aggFedStats.cpuUsage,
+						aggFedStats.memoryUsage,
+						aggFedStats.jitCompileTime,
+						aggFedStats.heavyHitters,
+						aggFedStats.coordinatorsTrafficBytes,
+						aggFedStats.requestTypeCount);
 			}
 		} catch (DMLRuntimeException dre) {
 			// silently ignore -> caused by offline federated workers

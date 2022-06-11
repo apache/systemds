@@ -37,7 +37,7 @@ export class CreateEditWorkersComponent {
     @Inject(MAT_DIALOG_DATA) public id: number) {}
 
   ngOnInit(): void {
-    this.model = new Worker(-1, '', '', false,[]);
+    this.model = new Worker(-1, '', '', false,0, [],[]);
 
     if (this.id !== null) {
       this.fedSiteService.getWorker(this.id).subscribe(worker => this.model = worker);

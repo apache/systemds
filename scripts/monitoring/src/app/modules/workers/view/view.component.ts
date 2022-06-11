@@ -33,9 +33,11 @@ export class ViewWorkerComponent {
 
   public optionsCPU: any;
   public optionsMemory: any;
+  public optionsRequests: any;
 
   public updateOptionsCPU: any;
   public updateOptionsMemory: any;
+  public updateOptionsRequests: any;
 
   private dataCPU!: any[];
   private dataMemory!: any[];
@@ -44,7 +46,6 @@ export class ViewWorkerComponent {
 
   public model: Worker;
 
-  public displayedColumns: string[] = ['type', 'executionTime'];
   public resultsLength = 0;
   public isLoadingResults = true;
 
@@ -148,6 +149,39 @@ export class ViewWorkerComponent {
       }]
     };
 
+    this.optionsRequests = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: [
+        {
+          type: 'category',
+          data: ["GET_VAR", "PUT_VAR", "READ_VAR", "EXEC_UDF", "EXEC_INST"],
+          axisTick: {
+            alignWithLabel: true
+          }
+        }
+      ],
+      yAxis: [{
+        type: 'value'
+      }],
+      series: [{
+        name: 'Count',
+        type: 'bar',
+        barWidth: '60%',
+        data: []
+      }]
+    }
+
     this.timer = setInterval(() => {
       this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
         this.model = worker;
@@ -186,6 +220,12 @@ export class ViewWorkerComponent {
     this.updateOptionsCPU = {
       series: [{
         data: this.dataCPU
+      }]
+    };
+
+    this.updateOptionsRequests = {
+      series: [{
+        data: this.model.requestTypeCounts.map(e => e['count'])
       }]
     };
 

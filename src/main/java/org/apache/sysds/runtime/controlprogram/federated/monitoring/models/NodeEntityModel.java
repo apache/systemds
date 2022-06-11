@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class NodeEntityModel extends BaseEntityModel {
@@ -26,6 +30,9 @@ public class NodeEntityModel extends BaseEntityModel {
 	private String _name;
 	private String _address;
 	private boolean _isOnline = false;
+	private double _jitCompileTime;
+
+	private List<Pair<FederatedRequest.RequestType, Long>> _requestTypeCount;
 	private List<BaseEntityModel> _stats;
 
 	public NodeEntityModel() { }
@@ -76,6 +83,33 @@ public class NodeEntityModel extends BaseEntityModel {
 		_stats = stats;
 	}
 
+	public double getJitCompileTime() {
+		return _jitCompileTime;
+	}
+
+	public void setJitCompileTime(final double jitCompileTime) {
+		_jitCompileTime = jitCompileTime;
+	}
+
+	public String getRequestTypeCount() {
+		List<String> requestTypeCountStrArr = new ArrayList<>();
+
+		if (_requestTypeCount != null) {
+			for(var entry : _requestTypeCount) {
+				requestTypeCountStrArr.add(String.format("{" +
+						"\"type\": \"%s\"," +
+						"\"count\": %d" +
+						"}", entry.getLeft().toString(), entry.getRight()));
+			}
+		}
+
+		return String.join(",", requestTypeCountStrArr);
+	}
+
+	public void setRequestTypeCount(final List<Pair<FederatedRequest.RequestType, Long>> requestTypeCount) {
+		_requestTypeCount = requestTypeCount;
+	}
+
 	@Override
 	public String toString() {
 		return String.format("{" +
@@ -83,7 +117,9 @@ public class NodeEntityModel extends BaseEntityModel {
 				"\"name\": \"%s\"," +
 				"\"address\": \"%s\"," +
 				"\"isOnline\": %b," +
+				"\"jitCompileTime\": %.2f," +
+				"\"requestTypeCounts\": [%s]," +
 				"\"stats\": %s" +
-				"}", _id, _name, _address, _isOnline, _stats);
+				"}", _id, _name, _address, _isOnline, _jitCompileTime, getRequestTypeCount(), _stats);
 	}
 }

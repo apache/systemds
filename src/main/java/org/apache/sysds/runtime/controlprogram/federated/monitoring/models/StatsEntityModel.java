@@ -21,9 +21,11 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.sql.Timestamp;
@@ -33,25 +35,35 @@ public class StatsEntityModel extends BaseEntityModel {
 	private Long _workerId;
 	private double _cpuUsage;
 	private double _memoryUsage;
+	private double _jitCompileTime = 0;
 	private Map<String, Pair<Long, Double>> _heavyHitterInstructionsObj;
 	private String _heavyHitterInstructions;
 	private List<Triple<LocalDateTime, String, Long>> _transferredBytesObj;
 	private String _transferredBytes;
+	private List<Pair<FederatedRequest.RequestType, Long>> _requestTypeCount;
 
 	public StatsEntityModel() { }
 
-	public StatsEntityModel(Long workerId, Timestamp timestamp, double cpuUsage, double memoryUsage,
-		Map<String, Pair<Long, Double>> heavyHitterInstructionsObj,
-		List<Triple<LocalDateTime, String, Long>> transferredBytesObj)
+	public StatsEntityModel(
+			Long workerId,
+			Timestamp timestamp,
+			double cpuUsage,
+			double memoryUsage,
+			double jitCompileTime,
+			Map<String, Pair<Long, Double>> heavyHitterInstructionsObj,
+			List<Triple<LocalDateTime, String, Long>> transferredBytesObj,
+			List<Pair<FederatedRequest.RequestType, Long>> requestTypeCount)
 	{
 		_workerId = workerId;
 		_timeStamp = timestamp;
 		_cpuUsage = cpuUsage;
 		_memoryUsage = memoryUsage;
+		_jitCompileTime = jitCompileTime;
 		_heavyHitterInstructionsObj = heavyHitterInstructionsObj;
 		_transferredBytesObj = transferredBytesObj;
 		_heavyHitterInstructions = "";
 		_transferredBytes = "";
+		_requestTypeCount = requestTypeCount;
 	}
 
 	public Long getWorkerId() {
@@ -85,25 +97,33 @@ public class StatsEntityModel extends BaseEntityModel {
 	public void setMemoryUsage(final double memoryUsage) {
 		_memoryUsage = memoryUsage;
 	}
+	public double getJitCompileTime() {
+		return _jitCompileTime;
+	}
+
+	public List<Pair<FederatedRequest.RequestType, Long>> getRequestTypeCount() {
+		return _requestTypeCount;
+	}
 
 	public String getHeavyHitterInstructions() {
-		if (_heavyHitterInstructions.isEmpty() || _heavyHitterInstructions.isBlank()) {
-			StringBuilder sb = new StringBuilder();
+		if ((_heavyHitterInstructions.isEmpty() || _heavyHitterInstructions.isBlank()) && _heavyHitterInstructionsObj != null) {
 
-			sb.append("{");
+			List<String> heavyHittersStrArr = new ArrayList<>();
+
 			for(Map.Entry<String, Pair<Long, Double>> entry : _heavyHitterInstructionsObj.entrySet()) {
 				String instruction = entry.getKey();
 				Long count = entry.getValue().getLeft();
 				double duration = entry.getValue().getRight();
-				sb.append(String.format("{" +
-					"\"instruction\": %s," +
-					"\"count\": \"%d\"," +
-					"\"duration\": \"%.2f\"," +
-					"},", instruction, count, duration));
+				heavyHittersStrArr.add(String.format("{" +
+					"\"instruction\": \"%s\"," +
+					"\"count\": %d," +
+					"\"duration\": %.2f" +
+					"}", instruction, count, duration));
 			}
-			sb.append("}");
 
-			_heavyHitterInstructions = sb.toString();
+			if (!heavyHittersStrArr.isEmpty()) {
+				_heavyHitterInstructions = String.join(",", heavyHittersStrArr);
+			}
 		}
 
 		return _heavyHitterInstructions;
@@ -114,21 +134,22 @@ public class StatsEntityModel extends BaseEntityModel {
 	}
 
 	public String getTransferredBytes() {
-		if (_transferredBytes.isEmpty() || _transferredBytes.isBlank()) {
-			StringBuilder sb = new StringBuilder();
+		if ((_transferredBytes.isEmpty() || _transferredBytes.isBlank()) && _transferredBytesObj != null) {
 
-			sb.append("{");
+			List<String> transferredBytesStrArr = new ArrayList<>();
+
 			for (var entry: _transferredBytesObj) {
-				sb.append(String.format("{" +
-					"\"datetime\": %s," +
+				transferredBytesStrArr.add(String.format("{" +
+					"\"datetime\": \"%s\"," +
 					"\"coordinatorAddress\": \"%s\"," +
-					"\"byteAmount\": \"%d\"," +
-					"},", entry.getLeft().format(DateTimeFormatter.ISO_DATE_TIME),
+					"\"byteAmount\": %d" +
+					"}", entry.getLeft().format(DateTimeFormatter.ISO_DATE_TIME),
 					entry.getMiddle(), entry.getRight()));
 			}
-			sb.append("}");
 
-			_transferredBytes = sb.toString();
+			if (!transferredBytesStrArr.isEmpty()) {
+				_transferredBytes = String.join(",", transferredBytesStrArr);
+			}
 		}
 
 		return _transferredBytes;
@@ -144,8 +165,9 @@ public class StatsEntityModel extends BaseEntityModel {
 			"\"timestamp\": \"%s\"," +
 			"\"cpuUsage\": %.2f," +
 			"\"memoryUsage\": %.2f," +
-			"\"coordinatorTraffic\": %s," +
-			"\"heavyHitters\": %s" +
-			"}", _timeStamp.toString(), _cpuUsage, _memoryUsage, getTransferredBytes(), getHeavyHitterInstructions());
+			"\"coordinatorTraffic\": [%s]," +
+			"\"heavyHitters\": [%s]" +
+			"}", _timeStamp.toString(), _cpuUsage, _memoryUsage,
+				getTransferredBytes(), getHeavyHitterInstructions());
 	}
 }

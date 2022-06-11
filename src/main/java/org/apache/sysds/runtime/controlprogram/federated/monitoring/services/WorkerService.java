@@ -71,14 +71,10 @@ public class WorkerService {
 
 	public BaseEntityModel get(Long id) {
 		var model = (NodeEntityModel) _entityRepository.getEntity(EntityEnum.WORKER, id);
-		var stats = (List<BaseEntityModel>) _entityRepository.getAllEntitiesByField(EntityEnum.WORKER_STATS, id);
 
 		updateCachedWorkers(null);
 
-		var statusOnline = StatsService.getWorkerStatistics(model.getId(), model.getAddress());
-
-		model.setOnlineStatus(statusOnline != null);
-		model.setStats(stats);
+		updateWorkersStats(model);
 
 		return model;
 	}
@@ -91,17 +87,27 @@ public class WorkerService {
 
 		for (var worker: workersRaw) {
 			var workerModel = (NodeEntityModel) worker;
-			var stats = (List<BaseEntityModel>) _entityRepository.getAllEntitiesByField(EntityEnum.WORKER_STATS, workerModel.getId());
 
-			var statusOnline = StatsService.getWorkerStatistics(workerModel.getId(), workerModel.getAddress());
-
-			workerModel.setOnlineStatus(statusOnline != null);
-			workerModel.setStats(stats);
+			updateWorkersStats(workerModel);
 
 			workersResult.add(workerModel);
 		}
 
 		return workersResult;
+	}
+
+	private void updateWorkersStats(NodeEntityModel model) {
+		var savedStats = (List<BaseEntityModel>) _entityRepository.getAllEntitiesByField(EntityEnum.WORKER_STATS, model.getId());
+		var recentStats = (StatsEntityModel) StatsService.getWorkerStatistics(model.getId(), model.getAddress());
+
+		model.setOnlineStatus(recentStats != null);
+
+		if (recentStats != null) {
+			model.setJitCompileTime(recentStats.getJitCompileTime());
+			model.setRequestTypeCount(recentStats.getRequestTypeCount());
+		}
+
+		model.setStats(savedStats);
 	}
 
 	private void updateCachedWorkers(List<BaseEntityModel> workersRaw) {

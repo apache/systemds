@@ -21,6 +21,6 @@ export class Statistics {
     constructor(public timestamp: any,
                 public cpuUsage: number,
                 public memoryUsage: number,
-                public coordinatorTraffic: any,
-                public heavyHitters: any) {}
+                public coordinatorTraffic: [],
+                public heavyHitters: []) {}
   }

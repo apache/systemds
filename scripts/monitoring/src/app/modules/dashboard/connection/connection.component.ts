@@ -49,7 +49,7 @@ export class ConnectionComponent implements OnInit, OnDestroy {
     // initialize chart options:
     this.options = {
       title: {
-        text: 'I/O (Mbit/s)'
+        text: 'I/O (Byte amount)'
       },
       tooltip: {
         trigger: 'axis',

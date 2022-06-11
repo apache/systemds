@@ -24,5 +24,7 @@ export class Worker {
                 public name: string,
                 public address: string,
                 public isOnline: boolean,
+                public jitCompileTime: number,
+                public requestTypeCounts: [],
                 public stats: Statistics[]) {}
   }

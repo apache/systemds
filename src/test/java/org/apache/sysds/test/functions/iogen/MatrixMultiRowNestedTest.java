@@ -125,4 +125,37 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 		sampleMatrix = new double[][] {{1, 2022}, {6, 1980}, {11, 2012}};
 		runGenerateReaderTest();
 	}
+
+	@Test
+	public void test9() {
+		sampleRaw = "#index 1\n" +
+			"#* 12\n" +
+			"#@ 13;14;15\n" +
+			"#o 16;17;18\n" +
+			"#t 19\n" +
+			"#c 110\n" +
+			"#% 111\n" +
+			"#% 112\n" +
+			"\n" +
+			"#index 2\n" +
+			"#* 22\n" +
+			"#@ 23;24;25\n" +
+			"#o 26;27;28\n" +
+			"#t 29\n" +
+			"#c 210\n" +
+			"#% 211\n" +
+			"#% 212\n" +
+			"\n" +
+			"\n" +
+			"#index 3\n" +
+			"#* 32\n" +
+			"#@ 33;34;35\n" +
+			"#o 36;37;38\n" +
+			"#t 39\n" +
+			"#c 310\n" +
+			"#% 311\n" +
+			"#% 500";
+		sampleMatrix = new double[][] {{1,12,13,14,15},{2,22,23,24,25},{3,32,33,34,35}};
+		runGenerateReaderTest();
+	}
 }

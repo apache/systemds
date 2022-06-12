@@ -29,6 +29,7 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class FormatIdentifying {
 
@@ -393,7 +394,54 @@ public class FormatIdentifying {
 						textTrie.insert(prefix.substring(j),i);
 					}
 				}
-				int mm = 100;
+				// scoring the prefix tree
+				ArrayList<Pair<String, Set<Integer>>> keys = textTrie.getAllKeys();
+				String beginString = null;
+				String endString = null;
+				if(keys.get(0).getValue().size() == nrows){
+					int index = keys.get(0).getKey().indexOf("\n");
+					if(index == -1)
+						beginString = keys.get(0).getKey();
+					else
+						beginString = keys.get(0).getKey().substring(0, index);
+
+					// recompute suffix strings to find end of string
+					ArrayList<String> suffixes = new ArrayList<>();
+					for(int i=0; i<prefixSuffixBeginEndCells.size(); i++){
+						String str = prefixSuffixBeginEndCells.get(i).getValue();
+						int indexBeginString = str.indexOf(beginString);
+						if(indexBeginString != -1)
+							suffixes.add(str.substring(0, indexBeginString));
+						else
+							suffixes.add(str);
+					}
+
+					TextTrie textTrieEnd = new TextTrie();
+					textTrieEnd.insert(new StringBuilder(suffixes.get(0).replace("\n", "")).reverse().toString(), 0);
+
+					for(int i=1; i< suffixes.size(); i++){
+						StringBuilder sb = new StringBuilder(suffixes.get(i).replace("\n", Lop.OPERAND_DELIMITOR)).reverse();
+						String str = sb.toString();
+						for(int j=0; j< str.length(); j++){
+							textTrieEnd.insert(str.substring(j),i);
+						}
+					}
+					keys = textTrieEnd.getAllKeys();
+					if(keys.get(0).getValue().size() == nrows){
+						index = keys.get(0).getKey().indexOf(Lop.OPERAND_DELIMITOR);
+						if(index == -1)
+							endString = new StringBuilder(keys.get(0).getKey()).reverse().toString();
+						else
+							endString = new StringBuilder(keys.get(0).getKey().substring(0, index)).reverse().toString();
+
+					}
+					else
+						endString = beginString;
+
+				}
+				else {
+					// TODO: extend sequential scattered format algorithm for heterogeneous structures
+				}
 			}
 		}
 	}
@@ -676,12 +724,12 @@ public class FormatIdentifying {
 		int lastLine = 0;
 		int lastPos = 0;
 		int nextLine = 0;
-		for(int r=0; r<nrows; r++){
+		for(int r = 0; r < nrows; r++) {
 			int beginLine = 0;
 			int endLine = 0;
-			int beginPos = ncols;
+			int beginPos = 0;
 			int endPos, nextPos;
-			for(int i = 0; i<nlines; i++)
+			for(int i = 0; i < nlines; i++)
 				if(recordUsedLines[r].get(i)) {
 					beginLine = i;
 					break;
@@ -691,42 +739,45 @@ public class FormatIdentifying {
 					endLine = i;
 					break;
 				}
-			if(r+1 < nrows) {
+			if(r + 1 < nrows) {
 				for(int i = 0; i < nlines; i++)
-					if(recordUsedLines[r+1].get(i)) {
+					if(recordUsedLines[r + 1].get(i)) {
 						nextLine = i;
 						break;
 					}
 			}
 			else
-				nextLine = nlines -1;
+				nextLine = nlines - 1;
 
 			endPos = sampleRawIndexes.get(endLine).getRawLength();
 			nextPos = sampleRawIndexes.get(nextLine).getRawLength();
-			for(int c=0; c<ncols; c++){
-				if( mapRow[r][c] == beginLine)
+			beginPos = sampleRawIndexes.get(beginLine).getRawLength();
+			for(int c = 0; c < ncols; c++) {
+				if(mapRow[r][c] == beginLine)
 					beginPos = Math.min(beginPos, mapCol[r][c]);
 
-				if( mapRow[r][c] == endLine)
+				if(mapRow[r][c] == endLine)
 					endPos = Math.min(endPos, mapCol[r][c] + mapLen[r][c]);
 
-				if(r+1 < nrows) {
-					if(mapRow[r+1][c] == nextLine)
-						nextPos = Math.min(nextPos, mapCol[r+1][c]);
+				if(r + 1 < nrows) {
+					if(mapRow[r + 1][c] == nextLine)
+						nextPos = Math.min(nextPos, mapCol[r + 1][c]);
 				}
 				else
-					nextPos = sampleRawIndexes.get(sampleRawIndexes.size() -1 ).getRawLength();
+					nextPos = sampleRawIndexes.get(sampleRawIndexes.size() - 1).getRawLength();
 			}
 			StringBuilder sbPrefix = new StringBuilder();
 			StringBuilder sbSuffix = new StringBuilder();
 
-			sbPrefix.append(sampleRawIndexes.get(lastLine).getRaw().substring(lastPos)).append("\n");
-			for(int i=lastLine+1; i<beginLine; i++)
+			if(lastLine != beginLine)
+				sbPrefix.append(sampleRawIndexes.get(lastLine).getRaw().substring(lastPos)).append("\n");
+
+			for(int i = lastLine + 1; i < beginLine; i++)
 				sbPrefix.append(sampleRawIndexes.get(i).getRaw()).append("\n");
 			sbPrefix.append(sampleRawIndexes.get(beginLine).getRaw().substring(0, beginPos));
 
 			sbSuffix.append(sampleRawIndexes.get(endLine).getRaw().substring(endPos)).append("\n");
-			for(int i=endLine+1; i<nextLine; i++)
+			for(int i = endLine + 1; i < nextLine; i++)
 				sbSuffix.append(sampleRawIndexes.get(i).getRaw()).append("\n");
 
 			sbSuffix.append(sampleRawIndexes.get(nextLine).getRaw().substring(0, nextPos));

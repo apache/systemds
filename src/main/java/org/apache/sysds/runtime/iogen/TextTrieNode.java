@@ -63,5 +63,9 @@ public class TextTrieNode {
 	public void setRowIndexUsed(int rowIndex) {
 		this.rowIndexesBitSet.set(rowIndex);
 	}
+
+	public ArrayList<Integer> getRowIndexes() {
+		return rowIndexes;
+	}
 }
 

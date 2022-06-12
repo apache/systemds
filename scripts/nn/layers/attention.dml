@@ -101,7 +101,8 @@ backward = function(matrix[double] dattention,
   J = ncol(query) / D
 
   norm = 1 / D^0.5
-  if (!length(key)){
+  use_key = length(key) > 0
+  if (!use_key){
     key = value
   }
   key_norm = key * norm
@@ -129,12 +130,11 @@ backward = function(matrix[double] dattention,
 
     dscore = t(softmax::backward(value_n %*% t(dattention_n), t(scores)))
     dquery[n] = matrix(dscore %*% key_norm_n, rows=1, cols=J*D)
-    if (length(key)){
+    if (use_key){
       dkey[n] = matrix(t(dscore) %*% query_n * norm, rows=1, cols=K*D)
       dvalue[n] = matrix(t(probs) %*% dattention_n, rows=1, cols=K*D)
     }
     else{
-      # TODO: This gradient seems to be inaccurate
       dvalue[n] = matrix(t(probs) %*% dattention_n + t(dscore) %*% query_n * norm, rows=1, cols=K*D)
     }
 

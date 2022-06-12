@@ -170,7 +170,8 @@ public class FormatIdentifying {
 		}
 		else {
 			// # 4, 6, 7, 8, 9
-			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist && colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
+			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist &&
+				colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
 
 				if(mappingProperties.getDataProperties() != MappingProperties.DataProperties.NOTEXIST) {
 					KeyTrie valueKeyPattern = buildValueKeyPattern();
@@ -379,6 +380,21 @@ public class FormatIdentifying {
 				}
 				colIndexStructure.setKeyPattern(colKeyPattern);
 			}
+			// #10 sequential scattered
+			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.SeqScatter){
+				ArrayList<Pair<String, String>> prefixSuffixBeginEndCells = extractPrefixSuffixBeginEndCells(false);
+
+				TextTrie textTrie = new TextTrie();
+				textTrie.insert(prefixSuffixBeginEndCells.get(0).getKey(), 0);
+
+				for(int i=1; i< prefixSuffixBeginEndCells.size(); i++){
+					String prefix = prefixSuffixBeginEndCells.get(i).getKey();
+					for(int j=0; j< prefix.length(); j++){
+						textTrie.insert(prefix.substring(j),i);
+					}
+				}
+				int mm = 100;
+			}
 		}
 	}
 
@@ -487,10 +503,11 @@ public class FormatIdentifying {
 				rowIndexStructure.setRowIndexBegin(begin);
 				return rowIndexStructure;
 			}
-			else if(isSeqScatter) {
-				rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.SeqScatter);
-				return rowIndexStructure;
-			}
+
+		}
+		if(isSeqScatter) {
+			rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.SeqScatter);
+			return rowIndexStructure;
 		}
 		return rowIndexStructure;
 	}
@@ -633,6 +650,93 @@ public class FormatIdentifying {
 		}
 		else
 			return beginPos;
+	}
+
+	// Extract prefix strings:
+	private ArrayList<Pair<String, String>> extractPrefixSuffixBeginEndCells(boolean reverse) {
+
+		ArrayList<Pair<String, String>> result = new ArrayList<>();
+		BitSet[] recordUsedLines = new BitSet[nlines];
+		BitSet[] usedLines = new BitSet[nlines];
+		for(int r = 0; r < nrows; r++)
+			recordUsedLines[r] = new BitSet();
+
+		for(int r = 0; r < nrows; r++)
+			for(int c = 0; c < ncols; c++)
+				if(mapRow[r][c] != -1)
+					recordUsedLines[r].set(mapRow[r][c]);
+
+		for(int r = 0; r < nrows; r++) {
+			usedLines[r] = new BitSet(nlines);
+			for(int i = 0; i < nrows; i++) {
+				if(i != r)
+					usedLines[r].or(recordUsedLines[i]);
+			}
+		}
+		int lastLine = 0;
+		int lastPos = 0;
+		int nextLine = 0;
+		for(int r=0; r<nrows; r++){
+			int beginLine = 0;
+			int endLine = 0;
+			int beginPos = ncols;
+			int endPos, nextPos;
+			for(int i = 0; i<nlines; i++)
+				if(recordUsedLines[r].get(i)) {
+					beginLine = i;
+					break;
+				}
+			for(int i = nlines - 1; i >= 0; i--)
+				if(recordUsedLines[r].get(i)) {
+					endLine = i;
+					break;
+				}
+			if(r+1 < nrows) {
+				for(int i = 0; i < nlines; i++)
+					if(recordUsedLines[r+1].get(i)) {
+						nextLine = i;
+						break;
+					}
+			}
+			else
+				nextLine = nlines -1;
+
+			endPos = sampleRawIndexes.get(endLine).getRawLength();
+			nextPos = sampleRawIndexes.get(nextLine).getRawLength();
+			for(int c=0; c<ncols; c++){
+				if( mapRow[r][c] == beginLine)
+					beginPos = Math.min(beginPos, mapCol[r][c]);
+
+				if( mapRow[r][c] == endLine)
+					endPos = Math.min(endPos, mapCol[r][c] + mapLen[r][c]);
+
+				if(r+1 < nrows) {
+					if(mapRow[r+1][c] == nextLine)
+						nextPos = Math.min(nextPos, mapCol[r+1][c]);
+				}
+				else
+					nextPos = sampleRawIndexes.get(sampleRawIndexes.size() -1 ).getRawLength();
+			}
+			StringBuilder sbPrefix = new StringBuilder();
+			StringBuilder sbSuffix = new StringBuilder();
+
+			sbPrefix.append(sampleRawIndexes.get(lastLine).getRaw().substring(lastPos)).append("\n");
+			for(int i=lastLine+1; i<beginLine; i++)
+				sbPrefix.append(sampleRawIndexes.get(i).getRaw()).append("\n");
+			sbPrefix.append(sampleRawIndexes.get(beginLine).getRaw().substring(0, beginPos));
+
+			sbSuffix.append(sampleRawIndexes.get(endLine).getRaw().substring(endPos)).append("\n");
+			for(int i=endLine+1; i<nextLine; i++)
+				sbSuffix.append(sampleRawIndexes.get(i).getRaw()).append("\n");
+
+			sbSuffix.append(sampleRawIndexes.get(nextLine).getRaw().substring(0, nextPos));
+			lastLine = endLine;
+			lastPos = endPos;
+
+			result.add(new Pair<>(sbPrefix.toString(), sbSuffix.toString()));
+		}
+
+		return result;
 	}
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

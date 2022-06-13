@@ -47,7 +47,7 @@ epochs = 10
 batch_size = 32
 val_size = 100
 
-data = read(data_loc + "clickbait.csv", format="csv", header=TRUE, sep=",", data_type="frame", schema=tableschema, cols=2, rows=N)
+data = read(data_loc + "clickbait_data.csv", format="csv", header=TRUE, sep=",", data_type="frame", schema=tableschema, cols=2, rows=N)
 
 
 [x_train, y_train, vocab_size] = preprocess(data, max_length, N)
@@ -217,7 +217,6 @@ train = function( matrix[double] x_train,
   for (ep in 1:epochs)
   {
     print("Start ep: " + ep)
-    loss = 0
     for (i in 1:iters)
     {
       print("Iteration: " + i)
@@ -232,11 +231,7 @@ train = function( matrix[double] x_train,
       [y_hat, out5, out4, out3, out2, out1, query, key, emb, cache_out_out, cache_c_out, cache_ifog_out] =
           predict(x_batch, biases, weights, max_sequence_length, embedding_size, lstm_neurons, out2)
 
-      # 3 loss
-      loss = loss + log_loss::forward(y_hat, y_batch)
-
       # 3 backpropagation
-
       dout = log_loss::backward(y_hat, y_batch)
       dprobs = sigmoid::backward(dout, out5)
       [dout_2, dW_2, db_2] = affine::backward(dprobs, out4, W_2, b_2)
@@ -270,7 +265,6 @@ train = function( matrix[double] x_train,
                                                         cache_ifog_out)
 
       # 4 update weights & biases
-
       t = ep * i - 1
       # #embedding
       [W_E, mW_E, vW_E] = update_embeddings(x_batch, dEmb, W_E, mW_E, vW_E,
@@ -301,9 +295,9 @@ train = function( matrix[double] x_train,
       biases = list(b_0,b_1,b_2,b_query, b_key)
       weights = list(W_0,W_1,W_2,W_E,W_query, W_key)
     }
-    val_loss = evaluate(x_val, y_val, biases, weights, lstm_neurons, max_sequence_length, embedding_size, batch_size, out2)
-    loss = loss / iters
-    print("Epoch: " + ep + "; Train Loss: " + loss + "; Val. Loss: " + val_loss)
+    [loss, accuracy] = evaluate(x_train, y_train, biases, weights, lstm_neurons, max_sequence_length, embedding_size, out2)
+    [val_loss, val_accuracy] = evaluate(x_val, y_val, biases, weights, lstm_neurons, max_sequence_length, embedding_size, out2)
+    print("Epoch: " + ep + "; Train Loss: " + loss + "; Train Acc: " + accuracy +"; Val. Loss: " + val_loss + "; Val. Accuracy: " + val_accuracy)
   }
 }
 
@@ -337,7 +331,9 @@ predict = function( matrix[double] x,
    * - out4: output of relu layer
    * - out3: output of hidden affine layer
    * - out2: output of attention layer
-   * - out1: output states from lstm layer, of shape(batch_size, max_sequence_lengt * lstm_neurons)
+   * - out1: output states from lstm layer, of shape(batch_size, max_sequence_length * lstm_neurons)
+   * - query: transformation of out1 by affine layer, of shape(batch_size, max_sequence_length * lstm_neurons/2)
+   * - key: transformation of out1 by affine layer, of shape(batch_size, max_sequence_length * lstm_neurons)
    * - cache_out_out: cache_out output from lstm layer
    * - cahce_c_out: cache_c output from lstm layer
    * - cache_ifog_out: cahce_ifog output from lstm layer
@@ -446,12 +442,11 @@ update_embeddings = function(matrix[double] indexes, matrix[double] dEmb, matrix
 
 evaluate = function(matrix[double] x, matrix[double] y,
   list[unknown] biases, list[unknown] weights, integer lstm_neurons,
-  integer max_sequence_length, integer embedding_size, integer batch_size,
-  matrix[double] out2)
-  return(double loss)
+  integer max_sequence_length, integer embedding_size, matrix[double] out2)
+  return(double loss, double accuracy)
 {
   /*
-  * Evaluate fit by calculating log_loss using predict function.
+  * Evaluate fit by calculating log_loss and accuracy using predict function.
   *
   * Inputs:
   * - x: feature matrix of shape(batch_size, max_sequence_length)
@@ -461,26 +456,19 @@ evaluate = function(matrix[double] x, matrix[double] y,
   * - lstm_neurons: number of neurons used in lstm layer
   * - max_sequence_length: number of words per sample.
   * - embedding_size: size of an embedding vector for 1 word.
-  * - batch_size: batch size for evaluation
   * - out2: matrix of shape (batch_size, max_sequence_length*embedding_size) as attention for attention layer.
   *
   * Outputs:
   * - loss: log_loss of prediction
+  * - accuracy: percentage of correct classifications
   */
-  samples = nrow(x)
-  iters = ceil(samples/batch_size)
-  loss = 0
-  for (i in 1:iters)
-  {
-    start = ((i-1) * batch_size) %% samples + 1
-    end = min(samples, start + batch_size -1)
-    x_batch = x[start:end]
-    y_batch = y[start:end]
-    [y_hat, out5, out4, out3, out2, out1, query, key, emb, cache_out_out, cache_c_out, cache_ifog_out] =
-      predict(x_batch, biases, weights, max_sequence_length, embedding_size, lstm_neurons, out2)
-    loss = loss + log_loss::forward(y_hat, y_batch)
-  }
-  loss = loss / iters
+  batch_size = nrow(x)
+  [y_hat, out5, out4, out3, out2, out1, query, key, emb, cache_out_out, cache_c_out, cache_ifog_out] =
+    predict(x, biases, weights, max_sequence_length, embedding_size, lstm_neurons, out2)
+  loss = log_loss::forward(y_hat, y)
+
+  z = y_hat >= 0.5
+  accuracy = 1 - sum(abs(z - y)) / batch_size
 }
 
 

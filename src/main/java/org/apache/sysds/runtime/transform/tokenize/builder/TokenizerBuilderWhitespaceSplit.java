@@ -17,9 +17,11 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.transform.tokenize;
+package org.apache.sysds.runtime.transform.tokenize.builder;
 
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
+import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
@@ -28,7 +30,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class TokenizerPreWhitespaceSplit implements TokenizerPre {
+public class TokenizerBuilderWhitespaceSplit implements TokenizerBuilder {
 
     private static final long serialVersionUID = 539127244034913364L;
 
@@ -50,7 +52,7 @@ public class TokenizerPreWhitespaceSplit implements TokenizerPre {
         }
     }
 
-    public TokenizerPreWhitespaceSplit(List<Integer> idCols, int tokenizeCol, JSONObject params) throws JSONException {
+    public TokenizerBuilderWhitespaceSplit(List<Integer> idCols, int tokenizeCol, JSONObject params) throws JSONException {
         this.idCols = idCols;
         this.tokenizeCol = tokenizeCol;
         this.params = new Params(params);
@@ -69,9 +71,7 @@ public class TokenizerPreWhitespaceSplit implements TokenizerPre {
     }
 
     @Override
-    public List<Tokenizer.DocumentToTokens> tokenizePre(FrameBlock in) {
-        List<Tokenizer.DocumentToTokens> documentsToTokenList = new ArrayList<>();
-
+    public void createInternalRepresentation(FrameBlock in, List<Tokenizer.DocumentRepresentation> internalRepresentation) {
         Iterator<String[]> iterator = in.getStringRowIterator();
         iterator.forEachRemaining(s -> {
             // Convert index value to Java (0-based) from DML (1-based)
@@ -84,9 +84,12 @@ public class TokenizerPreWhitespaceSplit implements TokenizerPre {
 
             // Transform to Bag format internally
             List<Tokenizer.Token> tokenList = splitToTokens(text);
-            documentsToTokenList.add(new Tokenizer.DocumentToTokens(keys, tokenList));
+            internalRepresentation.add(new Tokenizer.DocumentRepresentation(keys, tokenList));
         });
+    }
 
-        return documentsToTokenList;
+    @Override
+    public List<DependencyTask<?>> getTasks(FrameBlock in, List<Tokenizer.DocumentRepresentation> internalRepresentation, int k) {
+        return null;
     }
 }

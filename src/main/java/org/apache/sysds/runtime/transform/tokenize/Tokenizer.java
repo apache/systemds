@@ -23,46 +23,98 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplier;
+import org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilder;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class Tokenizer implements Serializable {
 
     private static final long serialVersionUID = 7155673772374114577L;
     protected static final Log LOG = LogFactory.getLog(Tokenizer.class.getName());
 
-    private final TokenizerPre tokenizerPre;
-    private final TokenizerPost tokenizerPost;
+    private List<DocumentRepresentation> internalRepresentation = new ArrayList<>();
+    private final TokenizerBuilder tokenizerBuilder;
+    private final TokenizerApplier tokenizerApplier;
 
-    protected Tokenizer(TokenizerPre tokenizerPre, TokenizerPost tokenizerPost) {
-
-        this.tokenizerPre = tokenizerPre;
-        this.tokenizerPost = tokenizerPost;
+    protected Tokenizer(TokenizerBuilder tokenizerBuilder, TokenizerApplier tokenizerApplier) {
+        this.tokenizerBuilder = tokenizerBuilder;
+        this.tokenizerApplier = tokenizerApplier;
     }
 
     public Types.ValueType[] getSchema() {
-        return tokenizerPost.getOutSchema();
+        return tokenizerApplier.getOutSchema();
     }
 
     public long getNumRows(long inRows) {
-        return tokenizerPost.getNumRows(inRows);
+        return tokenizerApplier.getNumRows(inRows);
     }
 
     public long getNumCols() {
-        return tokenizerPost.getNumCols();
+        return tokenizerApplier.getNumCols();
     }
 
     public FrameBlock tokenize(FrameBlock in, FrameBlock out) {
+        return tokenize(in, out, 1);
+    }
+
+    public FrameBlock tokenize(FrameBlock in, FrameBlock out, int k){
+        // First convert to internal representation
+        this.build(in, k);
+        // Then convert to output representation
+        return this.apply(in, out, k);
+        /*
+
         // First convert to internal representation
         List<DocumentToTokens> documentsToTokenList = tokenizerPre.tokenizePre(in);
         // Then convert to output representation
         return tokenizerPost.tokenizePost(documentsToTokenList, out);
+         */
     }
 
-    static class Token {
-        String textToken;
-        long startIndex;
+    public FrameBlock apply(FrameBlock in, FrameBlock out, int k) {
+        if(k > 1){
+            DependencyThreadPool pool = new DependencyThreadPool(k);
+            try{
+                pool.submitAllAndWait(tokenizerApplier.getTasks(this.internalRepresentation, out, k));
+            }
+            catch(ExecutionException | InterruptedException e) {
+                LOG.error("MT Tokenizer apply failed");
+                e.printStackTrace();
+            }
+            pool.shutdown();
+
+        }else{
+            tokenizerApplier.applyInternalRepresentation(this.internalRepresentation, out);
+        }
+        return out;
+    }
+
+    public void build(FrameBlock in, int k){
+        if(k > 1){
+            DependencyThreadPool pool = new DependencyThreadPool(k);
+            try{
+                pool.submitAllAndWait(tokenizerBuilder.getTasks(in, this.internalRepresentation, k));
+            }
+            catch(ExecutionException | InterruptedException e) {
+                LOG.error("MT Tokenizer build failed");
+                e.printStackTrace();
+            }
+            pool.shutdown();
+
+        }else{
+
+            tokenizerBuilder.createInternalRepresentation(in, this.internalRepresentation);
+        }
+    }
+
+    public static class Token {
+        public String textToken;
+        public long startIndex;
         long endIndex;
 
         public Token(String token, long startIndex) {
@@ -72,11 +124,11 @@ public class Tokenizer implements Serializable {
         }
     }
 
-    static class DocumentToTokens {
-        List<Object> keys;
-        List<Tokenizer.Token> tokens;
+    public static class DocumentRepresentation {
+        public List<Object> keys;
+        public List<Token> tokens;
 
-        public DocumentToTokens(List<Object> keys, List<Tokenizer.Token> tokens) {
+        public DocumentRepresentation(List<Object> keys, List<Tokenizer.Token> tokens) {
             this.keys = keys;
             this.tokens = tokens;
         }

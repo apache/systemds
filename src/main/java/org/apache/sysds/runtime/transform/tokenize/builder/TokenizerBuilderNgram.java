@@ -17,9 +17,11 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.transform.tokenize;
+package org.apache.sysds.runtime.transform.tokenize.builder;
 
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
+import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
@@ -27,11 +29,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TokenizerPreNgram implements TokenizerPre {
+public class TokenizerBuilderNgram implements TokenizerBuilder {
 
     private static final long serialVersionUID = -6297904316677723802L;
-    
-    private final TokenizerPreWhitespaceSplit tokenizerPreWhitespaceSplit;
+
+    private final TokenizerBuilderWhitespaceSplit tokenizerPreWhitespaceSplit;
     private final Params params;
 
     static class Params implements Serializable {
@@ -51,8 +53,8 @@ public class TokenizerPreNgram implements TokenizerPre {
         }
     }
 
-    public TokenizerPreNgram(List<Integer> idCols, int tokenizeCol, JSONObject params) throws JSONException {
-        this.tokenizerPreWhitespaceSplit = new TokenizerPreWhitespaceSplit(idCols, tokenizeCol, params);
+    public TokenizerBuilderNgram(List<Integer> idCols, int tokenizeCol, JSONObject params) throws JSONException {
+        this.tokenizerPreWhitespaceSplit = new TokenizerBuilderWhitespaceSplit(idCols, tokenizeCol, params);
         this.params = new Params(params);
     }
 
@@ -85,16 +87,20 @@ public class TokenizerPreNgram implements TokenizerPre {
     }
 
     @Override
-    public List<Tokenizer.DocumentToTokens> tokenizePre(FrameBlock in) {
-        List<Tokenizer.DocumentToTokens> docToWordTokens = tokenizerPreWhitespaceSplit.tokenizePre(in);
+    public void createInternalRepresentation(FrameBlock in, List<Tokenizer.DocumentRepresentation> internalRepresentation) {
+        tokenizerPreWhitespaceSplit.createInternalRepresentation(in, internalRepresentation);
 
-        List<Tokenizer.DocumentToTokens> docToNgramTokens = new ArrayList<>();
-        for (Tokenizer.DocumentToTokens docToTokens: docToWordTokens) {
+        List<Tokenizer.DocumentRepresentation> docToNgramTokens = new ArrayList<>();
+        for (Tokenizer.DocumentRepresentation docToTokens: internalRepresentation) {
             List<Object> keys = docToTokens.keys;
             List<Tokenizer.Token> wordTokens = docToTokens.tokens;
             List<Tokenizer.Token> ngramTokens = wordTokenListToNgrams(wordTokens);
-            docToNgramTokens.add(new Tokenizer.DocumentToTokens(keys, ngramTokens));
+            docToNgramTokens.add(new Tokenizer.DocumentRepresentation(keys, ngramTokens));
         }
-        return docToNgramTokens;
+    }
+
+    @Override
+    public List<DependencyTask<?>> getTasks(FrameBlock in, List<Tokenizer.DocumentRepresentation> internalRepresentation, int k) {
+        return null;
     }
 }

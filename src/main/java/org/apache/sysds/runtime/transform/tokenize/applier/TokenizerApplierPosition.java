@@ -17,25 +17,27 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.transform.tokenize;
+package org.apache.sysds.runtime.transform.tokenize.applier;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
+import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
+import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TokenizerPostPosition implements TokenizerPost{
+public class TokenizerApplierPosition implements TokenizerApplier {
 
 	private static final long serialVersionUID = 3563407270742660830L;
 	private final int numIdCols;
 	private final int maxTokens;
 	private final boolean wideFormat;
 
-	public TokenizerPostPosition(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) {
+	public TokenizerApplierPosition(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) {
 		// No configurable params yet
 		this.numIdCols = numIdCols;
 		this.maxTokens = maxTokens;
@@ -43,8 +45,8 @@ public class TokenizerPostPosition implements TokenizerPost{
 	}
 
 	@Override
-	public FrameBlock tokenizePost(List<Tokenizer.DocumentToTokens> tl, FrameBlock out) {
-		for (Tokenizer.DocumentToTokens docToToken: tl) {
+	public void applyInternalRepresentation(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out) {
+		for (Tokenizer.DocumentRepresentation docToToken: internalRepresentation) {
 			List<Object> keys = docToToken.keys;
 			List<Tokenizer.Token> tokenList = docToToken.tokens;
 
@@ -54,8 +56,11 @@ public class TokenizerPostPosition implements TokenizerPost{
 				this.appendTokensLong(keys, tokenList, out);
 			}
 		}
+	}
 
-		return out;
+	@Override
+	public List<DependencyTask<?>> getTasks(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out, int k) {
+		return null;
 	}
 
 	public void appendTokensLong(List<Object> keys, List<Tokenizer.Token> tokenList, FrameBlock out) {

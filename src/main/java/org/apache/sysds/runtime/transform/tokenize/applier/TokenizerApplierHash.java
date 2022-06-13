@@ -17,10 +17,12 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.transform.tokenize;
+package org.apache.sysds.runtime.transform.tokenize.applier;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
+import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
@@ -33,7 +35,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class TokenizerPostHash implements TokenizerPost{
+public class TokenizerApplierHash implements TokenizerApplier {
 
 	private static final long serialVersionUID = 4763889041868044668L;
 	private final Params params;
@@ -54,7 +56,7 @@ public class TokenizerPostHash implements TokenizerPost{
 		}
 	}
 
-	public TokenizerPostHash(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) throws JSONException {
+	public TokenizerApplierHash(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) throws JSONException {
 		this.params = new Params(params);
 		this.numIdCols = numIdCols;
 		this.maxTokens = maxTokens;
@@ -62,8 +64,8 @@ public class TokenizerPostHash implements TokenizerPost{
 	}
 
 	@Override
-	public FrameBlock tokenizePost(List<Tokenizer.DocumentToTokens> tl, FrameBlock out) {
-		for (Tokenizer.DocumentToTokens docToToken: tl) {
+	public void applyInternalRepresentation(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out) {
+		for (Tokenizer.DocumentRepresentation docToToken: internalRepresentation) {
 			List<Object> keys = docToToken.keys;
 			List<Tokenizer.Token> tokenList = docToToken.tokens;
 			// Transform to hashes
@@ -81,8 +83,11 @@ public class TokenizerPostHash implements TokenizerPost{
 				this.appendTokensLong(keys, sortedHashes, out);
 			}
 		}
+	}
 
-		return out;
+	@Override
+	public List<DependencyTask<?>> getTasks(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out, int k) {
+		return null;
 	}
 
 	private void appendTokensLong(List<Object> keys, Map<Integer, Long> sortedHashes, FrameBlock out) {

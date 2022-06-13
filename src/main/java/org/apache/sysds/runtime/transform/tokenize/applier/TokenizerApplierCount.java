@@ -17,10 +17,12 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.transform.tokenize;
+package org.apache.sysds.runtime.transform.tokenize.applier;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
+import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
@@ -32,7 +34,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TokenizerPostCount implements TokenizerPost{
+public class TokenizerApplierCount implements TokenizerApplier {
 
     private static final long serialVersionUID = 6382000606237705019L;
     private final Params params;
@@ -53,7 +55,7 @@ public class TokenizerPostCount implements TokenizerPost{
         }
     }
 
-    public TokenizerPostCount(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) throws JSONException {
+    public TokenizerApplierCount(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) throws JSONException {
         this.params = new Params(params);
         this.numIdCols = numIdCols;
         this.maxTokens = maxTokens;
@@ -61,13 +63,13 @@ public class TokenizerPostCount implements TokenizerPost{
     }
 
     @Override
-    public FrameBlock tokenizePost(List<Tokenizer.DocumentToTokens> tl, FrameBlock out) {
-        for (Tokenizer.DocumentToTokens docToToken: tl) {
+    public void applyInternalRepresentation(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out) {
+        for (Tokenizer.DocumentRepresentation docToToken: internalRepresentation) {
             List<Object> keys = docToToken.keys;
             List<Tokenizer.Token> tokenList = docToToken.tokens;
             // Creating the counts for BoW
             Map<String, Long> tokenCounts = tokenList.stream().collect(Collectors.groupingBy(token ->
-                token.textToken, Collectors.counting()));
+                    token.textToken, Collectors.counting()));
             // Remove duplicate strings
             Stream<String> distinctTokenStream = tokenList.stream().map(token -> token.textToken).distinct();
             if (params.sort_alpha) {
@@ -92,8 +94,11 @@ public class TokenizerPostCount implements TokenizerPost{
                 numTokens++;
             }
         }
+    }
 
-        return out;
+    @Override
+    public List<DependencyTask<?>> getTasks(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out, int k) {
+        return null;
     }
 
     @Override

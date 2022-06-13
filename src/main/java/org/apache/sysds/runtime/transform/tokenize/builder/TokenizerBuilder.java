@@ -17,13 +17,19 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.transform.tokenize;
+package org.apache.sysds.runtime.transform.tokenize.builder;
 
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
+import org.apache.sysds.runtime.util.DependencyTask;
 
 import java.io.Serializable;
 import java.util.List;
 
-public interface TokenizerPre extends Serializable {
-    List<Tokenizer.DocumentToTokens> tokenizePre(FrameBlock in);
+public interface TokenizerBuilder extends Serializable {
+
+    void createInternalRepresentation(FrameBlock in, List<Tokenizer.DocumentRepresentation> internalRepresentation);
+
+    List<DependencyTask<?>> getTasks(FrameBlock in, List<Tokenizer.DocumentRepresentation> internalRepresentation, int k);
+
 }

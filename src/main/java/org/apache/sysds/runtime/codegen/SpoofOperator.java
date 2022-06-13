@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import jcuda.Pointer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -321,4 +322,6 @@ public abstract class SpoofOperator implements Serializable
 			currColPos = 0;
 		}
 	}
+
+	public static native int getNativeStagingBuffer(Pointer ptr, long context, int size);
 }

@@ -92,11 +92,9 @@ public class FederatedTokenizeTest extends AutomatedTestBase {
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
 		int port3 = getRandomAvailablePort();
-		int port4 = getRandomAvailablePort();
 		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
-		Thread t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
-		Thread t4 = startLocalFedWorkerThread(port4);
+		Thread t3 = startLocalFedWorkerThread(port3);
 
 		FileFormatPropertiesCSV ffpCSV = new FileFormatPropertiesCSV(false, DataExpression.DEFAULT_DELIM_DELIMITER, false);
 
@@ -139,7 +137,7 @@ public class FederatedTokenizeTest extends AutomatedTestBase {
 		runTest(null);
 		compareResults(1e-9);
 		Assert.assertTrue(heavyHittersContainsString("fed_tokenize"));
-		TestUtils.shutdownThreads(t1, t2, t3, t4);
+		TestUtils.shutdownThreads(t1, t2, t3);
 	}
 
 	private void writeDatasetSlice(FrameBlock dataset, FrameWriter fw, FileFormatPropertiesCSV ffpCSV, String name) throws IOException {

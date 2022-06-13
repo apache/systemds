@@ -153,6 +153,9 @@ public class Types
 		public boolean isCol() {
 			return this == Col;
 		}
+		public boolean isRowCol() {
+			return this == RowCol;
+		}
 		@Override
 		public String toString() {
 			switch(this) {
@@ -229,8 +232,9 @@ public class Types
 	
 	// Operations that require 1 operand
 	public enum OpOp1 {
-		ABS, ACOS, ASIN, ASSERT, ATAN, BROADCAST, CAST_AS_SCALAR, CAST_AS_MATRIX,
-		CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
+		ABS, ACOS, ASIN, ASSERT, ATAN, BROADCAST,
+		CAST_AS_FRAME, CAST_AS_LIST, CAST_AS_MATRIX, CAST_AS_SCALAR,
+		CAST_AS_BOOLEAN, CAST_AS_DOUBLE, CAST_AS_INT,
 		CEIL, CHOLESKY, COS, COSH, CUMMAX, CUMMIN, CUMPROD, CUMSUM,
 		CUMSUMPROD, DETECTSCHEMA, COLNAMES, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
 		IQM, ISNA, ISNAN, ISINF, LENGTH, LINEAGE, LOG, NCOL, NOT, NROW,
@@ -263,6 +267,7 @@ public class Types
 				case CAST_AS_SCALAR:  return "castdts";
 				case CAST_AS_MATRIX:  return "castdtm";
 				case CAST_AS_FRAME:   return "castdtf";
+				case CAST_AS_LIST:    return "castdtl";
 				case CAST_AS_DOUBLE:  return "castvtd";
 				case CAST_AS_INT:     return "castvti";
 				case CAST_AS_BOOLEAN: return "castvtb";
@@ -308,9 +313,10 @@ public class Types
 	public enum OpOp2 {
 		AND(true), BITWAND(true), BITWOR(true), BITWSHIFTL(true), BITWSHIFTR(true),
 		BITWXOR(true), CBIND(false), CONCAT(false), COV(false), DIV(true),
-		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false), EQUAL(true), GREATER(true),
-		GREATEREQUAL(true), INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true),
-		LESSEQUAL(true), LOG(true), MAP(false), MAX(true), MEDIAN(false), MIN(true), 
+		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false), EQUAL(true),
+		FRAME_ROW_REPLICATE(true), GREATER(true), GREATEREQUAL(true), INTDIV(true),
+		INTERQUANTILE(false), IQM(false), LESS(true),
+		LESSEQUAL(true), LOG(true), MAX(true), MEDIAN(false), MIN(true),
 		MINUS(true), MODULUS(true), MOMENT(false), MULT(true), NOTEQUAL(true), OR(true),
 		PLUS(true), POW(true), PRINT(false), QUANTILE(false), SOLVE(false),
 		RBIND(false), VALUE_SWAP(false), XOR(true),
@@ -358,8 +364,8 @@ public class Types
 				case BITWSHIFTR:   return "bitwShiftR";
 				case DROP_INVALID_TYPE: return "dropInvalidType";
 				case DROP_INVALID_LENGTH: return "dropInvalidLength";
+				case FRAME_ROW_REPLICATE: return "freplicate";
 				case VALUE_SWAP: return "valueSwap";
-				case MAP:          return "_map";
 				default:           return name().toLowerCase();
 			}
 		}
@@ -393,8 +399,8 @@ public class Types
 				case "bitwShiftR":  return BITWSHIFTR;
 				case "dropInvalidType": return DROP_INVALID_TYPE;
 				case "dropInvalidLength": return DROP_INVALID_LENGTH;
-				case "valueSwap": return VALUE_SWAP;
-				case "map":         return MAP;
+				case "freplicate": return FRAME_ROW_REPLICATE;
+				case "valueSwap":   return VALUE_SWAP;
 				default:            return valueOf(opcode.toUpperCase());
 			}
 		}
@@ -402,7 +408,7 @@ public class Types
 	
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE;
+		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE, MAP;
 		
 		@Override
 		public String toString() {
@@ -410,6 +416,7 @@ public class Types
 				case MOMENT:     return "cm";
 				case PLUS_MULT:  return "+*";
 				case MINUS_MULT: return "-*";
+				case MAP:          return "_map";
 				default:         return name().toLowerCase();
 			}
 		}
@@ -419,6 +426,7 @@ public class Types
 				case "cm": return MOMENT;
 				case "+*": return PLUS_MULT;
 				case "-*": return MINUS_MULT;
+				case "map": return MAP;
 				default:   return valueOf(opcode.toUpperCase());
 			}
 		}

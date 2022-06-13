@@ -82,13 +82,13 @@ public class GPUContext {
 	/**
 	 * cusolverDnHandle for invoking solve() function on dense matrices on the GPU
 	 */
-	private cusolverDnHandle cusolverDnHandle;
+	private volatile cusolverDnHandle cusolverDnHandle;
 	/**
 	 * to launch custom CUDA kernel, specific to the active GPU for this GPUContext
 	 */
 	private JCudaKernels kernels;
 	
-	private GPUMemoryManager memoryManager;
+	private final GPUMemoryManager memoryManager;
 	
 	public GPUMemoryManager getMemoryManager() {
 		return memoryManager;
@@ -96,6 +96,7 @@ public class GPUContext {
 
 	protected GPUContext(int deviceNum) {
 		this.deviceNum = deviceNum;
+
 		cudaSetDevice(deviceNum);
 
 		cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
@@ -175,7 +176,7 @@ public class GPUContext {
 	 * Sets the device for the calling thread.
 	 * This method must be called after
 	 * {@link org.apache.sysds.runtime.controlprogram.context.ExecutionContext#getGPUContext(int)}
-	 * If in a multi-threaded environment like parfor, this method must be called when in the
+	 * If in a multithreaded environment like parfor, this method must be called when in the
 	 * appropriate thread.
 	 *
 	 */
@@ -187,18 +188,32 @@ public class GPUContext {
 	/**
 	 * Invokes memory manager's malloc method
 	 *
-	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
+	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if
+	 *                        you don't want to record
 	 * @param size            size of data (in bytes) to allocate
+	 * @param initialize 	  if cudaMemset() should be called
+	 * @return jcuda pointer
+	 */
+	public Pointer allocate(String instructionName, long size, boolean initialize) {
+		return memoryManager.malloc(instructionName, size, initialize);
+	}
+
+	/**
+	 * Default behavior for gpu memory allocation (init to zero)
+	 *
+	 * @param instructionName Name of the instruction calling allocate
+	 * @param size size in bytes
 	 * @return jcuda pointer
 	 */
 	public Pointer allocate(String instructionName, long size) {
-		return memoryManager.malloc(instructionName, size);
+		return memoryManager.malloc(instructionName, size, true);
 	}
 
 	/**
 	 * Does cudaFree calls, lazily.
 	 *
-	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
+	 * @param instructionName name of the instruction for which to record per instruction free time, null if you do not
+	 *                        want to record
 	 * @param toFree          {@link Pointer} instance to be freed
 	 * @param eager           true if to be done eagerly
 	 */
@@ -389,7 +404,7 @@ public class GPUContext {
 	 */
 	public void destroy() {
 		if (LOG.isTraceEnabled()) {
-			LOG.trace("GPU : this context was destroyed, this = " + this.toString());
+			LOG.trace("GPU : this context was destroyed, this = " + this);
 		}
 		clearMemory();
 

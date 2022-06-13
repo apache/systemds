@@ -32,7 +32,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def msvm(X: Matrix,
          Y: Matrix,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param intercept: No Intercept ( If set to TRUE then a constant bias column is added to X)
+    :param num_classes: Number of classes
+    :param epsilon: Procedure terminates early if the reduction in objective function
+    :param value: than epsilon (tolerance) times the initial objective function value.
+    :param reg: Regularization parameter (lambda) for L2 regularization
+    :param maxIterations: Maximum number of conjugate gradient iterations
+    :param verbose: Set to true to print while training.
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

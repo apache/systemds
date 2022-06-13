@@ -21,6 +21,12 @@
 #-------------------------------------------------------------
 set -e
 
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
+
 CMD=$6
 BASE=$4
 
@@ -31,7 +37,6 @@ if [ $3 -gt 2 ]; then DFAM=3; fi
 for i in 0 1 2; do
    #training
    tstart=$(date +%s.%N)
-   # ${CMD} -f ./algorithms/MultiLogReg.dml \
    ${CMD} -f scripts/MultiLogReg.dml \
       --config conf/SystemDS-config.xml \
       --stats \

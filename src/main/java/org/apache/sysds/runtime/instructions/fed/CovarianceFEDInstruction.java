@@ -27,7 +27,6 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -37,69 +36,65 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.functionobjects.COV;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.COVOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class CovarianceFEDInstruction extends BinaryFEDInstruction {
-	private CovarianceFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-		String istr) {
-		super(FEDInstruction.FEDType.AggregateBinary, op, in1, in2, out, opcode, istr);
-	}
-
-	private CovarianceFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-		String opcode, String istr) {
+	
+	private CovarianceFEDInstruction(Operator op, CPOperand in1,
+		CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr)
+	{
 		super(FEDInstruction.FEDType.AggregateBinary, op, in1, in2, in3, out, opcode, istr);
 	}
 
-
 	public static CovarianceFEDInstruction parseInstruction(String str) {
-		CPOperand in1 = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
-		CPOperand in3 = null;
-		CPOperand out = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
-
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		String opcode = parts[0];
-
-		if( !opcode.equalsIgnoreCase("cov") ) {
-			throw new DMLRuntimeException("CovarianceCPInstruction.parseInstruction():: Unknown opcode " + opcode);
-		}
-
-		COVOperator cov = new COVOperator(COV.getCOMFnObject());
-		if ( parts.length == 4 ) {
-			parseBinaryInstruction(str, in1, in2, out);
-			return new CovarianceFEDInstruction(cov, in1, in2, out, opcode, str);
-		} else if ( parts.length == 5 ) {
-			in3 = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
-			parseBinaryInstruction(str, in1, in2, in3, out);
-			return new CovarianceFEDInstruction(cov, in1, in2, in3, out, opcode, str);
-		}
-		else {
-			throw new DMLRuntimeException("Invalid number of arguments in Instruction: " + str);
-		}
+		FederatedOutput fedOut = FederatedOutput.valueOf(parts[parts.length-1]);
+		String cleanInstStr = InstructionUtils.removeFEDOutputFlag(str);
+		CovarianceFEDInstruction fedInst = parseInstruction(CovarianceCPInstruction.parseInstruction(cleanInstStr));
+		fedInst._fedOut = fedOut;
+		return fedInst;
 	}
 
+	public static CovarianceFEDInstruction parseInstruction(Instruction inst){
+		if ( inst instanceof CovarianceCPInstruction )
+			return parseInstruction((CovarianceCPInstruction) inst);
+		else if ( inst instanceof SPInstruction )
+			return parseInstruction(CovarianceCPInstruction.parseInstruction(inst.getInstructionString()));
+		else
+			return parseInstruction(inst.getInstructionString());
+	}
+
+	public static CovarianceFEDInstruction parseInstruction(CovarianceCPInstruction inst) { 
+		return new CovarianceFEDInstruction(inst.getOperator(),
+			inst.input1, inst.input2, inst.input3, inst.output,
+			inst.getOpcode(), inst.getInstructionString());
+	}
+	
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
-		MatrixObject weights = input3 != null ? ec.getMatrixObject(input3) : null;
+		MatrixLineagePair weights = (input3 != null) ? ec.getMatrixLineagePair(input3) : null;
 
 		if(mo1.isFederated() && mo2.isFederated() && !mo1.getFedMapping().isAligned(mo2.getFedMapping(), false))
 			throw new DMLRuntimeException("Not supported matrix-matrix binary operation: covariance.");
 
 		boolean moAligned = mo1.isFederated() && mo2.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false);
-		boolean weightsAligned = weights == null || (weights.isFederated() && mo2.isFederated() && weights.getFedMapping()
-			.isAligned(mo2.getFedMapping(), false));
+		boolean weightsAligned = weights == null || (weights.isFederated() && mo2.isFederated()
+			&& weights.getFedMapping().isAligned(mo2.getFedMapping(), false));
 
 		// all aligned
 		if(moAligned && weightsAligned)
@@ -111,14 +106,16 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			processCov(ec, mo1, mo2);
 	}
 
-	private void processAlignedFedCov(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3) {
+	private void processAlignedFedCov(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2,
+		MatrixLineagePair moLin3) {
 		FederatedRequest fr1;
-		if(mo3 == null)
+		if(moLin3 == null)
 			fr1 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()});
 		else
 			fr1 = FederationUtils.callInstruction(instString, output,
-				new CPOperand[]{input1, input2, input3}, new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), mo3.getFedMapping().getID()});
+				new CPOperand[]{input1, input2, input3}, new long[]{mo1.getFedMapping().getID(),
+					mo2.getFedMapping().getID(), moLin3.getFedMapping().getID()});
 
 		FederatedRequest fr2 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
 		FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
@@ -134,9 +131,10 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		ec.setVariable(output.getName(), new DoubleObject(result));
 	}
 
-	private void processFedCovWeights(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3) {
+	private void processFedCovWeights(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2,
+		MatrixLineagePair moLin3) {
 
-		FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo3, false);
+		FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(moLin3, false);
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()});
 		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());

@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.compress.readers;
 
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -27,27 +26,23 @@ public class ReaderColumnSelectionDenseSingleBlockTransposed extends ReaderColum
 	private final double[] _data;
 
 	protected ReaderColumnSelectionDenseSingleBlockTransposed(MatrixBlock data, int[] colIndexes, int rl, int ru) {
-		super(colIndexes.clone(), rl, Math.min(ru, data.getNumColumns()));
+		super(colIndexes.clone(), rl, Math.min(ru, data.getNumColumns()) -1 );
 		_data = data.getDenseBlockValues();
-		if(data.getDenseBlock().numBlocks() > 1)
-			throw new DMLCompressionException("Not handling multi block data reading in dense transposed reader");
 		for(int i = 0; i < _colIndexes.length; i++)
 			_colIndexes[i] = _colIndexes[i] * data.getNumColumns();
 	}
 
 	protected DblArray getNextRow() {
-		if(_rl == _ru - 1)
-			return null;
-		_rl++;
-
 		boolean empty = true;
-		for(int i = 0; i < _colIndexes.length; i++) {
-			final double v = _data[_colIndexes[i] + _rl];
-			if(v != 0)
-				empty = false;
-			reusableArr[i] = v;
-		}
+		while(empty && _rl < _ru ) {
+			_rl++;
+			for(int i = 0; i < _colIndexes.length; i++) {
+				final double v = _data[_colIndexes[i] + _rl];
+				empty &= v == 0;
+				reusableArr[i] = v;
+			}
 
-		return empty ? emptyReturn : reusableReturn;
+		}
+		return empty ? null : reusableReturn;
 	}
 }

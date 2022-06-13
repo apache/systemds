@@ -141,7 +141,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				throw new DMLRuntimeException("Unknown number of nonzeroes in denseIm2col");
 			}
 			else if(inPointer.nnz > 0) {
-				im2colPointer = gCtx.allocate(instName, C*R*S*N*P*Q*sizeOfDataType);
+				im2colPointer = gCtx.allocate(instName, C*R*S*N*P*Q*sizeOfDataType, false);
 				getCudaKernels(gCtx).launchKernel("sparse_dense_im2col", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(inPointer.nnz)), 
 						inPointer.val, inPointer.rowPtr, inPointer.colInd, im2colPointer, inPointer.nnz, N, 
 						C*H*W, H*W, W, R, S, P, Q, P*Q, R*S, N*P*Q, stride_h, stride_w, pad_h, pad_w);
@@ -150,7 +150,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				return null;
 		}
 		else {
-			im2colPointer = gCtx.allocate(instName, C*R*S*N*P*Q*sizeOfDataType);
+			im2colPointer = gCtx.allocate(instName, C*R*S*N*P*Q*sizeOfDataType, false);
 			Pointer imagePointer = getDensePointerForCuDNN(gCtx, image, instName);
 			getCudaKernels(gCtx).launchKernel("dense_dense_im2col", ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*C*H*W)), 
 					imagePointer, im2colPointer, N*C*H*W, 
@@ -212,7 +212,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				
 				// Perform matrix multiplication
 				CSRPointer filterPointer = filter.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
-				Pointer matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType);
+				Pointer matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType, false);
 				LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, matmultOutputPointer, filterPointer, im2colPointer, K, CRS, CRS, NPQ, K, NPQ, false, false);
 				gCtx.cudaFreeHelper(instName, im2colPointer, DMLScript.EAGER_CUDA_FREE);
 				
@@ -423,7 +423,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					try(LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image);
 						LibMatrixCuDNNInputRowFetcher doutFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, dout)) {
 						// Perform one-input conv2dBackwardFilter
-						Pointer tempdwPointer = gCtx.allocate(instName, KCRS*sizeOfDataType);
+						Pointer tempdwPointer = gCtx.allocate(instName, KCRS*sizeOfDataType, false);
 						for(int n = 0; n < N; n++) {
 							cudaMemset(tempdwPointer, 0, KCRS*sizeOfDataType);
 							// Perform one-input conv2dBackwardFilter
@@ -726,8 +726,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 						pad_h, pad_w, stride_h, stride_w, P, Q, poolingType)) {
 			int status;
 			if(!isMaxPoolOutputProvided) {
-				long numBytes = N*C*P*Q*sizeOfDataType;
-				y = gCtx.allocate(instName, numBytes);
+				long numBytes = (long) N *C*P*Q*sizeOfDataType;
+				y = gCtx.allocate(instName, numBytes, false);
 				status = cudnnPoolingForward(getCudnnHandle(gCtx), desc.poolingDesc, one(), desc.xDesc, x, zero(), desc.yDesc, y);
 				if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 					throw new DMLRuntimeException("Could not executed cudnnPoolingForward before cudnnPoolingBackward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
@@ -845,8 +845,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			String rnnMode, boolean return_sequences, int N, int M, int D, int T) throws DMLRuntimeException {
 		boolean hasCarry = rnnMode.equalsIgnoreCase("lstm");
 		// Get output pointers
-		Pointer cudnnYPointer = gCtx.allocate(instName, N*T*M*sizeOfDataType);
-		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName, N*M*sizeOfDataType);
+		Pointer cudnnYPointer = gCtx.allocate(instName, (long) N *T*M*sizeOfDataType, false);
+		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName,
+			(long) N*M*sizeOfDataType, false);
 		Pointer cyPointer = hasCarry ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, M) : new Pointer();
 		// Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName, D+M+2, 4*M);
 		
@@ -878,16 +879,16 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			String dxName, String dwName, String dbName, String dhxName, String dcxName,  	// output
 			boolean return_sequences, int N, int M, int D, int T) throws DMLRuntimeException {
 		// Transform the input dout and prepare them for cudnnRNNBackwardData
-		Pointer dy = gCtx.allocate(instName, N*T*M*sizeOfDataType);
+		Pointer dy = gCtx.allocate(instName, (long) N *T*M*sizeOfDataType, false);
 		int size = return_sequences ? N*T*M : N*M;
 		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_backward_gradients",
 				ExecutionConfig.getConfigForSimpleVectorOperations(size),
-				getDenseInputPointer(ec, gCtx, instName, doutName, N, return_sequences ? T*M : M),
+				getDenseInputPointer(ec, gCtx, instName, doutName, N, return_sequences ? (long) T*M : M),
 				dy, N, T, M, size, return_sequences ? 1 : 0);
 		ec.releaseMatrixInputForGPUInstruction(doutName);
 				
 		// Allocate intermediate pointers computed by forward
-		Pointer yPointer = gCtx.allocate(instName, N*T*M*sizeOfDataType);
+		Pointer yPointer = gCtx.allocate(instName, (long) N *T*M*sizeOfDataType, false);
 		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(ec, gCtx, instName, "lstm", N, T, M, D, true, wPointer)) {
 			JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
 					algo.xDesc, x, 
@@ -900,7 +901,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					algo.workSpace, algo.sizeInBytes, 
 					algo.reserveSpace, algo.reserveSpaceSizeInBytes);
 			
-			Pointer cudnnDx = gCtx.allocate(instName, N*T*D*LibMatrixCUDA.sizeOfDataType);
+			Pointer cudnnDx = gCtx.allocate(instName, (long) N *T*D*LibMatrixCUDA.sizeOfDataType, false);
 			JCudnn.cudnnRNNBackwardData(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
 					algo.yDesc, yPointer,
 					// ----------------------
@@ -933,7 +934,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			gCtx.cudaFreeHelper(instName, cudnnDx, DMLScript.EAGER_CUDA_FREE);
 			
 			// -------------------------------------------------------------------------------------------
-			Pointer cudnnDwPointer = gCtx.allocate(instName, (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);
+			Pointer cudnnDwPointer = gCtx.allocate(instName, (D+M+2)*(4L *M)*LibMatrixCUDA.sizeOfDataType, false);
 			JCudnn.cudnnRNNBackwardWeights(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
 					algo.xDesc, x, 
 					algo.hxDesc, hx, 

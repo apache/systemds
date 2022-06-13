@@ -214,6 +214,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tbody>
 </table>
 <table class="useSummary">
+<caption><span>Methods in <a href="../../matrix/operators/package-summary.html">org.apache.sysds.runtime.matrix.operators</a> that return <a href="../IndexFunction.html" title="class in org.apache.sysds.runtime.functionobjects">IndexFunction</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../IndexFunction.html" title="class in org.apache.sysds.runtime.functionobjects">IndexFunction</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CountDistinctOperator.</span><code><span class="memberNameLink"><a href="../../matrix/operators/CountDistinctOperator.html#getIndexFunction()">getIndexFunction</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
 <caption><span>Methods in <a href="../../matrix/operators/package-summary.html">org.apache.sysds.runtime.matrix.operators</a> with parameters of type <a href="../IndexFunction.html" title="class in org.apache.sysds.runtime.functionobjects">IndexFunction</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
@@ -224,6 +239,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../matrix/operators/ReorgOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ReorgOperator</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ReorgOperator.</span><code><span class="memberNameLink"><a href="../../matrix/operators/ReorgOperator.html#setFn(org.apache.sysds.runtime.functionobjects.IndexFunction)">setFn</a></span>&#8203;(<a href="../IndexFunction.html" title="class in org.apache.sysds.runtime.functionobjects">IndexFunction</a>&nbsp;fn)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../matrix/operators/CountDistinctOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">CountDistinctOperator</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CountDistinctOperator.</span><code><span class="memberNameLink"><a href="../../matrix/operators/CountDistinctOperator.html#setIndexFunction(org.apache.sysds.runtime.functionobjects.IndexFunction)">setIndexFunction</a></span>&#8203;(<a href="../IndexFunction.html" title="class in org.apache.sysds.runtime.functionobjects">IndexFunction</a>&nbsp;indexFunction)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -260,10 +280,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../matrix/operators/ReorgOperator.html#%3Cinit%3E(org.apache.sysds.runtime.functionobjects.IndexFunction)">ReorgOperator</a></span>&#8203;(<a href="../IndexFunction.html" title="class in org.apache.sysds.runtime.functionobjects">IndexFunction</a>&nbsp;p)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../matrix/operators/CountDistinctOperator.html#%3Cinit%3E(org.apache.sysds.runtime.matrix.operators.CountDistinctOperatorTypes,org.apache.sysds.runtime.functionobjects.IndexFunction,org.apache.sysds.utils.Hash.HashType)">CountDistinctOperator</a></span>&#8203;(<a href="../../matrix/operators/CountDistinctOperatorTypes.html" title="enum in org.apache.sysds.runtime.matrix.operators">CountDistinctOperatorTypes</a>&nbsp;operatorType,
+                     <a href="../IndexFunction.html" title="class in org.apache.sysds.runtime.functionobjects">IndexFunction</a>&nbsp;indexFunction,
+                     <a href="../../../utils/Hash.HashType.html" title="enum in org.apache.sysds.utils">Hash.HashType</a>&nbsp;hashType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../matrix/operators/ReorgOperator.html#%3Cinit%3E(org.apache.sysds.runtime.functionobjects.IndexFunction)">ReorgOperator</a></span>&#8203;(<a href="../IndexFunction.html" title="class in org.apache.sysds.runtime.functionobjects">IndexFunction</a>&nbsp;p)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../matrix/operators/ReorgOperator.html#%3Cinit%3E(org.apache.sysds.runtime.functionobjects.IndexFunction,int)">ReorgOperator</a></span>&#8203;(<a href="../IndexFunction.html" title="class in org.apache.sysds.runtime.functionobjects">IndexFunction</a>&nbsp;p,
              int&nbsp;numThreads)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -322,7 +348,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

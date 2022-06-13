@@ -23,23 +23,38 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import org.apache.log4j.Logger;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 
 public class FederatedLocalData extends FederatedData {
 	protected final static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
 
-	private static final ExecutionContextMap ecm = new ExecutionContextMap();
-	private static final FederatedWorkerHandler fwh = new FederatedWorkerHandler(ecm);
+	private static final FederatedLookupTable _flt = new FederatedLookupTable();
+	private static final FederatedReadCache _frc = new FederatedReadCache();
+	private static final FederatedWorkloadAnalyzer _fan = initAnalyzer();
+	private final FederatedWorkerHandler _fwh;
 
 	private final CacheableData<?> _data;
 
 	public FederatedLocalData(long id, CacheableData<?> data) {
 		super(data.getDataType(), null, data.getFileName());
+		_fwh = new FederatedWorkerHandler(_flt, _frc, _fan);
+
 		_data = data;
+		long pid = Long.valueOf(IDHandler.obtainProcessID());
+		ExecutionContextMap ecm = _flt.getECM(FederatedLookupTable.NOHOST, pid);
 		synchronized(ecm) {
 			ecm.get(-1).setVariable(Long.toString(id), _data);
 		}
 		setVarID(id);
+	}
+
+	private static FederatedWorkloadAnalyzer initAnalyzer() {
+		if(ConfigurationManager.getCompressConfig().isWorkload())
+			return new FederatedWorkloadAnalyzer();
+		else
+			return null;
 	}
 
 	@Override
@@ -54,6 +69,6 @@ public class FederatedLocalData extends FederatedData {
 
 	@Override
 	public synchronized Future<FederatedResponse> executeFederatedOperation(FederatedRequest... request) {
-		return CompletableFuture.completedFuture(fwh.createResponse(request));
+		return CompletableFuture.completedFuture(_fwh.createResponse(request));
 	}
 }

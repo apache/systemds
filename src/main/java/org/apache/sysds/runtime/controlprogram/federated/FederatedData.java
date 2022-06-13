@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,10 +34,12 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.meta.MetaData;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -46,21 +49,23 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.serialization.ClassResolvers;
-import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.concurrent.Promise;
-import org.apache.sysds.runtime.meta.MetaData;
 
 public class FederatedData {
 	private static final Log LOG = LogFactory.getLog(FederatedData.class.getName());
 	private static final Set<InetSocketAddress> _allFedSites = new HashSet<>();
 
+	/** Thread pool specific for the federated requests */
+	private static EventLoopGroup workerGroup = null;
+
 	/** A Singleton constructed SSL context, that only is assigned if ssl is enabled. */
-	private static SslContextMan instance = null;
+	private static SslContextMan sslInstance = null;
 
 	private final Types.DataType _dataType;
 	private final InetSocketAddress _address;
@@ -136,7 +141,7 @@ public class FederatedData {
 		if(!_dataType.isMatrix() && !_dataType.isFrame())
 			throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
 		_varID = id;
-		FederatedRequest request = (mtd != null ) ? 
+		FederatedRequest request = (mtd != null) ?
 			new FederatedRequest(RequestType.READ_VAR, id, mtd) :
 			new FederatedRequest(RequestType.READ_VAR, id);
 		request.appendParam(_filepath);
@@ -144,13 +149,8 @@ public class FederatedData {
 		return executeFederatedOperation(request);
 	}
 
-	public synchronized Future<FederatedResponse> executeFederatedOperation(FederatedRequest... request) {
-		try {
-			return executeFederatedOperation(_address, request);
-		}
-		catch(SSLException e) {
-			throw new DMLRuntimeException("Error in SSL Connection", e);
-		}
+	public Future<FederatedResponse> executeFederatedOperation(FederatedRequest... request) {
+		return executeFederatedOperation(_address, request);
 	}
 
 	/**
@@ -159,49 +159,47 @@ public class FederatedData {
 	 * @param address socket address (incl host and port)
 	 * @param request the requested operation
 	 * @return the response
-	 * @throws SSLException Throws an SSL exception if the ssl construction fails.
 	 */
-	public static Future<FederatedResponse> executeFederatedOperation(InetSocketAddress address,
-		FederatedRequest... request) throws SSLException {
-		// Careful with the number of threads. Each thread opens connections to multiple files making resulting in
-		// java.io.IOException: Too many open files
-		EventLoopGroup workerGroup = new NioEventLoopGroup(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
-
+	public synchronized static Future<FederatedResponse> executeFederatedOperation(InetSocketAddress address,
+		FederatedRequest... request) {
 		try {
-			Bootstrap b = new Bootstrap();
-			final DataRequestHandler handler = new DataRequestHandler(workerGroup);
+			final Bootstrap b = new Bootstrap();
+			if(workerGroup == null)
+				createWorkGroup();
+			b.group(workerGroup);
+			b.channel(NioSocketChannel.class);
+			final DataRequestHandler handler = new DataRequestHandler();
 			// Client Netty
-			b.group(workerGroup).channel(NioSocketChannel.class).handler(new ChannelInitializer<SocketChannel>() {
-				@Override
-				protected void initChannel(SocketChannel ch) throws Exception {
-					ChannelPipeline cp = ch.pipeline();
-					if(ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.USE_SSL_FEDERATED_COMMUNICATION)) {
-						cp.addLast(SslConstructor().context
-							.newHandler(ch.alloc(), address.getAddress().getHostAddress(), address.getPort()));
-					}
 
-					cp.addLast("ObjectDecoder",
-						new ObjectDecoder(Integer.MAX_VALUE,
-							ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
-					cp.addLast("FederatedOperationHandler", handler);
-					cp.addLast("ObjectEncoder", new ObjectEncoder());
-
-				}
-			});
+			b.handler(createChannel(address, handler));
 
 			ChannelFuture f = b.connect(address).sync();
 			Promise<FederatedResponse> promise = f.channel().eventLoop().newPromise();
-
 			handler.setPromise(promise);
 			f.channel().writeAndFlush(request);
-			return promise;
-		}
-		catch(InterruptedException e) {
-			throw new DMLRuntimeException("Could not send federated operation.");
+
+			return handler.getProm();
 		}
 		catch(Exception e) {
-			throw new DMLRuntimeException(e);
+			throw new DMLRuntimeException("Failed sending federated operation", e);
 		}
+	}
+
+	private static ChannelInitializer<SocketChannel> createChannel(InetSocketAddress address, DataRequestHandler handler){
+		final int timeout = ConfigurationManager.getFederatedTimeout();
+		final boolean ssl = ConfigurationManager.isFederatedSSL();
+
+		return new ChannelInitializer<SocketChannel>() {
+			@Override
+			protected void initChannel(SocketChannel ch) throws Exception {
+				final ChannelPipeline cp = ch.pipeline();
+				if(ssl)
+					cp.addLast(createSSLHandler(ch, address));
+				if(timeout > -1)
+					cp.addLast(new ReadTimeoutHandler(timeout));
+				cp.addLast(FederationUtils.decoder(), new FederatedRequestEncoder(), handler);
+			}
+		};
 	}
 
 	public static void clearFederatedWorkers() {
@@ -226,16 +224,30 @@ public class FederatedData {
 		}
 	}
 
+	private static SslHandler createSSLHandler(SocketChannel ch, InetSocketAddress address){
+		return SslConstructor().context.newHandler(ch.alloc(), address.getAddress().getHostAddress(),
+							address.getPort());
+	}
+
 	public static void resetFederatedSites() {
 		_allFedSites.clear();
 	}
 
+	public static void clearWorkGroup() {
+		if(workerGroup != null)
+			workerGroup.shutdownGracefully();
+		workerGroup = null;
+	}
+
+	public synchronized static void createWorkGroup() {
+		if(workerGroup == null)
+			workerGroup = new NioEventLoopGroup(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
+	}
+
 	private static class DataRequestHandler extends ChannelInboundHandlerAdapter {
 		private Promise<FederatedResponse> _prom;
-		private EventLoopGroup _workerGroup;
 
-		public DataRequestHandler(EventLoopGroup workerGroup) {
-			_workerGroup = workerGroup;
+		public DataRequestHandler() {
 		}
 
 		public void setPromise(Promise<FederatedResponse> prom) {
@@ -244,11 +256,12 @@ public class FederatedData {
 
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) {
-			if(_prom == null)
-				throw new DMLRuntimeException("Read while no message was sent");
 			_prom.setSuccess((FederatedResponse) msg);
 			ctx.close();
-			_workerGroup.shutdownGracefully();
+		}
+
+		public Promise<FederatedResponse> getProm() {
+			return _prom;
 		}
 	}
 
@@ -266,12 +279,10 @@ public class FederatedData {
 	}
 
 	private static SslContextMan SslConstructor() {
-		if(instance == null) {
+		if(sslInstance == null)
 			return new SslContextMan();
-		}
-		else {
-			return instance;
-		}
+		else
+			return sslInstance;
 	}
 
 	@Override
@@ -282,5 +293,30 @@ public class FederatedData {
 		sb.append(" " + _address.toString());
 		sb.append(":" + _filepath);
 		return sb.toString();
+	}
+
+	public static class FederatedRequestEncoder extends ObjectEncoder {
+		@Override
+		protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, Serializable msg,
+		boolean preferDirect) throws Exception {
+			int initCapacity = 256; // default initial capacity
+			if(msg instanceof FederatedRequest[]) {
+				initCapacity = 0;
+				try {
+					for(FederatedRequest fr : (FederatedRequest[])msg) {
+						int frSize = Math.toIntExact(fr.estimateSerializationBufferSize());
+						if(Integer.MAX_VALUE - initCapacity < frSize) // summed sizes exceed integer limits
+							throw new ArithmeticException("Overflow.");
+						initCapacity += frSize;
+					}
+				} catch(ArithmeticException ae) { // size of federated request exceeds integer limits
+					initCapacity = Integer.MAX_VALUE;
+				}
+			}
+			if(preferDirect)
+				return ctx.alloc().ioBuffer(initCapacity);
+			else
+				return ctx.alloc().heapBuffer(initCapacity);
+		}
 	}
 }

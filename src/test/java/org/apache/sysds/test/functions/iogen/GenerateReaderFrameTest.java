@@ -31,6 +31,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Random;
@@ -141,6 +142,8 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 
 			Random rn = new Random();
 			int rnt = rn.nextInt(types.length);
+			if(i == 0|| i==ncols-1)
+				rnt = 3;
 			schema[i] = types[rnt];
 
 			if(types[rnt] == Types.ValueType.STRING)
@@ -167,6 +170,10 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			FrameBlock sampleFrame = new FrameBlock(schema, names, data);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
+			File directory = new File(HOME);
+			if (! directory.exists()){
+				directory.mkdir();
+			}
 			String dataPath = HOME + "frame_data.raw";
 			int clen = data[0].length;
 			writeRawString(sampleRaw, dataPath);

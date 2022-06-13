@@ -24,7 +24,6 @@ import java.util.Collection;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -40,18 +39,38 @@ public class JolEstimateUncompressedTest extends JolEstimateTest {
 	public static Collection<Object[]> data() {
 
 		ArrayList<Object[]> tests = new ArrayList<>();
-
-		// mb.add(DataConverter.convertToMatrixBlock(new double[][] {{0}}));
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1}})});
+		
+		// single cell
+		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{0}})});
+		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1}})});
+		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{42151}})});
+		
+		// Const
+		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1,1,1}})});
+		
+		// Empty
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(1, 1, 0, 0, 0.0, 7)});
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(1, 10, 0, 0, 0.0, 7)});
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(1, 100, 0, 0, 0.0, 7)});
+		
+		// Small
 		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(1, 100, 0, 100, 1.0, 7)});
 		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(1, 1000, 0, 100, 0.2, 7)});
-		// tests.add(new Object[] {TestUtils.generateTestMatrixBlock(1, 100000, 0, 100, 0.01, 7)});
-
+		
 		// Multi column
 		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(2, 10, 0, 100, 1.0, 7)});
 		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(13, 100, 0, 100, 1.0, 7)});
 
-		// sparse
+		// Const multi column
+		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1,1,1},{1,1,1},{1,1,1}})});
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(13, 100, 1, 1, 1.0, 7)});
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(30, 100, 1, 1, 1.0, 7)});
+		
+		// empty multi column
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(10, 100, 0, 0, 0.0, 7)});
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(100, 100, 0, 0, 0.0, 7)});
+
+		// sparse multi column
 		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(13, 100, 0, 100, 0.3, 7)});
 		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(100, 100, 0, 100, 0.01, 7)});
 

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.bitmap;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -72,7 +73,7 @@ public class BitmapEncoder {
 
 	private static ABitmap extractBitmapSingleColumn(int colIndex, MatrixBlock rawBlock, int numRows, boolean transposed,
 		int est, boolean sort) {
-		if(transposed){
+		if(transposed) {
 			if(rawBlock.isInSparseFormat() && rawBlock.getSparseBlock().isEmpty(colIndex))
 				return null;
 			return makeSingleColBitmap(extractSingleColT(colIndex, rawBlock, est), rawBlock.getNumColumns(), sort);
@@ -84,10 +85,23 @@ public class BitmapEncoder {
 	private static DoubleIntListHashMap extractSingleCol(int colIndex, MatrixBlock rawBlock, int estimatedUnique) {
 		final DoubleIntListHashMap distinctVals = new DoubleIntListHashMap(estimatedUnique);
 		final int nRows = rawBlock.getNumRows();
-		final boolean notSparse = !rawBlock.isInSparseFormat();
 		final int nCols = rawBlock.getNumColumns();
+		final boolean sparse = rawBlock.isInSparseFormat();
 
-		if(notSparse && rawBlock.getDenseBlock().isContiguous()) {
+		if(sparse) {
+			final SparseBlock sb = rawBlock.getSparseBlock();
+			for(int r = 0; r < nRows; r++) {
+				if(sb.isEmpty(r))
+					continue;
+				final int apos = sb.pos(r);
+				final int alen = sb.size(r) + apos;
+				final int[] aix = sb.indexes(r);
+				final int idx = Arrays.binarySearch(aix, apos, alen, colIndex);
+				if(idx >= 0)
+					distinctVals.appendValue(sb.values(r)[idx], r);
+			}
+		}
+		else if(rawBlock.getDenseBlock().isContiguous()) {
 			final double[] values = rawBlock.getDenseBlockValues();
 			if(nCols == 1)
 				// Since the only values contained is in this column index. simply extract it continuously.

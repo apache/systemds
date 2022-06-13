@@ -52,7 +52,8 @@ public class TransformFrameBuildMultithreadedTest extends AutomatedTestBase {
 	//private final static String SPEC1b = "homes3/homes.tfspec_recode2.json";
 	private final static String SPEC2 = "homes3/homes.tfspec_dummy.json";
 	//private final static String SPEC2b = "homes3/homes.tfspec_dummy2.json";
-	private final static String SPEC3 = "homes3/homes.tfspec_bin.json"; // recode
+	private final static String SPEC3a = "homes3/homes.tfspec_bin.json"; // recode
+	private final static String SPEC3b = "homes3/homes.tfspec_bin_height.json"; // recode
 	//private final static String SPEC3b = "homes3/homes.tfspec_bin2.json"; // recode
 	private final static String SPEC6 = "homes3/homes.tfspec_recode_dummy.json";
 	//private final static String SPEC6b = "homes3/homes.tfspec_recode_dummy2.json";
@@ -65,7 +66,7 @@ public class TransformFrameBuildMultithreadedTest extends AutomatedTestBase {
 	private final static String SPEC10 = "homes3/homes.tfspec_recode_bin.json";
 
 	public enum TransformType {
-		RECODE, DUMMY, RECODE_DUMMY, BIN, BIN_DUMMY, HASH, HASH_RECODE, RECODE_BIN,
+		RECODE, DUMMY, RECODE_DUMMY, BIN_WIDTH, BIN_HEIGHT, BIN_DUMMY, HASH, HASH_RECODE, RECODE_BIN,
 	}
 
 	@Override
@@ -101,12 +102,21 @@ public class TransformFrameBuildMultithreadedTest extends AutomatedTestBase {
 
 	@Test
 	public void testHomesBuildBinSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN, 0);
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN_WIDTH, 0);
 	}
 
 	@Test
 	public void testHomesBuild50BinSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN, 50);
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN_WIDTH, 50);
+	}
+	@Test
+	public void testHomesBuildBinEQHTCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN_HEIGHT, 0);
+	}
+
+	@Test
+	public void testHomesBuild50BinEQHTCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN_HEIGHT, 50);
 	}
 
 	@Test
@@ -132,8 +142,12 @@ public class TransformFrameBuildMultithreadedTest extends AutomatedTestBase {
 				SPEC = SPEC2;
 				DATASET = DATASET1;
 				break;
-			case BIN:
-				SPEC = SPEC3;
+			case BIN_WIDTH:
+				SPEC = SPEC3a;
+				DATASET = DATASET1;
+				break;
+			case BIN_HEIGHT:
+				SPEC = SPEC3b;
 				DATASET = DATASET1;
 				break;
 			case RECODE_DUMMY:
@@ -174,7 +188,7 @@ public class TransformFrameBuildMultithreadedTest extends AutomatedTestBase {
 				.readFrameFromHDFS(DATASET, -1L, -1L);
 			StringBuilder specSb = new StringBuilder();
 			Files.readAllLines(Paths.get(SPEC)).forEach(s -> specSb.append(s).append("\n"));
-			ColumnEncoder.BUILD_ROW_BLOCKS_PER_COLUMN = Math.max(blockSize, 1);
+			ColumnEncoder.BUILD_ROW_BLOCKS_PER_COLUMN = Math.max(blockSize, -1);
 			MultiColumnEncoder encoderS = EncoderFactory.createEncoder(specSb.toString(), input.getColumnNames(),
 				input.getNumColumns(), null);
 			MultiColumnEncoder encoderM = EncoderFactory.createEncoder(specSb.toString(), input.getColumnNames(),
@@ -191,7 +205,7 @@ public class TransformFrameBuildMultithreadedTest extends AutomatedTestBase {
 					assertEquals(encodersS.get(i).getRcdMap().keySet(), encodersM.get(i).getRcdMap().keySet());
 				}
 			}
-			else if(type == TransformType.BIN) {
+			else if(type == TransformType.BIN_WIDTH || type == TransformType.BIN_HEIGHT) {
 				List<ColumnEncoderBin> encodersS = encoderS.getColumnEncoders(ColumnEncoderBin.class);
 				List<ColumnEncoderBin> encodersM = encoderM.getColumnEncoders(ColumnEncoderBin.class);
 				assertEquals(encodersS.size(), encodersM.size());

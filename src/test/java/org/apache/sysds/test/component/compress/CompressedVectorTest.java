@@ -69,7 +69,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 	public CompressedVectorTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov,
 		Collection<CompressionType> ct) {
-		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1, ct);
+		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1, ct, null);
 	}
 
 	@Test
@@ -136,6 +136,32 @@ public class CompressedVectorTest extends CompressedTestBase {
 		catch(Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
+		}
+	}
+
+	@Test
+	public void testReExpandRow() {
+		// does not make much sense since it would entail the compression was on a matrix with one row.
+		// but here is a test.
+		testReExpand(false);
+	}
+
+	@Test
+	public void testReExpandCol() {
+		testReExpand(true);
+	}
+
+	public void testReExpand(boolean col) {
+		try {
+			if(cmb instanceof CompressedMatrixBlock) {
+				MatrixBlock ret1 = cmb.rexpandOperations(new MatrixBlock(), 50, !col, true, true, _k);
+				MatrixBlock ret2 = mb.rexpandOperations(new MatrixBlock(), 50, !col, true, true, _k);
+				compareResultMatrices(ret2, ret1, 0);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw e;
 		}
 	}
 }

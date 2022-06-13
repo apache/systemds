@@ -19,29 +19,35 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 public class ColumnEncoderBin extends ColumnEncoder {
 	public static final String MIN_PREFIX = "min";
 	public static final String MAX_PREFIX = "max";
 	public static final String NBINS_PREFIX = "nbins";
 	private static final long serialVersionUID = 1917445005206076078L;
+
+	public int getNumBin() {
+		return _numBin;
+	}
+
 	protected int _numBin = -1;
+	private BinMethod _binMethod = BinMethod.EQUI_WIDTH;
 
 	// frame transform-apply attributes
 	// a) column bin boundaries
@@ -55,9 +61,10 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		super(-1);
 	}
 
-	public ColumnEncoderBin(int colID, int numBin) {
+	public ColumnEncoderBin(int colID, int numBin, BinMethod binMethod)  {
 		super(colID);
 		_numBin = numBin;
+		_binMethod = binMethod;
 	}
 
 	public ColumnEncoderBin(int colID, int numBin, double[] binMins, double[] binMaxs) {
@@ -83,29 +90,116 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		return _binMaxs;
 	}
 
+	public BinMethod getBinMethod() {
+		return _binMethod;
+	}
+
+	public void setBinMethod(String method) {
+		if (method.equalsIgnoreCase(BinMethod.EQUI_WIDTH.toString()))
+			_binMethod = BinMethod.EQUI_WIDTH;
+		if (method.equalsIgnoreCase(BinMethod.EQUI_HEIGHT.toString()))
+			_binMethod = BinMethod.EQUI_HEIGHT;
+	}
+
 	@Override
 	public void build(CacheBlock in) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(!isApplicable())
 			return;
-		double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
-		computeBins(pairMinMax[0], pairMinMax[1]);
+		if(_binMethod == BinMethod.EQUI_WIDTH) {
+			double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
+			computeBins(pairMinMax[0], pairMinMax[1]);
+		}
+		else if(_binMethod == BinMethod.EQUI_HEIGHT) {
+			double[] sortedCol = prepareDataForEqualHeightBins(in, _colID, 0, -1);
+			computeEqualHeightBins(sortedCol);
+		}
+
 		if(DMLScript.STATISTICS)
-			Statistics.incTransformBinningBuildTime(System.nanoTime()-t0);
+			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
+	}
+
+	//TODO move federated things outside the location-agnostic encoder,
+	// and/or generalize to fit the existing mergeAt and similar methods
+	public void buildEquiHeight(double[] equiHeightMaxs) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		if(!isApplicable())
+			return;
+		if(_binMethod == BinMethod.EQUI_HEIGHT)
+			computeFedEqualHeightBins(equiHeightMaxs);
+
+		if(DMLScript.STATISTICS)
+			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
+	}
+
+	public void build(CacheBlock in, double[] equiHeightMaxs) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		if(!isApplicable())
+			return;
+		if(_binMethod == BinMethod.EQUI_WIDTH) {
+			double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
+			computeBins(pairMinMax[0], pairMinMax[1]);
+		}
+		else if(_binMethod == BinMethod.EQUI_HEIGHT) {
+			computeFedEqualHeightBins(equiHeightMaxs);
+		}
+
+		if(DMLScript.STATISTICS)
+			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
 	}
 
 	protected double getCode(CacheBlock in, int row){
+		// find the right bucket for a single row
+		double bin = 0;
 		if( _binMins.length == 0 || _binMaxs.length == 0 ) {
 			LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
 			return 1; //robustness in case of missing bins
 		}
 		// Returns NaN if value is missing, so can't be assigned a Bin
 		double inVal = in.getDoubleNaN(row, _colID - 1);
-		if (Double.isNaN(inVal) || inVal < _binMins[0] || inVal > _binMaxs[_binMaxs.length-1] )
+		if (Double.isNaN(inVal) || inVal < _binMins[0] || inVal > _binMaxs[_binMaxs.length-1])
 			return Double.NaN;
-		int ix = Arrays.binarySearch(_binMaxs, inVal);
-
-		return ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+		if (_binMethod == BinMethod.EQUI_HEIGHT) {
+			int ix = Arrays.binarySearch(_binMaxs, inVal);
+			bin = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+		}
+		if (_binMethod == BinMethod.EQUI_WIDTH) {
+			//TODO: Skip computing bin boundaries for equi-width
+			double binWidth = (_binMaxs[_binMaxs.length - 1] - _binMins[0]) / _numBin;
+			double code = Math.ceil((inVal - _binMins[0]) / binWidth);
+			bin = (code == 0) ? code + 1 : code;
+		}
+		return bin;
+	}
+	
+	@Override
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+		// find the right bucket for a block of rows
+		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
+		double[] codes = new double[endInd-startInd];
+		for (int i=startInd; i<endInd; i++) {
+			if (_binMins.length == 0 || _binMaxs.length == 0) {
+				LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
+				codes[i-startInd] = 1; //robustness in case of missing bins
+				continue;
+			}
+			double inVal = in.getDoubleNaN(i, _colID - 1);
+			if (Double.isNaN(inVal) || inVal < _binMins[0] || inVal > _binMaxs[_binMaxs.length-1]) {
+				codes[i-startInd] = Double.NaN;
+				continue;
+			}
+			if (_binMethod == BinMethod.EQUI_HEIGHT) {
+				int ix = Arrays.binarySearch(_binMaxs, inVal);
+				codes[i-startInd] = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+			}
+			if (_binMethod == BinMethod.EQUI_WIDTH) {
+				//TODO: Skip computing bin boundaries for equi-width
+				double binWidth = (_binMaxs[_binMaxs.length - 1] - _binMins[0]) / _numBin;
+				double bin = Math.ceil((inVal - _binMins[0]) / binWidth);
+				codes[i - startInd] = bin == 0 ? bin + 1 : bin;
+			}
+		}
+		return codes;
 	}
 
 	@Override
@@ -127,15 +221,30 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		return new double[] {min, max};
 	}
 
+	private static double[] prepareDataForEqualHeightBins(CacheBlock in, int colID, int startRow, int blockSize) {
+		int endRow = getEndIndex(in.getNumRows(), startRow, blockSize);
+		double[] vals = new double[endRow-startRow];
+		for(int i = startRow; i < endRow; i++) {
+			double inVal = in.getDouble(i, colID - 1);
+			//FIXME current NaN handling introduces 0s and thus
+			// impacts the computation of bin boundaries
+			if(Double.isNaN(inVal))
+				continue;
+			vals[i-startRow] = inVal;
+		}
+		Arrays.sort(vals);
+		return vals;
+	}
+
 	@Override
 	public Callable<Object> getBuildTask(CacheBlock in) {
 		return new ColumnBinBuildTask(this, in);
 	}
 
 	@Override
-	public Callable<Object> getPartialBuildTask(CacheBlock in, int startRow, int blockSize, 
+	public Callable<Object> getPartialBuildTask(CacheBlock in, int startRow, int blockSize,
 			HashMap<Integer, Object> ret) {
-		return new BinPartialBuildTask(in, _colID, startRow, blockSize, ret);
+		return new BinPartialBuildTask(in, _colID, startRow, blockSize, _binMethod, ret);
 	}
 
 	@Override
@@ -153,6 +262,33 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			_binMins[i] = min + i * (max - min) / _numBin;
 			_binMaxs[i] = min + (i + 1) * (max - min) / _numBin;
 		}
+	}
+
+	private void computeEqualHeightBins(double[] sortedCol) {
+		if(_binMins == null || _binMaxs == null) {
+			_binMins = new double[_numBin];
+			_binMaxs = new double[_numBin];
+		}
+		int n = sortedCol.length;
+		for(int i = 0; i < _numBin; i++) {
+			double pos = n * (i + 1d) / _numBin;
+			_binMaxs[i] = (pos % 1 == 0) ? // pos is integer
+				sortedCol[(int) pos-1] :
+				sortedCol[(int) Math.floor(pos)];
+		}
+		_binMaxs[_numBin-1] = sortedCol[n-1];
+		_binMins[0] = sortedCol[0];
+		System.arraycopy(_binMaxs, 0, _binMins, 1, _numBin - 1);
+	}
+
+	private void computeFedEqualHeightBins(double[] binMaxs) {
+		if(_binMins == null || _binMaxs == null) {
+			_binMins = new double[_numBin];
+			_binMaxs = new double[_numBin];
+		}
+		System.arraycopy(binMaxs, 1, _binMaxs, 0, _numBin);
+		_binMins[0] = binMaxs[0];
+		System.arraycopy(_binMaxs, 0, _binMins, 1, _numBin - 1);
 	}
 
 	public void prepareBuildPartial() {
@@ -243,6 +379,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		super.writeExternal(out);
 
 		out.writeInt(_numBin);
+		out.writeUTF(_binMethod.toString());
 		out.writeBoolean(_binMaxs != null);
 		if(_binMaxs != null) {
 			for(int j = 0; j < _binMaxs.length; j++) {
@@ -256,6 +393,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	public void readExternal(ObjectInput in) throws IOException {
 		super.readExternal(in);
 		_numBin = in.readInt();
+		setBinMethod(in.readUTF());
 		boolean minmax = in.readBoolean();
 		_binMaxs = minmax ? new double[_numBin] : null;
 		_binMins = minmax ? new double[_numBin] : null;
@@ -265,6 +403,10 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			_binMaxs[j] = in.readDouble();
 			_binMins[j] = in.readDouble();
 		}
+	}
+
+	public enum BinMethod {
+		INVALID, EQUI_WIDTH, EQUI_HEIGHT
 	}
 
 	private static class BinSparseApplyTask extends ColumnApplyTask<ColumnEncoderBin> {
@@ -284,7 +426,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 				return null;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS)
-				Statistics.incTransformBinningApplyTime(System.nanoTime()-t0);
+				TransformStatistics.incBinningApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 
@@ -300,27 +442,37 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		private final int _blockSize;
 		private final int _startRow;
 		private final int _colID;
-		private final HashMap<Integer, Object> _partialMinMax;
+		private final BinMethod _method;
+		private final HashMap<Integer, Object> _partialData;
 
 		// if a pool is passed the task may be split up into multiple smaller tasks.
 		protected BinPartialBuildTask(CacheBlock input, int colID, int startRow, 
-				int blocksize, HashMap<Integer, Object> partialMinMax) {
+				int blocksize, BinMethod method, HashMap<Integer, Object> partialData) {
 			_input = input;
 			_blockSize = blocksize;
 			_colID = colID;
 			_startRow = startRow;
-			_partialMinMax = partialMinMax;
+			_method = method;
+			_partialData = partialData;
 		}
 
 		@Override
 		public double[] call() throws Exception {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			double[] minMax = getMinMaxOfCol(_input, _colID, _startRow, _blockSize);
-			synchronized (_partialMinMax){
-				_partialMinMax.put(_startRow, minMax);
+			if (_method == BinMethod.EQUI_WIDTH) {
+				double[] minMax = getMinMaxOfCol(_input, _colID, _startRow, _blockSize);
+				synchronized(_partialData) {
+					_partialData.put(_startRow, minMax);
+				}
+			}
+			if (_method == BinMethod.EQUI_HEIGHT) {
+				double[] sortedVals = prepareDataForEqualHeightBins(_input, _colID, _startRow, _blockSize);
+				synchronized(_partialData) {
+					_partialData.put(_startRow, sortedVals);
+				}
 			}
 			if (DMLScript.STATISTICS)
-				Statistics.incTransformBinningBuildTime(System.nanoTime()-t0);
+				TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
 			return null;
 		}
 
@@ -339,25 +491,80 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			_encoder = encoderBin;
 		}
 
+		private double[] mergeKSortedArrays(double[][] arrs) {
+			//PriorityQueue is heap in Java
+			PriorityQueue<ArrayContainer> queue;
+			queue = new PriorityQueue<>();
+			int total=0;
+
+			//add arrays to heap
+			for(double[] arr : arrs) {
+				queue.add(new ArrayContainer(arr, 0));
+				total = total + arr.length;
+			}
+			int m=0;
+			double[] result = new double[total];
+
+			//while heap is not empty
+			while(!queue.isEmpty()){
+				ArrayContainer ac = queue.poll();
+				result[m++]=ac.arr[ac.index];
+				if(ac.index < ac.arr.length-1){
+					queue.add(new ArrayContainer(ac.arr, ac.index+1));
+				}
+			}
+			return result;
+		}
+
 		@Override
 		public Object call() throws Exception {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			double min = Double.POSITIVE_INFINITY;
-			double max = Double.NEGATIVE_INFINITY;
-			for(Object minMax : _partialMaps.values()) {
-				min = Math.min(min, ((double[]) minMax)[0]);
-				max = Math.max(max, ((double[]) minMax)[1]);
+			if (_encoder.getBinMethod() == BinMethod.EQUI_WIDTH) {
+				double min = Double.POSITIVE_INFINITY;
+				double max = Double.NEGATIVE_INFINITY;
+				for(Object minMax : _partialMaps.values()) {
+					min = Math.min(min, ((double[]) minMax)[0]);
+					max = Math.max(max, ((double[]) minMax)[1]);
+				}
+				_encoder.computeBins(min, max);
 			}
-			_encoder.computeBins(min, max);
+
+			if (_encoder.getBinMethod() == BinMethod.EQUI_HEIGHT) {
+				double[][] allParts = new double[_partialMaps.size()][];
+				int i = 0;
+				for (Object arr: _partialMaps.values())
+					allParts[i++] = (double[]) arr;
+
+				// Heap-based merging of sorted partitions.
+				// TODO: Derive bin boundaries from partial aggregates, avoiding
+				// materializing the sorted arrays (e.g. federated quantile)
+				double[] sortedRes = mergeKSortedArrays(allParts);
+				_encoder.computeEqualHeightBins(sortedRes);
+			}
 
 			if(DMLScript.STATISTICS)
-				Statistics.incTransformBinningBuildTime(System.nanoTime()-t0);
+				TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
 			return null;
 		}
 
 		@Override
 		public String toString() {
 			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+	}
+
+	private static class ArrayContainer implements Comparable<ArrayContainer> {
+		double[] arr;
+		int index;
+
+		public ArrayContainer(double[] arr, int index) {
+			this.arr = arr;
+			this.index = index;
+		}
+
+		@Override
+		public int compareTo(ArrayContainer o) {
+			return this.arr[this.index] < o.arr[o.index] ? -1 : 1;
 		}
 	}
 

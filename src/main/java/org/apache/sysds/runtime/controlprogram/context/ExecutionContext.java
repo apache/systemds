@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.Program;
@@ -36,7 +37,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -62,7 +63,9 @@ import org.apache.sysds.utils.Statistics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ExecutionContext {
@@ -79,6 +82,9 @@ public class ExecutionContext {
 	//lineage map, cache, prepared dedup blocks
 	protected Lineage _lineage;
 
+	//parfor temporary functions (created by eval)
+	protected Set<String> _fnNames;
+	
 	/**
 	 * List of {@link GPUContext}s owned by this {@link ExecutionContext}
 	 */
@@ -95,6 +101,7 @@ public class ExecutionContext {
 		_autoCreateVars = false;
 		_lineage = allocateLineage ? new Lineage() : null;
 		_prog = prog;
+		_fnNames = new HashSet<>();
 	}
 
 	public ExecutionContext(LocalVariableMap vars) {
@@ -102,6 +109,7 @@ public class ExecutionContext {
 		_autoCreateVars = false;
 		_lineage = null;
 		_prog = null;
+		_fnNames = new HashSet<>();
 	}
 
 	public Program getProgram(){
@@ -243,6 +251,17 @@ public class ExecutionContext {
 		return (MatrixObject) dat;
 	}
 
+	public MatrixLineagePair getMatrixLineagePair(CPOperand cpo) {
+		return getMatrixLineagePair(cpo.getName());
+	}
+
+	public MatrixLineagePair getMatrixLineagePair(String varname) {
+		MatrixObject mo = getMatrixObject(varname);
+		if(mo == null)
+			return null;
+		return MatrixLineagePair.of(mo, DMLScript.LINEAGE ? getLineageItem(varname) : null);
+	}
+
 	public TensorObject getTensorObject(String varname) {
 		Data dat = getVariable(varname);
 
@@ -354,8 +373,14 @@ public class ExecutionContext {
 	 * @return a pair containing the wrapping {@link MatrixObject} and a boolean indicating whether a cuda memory allocation took place (as opposed to the space already being allocated)
 	 */
 	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols) {
+		return 	getDenseMatrixOutputForGPUInstruction(varName, numRows, numCols, true);
+	}
+
+	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols,
+		boolean initialize)
+	{
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
-		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense();
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense(initialize);
 		mo.getDataCharacteristics().setNonZeros(-1);
 		return new Pair<>(mo, allocated);
 	}
@@ -371,9 +396,15 @@ public class ExecutionContext {
 	 * @return matrix object
 	 */
 	public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols, long nnz) {
+		return getSparseMatrixOutputForGPUInstruction(varName, numRows, numCols, nnz, true);
+	}
+
+	public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols,
+		long nnz, boolean initialize)
+	{
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
 		mo.getDataCharacteristics().setNonZeros(nnz);
-		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse(initialize);
 		return new Pair<>(mo, allocated);
 	}
 
@@ -840,11 +871,15 @@ public class ExecutionContext {
 			throw new DMLRuntimeException("Lineage Trace unavailable.");
 		LineageDebugger.maintainSpecialValueBits(_lineage, inst, this);
 	}
-	
+
 	public LineageItem getLineageItem(CPOperand input) {
+		return getLineageItem(input.getName());
+	}
+
+	public LineageItem getLineageItem(String varname) {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");
-		return _lineage.get(input);
+		return _lineage.get(varname);
 	}
 
 	public LineageItem getOrCreateLineageItem(CPOperand input) {
@@ -855,6 +890,14 @@ public class ExecutionContext {
 	
 	private static String getNonExistingVarError(String varname) {
 		return "Variable '" + varname + "' does not exist in the symbol table.";
+	}
+	
+	public void addTmpParforFunction(String fname) {
+		_fnNames.add(fname);
+	}
+	
+	public Set<String> getTmpParforFunctions() {
+		return _fnNames;
 	}
 
 	@Override

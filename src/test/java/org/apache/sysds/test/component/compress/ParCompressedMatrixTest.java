@@ -23,7 +23,9 @@ import java.util.Collection;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -45,15 +47,22 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	public ParCompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettingsBuilder compressionSettings, MatrixTypology matrixTypology, OverLapping ov,
-		Collection<CompressionType> ct) {
+		Collection<CompressionType> ct, CostEstimatorBuilder csb) {
 		super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
-			InfrastructureAnalyzer.getLocalParallelism(), ct);
+			InfrastructureAnalyzer.getLocalParallelism(), ct, csb);
 	}
 
 	@Override
 	public void testUnaryOperators(AggType aggType, boolean inCP) {
-		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, _k);
-		testUnaryOperators(aggType, auop, inCP);
+		try {
+
+			AggregateUnaryOperator auop = super.getUnaryOperator(aggType, _k);
+			testUnaryOperators(aggType, auop, inCP);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLCompressionException("Error in test of unary aggregate", e);
+		}
 	}
 
 	@Override

@@ -139,7 +139,8 @@ public class FunctionCallIdentifier extends DataIdentifier
 			fblock = dmlp.getFunctionStatementBlock(_namespace, _name);
 			if( fblock == null ) {
 				raiseValidateError("Builtin function '"+_name+ "': script loaded "
-					+ "but function not found. Is there a typo in the function name?");
+					+ "but function not found. Is there a typo in the function name?", conditional);
+				return; //robustness on warnings (conditional)
 			}
 		}
 		

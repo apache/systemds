@@ -19,23 +19,62 @@
 
 package org.apache.sysds.test.component.compress.offset;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.junit.Test;
 
 public class OffsetSingleTests {
 
-	@Test(expected = RuntimeException.class)
-	public void testInvalidSize_01() {
-		OffsetFactory.estimateInMemorySize(-1, 100);
+	@Test
+	public void testEmptyEstimateMemory() {
+		assertTrue(OffsetFactory.estimateInMemorySize(0, 10000) < 10);
 	}
 
-	@Test(expected = RuntimeException.class)
-	public void testInvalidSize_02() {
-		OffsetFactory.estimateInMemorySize(10, -1);
+
+	@Test(expected = DMLCompressionException.class)
+	public void testInvalidCreate(){
+		OffsetFactory.createOffset(null, 10, 0);
 	}
 
-	@Test(expected = RuntimeException.class)
-	public void testInvalidCreation() {
-		OffsetFactory.create(new int[] {1, 2, 3, -1});
+
+	@Test
+	public void equivalentToOtherConstructor(){
+		int[] offset = new int[]{1,2,3,4,5,8};
+		AOffset a = OffsetFactory.createOffset(offset);
+		IntArrayList offsetB = new IntArrayList(offset);
+		AOffset b = OffsetFactory.createOffset(offsetB);
+		assertTrue(a.equals(b));
+	}
+
+	@Test
+	public void notEquivalentOnLast(){
+		int[] offset = new int[]{1,2,3,4,5,8};
+		AOffset a = OffsetFactory.createOffset(offset);
+		IntArrayList offsetB = new IntArrayList(new int[]{1,9});
+		AOffset b = OffsetFactory.createOffset(offsetB);
+		assertFalse(a.equals(b));
+	}
+
+	@Test
+	public void notEquivalentOnFirst(){
+		int[] offset = new int[]{1,2,3,4,5,8};
+		AOffset a = OffsetFactory.createOffset(offset);
+		IntArrayList offsetB = new IntArrayList(new int[]{0,8});
+		AOffset b = OffsetFactory.createOffset(offsetB);
+		assertFalse(a.equals(b));
+	}
+
+	@Test
+	public void notEquivalentInside(){
+		int[] offset = new int[]{1,2,3,4,5,8};
+		AOffset a = OffsetFactory.createOffset(offset);
+		IntArrayList offsetB = new IntArrayList(new int[]{1,2,3,4,8});
+		AOffset b = OffsetFactory.createOffset(offsetB);
+		assertFalse(a.equals(b));
 	}
 }

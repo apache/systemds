@@ -30,10 +30,10 @@ class TestFederatedAggFn(unittest.TestCase):
         shutil.rmtree("temp")
 
     def test_part1(self):
-        import docs.source.code.federatedTutorial_part1
+        import docs.source.code.guide.federated.federatedTutorial_part1
 
     def test_part2(self):
-        import docs.source.code.federatedTutorial_part2
+        import docs.source.code.guide.federated.federatedTutorial_part2
 
     def test_part3(self):
-        import docs.source.code.federatedTutorial_part3
+        import docs.source.code.guide.federated.federatedTutorial_part3

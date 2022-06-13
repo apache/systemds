@@ -18,47 +18,45 @@
  */
 
 #pragma once
-#ifndef SYSTEMDS_MATRIX_H
-#define SYSTEMDS_MATRIX_H
 
 using uint32_t = unsigned int;
 using int32_t = int;
 
 template <typename T>
 struct Matrix {
-	int32_t nnz;
+	uint64_t nnz;
 	uint32_t rows;
 	uint32_t cols;
-	
 	uint32_t* row_ptr;
 	uint32_t* col_idx;
 	T* data;
 	
 	typedef T value_type;
 	
-	explicit Matrix(size_t* jvals) : nnz(jvals[0]), rows(jvals[1]), cols(jvals[2]),
-			row_ptr(reinterpret_cast<uint32_t*>(jvals[3])),
-			col_idx(reinterpret_cast<uint32_t*>((jvals[4]))), data(reinterpret_cast<T*>(jvals[5])) {}
+	explicit Matrix(uint8_t* jvals) : nnz(*reinterpret_cast<uint32_t*>(&jvals[0])),
+		rows(*reinterpret_cast<uint32_t*>(&jvals[8])), cols(*reinterpret_cast<uint32_t*>(&jvals[12])),
+			row_ptr(reinterpret_cast<uint32_t*>(jvals[16])), col_idx(reinterpret_cast<uint32_t*>((jvals[24]))),
+				data(static_cast<T*>(jvals[32])) {}
 };
 
 #ifdef __CUDACC__
 
-template<typename T>
-uint32_t bin_search(T* values, uint32_t lower, uint32_t upper, T val) {
-	upper -= 1;
-	while(lower <= (upper-1)) {
-		uint32_t idx = (lower + upper) >> 1;
-		uint32_t vi = values[idx];
-		if (vi < val)
-			lower = idx + 1;
-		else {
-			if (vi <= val)
-				return idx;
-			upper = idx - 1;
-		}
-	}
-	return upper + 1;
-}
+//template<typename T>
+//uint32_t bin_search(T* values, uint32_t lower, uint32_t upper, T val) {
+//	upper -= 1;
+//	while(lower <= (upper-1)) {
+//		uint32_t idx = (lower + upper) >> 1;
+//		uint32_t vi = values[idx];
+//		if (vi < val)
+//			lower = idx + 1;
+//		else {
+//			if (vi <= val)
+//				return idx;
+//			upper = idx - 1;
+//		}
+//	}
+//	return upper + 1;
+//}
 
 template<typename T>
 class MatrixAccessor {
@@ -68,11 +66,11 @@ class MatrixAccessor {
 public:
 	MatrixAccessor() = default;
 	
-	__device__ MatrixAccessor(Matrix<T>* mat) : _mat(mat) {}
+	__device__ explicit MatrixAccessor(Matrix<T>* mat) : _mat(mat) {}
 	
 	__device__ void init(Matrix<T>* mat) { _mat = mat; }
 	
-	__device__ uint32_t& nnz() { return _mat->nnz; }
+//	__device__ uint32_t& nnz() { return _mat->row_ptr == nullptr ? _mat->rows * _mat->cols : _mat->nnz; }
 	__device__ uint32_t cols() { return _mat->cols; }
 	__device__ uint32_t rows() { return _mat->rows; }
 	
@@ -96,14 +94,14 @@ public:
 	}
 	
 	__device__ uint32_t row_len(uint32_t rix) {
-		return _mat->row_ptr == nullptr ? row_len_dense(rix) : row_len_sparse(rix);
+		return _mat->row_ptr == nullptr ? _mat->rows : row_len_sparse(rix);
 	}
 	
 	__device__ uint32_t* col_idxs(uint32_t rix) { return cols_sparse(rix); }
 
 	__device__ void set(uint32_t r, uint32_t c, T v) { set_sparse(r,c,v); }
 	
-	__device__ uint32_t* indexes() {  return _mat->row_ptr;	}
+//	__device__ uint32_t* indexes() {  return _mat->row_ptr;	}
 	
 	__device__ bool hasData() { return _mat->data != nullptr; }
 private:
@@ -127,13 +125,9 @@ private:
 		return &(_mat->data[rix]);
 	}
 	
-	__device__ uint32_t row_len_dense(uint32_t rix) {
-		return _mat->rows;
-	}
-	
 	//ToDo sparse accessors
 	__device__ uint32_t len_sparse() {
-		return _mat->nnz;
+		return _mat->row_ptr[_mat->rows];
 	}
 	
 	__device__ uint32_t pos_sparse(uint32_t rix) {
@@ -145,8 +139,8 @@ private:
 	}
 	
 	__device__ T& val_sparse_rc(uint32_t r, uint32_t c) {
-//		printf("TBI: val_sparse_rc\n");
-//		asm("trap;");
+		printf("TBI: val_sparse_rc(%d, %d)\n", r, c);
+		asm("trap;");
 
 		return _mat->data[0];
 	}
@@ -227,34 +221,4 @@ public:
 	}
 };
 
-template <typename T, int NUM_B>
-struct SpoofOp {
-	MatrixAccessor<T> a;
-	MatrixAccessor<T> b[NUM_B];
-	MatrixAccessor<T> c;
-	T* scalars;
-	uint32_t grix;
-	T* avals;
-	uint32_t* aix;
-	uint32_t alen;
-	
-	SpoofOp(Matrix<T>* A, Matrix<T>* B, Matrix<T>* C, T* scalars, T* tmp_stor, uint32_t grix) :
-			scalars(scalars), grix(grix), avals(A->data), aix(A->col_idx) {
-		a.init(A);
-		c.init(C);
-		alen = a.row_len(grix);
-
-		if(B)
-			for(auto i = 0; i < NUM_B; ++i)
-				b[i].init(&(B[i]));
-	}
-	
-//	__device__ Vector<T>& getTempStorage(uint32_t len) {
-//		Vector<T>& vec = temp_rb.next();
-//		tvec.length = len;
-//		return vec;
-//	}
-};
 #endif // __CUDACC_RTC__
-
-#endif //SYSTEMDS_MATRIX_H

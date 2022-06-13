@@ -35,6 +35,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
+import org.apache.sysds.hops.fedplanner.MemoTable;
 import org.apache.sysds.hops.ipa.FunctionCallGraph;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
@@ -68,6 +69,7 @@ import org.apache.sysds.runtime.instructions.spark.ReblockSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 
 public class Explain
 {
@@ -77,6 +79,9 @@ public class Explain
 	private static final boolean SHOW_LITERAL_HOPS          = false;
 	private static final boolean SHOW_DATA_DEPENDENCIES     = true;
 	private static final boolean SHOW_DATA_FLOW_PROPERTIES  = true;
+
+	//federated execution plan alternatives
+	private static MemoTable MEMO_TABLE;
 
 	//different explain levels
 	public enum ExplainType {
@@ -99,6 +104,14 @@ public class Explain
 		public int numJobs = 0;
 		public int numReblocks = 0;
 		public int numChkpts = 0;
+	}
+
+	/**
+	 * Store memo table for adding additional explain info regarding hops.
+	 * @param memoTable to store in Explain
+	 */
+	public static void setMemo(MemoTable memoTable){
+		MEMO_TABLE = memoTable;
 	}
 
 	//////////////
@@ -600,6 +613,19 @@ public class Explain
 		if (hop.getExecType() != null)
 			sb.append(", " + hop.getExecType());
 
+		if ( hop.getFederatedOutput() != FederatedOutput.NONE )
+			sb.append(" ").append(hop.getFederatedOutput()).append(" ");
+
+		if ( MEMO_TABLE != null && MEMO_TABLE.containsHop(hop) ){
+			List<String> fedAlts = MEMO_TABLE.getFedOutAlternatives(hop);
+			if ( fedAlts != null ){
+				sb.append(" [ ");
+				for ( String fedAlt : fedAlts )
+					sb.append(fedAlt).append(" ");
+				sb.append("]");
+			}
+		}
+
 		sb.append('\n');
 
 		hop.setVisited();
@@ -830,7 +856,7 @@ public class Explain
 		return OptimizerUtils.toMB(mem) + (units?"MB":"");
 	}
 
-	private static String createOffset( int level )
+	public static String createOffset( int level )
 	{
 		StringBuilder sb = new StringBuilder();
 		for( int i=0; i<level; i++ )

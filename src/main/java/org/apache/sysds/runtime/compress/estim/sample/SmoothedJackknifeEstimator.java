@@ -54,8 +54,8 @@ public class SmoothedJackknifeEstimator {
 		 * However, for large values of nRows, Gamma.gamma returns NAN
 		 * (factorial of a very large number).
 		 * 
-		 * The following implementation solves this problem by levaraging the
-		 * cancelations that show up when expanding the factorials in the
+		 * The following implementation solves this problem by leveraging the
+		 * cancellations that show up when expanding the factorials in the
 		 * numerator and the denominator.
 		 * 
 		 * 
@@ -100,6 +100,6 @@ public class SmoothedJackknifeEstimator {
 		gamma += D0 / nRows - 1;
 
 		double estimate = (d + nRows * h * g * gamma) / (1 - (nRows - NTilde - sampleSize + 1) * f1 / Nn);
-		return estimate < 1 ? 1 : (int) Math.round(estimate);
+		return (int) Math.round(estimate);
 	}
 }

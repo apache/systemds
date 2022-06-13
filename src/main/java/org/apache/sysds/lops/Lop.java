@@ -21,6 +21,8 @@ package org.apache.sysds.lops;
 
 import java.util.ArrayList;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
@@ -36,6 +38,7 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 public abstract class Lop 
 {
+	private static final Log LOG =  LogFactory.getLog(Lop.class.getName());
 	
 	public enum Type {
 		Data, DataGen,                                      //CP/MR read/write/datagen 
@@ -115,6 +118,14 @@ public abstract class Lop
 	 * Privacy Constraint
 	 */
 	protected PrivacyConstraint privacyConstraint;
+
+	/**
+	 * Field defining if prefetch should be activated for operation.
+	 * When prefetch is activated, the output will be transferred from
+	 * remote federated sites to local before one of the subsequent
+	 * local operations.
+	 */
+	protected boolean activatePrefetch;
 
 	/**
 	 * Enum defining if the output of the operation should be forced federated, forced local or neither.
@@ -316,8 +327,21 @@ public abstract class Lop
 		return privacyConstraint;
 	}
 
+	public void activatePrefetch(){
+		activatePrefetch = true;
+	}
+
+	public boolean prefetchActivated(){
+		return activatePrefetch;
+	}
+
 	public void setFederatedOutput(FederatedOutput fedOutput){
 		_fedOutput = fedOutput;
+		LOG.trace("Set federated output: " + fedOutput + " of lop " + this);
+	}
+
+	public FederatedOutput getFederatedOutput(){
+		return _fedOutput;
 	}
 	
 	public void setConsumerCount(int cc) {

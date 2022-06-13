@@ -23,7 +23,7 @@ source("scripts/pipelines/scripts/utils.dml") as utils;
 
 # read the inputs
 F = read($dirtyData, data_type="frame", format="csv", header=TRUE, 
-  naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
+  naStrings= ["NA", "null","  ","NaN", "nan", "", " ", "_nan_", "inf", "?", "NAN", "99999"]);
 F = F[,2:ncol(F)]
 primitives = read($primitives, data_type = "frame", format="csv", header= TRUE)
 param = read($parameters, data_type = "frame", format="csv", header= TRUE)
@@ -39,7 +39,7 @@ split = nrow(F) * trainTestSplit
   evalFunc = "evalRegression"
 if(testCV) {
   trainData = F[1:split,]
-  testData = as.frame("0")
+  testData = frame("", rows=0, cols=0)
 }
 else {
   trainData = F[1:split,]
@@ -47,40 +47,54 @@ else {
 }
 
 # # # split in train/test 70/30
+#matrix("1 1e-6 1e-9 1000", rows=1, cols=4)
+[topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData, 
+  primitives=primitives, parameters=param, evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),
+  topK=topK, resource_val=resources, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE)
 
-result = topk_cleaning(dataTrain=trainData, dataTest=testData, 
-  primitives=primitives, parameters=param, cmr=matrix("2 0.7 1", rows=1, cols=3), evaluationFunc=evalFunc, evalFunHp=matrix("1 1e-3 1e-9 100", rows=1, cols=4),
-  topK=topK, resource_val=resources, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE, output=output)
-  
-     
+write(topKPipelines, output+"/pip.csv", format="csv")
+write(topKHyperParams, output+"/hp.csv", format="csv")
+write(topKScores, output+"/bestAcc.csv", format="csv")
+write(baseLineScore, output+"/dirtyScore.csv", format="csv")
+write(evalFunHp, output+"/evalHp.csv", format="csv")
+write(applyFunc, output+"/applyFunc.csv", format="csv")
+result = baseLineScore < as.scalar(topKScores[1, 1])     
 write(result, $O)
 
 
 # UDF for evaluation  
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
 evalRegression = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
-  Matrix[Double] evalFunHp, Boolean trainML = FALSE)
+  Matrix[Double] evalFunHp)
 return(Matrix[Double] output)
 {
-  if(trainML == 1)
+  if(is.na(as.scalar(evalFunHp[1,1])))
   {
     # do the gridsearch for hyper-parameters
-    params = list("icpt","reg", "tol", "maxi");
-    paramRanges = list(seq(0,2),10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3));
-    [B1, opt] = utils::topk_gridSearch(X=X, y=Y, train="lm", predict="wmape",
-      numB=ncol(X)+1, cv=TRUE, params=params, paramValues=paramRanges, verbose=FALSE);
+    params = list("icpt","reg", "tol");
+    paramRanges = list(seq(0,2,1),10^seq(0,-4), 10^seq(-6,-12));
+    [B1, opt] = gridSearch(X=X, y=Y, train="lm", predict="wmape",
+      numB=ncol(X)+1, params=params, paramValues=paramRanges, cv=TRUE, cvk=3, verbose=TRUE);
     evalFunHp = as.matrix(opt)  
   }
   beta = lm(X=X, y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]), 
-    maxi=as.scalar(evalFunHp[1,4]));
-  acc = wmape(Xtest, Ytest, beta, as.scalar(evalFunHp[1,1]))
+    maxi=1000);
+  acc = wmape(Xtest, Ytest, beta)
   accuracy = (1 - acc)
   output = cbind(accuracy, evalFunHp)
 }
 
-wmape = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B, Integer icpt) return (Matrix[Double] loss) {
+# wmape = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (Matrix[Double] loss) {
+  # # loss = as.matrix(sum((y - X%*%B)^2));
+  # pred = lmPredict(X=X, B=B, ytest=y);
+  # WMAPE = sum(abs(y - pred))/sum(abs(y)) #this will give the lose into range of [0,1]
+  # loss = ifelse(is.na(as.matrix(WMAPE)), as.matrix(0), as.matrix(WMAPE))  
+# }
+
+wmape = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (Matrix[Double] loss) {
   # loss = as.matrix(sum((y - X%*%B)^2));
-  pred = lmPredict(X=X, B=B, ytest=y, icpt=icpt);
-  WMAPE = sum(abs(y - pred))/sum(abs(y)) #this will give the lose into range of [0,1]
-  loss = as.matrix(WMAPE) 
+  pred = lmPredict(X=X, B=B, ytest=y);
+  print("WMAPO: "+(1 - (sum(abs((pred - y)/(pred + y)))/nrow(y))))
+  WMAPE = 1 - (sum(abs((pred - y)/(pred + y)))/nrow(y)) #this will give the lose into range of [0,1]
+  loss = ifelse(is.na(as.matrix(WMAPE)), as.matrix(0), as.matrix(WMAPE))  
 }

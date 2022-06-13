@@ -53,7 +53,7 @@ public class MappingTestsResize {
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
-		final int max = MapToFactory.getUpperBoundValue(type);
+		final int max = MappingTestUtil.getUpperBoundValue(type);
 		final int maxSmaller = getMaxSmaller(type);
 		expected = new int[size];
 		m = MappingTests.genMap(MapToFactory.create(size, max), expected, maxSmaller, fill, seed);
@@ -67,12 +67,14 @@ public class MappingTestsResize {
 	private int getMaxSmaller(MAP_TYPE type) {
 		switch(type) {
 			case BIT:
-			case BYTE:
+			case UBYTE:
 				return 1;
+			case BYTE:
+				return 127;
 			case CHAR:
 				return (int) Math.pow(2, 8) - 1;
 			default:
-				return (int) Character.MAX_VALUE ;
+				return (int) Character.MAX_VALUE;
 		}
 	}
 

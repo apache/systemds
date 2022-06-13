@@ -28,101 +28,29 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.BiFunction;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class FederationMap {
-	public enum FPartitioning {
-		ROW,   //row partitioned, groups of entire rows
-		COL,   //column partitioned, groups of entire columns
-		MIXED, //arbitrary rectangles
-		NONE,  //entire data in a location
-	}
-
-	public enum FReplication {
-		NONE,    //every data item in a separate location
-		FULL,    //every data item at every location
-		OVERLAP, //every data item partially at every location, w/ addition as aggregation method
-	}
-
-	public enum FType {
-		ROW(FPartitioning.ROW, FReplication.NONE),
-		COL(FPartitioning.COL, FReplication.NONE),
-		FULL(FPartitioning.NONE, FReplication.NONE),
-		BROADCAST(FPartitioning.NONE, FReplication.FULL),
-		PART(FPartitioning.NONE, FReplication.OVERLAP),
-		OTHER(FPartitioning.MIXED, FReplication.NONE);
-
-		private final FPartitioning _partType;
-		@SuppressWarnings("unused") //not yet
-		private final FReplication _repType;
-
-		private FType(FPartitioning ptype, FReplication rtype) {
-			_partType = ptype;
-			_repType = rtype;
-		}
-
-		public boolean isRowPartitioned() {
-			return _partType == FPartitioning.ROW
-				|| _partType == FPartitioning.NONE;
-		}
-
-		public boolean isColPartitioned() {
-			return _partType == FPartitioning.COL
-				|| _partType == FPartitioning.NONE;
-		}
-
-		public FPartitioning getPartType() {
-			return this._partType;
-		}
-
-		public boolean isType(FType t) {
-			switch(t) {
-				case ROW:
-					return isRowPartitioned();
-				case COL:
-					return isColPartitioned();
-				case FULL:
-				case OTHER:
-				default:
-					return t == this;
-			}
-		}
-	}
-
-	// Alignment Check Type
-	public enum AlignType {
-		FULL, // exact matching dimensions of partitions on the same federated worker
-		ROW, // matching rows of partitions on the same federated worker
-		COL, // matching columns of partitions on the same federated worker
-		FULL_T, // matching dimensions with transposed dimensions of partitions on the same federated worker
-		ROW_T, // matching rows with columns of partitions on the same federated worker
-		COL_T; // matching columns with rows of partitions on the same federated worker
-
-		public boolean isTransposed() {
-			return (this == FULL_T || this == ROW_T || this == COL_T);
-		}
-		public boolean isFullType() {
-			return (this == FULL || this == FULL_T);
-		}
-		public boolean isRowType() {
-			return (this == ROW || this == ROW_T);
-		}
-		public boolean isColType() {
-			return (this == COL || this == COL_T);
-		}
-	}
 
 	private long _ID = -1;
 	private final List<Pair<FederatedRange, FederatedData>> _fedMap;
@@ -189,17 +117,26 @@ public class FederationMap {
 	}
 
 	public FederatedRequest broadcast(CacheableData<?> data) {
+		return broadcast(data, null);
+	}
+
+	public FederatedRequest broadcast(MatrixLineagePair moLin) {
+		return broadcast(moLin.getMO(), moLin.getLI());
+	}
+
+	private FederatedRequest broadcast(CacheableData<?> data, LineageItem lineageItem) {
 		// reuse existing broadcast variable
 		if( data.isFederated(FType.BROADCAST) )
 			return new FederatedRequest(RequestType.NOOP, data.getFedMapping().getID());
 		// prepare single request for all federated data
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
+
 		// create new fed mapping for broadcast (a potential overwrite
 		// is fine, because with broadcast all data on all workers)
 		data.setFedMapping(copyWithNewIDAndRange(
 			cb.getNumRows(), cb.getNumColumns(), id, FType.BROADCAST));
-		return new FederatedRequest(RequestType.PUT_VAR, id, cb);
+		return new FederatedRequest(RequestType.PUT_VAR, lineageItem, id, cb);
 	}
 
 	public FederatedRequest broadcast(ScalarObject scalar) {
@@ -208,15 +145,27 @@ public class FederationMap {
 		return new FederatedRequest(RequestType.PUT_VAR, id, scalar);
 	}
 
+	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
+		return broadcastSliced(data, null, transposed);
+	}
+
+	public FederatedRequest[] broadcastSliced(MatrixLineagePair moLin,
+		boolean transposed) {
+		return broadcastSliced(moLin.getMO(), moLin.getLI(),
+			transposed);
+	}
+
 	/**
-	 * Creates separate slices of an input data object according to the index ranges of federated data. Theses slices
+	 * Creates separate slices of an input data object according to the index ranges of federated data. These slices
 	 * are then wrapped in separate federated requests for broadcasting.
 	 *
-	 * @param data       input data object (matrix, tensor, frame)
-	 * @param transposed false: slice according to federated data, true: slice according to transposed federated data
+	 * @param data        input data object (matrix, tensor, frame)
+	 * @param lineageItem the lineage item of the data
+	 * @param transposed  false: slice according to federated data, true: slice according to transposed federated data
 	 * @return array of federated requests corresponding to federated data
 	 */
-	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
+	private FederatedRequest[] broadcastSliced(CacheableData<?> data, LineageItem lineageItem,
+		boolean transposed) {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data)};
 
@@ -253,13 +202,22 @@ public class FederationMap {
 		// multi-threaded block slicing and federation request creation
 		else {
 			Arrays.parallelSetAll(ret,
-				i -> new FederatedRequest(RequestType.PUT_VAR, id,
-				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
+				i -> sliceBroadcastBlock(ix[i], id, cb, lineageItem, false));
 		}
 		return ret;
 	}
 
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean isFrame, int[][] ix) {
+		return broadcastSliced(data, null, isFrame, ix);
+	}
+
+	public FederatedRequest[] broadcastSliced(MatrixLineagePair moLin,
+		boolean isFrame, int[][] ix) {
+		return broadcastSliced(moLin.getMO(), moLin.getLI(), isFrame, ix);
+	}
+
+	public FederatedRequest[] broadcastSliced(CacheableData<?> data, LineageItem lineageItem,
+		boolean isFrame, int[][] ix) {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data)};
 
@@ -270,9 +228,24 @@ public class FederationMap {
 		// multi-threaded block slicing and federation request creation
 		FederatedRequest[] ret = new FederatedRequest[ix.length];
 		Arrays.setAll(ret,
-			i -> new FederatedRequest(RequestType.PUT_VAR, id,
-				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], isFrame ? new FrameBlock() : new MatrixBlock())));
+			i -> sliceBroadcastBlock(ix[i], id, cb, lineageItem, isFrame));
 		return ret;
+	}
+
+	private FederatedRequest sliceBroadcastBlock(int[] ix, long id, CacheBlock cb, LineageItem objLi, boolean isFrame) {
+		LineageItem li = null;
+		if(objLi != null) {
+			// manually create a lineage item for indexing to complete the lineage trace for slicing
+			CPOperand rl = new CPOperand(String.valueOf(ix[0] + 1), ValueType.INT64, DataType.SCALAR, true);
+			CPOperand ru = new CPOperand(String.valueOf(ix[1] + 1), ValueType.INT64, DataType.SCALAR, true);
+			CPOperand cl = new CPOperand(String.valueOf(ix[2] + 1), ValueType.INT64, DataType.SCALAR, true);
+			CPOperand cu = new CPOperand(String.valueOf(ix[3] + 1), ValueType.INT64, DataType.SCALAR, true);
+			li = new LineageItem(RightIndex.OPCODE, new LineageItem[]{objLi, rl.getLiteralLineageItem(),
+				ru.getLiteralLineageItem(), cl.getLiteralLineageItem(), cu.getLiteralLineageItem()});
+		}
+		FederatedRequest fr = new FederatedRequest(RequestType.PUT_VAR, li, id,
+			cb.slice(ix[0], ix[1], ix[2], ix[3], isFrame ? new FrameBlock() : new MatrixBlock()));
+		return fr;
 	}
 
 	/**
@@ -304,7 +277,7 @@ public class FederationMap {
 	public boolean isAligned(FederationMap that, boolean transposed) {
 		boolean ret = true;
 		//TODO support operations with fully broadcast objects
-		if (_type == FederationMap.FType.BROADCAST)
+		if (_type == FType.BROADCAST)
 			return false;
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederatedRange range = !transposed ? e.getKey() : new FederatedRange(e.getKey()).transpose();
@@ -583,6 +556,24 @@ public class FederationMap {
 		return this;
 	}
 
+	/**
+	 * Take the federated mapping and sets one dimension of all federated ranges
+	 * to the specified value.
+	 *
+	 * @param value      long value for setting the dimension
+	 * @param dim        indicates if the row (0) or column (1) dimension should be set to value
+	 * @return FederationMap with the modified federated ranges
+	 */
+	public FederationMap modifyFedRanges(long value, int dim) {
+		if(getType() == (dim == 0 ? FType.ROW : FType.COL))
+			throw new DMLRuntimeException("Federated ranges cannot be modified in the direction of its partitioning.");
+		IntStream.range(0, getFederatedRanges().length).forEach(i -> {
+			getFederatedRanges()[i].setBeginDim(dim, 0);
+			getFederatedRanges()[i].setEndDim(dim, value);
+		});
+		return this;
+	}
+
 	public FederationMap transpose() {
 		List<Pair<FederatedRange, FederatedData>> tmp = new ArrayList<>(_fedMap);
 		_fedMap.clear();
@@ -591,17 +582,16 @@ public class FederationMap {
 		}
 		// derive output type
 		switch(_type) {
-			case FULL:
-				_type = FType.FULL;
-				break;
 			case ROW:
 				_type = FType.COL;
 				break;
 			case COL:
 				_type = FType.ROW;
 				break;
+			case FULL:
 			case PART:
-				_type = FType.PART;
+				// FULL and PART are not changed
+				break;
 			default:
 				_type = FType.OTHER;
 		}

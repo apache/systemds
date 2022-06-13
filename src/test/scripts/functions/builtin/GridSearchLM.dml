@@ -25,6 +25,7 @@ l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (
 
 X = read($1);
 y = read($2);
+verbose = $4;
 
 N = 200;
 Xtrain = X[1:N,];
@@ -32,10 +33,11 @@ ytrain = y[1:N,];
 Xtest = X[(N+1):nrow(X),];
 ytest = y[(N+1):nrow(X),];
 
-params = list("reg", "tol", "maxi");
-paramRanges = list(10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3));
+args = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
+params = list("reg", "tol", "maxi", "verbose");
+paramRanges = list(10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3), as.matrix(as.double(verbose)));
 [B1, opt] = gridSearch(X=Xtrain, y=ytrain, train="lm", predict="l2norm",
-  numB=ncol(X), params=params, paramValues=paramRanges);
+  numB=ncol(X), params=params, paramValues=paramRanges, trainArgs=args);
 B2 = lm(X=Xtrain, y=ytrain, verbose=FALSE);
 
 l1 = l2norm(Xtest, ytest, B1);

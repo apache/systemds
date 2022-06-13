@@ -59,7 +59,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
  * 		Semantic: align indices (sort), then perform operation
  */
 
-public class BinaryOp extends MultiThreadedHop{
+public class BinaryOp extends MultiThreadedHop {
 	// private static final Log LOG =  LogFactory.getLog(BinaryOp.class.getName());
 
 	//we use the full remote memory budget (but reduced by sort buffer), 
@@ -179,7 +179,12 @@ public class BinaryOp extends MultiThreadedHop{
 	
 	@Override
 	public boolean isMultiThreadedOpType() {
-		return !getDataType().isScalar();
+		return !getDataType().isScalar()
+			|| getOp() == OpOp2.COV
+			|| getOp() == OpOp2.MOMENT
+			|| getOp() == OpOp2.IQM
+			|| getOp() == OpOp2.MEDIAN
+			|| getOp() == OpOp2.QUANTILE;
 	}
 	
 	@Override
@@ -231,16 +236,18 @@ public class BinaryOp extends MultiThreadedHop{
 	}
 	
 	private void constructLopsIQM(ExecType et) {
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		SortKeys sort = SortKeys.constructSortByValueLop(
 				getInput().get(0).constructLops(), 
 				getInput().get(1).constructLops(), 
 				SortKeys.OperationTypes.WithWeights, 
-				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
+				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et, k);
 		sort.getOutputParameters().setDimensions(
 				getInput().get(0).getDim1(),
 				getInput().get(0).getDim2(), 
 				getInput().get(0).getBlocksize(), 
 				getInput().get(0).getNnz());
+		updateLopFedOut(sort);
 		PickByCount pick = new PickByCount(
 				sort,
 				null,
@@ -254,11 +261,12 @@ public class BinaryOp extends MultiThreadedHop{
 	}
 	
 	private void constructLopsMedian(ExecType et) {
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		SortKeys sort = SortKeys.constructSortByValueLop(
 				getInput().get(0).constructLops(), 
 				getInput().get(1).constructLops(), 
 				SortKeys.OperationTypes.WithWeights, 
-				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
+				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et, k);
 		sort.getOutputParameters().setDimensions(
 				getInput().get(0).getDim1(),
 				getInput().get(0).getDim2(),
@@ -279,26 +287,26 @@ public class BinaryOp extends MultiThreadedHop{
 		setLops(pick);
 	}
 	
-	private void constructLopsCentralMoment(ExecType et) 
-	{
+	private void constructLopsCentralMoment(ExecType et) {
 		// The output data type is a SCALAR if central moment 
 		// gets computed in CP/SPARK, and it will be MATRIX otherwise.
 		DataType dt = DataType.SCALAR;
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		CentralMoment cm = new CentralMoment(
-				getInput().get(0).constructLops(), 
-				getInput().get(1).constructLops(),
-				dt, getValueType(), et);
-
+			getInput().get(0).constructLops(), 
+			getInput().get(1).constructLops(),
+			dt, getValueType(), k, et);
 		setLineNumbers(cm);
 		cm.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLops(cm);
 	}
 
 	private void constructLopsCovariance(ExecType et) {
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		CoVariance cov = new CoVariance(
-				getInput().get(0).constructLops(), 
-				getInput().get(1).constructLops(), 
-				getDataType(), getValueType(), et);
+			getInput().get(0).constructLops(), 
+			getInput().get(1).constructLops(), 
+			getDataType(), getValueType(), k, et);
 		cov.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLineNumbers(cov);
 		setLops(cov);
@@ -315,10 +323,11 @@ public class BinaryOp extends MultiThreadedHop{
 		else
 			pick_op = PickByCount.OperationTypes.RANGEPICK;
 
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		SortKeys sort = SortKeys.constructSortByValueLop(
 			getInput().get(0).constructLops(), 
 			SortKeys.OperationTypes.WithoutWeights, 
-			DataType.MATRIX, ValueType.FP64, et );
+			DataType.MATRIX, ValueType.FP64, et, k );
 		sort.getOutputParameters().setDimensions(
 			getInput().get(0).getDim1(),
 			getInput().get(0).getDim2(),
@@ -458,7 +467,7 @@ public class BinaryOp extends MultiThreadedHop{
 				
 				boolean isLeftXGt0 = isLeftXGt && HopRewriteUtils.isLiteralOfValue(potentialZero, 0);
 				
-				if(op == OpOp2.MULT && isLeftXGt0 && 
+				if(et != ExecType.FED && op == OpOp2.MULT && isLeftXGt0 &&
 					!getInput().get(0).isVector() && !getInput().get(1).isVector()
 					&& getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) {
 					binary = new DnnTransform(getInput().get(0).getInput().get(0).constructLops(), 
@@ -746,11 +755,9 @@ public class BinaryOp extends MultiThreadedHop{
 			checkAndSetInvalidCPDimsAndSize();
 		}
 
-		updateETFed();
-			
 		//spark-specific decision refinement (execute unary scalar w/ spark input and 
 		//single parent also in spark because it's likely cheap and reduces intermediates)
-		if( transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP
+		if( transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP && _etypeForced != ExecType.FED
 			&& getDataType().isMatrix() && (dt1.isScalar() || dt2.isScalar()) 
 			&& supportsMatrixScalarOperations()                          //scalar operations
 			&& !(getInput().get(dt1.isScalar()?1:0) instanceof DataOp)   //input is not checkpoint
@@ -943,11 +950,16 @@ public class BinaryOp extends MultiThreadedHop{
 		DataType dt1 = input1.getDataType();
 		DataType dt2 = input2.getDataType();
 		
-		if ( getDataType() == DataType.SCALAR ) 
-		{
+		if ( getDataType() == DataType.SCALAR ) {
 			//do nothing always known
 			setDim1(0);
 			setDim2(0);
+		}
+		else if ( getDataType() == DataType.LIST ) {
+			if( input1.getDataType().isList() && input1.rowsKnown() ) {
+				setDim1(input1.getDim1() + 1);
+				setDim2(1); //always col-vector
+			}
 		}
 		else //MATRIX OUTPUT
 		{
@@ -1073,9 +1085,6 @@ public class BinaryOp extends MultiThreadedHop{
 	{
 		if( !(that instanceof BinaryOp) )
 			return false;
-
-		if(op == OpOp2.MAP)
-			return false; // custom UDFs
 
 		BinaryOp that2 = (BinaryOp)that;
 		return (   op == that2.op

@@ -34,11 +34,8 @@ def multiLogRegPredict(X: Matrix,
                        Y: Matrix,
                        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param X: Data Matrix X
-    :param B: Regression parameters betas
-    :param Y: Response vector Y
-    :param verbose: /
-    :return: 'OperationNode' containing matrix m of predicted means/probabilities & predicted response vector & scalar value of accuracy 
+    :param verbose: flag specifying if logging information should be printed
+    :return: 'OperationNode' containing value of accuracy 
     """
     params_dict = {'X': X, 'B': B, 'Y': Y}
     params_dict.update(kwargs)

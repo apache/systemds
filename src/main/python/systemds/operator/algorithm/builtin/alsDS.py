@@ -32,17 +32,14 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def alsDS(X: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param V: Location to read the input matrix V to be factorized
-    :param L: Location to write the factor matrix L
-    :param R: Location to write the factor matrix R
     :param rank: Rank of the factorization
-    :param lambda: Regularization parameter, no regularization if 0.0
+    :param reg: Regularization parameter, no regularization if 0.0
     :param maxi: Maximum number of iterations
     :param check: Check for convergence after every iteration, i.e., updating L and R once
     :param thr: Assuming check is set to TRUE, the algorithm stops and convergence is declared
     :param if: in loss in any two consecutive iterations falls below this threshold;
     :param if: FALSE thr is ignored
-    :return: 'OperationNode' containing x n matrix r 
+    :return: 'OperationNode' containing  
     """
     params_dict = {'X': X}
     params_dict.update(kwargs)

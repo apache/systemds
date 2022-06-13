@@ -27,22 +27,20 @@ public class ReaderColumnSelectionDenseMultiBlockTransposed extends ReaderColumn
 	private DenseBlock _data;
 
 	protected ReaderColumnSelectionDenseMultiBlockTransposed(MatrixBlock data, int[] colIndices, int rl, int ru) {
-		super(colIndices.clone(), rl, Math.min(ru, data.getNumColumns()));
+		super(colIndices.clone(), rl, Math.min(ru, data.getNumColumns()) - 1);
 		_data = data.getDenseBlock();
 	}
 
 	protected DblArray getNextRow() {
-		if(_rl == _ru - 1)
-			return null;
-		_rl++;
-
 		boolean empty = true;
-		for(int i = 0; i < _colIndexes.length; i++) {
-			double v = _data.get(_colIndexes[i], _rl);
-			if(v != 0)
-				empty = false;
-			reusableArr[i] = v;
+		while(empty && _rl < _ru) {
+			_rl++;
+			for(int i = 0; i < _colIndexes.length; i++) {
+				double v = _data.get(_colIndexes[i], _rl);
+				empty &= v == 0;
+				reusableArr[i] = v;
+			}
 		}
-		return empty ? emptyReturn : reusableReturn;
+		return empty ? null : reusableReturn;
 	}
 }

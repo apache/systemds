@@ -18,23 +18,25 @@
  */
 package org.apache.sysds.runtime.compress.lib;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class CLALibUnary {
-	private static final Log LOG = LogFactory.getLog(CLALibUnary.class.getName());
-	
+	// private static final Log LOG = LogFactory.getLog(CLALibUnary.class.getName());
+
 	public static MatrixBlock unaryOperations(CompressedMatrixBlock m, UnaryOperator op, MatrixValue result) {
 		final boolean overlapping = m.isOverlapping();
 		final int r = m.getNumRows();
 		final int c = m.getNumColumns();
-		
 		// early aborts:
 		if(m.isEmpty())
 			return new MatrixBlock(r, c, 0).unaryOperations(op, result);
@@ -42,18 +44,30 @@ public class CLALibUnary {
 			// when in overlapping state it is guaranteed that there is no infinites, NA, or NANs.
 			if(Builtin.isBuiltinCode(op.fn, BuiltinCode.ISINF, BuiltinCode.ISNA, BuiltinCode.ISNAN))
 				return new MatrixBlock(r, c, 0);
+			if(op.fn instanceof Builtin)
+			return m.getUncompressed("Unary Op not supported Overlapping builtin: " + ((Builtin)(op.fn)).getBuiltinCode(), op.getNumThreads()).unaryOperations(op, null);
+			else
+				return m.getUncompressed("Unary Op not supported Overlapping: " + op.fn.getClass().getSimpleName(), op.getNumThreads()).unaryOperations(op, null);
 		}
-		else if(Builtin.isBuiltinCode(op.fn, BuiltinCode.ISINF, BuiltinCode.ISNAN, BuiltinCode.ISNA) && !m.containsValue(op.getPattern()))
+		else if(Builtin.isBuiltinCode(op.fn, BuiltinCode.ISINF, BuiltinCode.ISNAN, BuiltinCode.ISNA) &&
+			!m.containsValue(op.getPattern()))
 			return new MatrixBlock(r, c, 0); // avoid unnecessary allocation
-		
+		else if(LibMatrixAgg.isSupportedUnaryOperator(op)) {
+			// e.g., cumsum/cumprod/cummin/cumax/cumsumprod
+			return m.getUncompressed("Unary Op not supported: " + op.fn.getClass().getSimpleName(), op.getNumThreads()).unaryOperations(op, null);
+		}
+		else {
 
-		if(op.isInplace()) {
-			LOG.warn("Compressed ops forcing unaryOperator not to be inplace.");
-			op = new UnaryOperator(op.fn, op.getNumThreads(), false);
+			List<AColGroup> groups = m.getColGroups();
+			List<AColGroup> retG = new ArrayList<>(groups.size());
+			for(AColGroup g : groups)
+				retG.add(g.unaryOperation(op));
+
+			CompressedMatrixBlock ret = new CompressedMatrixBlock(m.getNumRows(), m.getNumColumns());
+			ret.allocateColGroupList(retG);
+			ret.recomputeNonZeros();
+			return ret;
 		}
 
-		MatrixBlock uc = m.getUncompressed("unaryOperations " + op.fn.toString());
-		MatrixBlock ret = uc.unaryOperations(op, result);
-		return ret;
 	}
 }

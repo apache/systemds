@@ -161,6 +161,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ColumnEncoderRecode.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderRecode</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ColumnEncoderUDF.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderUDF</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary">
@@ -173,64 +178,69 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>,&#8203;E&gt;<br>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#applyToAll(java.lang.Class,java.util.function.Consumer)">applyToAll</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type,
-          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Consumer.html?is-external=true" title="class or interface in java.util.function" class="externalLink">Consumer</a>&lt;? super T&gt;&nbsp;function)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#applyToAll(java.lang.Class,java.util.function.Consumer)">applyToAll</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type,
+          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/function/Consumer.html?is-external=true" title="class or interface in java.util.function" class="externalLink">Consumer</a>&lt;? super T&gt;&nbsp;function)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>,&#8203;E&gt;<br>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#applyToAll(java.util.function.Consumer)">applyToAll</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Consumer.html?is-external=true" title="class or interface in java.util.function" class="externalLink">Consumer</a>&lt;? super <a href="../ColumnEncoderComposite.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderComposite</a>&gt;&nbsp;function)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#applyToAll(java.util.function.Consumer)">applyToAll</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/function/Consumer.html?is-external=true" title="class or interface in java.util.function" class="externalLink">Consumer</a>&lt;? super <a href="../ColumnEncoderComposite.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderComposite</a>&gt;&nbsp;function)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;<br>boolean</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#containsEncoderForID(int,java.lang.Class)">containsEncoderForID</a></span>&#8203;(int&nbsp;colID,
-                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
+                    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;<br>T</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#getColumnEncoder(int,java.lang.Class)">getColumnEncoder</a></span>&#8203;(int&nbsp;colID,
-                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
+                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;<br><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;T&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#getColumnEncoders(java.lang.Class)">getColumnEncoders</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
+<td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;<br><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;T&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#getColumnEncoders(java.lang.Class)">getColumnEncoders</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;<br>T</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderComposite.</span><code><span class="memberNameLink"><a href="../ColumnEncoderComposite.html#getEncoder(java.lang.Class)">getEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderComposite.</span><code><span class="memberNameLink"><a href="../ColumnEncoderComposite.html#getEncoder(java.lang.Class)">getEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>,&#8203;E&gt;<br><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;E&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#getFromAll(java.lang.Class,java.util.function.Function)">getFromAll</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type,
-          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html?is-external=true" title="class or interface in java.util.function" class="externalLink">Function</a>&lt;? super T,&#8203;? extends E&gt;&nbsp;mapper)</code></th>
+<td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>,&#8203;E&gt;<br><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;E&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#getFromAll(java.lang.Class,java.util.function.Function)">getFromAll</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type,
+          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/function/Function.html?is-external=true" title="class or interface in java.util.function" class="externalLink">Function</a>&lt;? super T,&#8203;? extends E&gt;&nbsp;mapper)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;<br>double[]</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#getFromAllDoubleArray(java.lang.Class,java.util.function.Function)">getFromAllDoubleArray</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type,
-                     <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html?is-external=true" title="class or interface in java.util.function" class="externalLink">Function</a>&lt;? super T,&#8203;? extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;&nbsp;mapper)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#getFromAllDoubleArray(java.lang.Class,java.util.function.Function)">getFromAllDoubleArray</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type,
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/function/Function.html?is-external=true" title="class or interface in java.util.function" class="externalLink">Function</a>&lt;? super T,&#8203;? extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;&nbsp;mapper)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;<br>int[]</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#getFromAllIntArray(java.lang.Class,java.util.function.Function)">getFromAllIntArray</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html?is-external=true" title="class or interface in java.util.function" class="externalLink">Function</a>&lt;? super T,&#8203;? extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;mapper)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#getFromAllIntArray(java.lang.Class,java.util.function.Function)">getFromAllIntArray</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type,
+                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/function/Function.html?is-external=true" title="class or interface in java.util.function" class="externalLink">Function</a>&lt;? super T,&#8203;? extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;mapper)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;<br>boolean</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderComposite.</span><code><span class="memberNameLink"><a href="../ColumnEncoderComposite.html#hasEncoder(java.lang.Class)">hasEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderComposite.</span><code><span class="memberNameLink"><a href="../ColumnEncoderComposite.html#hasBuild()">hasBuild</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;<br>boolean</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderComposite.</span><code><span class="memberNameLink"><a href="../ColumnEncoderComposite.html#hasEncoder(java.lang.Class)">hasEncoder</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>&lt;T extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;<br><a href="../MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#subRangeEncoder(org.apache.sysds.runtime.util.IndexRange,java.lang.Class)">subRangeEncoder</a></span>&#8203;(<a href="../../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
+               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -259,17 +269,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderComposite.</span><code><span class="memberNameLink"><a href="../ColumnEncoderComposite.html#getEncoders()">getEncoders</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;? extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;? extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#getEncoderTypes()">getEncoderTypes</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;? extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;? extends <a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MultiColumnEncoder.</span><code><span class="memberNameLink"><a href="../MultiColumnEncoder.html#getEncoderTypes(int)">getEncoderTypes</a></span>&#8203;(int&nbsp;colID)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -335,6 +345,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderRecode.</span><code><span class="memberNameLink"><a href="../ColumnEncoderRecode.html#mergeAt(org.apache.sysds.runtime.transform.encode.ColumnEncoder)">mergeAt</a></span>&#8203;(<a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&nbsp;other)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderUDF.</span><code><span class="memberNameLink"><a href="../ColumnEncoderUDF.html#mergeAt(org.apache.sysds.runtime.transform.encode.ColumnEncoder)">mergeAt</a></span>&#8203;(<a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&nbsp;other)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary">
@@ -347,7 +362,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderDummycode.</span><code><span class="memberNameLink"><a href="../ColumnEncoderDummycode.html#updateDomainSizes(java.util.List)">updateDomainSizes</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;&nbsp;columnEncoders)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColumnEncoderDummycode.</span><code><span class="memberNameLink"><a href="../ColumnEncoderDummycode.html#updateDomainSizes(java.util.List)">updateDomainSizes</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;&nbsp;columnEncoders)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -373,11 +388,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ColumnEncoderComposite.html#%3Cinit%3E(java.util.List)">ColumnEncoderComposite</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;&nbsp;columnEncoders)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ColumnEncoderComposite.html#%3Cinit%3E(java.util.List)">ColumnEncoderComposite</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;&nbsp;columnEncoders)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ColumnEncoderComposite.html#%3Cinit%3E(java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">ColumnEncoderComposite</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;&nbsp;columnEncoders,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ColumnEncoderComposite.html#%3Cinit%3E(java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">ColumnEncoderComposite</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;&nbsp;columnEncoders,
                       <a href="../../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -435,7 +450,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

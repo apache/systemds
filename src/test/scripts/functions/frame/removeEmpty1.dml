@@ -21,10 +21,6 @@
 
 
 A = read($1, naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"])
-B = frame(data=["TRUE", "abc"], rows=nrow(A) / 2, cols=2, schema=["BOOLEAN", "STRING"])
-C = frame(data=["FALSE", "0.0"], rows=nrow(A) / 2, cols=2, schema=["BOOLEAN", "STRING"])
-D = rbind(B, C)
-V = cbind(as.frame(A), D)
-Vp = removeEmpty(target=V, margin=$2)
-X = as.matrix(Vp[, 1:(ncol(Vp)-2)])
-write(X, $3);
+V = as.frame(A)
+Vp = removeEmpty(target=V, margin=$3)
+write(Vp, $4);

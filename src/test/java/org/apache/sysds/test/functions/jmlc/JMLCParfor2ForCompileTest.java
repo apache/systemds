@@ -27,6 +27,7 @@ import org.apache.sysds.api.jmlc.PreparedScript;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.ParForStatistics;
 
 public class JMLCParfor2ForCompileTest extends AutomatedTestBase 
 {
@@ -69,6 +70,6 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 		}
 		
 		//check for existing or non-existing parfor
-		Assert.assertTrue(Statistics.getParforOptCount()==(par?1:0));
+		Assert.assertTrue(ParForStatistics.getOptCount()==(par?1:0));
 	}
 }

@@ -23,11 +23,13 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 
 public class ExecutionContextMap {
-	private final ExecutionContext _main;
+	private ExecutionContext _main;
 	private final Map<Long, ExecutionContext> _parEc;
 	
 	public ExecutionContextMap() {
@@ -35,7 +37,7 @@ public class ExecutionContextMap {
 		_parEc = new ConcurrentHashMap<>();
 	}
 	
-	public ExecutionContext get(long tid) {
+	public synchronized ExecutionContext get(long tid) {
 		//return main execution context
 		if( tid <= 0 )
 			return _main;
@@ -45,7 +47,7 @@ public class ExecutionContextMap {
 			k -> deriveExecutionContext(_main));
 	}
 	
-	public void clear() {
+	public synchronized void clear() {
 		//handle main symbol table (w/ tmp list for concurrent modification)
 		for( String varName : new ArrayList<>(_main.getVariables().keySet()) )
 			_main.cleanupDataObject(_main.removeVariable(varName));
@@ -56,7 +58,16 @@ public class ExecutionContextMap {
 				_main.cleanupDataObject(ec.removeVariable(varName));
 		_parEc.clear();
 	}
-	
+
+	public synchronized void convertToSparkCtx() {
+		// set hybrid mode for global consistency
+		DMLScript.setGlobalExecMode(ExecMode.HYBRID);
+		
+		//convert existing execution contexts
+		_main = deriveExecutionContext(_main);
+		_parEc.replaceAll((k,v) -> deriveExecutionContext(v));
+		
+	}
 	private static ExecutionContext createExecutionContext() {
 		ExecutionContext ec = ExecutionContextFactory.createContext();
 		ec.setAutoCreateVars(true); //w/o createvar inst
@@ -70,5 +81,16 @@ public class ExecutionContextMap {
 			.createContext(ec.getVariables(), ec.getProgram());
 		ec2.setAutoCreateVars(true); //w/o createvar inst
 		return ec2;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append("\nMain EC: ");
+		sb.append(_main.toString());
+		sb.append("ParFor ECs: ");
+		sb.append(_parEc.toString());
+		return sb.toString();
 	}
 }

@@ -152,6 +152,16 @@ public class TensorCharacteristics extends DataCharacteristics
 	}
 
 	@Override
+	public long getRows() {
+		return getDim(0);
+	}
+
+	@Override
+	public long getCols() {
+		return getDim(1);
+	}
+
+	@Override
 	public String toString() {
 		return "["+Arrays.toString(_dims)+", nnz="+_nnz + ", blocksize= "+_blocksize+"]";
 	}

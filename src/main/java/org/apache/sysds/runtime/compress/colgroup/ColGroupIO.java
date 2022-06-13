@@ -50,8 +50,9 @@ public class ColGroupIO {
 
 		// Read in how many colGroups there are
 		final int nColGroups = in.readInt();
-		if(LOG.isDebugEnabled())
-			LOG.debug("reading " + nColGroups + " ColGroups");
+		final boolean trace = LOG.isTraceEnabled();
+		if(trace)
+			LOG.trace("reading " + nColGroups + " ColGroups");
 		
 		// Allocate that amount into an ArrayList
 		final List<AColGroup> _colGroups = new ArrayList<>(nColGroups);
@@ -59,7 +60,7 @@ public class ColGroupIO {
 		// Read each ColGroup one at a time.
 		for(int i = 0; i < nColGroups; i++) {
 			ColGroupType ctype = ColGroupType.values()[in.readByte()];
-			if(LOG.isTraceEnabled())
+			if(trace)
 				LOG.trace("Reading in : " + ctype);
 			final AColGroup grp = constructColGroup(ctype, nRows);
 			grp.readFields(in);
@@ -106,6 +107,8 @@ public class ColGroupIO {
 				return new ColGroupRLE(nRows);
 			case DDC:
 				return new ColGroupDDC(nRows);
+			case DeltaDDC:
+				return new ColGroupDeltaDDC(nRows);
 			case CONST:
 				return new ColGroupConst();
 			case EMPTY:
@@ -118,6 +121,10 @@ public class ColGroupIO {
 				return new ColGroupSDCSingleZeros(nRows);
 			case SDCZeros:
 				return new ColGroupSDCZeros(nRows);
+			case SDCFOR:
+				return new ColGroupSDCFOR(nRows);
+			case DDCFOR:
+				return new ColGroupDDCFOR(nRows);
 			default:
 				throw new DMLRuntimeException("Unsupported ColGroup Type used:  " + ctype);
 		}

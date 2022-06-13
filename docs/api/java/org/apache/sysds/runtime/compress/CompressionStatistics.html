@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.compress.CompressionStatistics</li>
@@ -132,7 +132,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <hr>
 <pre>public class <span class="typeNameLabel">CompressionStatistics</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
 <div class="block">Compression Statistics contain the main information gathered from the compression, such as sizes of the original
  matrix, vs the compressed representation at different stages of the compression.</div>
 </li>
@@ -156,34 +156,81 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compressedInitialSize">compressedInitialSize</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compressedCost">compressedCost</a></span></code></th>
+<td class="colLast">
+<div class="block">Cost of the compressed representation</div>
+</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#denseSize">denseSize</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compressedInitialCost">compressedInitialCost</a></span></code></th>
+<td class="colLast">
+<div class="block">Compressed cost after compression but before finalize</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimatedSizeCoCoded">estimatedSizeCoCoded</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compressedInitialSize">compressedInitialSize</a></span></code></th>
+<td class="colLast">
+<div class="block">Compression size after compressing but before finalize</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#compressedSize">compressedSize</a></span></code></th>
+<td class="colLast">
+<div class="block">Compressed size</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#denseSize">denseSize</a></span></code></th>
+<td class="colLast">
+<div class="block">Size if the input is dense</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimatedCostCoCoded">estimatedCostCoCoded</a></span></code></th>
+<td class="colLast">
+<div class="block">Summed cost after cocoding</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimatedCostCols">estimatedCostCols</a></span></code></th>
+<td class="colLast">
+<div class="block">Summed cost estimated from individual columns</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimatedSizeCoCoded">estimatedSizeCoCoded</a></span></code></th>
+<td class="colLast">
+<div class="block">Estimated size of compressing after co-coding</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimatedSizeCols">estimatedSizeCols</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Estimated size of compressing individual columns</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#originalCost">originalCost</a></span></code></th>
+<td class="colLast">
+<div class="block">Cost calculated by the cost estimator on input</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#originalSize">originalSize</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size">size</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Size of the original input</div>
+</td>
 </tr>
 </table>
 </li>
@@ -225,7 +272,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;int[]&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;int[]&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getColGroups()">getColGroups</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -235,12 +282,12 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getGroupsSizesString()">getGroupsSizesString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getGroupsTypesString()">getGroupsTypesString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -250,7 +297,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -259,8 +306,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -278,33 +325,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a>
 <h3>Field Detail</h3>
-<a id="estimatedSizeCoCoded">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>estimatedSizeCoCoded</h4>
-<pre>public&nbsp;long estimatedSizeCoCoded</pre>
-</li>
-</ul>
-<a id="estimatedSizeCols">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>estimatedSizeCols</h4>
-<pre>public&nbsp;long estimatedSizeCols</pre>
-</li>
-</ul>
-<a id="compressedInitialSize">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>compressedInitialSize</h4>
-<pre>public&nbsp;long compressedInitialSize</pre>
-</li>
-</ul>
 <a id="originalSize">
 <!--   -->
 </a>
@@ -312,6 +332,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>originalSize</h4>
 <pre>public&nbsp;long originalSize</pre>
+<div class="block">Size of the original input</div>
 </li>
 </ul>
 <a id="denseSize">
@@ -321,15 +342,97 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>denseSize</h4>
 <pre>public&nbsp;long denseSize</pre>
+<div class="block">Size if the input is dense</div>
 </li>
 </ul>
-<a id="size">
+<a id="estimatedSizeCols">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>estimatedSizeCols</h4>
+<pre>public&nbsp;long estimatedSizeCols</pre>
+<div class="block">Estimated size of compressing individual columns</div>
+</li>
+</ul>
+<a id="estimatedSizeCoCoded">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>estimatedSizeCoCoded</h4>
+<pre>public&nbsp;long estimatedSizeCoCoded</pre>
+<div class="block">Estimated size of compressing after co-coding</div>
+</li>
+</ul>
+<a id="compressedInitialSize">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>compressedInitialSize</h4>
+<pre>public&nbsp;long compressedInitialSize</pre>
+<div class="block">Compression size after compressing but before finalize</div>
+</li>
+</ul>
+<a id="compressedSize">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>compressedSize</h4>
+<pre>public&nbsp;long compressedSize</pre>
+<div class="block">Compressed size</div>
+</li>
+</ul>
+<a id="originalCost">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>originalCost</h4>
+<pre>public&nbsp;double originalCost</pre>
+<div class="block">Cost calculated by the cost estimator on input</div>
+</li>
+</ul>
+<a id="estimatedCostCols">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>estimatedCostCols</h4>
+<pre>public&nbsp;double estimatedCostCols</pre>
+<div class="block">Summed cost estimated from individual columns</div>
+</li>
+</ul>
+<a id="estimatedCostCoCoded">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>estimatedCostCoCoded</h4>
+<pre>public&nbsp;double estimatedCostCoCoded</pre>
+<div class="block">Summed cost after cocoding</div>
+</li>
+</ul>
+<a id="compressedInitialCost">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>compressedInitialCost</h4>
+<pre>public&nbsp;double compressedInitialCost</pre>
+<div class="block">Compressed cost after compression but before finalize</div>
+</li>
+</ul>
+<a id="compressedCost">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>size</h4>
-<pre>public&nbsp;long size</pre>
+<h4>compressedCost</h4>
+<pre>public&nbsp;double compressedCost</pre>
+<div class="block">Cost of the compressed representation</div>
 </li>
 </ul>
 </li>
@@ -367,7 +470,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getColGroups</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;int[]&gt;&nbsp;getColGroups()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;int[]&gt;&nbsp;getColGroups()</pre>
 </li>
 </ul>
 <a id="getGroupsTypesString()">
@@ -376,7 +479,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getGroupsTypesString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getGroupsTypesString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getGroupsTypesString()</pre>
 </li>
 </ul>
 <a id="getGroupsSizesString()">
@@ -385,7 +488,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getGroupsSizesString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getGroupsSizesString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;getGroupsSizesString()</pre>
 </li>
 </ul>
 <a id="getRatio()">
@@ -412,10 +515,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockListLast">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -488,7 +591,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

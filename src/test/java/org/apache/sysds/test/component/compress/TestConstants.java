@@ -25,7 +25,7 @@ package org.apache.sysds.test.component.compress;
 public class TestConstants {
 
 	public enum SparsityType {
-		DENSE, SPARSE, ULTRA_SPARSE, EMPTY, FULL
+		DENSE, SPARSE, ULTRA_SPARSE, EMPTY, FULL,THIRTY
 	}
 
 	public enum ValueType {
@@ -34,8 +34,7 @@ public class TestConstants {
 		RAND_ROUND, // Values rounded to nearest whole numbers.
 		OLE_COMPRESSIBLE, // Ideal inputs for OLE Compression.
 		RLE_COMPRESSIBLE, // Ideal inputs for RLE Compression.
-		ONE_HOT,
-		UNBALANCED_SPARSE, // An input where some columns are super dense and some very sparse
+		ONE_HOT, UNBALANCED_SPARSE, // An input where some columns are super dense and some very sparse
 	}
 
 	public enum MatrixTypology {
@@ -48,6 +47,7 @@ public class TestConstants {
 		L_ROWS, // Many Rows
 		XL_ROWS, // A LOT of rows.
 		SINGLE_COL_L, // Single Column large.
+		COL_16,
 	}
 
 	public enum ValueRange {
@@ -55,7 +55,8 @@ public class TestConstants {
 	}
 
 	public enum OverLapping {
-		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS, APPEND_EMPTY, APPEND_CONST, PLUS_LARGE, C_BIND_SELF;
+		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS, APPEND_EMPTY, APPEND_CONST, PLUS_LARGE,
+		C_BIND_SELF, PLUS_ROW_VECTOR;
 
 		public static boolean effectOnOutput(OverLapping opcode) {
 			switch(opcode) {
@@ -79,11 +80,13 @@ public class TestConstants {
 			case SPARSE:
 				return 0.1;
 			case ULTRA_SPARSE:
-				return 0.01;
+				return 0.0001;
 			case EMPTY:
 				return 0.0;
 			case FULL:
 				return 1.0;
+			case THIRTY:
+				return 0.3;
 			default:
 				throw new RuntimeException("Invalid Sparsity type");
 		}
@@ -135,6 +138,10 @@ public class TestConstants {
 				return 1000;
 			case SINGLE_COL:
 				return 5000;
+			case XL_ROWS:
+				return 3000;
+			case COL_16:
+				return 3000;
 			default:
 				throw new RuntimeException("Invalid matrix enum type");
 		}
@@ -143,11 +150,15 @@ public class TestConstants {
 	public static int getNumberOfColumns(MatrixTypology matrixTypology) {
 		switch(matrixTypology) {
 			case SMALL:
-				return 6;
+				return 3;
 			case LARGE:
-				return 9;
+				return 10;
 			case SINGLE_COL:
 				return 1;
+			case COL_16:
+				return 16;
+			case XL_ROWS:
+				return 100;
 			default:
 				throw new RuntimeException("Invalid matrix enum type");
 		}

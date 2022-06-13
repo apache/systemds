@@ -46,8 +46,10 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 		MatrixBlock outBlock = null;
 		if( "cbind".equals(getOpcode()) || "rbind".equals(getOpcode()) ) {
 			boolean cbind = "cbind".equals(getOpcode());
-			outBlock = matrices.get(0).append(matrices.subList(1, matrices.size())
-				.toArray(new MatrixBlock[0]), new MatrixBlock(), cbind);
+			//robustness for empty lists: create 0-by-0 matrix block
+			outBlock = matrices.size() == 0 ? new MatrixBlock(0, 0, 0) : 
+				matrices.get(0).append(matrices.subList(1, matrices.size())
+					.toArray(new MatrixBlock[0]), new MatrixBlock(), cbind);
 		}
 		
 		else if( ArrayUtils.contains(new String[]{"nmin", "nmax", "n+"}, getOpcode()) ) {

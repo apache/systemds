@@ -28,6 +28,8 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.hops.fedplanner.FTypes.FPartitioning;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -54,6 +56,9 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
+import io.netty.handler.codec.serialization.ClassResolvers;
+import io.netty.handler.codec.serialization.ObjectDecoder;
+
 public class FederationUtils {
 	protected static Logger log = Logger.getLogger(FederationUtils.class);
 	private static final IDSequence _idSeq = new IDSequence();
@@ -68,7 +73,7 @@ public class FederationUtils {
 
 	public static void checkFedMapType(MatrixObject mo) {
 		FederationMap fedMap = mo.getFedMapping();
-		FederationMap.FType oldType = fedMap.getType();
+		FType oldType = fedMap.getType();
 
 		boolean isRow = true;
 		long prev = 0;
@@ -78,10 +83,10 @@ public class FederationUtils {
 			else
 				isRow = false;
 		}
-		if(isRow && oldType.getPartType() == FederationMap.FPartitioning.COL)
-			fedMap.setType(FederationMap.FType.ROW);
-		else if(!isRow && oldType.getPartType() == FederationMap.FPartitioning.ROW)
-			fedMap.setType(FederationMap.FType.COL);
+		if(isRow && oldType.getPartType() == FPartitioning.COL)
+			fedMap.setType(FType.ROW);
+		else if(!isRow && oldType.getPartType() == FPartitioning.ROW)
+			fedMap.setType(FType.COL);
 	}
 
 	//TODO remove rmFedOutFlag, once all federated instructions have this flag, then unconditionally remove
@@ -217,9 +222,9 @@ public class FederationUtils {
 		}
 	}
 
-	public static MatrixBlock aggMinMax(Future<FederatedResponse>[] ffr, boolean isMin, boolean isScalar, Optional<FederationMap.FType> fedType) {
+	public static MatrixBlock aggMinMax(Future<FederatedResponse>[] ffr, boolean isMin, boolean isScalar, Optional<FType> fedType) {
 		try {
-			if (!fedType.isPresent() || fedType.get() == FederationMap.FType.OTHER) {
+			if (!fedType.isPresent() || fedType.get() == FType.OTHER) {
 				double res = isMin ? Double.MAX_VALUE : -Double.MAX_VALUE;
 				for (Future<FederatedResponse> fr : ffr) {
 					double v = isScalar ? ((ScalarObject) fr.get().getData()[0]).getDoubleValue() :
@@ -229,11 +234,11 @@ public class FederationUtils {
 				return new MatrixBlock(1, 1, res);
 			} else {
 				MatrixBlock[] tmp = getResults(ffr);
-				int dim = fedType.get() == FederationMap.FType.COL ? tmp[0].getNumRows() : tmp[0].getNumColumns();
+				int dim = fedType.get() == FType.COL ? tmp[0].getNumRows() : tmp[0].getNumColumns();
 
 				for (int i = 0; i < ffr.length - 1; i++)
 					for (int j = 0; j < dim; j++)
-						if (fedType.get() == FederationMap.FType.COL)
+						if (fedType.get() == FType.COL)
 							tmp[i + 1].setValue(j, 0, isMin ? Double.min(tmp[i].getValue(j, 0), tmp[i + 1].getValue(j, 0)) :
 								Double.max(tmp[i].getValue(j, 0), tmp[i + 1].getValue(j, 0)));
 						else tmp[i + 1].setValue(0, j, isMin ? Double.min(tmp[i].getValue(0, j), tmp[i + 1].getValue(0, j)) :
@@ -248,7 +253,7 @@ public class FederationUtils {
 
 	public static MatrixBlock aggProd(Future<FederatedResponse>[] ffr, FederationMap fedMap, AggregateUnaryOperator aop) {
 		try {
-			boolean rowFed = fedMap.getType() == FederationMap.FType.ROW;
+			boolean rowFed = fedMap.getType() == FType.ROW;
 			MatrixBlock ret = aop.isFullAggregate() ? (rowFed ?
 				new MatrixBlock(ffr.length, 1, 1.0) : new MatrixBlock(1, ffr.length, 1.0)) :
 				(rowFed ?
@@ -369,16 +374,19 @@ public class FederationUtils {
 				return new DoubleObject(aggMean(ffr, map).getValue(0,0));
 			}
 			else if(aop.aggOp.increOp.fn instanceof CM) {
-				double var = ((ScalarObject) ffr[0].get().getData()[0]).getDoubleValue();
-				double mean = ((ScalarObject) meanFfr[0].get().getData()[0]).getDoubleValue();
-				long size = map.getFederatedRanges()[0].getSize();
-				for(int i = 0; i < ffr.length - 1; i++) {
-					long l = size + map.getFederatedRanges()[i+1].getSize();
-					double k = ((size * var) + (map.getFederatedRanges()[i+1].getSize() * ((ScalarObject) ffr[i+1].get().getData()[0]).getDoubleValue())) / l;
-					var = k + (size * map.getFederatedRanges()[i+1].getSize()) * Math.pow((mean - ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue()) / l, 2);
-					mean = (mean *  size + ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue() * (map.getFederatedRanges()[i+1].getSize())) / l;
-					size = l;
+				long size1 = map.getFederatedRanges()[0].getSize();
+				double mean1 = ((ScalarObject) meanFfr[0].get().getData()[0]).getDoubleValue();
+				double squaredM1 = ((ScalarObject) ffr[0].get().getData()[0]).getDoubleValue() * (size1 - 1);
+				for(int i = 1; i < ffr.length; i++) {
+					long size2 = map.getFederatedRanges()[i].getSize();
+					double delta = ((ScalarObject) meanFfr[i].get().getData()[0]).getDoubleValue() - mean1;
+					double squaredM2 =  ((ScalarObject) ffr[i].get().getData()[0]).getDoubleValue() * (size2 - 1);
+					squaredM1 = squaredM1 + squaredM2 + (Math.pow(delta, 2) * size1 * size2 / (size1 + size2));
+
+					size1 += size2;
+					mean1 = mean1 + delta * size2 / size1;
 				}
+				double var = squaredM1 / (size1 - 1);
 				return new DoubleObject(var);
 
 			}
@@ -395,9 +403,9 @@ public class FederationUtils {
 	}
 
 	public static MatrixBlock aggMatrix(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr, Future<FederatedResponse>[] meanFfr, FederationMap map) {
-		if (aop.isRowAggregate() && map.getType() == FederationMap.FType.ROW)
+		if (aop.isRowAggregate() && map.getType() == FType.ROW)
 			return bind(ffr, false);
-		else if (aop.isColAggregate() && map.getType() == FederationMap.FType.COL)
+		else if (aop.isColAggregate() && map.getType() == FType.COL)
 			return bind(ffr, true);
 
 		if (aop.aggOp.increOp.fn instanceof KahanFunction)
@@ -473,9 +481,9 @@ public class FederationUtils {
 	}
 
 	public static MatrixBlock aggMatrix(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr, FederationMap map) {
-		if (aop.isRowAggregate() && map.getType() == FederationMap.FType.ROW)
+		if (aop.isRowAggregate() && map.getType() == FType.ROW)
 			return bind(ffr, false);
-		else if (aop.isColAggregate() && map.getType() == FederationMap.FType.COL)
+		else if (aop.isColAggregate() && map.getType() == FType.COL)
 			return bind(ffr, true);
 
 		if (aop.aggOp.increOp.fn instanceof KahanFunction)
@@ -549,5 +557,10 @@ public class FederationUtils {
 		for ( Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses )
 			dataParts.add(readResponse.getValue());
 		return FederationUtils.aggAdd(dataParts.toArray(new Future[0]));
+	}
+
+	public static ObjectDecoder decoder() {
+		return new ObjectDecoder(Integer.MAX_VALUE,
+			ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader()));
 	}
 }

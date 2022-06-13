@@ -496,9 +496,9 @@ public class DataOp extends Hop {
 			}
 			
 			_etype = letype;
+			if ( _etypeForced == ExecType.FED )
+				_etype = _etypeForced;
 		}
-
-		updateETFed();
 
 		return _etype;
 	}

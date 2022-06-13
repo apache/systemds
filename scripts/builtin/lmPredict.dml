@@ -19,8 +19,29 @@
 #
 #-------------------------------------------------------------
 
+# The lmPredict-function predicts the class of a feature vector
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE              DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X             Matrix[Double]    ---      Matrix of feature vectors
+# B             Matrix[Double]    ---      1-column matrix of weights.
+# ytest         Matrix[Double]    ---      test labels, used only for verbose output. can be set to matrix(0,1,1)
+#                                          if verbose output is not wanted
+# icpt          Integer           0        Intercept presence, shifting and rescaling the columns of X
+# verbose       Boolean           TRUE     If TRUE print messages are activated
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# yhat          Matrix[Double]             1-column matrix of classes
+# ----------------------------------------------------------------------------------------------------------------------
+
 m_lmPredict = function(Matrix[Double] X, Matrix[Double] B, 
-  Matrix[Double] ytest, Integer icpt = 0, Boolean verbose = FALSE) 
+  Matrix[Double] ytest = matrix(0,1,1), Integer icpt = 0, Boolean verbose = FALSE) 
   return (Matrix[Double] yhat)
 {
   intercept = ifelse(icpt>0 | ncol(X)+1==nrow(B), as.scalar(B[nrow(B),]), 0);

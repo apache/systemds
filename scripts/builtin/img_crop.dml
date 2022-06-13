@@ -19,6 +19,26 @@
 #
 #-------------------------------------------------------------
 
+# The img_crop-function is an image data augumentation function. It cuts out a subregion of an image.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE               DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_in    Matrix[Double]     ---       Input matrix/image
+# w         Integer            ---       The width of the subregion required
+# h         Integer            ---       The height of the subregion required
+# x_offset  Integer            ---       The horizontal coordinate in the image to begin the crop operation
+# y_offset  Integer            ---       The vertical coordinate in the image to begin the crop operation
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE                MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_out  Matrix[Double]      Cropped matrix/image
+# ----------------------------------------------------------------------------------------------------------------------
+
 m_img_crop = function(Matrix[Double] img_in, Integer w, Integer h, Integer x_offset, Integer y_offset) return (Matrix[Double] img_out) {
   # crop - cut out a subregion of an image. Adapted from image_utils.dml
   orig_w = ncol(img_in)

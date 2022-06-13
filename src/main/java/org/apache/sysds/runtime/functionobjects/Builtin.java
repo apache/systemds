@@ -50,8 +50,8 @@ public class Builtin extends ValueFunction
 	public enum BuiltinCode { AUTODIFF, SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
 		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, LINEAGE, ROUND, MAXINDEX, MININDEX,
 		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
-		TYPEOF, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID_TYPE, DROP_INVALID_LENGTH, VALUE_SWAP, MAP,
-		COUNT_DISTINCT, COUNT_DISTINCT_APPROX}
+		TYPEOF, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID_TYPE, DROP_INVALID_LENGTH, VALUE_SWAP, FRAME_ROW_REPLICATE,
+		MAP, COUNT_DISTINCT, COUNT_DISTINCT_APPROX}
 
 
 	public BuiltinCode bFunc;
@@ -107,6 +107,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "isnan", BuiltinCode.ISNAN);
 		String2BuiltinCode.put( "isinf", BuiltinCode.ISINF);
 		String2BuiltinCode.put( "dropInvalidType", BuiltinCode.DROP_INVALID_TYPE);
+		String2BuiltinCode.put( "freplicate", BuiltinCode.FRAME_ROW_REPLICATE);
 		String2BuiltinCode.put( "dropInvalidLength", BuiltinCode.DROP_INVALID_LENGTH);
 		String2BuiltinCode.put( "_map", BuiltinCode.MAP);
 		String2BuiltinCode.put( "valueSwap", BuiltinCode.VALUE_SWAP);
@@ -223,7 +224,7 @@ public class Builtin extends ValueFunction
 				// compared and performs just the value part of the comparison. We
 				// return an integer cast down to a double, since the aggregation
 				// API doesn't have any way to return anything but a double. The
-				// integer returned takes on three posssible values: //
+				// integer returned takes on three possible values: //
 				// .     0 => keep the index associated with in1 //
 				// .     1 => use the index associated with in2 //
 				// .     2 => use whichever index is higher (tie in value) //

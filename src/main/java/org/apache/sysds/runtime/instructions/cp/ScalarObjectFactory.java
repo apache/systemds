@@ -27,10 +27,19 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public abstract class ScalarObjectFactory
 {
+	public static ScalarObject createScalarObject(String value) {
+		//best effort parsing of specialized types
+		if( UtilFunctions.isBoolean(value) )
+			return new BooleanObject(Boolean.parseBoolean(value));
+		if( UtilFunctions.isIntegerNumber(value) )
+			return new IntObject(UtilFunctions.parseToLong(value));
+		return new StringObject(value);
+	}
+	
 	public static ScalarObject createScalarObject(ValueType vt, String value) {
 		switch( vt ) {
-			case INT64:     return new IntObject(UtilFunctions.parseToLong(value));
-			case FP64:  return new DoubleObject(Double.parseDouble(value));
+			case INT64:   return new IntObject(UtilFunctions.parseToLong(value));
+			case FP64:    return new DoubleObject(Double.parseDouble(value));
 			case BOOLEAN: return new BooleanObject(Boolean.parseBoolean(value));
 			case STRING:  return new StringObject(value);
 			default: throw new RuntimeException("Unsupported scalar value type: "+vt.name());
@@ -62,8 +71,8 @@ public abstract class ScalarObjectFactory
 	
 	public static ScalarObject createScalarObject(ValueType vt, ScalarObject so) {
 		switch( vt ) {
-			case FP64:  return castToDouble(so);
-			case INT64:     return castToLong(so);
+			case FP64:    return castToDouble(so);
+			case INT64:   return castToLong(so);
 			case BOOLEAN: return new BooleanObject(so.getBooleanValue());
 			case STRING:  return new StringObject(so.getStringValue());
 			default: throw new RuntimeException("Unsupported scalar value type: "+vt.name());
@@ -76,8 +85,8 @@ public abstract class ScalarObjectFactory
 	
 	public static ScalarObject createScalarObject(ValueType vt, LiteralOp lit) {
 		switch( vt ) {
-			case FP64:  return new DoubleObject(lit.getDoubleValue());
-			case INT64:     return new IntObject(lit.getLongValue());
+			case FP64:    return new DoubleObject(lit.getDoubleValue());
+			case INT64:   return new IntObject(lit.getLongValue());
 			case BOOLEAN: return new BooleanObject(lit.getBooleanValue());
 			case STRING:  return new StringObject(lit.getStringValue());
 			default: throw new RuntimeException("Unsupported scalar value type: "+vt.name());
@@ -86,8 +95,8 @@ public abstract class ScalarObjectFactory
 	
 	public static LiteralOp createLiteralOp(ScalarObject so) {
 		switch( so.getValueType() ){
-			case FP64:  return new LiteralOp(so.getDoubleValue());
-			case INT64:     return new LiteralOp(so.getLongValue());
+			case FP64:    return new LiteralOp(so.getDoubleValue());
+			case INT64:   return new LiteralOp(so.getLongValue());
 			case BOOLEAN: return new LiteralOp(so.getBooleanValue());
 			case STRING:  return new LiteralOp(so.getStringValue());
 			default:

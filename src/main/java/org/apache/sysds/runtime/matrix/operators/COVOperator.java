@@ -22,14 +22,19 @@ package org.apache.sysds.runtime.matrix.operators;
 
 import org.apache.sysds.runtime.functionobjects.COV;
 
-public class COVOperator extends Operator 
+public class COVOperator extends MultiThreadedOperator
 {
 	private static final long serialVersionUID = -8404264552880694469L;
 
 	public final COV fn;
 	
 	public COVOperator(COV op) {
+		this(op, 1);
+	}
+	
+	public COVOperator(COV op, int numThreads) {
 		super(true);
 		fn = op;
+		_numThreads = numThreads;
 	}
 }

@@ -19,22 +19,24 @@
 #
 #-------------------------------------------------------------
 
-# Image Rotate
-# Rotates the input image counter-clockwise around the center.
+# The Image Rotate function rotates the input image counter-clockwise around the center.
 # Uses nearest neighbor sampling.
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME       TYPE   DEFAULT MEANING
-# ---------------------------------------------------------------------------------------------
-# img_in     Matrix ---     Input image as 2D matrix with top left corner at [1, 1]
-# radians    Double ---     The value by which to rotate in radian.
-# fill_value Double ---     The background color revealed by the rotation
-
-# RETURN VALUES
-# ---------------------------------------------------------------------------------------------
-# img_out    Matrix ---     Output image as 2D matrix with top left corner at [1, 1]
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE            DEFAULT MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_in     Matrix[Double]  ---     Input image as 2D matrix with top left corner at [1, 1]
+# radians    Double          ---     The value by which to rotate in radian.
+# fill_value Double          ---     The background color revealed by the rotation
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_out    Matrix[Double]          Output image as 2D matrix with top left corner at [1, 1]
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_img_rotate = function(Matrix[Double] img_in, Double radians, Double fill_value) return (Matrix[Double] img_out) {
   # Translation matrix for moving the origin to the center of the image

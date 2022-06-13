@@ -23,7 +23,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.SparkStatistics;
 
 public class TriggerBroadcastTask implements Runnable {
 	ExecutionContext _ec;
@@ -46,7 +46,7 @@ public class TriggerBroadcastTask implements Runnable {
 
 		//TODO: Count only if successful (owned lock)
 		if (DMLScript.STATISTICS)
-			Statistics.incSparkAsyncBroadcastCount(1);
+			SparkStatistics.incAsyncBroadcastCount(1);
 		
 	}
 }

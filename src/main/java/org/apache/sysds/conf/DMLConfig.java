@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -42,7 +43,9 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.SpoofCompiler.CompilerType;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofCompiler.PlanSelector;
+import org.apache.sysds.hops.fedplanner.FTypes.FederatedPlanner;
 import org.apache.sysds.lops.Compression;
+import org.apache.sysds.lops.compile.linearization.ILinearize.DagLinearization;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -82,6 +85,7 @@ public class DMLConfig
 	public static final String COMPRESSED_TRANSPOSE = "sysds.compressed.transpose";
 	public static final String NATIVE_BLAS          = "sysds.native.blas";
 	public static final String NATIVE_BLAS_DIR      = "sysds.native.blas.directory";
+	public static final String DAG_LINEARIZATION    = "sysds.compile.linearization";
 	public static final String CODEGEN              = "sysds.codegen.enabled"; //boolean
 	public static final String CODEGEN_API          = "sysds.codegen.api"; // see SpoofCompiler.API
 	public static final String CODEGEN_COMPILER     = "sysds.codegen.compiler"; //see SpoofCompiler.CompilerType
@@ -97,6 +101,8 @@ public class DMLConfig
 	public static final String LOCAL_SPARK_NUM_THREADS = "sysds.local.spark.number.threads"; // the number of threads allowed to be used in the local spark configuration, default is * to enable use of all threads.
 	public static final String LINEAGECACHESPILL    = "sysds.lineage.cachespill"; // boolean: whether to spill cache entries to disk
 	public static final String COMPILERASSISTED_RW  = "sysds.lineage.compilerassisted"; // boolean: whether to apply compiler assisted rewrites
+	public static final String BUFFERPOOL_LIMIT     = "sysds.caching.bufferpoollimit"; // max buffer pool size in percentage
+	public static final String MEMORY_MANAGER       = "sysds.caching.memorymanager"; // static or unified memory manager
 	
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
@@ -108,8 +114,12 @@ public class DMLConfig
 
 	public static final String USE_SSL_FEDERATED_COMMUNICATION = "sysds.federated.ssl"; // boolean
 	public static final String DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT = "sysds.federated.initialization.timeout"; // int seconds
+	public static final String FEDERATED_TIMEOUT = "sysds.federated.timeout"; // single request timeout default -1 to indicate infinite.
+	public static final String FEDERATED_PLANNER = "sysds.federated.planner";
+	public static final String FEDERATED_PAR_INST = "sysds.federated.par_inst";
+	public static final String FEDERATED_PAR_CONN = "sysds.federated.par_conn";
 	public static final int DEFAULT_FEDERATED_PORT = 4040; // borrowed default Spark Port
-	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 2;
+	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 8;
 	
 	//internal config
 	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and DFS
@@ -133,8 +143,8 @@ public class DMLConfig
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
 		_defaultVals.put(PARALLEL_ENCODE,        "false" );
 		_defaultVals.put(PARALLEL_ENCODE_STAGED, "false" );
-		_defaultVals.put(PARALLEL_ENCODE_APPLY_BLOCKS, "1");
-		_defaultVals.put(PARALLEL_ENCODE_BUILD_BLOCKS, "1");
+		_defaultVals.put(PARALLEL_ENCODE_APPLY_BLOCKS, "-1");
+		_defaultVals.put(PARALLEL_ENCODE_BUILD_BLOCKS, "-1");
 		_defaultVals.put(PARALLEL_ENCODE_NUM_THREADS, "-1");
 		_defaultVals.put(COMPRESSED_LINALG,      Compression.CompressConfig.FALSE.name() );
 		_defaultVals.put(COMPRESSED_LOSSY,       "false" );
@@ -144,16 +154,19 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_COCODE,      "AUTO");
 		_defaultVals.put(COMPRESSED_COST_MODEL,  "AUTO");
 		_defaultVals.put(COMPRESSED_TRANSPOSE,   "auto");
+		_defaultVals.put(DAG_LINEARIZATION,      DagLinearization.DEPTH_FIRST.name());
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_API,            GeneratorAPI.JAVA.name() );
 		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );
-		_defaultVals.put(CODEGEN_OPTIMIZER,      PlanSelector.FUSE_COST_BASED_V2.name() );
+		_defaultVals.put(CODEGEN_OPTIMIZER,      PlanSelector.FUSE_COST_BASED_V2.name());
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
 		_defaultVals.put(NATIVE_BLAS,            "none" );
 		_defaultVals.put(NATIVE_BLAS_DIR,        "none" );
 		_defaultVals.put(LINEAGECACHESPILL,      "true" );
 		_defaultVals.put(COMPILERASSISTED_RW,    "true" );
+		_defaultVals.put(BUFFERPOOL_LIMIT,       "15"); // % of total heap
+		_defaultVals.put(MEMORY_MANAGER,         "static"); // static/unified partitioning of heap
 		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false" );
 		_defaultVals.put(EVICTION_SHADOW_BUFFERSIZE,  "0.0" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
@@ -168,6 +181,10 @@ public class DMLConfig
 		_defaultVals.put(FLOATING_POINT_PRECISION, "double" );
 		_defaultVals.put(USE_SSL_FEDERATED_COMMUNICATION, "false");
 		_defaultVals.put(DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, "10");
+		_defaultVals.put(FEDERATED_TIMEOUT,      "-1");
+		_defaultVals.put(FEDERATED_PLANNER,      FederatedPlanner.RUNTIME.name());
+		_defaultVals.put(FEDERATED_PAR_CONN,     "-1"); // vcores
+		_defaultVals.put(FEDERATED_PAR_INST,     "-1"); // vcores
 	}
 	
 	public DMLConfig() {
@@ -240,6 +257,7 @@ public class DMLConfig
 	private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
 		if (_documentBuilder == null) {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);  // Prevent XML Injection
 			factory.setIgnoringComments(true); //ignore XML comments
 			_documentBuilder = factory.newDocumentBuilder();
 		}
@@ -412,12 +430,13 @@ public class DMLConfig
 			LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL, DEFAULT_BLOCK_SIZE,
 			CP_PARALLEL_OPS, CP_PARALLEL_IO, PARALLEL_ENCODE, NATIVE_BLAS, NATIVE_BLAS_DIR,
 			COMPRESSED_LINALG, COMPRESSED_LOSSY, COMPRESSED_VALID_COMPRESSIONS, COMPRESSED_OVERLAPPING,
-			COMPRESSED_SAMPLING_RATIO, COMPRESSED_COCODE, COMPRESSED_TRANSPOSE,
+			COMPRESSED_SAMPLING_RATIO, COMPRESSED_COCODE, COMPRESSED_TRANSPOSE, DAG_LINEARIZATION,
 			CODEGEN, CODEGEN_API, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
-			STATS_MAX_WRAP_LEN, LINEAGECACHESPILL, COMPILERASSISTED_RW, PRINT_GPU_MEMORY_INFO,
-			AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, 
-			LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE, GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR,
-			USE_SSL_FEDERATED_COMMUNICATION, DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT
+			STATS_MAX_WRAP_LEN, LINEAGECACHESPILL, COMPILERASSISTED_RW, BUFFERPOOL_LIMIT, MEMORY_MANAGER,
+			PRINT_GPU_MEMORY_INFO, AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION,
+			GPU_EVICTION_POLICY, LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE, GPU_MEMORY_ALLOCATOR,
+			GPU_MEMORY_UTILIZATION_FACTOR, USE_SSL_FEDERATED_COMMUNICATION, DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT,
+			FEDERATED_TIMEOUT
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

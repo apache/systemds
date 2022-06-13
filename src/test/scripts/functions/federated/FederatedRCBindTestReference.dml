@@ -32,9 +32,14 @@ R = rbind(A, B)
 C = cbind(A, B)
 R_LF = rbind(B, A)
 C_LF = cbind(B, A)
+R_FF_misaligned = rbind(A, A);
+C_FF_aligned = cbind(A, A);
+
 write(R, $out_R_FF)
 write(R, $out_R_FL)
 write(R_LF, $out_R_LF)
 write(C, $out_C_FF)
 write(C, $out_C_FL)
 write(C_LF, $out_C_LF)
+write(R_FF_misaligned, $out_R_FF_misaligned);
+write(C_FF_aligned, $out_C_FF_aligned);

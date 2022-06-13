@@ -88,19 +88,7 @@ printf "$NEXT_VERSION"
 # options available at https://maven.apache.org/plugins/maven-gpg-plugin/sign-mojo.html
 GPG_OPTS="-Dgpg.homedir=$GNUPGHOME -Dgpg.keyname=$GPG_KEY -Dgpg.passphrase=$GPG_PASSPHRASE"
 
-printf "\n -Dgpg.homedir=$GNUPGHOME -Dgpg.keyname=$GPG_KEY -Dgpg.passphrase=$GPG_PASSPHRASE \n"
-
-# Tag release version before `mvn release:prepare`
-# tag python build
-# PySpark version info we use dev0 instead of SNAPSHOT to be closer
-# to PEP440.
-# sed -i".tmp" 's/__version__ = .*$/__version__ = "'"$NEXT_VERSION.dev0"'"/' python/systemds/version.py
-
-# change tags in docs
-# docs/_config.yml
-# update SYSTEMDS_VERSION
-# sed -i 's/SYSTEMDS_VERSION:.*$/SYSTEMDS_VERSION: '"$RELEASE_VERSION"'/g' docs/_config.yml
-# and run docs/updateAPI.sh to update version in api docs
+printf "\n -Dgpg.homedir=$GNUPGHOME -Dgpg.keyname=$GPG_KEY \n"
 
 
 # NOTE:
@@ -130,9 +118,3 @@ printf "\n #### Executing command: #### \n"
 printf "\n $(bold $(greencolor $CMD)) \n\n"
 
 $CMD
-
-# tag snapshot version after `mvn release:prepare`
-
-# Change docs to dev snapshot tag
-# sed -i".tmp1" 's/SYSTEMDS_VERSION:.*$/SYSTEMDS_VERSION: '"$NEXT_VERSION"'/g' docs/_config.yml
-# and run docs/updateAPI.sh to update version in api docs

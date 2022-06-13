@@ -27,21 +27,20 @@ public class ReaderColumnSelectionDenseMultiBlock extends ReaderColumnSelection 
 	private DenseBlock _data;
 
 	protected ReaderColumnSelectionDenseMultiBlock(MatrixBlock data, int[] colIndices, int rl, int ru) {
-		super(colIndices, rl, Math.min(ru, data.getNumRows()));
+		super(colIndices, rl, Math.min(ru, data.getNumRows()) - 1);
 		_data = data.getDenseBlock();
 	}
 
 	protected DblArray getNextRow() {
-		if(_rl == _ru - 1)
-			return null;
-		_rl++;
 		boolean empty = true;
-		for(int i = 0; i < _colIndexes.length; i++) {
-			double v = _data.get(_rl, _colIndexes[i]);
-			if(v != 0)
-				empty = false;
-			reusableArr[i] = v;
+		while(empty && _rl < _ru) {
+			_rl++;
+			for(int i = 0; i < _colIndexes.length; i++) {
+				final double v = _data.get(_rl, _colIndexes[i]);
+				empty &= v == 0;
+				reusableArr[i] = v;
+			}
 		}
-		return empty ? emptyReturn : reusableReturn;
+		return empty ? null : reusableReturn;
 	}
 }

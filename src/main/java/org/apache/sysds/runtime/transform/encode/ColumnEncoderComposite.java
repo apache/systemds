@@ -27,8 +27,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -106,6 +106,16 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
+	public void build(CacheBlock in, Map<Integer, double[]> equiHeightMaxs) {
+		for(ColumnEncoder columnEncoder : _columnEncoders)
+			if(columnEncoder instanceof ColumnEncoderBin && ((ColumnEncoderBin) columnEncoder).getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
+				columnEncoder.build(in, equiHeightMaxs.get(columnEncoder.getColID()));
+			} else {
+				columnEncoder.build(in);
+			}
+	}
+
+	@Override
 	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<Integer> sizes = new ArrayList<>();
@@ -161,13 +171,19 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			}
 			tasks.addAll(t);
 		}
+
 		List<List<? extends Callable<?>>> dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
 		DependencyThreadPool.createDependencyList(tasks, depMap, dep);
+		// If DC is required, add an UpdateDC task to update the domainsize as the last task
+		// Only for RC build, UpdateDC must depends on the Build task, other can be independent.
 		if(hasEncoder(ColumnEncoderDummycode.class)) {
 			tasks.add(DependencyThreadPool.createDependencyTask(new ColumnCompositeUpdateDCTask(this)));
-			dep.add(tasks.subList(tasks.size() - 2, tasks.size() - 1));
+			if (_columnEncoders.get(0) instanceof ColumnEncoderRecode) {
+				dep.add(tasks.subList(tasks.size() - 2, tasks.size() - 1));
+				return DependencyThreadPool.createDependencyTasks(tasks, dep);
+			}
 		}
-		return DependencyThreadPool.createDependencyTasks(tasks, dep);
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
 	}
 
 	@Override
@@ -204,6 +220,11 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	@Override
 	protected double getCode(CacheBlock in, int row) {
+		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
+	}
+
+	@Override
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
 		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
 	}
 
@@ -248,6 +269,9 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		ColumnEncoderDummycode dc = getEncoder(ColumnEncoderDummycode.class);
 		if(dc != null)
 			dc.updateDomainSizes(_columnEncoders);
+		ColumnEncoderUDF udf = getEncoder(ColumnEncoderUDF.class);
+		if (udf != null && dc != null)
+			udf.updateDomainSizes(_columnEncoders);
 	}
 
 	public void addEncoder(ColumnEncoder other) {
@@ -338,6 +362,37 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	public <T extends ColumnEncoder> boolean hasEncoder(Class<T> type) {
 		return _columnEncoders.stream().anyMatch(encoder -> encoder.getClass().equals(type));
+	}
+
+	public <T extends ColumnEncoder> boolean hasBuild() {
+		for (ColumnEncoder e : _columnEncoders)
+			if (e.getClass().equals(ColumnEncoderRecode.class)
+				|| e.getClass().equals(ColumnEncoderDummycode.class)
+				|| e.getClass().equals(ColumnEncoderBin.class))
+				return true;
+		return false;
+	}
+
+	public void computeRCDMapSizeEstimate(CacheBlock in, int[] sampleIndices) {
+		int estNumDist = 0;
+		for (ColumnEncoder e : _columnEncoders)
+			if (e.getClass().equals(ColumnEncoderRecode.class)) {
+				((ColumnEncoderRecode) e).computeRCDMapSizeEstimate(in, sampleIndices);
+				estNumDist = e.getEstNumDistincts();
+			}
+		long totEstSize = _columnEncoders.stream().mapToLong(ColumnEncoder::getEstMetaSize).sum();
+		setEstMetaSize(totEstSize);
+		setEstNumDistincts(estNumDist);
+	}
+
+	public void setNumPartitions(int nBuild, int nApply) {
+			_columnEncoders.forEach(e -> {
+				e.setBuildRowBlocksPerColumn(nBuild);
+				if (e.getClass().equals(ColumnEncoderUDF.class))
+					e.setApplyRowBlocksPerColumn(1);
+				else
+					e.setApplyRowBlocksPerColumn(nApply);
+			});
 	}
 
 	@Override

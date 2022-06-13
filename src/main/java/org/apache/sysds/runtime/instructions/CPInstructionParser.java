@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions;
 import java.util.HashMap;
 
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.lops.Append;
 import org.apache.sysds.lops.Compression;
@@ -30,7 +31,6 @@ import org.apache.sysds.lops.DeCompression;
 import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.Local;
 import org.apache.sysds.lops.RightIndex;
-import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
@@ -96,7 +96,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "uacvar"  , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uamax"   , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uarmax"  , CPType.AggregateUnary);
-		String2CPInstructionType.put( "uarimax", CPType.AggregateUnary);
+		String2CPInstructionType.put( "uarimax" , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacmax"  , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uamin"   , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uarmin"  , CPType.AggregateUnary);
@@ -110,13 +110,15 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "uac*"    , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uatrace" , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uaktrace", CPType.AggregateUnary);
-		String2CPInstructionType.put( "nrow"    ,CPType.AggregateUnary);
-		String2CPInstructionType.put( "ncol"    ,CPType.AggregateUnary);
-		String2CPInstructionType.put( "length"  ,CPType.AggregateUnary);
-		String2CPInstructionType.put( "exists"  ,CPType.AggregateUnary);
-		String2CPInstructionType.put( "lineage" ,CPType.AggregateUnary);
+		String2CPInstructionType.put( "nrow"    , CPType.AggregateUnary);
+		String2CPInstructionType.put( "ncol"    , CPType.AggregateUnary);
+		String2CPInstructionType.put( "length"  , CPType.AggregateUnary);
+		String2CPInstructionType.put( "exists"  , CPType.AggregateUnary);
+		String2CPInstructionType.put( "lineage" , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacd"    , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uacdap"  , CPType.AggregateUnary);
+		String2CPInstructionType.put( "uacdapr" , CPType.AggregateUnary);
+		String2CPInstructionType.put( "uacdapc" , CPType.AggregateUnary);
 
 		String2CPInstructionType.put( "uaggouterchain", CPType.UaggOuterChain);
 		
@@ -161,8 +163,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "min"  , CPType.Binary);
 		String2CPInstructionType.put( "dropInvalidType"  , CPType.Binary);
 		String2CPInstructionType.put( "dropInvalidLength"  , CPType.Binary);
+		String2CPInstructionType.put( "freplicate"  , CPType.Binary);
 		String2CPInstructionType.put( "valueSwap"  , CPType.Binary);
-		String2CPInstructionType.put( "_map"  , CPType.Binary); // _map represents the operation map
+		String2CPInstructionType.put( "_map"  , CPType.Ternary); // _map represents the operation map
 
 		String2CPInstructionType.put( "nmax", CPType.BuiltinNary);
 		String2CPInstructionType.put( "nmin", CPType.BuiltinNary);
@@ -240,12 +243,13 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "mvvar"       , CPType.Variable);
 		String2CPInstructionType.put( "rmvar"       , CPType.Variable);
 		String2CPInstructionType.put( "rmfilevar"   , CPType.Variable);
-		String2CPInstructionType.put( UnaryCP.CAST_AS_SCALAR_OPCODE, CPType.Variable);
-		String2CPInstructionType.put( UnaryCP.CAST_AS_MATRIX_OPCODE, CPType.Variable);
-		String2CPInstructionType.put( UnaryCP.CAST_AS_FRAME_OPCODE,  CPType.Variable);
-		String2CPInstructionType.put( UnaryCP.CAST_AS_DOUBLE_OPCODE, CPType.Variable);
-		String2CPInstructionType.put( UnaryCP.CAST_AS_INT_OPCODE,    CPType.Variable);
-		String2CPInstructionType.put( UnaryCP.CAST_AS_BOOLEAN_OPCODE, CPType.Variable);
+		String2CPInstructionType.put( OpOp1.CAST_AS_SCALAR.toString(),  CPType.Variable);
+		String2CPInstructionType.put( OpOp1.CAST_AS_MATRIX.toString(),  CPType.Variable);
+		String2CPInstructionType.put( OpOp1.CAST_AS_FRAME.toString(),   CPType.Variable);
+		String2CPInstructionType.put( OpOp1.CAST_AS_LIST.toString(),    CPType.Variable);
+		String2CPInstructionType.put( OpOp1.CAST_AS_DOUBLE.toString(),  CPType.Variable);
+		String2CPInstructionType.put( OpOp1.CAST_AS_INT.toString(),     CPType.Variable);
+		String2CPInstructionType.put( OpOp1.CAST_AS_BOOLEAN.toString(), CPType.Variable);
 		String2CPInstructionType.put( "attachfiletovar"  , CPType.Variable);
 		String2CPInstructionType.put( "read"        , CPType.Variable);
 		String2CPInstructionType.put( "write"       , CPType.Variable);

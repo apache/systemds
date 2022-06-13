@@ -19,9 +19,11 @@
 
 package org.apache.sysds.test.functions.privacy.fedplanning;
 
-import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -32,6 +34,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -40,6 +43,8 @@ import static org.junit.Assert.fail;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedMultiplyPlanningTest.class.getName());
+
 	private final static String TEST_DIR = "functions/privacy/fedplanning/";
 	private final static String TEST_NAME = "FederatedMultiplyPlanningTest";
 	private final static String TEST_NAME_2 = "FederatedMultiplyPlanningTest2";
@@ -47,7 +52,12 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	private final static String TEST_NAME_4 = "FederatedMultiplyPlanningTest4";
 	private final static String TEST_NAME_5 = "FederatedMultiplyPlanningTest5";
 	private final static String TEST_NAME_6 = "FederatedMultiplyPlanningTest6";
+	private final static String TEST_NAME_7 = "FederatedMultiplyPlanningTest7";
+	private final static String TEST_NAME_8 = "FederatedMultiplyPlanningTest8";
+	private final static String TEST_NAME_9 = "FederatedMultiplyPlanningTest9";
+	private final static String TEST_NAME_10 = "FederatedMultiplyPlanningTest10";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedMultiplyPlanningTest.class.getSimpleName() + "/";
+	private static File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, "SystemDS-config-cost-based.xml");
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -64,6 +74,10 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME_4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_4, new String[] {"Z"}));
 		addTestConfiguration(TEST_NAME_5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_5, new String[] {"Z"}));
 		addTestConfiguration(TEST_NAME_6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_6, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME_7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_7, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME_8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_8, new String[] {"Z.scalar"}));
+		addTestConfiguration(TEST_NAME_9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_9, new String[] {"Z.scalar"}));
+		addTestConfiguration(TEST_NAME_10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_10, new String[] {"Z"}));
 	}
 
 	@Parameterized.Parameters
@@ -102,7 +116,10 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	@Test
 	public void federatedAggregateBinaryColFedSequence(){
 		cols = rows;
-		String[] expectedHeavyHitters = new String[]{"fed_ba+*","fed_*","fed_fedinit"};
+		//TODO: When alignment checks have been added to getFederatedOut in AFederatedPlanner,
+		// the following expectedHeavyHitters can be added. Until then, fed_* will not be generated.
+		//String[] expectedHeavyHitters = new String[]{"fed_ba+*","fed_*","fed_fedinit"};
+		String[] expectedHeavyHitters = new String[]{"fed_ba+*","fed_fedinit"};
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_5, expectedHeavyHitters);
 	}
 
@@ -110,6 +127,31 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	public void federatedAggregateBinarySequence2(){
 		String[] expectedHeavyHitters = new String[]{"fed_ba+*","fed_fedinit"};
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_6, expectedHeavyHitters);
+	}
+
+	@Test
+	public void federatedMultiplyDoubleHop() {
+		String[] expectedHeavyHitters = new String[]{"fed_*", "fed_fedinit", "fed_r'", "fed_ba+*"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_7, expectedHeavyHitters);
+	}
+
+	@Test
+	public void federatedMultiplyDoubleHop2() {
+		String[] expectedHeavyHitters = new String[]{"fed_fedinit", "fed_ba+*"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_8, expectedHeavyHitters);
+	}
+
+	@Test
+	public void federatedMultiplyPlanningTest9(){
+		String[] expectedHeavyHitters = new String[]{"fed_+*", "fed_1-*", "fed_fedinit", "fed_tak+*", "fed_max"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_9, expectedHeavyHitters);
+	}
+
+	@Test
+	public void federatedMultiplyPlanningTest10(){
+		String[] expectedHeavyHitters = new String[]{"fed_fedinit", "fed_^2"};
+		TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, "SystemDS-config-fout.xml");
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_10, expectedHeavyHitters);
 	}
 
 	private void writeStandardMatrix(String matrixName, long seed){
@@ -158,6 +200,18 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 			writeRowFederatedVector("Y1", 44);
 			writeRowFederatedVector("Y2", 21);
 		}
+		else if ( testName.equals(TEST_NAME_8) ){
+			writeColStandardMatrix("X1", 42, null);
+			writeColStandardMatrix("X2", 1340, null);
+			writeColStandardMatrix("Y1", 44, null);
+			writeColStandardMatrix("Y2", 21, null);
+			writeColStandardMatrix("W1", 76, null);
+			writeColStandardMatrix("W2", 11, null);
+		}
+		else if ( testName.equals(TEST_NAME_10) ){
+			writeStandardMatrix("X1", 42, null);
+			writeStandardMatrix("X2", 1340, null);
+		}
 		else {
 			writeStandardMatrix("X1", 42);
 			writeStandardMatrix("X2", 1340);
@@ -177,56 +231,86 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	}
 
 	private void federatedTwoMatricesTest(Types.ExecMode execMode, String testName, String[] expectedHeavyHitters) {
-		OptimizerUtils.FEDERATED_COMPILATION = true;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
 		if(rtplatform == Types.ExecMode.SPARK) {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
+		Thread t1 = null, t2 = null;
 
-		getAndLoadTestConfiguration(testName);
-		String HOME = SCRIPT_DIR + TEST_DIR;
+		try{
+			getAndLoadTestConfiguration(testName);
+			String HOME = SCRIPT_DIR + TEST_DIR;
 
-		writeInputMatrices(testName);
+			writeInputMatrices(testName);
 
-		int port1 = getRandomAvailablePort();
-		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-		Thread t2 = startLocalFedWorkerThread(port2);
+			int port1 = getRandomAvailablePort();
+			int port2 = getRandomAvailablePort();
+			t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
+			t2 = startLocalFedWorkerThread(port2);
 
-		// Run actual dml script with federated matrix
-		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[] {"-stats", "-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
-			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
+			// Run actual dml script with federated matrix
+			fullDMLScriptName = HOME + testName + ".dml";
+			programArgs = new String[] {"-stats", "-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
+				"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
+				"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
+			rewriteRealProgramArgs(testName, port1, port2);
+			runTest(true, false, null, -1);
+
+			// Run reference dml script with normal matrix
+			fullDMLScriptName = HOME + testName + "Reference.dml";
+			programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
+				"Y2=" + input("Y2"), "Z=" + expected("Z")};
+			rewriteReferenceProgramArgs(testName);
+			runTest(true, false, null, -1);
+
+			// compare via files
+			compareResults(1e-9);
+			if (!heavyHittersContainsAllString(expectedHeavyHitters))
+				fail("The following expected heavy hitters are missing: "
+					+ Arrays.toString(missingHeavyHitters(expectedHeavyHitters)));
+		} finally {
+			TestUtils.shutdownThreads(t1, t2);
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
+	}
+
+	private void rewriteRealProgramArgs(String testName, int port1, int port2){
 		if ( testName.equals(TEST_NAME_4) || testName.equals(TEST_NAME_5) ){
 			programArgs = new String[] {"-stats","-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"Y1=" + input("Y1"),
 				"Y2=" + input("Y2"), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
+		} else if ( testName.equals(TEST_NAME_8) ){
+			programArgs = new String[] {"-stats","-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
+				"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
+				"Y2=" + TestUtils.federatedAddress(port2, input("Y2")),
+				"W1=" + input("W1"),
+				"W2=" + input("W2"),
+				"r=" + rows, "c=" + cols, "Z=" + output("Z")};
 		}
-		runTest(true, false, null, -1);
+	}
 
-		OptimizerUtils.FEDERATED_COMPILATION = false;
+	private void rewriteReferenceProgramArgs(String testName){
+		if ( testName.equals(TEST_NAME_8) ){
+			programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
+				"Y2=" + input("Y2"), "W1=" + input("W1"), "W2=" + input("W2"), "Z=" + expected("Z")};
+		}
+	}
 
-		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + testName + "Reference.dml";
-		programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
-			"Y2=" + input("Y2"), "Z=" + expected("Z")};
-		runTest(true, false, null, -1);
-
-		// compare via files
-		compareResults(1e-9);
-		if (!heavyHittersContainsAllString(expectedHeavyHitters))
-			fail("The following expected heavy hitters are missing: "
-				+ Arrays.toString(missingHeavyHitters(expectedHeavyHitters)));
-
-		TestUtils.shutdownThreads(t1, t2);
-
-		rtplatform = platformOld;
-		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+	/**
+	 * Override default configuration with custom test configuration to ensure
+	 * scratch space and local temporary directory locations are also updated.
+	 */
+	@Override
+	protected File getConfigTemplateFile() {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		LOG.info("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
+		return TEST_CONF_FILE;
 	}
 }
 

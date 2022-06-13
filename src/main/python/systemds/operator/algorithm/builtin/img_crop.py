@@ -34,7 +34,13 @@ def img_crop(img_in: Matrix,
              h: int,
              x_offset: int,
              y_offset: int):
-    
+    """
+    :param w: The width of the subregion required
+    :param h: The height of the subregion required
+    :param x_offset: The horizontal coordinate in the image to begin the crop operation
+    :param y_offset: The vertical coordinate in the image to begin the crop operation
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'img_in': img_in, 'w': w, 'h': h, 'x_offset': x_offset, 'y_offset': y_offset}
     return Matrix(img_in.sds_context,
         'img_crop',

@@ -34,6 +34,7 @@ import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.fedplanner.FTypes.FederatedPlanner;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.Lop;
@@ -44,6 +45,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
+import org.apache.sysds.runtime.controlprogram.caching.UnifiedMemoryManager;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -52,6 +54,7 @@ import org.apache.sysds.runtime.functionobjects.IntegerDivide;
 import org.apache.sysds.runtime.functionobjects.Modulus;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -60,6 +63,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 public class OptimizerUtils 
 {
@@ -71,7 +75,21 @@ public class OptimizerUtils
 	 * NOTE: it is important that MEM_UTIL_FACTOR+CacheableData.CACHING_BUFFER_SIZE &lt; 1.0
 	 */
 	public static double MEM_UTIL_FACTOR = 0.7d;
-	
+	/** Default buffer pool sizes for static (15%) and unified (85%) memory */
+	public static double DEFAULT_MEM_UTIL_FACTOR = 0.15d;
+	public static double DEFAULT_UMM_UTIL_FACTOR = 0.85d;
+
+	/** Memory managers (static partitioned, unified) */
+	public enum MemoryManager {
+		STATIC_MEMORY_MANAGER,
+		UNIFIED_MEMORY_MANAGER
+	}
+
+	/** Indicate the current memory manager in effect */
+	public static MemoryManager MEMORY_MANAGER = null;
+	/** Buffer pool size in bytes */
+	public static long BUFFER_POOL_SIZE = 0;
+
 	/** Default blocksize if unspecified or for testing purposes */
 	public static final int DEFAULT_BLOCKSIZE = 1000;
 	
@@ -215,6 +233,7 @@ public class OptimizerUtils
 	 * Compile federated instructions based on input federation state and privacy constraints.
 	 */
 	public static boolean FEDERATED_COMPILATION = false;
+	public static Map<Integer, FEDInstruction.FederatedOutput> FEDERATED_SPECS = new HashMap<>();
 	
 	/**
 	 * Specifies a multiplier computing the degree of parallelism of parallel
@@ -411,6 +430,12 @@ public class OptimizerUtils
 			cconf.set(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS, false);
 		}
 		
+		//handle federated runtime conversion to avoid string comparisons
+		String planner = dmlconf.getTextValue(DMLConfig.FEDERATED_PLANNER);
+		if( FederatedPlanner.RUNTIME.name().equalsIgnoreCase(planner) ) {
+			cconf.set(ConfigType.FEDERATED_RUNTIME, true);
+		}
+		
 		return cconf;
 	}
 	
@@ -457,6 +482,59 @@ public class OptimizerUtils
 	public static double getLocalMemBudget() {
 		double ret = InfrastructureAnalyzer.getLocalMaxMemory();
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
+	}
+
+	/**
+	 * Returns buffer pool size as set in the config
+	 *
+	 * @return buffer pool size in bytes
+	 */
+	public static long getBufferPoolLimit() {
+		if (BUFFER_POOL_SIZE != 0)
+			return BUFFER_POOL_SIZE;
+		DMLConfig conf = ConfigurationManager.getDMLConfig();
+		double bufferPoolFactor = (double)(conf.getIntValue(DMLConfig.BUFFERPOOL_LIMIT))/100;
+		bufferPoolFactor = Math.max(bufferPoolFactor, DEFAULT_MEM_UTIL_FACTOR);
+		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		return (long)(bufferPoolFactor * maxMem);
+	}
+
+	/**
+	 * Check if unified memory manager is in effect
+	 * @return boolean
+	 */
+	public static boolean isUMMEnabled() {
+		if (MEMORY_MANAGER == null) {
+			DMLConfig conf = ConfigurationManager.getDMLConfig();
+			boolean isUMM = conf.getTextValue(DMLConfig.MEMORY_MANAGER).equalsIgnoreCase("unified");
+			MEMORY_MANAGER = isUMM ? MemoryManager.UNIFIED_MEMORY_MANAGER : MemoryManager.STATIC_MEMORY_MANAGER;
+		}
+		return MEMORY_MANAGER == MemoryManager.UNIFIED_MEMORY_MANAGER;
+	}
+
+	/**
+	 * Disable unified memory manager and fallback to static partitioning.
+	 * Initialize LazyWriteBuffer with the default size (15%).
+	 */
+	public static void disableUMM() {
+		MEMORY_MANAGER = MemoryManager.STATIC_MEMORY_MANAGER;
+		LazyWriteBuffer.cleanup();
+		LazyWriteBuffer.init();
+		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		BUFFER_POOL_SIZE = (long) (DEFAULT_MEM_UTIL_FACTOR * maxMem);
+		LazyWriteBuffer.setWriteBufferLimit(BUFFER_POOL_SIZE);
+	}
+
+	/**
+	 * Enable unified memory manager and initialize with the default size (85%).
+	 */
+	public static void enableUMM() {
+		MEMORY_MANAGER = MemoryManager.UNIFIED_MEMORY_MANAGER;
+		UnifiedMemoryManager.cleanup();
+		UnifiedMemoryManager.init();
+		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		BUFFER_POOL_SIZE = (long) (DEFAULT_UMM_UTIL_FACTOR * maxMem);
+		UnifiedMemoryManager.setUMMLimit(BUFFER_POOL_SIZE);
 	}
 	
 	public static boolean isMaxLocalParallelism(int k) {
@@ -1286,17 +1364,18 @@ public class OptimizerUtils
 		if( fpb.getStatementBlock()==null )
 			return defaultValue;
 		ForStatementBlock fsb = (ForStatementBlock) fpb.getStatementBlock();
-		try {
-			HashMap<Long,Long> memo = new HashMap<>();
-			long from = rEvalSimpleLongExpression(fsb.getFromHops().getInput().get(0), memo);
-			long to = rEvalSimpleLongExpression(fsb.getToHops().getInput().get(0), memo);
-			long increment = (fsb.getIncrementHops()==null) ? (from < to) ? 1 : -1 : 
-				rEvalSimpleLongExpression(fsb.getIncrementHops().getInput().get(0), memo);
-			if( from != Long.MAX_VALUE && to != Long.MAX_VALUE && increment != Long.MAX_VALUE )
-				return (int)Math.ceil(((double)(to-from+1))/increment);
-		}
-		catch(Exception ex){}
-		return defaultValue;
+		return getNumIterations(fsb, defaultValue);
+	}
+
+	public static long getNumIterations(ForStatementBlock fsb, long defaultValue){
+		HashMap<Long,Long> memo = new HashMap<>();
+		long from = rEvalSimpleLongExpression(fsb.getFromHops().getInput().get(0), memo);
+		long to = rEvalSimpleLongExpression(fsb.getToHops().getInput().get(0), memo);
+		long increment = (fsb.getIncrementHops()==null) ? (from < to) ? 1 : -1 :
+			rEvalSimpleLongExpression(fsb.getIncrementHops().getInput().get(0), memo);
+		if( from != Long.MAX_VALUE && to != Long.MAX_VALUE && increment != Long.MAX_VALUE )
+			return (int)Math.ceil(((double)(to-from+1))/increment);
+		else return defaultValue;
 	}
 	
 	public static long getNumIterations(ForProgramBlock fpb, LocalVariableMap vars, long defaultValue) {

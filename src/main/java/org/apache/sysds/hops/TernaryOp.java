@@ -149,7 +149,9 @@ public class TernaryOp extends MultiThreadedHop
 	public boolean isMultiThreadedOpType() {
 		return _op == OpOp3.IFELSE
 			|| _op == OpOp3.MINUS_MULT
-			|| _op == OpOp3.PLUS_MULT;
+			|| _op == OpOp3.PLUS_MULT
+			|| _op == OpOp3.QUANTILE
+			|| _op == OpOp3.INTERQUANTILE;
 	}
 	
 	@Override
@@ -182,9 +184,9 @@ public class TernaryOp extends MultiThreadedHop
 				case PLUS_MULT:
 				case MINUS_MULT:
 				case IFELSE:
+				case MAP:
 					constructLopsTernaryDefault();
 					break;
-					
 				default:
 					throw new HopsException(this.printErrorLocation() + "Unknown TernaryOp (" + _op + ") while constructing Lops \n");
 
@@ -203,18 +205,17 @@ public class TernaryOp extends MultiThreadedHop
 	/**
 	 * Method to construct LOPs when op = CENTRAILMOMENT.
 	 */
-	private void constructLopsCentralMoment()
-	{	
+	private void constructLopsCentralMoment() {
 		if ( _op != OpOp3.MOMENT )
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.MOMENT );
 		
 		ExecType et = optFindExecType();
-		
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		CentralMoment cm = new CentralMoment(
-				getInput().get(0).constructLops(),
-				getInput().get(1).constructLops(),
-				getInput().get(2).constructLops(),
-				getDataType(), getValueType(), et);
+			getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(),
+			getInput().get(2).constructLops(),
+			getDataType(), getValueType(), k, et);
 		cm.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLineNumbers(cm);
 		setLops(cm);
@@ -228,13 +229,12 @@ public class TernaryOp extends MultiThreadedHop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.COV );
 		
 		ExecType et = optFindExecType();
-		
-		
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		CoVariance cov = new CoVariance(
-				getInput().get(0).constructLops(), 
-				getInput().get(1).constructLops(), 
-				getInput().get(2).constructLops(), 
-				getDataType(), getValueType(), et);
+			getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(),
+			getInput().get(2).constructLops(),
+			getDataType(), getValueType(), k, et);
 		cov.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLineNumbers(cov);
 		setLops(cov);
@@ -249,9 +249,10 @@ public class TernaryOp extends MultiThreadedHop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.QUANTILE + " or " + OpOp3.INTERQUANTILE );
 		
 		ExecType et = optFindExecType();
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		SortKeys sort = SortKeys.constructSortByValueLop(getInput().get(0).constructLops(),
 			getInput().get(1).constructLops(), SortKeys.OperationTypes.WithWeights, 
-			getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
+			getInput().get(0).getDataType(), getInput().get(0).getValueType(), et, k);
 		PickByCount pick = new PickByCount(sort, getInput().get(2).constructLops(),
 			getDataType(), getValueType(), (_op == OpOp3.QUANTILE) ?
 			PickByCount.OperationTypes.VALUEPICK : PickByCount.OperationTypes.RANGEPICK, et, true);
@@ -377,6 +378,7 @@ public class TernaryOp extends MultiThreadedHop
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
 			case PLUS_MULT:
 			case MINUS_MULT:
+			case MAP:
 			case IFELSE: {
 				if (isGPUEnabled()) {
 					// For the GPU, the input is converted to dense
@@ -421,6 +423,15 @@ public class TernaryOp extends MultiThreadedHop
 		
 		switch( _op ) 
 		{
+			case MAP:
+				long ldim1 = (mc[0].rowsKnown()) ? mc[0].getRows() :
+					(mc[1].getRows()>=1) ? mc[1].getRows() : -1;
+				long ldim2 = (mc[0].colsKnown()) ? mc[0].getCols() :
+					(mc[1].getCols()>=1) ? mc[1].getCols() : -1;
+				if( ldim1>=0 && ldim2>=0 )
+					ret = new MatrixCharacteristics(ldim1, ldim2, -1, (long) (ldim1 * ldim2 * 1.0));
+				return ret;
+
 			case CTABLE:
 				boolean dimsSpec = (getInput().size() > 3); 
 				
@@ -500,8 +511,6 @@ public class TernaryOp extends MultiThreadedHop
 			checkAndSetInvalidCPDimsAndSize();
 		}
 
-		updateETFed();
-
 		//mark for recompile (forever)
 		// additional condition: when execType=CP and additional dimension inputs 
 		// are provided (and those values are unknown at initial compile time).
@@ -517,20 +526,31 @@ public class TernaryOp extends MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
+		Hop input1 = getInput().get(0);
+		Hop input2 = getInput().get(1);
+		Hop input3 = getInput().get(2);
+
 		if ( getDataType() == DataType.SCALAR ) 
 		{
 			//do nothing always known
 		}
-		else 
+		else
 		{
 			switch( _op ) 
 			{
+				case MAP:
+					long ldim1, ldim2, lnnz1 = -1;
+					ldim1 = (input1.rowsKnown()) ? input1.getDim1() : ((input2.getDim1()>=1)?input2.getDim1():-1);
+					ldim2 = (input1.colsKnown()) ? input1.getDim2() : ((input2.getDim2()>=1)?input2.getDim2():-1);
+					lnnz1 = input1.getNnz();
+
+					setDim1( ldim1 );
+					setDim2( ldim2 );
+					setNnz(lnnz1);
+					break;
 				case CTABLE:
 					//in general, do nothing because the output size is data dependent
-					Hop input1 = getInput().get(0);
-					Hop input2 = getInput().get(1);
-					Hop input3 = getInput().get(2);
-					
+
 					//TODO double check reset (dimsInputPresent?)
 					if ( !dimsKnown() ) { 
 						//for ctable_expand at least one dimension is known
@@ -602,6 +622,9 @@ public class TernaryOp extends MultiThreadedHop
 			return false;
 		
 		TernaryOp that2 = (TernaryOp)that;
+
+		if(_op == OpOp3.MAP)
+			return false; // custom UDFs
 		
 		//compare basic inputs and weights (always existing)
 		boolean ret = (_op == that2._op

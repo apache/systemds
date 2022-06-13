@@ -32,7 +32,6 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def img_invert(img_in: Matrix,
                max_value: float):
     """
-    :param img_in: Input image
     :param max_value: The maximum value pixels can have
     :return: 'OperationNode' containing  
     """

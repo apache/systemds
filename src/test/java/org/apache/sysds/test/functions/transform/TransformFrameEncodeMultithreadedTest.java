@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -55,13 +56,14 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	private final static String SPEC7 = "homes3/homes.tfspec_binDummy.json"; // recode+dummy
 	private final static String SPEC8 = "homes3/homes.tfspec_hash.json";
 	private final static String SPEC9 = "homes3/homes.tfspec_hash_recode.json";
+	private final static String SPEC10 = "homes3/homes.tfspec_hash_dummy.json";
 
 	private static final int[] BIN_col3 = new int[] {1, 4, 2, 3, 3, 2, 4};
 	private static final int[] BIN_col8 = new int[] {1, 2, 2, 2, 2, 2, 3};
 
 	public enum TransformType {
 		RECODE, DUMMY, DUMMY_ALL, // to test sparse
-		RECODE_DUMMY, BIN, BIN_DUMMY, HASH, HASH_RECODE,
+		RECODE_DUMMY, BIN, BIN_DUMMY, HASH, HASH_RECODE, HASH_DUMMY
 	}
 
 	@Override
@@ -111,6 +113,11 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void testHomesHashDummyCodeNonStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_DUMMY, false);
+	}
+
+	@Test
 	public void testHomesRecodeStaged() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.RECODE, true);
 	}
@@ -148,6 +155,11 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	@Test
 	public void testHomesHashRecodeStaged() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_RECODE, true);
+	}
+
+	@Test
+	public void testHomesHashDummyCodeStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_DUMMY, true);
 	}
 
 	private void runTransformTest(ExecMode rt, String ofmt, TransformType type, boolean staged) {
@@ -188,6 +200,10 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 				SPEC = SPEC9;
 				DATASET = DATASET1;
 				break;
+			case HASH_DUMMY:
+				SPEC = SPEC10;
+				DATASET = DATASET1;
+				break;
 		}
 
 		if(!ofmt.equals("csv"))
@@ -211,11 +227,19 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 			MultiColumnEncoder.MULTI_THREADED_STAGES = staged;
 
 			MatrixBlock outputS = encoder.encode(input, 1);
+			FrameBlock metaS = encoder.getMetaData(new FrameBlock(input.getNumColumns(), ValueType.STRING), 1);
 			MatrixBlock outputM = encoder.encode(input, 12);
+			FrameBlock metaM = encoder.getMetaData(new FrameBlock(input.getNumColumns(), ValueType.STRING), 12);
 
+			// Match encoded matrices
 			double[][] R1 = DataConverter.convertToDoubleMatrix(outputS);
 			double[][] R2 = DataConverter.convertToDoubleMatrix(outputM);
 			TestUtils.compareMatrices(R1, R2, R1.length, R1[0].length, 0);
+			// Match the metadata frames
+			String[][] M1 = DataConverter.convertToStringFrame(metaS);
+			String[][] M2 = DataConverter.convertToStringFrame(metaM);
+			TestUtils.compareFrames(M1, M2, M1.length, M1[0].length);
+
 			Assert.assertEquals(outputS.getNonZeros(), outputM.getNonZeros());
 			Assert.assertTrue(outputM.getNonZeros() > 0);
 

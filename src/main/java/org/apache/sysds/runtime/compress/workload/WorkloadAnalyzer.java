@@ -43,6 +43,7 @@ import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.IndexingOp;
 import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.NaryOp;
 import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.UnaryOp;
@@ -140,7 +141,7 @@ public class WorkloadAnalyzer {
 		List<Hop> candidates = new ArrayList<>();
 		for(StatementBlock sb : prog.getStatementBlocks())
 			getCandidates(sb, prog, candidates, new HashSet<>());
-		
+
 		return candidates;
 	}
 
@@ -445,7 +446,7 @@ public class WorkloadAnalyzer {
 						return;
 					}
 					else {
-						String ex = "Setting decompressed because input Binary Op is unknown, please add the case to WorkloadAnalyzer:\n"
+						String ex = "Setting decompressed because input Binary Op dimensions is unknown:\n"
 							+ Explain.explain(hop);
 						LOG.warn(ex);
 						setDecompressionOnAllInputs(hop, parent);
@@ -503,8 +504,12 @@ public class WorkloadAnalyzer {
 				setDecompressionOnAllInputs(hop, parent);
 				return;
 			}
+			else if(hop instanceof NaryOp){
+				setDecompressionOnAllInputs(hop, parent);
+				return;
+			}
 			else
-				throw new DMLCompressionException("Unknown Hop: " + Explain.explain(hop));
+				throw new DMLCompressionException("Unknown Hop:" +hop.getClass().getSimpleName() +"\n" + Explain.explain(hop));
 
 			o = o != null ? o : new OpNormal(hop, RewriteCompressedReblock.satisfiesSizeConstraintsForCompression(hop));
 			treeLookup.put(hop.getHopID(), o);

@@ -27,8 +27,7 @@
 template<typename T>
 struct SpoofCellwiseFullAgg {
 	
-	static void exec(SpoofCellwiseOp* op, uint32_t NT, uint32_t N, const std::string& op_name,
-			std::vector<Matrix<T>>& sides, uint32_t grix,  DevMatPtrs<T>& dp) {
+	static void exec(SpoofCellwiseOp* op, uint32_t NT, uint32_t N, const std::string& op_name, DataBufferWrapper* dbw, SpoofCUDAContext* ctx) {
 		T value_type;
 		
 		// num ctas
@@ -46,14 +45,15 @@ struct SpoofCellwiseFullAgg {
 						  << std::endl;
 #endif
 		CHECK_CUDA(op->program.get()->kernel(op_name)
-						   .instantiate(type_of(value_type), std::max(static_cast<size_t>(1), sides.size()))
-						   .configure(grid, block, shared_mem_size)
-						   .launch(dp.in, dp.sides, dp.out, dp.scalars, N, grix));
+						   .instantiate(type_of(value_type), std::max(static_cast<uint32_t>(1u), dbw->num_sides()))
+						   .configure(grid, block, shared_mem_size, ctx->stream)
+						   .launch(dbw->d_in<T>(0), dbw->d_sides<T>(), dbw->d_out<T>(), dbw->d_scalars<T>(), N, dbw->grix()));
 		
 		if(NB > 1) {
 			N = NB;
 			while (NB > 1) {
-				void* args[3] = { &dp.out, &dp.out, &N};
+				Matrix<T>* out = dbw->d_out<T>();
+				void* args[3] = { &out, &out, &N};
 				
 				NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
 #ifndef NDEBUG
@@ -64,7 +64,7 @@ struct SpoofCellwiseFullAgg {
                     << N << " elements"
                     << std::endl;
 #endif
-				CHECK_CUDA(cuLaunchKernel(op->agg_kernel,NB, 1, 1, NT, 1, 1, shared_mem_size, nullptr, args, nullptr));
+				CHECK_CUDA(cuLaunchKernel(op->agg_kernel,NB, 1, 1, NT, 1, 1, shared_mem_size, ctx->stream, args, nullptr));
 				N = NB;
 			}
 		}
@@ -74,12 +74,11 @@ struct SpoofCellwiseFullAgg {
 
 template<typename T>
 struct SpoofCellwiseRowAgg {
-	static void exec(SpoofOperator *op, uint32_t NT, uint32_t N, const std::string &op_name,
-			  std::vector<Matrix<T>> &input, std::vector<Matrix<T>> &sides, uint32_t grix, DevMatPtrs<T>& dp) {
+	static void exec(SpoofOperator *op, uint32_t NT, uint32_t N, const std::string &op_name, DataBufferWrapper* dbw, SpoofCUDAContext* ctx) {
 		T value_type;
 		
 		// num ctas
-		uint32_t NB = input.front().rows;
+		uint32_t NB = dbw->h_in<T>(0)->rows;
 		dim3 grid(NB, 1, 1);
 		dim3 block(NT, 1, 1);
 		uint32_t shared_mem_size = NT * sizeof(T);
@@ -90,9 +89,9 @@ struct SpoofCellwiseRowAgg {
 					<< N << " elements" << std::endl;
 #endif
 		CHECK_CUDA(op->program->kernel(op_name)
-						   .instantiate(type_of(value_type), std::max(static_cast<size_t>(1), sides.size()))
-						   .configure(grid, block, shared_mem_size)
-						   .launch(dp.in, dp.sides, dp.out, dp.scalars, N, grix));
+						   .instantiate(type_of(value_type), std::max(static_cast<uint32_t>(1u), dbw->num_sides()))
+						   .configure(grid, block, shared_mem_size, ctx->stream)
+						   .launch(dbw->d_in<T>(0), dbw->d_sides<T>(), dbw->d_out<T>(), dbw->d_scalars<T>(), N, dbw->grix()));
 		
 	}
 };
@@ -100,8 +99,7 @@ struct SpoofCellwiseRowAgg {
 
 template<typename T>
 struct SpoofCellwiseColAgg {
-	static void exec(SpoofOperator* op, uint32_t NT, uint32_t N, const std::string& op_name,
-					 std::vector<Matrix<T>>& sides, uint32_t grix, DevMatPtrs<T>& dp) {
+	static void exec(SpoofOperator* op, uint32_t NT, uint32_t N, const std::string& op_name, DataBufferWrapper* dbw, SpoofCUDAContext* ctx) {
 		T value_type;
 		
 		// num ctas
@@ -116,9 +114,9 @@ struct SpoofCellwiseColAgg {
 						<< N << " elements" << std::endl;
 #endif
 		CHECK_CUDA(op->program->kernel(op_name)
-						   .instantiate(type_of(value_type), std::max(static_cast<size_t>(1), sides.size()))
-						   .configure(grid, block, shared_mem_size)
-						   .launch(dp.in, dp.sides, dp.out, dp.scalars, N, grix));
+						   .instantiate(type_of(value_type), std::max(static_cast<uint32_t>(1u), dbw->num_sides()))
+						   .configure(grid, block, shared_mem_size, ctx->stream)
+						   .launch(dbw->d_in<T>(0), dbw->d_sides<T>(), dbw->d_out<T>(), dbw->d_scalars<T>(), N, dbw->grix()));
 		
 	}
 };
@@ -126,72 +124,78 @@ struct SpoofCellwiseColAgg {
 
 template<typename T>
 struct SpoofCellwiseNoAgg {
-	static void exec(SpoofOperator *op, uint32_t NT, uint32_t N, const std::string &op_name,
-			  std::vector<Matrix<T>> &input, std::vector<Matrix<T>> &sides, uint32_t grix, DevMatPtrs<T>& dp) {
+	static void exec(SpoofOperator *op, uint32_t NT, uint32_t N, const std::string &op_name, DataBufferWrapper* dbw, SpoofCUDAContext* ctx) {
 		T value_type;
-		bool sparse_input = input.front().row_ptr != nullptr;
+		bool sparse_input = dbw->h_in<T>(0)->row_ptr != nullptr;
 		
 		// num ctas
-		// ToDo: adaptive VT
+		// ToDo? adaptive VT
 		const uint32_t VT = 1;
 		uint32_t NB = std::ceil((N + NT * VT - 1) / (NT * VT));
 		if(sparse_input)
-			NB = input.front().rows;
+			NB = dbw->h_in<T>(0)->rows;
 		dim3 grid(NB, 1, 1);
 		dim3 block(NT, 1, 1);
 		uint32_t shared_mem_size = 0;
 
 #ifndef NDEBUG
+		std::cout << "output rows: " << dbw->h_out<T>()->rows << " cols: " << dbw->h_out<T>()->cols << " nnz: " <<
+			(dbw->h_out<T>()->row_ptr == nullptr ? dbw->h_out<T>()->rows * dbw->h_out<T>()->cols :
+				dbw->h_out<T>()->nnz) << " format: " << (dbw->h_out<T>()->row_ptr == nullptr
+					? "dense" : "sparse") << std::endl;
+
 		if(sparse_input) {
 				std::cout << "launching sparse spoof cellwise kernel " << op_name << " with " << NT * NB
-						  << " threads in " << NB << " blocks without aggregation for " << N << " elements"
-						  << std::endl;
+			  		<< " threads in " << NB << " blocks without aggregation for " << N << " elements" << std::endl;
 		}
 		else {
-			std::cout << "launching spoof cellwise kernel " << op_name << " with " << NT * NB
-					  << " threads in " << NB << " blocks without aggregation for " << N << " elements"
-					  << std::endl;
+			std::cout << "launching spoof cellwise kernel " << op_name << " with " << NT * NB << " threads in " << NB <<
+				" blocks without aggregation for " << N << " elements" << std::endl;
 		}
 #endif
-		
 		CHECK_CUDA(op->program->kernel(op_name)
-						   .instantiate(type_of(value_type), std::max(static_cast<size_t>(1), sides.size()))
-						   .configure(grid, block, shared_mem_size)
-						   .launch(dp.in, dp.sides, dp.out, dp.scalars, N, grix));
+						   .instantiate(type_of(value_type), std::max(static_cast<uint32_t>(1u), dbw->num_sides()))
+						   .configure(grid, block, shared_mem_size, ctx->stream)
+						   .launch(dbw->d_in<T>(0), dbw->d_sides<T>(), dbw->d_out<T>(), dbw->d_scalars<T>(), N, dbw->grix()));
+
+		// copy over row indices from input to output if appropriate
+		if (op->isSparseSafe() && dbw->h_in<T>(0)->row_ptr != nullptr) {
+			// src/dst information (pointer address) is stored in *host* buffer!
+			CHECK_CUDART(cudaMemcpyAsync(dbw->h_out<T>()->row_ptr, dbw->h_in<T>(0)->row_ptr,
+				(dbw->h_in<T>(0)->rows+1) * sizeof(uint32_t), cudaMemcpyDeviceToDevice, ctx->stream));
+			CHECK_CUDART(cudaMemcpyAsync(dbw->h_out<T>()->col_idx, dbw->h_in<T>(0)->col_idx,
+										 (dbw->h_in<T>(0)->nnz) * sizeof(uint32_t), cudaMemcpyDeviceToDevice, ctx->stream));
+		}
 	}
 };
 
 template<typename T>
 struct SpoofCellwise {
-	static void exec(SpoofCUDAContext* ctx, SpoofOperator* _op, std::vector<Matrix<T>>& input,
-			std::vector<Matrix<T>>& sides, Matrix<T>& output, uint32_t grix,
-			DevMatPtrs<T>& dp)  {
-		
-		T value_type;
+	static void exec(SpoofCUDAContext* ctx, SpoofOperator* _op, DataBufferWrapper* dbw) {
 		auto* op = dynamic_cast<SpoofCellwiseOp*>(_op);
-		bool sparse_input = input.front().row_ptr != nullptr;
+		bool sparse_input = dbw->h_in<T>(0)->row_ptr != nullptr;
 		uint32_t NT = 256; // ToDo: num threads
-		uint32_t N = input.front().rows * input.front().cols;
+		uint32_t N = dbw->h_in<T>(0)->rows * dbw->h_in<T>(0)->cols;
 		std::string op_name(op->name + "_DENSE");
 		if(sparse_input) {
 			op_name = std::string(op->name + "_SPARSE");
-			if(op->isSparseSafe() && input.front().nnz > 0)
-				N = input.front().nnz;
+			if(op->isSparseSafe() && dbw->h_in<T>(0)->nnz > 0)
+				N = dbw->h_in<T>(0)->nnz;
 		}
 		
 		switch(op->agg_type) {
 			case SpoofOperator::AggType::FULL_AGG:
 				op->agg_kernel = ctx->template getReductionKernel<T>(std::make_pair(op->agg_type, op->agg_op));
-				SpoofCellwiseFullAgg<T>::exec(op, NT, N, op_name, sides, grix, dp);
+				SpoofCellwiseFullAgg<T>::exec(op, NT, N, op_name, dbw, ctx);
 				break;
 			case SpoofOperator::AggType::ROW_AGG:
-				SpoofCellwiseRowAgg<T>::exec(op, NT, N, op_name, input, sides, grix, dp);
+				SpoofCellwiseRowAgg<T>::exec(op, NT, N, op_name, dbw, ctx);
 				break;
 			case SpoofOperator::AggType::COL_AGG:
-				SpoofCellwiseColAgg<T>::exec(op, NT, N, op_name, sides, grix, dp);
+				SpoofCellwiseColAgg<T>::exec(op, NT, N, op_name, dbw, ctx);
 				break;
 			case SpoofOperator::AggType::NO_AGG:
-				SpoofCellwiseNoAgg<T>::exec(op, NT, N, op_name, input, sides, grix, dp);
+				SpoofCellwiseNoAgg<T>::exec(op, NT, N, op_name, dbw, ctx);
 				break;
 			default:
 				throw std::runtime_error("unknown cellwise agg type" + std::to_string(static_cast<int>(op->agg_type)));

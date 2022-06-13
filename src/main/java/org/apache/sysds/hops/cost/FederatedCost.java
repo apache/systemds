@@ -30,15 +30,20 @@ public class FederatedCost {
 	protected double _outputTransferCost = 0;
 	protected double _inputTotalCost = 0;
 
+	protected double _repetitions = 1;
+	protected double _totalCost;
+
 	public FederatedCost(){}
 
 	public FederatedCost(double readCost, double inputTransferCost, double outputTransferCost,
-		double computeCost, double inputTotalCost){
+		double computeCost, double inputTotalCost, double repetitions){
 		_readCost = readCost;
 		_inputTransferCost = inputTransferCost;
 		_outputTransferCost = outputTransferCost;
 		_computeCost = computeCost;
 		_inputTotalCost = inputTotalCost;
+		_repetitions = repetitions;
+		_totalCost = calcTotal();
 	}
 
 	/**
@@ -46,15 +51,15 @@ public class FederatedCost {
 	 * @return total cost
 	 */
 	public double getTotal(){
-		return _computeCost + _readCost + _inputTransferCost + _outputTransferCost + _inputTotalCost;
+		return _totalCost;
 	}
 
-	/**
-	 * Multiply the input costs by the number of times the costs are repeated.
-	 * @param repetitionNumber number of repetitions of the costs
-	 */
-	public void addRepetitionCost(int repetitionNumber){
-		_inputTotalCost *= repetitionNumber;
+	private double calcTotal(){
+		return (_computeCost + _readCost + _inputTransferCost + _outputTransferCost) * _repetitions + _inputTotalCost;
+	}
+
+	private void updateTotal(){
+		this._totalCost = calcTotal();
 	}
 
 	/**
@@ -75,6 +80,7 @@ public class FederatedCost {
 	 */
 	public void addInputTotalCost(double additionalCost){
 		_inputTotalCost += additionalCost;
+		updateTotal();
 	}
 
 	/**
@@ -82,19 +88,7 @@ public class FederatedCost {
 	 * @param federatedCost input cost from which the total is retrieved
 	 */
 	public void addInputTotalCost(FederatedCost federatedCost){
-		_inputTotalCost += federatedCost.getTotal();
-	}
-
-	/**
-	 * Add costs of FederatedCost object to this object's current costs.
-	 * @param additionalCost object to add to this object
-	 */
-	public void addFederatedCost(FederatedCost additionalCost){
-		_readCost += additionalCost._readCost;
-		_inputTransferCost += additionalCost._inputTransferCost;
-		_outputTransferCost += additionalCost._outputTransferCost;
-		_computeCost += additionalCost._computeCost;
-		_inputTotalCost += additionalCost._inputTotalCost;
+		addInputTotalCost(federatedCost.getTotal());
 	}
 
 	@Override
@@ -110,6 +104,8 @@ public class FederatedCost {
 		builder.append(_outputTransferCost);
 		builder.append("\n inputTotalCost: ");
 		builder.append(_inputTotalCost);
+		builder.append("\n repetitions: ");
+		builder.append(_repetitions);
 		builder.append("\n total cost: ");
 		builder.append(getTotal());
 		return builder.toString();

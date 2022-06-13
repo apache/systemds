@@ -29,7 +29,10 @@ else {
   Y = t(X) * 7;
 }
 
-while(FALSE) { }
+Z1 = Y %*% seq(1, ncol(Y));
 
-s = X %*% Y;
+Z2 = X %*% Y;
+
+s = sum(Z1) + Z2;
+
 write(s, $5);

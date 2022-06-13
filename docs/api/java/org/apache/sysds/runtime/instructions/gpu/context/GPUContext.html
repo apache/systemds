@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":9,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.instructions.gpu.context.GPUContext</li>
@@ -132,7 +132,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <hr>
 <pre>public class <span class="typeNameLabel">GPUContext</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
 <div class="block">Represents a context per GPU accessible through the same JVM.
  Each context holds cublas, cusparse, cudnn... handles which are separate for each GPU.</div>
 </li>
@@ -157,165 +157,174 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>jcuda.Pointer</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocate(java.lang.String,long)">allocate</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocate(java.lang.String,long)">allocate</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName,
         long&nbsp;size)</code></th>
+<td class="colLast">
+<div class="block">Default behavior for gpu memory allocation (init to zero)</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>jcuda.Pointer</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocate(java.lang.String,long,boolean)">allocate</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName,
+        long&nbsp;size,
+        boolean&nbsp;initialize)</code></th>
 <td class="colLast">
 <div class="block">Invokes memory manager's malloc method</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clearMemory()">clearMemory</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Clears all memory used by this <a href="GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUContext</code></a>.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clearTemporaryMemory()">clearTemporaryMemory</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createGPUObject(org.apache.sysds.runtime.controlprogram.caching.MatrixObject)">createGPUObject</a></span>&#8203;(<a href="../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo)</code></th>
 <td class="colLast">
 <div class="block">Instantiates a new <a href="GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context"><code>GPUObject</code></a> initialized with the given <a href="../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching"><code>MatrixObject</code></a>.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cudaFreeHelper(java.lang.String,jcuda.Pointer,boolean)">cudaFreeHelper</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cudaFreeHelper(java.lang.String,jcuda.Pointer,boolean)">cudaFreeHelper</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName,
               jcuda.Pointer&nbsp;toFree,
               boolean&nbsp;eager)</code></th>
 <td class="colLast">
 <div class="block">Does cudaFree calls, lazily.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cudaGetDevice()">cudaGetDevice</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns which device is currently being used.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#destroy()">destroy</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Destroys this GPUContext object.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#ensureComputeCapability()">ensureComputeCapability</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Makes sure that GPU that SystemDS is trying to use has the minimum compute capability needed.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAvailableMemory()">getAvailableMemory</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Gets the available memory on GPU that SystemDS can use.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>jcuda.jcublas.cublasHandle</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCublasHandle()">getCublasHandle</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns cublasHandle for BLAS operations on the GPU.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>jcuda.jcudnn.cudnnHandle</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCudnnHandle()">getCudnnHandle</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns the cudnnHandle for Deep Neural Network operations on the GPU.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>jcuda.jcusolver.cusolverDnHandle</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCusolverDnHandle()">getCusolverDnHandle</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns cusolverDnHandle for invoking solve() function on dense matrices on the GPU.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>jcuda.jcusparse.cusparseHandle</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCusparseHandle()">getCusparseHandle</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns cusparseHandle for certain sparse BLAS operations on the GPU.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDeviceNum()">getDeviceNum</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns which device is assigned to this GPUContext instance.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>jcuda.runtime.cudaDeviceProp</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getGPUProperties()">getGPUProperties</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Gets the device properties for the active GPU (set with cudaSetDevice()).</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code><a href="JCudaKernels.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">JCudaKernels</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getKernels()">getKernels</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns utility class used to launch custom CUDA kernel, specific to the active GPU for this GPUContext.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMaxBlocks()">getMaxBlocks</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Gets the maximum number of blocks supported by the active cuda device.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMaxSharedMemory()">getMaxSharedMemory</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Gets the shared memory per block supported by the active cuda device.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMaxThreadsPerBlock()">getMaxThreadsPerBlock</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Gets the maximum number of threads per block for "active" GPU.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="GPUMemoryManager.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUMemoryManager</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMemoryManager()">getMemoryManager</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getWarpSize()">getWarpSize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Gets the warp size supported by the active cuda device.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initializeThread()">initializeThread</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Sets the device for the calling thread.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#printMemoryInfo(java.lang.String)">printMemoryInfo</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#printMemoryInfo(java.lang.String)">printMemoryInfo</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</code></th>
 <td class="colLast">
 <div class="block">Print information of memory usage.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shallowCopyGPUObject(org.apache.sysds.runtime.instructions.gpu.context.GPUObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject)">shallowCopyGPUObject</a></span>&#8203;(<a href="GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a>&nbsp;source,
                     <a href="../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;mo)</code></th>
@@ -324,8 +333,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  assign that to the given <a href="../../../controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching"><code>MatrixObject</code></a>.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
+<tr id="i25" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -334,8 +343,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -382,7 +391,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>printMemoryInfo</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;printMemoryInfo&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;printMemoryInfo&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</pre>
 <div class="block">Print information of memory usage.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -414,8 +423,29 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Sets the device for the calling thread.
  This method must be called after
  <a href="../../../controlprogram/context/ExecutionContext.html#getGPUContext(int)"><code>ExecutionContext.getGPUContext(int)</code></a>
- If in a multi-threaded environment like parfor, this method must be called when in the
+ If in a multithreaded environment like parfor, this method must be called when in the
  appropriate thread.</div>
+</li>
+</ul>
+<a id="allocate(java.lang.String,long,boolean)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>allocate</h4>
+<pre class="methodSignature">public&nbsp;jcuda.Pointer&nbsp;allocate&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName,
+                              long&nbsp;size,
+                              boolean&nbsp;initialize)</pre>
+<div class="block">Invokes memory manager's malloc method</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>instructionName</code> - name of instruction for which to record per instruction performance statistics, null if
+                        you don't want to record</dd>
+<dd><code>size</code> - size of data (in bytes) to allocate</dd>
+<dd><code>initialize</code> - if cudaMemset() should be called</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>jcuda pointer</dd>
+</dl>
 </li>
 </ul>
 <a id="allocate(java.lang.String,long)">
@@ -424,13 +454,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>allocate</h4>
-<pre class="methodSignature">public&nbsp;jcuda.Pointer&nbsp;allocate&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName,
+<pre class="methodSignature">public&nbsp;jcuda.Pointer&nbsp;allocate&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName,
                               long&nbsp;size)</pre>
-<div class="block">Invokes memory manager's malloc method</div>
+<div class="block">Default behavior for gpu memory allocation (init to zero)</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>instructionName</code> - name of instruction for which to record per instruction performance statistics, null if don't want to record</dd>
-<dd><code>size</code> - size of data (in bytes) to allocate</dd>
+<dd><code>instructionName</code> - Name of the instruction calling allocate</dd>
+<dd><code>size</code> - size in bytes</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>jcuda pointer</dd>
 </dl>
@@ -442,13 +472,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>cudaFreeHelper</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;cudaFreeHelper&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName,
+<pre class="methodSignature">public&nbsp;void&nbsp;cudaFreeHelper&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;instructionName,
                            jcuda.Pointer&nbsp;toFree,
                            boolean&nbsp;eager)</pre>
 <div class="block">Does cudaFree calls, lazily.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>instructionName</code> - name of the instruction for which to record per instruction free time, null if do not want to record</dd>
+<dd><code>instructionName</code> - name of the instruction for which to record per instruction free time, null if you do not
+                        want to record</dd>
 <dd><code>toFree</code> - <code>Pointer</code> instance to be freed</dd>
 <dd><code>eager</code> - true if to be done eagerly</dd>
 </dl>
@@ -693,10 +724,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockListLast">
 <li class="blockList">
 <h4>toString</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;toString()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -769,7 +800,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

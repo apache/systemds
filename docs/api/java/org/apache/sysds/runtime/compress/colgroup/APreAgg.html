@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":6,"i3":6,"i4":10,"i5":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":6,"i5":6,"i6":10,"i7":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.AColGroup</a></li>
@@ -147,11 +147,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code>, <code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Cloneable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Cloneable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code>, <code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Cloneable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Cloneable</a></code></dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
-<dd><code><a href="ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a></code>, <code><a href="ColGroupSDCSingleZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCSingleZeros</a></code>, <code><a href="ColGroupSDCZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCZeros</a></code></dd>
+<dd><code><a href="ASDCZero.html" title="class in org.apache.sysds.runtime.compress.colgroup">ASDCZero</a></code>, <code><a href="ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a></code></dd>
 </dl>
 <hr>
 <pre>public abstract class <span class="typeNameLabel">APreAgg</span>
@@ -199,6 +199,11 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPreAggregateSize()">getPreAggregateSize</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
                    <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
@@ -206,42 +211,54 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 <div class="block">Left side matrix multiplication with a column group that is transposed.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#leftMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">leftMultByMatrix</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
-                <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mmWithDictionary(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int)">mmWithDictionary</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;preAgg,
+                <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;tmpRes,
+                <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
+                int&nbsp;k,
                 int&nbsp;rl,
                 int&nbsp;ru)</code></th>
-<td class="colLast">
-<div class="block">Multiply with a matrix on the left.</div>
-</td>
-</tr>
-<tr id="i2" class="altColor">
-<td class="colFirst"><code>abstract void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preAggregate(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">preAggregate</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
-            <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;preAgg,
-            int&nbsp;rl,
-            int&nbsp;ru)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">preAggregateDense</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
-                 <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;preAgg,
-                 int&nbsp;rl,
-                 int&nbsp;ru,
-                 int&nbsp;vl,
-                 int&nbsp;vu)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preAggregate(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int)">preAggregate</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+            double[]&nbsp;preAgg,
+            int&nbsp;rl,
+            int&nbsp;ru)</code></th>
+<td class="colLast">
+<div class="block">Pre aggregate a matrix block into a pre aggregate target (first step of left matrix multiplication)</div>
+</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code><a href="dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
+<td class="colFirst"><code>abstract void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int)">preAggregateDense</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                 double[]&nbsp;preAgg,
+                 int&nbsp;rl,
+                 int&nbsp;ru,
+                 int&nbsp;cl,
+                 int&nbsp;cu)</code></th>
+<td class="colLast">
+<div class="block">Pre aggregate a dense matrix block into a pre aggregate target (first step of left matrix multiplication)</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>abstract void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a></span>&#8203;(<a href="../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                  double[]&nbsp;preAgg,
+                  int&nbsp;rl,
+                  int&nbsp;ru)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code><a href="dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preAggregateThatIndexStructure(org.apache.sysds.runtime.compress.colgroup.APreAgg)">preAggregateThatIndexStructure</a></span>&#8203;(<a href="APreAgg.html" title="class in org.apache.sysds.runtime.compress.colgroup">APreAgg</a>&nbsp;that)</code></th>
 <td class="colLast">
 <div class="block">Pre aggregate into a dictionary.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
@@ -257,28 +274,28 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></h3>
-<code><a href="AColGroupValue.html#addMatrixToResult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">addMatrixToResult</a>, <a href="AColGroupValue.html#containsValue(double)">containsValue</a>, <a href="AColGroupValue.html#copy()">copy</a>, <a href="AColGroupValue.html#copyAndSet(double%5B%5D)">copyAndSet</a>, <a href="AColGroupValue.html#copyAndSet(int%5B%5D,double%5B%5D)">copyAndSet</a>, <a href="AColGroupValue.html#copyAndSet(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary)">copyAndSet</a>, <a href="AColGroupValue.html#copyAndSet(org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary)">copyAndSet</a>, <a href="AColGroupValue.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int,int,int)">decompressToDenseBlock</a>, <a href="AColGroupValue.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a>, <a href="AColGroupValue.html#estimateInMemorySize()">estimateInMemorySize</a>, <a href="AColGroupValue.html#getCachedCounts()">getCachedCounts</a>, <a href="AColGroupValue.html#getCounts()">getCounts</a>, <a href="AColGroupValue.html#getCounts(int%5B%5D)">getCounts</a>, <a href="AColGroupValue.html#getDictionary()">getDictionary</a>, <a href="AColGroupValue.html#getExactSizeOnDisk()">getExactSizeOnDisk</a>, <a href="AColGroupValue.html#getNumberNonZeros(int)">getNumberNonZeros</a>, <a href="AColGroupValue.html#getNumValues()">getNumValues</a>, <a href="AColGroupValue.html#getValuesAsBlock()">getValuesAsBlock</a>, <a href="AColGroupValue.html#leftMultByPreAggregateMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByPreAggregateMatrix</a>, <a href="AColGroupValue.html#readFields(java.io.DataInput)">readFields</a>, <a href="AColGroupValue.html#replace(double,double)">replace</a>, <a href="AColGroupValue.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a>, <a href="AColGroupValue.html#toString()">toString</a>, <a href="AColGroupValue.html#write(java.io.DataOutput)">write</a></code></li>
+<code><a href="AColGroupValue.html#centralMoment(org.apache.sysds.runtime.matrix.operators.CMOperator,int)">centralMoment</a>, <a href="AColGroupValue.html#computeColSums(double%5B%5D,int)">computeColSums</a>, <a href="AColGroupValue.html#containsValue(double)">containsValue</a>, <a href="AColGroupValue.html#copy()">copy</a>, <a href="AColGroupValue.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int,int,int)">decompressToDenseBlock</a>, <a href="AColGroupValue.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a>, <a href="AColGroupValue.html#estimateInMemorySize()">estimateInMemorySize</a>, <a href="AColGroupValue.html#forceMatrixBlockDictionary()">forceMatrixBlockDictionary</a>, <a href="AColGroupValue.html#getCachedCounts()">getCachedCounts</a>, <a href="AColGroupValue.html#getCounts()">getCounts</a>, <a href="AColGroupValue.html#getCounts(int%5B%5D)">getCounts</a>, <a href="AColGroupValue.html#getDictionary()">getDictionary</a>, <a href="AColGroupValue.html#getExactSizeOnDisk()">getExactSizeOnDisk</a>, <a href="AColGroupValue.html#getNumberNonZeros(int)">getNumberNonZeros</a>, <a href="AColGroupValue.html#getNumValues()">getNumValues</a>, <a href="AColGroupValue.html#readFields(java.io.DataInput)">readFields</a>, <a href="AColGroupValue.html#replace(double,double)">replace</a>, <a href="AColGroupValue.html#rexpandCols(int,boolean,boolean,int)">rexpandCols</a>, <a href="AColGroupValue.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a>, <a href="AColGroupValue.html#toString()">toString</a>, <a href="AColGroupValue.html#write(java.io.DataOutput)">write</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a></h3>
-<code><a href="AColGroupCompressed.html#computeColSums(double%5B%5D,int)">computeColSums</a>, <a href="AColGroupCompressed.html#getMax()">getMax</a>, <a href="AColGroupCompressed.html#getMin()">getMin</a>, <a href="AColGroupCompressed.html#tsmm(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">tsmm</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int)">unaryAggregateOperations</a></code></li>
+<code><a href="AColGroupCompressed.html#getMax()">getMax</a>, <a href="AColGroupCompressed.html#getMin()">getMin</a>, <a href="AColGroupCompressed.html#preAggRows(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">preAggRows</a>, <a href="AColGroupCompressed.html#tsmm(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">tsmm</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int)">unaryAggregateOperations</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int,double%5B%5D)">unaryAggregateOperations</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.AColGroup">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></h3>
-<code><a href="AColGroup.html#binaryRowOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,boolean)">binaryRowOpLeft</a>, <a href="AColGroup.html#binaryRowOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,boolean)">binaryRowOpRight</a>, <a href="AColGroup.html#colSum(java.util.List,double%5B%5D,int)">colSum</a>, <a href="AColGroup.html#decompressToBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">decompressToBlock</a>, <a href="AColGroup.html#decompressToBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">decompressToBlock</a>, <a href="AColGroup.html#get(int,int)">get</a>, <a href="AColGroup.html#getColIndices()">getColIndices</a>, <a href="AColGroup.html#getCompType()">getCompType</a>, <a href="AColGroup.html#getIdx(int,int)">getIdx</a>, <a href="AColGroup.html#getNumCols()">getNumCols</a>, <a href="AColGroup.html#scalarOperation(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">scalarOperation</a>, <a href="AColGroup.html#shiftColIndices(int)">shiftColIndices</a>, <a href="AColGroup.html#sliceColumn(int)">sliceColumn</a>, <a href="AColGroup.html#sliceColumns(int,int)">sliceColumns</a></code></li>
+<code><a href="AColGroup.html#binaryRowOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,boolean)">binaryRowOpLeft</a>, <a href="AColGroup.html#binaryRowOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,boolean)">binaryRowOpRight</a>, <a href="AColGroup.html#colSum(java.util.List,double%5B%5D,int)">colSum</a>, <a href="AColGroup.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int)">decompressToDenseBlock</a>, <a href="AColGroup.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int)">decompressToSparseBlock</a>, <a href="AColGroup.html#get(int,int)">get</a>, <a href="AColGroup.html#getColIndices()">getColIndices</a>, <a href="AColGroup.html#getCompType()">getCompType</a>, <a href="AColGroup.html#getCost(org.apache.sysds.runtime.compress.cost.ComputationCostEstimator,int)">getCost</a>, <a href="AColGroup.html#getIdx(int,int)">getIdx</a>, <a href="AColGroup.html#getNumCols()">getNumCols</a>, <a href="AColGroup.html#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">leftMultByMatrixNoPreAgg</a>, <a href="AColGroup.html#scalarOperation(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">scalarOperation</a>, <a href="AColGroup.html#shiftColIndices(int)">shiftColIndices</a>, <a href="AColGroup.html#sliceColumn(int)">sliceColumn</a>, <a href="AColGroup.html#sliceColumns(int,int)">sliceColumns</a>, <a href="AColGroup.html#unaryOperation(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">unaryOperation</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -344,35 +361,13 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 </dl>
 </li>
 </ul>
-<a id="leftMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>leftMultByMatrix</h4>
-<pre class="methodSignature">public final&nbsp;void&nbsp;leftMultByMatrix&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
-                                   <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
-                                   int&nbsp;rl,
-                                   int&nbsp;ru)</pre>
-<div class="block">Multiply with a matrix on the left.</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="AColGroup.html#leftMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">leftMultByMatrix</a></code>&nbsp;in class&nbsp;<code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>matrix</code> - Matrix Block to left multiply with</dd>
-<dd><code>result</code> - Matrix Block result</dd>
-<dd><code>rl</code> - The row to start the matrix multiplication from</dd>
-<dd><code>ru</code> - The row to stop the matrix multiplication at.</dd>
-</dl>
-</li>
-</ul>
 <a id="preAggregateThatIndexStructure(org.apache.sysds.runtime.compress.colgroup.APreAgg)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>preAggregateThatIndexStructure</h4>
-<pre class="methodSignature">public final&nbsp;<a href="dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;preAggregateThatIndexStructure&#8203;(<a href="APreAgg.html" title="class in org.apache.sysds.runtime.compress.colgroup">APreAgg</a>&nbsp;that)</pre>
+<pre class="methodSignature">public final&nbsp;<a href="dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;preAggregateThatIndexStructure&#8203;(<a href="APreAgg.html" title="class in org.apache.sysds.runtime.compress.colgroup">APreAgg</a>&nbsp;that)</pre>
 <div class="block">Pre aggregate into a dictionary. It is assumed that "that" have more distinct values than, "this".</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -382,30 +377,83 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 </dl>
 </li>
 </ul>
-<a id="preAggregate(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">
+<a id="preAggregate(org.apache.sysds.runtime.matrix.data.MatrixBlock,double[],int,int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>preAggregate</h4>
-<pre class="methodSignature">public abstract&nbsp;void&nbsp;preAggregate&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
-                                  <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;preAgg,
-                                  int&nbsp;rl,
-                                  int&nbsp;ru)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;preAggregate&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                         double[]&nbsp;preAgg,
+                         int&nbsp;rl,
+                         int&nbsp;ru)</pre>
+<div class="block">Pre aggregate a matrix block into a pre aggregate target (first step of left matrix multiplication)</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>m</code> - The matrix to preAggregate</dd>
+<dd><code>preAgg</code> - The preAggregate target</dd>
+<dd><code>rl</code> - Row lower on the left side matrix</dd>
+<dd><code>ru</code> - Row upper on the left side matrix</dd>
+</dl>
 </li>
 </ul>
-<a id="preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">
+<a id="preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double[],int,int,int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>preAggregateDense</h4>
+<pre class="methodSignature">public abstract&nbsp;void&nbsp;preAggregateDense&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                                       double[]&nbsp;preAgg,
+                                       int&nbsp;rl,
+                                       int&nbsp;ru,
+                                       int&nbsp;cl,
+                                       int&nbsp;cu)</pre>
+<div class="block">Pre aggregate a dense matrix block into a pre aggregate target (first step of left matrix multiplication)</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>m</code> - The matrix to preAggregate</dd>
+<dd><code>preAgg</code> - The preAggregate target</dd>
+<dd><code>rl</code> - Row lower on the left side matrix</dd>
+<dd><code>ru</code> - Row upper on the left side matrix</dd>
+<dd><code>cl</code> - Column lower on the left side matrix (or row lower in the column group)</dd>
+<dd><code>cu</code> - Column upper on the left side matrix (or row upper in the column group)</dd>
+</dl>
+</li>
+</ul>
+<a id="preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double[],int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>preAggregateSparse</h4>
+<pre class="methodSignature">public abstract&nbsp;void&nbsp;preAggregateSparse&#8203;(<a href="../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                                        double[]&nbsp;preAgg,
+                                        int&nbsp;rl,
+                                        int&nbsp;ru)</pre>
+</li>
+</ul>
+<a id="getPreAggregateSize()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getPreAggregateSize</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getPreAggregateSize()</pre>
+</li>
+</ul>
+<a id="mmWithDictionary(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>preAggregateDense</h4>
-<pre class="methodSignature">public abstract&nbsp;void&nbsp;preAggregateDense&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
-                                       <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;preAgg,
-                                       int&nbsp;rl,
-                                       int&nbsp;ru,
-                                       int&nbsp;vl,
-                                       int&nbsp;vu)</pre>
+<h4>mmWithDictionary</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;mmWithDictionary&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;preAgg,
+                             <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;tmpRes,
+                             <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
+                             int&nbsp;k,
+                             int&nbsp;rl,
+                             int&nbsp;ru)</pre>
 </li>
 </ul>
 </li>
@@ -477,7 +525,7 @@ extends <a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.c
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

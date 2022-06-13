@@ -123,7 +123,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="AIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AIterator</a></th>
 <td class="colLast">
-<div class="block">Iterator interface, that returns a iterator of the indexes (not offsets)</div>
+<div class="block">Iterator interface, that returns a iterator of the indexes while also maintaining a data index.</div>
 </td>
 </tr>
 <tr class="rowColor">
@@ -133,11 +133,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="AOffsetIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffsetIterator</a></th>
+<td class="colLast">
+<div class="block">Iterator interface that only iterate through offsets without considering data index.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="OffsetByte.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">OffsetByte</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="OffsetChar.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">OffsetChar</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="OffsetSingle.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">OffsetSingle</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="OffsetTwo.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">OffsetTwo</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -153,7 +167,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="OffsetFactory.OFF_TYPE.html" title="enum in org.apache.sysds.runtime.compress.colgroup.offset">OffsetFactory.OFF_TYPE</a></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">The specific underlying types of offsets.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -206,7 +222,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

@@ -19,12 +19,13 @@
 #
 # -------------------------------------------------------------
 
-from typing import Tuple, List
 import json
 import os
 import re
-from parser import FunctionParser
+import sys
 import traceback
+from parser import FunctionParser
+from typing import List, Tuple
 
 
 class PythonAPIFileGenerator(object):
@@ -89,7 +90,7 @@ class PythonAPIFileGenerator(object):
                 init_file.write(self.init_import.format(function=f))
             init_file.write("\n")
             init_file.write(self.init_all.format(
-                functions=self.function_names).replace(",",",\n"))
+                functions=self.function_names).replace(",", ",\n"))
 
 
 class PythonAPIFunctionGenerator(object):
@@ -141,30 +142,57 @@ class PythonAPIFunctionGenerator(object):
             function_name=function_name, parameters=parameters, header=header,
             params_dict=params_dict, api_call=api_call)
 
+    def replace_types(self,  item: str):
+        pattern = self.__class__.type_mapping_pattern
+        return self.__class__.type_mapping["type"].get(re.search(pattern, str(
+            item).lower()).group() if item else item.lower(), item)
+
     def format_param_string(self, parameters: List[Tuple[str]], nameLength: int) -> str:
-        result = []
-        has_optional = False
-        path = os.path.dirname(__file__)
-        newline_spacing = "\n" + " " * (nameLength + 5)
-        for param in parameters:
-            # map data types
-            pattern = self.__class__.type_mapping_pattern
-            param = [self.__class__.type_mapping["type"].get(re.search(pattern, str(
-                item).lower()).group() if item else str(item).lower(), item) for item in param]
-            if param[2] is not None:
-                has_optional = True
+        try:
+            result = []
+            has_optional = False
+            path = os.path.dirname(__file__)
+            newline_spacing = "\n" + " " * (nameLength + 5)
+
+            for param in parameters:
+                # map data types
+                # pattern = self.__class__.type_mapping_pattern
+                # print(param)
+                param[1] = self.replace_types(param[1])
+                # print(param)
+                if "[" in param[1] or "[" in param[0]:
+                    raise AttributeError(
+                        "Failed parsing param" + str(param) + "\n" + str(parameters))
+                if param[2] is not None:
+                    has_optional = True
+                    # result.append("{nl}{name}: {typ},".format(
+                    #     result=result, name=param[0], typ=param[1],
+                    #     nl=newline_spacing))
+                else:
+                    # has_optional = False
+                    result.append("{nl}{name}: {typ},".format(
+                        result=result, name=param[0], typ=param[1],
+                        nl=newline_spacing))
+            if len(result) == 0:
+                result = ""
+                # if has_optional:
+                # result = u"{kwargs}".format(
+                #     result=result, kwargs=self.__class__.kwargs_parameter_string,
+                #     nl=newline_spacing)
             else:
-                result.append("{nl}{name}: {typ},".format(
-                    result=result, name=param[0], typ=param[1],
-                    nl=newline_spacing))
-        result[0] = result[0][len(newline_spacing):]
-        result[-1] = result[-1][:-1]
-        result = "".join(result)
-        if has_optional:
-            result = u"{result},{nl}{kwargs}".format(
-                result=result, kwargs=self.__class__.kwargs_parameter_string,
-                nl=newline_spacing)
-        return result
+                result[0] = result[0][len(newline_spacing):]
+                result[-1] = result[-1][:-1]
+                result = "".join(result)
+                if has_optional:
+                    result = u"{result},{nl}{kwargs}".format(
+                        result=result, kwargs=self.__class__.kwargs_parameter_string,
+                        nl=newline_spacing)
+
+            # print("\n\n" +str(parameters) + "\n\n " +result)
+            return result
+        except Exception as e:
+            raise AttributeError("Failed Formatting parameter strings: " +
+                                 str(parameters) + " " + format_exception(e))
 
     def format_params_dict_string(self, parameters: List[Tuple[str]]) -> str:
         if not len(parameters):
@@ -219,7 +247,8 @@ class PythonAPIFunctionGenerator(object):
             if(output_type):
                 output_type = output_type[0].upper()
             else:
-                raise AttributeError("Error in pattern match")
+                raise AttributeError("Error in pattern match: " + str(value) + "\n" +
+                                     function_name + "\n" + str(parameters) + "\n" + str(return_values))
             result = ("{sds_context}," +
                       "\n        \'{function_name}\'," +
                       "\n        named_input_nodes=params_dict").format(
@@ -317,6 +346,21 @@ class PythonAPIDocumentationGenerator(object):
         return meaning_str
 
 
+def format_exception(e):
+    exception_list = traceback.format_stack()
+    exception_list = exception_list[:-2]
+    exception_list.extend(traceback.format_tb(sys.exc_info()[2]))
+    exception_list.extend(traceback.format_exception_only(
+        sys.exc_info()[0], sys.exc_info()[1]))
+
+    exception_str = "Traceback (most recent call last):\n"
+    exception_str += "".join(exception_list)
+    # Removing the last \n
+    exception_str = exception_str[:-1]
+
+    return exception_str
+
+
 if __name__ == "__main__":
     if "python" in os.getcwd():
         source_path = os.path.join("../../../", 'scripts', 'builtin')
@@ -337,9 +381,8 @@ if __name__ == "__main__":
                 header_data)
             script_content = fun_generator.generate_function(data)
         except Exception as e:
-            traceback.print_exc()
-            print("[ERROR] error in : \'{file_name}\'.".format(
-                file_name=dml_file))
+            print("[ERROR] error in : \'{file_name}\' \n{err} \n{trace}.".format(
+                file_name=dml_file, err=e, trace=format_exception(e)))
             continue
         file_generator.generate_file(
             data["function_name"], script_content, dml_file)

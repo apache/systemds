@@ -226,6 +226,14 @@ public class ReorgOp extends MultiThreadedHop
 
 
 	@Override
+	public void computeMemEstimate(MemoTable memo){
+		if(_op == ReOrgOp.TRANS && getInput().get(0).isCompressedOutput() )
+			_outputMemEstimate = getInput().get(0).getCompressedSize();
+		else
+			super.computeMemEstimate(memo);
+	}
+
+	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz ) {
 		//no dedicated mem estimation per op type, because always propagated via refreshSizeInformation
 		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
@@ -366,8 +374,6 @@ public class ReorgOp extends MultiThreadedHop
 			checkAndSetInvalidCPDimsAndSize();
 		}
 
-		updateETFed();
-		
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

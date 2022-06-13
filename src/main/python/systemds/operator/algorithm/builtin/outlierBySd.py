@@ -32,9 +32,28 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def outlierBySd(X: Matrix,
                 max_iterations: int,
                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param k: threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
+    :param repairMethod: values: 0 = delete rows having outliers, 1 = replace outliers as  zeros
+    :param max_iterations: values: 0 = arbitrary number of iteration until all outliers are removed,
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'max_iterations': max_iterations}
     params_dict.update(kwargs)
-    return Matrix(X.sds_context,
-        'outlierBySd',
-        named_input_nodes=params_dict)
+    
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    vX_2 = Matrix(X.sds_context, '')
+    vX_3 = Scalar(X.sds_context, '')
+    vX_4 = Scalar(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, vX_2, vX_3, vX_4, ]
+
+    op = MultiReturn(X.sds_context, 'outlierBySd', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+    vX_2._unnamed_input_nodes = [op]
+    vX_3._unnamed_input_nodes = [op]
+    vX_4._unnamed_input_nodes = [op]
+
+    return op

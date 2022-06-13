@@ -24,3 +24,7 @@ X = federated(type="frame", addresses=list($X1, $X2),
 
 Z = as.matrix(X)
 print(toString(Z[1]))
+
+while(FALSE) { }
+sZ = sum(Z);
+print("Sum: " + sZ);

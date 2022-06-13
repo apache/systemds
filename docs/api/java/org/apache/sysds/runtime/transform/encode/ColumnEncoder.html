@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -120,7 +120,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
-<li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
+<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.transform.encode.ColumnEncoder</li>
@@ -132,16 +132,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io" class="externalLink">Externalizable</a></code>, <code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code>, <code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Comparable</a>&lt;<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;</code>, <code><a href="Encoder.html" title="interface in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Externalizable.html?is-external=true" title="class or interface in java.io" class="externalLink">Externalizable</a></code>, <code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html?is-external=true" title="class or interface in java.io" class="externalLink">Serializable</a></code>, <code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Comparable</a>&lt;<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;</code>, <code><a href="Encoder.html" title="interface in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
-<dd><code><a href="ColumnEncoderBin.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderBin</a></code>, <code><a href="ColumnEncoderComposite.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderComposite</a></code>, <code><a href="ColumnEncoderDummycode.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderDummycode</a></code>, <code><a href="ColumnEncoderFeatureHash.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderFeatureHash</a></code>, <code><a href="ColumnEncoderPassThrough.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderPassThrough</a></code>, <code><a href="ColumnEncoderRecode.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderRecode</a></code></dd>
+<dd><code><a href="ColumnEncoderBin.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderBin</a></code>, <code><a href="ColumnEncoderComposite.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderComposite</a></code>, <code><a href="ColumnEncoderDummycode.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderDummycode</a></code>, <code><a href="ColumnEncoderFeatureHash.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderFeatureHash</a></code>, <code><a href="ColumnEncoderPassThrough.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderPassThrough</a></code>, <code><a href="ColumnEncoderRecode.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderRecode</a></code>, <code><a href="ColumnEncoderUDF.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoderUDF</a></code></dd>
 </dl>
 <hr>
 <pre>public abstract class <span class="typeNameLabel">ColumnEncoder</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>
-implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.transform.encode">Encoder</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Comparable</a>&lt;<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;</pre>
+extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>
+implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.transform.encode">Encoder</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Comparable</a>&lt;<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;</pre>
 <div class="block">Base class for all transform encoders providing both a row and block interface for decoding frames to matrices.</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -191,6 +191,11 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#APPLY_ROW_BLOCKS_PER_COLUMN">APPLY_ROW_BLOCKS_PER_COLUMN</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#BUILD_ROW_BLOCKS_PER_COLUMN">BUILD_ROW_BLOCKS_PER_COLUMN</a></span></code></th>
 <td class="colLast">&nbsp;</td>
@@ -244,19 +249,19 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getApplyTasks(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">getApplyTasks</a></span>&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
              <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
              int&nbsp;outputCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBuildTask(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">getBuildTask</a></span>&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBuildTasks(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">getBuildTasks</a></span>&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -273,70 +278,80 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 </td>
 </tr>
 <tr id="i9" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPartialBuildTask(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,int,int,java.util.HashMap)">getPartialBuildTask</a></span>&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
-                   int&nbsp;startRow,
-                   int&nbsp;blockSize,
-                   <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;ret)</code></th>
+<td class="colFirst"><code>long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEstMetaSize()">getEstMetaSize</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPartialMergeBuildTask(java.util.HashMap)">getPartialMergeBuildTask</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;?&gt;&nbsp;ret)</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPartialBuildTask(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,int,int,java.util.HashMap)">getPartialBuildTask</a></span>&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
+                   int&nbsp;startRow,
+                   int&nbsp;blockSize,
+                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i11" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util" class="externalLink">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSparseRowsWZeros()">getSparseRowsWZeros</a></span>()</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPartialMergeBuildTask(java.util.HashMap)">getPartialMergeBuildTask</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;?&gt;&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i12" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Set.html?is-external=true" title="class or interface in java.util" class="externalLink">Set</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSparseRowsWZeros()">getSparseRowsWZeros</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isApplicable()">isApplicable</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Indicates if this encoder is applicable, i.e, if there is a column to encode.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isApplicable(int)">isApplicable</a></span>&#8203;(int&nbsp;colID)</code></th>
 <td class="colLast">
 <div class="block">Indicates if this encoder is applicable for the given column ID, i.e., if it is subject to this transformation.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mergeAt(org.apache.sysds.runtime.transform.encode.ColumnEncoder)">mergeAt</a></span>&#8203;(<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&nbsp;other)</code></th>
 <td class="colLast">
 <div class="block">Merges another encoder, of a compatible type, in after a certain position.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#prepareBuildPartial()">prepareBuildPartial</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Allocates internal data structures for partial build.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readExternal(java.io.ObjectInput)">readExternal</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readExternal(java.io.ObjectInput)">readExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)</code></th>
 <td class="colLast">
 <div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
  efficient broadcast/rdd deserialization.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setColID(int)">setColID</a></span>&#8203;(int&nbsp;colID)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setEstMetaSize(long)">setEstMetaSize</a></span>&#8203;(long&nbsp;estSize)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shiftCol(int)">shiftCol</a></span>&#8203;(int&nbsp;columnOffset)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#updateIndexRanges(long%5B%5D,long%5B%5D,int)">updateIndexRanges</a></span>&#8203;(long[]&nbsp;beginDims,
                  long[]&nbsp;endDims,
@@ -345,9 +360,9 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <div class="block">Update index-ranges to after encoding.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeExternal(java.io.ObjectOutput)">writeExternal</a></span>&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;os)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeExternal(java.io.ObjectOutput)">writeExternal</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;os)</code></th>
 <td class="colLast">
 <div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
  efficient broadcast/rdd serialization.</div>
@@ -358,8 +373,8 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
+<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.transform.encode.Encoder">
@@ -384,6 +399,15 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <!--   -->
 </a>
 <h3>Field Detail</h3>
+<a id="APPLY_ROW_BLOCKS_PER_COLUMN">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>APPLY_ROW_BLOCKS_PER_COLUMN</h4>
+<pre>public static&nbsp;int APPLY_ROW_BLOCKS_PER_COLUMN</pre>
+</li>
+</ul>
 <a id="BUILD_ROW_BLOCKS_PER_COLUMN">
 <!--   -->
 </a>
@@ -557,17 +581,17 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <ul class="blockList">
 <li class="blockList">
 <h4>writeExternal</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;writeExternal&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;os)
-                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;writeExternal&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectOutput</a>&nbsp;os)
+                   throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
  efficient broadcast/rdd serialization.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#writeExternal(java.io.ObjectOutput)" title="class or interface in java.io" class="externalLink">writeExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io" class="externalLink">Externalizable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Externalizable.html?is-external=true#writeExternal(java.io.ObjectOutput)" title="class or interface in java.io" class="externalLink">writeExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Externalizable.html?is-external=true" title="class or interface in java.io" class="externalLink">Externalizable</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>os</code> - object output</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
 </dl>
 </li>
 </ul>
@@ -577,17 +601,17 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <ul class="blockList">
 <li class="blockList">
 <h4>readExternal</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;readExternal&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)
-                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;readExternal&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io" class="externalLink">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
 <div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
  efficient broadcast/rdd deserialization.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#readExternal(java.io.ObjectInput)" title="class or interface in java.io" class="externalLink">readExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io" class="externalLink">Externalizable</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Externalizable.html?is-external=true#readExternal(java.io.ObjectInput)" title="class or interface in java.io" class="externalLink">readExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Externalizable.html?is-external=true" title="class or interface in java.io" class="externalLink">Externalizable</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - object input</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occur</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occur</dd>
 </dl>
 </li>
 </ul>
@@ -618,6 +642,24 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <pre class="methodSignature">public&nbsp;void&nbsp;shiftCol&#8203;(int&nbsp;columnOffset)</pre>
 </li>
 </ul>
+<a id="setEstMetaSize(long)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setEstMetaSize</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setEstMetaSize&#8203;(long&nbsp;estSize)</pre>
+</li>
+</ul>
+<a id="getEstMetaSize()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getEstMetaSize</h4>
+<pre class="methodSignature">public&nbsp;long&nbsp;getEstMetaSize()</pre>
+</li>
+</ul>
 <a id="compareTo(org.apache.sysds.runtime.transform.encode.ColumnEncoder)">
 <!--   -->
 </a>
@@ -627,7 +669,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <pre class="methodSignature">public&nbsp;int&nbsp;compareTo&#8203;(<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&nbsp;o)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Comparable.html?is-external=true#compareTo(T)" title="class or interface in java.lang" class="externalLink">compareTo</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Comparable</a>&lt;<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;</code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Comparable.html?is-external=true#compareTo(T)" title="class or interface in java.lang" class="externalLink">compareTo</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang" class="externalLink">Comparable</a>&lt;<a href="ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&gt;</code></dd>
 </dl>
 </li>
 </ul>
@@ -637,7 +679,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <ul class="blockList">
 <li class="blockList">
 <h4>getBuildTasks</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;&nbsp;getBuildTasks&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in)</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;&nbsp;getBuildTasks&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in)</pre>
 </li>
 </ul>
 <a id="getBuildTask(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">
@@ -646,7 +688,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <ul class="blockList">
 <li class="blockList">
 <h4>getBuildTask</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;getBuildTask&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in)</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;getBuildTask&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in)</pre>
 </li>
 </ul>
 <a id="getPartialBuildTask(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,int,int,java.util.HashMap)">
@@ -655,10 +697,10 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <ul class="blockList">
 <li class="blockList">
 <h4>getPartialBuildTask</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;getPartialBuildTask&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;getPartialBuildTask&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
                                             int&nbsp;startRow,
                                             int&nbsp;blockSize,
-                                            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;ret)</pre>
+                                            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;ret)</pre>
 </li>
 </ul>
 <a id="getPartialMergeBuildTask(java.util.HashMap)">
@@ -667,7 +709,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <ul class="blockList">
 <li class="blockList">
 <h4>getPartialMergeBuildTask</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;getPartialMergeBuildTask&#8203;(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;?&gt;&nbsp;ret)</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent" class="externalLink">Callable</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;getPartialMergeBuildTask&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;?&gt;&nbsp;ret)</pre>
 </li>
 </ul>
 <a id="getApplyTasks(org.apache.sysds.runtime.controlprogram.caching.CacheBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">
@@ -676,7 +718,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <ul class="blockList">
 <li class="blockList">
 <h4>getApplyTasks</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;&nbsp;getApplyTasks&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;&nbsp;getApplyTasks&#8203;(<a href="../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;in,
                                              <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
                                              int&nbsp;outputCol)</pre>
 </li>
@@ -687,7 +729,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 <ul class="blockListLast">
 <li class="blockList">
 <h4>getSparseRowsWZeros</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util" class="externalLink">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;getSparseRowsWZeros()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Set.html?is-external=true" title="class or interface in java.util" class="externalLink">Set</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&nbsp;getSparseRowsWZeros()</pre>
 </li>
 </ul>
 </li>
@@ -759,7 +801,7 @@ implements <a href="Encoder.html" title="interface in org.apache.sysds.runtime.t
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
 </nav>
-<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2022 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </footer>
 </body>
 </html>

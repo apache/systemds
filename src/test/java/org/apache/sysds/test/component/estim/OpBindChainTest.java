@@ -136,7 +136,7 @@ public class OpBindChainTest extends AutomatedTestBase
 				m2 = MatrixBlock.randOperations(n, k, sp[1], 1, 1, "uniform", 7);
 				m1.append(m2, m3, false);
 				m4 = MatrixBlock.randOperations(k, m, sp[1], 1, 1, "uniform", 5);
-				m5 = m1.aggregateBinaryOperations(m3, m4, 
+				m5 = m3.aggregateBinaryOperations(m3, m4, 
 						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
 				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m4), OpCode.MM)).getSparsity();
 				//System.out.println(est);
@@ -147,7 +147,7 @@ public class OpBindChainTest extends AutomatedTestBase
 				m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 7);
 				m1.append(m2, m3, true);
 				m4 = MatrixBlock.randOperations(k+n, m, sp[1], 1, 1, "uniform", 5);
-				m5 = m1.aggregateBinaryOperations(m3, m4, 
+				m5 = m3.aggregateBinaryOperations(m3, m4, 
 						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
 				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m4), OpCode.MM)).getSparsity();
 				//System.out.println(est);

@@ -29,13 +29,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysds.runtime.util.CollectionUtils;
+import org.apache.wink.json4j.JSONObject;
 
 
 public class ParameterizedBuiltinFunctionExpression extends DataIdentifier 
@@ -245,6 +246,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			validateParamserv(output, conditional);
 			break;
 
+		case COUNT_DISTINCT_APPROX:
+			validateCountDistinctApprox(output, conditional);
+			break;
+
 		default: //always unconditional (because unsupported operation)
 			//handle common issue of transformencode
 			if( getOpCode()==Builtins.TRANSFORMENCODE )
@@ -258,7 +263,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	private void validateAutoDiff(DataIdentifier output, boolean conditional) {
 		//validate data / metadata (recode maps)
-		checkDataType("lineage", LINEAGE_TRACE, DataType.LIST, conditional);
+		checkDataType(false, "lineage", LINEAGE_TRACE, DataType.LIST, conditional);
 
 		//validate specification
 		checkDataValueType(false, "lineage", LINEAGE_TRACE, DataType.LIST, ValueType.UNKNOWN, conditional);
@@ -266,7 +271,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		// set output characteristics
 		output.setDataType(DataType.LIST);
 		output.setValueType(ValueType.UNKNOWN);
-		// TODO dimension should be set to -1 but could not set due to lineage parsing error in Spark contetx
+		// TODO dimension should be set to -1 but could not set due to lineage parsing error in Spark context
 		output.setDimensions(varParams.size(), 1);
 		// output.setDimensions(-1, 1);
 		output.setBlocksize(-1);
@@ -319,9 +324,9 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkInvalidParameters(getOpCode(), getVarParams(), valid);
 
 		// check existence and correctness of parameters
-		checkDataType(fname, Statement.PS_MODEL, DataType.LIST, conditional); // check the model which is the only non-parameterized argument
-		checkDataType(fname, Statement.PS_FEATURES, DataType.MATRIX, conditional);
-		checkDataType(fname, Statement.PS_LABELS, DataType.MATRIX, conditional);
+		checkDataType(false, fname, Statement.PS_MODEL, DataType.LIST, conditional); // check the model which is the only non-parameterized argument
+		checkDataType(false, fname, Statement.PS_FEATURES, DataType.MATRIX, conditional);
+		checkDataType(false, fname, Statement.PS_LABELS, DataType.MATRIX, conditional);
 		checkDataValueType(true, fname, Statement.PS_VAL_FEATURES, DataType.MATRIX, ValueType.FP64, conditional);
 		checkDataValueType(true, fname, Statement.PS_VAL_LABELS, DataType.MATRIX, ValueType.FP64, conditional);
 		checkDataValueType(false, fname, Statement.PS_UPDATE_FUN, DataType.SCALAR, ValueType.STRING, conditional);
@@ -347,6 +352,99 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setBlocksize(-1);
 	}
 
+	private void validateCountDistinctApprox(DataIdentifier output, boolean conditional) {
+		Set<String> validTypeNames = CollectionUtils.asSet("KMV");
+		HashMap<String, Expression> varParams = getVarParams();
+
+		// "data" is the only parameter that is allowed to be unnamed
+		if (varParams.containsKey(null)) {
+			varParams.put("data", varParams.remove(null));
+		}
+
+		// Validate the number of parameters
+		String fname = getOpCode().getName();
+		String usageMessage = "function " + fname + " takes at least 1 and at most 3 parameters";
+		if (varParams.size() < 1) {
+			raiseValidateError("Too few parameters: " + usageMessage, conditional);
+		}
+
+		if (varParams.size() > 3) {
+			raiseValidateError("Too many parameters: " + usageMessage, conditional);
+		}
+
+		// Check parameter names are valid
+		Set<String> validParameterNames = CollectionUtils.asSet("data", "type", "dir");
+		checkInvalidParameters(getOpCode(), varParams, validParameterNames);
+
+		// Check parameter expression data types match expected
+		checkDataType(false, fname, "data", DataType.MATRIX, conditional);
+		checkDataValueType(false, fname, "data", DataType.MATRIX, ValueType.FP64, conditional);
+
+		// We need the dimensions of the input matrix to determine the output matrix characteristics
+		// Validate data parameter, lookup previously defined var or resolve expression
+		Identifier dataId = varParams.get("data").getOutput();
+		if (dataId == null) {
+			raiseValidateError("Cannot parse input parameter \"data\" to function " + fname, conditional);
+		}
+
+		checkStringParam(true, fname, "type", conditional);
+		// Check data value of "type" parameter
+		if (varParams.keySet().contains("type")) {
+			String typeString = varParams.get("type").toString().toUpperCase();
+			if (!validTypeNames.contains(typeString)) {
+				raiseValidateError("Unrecognized type for optional parameter " + typeString, conditional);
+			}
+		} else {
+			// default to KMV
+			addVarParam("type", new StringIdentifier("KMV", this));
+		}
+
+		checkStringParam(true, fname, "dir", conditional);
+		// Check data value of "dir" parameter
+		if (varParams.keySet().contains("dir")) {
+			String directionString = varParams.get("dir").toString().toUpperCase();
+
+			// Set output type and dimensions based on direction
+
+			// "r" -> count across all rows, resulting in a Mx1 matrix
+			if (directionString.equals(Types.Direction.Row.toString())) {
+				output.setDataType(DataType.MATRIX);
+				output.setDimensions(dataId.getDim1(), 1);
+				output.setBlocksize(dataId.getBlocksize());
+				output.setValueType(ValueType.INT64);
+				output.setNnz(dataId.getDim1());
+
+			// "c" -> count across all cols, resulting in a 1xN matrix
+			} else if (directionString.equals(Types.Direction.Col.toString())) {
+				output.setDataType(DataType.MATRIX);
+				output.setDimensions(1, dataId.getDim2());
+				output.setBlocksize(dataId.getBlocksize());
+				output.setValueType(ValueType.INT64);
+				output.setNnz(dataId.getDim2());
+
+			// "rc" -> count across all rows and cols in input matrix, resulting in a single value
+			} else if (directionString.equals(Types.Direction.RowCol.toString())) {
+				output.setDataType(DataType.SCALAR);
+				output.setDimensions(0, 0);
+				output.setBlocksize(0);
+				output.setValueType(ValueType.INT64);
+				output.setNnz(1);
+
+			// unrecognized value for "dir" parameter, should "cr" be valid?
+			} else {
+				raiseValidateError("Invalid argument: " + directionString + " is not recognized");
+			}
+
+		// default to dir="rc"
+		} else {
+			output.setDataType(DataType.SCALAR);
+			output.setDimensions(0, 0);
+			output.setBlocksize(0);
+			output.setValueType(ValueType.INT64);
+			output.setNnz(1);
+		}
+	}
+
 	private void checkStringParam(boolean optional, String fname, String pname, boolean conditional) {
 		Expression param = getVarParam(pname);
 		if (param == null) {
@@ -365,7 +463,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private void validateTokenize(DataIdentifier output, boolean conditional)
 	{
 		//validate data / metadata (recode maps)
-		checkDataType("tokenize", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
+		checkDataType(false, "tokenize", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 
 		//validate specification
 		checkDataValueType(false, "tokenize", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
@@ -381,8 +479,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private void validateTransformApply(DataIdentifier output, boolean conditional) 
 	{
 		//validate data / metadata (recode maps)
-		checkDataType("transformapply", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
-		checkDataType("transformapply", TF_FN_PARAM_MTD2, DataType.FRAME, conditional);
+		checkDataType(false, "transformapply", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
+		checkDataType(false, "transformapply", TF_FN_PARAM_MTD2, DataType.FRAME, conditional);
 		
 		//validate specification
 		checkDataValueType(false, "transformapply", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
@@ -397,8 +495,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private void validateTransformDecode(DataIdentifier output, boolean conditional) 
 	{
 		//validate data / metadata (recode maps) 
-		checkDataType("transformdecode", TF_FN_PARAM_DATA, DataType.MATRIX, conditional);
-		checkDataType("transformdecode", TF_FN_PARAM_MTD2, DataType.FRAME, conditional);
+		checkDataType(false, "transformdecode", TF_FN_PARAM_DATA, DataType.MATRIX, conditional);
+		checkDataType(false, "transformdecode", TF_FN_PARAM_MTD2, DataType.FRAME, conditional);
 		
 		//validate specification
 		checkDataValueType(false, "transformdecode", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
@@ -414,7 +512,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	{
 		//validate data / metadata (recode maps) 
 		Expression exprTarget = getVarParam(Statement.GAGG_TARGET);
-		checkDataType("transformcolmap", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
+		checkDataType(false, "transformcolmap", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 		
 		//validate specification
 		checkDataValueType(false,"transformcolmap", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
@@ -444,7 +542,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private void validateTransformEncode(DataIdentifier output1, DataIdentifier output2, boolean conditional) 
 	{
 		//validate data / metadata (recode maps) 
-		checkDataType("transformencode", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
+		checkDataType(false, "transformencode", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 		
 		//validate specification
 		checkDataValueType(false, "transformencode", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
@@ -692,7 +790,9 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			else if (fnameStr.equals(Statement.GAGG_FN_COUNT) 
 					|| fnameStr.equals(Statement.GAGG_FN_SUM) 
 					|| fnameStr.equals(Statement.GAGG_FN_MEAN)
-					|| fnameStr.equals(Statement.GAGG_FN_VARIANCE)){}
+					|| fnameStr.equals(Statement.GAGG_FN_VARIANCE)
+					|| fnameStr.equals(Statement.GAGG_FN_MIN)
+					|| fnameStr.equals(Statement.GAGG_FN_MAX)){}
 			else { 
 				raiseValidateError("fname is " + fnameStr + " but must be either centeralmoment, count, sum, mean, variance", conditional);
 			}
@@ -871,12 +971,18 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setBlocksize(-1);
 	}
 
-	private void checkDataType( String fname, String pname, DataType dt, boolean conditional ) {
+	private void checkDataType(boolean optional, String fname, String pname, DataType dt, boolean conditional) {
 		Expression data = getVarParam(pname);
-		if( data==null )
-			raiseValidateError("Named parameter '" + pname + "' missing. Please specify the input.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		else if( data.getOutput().getDataType() != dt )
-			raiseValidateError("Input to "+fname+"::"+pname+" must be of type '"+dt.toString()+"'. It should not be of type '"+data.getOutput().getDataType()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		if(data == null) {
+			if(optional)
+				return;
+			raiseValidateError("Named parameter '" + pname + "' missing. Please specify the input.", conditional,
+				LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		else if(data.getOutput().getDataType() != dt)
+			raiseValidateError("Input to " + fname + "::" + pname + " must be of type '" + dt.toString()
+				+ "'. It should not be of type '" + data.getOutput().getDataType() + "'.", conditional,
+				LanguageErrorCodes.INVALID_PARAMETERS);
 	}
 
 	private void checkDataValueType(boolean optional, String fname, String pname, DataType dt, ValueType vt,

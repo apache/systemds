@@ -29,7 +29,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public abstract class ReaderColumnSelection {
 
 	protected static final Log LOG = LogFactory.getLog(ReaderColumnSelection.class.getName());
-	protected static final DblArray emptyReturn = new DblArray();
 
 	protected final int[] _colIndexes;
 	protected final DblArray reusableReturn;
@@ -52,17 +51,14 @@ public abstract class ReaderColumnSelection {
 	 * 
 	 * @return next row
 	 */
-	public DblArray nextRow() {
-		DblArray ret = getNextRow();
-		while(ret != null && ret.isEmpty())
-			ret = getNextRow();
-
-		if(ret == null)
+	public final DblArray nextRow() {
+		if(_rl >= _ru)
 			return null;
-		else {
+		final DblArray ret = getNextRow();
+
+		if(ret != null)
 			ret.resetHash();
-			return ret;
-		}
+		return ret;
 	}
 
 	protected abstract DblArray getNextRow();
@@ -79,7 +75,7 @@ public abstract class ReaderColumnSelection {
 
 	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, int[] colIndices, boolean transposed, int rl,
 		int ru) {
-		checkInput(rawBlock, colIndices);
+		checkInput(rawBlock, colIndices, rl, ru);
 		rl = rl - 1;
 
 		if(transposed) {
@@ -90,7 +86,6 @@ public abstract class ReaderColumnSelection {
 			else
 				return new ReaderColumnSelectionDenseSingleBlockTransposed(rawBlock, colIndices, rl, ru);
 		}
-
 		if(rawBlock.isInSparseFormat())
 			return new ReaderColumnSelectionSparse(rawBlock, colIndices, rl, ru);
 		else if(rawBlock.getDenseBlock().numBlocks() > 1)
@@ -98,10 +93,12 @@ public abstract class ReaderColumnSelection {
 		return new ReaderColumnSelectionDenseSingleBlock(rawBlock, colIndices, rl, ru);
 	}
 
-	private static void checkInput(MatrixBlock rawBlock, int[] colIndices) {
+	private static void checkInput(final MatrixBlock rawBlock, final int[] colIndices, final int rl, final int ru) {
 		if(colIndices.length <= 1)
 			throw new DMLCompressionException("Column selection reader should not be done on single column groups");
-		if(rawBlock.getSparseBlock() == null && rawBlock.getDenseBlock() == null)
+		else if(rawBlock.getSparseBlock() == null && rawBlock.getDenseBlock() == null)
 			throw new DMLCompressionException("Input Block was null");
+		else if(rl >= ru)
+			throw new DMLCompressionException("Invalid inverse range for reader " + rl + " to " + ru);
 	}
 }

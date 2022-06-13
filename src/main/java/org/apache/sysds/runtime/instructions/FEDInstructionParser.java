@@ -22,12 +22,17 @@ package org.apache.sysds.runtime.instructions;
 import org.apache.sysds.lops.Append;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.fed.AggregateBinaryFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.AggregateTernaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.AggregateUnaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.AppendFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.BinaryFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.CentralMomentFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.CovarianceFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.QuantilePickFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.QuantileSortFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.TernaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.TsmmFEDInstruction;
@@ -42,10 +47,13 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "fedinit"  , FEDType.Init );
 		String2FEDInstructionType.put( "tsmm"     , FEDType.Tsmm );
 		String2FEDInstructionType.put( "ba+*"     , FEDType.AggregateBinary );
+		String2FEDInstructionType.put( "tak+*"    , FEDType.AggregateTernary);
 
 		String2FEDInstructionType.put( "uak+"    , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uark+"   , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uack+"   , FEDType.AggregateUnary );
+		String2FEDInstructionType.put( "uamax"   , FEDType.AggregateUnary );
+		String2FEDInstructionType.put( "uamin"   , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uasqk+"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uarsqk+" , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uacsqk+" , FEDType.AggregateUnary );
@@ -54,11 +62,19 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "uacvar"  , FEDType.AggregateUnary);
 
 		// Arithmetic Instruction Opcodes
-		String2FEDInstructionType.put( "+" , FEDType.Binary );
-		String2FEDInstructionType.put( "-" , FEDType.Binary );
-		String2FEDInstructionType.put( "*" , FEDType.Binary );
-		String2FEDInstructionType.put( "/" , FEDType.Binary );
-		String2FEDInstructionType.put( "1-*" , FEDType.Binary); //special * case
+		String2FEDInstructionType.put( "+" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "-" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "*" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "/" ,  FEDType.Binary );
+		String2FEDInstructionType.put( "1-*", FEDType.Binary); //special * case
+		String2FEDInstructionType.put( "^2" , FEDType.Binary); //special ^ case
+		String2FEDInstructionType.put( "max", FEDType.Binary );
+		String2FEDInstructionType.put( "==",  FEDType.Binary);
+		String2FEDInstructionType.put( "!=",  FEDType.Binary);
+		String2FEDInstructionType.put( "<",   FEDType.Binary);
+		String2FEDInstructionType.put( ">",   FEDType.Binary);
+		String2FEDInstructionType.put( "<=",  FEDType.Binary);
+		String2FEDInstructionType.put( ">=",  FEDType.Binary);
 
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2FEDInstructionType.put( "r'"     , FEDType.Reorg );
@@ -70,6 +86,12 @@ public class FEDInstructionParser extends InstructionParser
 		// Ternary Instruction Opcodes
 		String2FEDInstructionType.put( "+*" , FEDType.Ternary);
 		String2FEDInstructionType.put( "-*" , FEDType.Ternary);
+
+		//central moment, covariance, quantiles (sort/pick)
+		String2FEDInstructionType.put( "cm",    FEDType.CentralMoment);
+		String2FEDInstructionType.put( "cov",   FEDType.Covariance);
+		String2FEDInstructionType.put( "qsort", FEDType.QSort);
+		String2FEDInstructionType.put( "qpick", FEDType.QPick);
 
 		String2FEDInstructionType.put(Append.OPCODE, FEDType.Append);
 	}
@@ -106,6 +128,16 @@ public class FEDInstructionParser extends InstructionParser
 				return ReorgFEDInstruction.parseInstruction(str);
 			case Append:
 				return AppendFEDInstruction.parseInstruction(str);
+			case AggregateTernary:
+				return AggregateTernaryFEDInstruction.parseInstruction(str);
+			case CentralMoment:
+				return CentralMomentFEDInstruction.parseInstruction(str);
+			case Covariance:
+				return CovarianceFEDInstruction.parseInstruction(str);
+			case QSort:
+				return QuantileSortFEDInstruction.parseInstruction(str, true);
+			case QPick:
+				return QuantilePickFEDInstruction.parseInstruction(str);
 			default:
 				throw new DMLRuntimeException("Invalid FEDERATED Instruction Type: " + fedtype );
 		}

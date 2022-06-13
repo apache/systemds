@@ -31,7 +31,10 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def outlier(X: Matrix,
             opposite: bool):
-    
+    """
+    :param opposite: (1)TRUE for evaluating outlier from upper quartile range,
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'opposite': opposite}
     return Matrix(X.sds_context,
         'outlier',

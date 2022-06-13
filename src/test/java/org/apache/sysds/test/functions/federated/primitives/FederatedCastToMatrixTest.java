@@ -149,6 +149,7 @@ public class FederatedCastToMatrixTest extends AutomatedTestBase {
 			fedOut = fedOut.split("SystemDS Statistics:")[0];
 			Assert.assertTrue("Equal Printed Output", out.equals(fedOut));
 			Assert.assertTrue("Contains federated Cast to frame", heavyHittersContainsString("fed_castdtm"));
+			Assert.assertTrue(heavyHittersContainsString("fed_uak+")); // verify output is federated
 			TestUtils.shutdownThreads(t1, t2);
 
 			rtplatform = platformOld;

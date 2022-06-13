@@ -50,11 +50,16 @@ public final class CostEstimatorBuilder implements Serializable {
 			addNode(1, n, counter);
 	}
 
-	protected ICostEstimate create(int nRows, int nCols, double sparsity, boolean isInSpark) {
-		if(isInSpark)
-			return new HybridCostEstimator(nRows, nCols, sparsity, counter);
-		else
-			return new ComputationCostEstimator(nRows, nCols, sparsity, counter);
+	public CostEstimatorBuilder(InstructionTypeCounter counter) {
+		this.counter = counter;
+	}
+
+	protected ACostEstimate create(boolean isInSpark) {
+		return new ComputationCostEstimator(counter);
+	}
+
+	protected ACostEstimate createHybrid() {
+		return new HybridCostEstimator(counter);
 	}
 
 	public InstructionTypeCounter getCounter() {
@@ -72,7 +77,7 @@ public final class CostEstimatorBuilder implements Serializable {
 	private static void addOp(int count, Op o, InstructionTypeCounter counter) {
 		if(o.isDecompressing()) {
 			if(o.isOverlapping())
-				counter.overlappingDecompressions += count;
+				counter.overlappingDecompressions += count * o.dim();
 			else
 				counter.decompressions += count;
 		}
@@ -82,12 +87,13 @@ public final class CostEstimatorBuilder implements Serializable {
 
 		if(o instanceof OpSided) {
 			OpSided os = (OpSided) o;
+			final int d = o.dim();
 			if(os.isLeftMM())
-				counter.leftMultiplications += count;
+				counter.leftMultiplications += count * d;
 			else if(os.isRightMM())
-				counter.rightMultiplications += count;
+				counter.rightMultiplications += count * d;
 			else
-				counter.compressedMultiplications += count;
+				counter.compressedMultiplications += count * d;
 		}
 		else if(o instanceof OpMetadata) {
 			// ignore it
@@ -119,32 +125,16 @@ public final class CostEstimatorBuilder implements Serializable {
 
 	public boolean shouldTryToCompress() {
 		int numberOps = 0;
-		numberOps += counter.scans + counter.leftMultiplications * 2 + counter.rightMultiplications * 2 +
-			counter.compressedMultiplications * 4 + counter.dictionaryOps;
-		numberOps -= counter.decompressions + counter.overlappingDecompressions * 2;
-
-		final int nrMultiplications = counter.leftMultiplications + counter.rightMultiplications +
-			counter.compressedMultiplications;
-		final int nrDecompressions = counter.decompressions + counter.overlappingDecompressions * 2;
-		if(counter.decompressions == 0 && counter.rightMultiplications == counter.overlappingDecompressions &&
-			numberOps > 10)
-			return true;
-		if(nrDecompressions > nrMultiplications || (nrDecompressions > 1 && nrMultiplications < 1))
-			// This condition is added for l2svm and mLogReg y dataset, that is compressing while it should not.
-			return false;
+		numberOps += counter.scans + counter.leftMultiplications + counter.rightMultiplications +
+			counter.compressedMultiplications + counter.dictionaryOps;
+		numberOps -= counter.decompressions + counter.overlappingDecompressions;
 		return numberOps > 4;
-
-	}
-
-	public boolean shouldUseOverlap() {
-		final int decompressionsOverall = counter.overlappingDecompressions + counter.decompressions;
-		return decompressionsOverall == 0 ||
-			decompressionsOverall * 10 < counter.leftMultiplications * 9 + counter.dictionaryOps;
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
+		sb.append("CostVector: ");
 		sb.append(counter);
 		return sb.toString();
 	}

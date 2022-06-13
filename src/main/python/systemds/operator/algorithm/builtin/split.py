@@ -32,7 +32,12 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def split(X: Matrix,
           Y: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
-    
+    """
+    :param f: Train set fraction [0,1]
+    :param cont: contiuous splits, otherwise sampled
+    :param seed: The seed to reandomly select rows in sampled mode
+    :return: 'OperationNode' containing  
+    """
     params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)
     

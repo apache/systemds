@@ -205,6 +205,13 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("X3", X3, false, mc);
 		writeInputMatrixWithMTD("X4", X4, false, mc);
 
+		rtplatform = execMode;
+		if(rtplatform == ExecMode.SPARK) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		}
+		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
+		loadTestConfiguration(config);
+
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
@@ -215,14 +222,6 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 		Thread t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
 		Thread t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
 		Thread t4 = startLocalFedWorkerThread(port4);
-
-		rtplatform = execMode;
-		if(rtplatform == ExecMode.SPARK) {
-			System.out.println(7);
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		}
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-		loadTestConfiguration(config);
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
@@ -267,7 +266,7 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("*")));
 				break;
 			case MM:
-				Assert.assertTrue(heavyHittersContainsString(rtplatform == ExecMode.SPARK ? "fed_mapmm" : "fed_ba+*"));
+				Assert.assertTrue(heavyHittersContainsString(rtplatform == ExecMode.SPARK ? "fed_mapmm" : "fed_ba+*", 1, 2));
 				break;
 		}
 

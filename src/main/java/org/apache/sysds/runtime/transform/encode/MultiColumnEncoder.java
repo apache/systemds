@@ -67,7 +67,7 @@ public class MultiColumnEncoder implements Encoder {
 	// Only affects if  MULTI_THREADED_STAGES is true
 	// if true apply tasks for each column will complete
 	// before the next will start.
-	public static boolean APPLY_ENCODER_SEPARATE_STAGES = false; 
+	public static boolean APPLY_ENCODER_SEPARATE_STAGES = false;
 
 	private List<ColumnEncoderComposite> _columnEncoders;
 	// These encoders are deprecated and will be phased out soon.
@@ -162,21 +162,21 @@ public class MultiColumnEncoder implements Encoder {
 			tasks.addAll(buildTasks);
 			if(buildTasks.size() > 0) {
 				// Check if any Build independent UpdateDC task (Bin+DC, FH+DC)
-				if (e.hasEncoder(ColumnEncoderDummycode.class) 
+				if (e.hasEncoder(ColumnEncoderDummycode.class)
 					&& buildTasks.size() > 1  //filter out FH
 					&& !buildTasks.get(buildTasks.size()-2).hasDependency(buildTasks.get(buildTasks.size()-1)))
 						independentUpdateDC = true;
-				
+
 				// Independent UpdateDC task
 				if (independentUpdateDC) {
 					// Apply Task depends on task prior to UpdateDC (Build/MergePartialBuild)
 					depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},     //ApplyTask
 						new Integer[] {tasks.size() - 2, tasks.size() - 1});       //BuildTask
-					// getMetaDataTask depends on task prior to UpdateDC 
+					// getMetaDataTask depends on task prior to UpdateDC
 					depMap.put(new Integer[] {tasks.size() + 1, tasks.size() + 2}, //MetaDataTask
 						new Integer[] {tasks.size() - 2, tasks.size() - 1});       //BuildTask
 				}
-				else { 
+				else {
 					// Apply Task depends on the last task (Build/MergePartial/UpdateDC)
 					depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},     //ApplyTask
 						new Integer[] {tasks.size() - 1, tasks.size()});           //Build/UpdateDC
@@ -209,7 +209,7 @@ public class MultiColumnEncoder implements Encoder {
 					new Integer[] {tasks.size() - 1, tasks.size()});           //BuildTask
 				// UpdateOutputColTask, that sets the starting offsets of the DC columns,
 				// depends on the Build completion tasks
-				depMap.put(new Integer[] {-2, -1},                             //UpdateOutputColTask (last task) 
+				depMap.put(new Integer[] {-2, -1},                             //UpdateOutputColTask (last task)
 						new Integer[] {tasks.size() - 1, tasks.size()});       //BuildTask
 				buildTasks.forEach(t -> t.setPriority(5));
 				applyOffsetDep = true;
@@ -217,7 +217,7 @@ public class MultiColumnEncoder implements Encoder {
 
 			if(hasDC && applyOffsetDep) {
 				// Apply tasks depend on UpdateOutputColTask
-				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},     //ApplyTask 
+				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},     //ApplyTask
 						new Integer[] {-2, -1});                               //UpdateOutputColTask (last task)
 
 				applyTAgg = applyTAgg == null ? new ArrayList<>() : applyTAgg;
@@ -421,7 +421,6 @@ public class MultiColumnEncoder implements Encoder {
 		// Else, derive the optimum number of partitions
 		int nRow = in.getNumRows();
 		int nThread = OptimizerUtils.getTransformNumThreads(); //VCores
-		nThread = 32;
 		int minNumRows = 16000; //min rows per partition
 		List<ColumnEncoderComposite> recodeEncoders = new ArrayList<>();
 		// Count #Builds and #Applies (= #Col)
@@ -561,7 +560,7 @@ public class MultiColumnEncoder implements Encoder {
 				int size = output.getNumRows() * input.getNumColumns();
 				SparseBlock csrblock = new SparseBlockCSR(output.getNumRows(), size, size);
 				// Manually fill the row pointers based on nnzs/row (= #cols in the input)
-				// Not using the set() methods to 1) avoid binary search and shifting, 
+				// Not using the set() methods to 1) avoid binary search and shifting,
 				// 2) reduce thread contentions on the arrays
 				int[] rptr = ((SparseBlockCSR)csrblock).rowPointers();
 				for (int i=0; i<rptr.length-1; i++) { //TODO: parallelize
@@ -1102,7 +1101,7 @@ public class MultiColumnEncoder implements Encoder {
 		private int _offset = -1; // offset dude to dummycoding in
 									// previous columns needs to be updated by external task!
 
-		private ApplyTasksWrapperTask(ColumnEncoder encoder, CacheBlock in, 
+		private ApplyTasksWrapperTask(ColumnEncoder encoder, CacheBlock in,
 				MatrixBlock out, DependencyThreadPool pool) {
 			super(pool);
 			_encoder = encoder;
@@ -1178,7 +1177,7 @@ public class MultiColumnEncoder implements Encoder {
 	private static class AllocMetaTask implements Callable<Object> {
 		private final MultiColumnEncoder _encoder;
 		private final FrameBlock _meta;
-		
+
 		private AllocMetaTask (MultiColumnEncoder encoder, FrameBlock meta) {
 			_encoder = encoder;
 			_meta = meta;
@@ -1195,7 +1194,7 @@ public class MultiColumnEncoder implements Encoder {
 			return getClass().getSimpleName();
 		}
 	}
-	
+
 	private static class ColumnMetaDataTask<T extends ColumnEncoder> implements Callable<Object> {
 		private final T _colEncoder;
 		private final FrameBlock _out;

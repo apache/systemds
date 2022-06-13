@@ -57,6 +57,8 @@ public class TokenizeMultithreadedTest extends AutomatedTestBase  {
     private final static JsonObject count_out_params0 = Json.createObjectBuilder().add("sort_alpha", false).build();
     private final static JsonObject count_out_params1 = Json.createObjectBuilder().add("sort_alpha", true).build();
 
+    private final static JsonObject hash_out_params0 = Json.createObjectBuilder().add("num_features", 128).build();
+
     public enum TokenizerBuilder {
         WHITESPACE_SPLIT,
         NGRAM,
@@ -84,13 +86,52 @@ public class TokenizeMultithreadedTest extends AutomatedTestBase  {
         runTokenizeTest(ExecMode.SINGLE_NODE, TokenizerBuilder.NGRAM, TokenizerApplier.COUNT,  2000, false, ngram_algo_params0, count_out_params0);
     }
 
+    @Test
+    public void testTokenizeSplitPositionLong() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, TokenizerBuilder.WHITESPACE_SPLIT, TokenizerApplier.POSITION,  2000, false, null, null);
+    }
+
+    @Test
+    public void testTokenizeNgramPositionLong() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, TokenizerBuilder.NGRAM, TokenizerApplier.POSITION,  2000, false, ngram_algo_params0, null);
+    }
+
+    @Test
+    public void testTokenizeSplitHashLong() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, TokenizerBuilder.WHITESPACE_SPLIT, TokenizerApplier.HASH,  2000, false, null, hash_out_params0);
+    }
+
+    @Test
+    public void testTokenizeNgramHashLong() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, TokenizerBuilder.NGRAM, TokenizerApplier.HASH,  2000, false, ngram_algo_params0, hash_out_params0);
+    }
+    @Test
+    public void testTokenizeSplitCountWide() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, TokenizerBuilder.WHITESPACE_SPLIT,TokenizerApplier.POSITION,  2000, true, null, count_out_params0);
+    }
+
+    @Test
+    public void testTokenizeNgramCountWide() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, TokenizerBuilder.NGRAM, TokenizerApplier.POSITION,  2000, true, ngram_algo_params0, count_out_params0);
+    }
+
+    @Test
+    public void testTokenizeSplitHashWide() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, TokenizerBuilder.WHITESPACE_SPLIT, TokenizerApplier.HASH,  2000, true, null, hash_out_params0);
+    }
+
+    @Test
+    public void testTokenizeNgramHashWide() {
+        runTokenizeTest(ExecMode.SINGLE_NODE, TokenizerBuilder.NGRAM, TokenizerApplier.HASH,  2000, true, ngram_algo_params0, hash_out_params0);
+    }
+
     private void runTokenizeTest(ExecMode rt, TokenizerBuilder builder, TokenizerApplier applier, int max_tokens, boolean format_wide, JsonObject algo_params, JsonObject out_params) {
         try{
             getAndLoadTestConfiguration(this.getClass().getSimpleName());
             FileFormatPropertiesCSV props = new FileFormatPropertiesCSV();
             props.setHeader(false);
             FrameBlock input = FrameReaderFactory.createFrameReader(Types.FileFormat.CSV, props).readFrameFromHDFS(DATASET_DIR+DATASET, -1L, -1L);
-            Tokenizer tokenizer = TokenizerFactory.createTokenizer(createTokenizerSpec(builder, applier, format_wide, algo_params, out_params), 2000);
+            Tokenizer tokenizer = TokenizerFactory.createTokenizer(createTokenizerSpec(builder, applier, format_wide, algo_params, out_params), max_tokens);
             FrameBlock outS = tokenizer.tokenize(input, 1);
             FrameBlock outM = tokenizer.tokenize(input, 12);
             Assert.assertEquals(outS.getNumRows(), outM.getNumRows());
@@ -130,8 +171,8 @@ public class TokenizeMultithreadedTest extends AutomatedTestBase  {
         if(algo_params != null)
             spec.add("algo_params", algo_params);
         spec.add("format_wide", format_wide);
-        spec.add("id_cols",Json.createArrayBuilder().add(1).add(2));
-        spec.add("tokenize_col", 3);
+        spec.add("id_cols",Json.createArrayBuilder().add(2).add(3));
+        spec.add("tokenize_col", 4);
         return spec.build().toString();
     }
 

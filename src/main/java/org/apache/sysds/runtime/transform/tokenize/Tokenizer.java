@@ -22,13 +22,14 @@ package org.apache.sysds.runtime.transform.tokenize;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplier;
 import org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilder;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -37,7 +38,7 @@ public class Tokenizer implements Serializable {
     private static final long serialVersionUID = 7155673772374114577L;
     protected static final Log LOG = LogFactory.getLog(Tokenizer.class.getName());
 
-    private List<DocumentRepresentation> internalRepresentation = new ArrayList<>();
+    private DocumentRepresentation[] internalRepresentation = null;
     private final TokenizerBuilder tokenizerBuilder;
     private final TokenizerApplier tokenizerApplier;
 
@@ -50,12 +51,27 @@ public class Tokenizer implements Serializable {
         return tokenizerApplier.getOutSchema();
     }
 
-    public long getNumRows(long inRows) {
-        return tokenizerApplier.getNumRows(inRows);
+    public int getMaxNumRows(int inRows) {
+        return tokenizerApplier.getMaxNumRows(inRows);
+    }
+
+    public int getNumRows(){
+        if(internalRepresentation != null){
+            if(tokenizerApplier.isWideFormat()){
+                return internalRepresentation.length;
+            }else {
+                return Arrays.stream(internalRepresentation).mapToInt(doc -> doc.tokens.size()).sum();
+            }
+        }
+        throw new DMLRuntimeException("Internal Token Representation was not computed yet. Can not get exact size.");
     }
 
     public long getNumCols() {
         return tokenizerApplier.getNumCols();
+    }
+
+    public void allocateInternalRepresentation(int numDocuments){
+        internalRepresentation = new DocumentRepresentation[numDocuments];
     }
 
     public FrameBlock tokenize(FrameBlock in) {
@@ -63,11 +79,13 @@ public class Tokenizer implements Serializable {
     }
 
     public FrameBlock tokenize(FrameBlock in, int k){
-        FrameBlock out = new FrameBlock(this.getSchema());
+        allocateInternalRepresentation(in.getNumRows());
         // First convert to internal representation
         this.build(in, k);
+        FrameBlock out = new FrameBlock(this.getSchema());
+        out.ensureAllocatedColumns(getNumRows());
         // Then convert to output representation
-        return this.apply(in, out, k);
+        return this.apply(out, k);
         /*
 
         // First convert to internal representation
@@ -77,7 +95,7 @@ public class Tokenizer implements Serializable {
          */
     }
 
-    public FrameBlock apply(FrameBlock in, FrameBlock out, int k) {
+    public FrameBlock apply(FrameBlock out, int k) {
         if(k > 1){
             DependencyThreadPool pool = new DependencyThreadPool(k);
             try{

@@ -60,13 +60,13 @@ public class TokenizerFactory {
             int tokenizeCol = jSpec.getInt("tokenize_col");
 
             // tokenization needs one or more idCols that define the document and are replicated per token
-            List<Integer> idCols = new ArrayList<>();
             JSONArray idColsJsonArray = jSpec.getJSONArray("id_cols");
+            int[] idCols = new int[idColsJsonArray.length()];
             for (int i=0; i < idColsJsonArray.length(); i++) {
-                idCols.add(idColsJsonArray.getInt(i));
+                idCols[i] = idColsJsonArray.getInt(i);
             }
             // Output schema is derived from specified id cols
-            int numIdCols = idCols.size();
+            int numIdCols = idCols.length;
 
             // get difference between long and wide format
             boolean wideFormat = false;  // long format is default
@@ -77,7 +77,7 @@ public class TokenizerFactory {
             TokenizerBuilder tokenizerBuilder;
             TokenizerApplier tokenizerApplier;
 
-            // Note that internal representation should be independent from output representation
+            // Note that internal representation should be independent of output representation
 
             // Algorithm to transform tokens into internal token representation
             switch (algo) {
@@ -94,13 +94,13 @@ public class TokenizerFactory {
             // Transform tokens to output representation
             switch (out) {
                 case "count":
-                    tokenizerApplier = new TokenizerApplierCount(outParams, numIdCols, maxTokens, wideFormat);
+                    tokenizerApplier = new TokenizerApplierCount(numIdCols, maxTokens, wideFormat, outParams);
                     break;
                 case "position":
-                    tokenizerApplier = new TokenizerApplierPosition(outParams, numIdCols, maxTokens, wideFormat);
+                    tokenizerApplier = new TokenizerApplierPosition(numIdCols, maxTokens, wideFormat);
                     break;
                 case "hash":
-                    tokenizerApplier = new TokenizerApplierHash(outParams, numIdCols, maxTokens, wideFormat);
+                    tokenizerApplier = new TokenizerApplierHash(numIdCols, maxTokens, wideFormat, outParams);
                     break;
                 default:
                     throw new IllegalArgumentException("Output representation {out=" + out + "} is not supported.");

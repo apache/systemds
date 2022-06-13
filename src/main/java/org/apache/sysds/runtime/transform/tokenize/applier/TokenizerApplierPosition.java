@@ -28,78 +28,72 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-public class TokenizerApplierPosition implements TokenizerApplier {
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
+public class TokenizerApplierPosition extends TokenizerApplier {
 
 	private static final long serialVersionUID = 3563407270742660830L;
-	private final int numIdCols;
-	private final int maxTokens;
-	private final boolean wideFormat;
 
-	public TokenizerApplierPosition(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) {
-		// No configurable params yet
-		this.numIdCols = numIdCols;
-		this.maxTokens = maxTokens;
-		this.wideFormat = wideFormat;
+	public TokenizerApplierPosition(int numIdCols, int maxTokens, boolean wideFormat) {
+		super(numIdCols, maxTokens, wideFormat);
 	}
 
 	@Override
-	public void applyInternalRepresentation(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out) {
-		for (Tokenizer.DocumentRepresentation docToToken: internalRepresentation) {
-			List<Object> keys = docToToken.keys;
-			List<Tokenizer.Token> tokenList = docToToken.tokens;
+	public void applyInternalRepresentation(Tokenizer.DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
+		int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
+		int outputRow = wideFormat ? inputRowStart : Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> doc.tokens.size()).sum();
+		for(int i = inputRowStart; i < endIndex; i++ ) {
+			List<Object> keys = internalRepresentation[i].keys;
+			List<Tokenizer.Token> tokenList = internalRepresentation[i].tokens;
 
 			if (wideFormat) {
-				this.appendTokensWide(keys, tokenList, out);
+				outputRow = this.appendTokensWide(outputRow, keys, tokenList, out);
 			} else {
-				this.appendTokensLong(keys, tokenList, out);
+				outputRow = this.appendTokensLong(outputRow, keys, tokenList, out);
 			}
 		}
 	}
 
-	@Override
-	public List<DependencyTask<?>> getTasks(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out, int k) {
-		return null;
-	}
 
-	public void appendTokensLong(List<Object> keys, List<Tokenizer.Token> tokenList, FrameBlock out) {
+	public int appendTokensLong(int row, List<Object> keys, List<Tokenizer.Token> tokenList, FrameBlock out) {
 		int numTokens = 0;
 		for (Tokenizer.Token token: tokenList) {
 			if (numTokens >= maxTokens) {
 				break;
 			}
-			// Create a row per token
-			List<Object> rowList = new ArrayList<>(keys);
-			// Convert to 1-based index for DML
-			rowList.add(token.startIndex + 1);
-			rowList.add(token.textToken);
-			Object[] row = new Object[rowList.size()];
-			rowList.toArray(row);
-			out.appendRow(row);
+			int col = 0;
+			for(; col < keys.size(); col++){
+				out.set(row, col, keys.get(col));
+			}
+			out.set(row, col, token.startIndex + 1);
+			out.set(row, col + 1, token.textToken);
+			row++;
 			numTokens++;
 		}
+		return row;
 	}
 
-	public void appendTokensWide(List<Object> keys, List<Tokenizer.Token> tokenList, FrameBlock out) {
+	public int appendTokensWide(int row, List<Object> keys, List<Tokenizer.Token> tokenList, FrameBlock out) {
 		// Create one row with keys as prefix
-		List<Object> rowList = new ArrayList<>(keys);
-
-		int numTokens = 0;
-		for (Tokenizer.Token token: tokenList) {
-			if (numTokens >= maxTokens) {
+		int col = 0;
+		for(; col < keys.size(); col++){
+			out.set(row, col, keys.get(col));
+		}
+		int token = 0;
+		for (; token < tokenList.size(); token++) {
+			if (token >= maxTokens) {
 				break;
 			}
-			rowList.add(token.textToken);
-			numTokens++;
+			out.set(row, col+token, tokenList.get(token).textToken);
 		}
 		// Remaining positions need to be filled with empty tokens
-		for (; numTokens < maxTokens; numTokens++) {
-			rowList.add("");
+		for (; token < maxTokens; token++) {
+			out.set(row, col+token, "");
 		}
-		Object[] row = new Object[rowList.size()];
-		rowList.toArray(row);
-		out.appendRow(row);
+		return ++row;
 	}
 
 	@Override
@@ -118,25 +112,8 @@ public class TokenizerApplierPosition implements TokenizerApplier {
 	}
 
 	private static Types.ValueType[] getOutSchemaLong(int numIdCols) {
-		Types.ValueType[] schema = new Types.ValueType[numIdCols + 2];
-		int i = 0;
-		for (; i < numIdCols; i++) {
-			schema[i] = Types.ValueType.STRING;
-		}
-		schema[i] = Types.ValueType.INT64;
-		schema[i+1] = Types.ValueType.STRING;
+		Types.ValueType[] schema = UtilFunctions.nCopies(numIdCols + 2,Types.ValueType.STRING );
+		schema[numIdCols] = Types.ValueType.INT64;
 		return schema;
-	}
-
-	public long getNumRows(long inRows) {
-		if (wideFormat) {
-			return inRows;
-		} else {
-			return inRows * maxTokens;
-		}
-	}
-
-	public long getNumCols() {
-		return this.getOutSchema().length;
 	}
 }

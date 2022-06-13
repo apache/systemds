@@ -27,50 +27,44 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
-import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class TokenizerApplierHash implements TokenizerApplier {
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
+public class TokenizerApplierHash extends TokenizerApplier {
 
 	private static final long serialVersionUID = 4763889041868044668L;
-	private final Params params;
-	private final int numIdCols;
-	private final int maxTokens;
-	private final boolean wideFormat;
 
-	static class Params implements Serializable {
+	public int num_features = 1048576;  // 2^20
 
-		private static final long serialVersionUID = -256069061414241795L;
 
-		public int num_features = 1048576;  // 2^20
-
-		public Params(JSONObject json) throws JSONException {
-			if (json != null && json.has("num_features")) {
-				this.num_features = json.getInt("num_features");
-			}
+	public TokenizerApplierHash( int numIdCols, int maxTokens, boolean wideFormat, JSONObject params) throws JSONException {
+		super(numIdCols, maxTokens, wideFormat);
+		if (params != null && params.has("num_features")) {
+			this.num_features = params.getInt("num_features");
 		}
 	}
 
-	public TokenizerApplierHash(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) throws JSONException {
-		this.params = new Params(params);
-		this.numIdCols = numIdCols;
-		this.maxTokens = maxTokens;
-		this.wideFormat = wideFormat;
-	}
-
 	@Override
-	public void applyInternalRepresentation(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out) {
-		for (Tokenizer.DocumentRepresentation docToToken: internalRepresentation) {
-			List<Object> keys = docToToken.keys;
-			List<Tokenizer.Token> tokenList = docToToken.tokens;
+	public void applyInternalRepresentation(Tokenizer.DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
+		int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
+		int outputRow = wideFormat ? inputRowStart : Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> doc.tokens.size()).sum();
+		for(int i = inputRowStart; i < endIndex; i++) {
+			List<Object> keys = internalRepresentation[i].keys;
+			List<Tokenizer.Token> tokenList = internalRepresentation[i].tokens;
 			// Transform to hashes
-			List<Integer> hashList = tokenList.stream().map(token -> token.textToken.hashCode() %
-				params.num_features).collect(Collectors.toList());
+			List<Integer> hashList = tokenList.stream().map(token -> {
+				int mod = (token.textToken.hashCode() % this.num_features) + 1;
+				if(mod < 0)
+					mod += this.num_features;
+				return mod;
+			}).collect(Collectors.toList());
 			// Counting the hashes
 			Map<Integer, Long> hashCounts = hashList.stream().collect(Collectors.groupingBy(Function.identity(),
 				Collectors.counting()));
@@ -78,48 +72,47 @@ public class TokenizerApplierHash implements TokenizerApplier {
 			Map<Integer, Long> sortedHashes = new TreeMap<>(hashCounts);
 
 			if (wideFormat) {
-				this.appendTokensWide(keys, sortedHashes, out);
+				outputRow = this.setTokensWide(outputRow, keys, sortedHashes, out);
 			} else {
-				this.appendTokensLong(keys, sortedHashes, out);
+				outputRow = this.setTokensLong(outputRow, keys, sortedHashes, out);
 			}
 		}
 	}
 
-	@Override
-	public List<DependencyTask<?>> getTasks(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out, int k) {
-		return null;
-	}
 
-	private void appendTokensLong(List<Object> keys, Map<Integer, Long> sortedHashes, FrameBlock out) {
+	private int setTokensLong(int row, List<Object> keys, Map<Integer, Long> sortedHashes, FrameBlock out) {
 		int numTokens = 0;
 		for (Map.Entry<Integer, Long> hashCount: sortedHashes.entrySet()) {
 			if (numTokens >= maxTokens) {
 				break;
 			}
+			int col = 0;
+			for(; col < keys.size(); col++){
+				out.set(row, col, keys.get(col));
+			}
 			// Create a row per token
-			int hash = hashCount.getKey() + 1;
+			int hash = hashCount.getKey();
 			long count = hashCount.getValue();
-			List<Object> rowList = new ArrayList<>(keys);
-			rowList.add((long) hash);
-			rowList.add(count);
-			Object[] row = new Object[rowList.size()];
-			rowList.toArray(row);
-			out.appendRow(row);
+			out.set(row, col, (long)hash);
+			out.set(row, col + 1, count);
 			numTokens++;
+			row++;
 		}
+		return row;
 	}
 
-	private void appendTokensWide(List<Object> keys, Map<Integer, Long> sortedHashes, FrameBlock out) {
+	private int setTokensWide(int row, List<Object> keys, Map<Integer, Long> sortedHashes, FrameBlock out) {
 		// Create one row with keys as prefix
-		List<Object> rowList = new ArrayList<>(keys);
+		int col = 0;
+		for(; col < keys.size(); col++){
+			out.set(row, col, keys.get(col));
+		}
 
 		for (int tokenPos = 0; tokenPos < maxTokens; tokenPos++) {
 			long positionHash = sortedHashes.getOrDefault(tokenPos, 0L);
-			rowList.add(positionHash);
+			out.set(row, col + tokenPos, positionHash);
 		}
-		Object[] row = new Object[rowList.size()];
-		rowList.toArray(row);
-		out.appendRow(row);
+		return ++row;
 	}
 
 	@Override
@@ -150,15 +143,4 @@ public class TokenizerApplierHash implements TokenizerApplier {
 		return schema;
 	}
 
-	public long getNumRows(long inRows) {
-		if (wideFormat) {
-			return inRows;
-		} else {
-			return inRows * maxTokens;
-		}
-	}
-
-	public long getNumCols() {
-		return this.getOutSchema().length;
-	}
 }

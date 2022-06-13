@@ -473,7 +473,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			sec.addLineageRDD(output.getName(), params.get("target"));
 
 			// get max tokens for row upper bound
-			long numRows = tokenizer.getNumRows(mc.getRows());
+			long numRows = tokenizer.getMaxNumRows((int) mc.getRows());
 			long numCols = tokenizer.getNumCols();
 
 			sec.getDataCharacteristics(output.getName()).set(numRows, numCols, mc.getBlocksize());

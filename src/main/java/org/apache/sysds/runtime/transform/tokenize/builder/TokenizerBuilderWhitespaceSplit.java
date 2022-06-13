@@ -27,40 +27,34 @@ import org.apache.wink.json4j.JSONObject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
 
-public class TokenizerBuilderWhitespaceSplit implements TokenizerBuilder {
+import static org.apache.sysds.runtime.util.UtilFunctions.getBlockSizes;
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
+public class TokenizerBuilderWhitespaceSplit extends TokenizerBuilder {
 
     private static final long serialVersionUID = 539127244034913364L;
 
-    private final Params params;
-
-    private final List<Integer> idCols;
+    private final int[] idCols;
     private final int tokenizeCol;
 
-    static class Params implements Serializable {
+    public String regex = "\\s+"; // whitespace
 
-        private static final long serialVersionUID = -4368552847660442628L;
-
-        public String regex = "\\s+"; // whitespace
-
-        public Params(JSONObject json) throws JSONException {
-            if (json != null && json.has("regex")) {
-                this.regex = json.getString("regex");
-            }
+    public TokenizerBuilderWhitespaceSplit(int[] idCols, int tokenizeCol, JSONObject params) throws JSONException {
+        if (params != null && params.has("regex")) {
+            this.regex = params.getString("regex");
         }
-    }
-
-    public TokenizerBuilderWhitespaceSplit(List<Integer> idCols, int tokenizeCol, JSONObject params) throws JSONException {
         this.idCols = idCols;
         this.tokenizeCol = tokenizeCol;
-        this.params = new Params(params);
     }
 
     public List<Tokenizer.Token> splitToTokens(String text) {
         List<Tokenizer.Token> tokenList = new ArrayList<>();
-        String[] textTokens = text.split(params.regex);
+        String[] textTokens = text.split(this.regex);
         int curIndex = 0;
         for(String textToken: textTokens) {
             int tokenIndex = text.indexOf(textToken, curIndex);
@@ -71,25 +65,17 @@ public class TokenizerBuilderWhitespaceSplit implements TokenizerBuilder {
     }
 
     @Override
-    public void createInternalRepresentation(FrameBlock in, List<Tokenizer.DocumentRepresentation> internalRepresentation) {
-        Iterator<String[]> iterator = in.getStringRowIterator();
-        iterator.forEachRemaining(s -> {
-            // Convert index value to Java (0-based) from DML (1-based)
-            String text = s[tokenizeCol - 1];
-            List<Object> keys = new ArrayList<>();
-            for (Integer idCol: idCols) {
-                Object key = s[idCol - 1];
-                keys.add(key);
-            }
-
-            // Transform to Bag format internally
+    public void createInternalRepresentation(FrameBlock in, Tokenizer.DocumentRepresentation[] internalRepresentation, int rowStart, int blk) {
+        int endIndex = getEndIndex(in.getNumRows(), rowStart, blk);
+        for (int i = rowStart; i < endIndex; i++) {
+            String text = in.getString(i, tokenizeCol - 1);
             List<Tokenizer.Token> tokenList = splitToTokens(text);
-            internalRepresentation.add(new Tokenizer.DocumentRepresentation(keys, tokenList));
-        });
-    }
-
-    @Override
-    public List<DependencyTask<?>> getTasks(FrameBlock in, List<Tokenizer.DocumentRepresentation> internalRepresentation, int k) {
-        return null;
+            List<Object> keys = new ArrayList<>();
+            for (Integer idCol : idCols) {
+                Object key = in.get(i, idCol - 1);
+                keys.add(key);
+                internalRepresentation[i] = new Tokenizer.DocumentRepresentation(keys, tokenList);
+            }
+        }
     }
 }

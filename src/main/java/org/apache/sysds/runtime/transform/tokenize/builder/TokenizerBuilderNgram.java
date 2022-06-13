@@ -29,45 +29,37 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TokenizerBuilderNgram implements TokenizerBuilder {
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
+public class TokenizerBuilderNgram extends TokenizerBuilderWhitespaceSplit {
 
     private static final long serialVersionUID = -6297904316677723802L;
 
-    private final TokenizerBuilderWhitespaceSplit tokenizerPreWhitespaceSplit;
-    private final Params params;
+    // private final TokenizerBuilderWhitespaceSplit tokenizerPreWhitespaceSplit;
 
-    static class Params implements Serializable {
+    public int minGram = 1;
+    public int maxGram = 2;
 
-        private static final long serialVersionUID = -6516419749810062677L;
-
-        public int minGram = 1;
-        public int maxGram = 2;
-
-        public Params(JSONObject json) throws JSONException {
-            if (json != null && json.has("min_gram")) {
-                this.minGram = json.getInt("min_gram");
-            }
-            if (json != null && json.has("max_gram")) {
-                this.maxGram = json.getInt("max_gram");
-            }
+    public TokenizerBuilderNgram(int[] idCols, int tokenizeCol, JSONObject params) throws JSONException {
+        super(idCols, tokenizeCol, params);
+        if (params != null && params.has("min_gram")) {
+            this.minGram = params.getInt("min_gram");
         }
-    }
-
-    public TokenizerBuilderNgram(List<Integer> idCols, int tokenizeCol, JSONObject params) throws JSONException {
-        this.tokenizerPreWhitespaceSplit = new TokenizerBuilderWhitespaceSplit(idCols, tokenizeCol, params);
-        this.params = new Params(params);
+        if (params != null && params.has("max_gram")) {
+            this.maxGram = params.getInt("max_gram");
+        }
     }
 
     public List<Tokenizer.Token> wordTokenToNgrams(Tokenizer.Token wordTokens) {
         List<Tokenizer.Token> ngramTokens = new ArrayList<>();
 
         int tokenLen = wordTokens.textToken.length();
-        int startPos = params.minGram - params.maxGram;
-        int endPos = Math.max(tokenLen - params.minGram, startPos);
+        int startPos = this.minGram - this.maxGram;
+        int endPos = Math.max(tokenLen - this.minGram, startPos);
 
         for (int i = startPos; i <= endPos; i++) {
             int startSlice = Math.max(i, 0);
-            int endSlice = Math.min(i + params.maxGram, tokenLen);
+            int endSlice = Math.min(i + this.maxGram, tokenLen);
             String substring = wordTokens.textToken.substring(startSlice, endSlice);
             long tokenStart = wordTokens.startIndex + startSlice;
             ngramTokens.add(new Tokenizer.Token(substring, tokenStart));
@@ -87,20 +79,14 @@ public class TokenizerBuilderNgram implements TokenizerBuilder {
     }
 
     @Override
-    public void createInternalRepresentation(FrameBlock in, List<Tokenizer.DocumentRepresentation> internalRepresentation) {
-        tokenizerPreWhitespaceSplit.createInternalRepresentation(in, internalRepresentation);
-
-        List<Tokenizer.DocumentRepresentation> docToNgramTokens = new ArrayList<>();
-        for (Tokenizer.DocumentRepresentation docToTokens: internalRepresentation) {
-            List<Object> keys = docToTokens.keys;
-            List<Tokenizer.Token> wordTokens = docToTokens.tokens;
-            List<Tokenizer.Token> ngramTokens = wordTokenListToNgrams(wordTokens);
-            docToNgramTokens.add(new Tokenizer.DocumentRepresentation(keys, ngramTokens));
+    public void createInternalRepresentation(FrameBlock in, Tokenizer.DocumentRepresentation[] internalRepresentation, int rowStart, int blk) {
+        super.createInternalRepresentation(in, internalRepresentation, rowStart, blk);
+        int endIndex = getEndIndex(in.getNumRows(), rowStart, blk);
+        for(int row = rowStart; row < endIndex; row++){
+            Tokenizer.DocumentRepresentation documentRepresentation = internalRepresentation[row];
+            List<Tokenizer.Token> wordTokens = documentRepresentation.tokens;
+            documentRepresentation.tokens = wordTokenListToNgrams(wordTokens);
         }
     }
 
-    @Override
-    public List<DependencyTask<?>> getTasks(FrameBlock in, List<Tokenizer.DocumentRepresentation> internalRepresentation, int k) {
-        return null;
-    }
 }

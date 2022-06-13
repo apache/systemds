@@ -29,50 +29,40 @@ import org.apache.wink.json4j.JSONObject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TokenizerApplierCount implements TokenizerApplier {
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
+public class TokenizerApplierCount extends TokenizerApplier {
 
     private static final long serialVersionUID = 6382000606237705019L;
-    private final Params params;
-    private final int numIdCols;
-    private final int maxTokens;
-    private final boolean wideFormat;
+    public boolean sort_alpha = false;
 
-    static class Params implements Serializable {
 
-        private static final long serialVersionUID = 5121697674346781880L;
-
-        public boolean sort_alpha = false;
-
-        public Params(JSONObject json) throws JSONException {
-            if (json != null && json.has("sort_alpha")) {
-                this.sort_alpha = json.getBoolean("sort_alpha");
-            }
+    public TokenizerApplierCount(int numIdCols, int maxTokens, boolean wideFormat, JSONObject params) throws JSONException {
+        super(numIdCols, maxTokens, wideFormat);
+        if (params != null && params.has("sort_alpha")) {
+            this.sort_alpha = params.getBoolean("sort_alpha");
         }
     }
 
-    public TokenizerApplierCount(JSONObject params, int numIdCols, int maxTokens, boolean wideFormat) throws JSONException {
-        this.params = new Params(params);
-        this.numIdCols = numIdCols;
-        this.maxTokens = maxTokens;
-        this.wideFormat = wideFormat;
-    }
-
     @Override
-    public void applyInternalRepresentation(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out) {
-        for (Tokenizer.DocumentRepresentation docToToken: internalRepresentation) {
-            List<Object> keys = docToToken.keys;
-            List<Tokenizer.Token> tokenList = docToToken.tokens;
+    public void applyInternalRepresentation(Tokenizer.DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
+        int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
+        int outputRow = Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> doc.tokens.size()).sum();
+        for(int i = inputRowStart; i < endIndex; i++) {
+            List<Object> keys = internalRepresentation[i].keys;
+            List<Tokenizer.Token> tokenList = internalRepresentation[i].tokens;
             // Creating the counts for BoW
             Map<String, Long> tokenCounts = tokenList.stream().collect(Collectors.groupingBy(token ->
                     token.textToken, Collectors.counting()));
             // Remove duplicate strings
             Stream<String> distinctTokenStream = tokenList.stream().map(token -> token.textToken).distinct();
-            if (params.sort_alpha) {
+            if (this.sort_alpha) {
                 // Sort alphabetically
                 distinctTokenStream = distinctTokenStream.sorted();
             }
@@ -83,23 +73,20 @@ public class TokenizerApplierCount implements TokenizerApplier {
                 if (numTokens >= maxTokens) {
                     break;
                 }
+                int col = 0;
+                for(; col < keys.size(); col++){
+                    out.set(outputRow, col, keys.get(col));
+                }
                 // Create a row per token
                 long count = tokenCounts.get(token);
-                List<Object> rowList = new ArrayList<>(keys);
-                rowList.add(token);
-                rowList.add(count);
-                Object[] row = new Object[rowList.size()];
-                rowList.toArray(row);
-                out.appendRow(row);
+                out.set(outputRow, col, token);
+                out.set(outputRow, col+1, count);
+                outputRow++;
                 numTokens++;
             }
         }
     }
 
-    @Override
-    public List<DependencyTask<?>> getTasks(List<Tokenizer.DocumentRepresentation> internalRepresentation, FrameBlock out, int k) {
-        return null;
-    }
 
     @Override
     public Types.ValueType[] getOutSchema() {
@@ -112,15 +99,4 @@ public class TokenizerApplierCount implements TokenizerApplier {
         return schema;
     }
 
-    public long getNumRows(long inRows) {
-        if (wideFormat) {
-            return inRows;
-        } else {
-            return inRows * maxTokens;
-        }
-    }
-
-    public long getNumCols() {
-        return this.getOutSchema().length;
-    }
 }

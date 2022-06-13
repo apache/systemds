@@ -73,9 +73,14 @@ s_apply_pipeline = function(Frame[Unknown] testData, Frame[Unknown] metaData = a
   
   # # # if mask has 1s then there are categorical features
   M = as.frame(exState[2])
-  index = vectorToCsv(mask)
-  jspecR = "{ids:true, recode:["+index+"]}"
-  eXtest = transformapply(target=Xtest, spec=jspecR, meta=M);
+  if(sum(mask) > 0)
+  {
+    index = vectorToCsv(mask)
+    jspecR = "{ids:true, recode:["+index+"]}"
+    eXtest = transformapply(target=Xtest, spec=jspecR, meta=M);
+  }
+  else 
+    eXtest = as.matrix(Xtest)
   metaList["applyFunc"] = applyFunc
 
   no_of_param = as.scalar(hp[1, 1]) + 1

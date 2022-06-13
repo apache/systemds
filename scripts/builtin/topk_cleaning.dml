@@ -223,6 +223,7 @@ return(Matrix[Double] eXtrain, Matrix[Double] eXtest, Frame[Unknown] X_meta)
   else {
     eXtrain = as.matrix(Xtrain)
     eXtest = as.matrix(Xtest)
+    X_meta = as.frame('NULL')
   }
 }
 

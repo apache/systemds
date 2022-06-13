@@ -378,16 +378,16 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec
 					.getBinaryMatrixBlockRDDHandleForVariable(params.get("target"));
 				DataCharacteristics mcIn = sec.getDataCharacteristics(params.get("target"));
-	
+
 				// execute replace operation
 				double pattern = Double.parseDouble(params.get("pattern"));
 				double replacement = Double.parseDouble(params.get("replacement"));
 				JavaPairRDD<MatrixIndexes, MatrixBlock> out = in1.mapValues(new RDDReplaceFunction(pattern, replacement));
-	
+
 				// store output rdd handle
 				sec.setRDDHandleForVariable(output.getName(), out);
 				sec.addLineageRDD(output.getName(), params.get("target"));
-	
+
 				// update output statistics (required for correctness)
 				sec.getDataCharacteristics(output.getName()).set(mcIn.getRows(),
 					mcIn.getCols(),
@@ -420,7 +420,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			// get input rdd handle
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(rddInVar);
 			DataCharacteristics mcIn = sec.getDataCharacteristics(rddInVar);
-			
+
 			// parse untyped parameters, w/ robust handling for 'max'
 			String maxValName = params.get("max");
 			long lmaxVal = maxValName.startsWith(Lop.SCALAR_VAR_NAME_PREFIX) ?
@@ -572,7 +572,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			_replacement = replacement;
 		}
 
-		@Override 
+		@Override
 		public FrameBlock call(FrameBlock arg0){
 			return arg0.replaceOperations(_pattern, _replacement);
 		}
@@ -842,7 +842,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		private static final long serialVersionUID = -8788298032616522019L;
 
 		private Tokenizer _tokenizer = null;
-		
+
 		public RDDTokenizeFunction(Tokenizer tokenizer, int blen) {
 			_tokenizer = tokenizer;
 		}
@@ -852,7 +852,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			long key = in._1();
 			FrameBlock blk = in._2();
 
-			FrameBlock fbout = _tokenizer.tokenize(blk, new FrameBlock(_tokenizer.getSchema()));
+			FrameBlock fbout = _tokenizer.tokenize(blk);
 			return new Tuple2<>(key, fbout);
 		}
 	}

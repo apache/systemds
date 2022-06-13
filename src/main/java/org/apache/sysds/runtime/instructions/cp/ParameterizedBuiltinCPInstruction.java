@@ -255,7 +255,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 					ec.setMatrixOutput(output.getName(), ret);
 				targetObj.release();
 			}
-			
+
 		}
 		else if(opcode.equals("lowertri") || opcode.equals("uppertri")) {
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));
@@ -289,7 +289,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			// compute tokenizer
 			Tokenizer tokenizer = TokenizerFactory.createTokenizer(getParameterMap().get("spec"),
 				Integer.parseInt(getParameterMap().get("max_tokens")));
-			FrameBlock fbout = tokenizer.tokenize(data, new FrameBlock(tokenizer.getSchema()));
+			FrameBlock fbout = tokenizer.tokenize(data);
 
 			// release locks
 			ec.setFrameOutput(output.getName(), fbout);
@@ -419,8 +419,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 
 			ListObject list = null;
 			if (DMLScript.LINEAGE) {
-				CPOperand[] listOperands = names.stream().map(n -> ec.containsVariable(params.get(n)) 
-						? new CPOperand(n, ec.getVariable(params.get(n))) 
+				CPOperand[] listOperands = names.stream().map(n -> ec.containsVariable(params.get(n))
+						? new CPOperand(n, ec.getVariable(params.get(n)))
 						: getStringLiteral(n)).toArray(CPOperand[]::new);
 				LineageItem[] liList = LineageItemUtils.getLineage(ec, listOperands);
 				// create list object over all inputs w/ the corresponding lineage items
@@ -520,10 +520,10 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if (opcode.equalsIgnoreCase("nvlist") || opcode.equalsIgnoreCase("autoDiff")) {
 			List<String> names = new ArrayList<>(params.keySet());
-			CPOperand[] listOperands = names.stream().map(n -> ec.containsVariable(params.get(n)) 
-					? new CPOperand(n, ec.getVariable(params.get(n))) 
+			CPOperand[] listOperands = names.stream().map(n -> ec.containsVariable(params.get(n))
+					? new CPOperand(n, ec.getVariable(params.get(n)))
 					: getStringLiteral(n)).toArray(CPOperand[]::new);
-			return Pair.of(output.getName(), 
+			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, listOperands)));
 		}
 		else {

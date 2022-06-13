@@ -58,11 +58,12 @@ public class Tokenizer implements Serializable {
         return tokenizerApplier.getNumCols();
     }
 
-    public FrameBlock tokenize(FrameBlock in, FrameBlock out) {
-        return tokenize(in, out, 1);
+    public FrameBlock tokenize(FrameBlock in) {
+        return tokenize(in, 1);
     }
 
-    public FrameBlock tokenize(FrameBlock in, FrameBlock out, int k){
+    public FrameBlock tokenize(FrameBlock in, int k){
+        FrameBlock out = new FrameBlock(this.getSchema());
         // First convert to internal representation
         this.build(in, k);
         // Then convert to output representation

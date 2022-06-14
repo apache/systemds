@@ -29,12 +29,12 @@ import java.util.BitSet;
 import java.util.HashMap;
 
 public class RawIndex {
-	private final String raw;
-	private final int rawLength;
-	private final BitSet numberBitSet;
-	private final BitSet dotBitSet;
-	private final BitSet eBitSet;
-	private final BitSet plusMinusBitSet;
+	private String raw;
+	private int rawLength;
+	private BitSet numberBitSet;
+	private BitSet dotBitSet;
+	private BitSet eBitSet;
+	private BitSet plusMinusBitSet;
 	private BitSet reservedPositions;
 	private BitSet backupReservedPositions;
 	private HashMap<Double, ArrayList<Pair<Integer, Integer>>> actualNumericValues;
@@ -141,6 +141,8 @@ public class RawIndex {
 		if(numberBitSet.cardinality() > 0)
 			extractNumericDotEActualValues();
 	}
+
+	public RawIndex() {}
 
 	public Pair<Integer, Integer> findValue(Object value, Types.ValueType valueType) {
 		if(valueType.isNumeric())
@@ -357,5 +359,16 @@ public class RawIndex {
 			}
 		}
 		return pos;
+	}
+
+	public void setRaw(String raw){
+		this.raw = raw;
+		this.rawLength = raw.length();
+		this.reservedPositions = new BitSet(rawLength);
+	}
+
+	public void setReservedPositions(int pos, int len){
+		for(int i=pos; i<pos+len; i++)
+			this.reservedPositions.set(i);
 	}
 }

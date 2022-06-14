@@ -32,8 +32,6 @@ import java.util.Random;
 
 public class CodeGenTrie {
 	private final CustomProperties properties;
-	private final CodeGenTrieNode ctnCol;
-	private final CodeGenTrieNode ctnRow;
 	private final CodeGenTrieNode ctnValue;
 	private final CodeGenTrieNode ctnIndexes;
 
@@ -47,9 +45,6 @@ public class CodeGenTrie {
 
 		this.ctnValue = new CodeGenTrieNode(CodeGenTrieNode.NodeType.VALUE);
 		this.ctnIndexes = new CodeGenTrieNode(CodeGenTrieNode.NodeType.INDEX);
-
-		this.ctnCol = new CodeGenTrieNode(CodeGenTrieNode.NodeType.COL);
-		this.ctnRow = new CodeGenTrieNode(CodeGenTrieNode.NodeType.ROW);
 
 		if(properties.getColKeyPatterns() != null) {
 			for(int c = 0; c < properties.getColKeyPatterns().length; c++) {
@@ -123,8 +118,9 @@ public class CodeGenTrie {
 
 		// example: csv
 		if(data != MappingProperties.DataProperties.NOTEXIST &&
-			rowIndex == RowIndexStructure.IndexProperties.Identity &&
-			colIndex == ColIndexStructure.IndexProperties.Identity) {
+			((rowIndex == RowIndexStructure.IndexProperties.Identity &&
+			colIndex == ColIndexStructure.IndexProperties.Identity) ||
+			rowIndex == RowIndexStructure.IndexProperties.SeqScatter)) {
 			getJavaCode(ctnValue, src, "0");
 			src.append("row++; \n");
 		}

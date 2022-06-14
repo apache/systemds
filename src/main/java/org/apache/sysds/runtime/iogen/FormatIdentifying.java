@@ -438,6 +438,10 @@ public class FormatIdentifying {
 					else
 						endString = beginString;
 
+					updateMapsAndExtractAllSuffixStringsOfColsMultiLine(beginString, endString);
+					KeyTrie[] colKeyPatterns;
+					colKeyPatterns = buildColsKeyPatternSingleRow();
+					properties.setColKeyPatterns(colKeyPatterns);
 				}
 				else {
 					// TODO: extend sequential scattered format algorithm for heterogeneous structures
@@ -508,9 +512,11 @@ public class FormatIdentifying {
 		// check for Sequential:
 		for(int r = 0; r < nrows && isSeqScatter; r++) {
 			BitSet bitSet = bitSets[r];
-			int beginIndex = bitSet.nextSetBit(0);
-			for(int i = bitSet.nextSetBit(beginIndex + 1); i != -1 && isSeqScatter; i = bitSet.nextSetBit(i + 1))
-				isSeqScatter = i == ++beginIndex;
+			ArrayList<Integer> list = new ArrayList<>();
+			for(int i = bitSet.nextSetBit(0); i != -1; i = bitSet.nextSetBit(i + 1))
+				list.add(i);
+			for(int i=0; i<list.size()-1 && isSeqScatter; i++)
+				isSeqScatter = list.get(i) <= list.get(i+1);
 		}
 
 		// check for Cell Wise
@@ -790,50 +796,8 @@ public class FormatIdentifying {
 		return result;
 	}
 
-	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-	private boolean checkPrefixRowIndex(int colIndex, int beginPos, ArrayList<RawIndex> prefixRawIndex) {
-		for(int r = 0; r < nrows; r++) {
-			int rowIndex = this.mapRow[r][colIndex];
-			if(rowIndex != -1) {
-				boolean flag = false;
-				for(RawIndex ri : prefixRawIndex) {
-					if(ri.findValue(r + beginPos) != null) {
-						flag = true;
-						break;
-					}
-				}
-				if(!flag)
-					return false;
-			}
-		}
-		return true;
-	}
-
 	public CustomProperties getFormatProperties() {
 		return properties;
-	}
-
-	private Integer mostCommonScore(int[] list) {
-		Map<Integer, Integer> map = new HashMap<>();
-		int nan = 0;
-		for(Integer t : list) {
-			if(t != -1) {
-				Integer val = map.get(t);
-				map.put(t, val == null ? 1 : val + 1);
-			}
-			else
-				nan++;
-		}
-		if(map.size() == 0)
-			return nan;
-
-		Map.Entry<Integer, Integer> max = null;
-		for(Map.Entry<Integer, Integer> e : map.entrySet()) {
-			if(max == null || e.getValue() > max.getValue())
-				max = e;
-		}
-		return max.getValue() + nan;
 	}
 
 	private Integer mostCommonValue(int[] list) {
@@ -1127,283 +1091,87 @@ public class FormatIdentifying {
 	/////////////////////////////////////////////////////////////////////////////
 	//                    Methods For Multi Lines Mapping                     //
 	////////////////////////////////////////////////////////////////////////////
-	// This implementation is for nested datasets are scattered on multiple lines
-	// The following steps are required:
-	// 1.  Extract all prefix strings per column
-	// 2. Build key pattern tree for each column
-	// 3. Build key pattern for end of values
 
-	private ArrayList<ArrayList<String>> findRowDelimiters() {
-		ArrayList<ArrayList<String>> keyPattern = new ArrayList<>();
-		Hirschberg hirschberg = new Hirschberg();
-		int misMatchPenalty = 3;
-		int gapPenalty = 2;
-
-		//extract all lines are in record boundary
-		ArrayList<String> recordBoundaries = new ArrayList<>();
-		BitSet[] tmpUsedLines = new BitSet[nlines];
-		BitSet[] usedLines = new BitSet[nlines];
-		int[] minList = new int[nrows];
-		HashMap<Integer, Integer> maxColPos = new HashMap<>();
-		int[] minColPos = new int[nrows];
-		for(int r = 0; r < nrows; r++)
-			tmpUsedLines[r] = new BitSet();
-
-		for(int r = 0; r < nrows; r++) {
-			int min = nlines;
-			int minPos = 0;
-			for(int c = 0; c < ncols; c++)
-				if(mapRow[r][c] != -1) {
-					tmpUsedLines[r].set(mapRow[r][c]);
-					if(mapRow[r][c] <= min) {
-						min = mapRow[r][c];
-						if(minPos != 0)
-							minPos = Math.min(minPos, mapCol[r][c]);
-						else
-							minPos = mapCol[r][c];
-
-					}
-					if(maxColPos.containsKey(mapRow[r][c]))
-						maxColPos.put(mapRow[r][c], Math.max(maxColPos.get(mapRow[r][c]), mapCol[r][c] + mapLen[r][c]));
-					else
-						maxColPos.put(mapRow[r][c], mapCol[r][c] + mapLen[r][c]);
-				}
-			minList[r] = min;
-			minColPos[r] = minPos;
+	private void updateMapsAndExtractAllSuffixStringsOfColsMultiLine(String beginString, String endString){
+		ArrayList<RawIndex> upRawIndexes = new ArrayList<>();
+		ArrayList<Pair<Integer, Integer>> beginIndexes = getTokenIndexOnMultiLineRecords(beginString);
+		ArrayList<Pair<Integer, Integer>> endIndexes;
+		String endToken;
+		if(!beginString.equals(endString)) {
+			endIndexes = getTokenIndexOnMultiLineRecords(endString);
+			endToken = endString;
 		}
-
-		for(int r = 0; r < nrows; r++) {
-			usedLines[r] = new BitSet(nlines);
-			for(int i = 0; i < nrows; i++) {
-				if(i != r)
-					usedLines[r].or(tmpUsedLines[i]);
-			}
+		else {
+			endIndexes = new ArrayList<>();
+			for(int i = 1; i < beginIndexes.size(); i++)
+				endIndexes.add(beginIndexes.get(i));
+			endIndexes.add(new Pair<>(this.sampleRawIndexes.size() - 1, this.sampleRawIndexes.get(this.sampleRawIndexes.size() - 1).getRawLength()));
+			endToken = "";
 		}
-
-		for(int r = 0; r < nrows; r++) {
-			int beginLine = minList[r];
-			for(; beginLine >= 0; beginLine--)
-				if(usedLines[r].get(beginLine))
-					break;
-
-			StringBuilder sb = new StringBuilder();
-			beginLine = Math.max(beginLine, 0);
-
-			if(beginLine + 1 == nlines)
-				continue;
-
-			Integer subStrPos = 0;
-			if(maxColPos.containsKey(beginLine))
-				subStrPos = maxColPos.get(beginLine);
-
-			String str = sampleRawIndexes.get(beginLine).getRaw().substring(subStrPos);
-			if(str.length() > 0) {
-				sb.append(str).append("\n");
-			}
-			for(int i = beginLine + 1; i < minList[r]; i++) {
-				str = sampleRawIndexes.get(i).getRaw();
-				if(str.length() > 0)
-					sb.append(str).append("\n");
-			}
-
-			str = sampleRawIndexes.get(minList[r]).getRaw().substring(0, minColPos[r]);
-			if(str.length() > 0)
-				sb.append(str);
-			recordBoundaries.add(sb.toString());
-		}
-		recordBoundaries.remove(recordBoundaries.size() - 1);
-
-		String str1 = recordBoundaries.get(0);
-		String str2 = recordBoundaries.get(1);
-		Pair<ArrayList<String>, String> pattern = hirschberg.getLCS(str1, str2, misMatchPenalty, gapPenalty);
-		if(pattern != null) {
-			String intersect = pattern.getValue();
-			ArrayList<String> intersectPattern = pattern.getKey();
-			for(int i = 2; i < recordBoundaries.size(); i++) {
-				pattern = hirschberg.getLCS(intersect, recordBoundaries.get(i), misMatchPenalty, gapPenalty);
-				if(pattern != null) {
-					intersect = pattern.getValue();
-					intersectPattern = pattern.getKey();
-				}
-				else
-					intersect = null;
-			}
-			if(intersect != null && intersect.length() > 0) {
-				keyPattern.add(intersectPattern);
-				return keyPattern;
-			}
-		}
-		return null;
-	}
-
-	// Build key pattern tree for each column
-	private KeyTrie[] buildColsKeyPatternMultiRow() {
-		Pair<ArrayList<String>[], Pair<Integer, Integer>[]> prefixStrings = extractAllPrefixStringsOfColsMultiLine(true);
-		ArrayList<String>[] suffixStrings = extractAllSuffixStringsOfColsMultiLine();
-
-		KeyTrie[] colKeyPattens = new KeyTrie[ncols];
-		for(int c = 0; c < ncols; c++) {
-			// 1. Build Prefix Key Pattern
-			String colDelim = findStartWithIntersectOfStrings(prefixStrings.getKey()[c], prefixStrings.getValue()[c].getKey());
-
-			HashSet<String> intersect = new HashSet<>();
-			intersect.add(colDelim);
-
-			KeyTrie trie = new KeyTrie(colDelim);
-			ArrayList<Pair<ArrayList<String>, ArrayList<String>>> remainedPrefixes = new ArrayList<>();
-			boolean check;
-			do {
-				ArrayList<ArrayList<String>> keyPatterns = trie.getPrefixKeyPatterns();
-				check = false;
-				for(ArrayList<String> keyPattern : keyPatterns) {
-					boolean newCheck = checkKeyPatternIsUnique(prefixStrings.getKey()[c], keyPattern);
-					check |= newCheck;
-					if(newCheck) {
-						trie.setAPrefixPath(keyPattern);
-					}
-				}
-
-				if(!check) {
-					remainedPrefixes.clear();
-					boolean flag = true;
-					for(ArrayList<String> keyPattern : keyPatterns) {
-						ArrayList<String> remainedPrefix = new ArrayList<>();
-						for(String ps : prefixStrings.getKey()[c])
-							remainedPrefix.add(getRemainedSubstring(ps, keyPattern));
-
-						intersect = findStartWithIntersectOfStrings(remainedPrefix);
-						if(intersect != null) {
-							trie.insertPrefixKeysConcurrent(intersect);
-						}
-						else {
-							remainedPrefixes.add(new Pair<>(keyPattern, remainedPrefix));
-							flag = false;
-							break;
-						}
-					}
-					if(!flag)
-						break;
-				}
-			}
-			while(!check);
-
-			// Suffix pattern is based on char, so we need to extract all chars of a string
-			for(String suffix : suffixStrings[c]) {
-				trie.insertSuffixKeys(suffix.toCharArray());
-			}
-			colKeyPattens[c] = trie;
-		}
-		return colKeyPattens;
-	}
-
-	// Extract prefix strings:
-	private Pair<ArrayList<String>[], Pair<Integer, Integer>[]> extractAllPrefixStringsOfColsMultiLine(boolean reverse) {
-
-		ArrayList<String>[] result = new ArrayList[ncols];
-		Pair<Integer, Integer>[] minmax = new Pair[ncols];
-		BitSet[] tmpUsedLines = new BitSet[nlines];
-		BitSet[] usedLines = new BitSet[nlines];
-		for(int r = 0; r < nrows; r++)
-			tmpUsedLines[r] = new BitSet();
-
-		for(int r = 0; r < nrows; r++)
-			for(int c = 0; c < ncols; c++)
-				if(mapRow[r][c] != -1)
-					tmpUsedLines[r].set(mapRow[r][c]);
-
-		for(int r = 0; r < nrows; r++) {
-			usedLines[r] = new BitSet(nlines);
-			for(int i = 0; i < nrows; i++) {
-				if(i != r)
-					usedLines[r].or(tmpUsedLines[i]);
-			}
-		}
-
-		// extract prefix strings
-		for(int c = 0; c < ncols; c++) {
-			result[c] = new ArrayList<>();
-			int min = 0;
-			int max = 0;
-			for(int r = 0; r < nrows; r++) {
-				int rowIndex = mapRow[r][c];
-				if(rowIndex == -1)
-					continue;
-				StringBuilder sb = new StringBuilder();
-				int lastLine = 0;
-
-				for(int i = rowIndex - 1; i >= 0; i--)
-					if(usedLines[r].get(i)) {
-						lastLine = i;
-						break;
-					}
-				for(int i = lastLine; i < rowIndex; i++) {
-					if(sampleRawIndexes.get(i).getRawLength() > 0)
-						sb.append(sampleRawIndexes.get(i).getRaw()).append("\n");
-				}
-				String str = sampleRawIndexes.get(rowIndex).getSubString(0, mapCol[r][c]);
-				if(str.length() > 0 && !str.equals("\n"))
-					sb.append(str);
-				else if(lastLine < rowIndex)
-					sb.deleteCharAt(sb.length() - 1);
-
-				if(reverse)
-					result[c].add(sb.reverse().toString());
-				else
-					result[c].add(sb.toString());
-				max = Math.max(max, sb.length());
-				if(sb.length() < min || min == 0)
-					min = sb.length();
-				minmax[c] = new Pair<>(min, max);
-			}
-		}
-		return new Pair<>(result, minmax);
-	}
-
-	private String findStartWithIntersectOfStrings(ArrayList<String> strList, int minLength) {
-		StringBuilder sb = new StringBuilder();
+		int r = 0;
 		int i = 0;
-		boolean flag = true;
-		do {
-			char ch = strList.get(0).charAt(i);
-			for(int j = 1; j < Math.min(strList.size(), minLength); j++) {
-				char cch = strList.get(j).charAt(i);
-				if(ch != cch || ch == '\n') {
-					flag = false;
+		int j = 0;
+		StringBuilder sb = new StringBuilder();
+		while(i < beginIndexes.size() && j < endIndexes.size()) {
+			Pair<Integer, Integer> p1 = beginIndexes.get(i);
+			Pair<Integer, Integer> p2 = endIndexes.get(j);
+			int n = 0;
+			while(p1.getKey() < p2.getKey() || (p1.getKey() == p2.getKey() && p1.getValue() < p2.getValue())) {
+				n++;
+				i++;
+				if(i == beginIndexes.size())
 					break;
+				p1 = beginIndexes.get(i);
+			}
+			j += n - 1;
+			sb.append(this.sampleRawIndexes.get(beginIndexes.get(i - n).getKey()).getRaw().substring(beginIndexes.get(i - n).getValue()));
+			for(int ri = beginIndexes.get(i - n).getKey() + 1; ri < endIndexes.get(j).getKey(); ri++) {
+				sb.append(this.sampleRawIndexes.get(ri).getRaw());
+			}
+			sb.append(this.sampleRawIndexes.get(endIndexes.get(j).getKey()).getRaw().substring(0, endIndexes.get(j).getValue())).append(endToken);
+			RawIndex rawIndex = new RawIndex();
+			rawIndex.setRaw(sb.toString());
+			sb = new StringBuilder();
+			j++;
+			// update mapping
+			for(int c = 0; c < ncols; c++) {
+				if(mapRow[r][c] != -1) {
+					if(mapRow[r][c] != beginIndexes.get(i - n).getKey())
+						this.mapCol[r][c] += this.sampleRawIndexes.get(beginIndexes.get(i - n).getKey()).getRawLength() - beginIndexes.get(i - n)
+							.getValue();
+					else
+						this.mapCol[r][c] -= beginIndexes.get(i - n).getValue();
+
+					for(int ci = beginIndexes.get(i - n).getKey() + 1; ci < this.mapRow[r][c]; ci++)
+						this.mapCol[r][c] += this.sampleRawIndexes.get(ci).getRawLength();
+					rawIndex.setReservedPositions(mapCol[r][c], mapLen[r][c]);
+					this.mapRow[r][c] = r;
 				}
 			}
-			if(flag)
-				sb.append(ch);
-			i++;
+			upRawIndexes.add(rawIndex);
+			r++;
 		}
-		while(flag && i < minLength);
-		return sb.toString();
-
+		this.sampleRawIndexes = upRawIndexes;
 	}
 
-	private HashSet<String> findStartWithIntersectOfStrings(ArrayList<String> strList) {
-		// 1. Extract all substrings
-		// 2. Find intersection of substrings
+	private ArrayList<Pair<Integer, Integer>> getTokenIndexOnMultiLineRecords(String token){
+		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
 
-		HashSet<String>[] substrings = new HashSet[strList.size()];
-		for(int i = 0; i < strList.size(); i++)
-			substrings[i] = new HashSet<>();
-
-		for(int w = windowSize; w > 2; w--) {
-			for(int i = 0; i < strList.size(); i++) {
-				substrings[i].clear();
-				substrings[i].addAll(getAllSubstringsOfAString(strList.get(i), w));
-			}
-
-			HashSet<String> totalIntersect = new HashSet<>(substrings[0]);
-			for(int r = 1; r < substrings.length; r++)
-				totalIntersect.retainAll(substrings[r]);
-
-			if(totalIntersect.size() > 0)
-				return totalIntersect;
-
+		for(int ri=0; ri< this.sampleRawIndexes.size(); ri++){
+			String raw = this.sampleRawIndexes.get(ri).getRaw();
+			int index;
+			int fromIndex = 0;
+			do {
+				index = raw.indexOf(token, fromIndex);
+				if(index !=-1){
+					result.add(new Pair<>(ri, index));
+					fromIndex = index+token.length();
+				}
+				else
+					break;
+			}while(true);
 		}
-		return null;
+		return result;
 	}
 
 	private boolean checkKeyPatternIsUnique(ArrayList<String> prefixStrings, ArrayList<String> keys) {
@@ -1453,68 +1221,6 @@ public class FormatIdentifying {
 			return new Pair<>(startPos, currPos + key.get(key.size() - 1).length());
 		else
 			return new Pair<>(-1, -1);
-	}
-
-	private ArrayList<String> getAllSubstringsOfAString(String str, int size) {
-		ArrayList<String> result = new ArrayList<>();
-		if(str == null)
-			return result;
-		for(int i = 0; i <= str.length() - size; i++) {
-			String s = str.substring(i, i + size);
-			if(!s.contains("\n"))
-				result.add(s);
-		}
-		return result;
-	}
-
-	private String getRemainedSubstring(String str, ArrayList<String> keys) {
-		boolean flag = true;
-		int currPos = 0;
-		for(String k : keys) {
-			int index = str.indexOf(k, currPos);
-			if(index != -1)
-				currPos = index + k.length();
-			else {
-				flag = false;
-				break;
-			}
-		}
-		if(flag)
-			return str.substring(currPos);
-		else
-			return null;
-	}
-
-	private ArrayList<String>[] extractAllSuffixStringsOfColsMultiLine() {
-		ArrayList<String>[] result = new ArrayList[ncols];
-		for(int c = 0; c < ncols; c++) {
-			result[c] = new ArrayList<>();
-
-			for(int r = 0; r < nrows; r++) {
-				int rowIndex = mapRow[r][c];
-				if(rowIndex == -1)
-					continue;
-				StringBuilder sb = new StringBuilder();
-				String str = sampleRawIndexes.get(rowIndex).getRaw().substring(mapCol[r][c] + mapLen[r][c]);
-				boolean enter = false;
-				if(str.length() > 0) {
-					sb.append(str);
-					enter = true;
-				}
-
-				for(int i = rowIndex + 1; i < nlines; i++) {
-					str = sampleRawIndexes.get(i).getRaw().substring(0, Math.min(sampleRawIndexes.get(i).getRawLength(), suffixStringLength));
-					if(str.length() > 0 && !enter) {
-						sb.append(str);
-						break;
-					}
-				}
-				if(sb.length() > 0)
-					sb.deleteCharAt(sb.length() - 1);
-				result[c].add(sb.toString());
-			}
-		}
-		return result;
 	}
 
 }

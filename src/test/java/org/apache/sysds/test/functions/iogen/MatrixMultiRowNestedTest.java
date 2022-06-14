@@ -36,6 +36,11 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 	public void test1() {
 		sampleRaw = "<a>\n" +
 					"<b>1</b>\n" +
+					"<a>\n" +
+					"<b>70</b>\n" +
+					"<c>85</c>\n" +
+					"<d>90</d>\n" +
+					"</a>"+
 					"<c>2</c>\n" +
 					"<d>3</d>\n" +
 					"</a>\n" +
@@ -43,7 +48,7 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 					"<b>4</b>\n" +
 					"<c>5</c>\n" +
 					"<d>6</d>\n" +
-					"</a>\n" +
+					"</a>" +
 					"<a>\n" +
 					"<b>7</b>\n" +
 					"<c>8</c>\n" +

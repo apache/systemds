@@ -46,8 +46,11 @@ public class TokenizerApplierHash extends TokenizerApplier {
 	public int num_features = 1048576;  // 2^20
 
 
-	public TokenizerApplierHash( int numIdCols, int maxTokens, boolean wideFormat, JSONObject params) throws JSONException {
-		super(numIdCols, maxTokens, wideFormat);
+	public TokenizerApplierHash( int numIdCols, int maxTokens, boolean wideFormat, boolean applyPadding, JSONObject params) throws JSONException {
+		super(numIdCols, maxTokens, wideFormat, applyPadding);
+		if(!applyPadding && wideFormat){
+			LOG.warn("ApplyPadding was set to 'false', Hash Tokenizer with wide format always has padding applied");
+		}
 		if (params != null && params.has("num_features")) {
 			this.num_features = params.getInt("num_features");
 		}
@@ -56,13 +59,13 @@ public class TokenizerApplierHash extends TokenizerApplier {
 	@Override
 	public void applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
 		int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
-		int outputRow = wideFormat ? inputRowStart : Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> doc.tokens.size()).sum();
+		int outputRow = wideFormat ? inputRowStart : Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> applyPadding? maxTokens:doc.tokens.size()).sum();
 		for(int i = inputRowStart; i < endIndex; i++) {
 			List<Object> keys = internalRepresentation[i].keys;
 			List<Token> tokenList = internalRepresentation[i].tokens;
 			// Transform to hashes
 			List<Integer> hashList = tokenList.stream().map(token -> {
-				int mod = (token.hashCode() % this.num_features) + 1;
+				int mod = (token.hashCode() % this.num_features);
 				if(mod < 0)
 					mod += this.num_features;
 				return mod;
@@ -88,31 +91,27 @@ public class TokenizerApplierHash extends TokenizerApplier {
 			if (numTokens >= maxTokens) {
 				break;
 			}
-			int col = 0;
-			for(; col < keys.size(); col++){
-				out.set(row, col, keys.get(col));
-			}
+			int col = setKeys(row, keys, out);
 			// Create a row per token
-			int hash = hashCount.getKey();
+			int hash = hashCount.getKey() + 1;
 			long count = hashCount.getValue();
 			out.set(row, col, (long)hash);
 			out.set(row, col + 1, count);
 			numTokens++;
 			row++;
 		}
+		if(applyPadding){
+			row = applyPaddingLong(row, keys, out, PADDING_STRING, 0L);
+		}
 		return row;
 	}
 
 	private int setTokensWide(int row, List<Object> keys, Map<Integer, Long> sortedHashes, FrameBlock out) {
 		// Create one row with keys as prefix
-		int col = 0;
-		for(; col < keys.size(); col++){
-			out.set(row, col, keys.get(col));
-		}
-
+		int numKeys = setKeys(row, keys, out);
 		for (int tokenPos = 0; tokenPos < maxTokens; tokenPos++) {
 			long positionHash = sortedHashes.getOrDefault(tokenPos, 0L);
-			out.set(row, col + tokenPos, positionHash);
+			out.set(row, numKeys + tokenPos, positionHash);
 		}
 		return ++row;
 	}

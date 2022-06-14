@@ -61,6 +61,8 @@ public class Tokenizer implements Serializable {
             if(tokenizerApplier.isWideFormat()){
                 return internalRepresentation.length;
             }else {
+                if(tokenizerApplier.hasPadding())
+                    return internalRepresentation.length * tokenizerApplier.getMaxTokens();
                 return Arrays.stream(internalRepresentation).mapToInt(doc -> doc.tokens.size()).sum();
             }
         }

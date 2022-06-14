@@ -19,10 +19,11 @@
 
 package org.apache.sysds.runtime.transform.tokenize.applier;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation;
-import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 
@@ -35,13 +36,20 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getBlockSizes;
 
 public abstract class TokenizerApplier implements Serializable {
 
+    protected static final Log LOG = LogFactory.getLog(TokenizerApplier.class.getName());
+
+    public static final String PADDING_STRING = "";
+
     protected final int numIdCols;
     protected final int maxTokens;
     protected final boolean wideFormat;
-    public TokenizerApplier(int numIdCols, int maxTokens, boolean wideFormat){
+    protected final boolean applyPadding;
+
+    public TokenizerApplier(int numIdCols, int maxTokens, boolean wideFormat, boolean applyPadding){
         this.numIdCols = numIdCols;
         this.maxTokens = maxTokens;
         this.wideFormat = wideFormat;
+        this.applyPadding = applyPadding;
     }
 
     public void applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out){
@@ -65,7 +73,40 @@ public abstract class TokenizerApplier implements Serializable {
         return DependencyThreadPool.createDependencyTasks(tasks, null);
     }
 
+    protected int setKeys(int row, List<Object> keys, FrameBlock out){
+        int col = 0;
+        for(; col < keys.size(); col++){
+            out.set(row, col, keys.get(col));
+        }
+        return col;
+    }
+
+    protected int applyPaddingLong(int startRow, List<Object> keys, FrameBlock out, Object val1, Object val2){
+        int row = startRow;
+        for (; row < maxTokens; row++){
+            int col = setKeys(row, keys, out);
+            out.set(row, col, val1);
+            out.set(row, col+1, val2);
+        }
+        return row;
+    }
+
+    protected void applyPaddingWide(int row, int offset, int startToken, FrameBlock out, Object padding){
+        int token = startToken;
+        for (; token < maxTokens; token++) {
+            out.set(row, offset+token, padding);
+        }
+    }
+
     public abstract Types.ValueType[] getOutSchema();
+
+    public boolean hasPadding(){
+        return applyPadding;
+    }
+
+    public int getMaxTokens(){
+        return maxTokens;
+    }
 
     public int getMaxNumRows(int inRows) {
         if (wideFormat) {

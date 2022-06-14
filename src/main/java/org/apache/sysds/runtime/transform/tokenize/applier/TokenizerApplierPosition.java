@@ -39,14 +39,15 @@ public class TokenizerApplierPosition extends TokenizerApplier {
 
 	private static final long serialVersionUID = 3563407270742660830L;
 
-	public TokenizerApplierPosition(int numIdCols, int maxTokens, boolean wideFormat) {
-		super(numIdCols, maxTokens, wideFormat);
+	public TokenizerApplierPosition(int numIdCols, int maxTokens, boolean wideFormat, boolean applyPadding) {
+		super(numIdCols, maxTokens, wideFormat, applyPadding);
 	}
 
 	@Override
 	public void applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
 		int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
-		int outputRow = wideFormat ? inputRowStart : Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> doc.tokens.size()).sum();
+		int outputRow = wideFormat ? inputRowStart : Arrays.stream(internalRepresentation).limit(inputRowStart)
+				.mapToInt(doc -> applyPadding? maxTokens : doc.tokens.size()).sum();
 		for(int i = inputRowStart; i < endIndex; i++ ) {
 			List<Object> keys = internalRepresentation[i].keys;
 			List<Token> tokenList = internalRepresentation[i].tokens;
@@ -75,25 +76,26 @@ public class TokenizerApplierPosition extends TokenizerApplier {
 			row++;
 			numTokens++;
 		}
+		if(applyPadding){
+			row = applyPaddingLong(row, keys, out, -1, PADDING_STRING);
+		}
+
 		return row;
 	}
 
 	public int appendTokensWide(int row, List<Object> keys, List<Token> tokenList, FrameBlock out) {
 		// Create one row with keys as prefix
-		int col = 0;
-		for(; col < keys.size(); col++){
-			out.set(row, col, keys.get(col));
-		}
+		int numKeys = setKeys(row, keys, out);
 		int token = 0;
 		for (; token < tokenList.size(); token++) {
 			if (token >= maxTokens) {
 				break;
 			}
-			out.set(row, col+token, tokenList.get(token).toString());
+			out.set(row, numKeys+token, tokenList.get(token).toString());
 		}
-		// Remaining positions need to be filled with empty tokens
-		for (; token < maxTokens; token++) {
-			out.set(row, col+token, "");
+		if(applyPadding){
+			// Remaining positions need to be filled with empty tokens
+			applyPaddingWide(row, numKeys, token, out, PADDING_STRING);
 		}
 		return ++row;
 	}

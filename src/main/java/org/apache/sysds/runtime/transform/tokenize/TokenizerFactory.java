@@ -74,6 +74,11 @@ public class TokenizerFactory {
                 wideFormat = jSpec.getBoolean("format_wide");
             }
 
+            boolean applyPadding = false;  // no padding is default
+            if (jSpec.has("apply_padding")) {
+                applyPadding = jSpec.getBoolean("apply_padding");
+            }
+
             TokenizerBuilder tokenizerBuilder;
             TokenizerApplier tokenizerApplier;
 
@@ -94,13 +99,13 @@ public class TokenizerFactory {
             // Transform tokens to output representation
             switch (out) {
                 case "count":
-                    tokenizerApplier = new TokenizerApplierCount(numIdCols, maxTokens, wideFormat, outParams);
+                    tokenizerApplier = new TokenizerApplierCount(numIdCols, maxTokens, wideFormat, applyPadding, outParams);
                     break;
                 case "position":
-                    tokenizerApplier = new TokenizerApplierPosition(numIdCols, maxTokens, wideFormat);
+                    tokenizerApplier = new TokenizerApplierPosition(numIdCols, maxTokens, wideFormat, applyPadding);
                     break;
                 case "hash":
-                    tokenizerApplier = new TokenizerApplierHash(numIdCols, maxTokens, wideFormat, outParams);
+                    tokenizerApplier = new TokenizerApplierHash(numIdCols, maxTokens, wideFormat, applyPadding, outParams);
                     break;
                 default:
                     throw new IllegalArgumentException("Output representation {out=" + out + "} is not supported.");

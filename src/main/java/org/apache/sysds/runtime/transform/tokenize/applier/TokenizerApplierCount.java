@@ -45,8 +45,8 @@ public class TokenizerApplierCount extends TokenizerApplier {
     public boolean sort_alpha = false;
 
 
-    public TokenizerApplierCount(int numIdCols, int maxTokens, boolean wideFormat, JSONObject params) throws JSONException {
-        super(numIdCols, maxTokens, wideFormat);
+    public TokenizerApplierCount(int numIdCols, int maxTokens, boolean wideFormat, boolean applyPadding, JSONObject params) throws JSONException {
+        super(numIdCols, maxTokens, wideFormat, applyPadding);
         if (params != null && params.has("sort_alpha")) {
             this.sort_alpha = params.getBoolean("sort_alpha");
         }
@@ -55,7 +55,7 @@ public class TokenizerApplierCount extends TokenizerApplier {
     @Override
     public void applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
         int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
-        int outputRow = Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> doc.tokens.size()).sum();
+        int outputRow = Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> applyPadding? maxTokens: doc.tokens.size()).sum();
         for(int i = inputRowStart; i < endIndex; i++) {
             List<Object> keys = internalRepresentation[i].keys;
             List<Token> tokenList = internalRepresentation[i].tokens;
@@ -84,6 +84,9 @@ public class TokenizerApplierCount extends TokenizerApplier {
                 out.set(outputRow, col+1, count);
                 outputRow++;
                 numTokens++;
+            }
+            if(applyPadding){
+               outputRow = applyPaddingLong(outputRow, keys, out, PADDING_STRING, -1);
             }
         }
     }

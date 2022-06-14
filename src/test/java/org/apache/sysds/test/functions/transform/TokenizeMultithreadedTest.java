@@ -51,7 +51,7 @@ public class TokenizeMultithreadedTest extends AutomatedTestBase  {
     private final static JsonObject ngram_algo_params0 = Json.createObjectBuilder()
             .add("min_gram", 2)
             .add("max_gram", 3)
-            .add("regex", "\\\\W+")
+            .add("regex", "\\W+")
             .build();
 
     private final static JsonObject count_out_params0 = Json.createObjectBuilder().add("sort_alpha", false).build();

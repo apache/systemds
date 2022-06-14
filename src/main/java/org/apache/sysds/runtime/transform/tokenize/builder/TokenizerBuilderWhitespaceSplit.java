@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.transform.tokenize.builder;
 
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation;
+import org.apache.sysds.runtime.transform.tokenize.Token;
 import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.wink.json4j.JSONException;
@@ -31,6 +33,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static org.apache.sysds.runtime.util.UtilFunctions.getBlockSizes;
 import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
@@ -52,29 +55,29 @@ public class TokenizerBuilderWhitespaceSplit extends TokenizerBuilder {
         this.tokenizeCol = tokenizeCol;
     }
 
-    public List<Tokenizer.Token> splitToTokens(String text) {
-        List<Tokenizer.Token> tokenList = new ArrayList<>();
+    public List<Token> splitToTokens(String text) {
+        List<Token> tokenList = new ArrayList<>();
         String[] textTokens = text.split(this.regex);
         int curIndex = 0;
         for(String textToken: textTokens) {
             int tokenIndex = text.indexOf(textToken, curIndex);
             curIndex = tokenIndex;
-            tokenList.add(new Tokenizer.Token(textToken, tokenIndex));
+            tokenList.add(new Token(textToken, tokenIndex));
         }
         return tokenList;
     }
 
     @Override
-    public void createInternalRepresentation(FrameBlock in, Tokenizer.DocumentRepresentation[] internalRepresentation, int rowStart, int blk) {
+    public void createInternalRepresentation(FrameBlock in, DocumentRepresentation[] internalRepresentation, int rowStart, int blk) {
         int endIndex = getEndIndex(in.getNumRows(), rowStart, blk);
         for (int i = rowStart; i < endIndex; i++) {
             String text = in.getString(i, tokenizeCol - 1);
-            List<Tokenizer.Token> tokenList = splitToTokens(text);
+            List<Token> tokenList = splitToTokens(text);
             List<Object> keys = new ArrayList<>();
             for (Integer idCol : idCols) {
                 Object key = in.get(i, idCol - 1);
                 keys.add(key);
-                internalRepresentation[i] = new Tokenizer.DocumentRepresentation(keys, tokenList);
+                internalRepresentation[i] = new DocumentRepresentation(keys, tokenList);
             }
         }
     }

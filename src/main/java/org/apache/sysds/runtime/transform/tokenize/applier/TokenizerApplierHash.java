@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.transform.tokenize.applier;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation;
+import org.apache.sysds.runtime.transform.tokenize.Token;
 import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -52,15 +54,15 @@ public class TokenizerApplierHash extends TokenizerApplier {
 	}
 
 	@Override
-	public void applyInternalRepresentation(Tokenizer.DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
+	public void applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
 		int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
 		int outputRow = wideFormat ? inputRowStart : Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> doc.tokens.size()).sum();
 		for(int i = inputRowStart; i < endIndex; i++) {
 			List<Object> keys = internalRepresentation[i].keys;
-			List<Tokenizer.Token> tokenList = internalRepresentation[i].tokens;
+			List<Token> tokenList = internalRepresentation[i].tokens;
 			// Transform to hashes
 			List<Integer> hashList = tokenList.stream().map(token -> {
-				int mod = (token.textToken.hashCode() % this.num_features) + 1;
+				int mod = (token.hashCode() % this.num_features) + 1;
 				if(mod < 0)
 					mod += this.num_features;
 				return mod;

@@ -32,6 +32,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 public class Tokenizer implements Serializable {
 
@@ -131,25 +132,4 @@ public class Tokenizer implements Serializable {
         }
     }
 
-    public static class Token {
-        public String textToken;
-        public long startIndex;
-        long endIndex;
-
-        public Token(String token, long startIndex) {
-            this.textToken = token;
-            this.startIndex = startIndex;
-            this.endIndex = startIndex + token.length();
-        }
-    }
-
-    public static class DocumentRepresentation {
-        public List<Object> keys;
-        public List<Token> tokens;
-
-        public DocumentRepresentation(List<Object> keys, List<Tokenizer.Token> tokens) {
-            this.keys = keys;
-            this.tokens = tokens;
-        }
-    }
 }

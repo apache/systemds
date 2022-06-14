@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.transform.tokenize.applier;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
+import org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation;
+import org.apache.sysds.runtime.transform.tokenize.Token;
 import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -42,12 +44,12 @@ public class TokenizerApplierPosition extends TokenizerApplier {
 	}
 
 	@Override
-	public void applyInternalRepresentation(Tokenizer.DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
+	public void applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
 		int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
 		int outputRow = wideFormat ? inputRowStart : Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> doc.tokens.size()).sum();
 		for(int i = inputRowStart; i < endIndex; i++ ) {
 			List<Object> keys = internalRepresentation[i].keys;
-			List<Tokenizer.Token> tokenList = internalRepresentation[i].tokens;
+			List<Token> tokenList = internalRepresentation[i].tokens;
 
 			if (wideFormat) {
 				outputRow = this.appendTokensWide(outputRow, keys, tokenList, out);
@@ -58,9 +60,9 @@ public class TokenizerApplierPosition extends TokenizerApplier {
 	}
 
 
-	public int appendTokensLong(int row, List<Object> keys, List<Tokenizer.Token> tokenList, FrameBlock out) {
+	public int appendTokensLong(int row, List<Object> keys, List<Token> tokenList, FrameBlock out) {
 		int numTokens = 0;
-		for (Tokenizer.Token token: tokenList) {
+		for (Token token: tokenList) {
 			if (numTokens >= maxTokens) {
 				break;
 			}
@@ -68,15 +70,15 @@ public class TokenizerApplierPosition extends TokenizerApplier {
 			for(; col < keys.size(); col++){
 				out.set(row, col, keys.get(col));
 			}
-			out.set(row, col, token.startIndex + 1);
-			out.set(row, col + 1, token.textToken);
+			out.set(row, col, token.getStartIndex(0) + 1);
+			out.set(row, col + 1, token.toString());
 			row++;
 			numTokens++;
 		}
 		return row;
 	}
 
-	public int appendTokensWide(int row, List<Object> keys, List<Tokenizer.Token> tokenList, FrameBlock out) {
+	public int appendTokensWide(int row, List<Object> keys, List<Token> tokenList, FrameBlock out) {
 		// Create one row with keys as prefix
 		int col = 0;
 		for(; col < keys.size(); col++){
@@ -87,7 +89,7 @@ public class TokenizerApplierPosition extends TokenizerApplier {
 			if (token >= maxTokens) {
 				break;
 			}
-			out.set(row, col+token, tokenList.get(token).textToken);
+			out.set(row, col+token, tokenList.get(token).toString());
 		}
 		// Remaining positions need to be filled with empty tokens
 		for (; token < maxTokens; token++) {
@@ -107,8 +109,7 @@ public class TokenizerApplierPosition extends TokenizerApplier {
 	}
 
 	private static Types.ValueType[] getOutSchemaWide(int numIdCols, int maxTokens) {
-		Types.ValueType[] schema = UtilFunctions.nCopies(numIdCols + maxTokens,Types.ValueType.STRING );
-		return schema;
+		return UtilFunctions.nCopies(numIdCols + maxTokens,Types.ValueType.STRING );
 	}
 
 	private static Types.ValueType[] getOutSchemaLong(int numIdCols) {

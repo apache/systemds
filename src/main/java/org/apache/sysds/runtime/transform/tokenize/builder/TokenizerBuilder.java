@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.transform.tokenize.builder;
 
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation;
 import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
@@ -34,13 +35,13 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getBlockSizes;
 public abstract class TokenizerBuilder implements Serializable {
 
 
-    public void createInternalRepresentation(FrameBlock in, Tokenizer.DocumentRepresentation[] internalRepresentation) {
+    public void createInternalRepresentation(FrameBlock in, DocumentRepresentation[] internalRepresentation) {
         createInternalRepresentation(in, internalRepresentation, 0, -1);
     }
 
-    public abstract void createInternalRepresentation(FrameBlock in, Tokenizer.DocumentRepresentation[] internalRepresentation, int rowStart, int blk);
+    public abstract void createInternalRepresentation(FrameBlock in, DocumentRepresentation[] internalRepresentation, int rowStart, int blk);
 
-    public List<DependencyTask<?>> getTasks(FrameBlock in, Tokenizer.DocumentRepresentation[] internalRepresentation, int k) {
+    public List<DependencyTask<?>> getTasks(FrameBlock in, DocumentRepresentation[] internalRepresentation, int k) {
         int nRows = in.getNumRows();
         List<Callable<Object>> tasks = new ArrayList<>();
         int[] blockSizes = getBlockSizes(nRows, k);
@@ -60,12 +61,12 @@ public abstract class TokenizerBuilder implements Serializable {
 
         protected final T _tokenizerBuilder;
         protected final FrameBlock _input;
-        protected final Tokenizer.DocumentRepresentation[] _internalRepresentation;
+        protected final DocumentRepresentation[] _internalRepresentation;
         protected final int _rowStart;
         protected final int _blk;
 
         protected TokenizerBuildTask(T tokenizerBuilder, FrameBlock input,
-                                     Tokenizer.DocumentRepresentation[] internalRepresentation,
+                                     DocumentRepresentation[] internalRepresentation,
                                      int rowStart, int blk){
             this._tokenizerBuilder = tokenizerBuilder;
             this._input = input;

@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.transform.tokenize.applier;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation;
+import org.apache.sysds.runtime.transform.tokenize.Token;
 import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -51,17 +53,16 @@ public class TokenizerApplierCount extends TokenizerApplier {
     }
 
     @Override
-    public void applyInternalRepresentation(Tokenizer.DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
+    public void applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
         int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
         int outputRow = Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> doc.tokens.size()).sum();
         for(int i = inputRowStart; i < endIndex; i++) {
             List<Object> keys = internalRepresentation[i].keys;
-            List<Tokenizer.Token> tokenList = internalRepresentation[i].tokens;
+            List<Token> tokenList = internalRepresentation[i].tokens;
             // Creating the counts for BoW
-            Map<String, Long> tokenCounts = tokenList.stream().collect(Collectors.groupingBy(token ->
-                    token.textToken, Collectors.counting()));
+            Map<String, Long> tokenCounts = tokenList.stream().collect(Collectors.groupingBy(Token::toString, Collectors.counting()));
             // Remove duplicate strings
-            Stream<String> distinctTokenStream = tokenList.stream().map(token -> token.textToken).distinct();
+            Stream<String> distinctTokenStream = tokenList.stream().map(Token::toString).distinct();
             if (this.sort_alpha) {
                 // Sort alphabetically
                 distinctTokenStream = distinctTokenStream.sorted();

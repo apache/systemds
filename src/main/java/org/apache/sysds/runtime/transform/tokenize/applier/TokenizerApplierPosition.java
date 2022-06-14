@@ -77,7 +77,7 @@ public class TokenizerApplierPosition extends TokenizerApplier {
 			numTokens++;
 		}
 		if(applyPadding){
-			row = applyPaddingLong(row, keys, out, -1, PADDING_STRING);
+			row = applyPaddingLong(row, numTokens, keys, out, -1, PADDING_STRING);
 		}
 
 		return row;

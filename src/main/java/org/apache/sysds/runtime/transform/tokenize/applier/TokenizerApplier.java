@@ -81,9 +81,9 @@ public abstract class TokenizerApplier implements Serializable {
         return col;
     }
 
-    protected int applyPaddingLong(int startRow, List<Object> keys, FrameBlock out, Object val1, Object val2){
+    protected int applyPaddingLong(int startRow, int numTokens, List<Object> keys, FrameBlock out, Object val1, Object val2){
         int row = startRow;
-        for (; row < maxTokens; row++){
+        for (; numTokens < maxTokens; numTokens++, row++){
             int col = setKeys(row, keys, out);
             out.set(row, col, val1);
             out.set(row, col+1, val2);

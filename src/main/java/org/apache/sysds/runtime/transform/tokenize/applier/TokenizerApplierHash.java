@@ -101,7 +101,7 @@ public class TokenizerApplierHash extends TokenizerApplier {
 			row++;
 		}
 		if(applyPadding){
-			row = applyPaddingLong(row, keys, out, PADDING_STRING, 0L);
+			row = applyPaddingLong(row, numTokens, keys, out, PADDING_STRING, 0L);
 		}
 		return row;
 	}

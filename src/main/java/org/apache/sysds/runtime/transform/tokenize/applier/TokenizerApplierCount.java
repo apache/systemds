@@ -86,7 +86,7 @@ public class TokenizerApplierCount extends TokenizerApplier {
                 numTokens++;
             }
             if(applyPadding){
-               outputRow = applyPaddingLong(outputRow, keys, out, PADDING_STRING, -1);
+               outputRow = applyPaddingLong(outputRow, numTokens, keys, out, PADDING_STRING, -1);
             }
         }
     }

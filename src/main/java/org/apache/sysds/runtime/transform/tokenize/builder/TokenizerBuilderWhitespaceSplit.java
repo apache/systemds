@@ -57,6 +57,8 @@ public class TokenizerBuilderWhitespaceSplit extends TokenizerBuilder {
 
     public List<Token> splitToTokens(String text) {
         List<Token> tokenList = new ArrayList<>();
+        if(text == null)
+            return tokenList;
         String[] textTokens = text.split(this.regex);
         int curIndex = 0;
         for(String textToken: textTokens) {

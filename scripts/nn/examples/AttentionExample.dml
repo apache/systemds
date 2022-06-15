@@ -18,6 +18,8 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
+#-------------------------------------------------------------
 # We implement a simple example using the attention layer
 # for single-headed self attention
 # in combination with the LSTM recurrent layer.

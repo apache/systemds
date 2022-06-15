@@ -143,6 +143,8 @@ public class DMLConfig
 		_defaultVals.put(DEFAULT_BLOCK_SIZE,     String.valueOf(OptimizerUtils.DEFAULT_BLOCKSIZE) );
 		_defaultVals.put(CP_PARALLEL_OPS,        "true" );
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
+		_defaultVals.put(PARALLEL_TOKENIZE,      "false");
+		_defaultVals.put(PARALLEL_TOKENIZE_NUM_BLOCKS, "64");
 		_defaultVals.put(PARALLEL_ENCODE,        "false" );
 		_defaultVals.put(PARALLEL_ENCODE_STAGED, "false" );
 		_defaultVals.put(PARALLEL_ENCODE_APPLY_BLOCKS, "-1");

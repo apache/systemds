@@ -29,11 +29,15 @@ import org.apache.wink.json4j.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -55,6 +59,15 @@ public class TokenizerApplierCount extends TokenizerApplier {
     }
 
     @Override
+    public int getNumRows(DocumentRepresentation[] internalRepresentation) {
+        if(wideFormat)
+            return internalRepresentation.length;
+        if(applyPadding)
+            return maxTokens * internalRepresentation.length;
+        return counts.stream().mapToInt(hashMap -> Math.min(hashMap.size(), maxTokens)).sum();
+    }
+
+    @Override
     public void allocateInternalMeta(int numDocuments) {
         counts = new ArrayList<>(Collections.nCopies(numDocuments,null));
     }
@@ -72,7 +85,6 @@ public class TokenizerApplierCount extends TokenizerApplier {
                 else
                     tokenCounts.put(txt, 1);
             }
-            //Map<String, Long> tokenCounts = internalRepresentation[i].tokens.stream().collect(Collectors.groupingBy(Token::toString, Collectors.counting()));
             counts.set(i, tokenCounts);
         }
     }
@@ -83,20 +95,17 @@ public class TokenizerApplierCount extends TokenizerApplier {
         int outputRow = getOutputRow(inputRowStart, counts);
         for(int i = inputRowStart; i < endIndex; i++) {
             List<Object> keys = internalRepresentation[i].keys;
-            List<Token> tokenList = internalRepresentation[i].tokens;
             // Creating the counts for BoW
             Map<String, Integer> tokenCounts = counts.get(i);
-
             // Remove duplicate strings
-            Stream<String> distinctTokenStream = tokenCounts.keySet().stream();
+            Collection<String> distinctTokens = tokenCounts.keySet();
             if (this.sort_alpha) {
                 // Sort alphabetically
-                distinctTokenStream = distinctTokenStream.sorted();
+                distinctTokens = new TreeSet<>(distinctTokens);
             }
-            List<String> outputTokens = distinctTokenStream.collect(Collectors.toList());
 
             int numTokens = 0;
-            for (String token: outputTokens) {
+            for (String token: distinctTokens) {
                 if (numTokens >= maxTokens) {
                     break;
                 }

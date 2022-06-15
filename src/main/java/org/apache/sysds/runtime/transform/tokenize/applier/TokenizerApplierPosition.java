@@ -39,11 +39,16 @@ public class TokenizerApplierPosition extends TokenizerApplier {
 		super(numIdCols, maxTokens, wideFormat, applyPadding);
 	}
 
+	public int getNumRows(DocumentRepresentation[] internalRepresentation){
+		return wideFormat ? internalRepresentation.length : Arrays.stream(internalRepresentation).mapToInt(doc -> applyPadding? maxTokens: Math.min(doc.tokens.size(), maxTokens)).sum();
+	}
+
+
+
 	@Override
 	public int applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
 		int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
-		int outputRow = wideFormat ? inputRowStart : Arrays.stream(internalRepresentation).limit(inputRowStart)
-				.mapToInt(doc -> applyPadding? maxTokens : Math.min(doc.tokens.size(), maxTokens)).sum();
+		int outputRow = getOutputRow(inputRowStart, internalRepresentation);
 		for(int i = inputRowStart; i < endIndex; i++ ) {
 			List<Object> keys = internalRepresentation[i].keys;
 			List<Token> tokenList = internalRepresentation[i].tokens;

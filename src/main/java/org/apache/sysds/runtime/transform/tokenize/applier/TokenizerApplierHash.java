@@ -59,6 +59,16 @@ public class TokenizerApplierHash extends TokenizerApplier {
 		}
 	}
 
+
+	@Override
+	public int getNumRows(DocumentRepresentation[] internalRepresentation) {
+		if(wideFormat)
+			return internalRepresentation.length;
+		if(applyPadding)
+			return maxTokens * internalRepresentation.length;
+		return hashes.stream().mapToInt(hashMap -> Math.min(hashMap.size(), maxTokens)).sum();
+	}
+
 	@Override
 	public void allocateInternalMeta(int numDocuments) {
 		hashes = new ArrayList<>(Collections.nCopies(numDocuments,null));

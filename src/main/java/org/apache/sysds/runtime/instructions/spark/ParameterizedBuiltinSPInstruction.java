@@ -86,6 +86,8 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 import scala.Tuple2;
 
+import static org.apache.sysds.hops.OptimizerUtils.getTokenizeNumThreads;
+
 public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction {
 	protected HashMap<String, String> params;
 
@@ -852,7 +854,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			long key = in._1();
 			FrameBlock blk = in._2();
 
-			FrameBlock fbout = _tokenizer.tokenize(blk);
+			FrameBlock fbout = _tokenizer.tokenize(blk, getTokenizeNumThreads());
 			return new Tuple2<>(key, fbout);
 		}
 	}

@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import static org.apache.sysds.runtime.transform.tokenize.Tokenizer.TOKENIZE_NUM_BLOCKS;
 import static org.apache.sysds.runtime.util.UtilFunctions.getBlockSizes;
 
 public abstract class TokenizerBuilder implements Serializable {
@@ -41,10 +42,10 @@ public abstract class TokenizerBuilder implements Serializable {
 
     public abstract void createInternalRepresentation(FrameBlock in, DocumentRepresentation[] internalRepresentation, int rowStart, int blk);
 
-    public List<DependencyTask<?>> getTasks(FrameBlock in, DocumentRepresentation[] internalRepresentation, int k) {
+    public List<DependencyTask<?>> getTasks(FrameBlock in, DocumentRepresentation[] internalRepresentation) {
         int nRows = in.getNumRows();
         List<Callable<Object>> tasks = new ArrayList<>();
-        int[] blockSizes = getBlockSizes(nRows, k);
+        int[] blockSizes = getBlockSizes(nRows, TOKENIZE_NUM_BLOCKS);
         if(blockSizes.length == 1){
             tasks.add(new TokenizerBuildTask<>(this, in, internalRepresentation, 0, -1));
         }

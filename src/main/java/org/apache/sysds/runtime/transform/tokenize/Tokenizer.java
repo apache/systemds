@@ -22,9 +22,14 @@ package org.apache.sysds.runtime.transform.tokenize;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplier;
+import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierCount;
+import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierHash;
+import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierPosition;
 import org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilder;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
@@ -43,6 +48,8 @@ public class Tokenizer implements Serializable {
 
     private static final long serialVersionUID = 7155673772374114577L;
     protected static final Log LOG = LogFactory.getLog(Tokenizer.class.getName());
+    private static final boolean MULTI_THREADED_STAGES_TOKENIZER = false;
+    public static final int TOKENIZE_NUM_BLOCKS = ConfigurationManager.getNumberTokenizeBlocks();
 
     private DocumentRepresentation[] internalRepresentation = null;
     private final TokenizerBuilder tokenizerBuilder;
@@ -62,15 +69,15 @@ public class Tokenizer implements Serializable {
     }
 
     public int getNumRowsEstimate(){
-        // Estimate because Count Applier has less since it only outputs each unique token once
+        // Estimate upperbound because e.g. Count Applier has less since it only outputs each unique token once
         if(internalRepresentation != null){
-            if(tokenizerApplier.isWideFormat()){
+            if(tokenizerApplier.isWideFormat()) {
                 return internalRepresentation.length;
-            }else {
-                if(tokenizerApplier.hasPadding())
-                    return internalRepresentation.length * tokenizerApplier.getMaxTokens();
-                return Arrays.stream(internalRepresentation).mapToInt(doc -> doc.tokens.size()).sum();
             }
+            if(tokenizerApplier.hasPadding()) {
+                return internalRepresentation.length * tokenizerApplier.getMaxTokens();
+            }
+            return Arrays.stream(internalRepresentation).mapToInt(doc -> Math.min(doc.tokens.size(), tokenizerApplier.getMaxTokens())).sum();
         }
         throw new DMLRuntimeException("Internal Token Representation was not computed yet. Can not get exact size.");
     }
@@ -85,17 +92,72 @@ public class Tokenizer implements Serializable {
     }
 
     public FrameBlock tokenize(FrameBlock in) {
-        return tokenize(in, 12);
+        return tokenize(in, 1);
     }
 
-    public FrameBlock tokenize(FrameBlock in, int k){
+    public FrameBlock tokenize(FrameBlock in, int k) {
         allocateInternalRepresentation(in.getNumRows());
-        // First convert to internal representation
-        this.build(in, k);
         FrameBlock out = new FrameBlock(this.getSchema());
-        out.ensureAllocatedColumns(getNumRowsEstimate());
-        // Then convert to output representation
-        return this.apply(out, k);
+        if (k > 1 && !MULTI_THREADED_STAGES_TOKENIZER) {
+            DependencyThreadPool pool = new DependencyThreadPool(k);
+            LOG.debug("Tokenizing with full DAG on " + k + " Threads");
+            try {
+                List<DependencyTask<?>> tokenizeTasks = getTokenizeTasks(in, out, pool);
+                int lastRow = pool.submitAllAndWait(tokenizeTasks).stream().map(s -> s == null? 0 :(Integer)s).max(Integer::compare).get();
+                if(lastRow != out.getNumRows()){
+                    out = out.slice(0, lastRow - 1, 0, out.getNumColumns() - 1, null);
+                }
+            } catch (ExecutionException | InterruptedException e) {
+                LOG.error("MT Column encode failed");
+                e.printStackTrace();
+            }
+            pool.shutdown();
+        } else {
+            build(in, k);
+            out.ensureAllocatedColumns(tokenizerApplier.getNumRows(this.internalRepresentation));
+            out = apply(out, k);
+        }
+        return out;
+    }
+
+    private List<DependencyTask<?>> getTokenizeTasks(FrameBlock in, FrameBlock out, DependencyThreadPool pool) {
+        // TODO further optimisation of task graph to reduce memory usage!
+        // TODO add cache awareness
+        List<DependencyTask<?>> tasks = new ArrayList<>();
+        Map<Integer[], Integer[]> depMap = new HashMap<>();
+        tasks.add(DependencyThreadPool.createDependencyTask(new AllocateOutputFrame(this, out)));
+        List<DependencyTask<?>> buildTasks = getBuildTasks(in);  // First half is builder build second half is applier build, dependencies already done
+        tasks.addAll(buildTasks);
+        List<DependencyTask<?>> applyTasks = tokenizerApplier.getApplyTasks(this.internalRepresentation, out);
+        if(applyTasks.size() != buildTasks.size() / 2)
+            throw new DMLRuntimeException("Different block sizes between build and apply tasks currently not supported");
+        // Builder creates internal representation for a given section
+        // Applier builder creates additional meta information which will be needed in the apply step
+        // If there is long representation and no padding:
+        //  - Count and Hash apply tasks have dependencies to the metadata build task of all previous chunks due to "getOutputRow".
+        //    e.g. apply task starting at row 100 with block size 50 has dependencies to the ApplierBuildTask responsible for sections [0-49] and [50-99].
+        //  - Same for Position only they are only dependent on the internal representation creation since it does not have metadata.
+        if(!tokenizerApplier.isWideFormat() || !tokenizerApplier.hasPadding()){
+            int buildTaskOffset;
+            if(tokenizerApplier instanceof TokenizerApplierPosition){
+                buildTaskOffset = 0;
+            }
+            else if (tokenizerApplier instanceof TokenizerApplierCount || tokenizerApplier instanceof TokenizerApplierHash) {
+                buildTaskOffset = applyTasks.size();
+            }
+            else{
+                throw new DMLRuntimeException("Unknown TokenizerApplier");
+            }
+            depMap.put(new Integer[] {0, 1}, new Integer[]{1, (buildTasks.size()/2) + 1});
+            depMap.put(new Integer[] {tasks.size(), tasks.size()+applyTasks.size()}, new Integer[]{0, 1});
+            for(int i = 0; i < applyTasks.size(); i++){
+                depMap.put(new Integer[] {tasks.size() + i, tasks.size()+applyTasks.size()}, new Integer[]{1+buildTaskOffset + i, 2+buildTaskOffset + i});
+            }
+        }
+        tasks.addAll(applyTasks);
+        List<List<? extends Callable<?>>> deps = new ArrayList<>(Collections.nCopies(tasks.size(), null));
+        DependencyThreadPool.createDependencyList(tasks, depMap, deps);
+        return DependencyThreadPool.createDependencyTasks(tasks, deps);
     }
 
     public FrameBlock apply(FrameBlock out, int k) {
@@ -103,7 +165,7 @@ public class Tokenizer implements Serializable {
         if(k > 1){
             DependencyThreadPool pool = new DependencyThreadPool(k);
             try{
-                List<DependencyTask<?>> taskList = tokenizerApplier.getApplyTasks(this.internalRepresentation, out, k);
+                List<DependencyTask<?>> taskList = tokenizerApplier.getApplyTasks(this.internalRepresentation, out);
                 lastRow = (Integer) pool.submitAllAndWait(taskList).stream().map(s -> (Integer)s).max(Integer::compare).get();
             }
             catch(ExecutionException | InterruptedException e) {
@@ -122,9 +184,9 @@ public class Tokenizer implements Serializable {
         return out;
     }
 
-    public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int k){
-        List<DependencyTask<?>> tasks = tokenizerBuilder.getTasks(in, this.internalRepresentation, k);
-        List<DependencyTask<?>> applierBuildTaskList = tokenizerApplier.getBuildTasks(this.internalRepresentation, k);
+    public List<DependencyTask<?>> getBuildTasks(FrameBlock in){
+        List<DependencyTask<?>> tasks = tokenizerBuilder.getTasks(in, this.internalRepresentation);
+        List<DependencyTask<?>> applierBuildTaskList = tokenizerApplier.getBuildTasks(this.internalRepresentation);
         if(tasks.size() != applierBuildTaskList.size())
             throw new DMLRuntimeException("Cannot create dependencies for mismatched array sizes");
         tasks.addAll(applierBuildTaskList);
@@ -143,7 +205,7 @@ public class Tokenizer implements Serializable {
         if(k > 1){
             DependencyThreadPool pool = new DependencyThreadPool(k);
             try{
-                pool.submitAllAndWait(getBuildTasks(in, k));
+                pool.submitAllAndWait(getBuildTasks(in));
             }
             catch(ExecutionException | InterruptedException e) {
                 LOG.error("MT Tokenizer build failed");
@@ -156,5 +218,25 @@ public class Tokenizer implements Serializable {
             tokenizerApplier.build(this.internalRepresentation, 0, -1);
         }
     }
+
+
+    protected static class AllocateOutputFrame implements Callable<Object>{
+
+        protected final Tokenizer _tokenizer;
+        protected final FrameBlock _out;
+
+        protected AllocateOutputFrame(Tokenizer tokenizer,
+                                      FrameBlock out){
+            this._tokenizer = tokenizer;
+            this._out = out;
+        }
+
+        @Override
+        public Object call() throws Exception {
+            _out.ensureAllocatedColumns(_tokenizer.getNumRowsEstimate());
+            return null;
+        }
+    }
+
 
 }

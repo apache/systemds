@@ -75,6 +75,8 @@ public class DMLConfig
 	public static final String PARALLEL_ENCODE_APPLY_BLOCKS = "sysds.parallel.encode.applyBlocks";
 	public static final String PARALLEL_ENCODE_BUILD_BLOCKS = "sysds.parallel.encode.buildBlocks";
 	public static final String PARALLEL_ENCODE_NUM_THREADS  = "sysds.parallel.encode.numThreads";
+	public static final String PARALLEL_TOKENIZE = "sysds.parallel.tokenize";
+	public static final String PARALLEL_TOKENIZE_NUM_BLOCKS = "sysds.parallel.tokenize.numBlocks";
 	public static final String COMPRESSED_LINALG    = "sysds.compressed.linalg";
 	public static final String COMPRESSED_LOSSY     = "sysds.compressed.lossy";
 	public static final String COMPRESSED_VALID_COMPRESSIONS = "sysds.compressed.valid.compressions";

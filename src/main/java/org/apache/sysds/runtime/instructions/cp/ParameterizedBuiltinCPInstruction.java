@@ -58,6 +58,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.apache.sysds.hops.OptimizerUtils.getTokenizeNumThreads;
+
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParameterizedBuiltinCPInstruction.class.getName());
 	private static final int TOSTRING_MAXROWS = 100;
@@ -289,7 +291,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			// compute tokenizer
 			Tokenizer tokenizer = TokenizerFactory.createTokenizer(getParameterMap().get("spec"),
 				Integer.parseInt(getParameterMap().get("max_tokens")));
-			FrameBlock fbout = tokenizer.tokenize(data);
+			FrameBlock fbout = tokenizer.tokenize(data, getTokenizeNumThreads());
 
 			// release locks
 			ec.setFrameOutput(output.getName(), fbout);

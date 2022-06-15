@@ -34,24 +34,39 @@ public class Token {
         }
     }
 
-    private List<SubToken> subTokens = new ArrayList<>();
+    private List<SubToken> subTokens;
 
-    public Token(){}
+    private Token(int subListSize){
+        subTokens = new ArrayList<>(subListSize);
+    }
 
     public Token(String token, long startIndex) {
+        this(1);
         subTokens.add(new SubToken(token, startIndex));
     }
 
     public Token(List<String> tokens, List<Long> startIndex){
+        this(tokens.size());
         if(tokens.size() != startIndex.size())
             throw new DMLRuntimeException("Cannot create token from mismatched input sizes");
-        subTokens = IntStream.range(0, tokens.size()).mapToObj(i -> new SubToken(tokens.get(i), startIndex.get(i))).collect(Collectors.toList());
+        for(int i = 0; i < tokens.size(); i++){
+            subTokens.add(new SubToken(tokens.get(i), startIndex.get(i)));
+        }
     }
 
     public Token(List<Token> subList) {
+        this(getNumSubTokens(subList));
         for(Token token: subList){
             subTokens.addAll(token.subTokens);
         }
+    }
+
+    private static int getNumSubTokens(List<Token> tokens){
+        int sum = 0;
+        for (Token token : tokens) {
+            sum += token.getNumSubTokens();
+        }
+        return sum;
     }
 
     public int getNumSubTokens(){

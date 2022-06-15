@@ -27,9 +27,14 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,6 +45,7 @@ public class TokenizerApplierCount extends TokenizerApplier {
     private static final long serialVersionUID = 6382000606237705019L;
     public boolean sort_alpha = false;
 
+    private List<Map<String, Integer>> counts;
 
     public TokenizerApplierCount(int numIdCols, int maxTokens, boolean wideFormat, boolean applyPadding, JSONObject params) throws JSONException {
         super(numIdCols, maxTokens, wideFormat, applyPadding);
@@ -49,16 +55,40 @@ public class TokenizerApplierCount extends TokenizerApplier {
     }
 
     @Override
+    public void allocateInternalMeta(int numDocuments) {
+        counts = new ArrayList<>(Collections.nCopies(numDocuments,null));
+    }
+
+    @Override
+    public void build(DocumentRepresentation[] internalRepresentation, int inputRowStart, int blk){
+        int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
+        for(int i = inputRowStart; i < endIndex; i++){
+            Map<String, Integer> tokenCounts = new HashMap<>();
+            for(Token token: internalRepresentation[i].tokens){
+                String txt = token.toString();
+                Integer count = tokenCounts.getOrDefault(txt, null);
+                if(count != null)
+                    tokenCounts.put(txt, count + 1);
+                else
+                    tokenCounts.put(txt, 1);
+            }
+            //Map<String, Long> tokenCounts = internalRepresentation[i].tokens.stream().collect(Collectors.groupingBy(Token::toString, Collectors.counting()));
+            counts.set(i, tokenCounts);
+        }
+    }
+
+    @Override
     public int applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
         int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
-        int outputRow = Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> applyPadding? maxTokens: doc.tokens.size()).sum();
+        int outputRow = getOutputRow(inputRowStart, counts);
         for(int i = inputRowStart; i < endIndex; i++) {
             List<Object> keys = internalRepresentation[i].keys;
             List<Token> tokenList = internalRepresentation[i].tokens;
             // Creating the counts for BoW
-            Map<String, Long> tokenCounts = tokenList.stream().collect(Collectors.groupingBy(Token::toString, Collectors.counting()));
+            Map<String, Integer> tokenCounts = counts.get(i);
+
             // Remove duplicate strings
-            Stream<String> distinctTokenStream = tokenList.stream().map(Token::toString).distinct();
+            Stream<String> distinctTokenStream = tokenCounts.keySet().stream();
             if (this.sort_alpha) {
                 // Sort alphabetically
                 distinctTokenStream = distinctTokenStream.sorted();

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.transform.tokenize.applier;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation;
@@ -26,8 +27,12 @@ import org.apache.sysds.runtime.transform.tokenize.Token;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
+import scala.Array;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -42,6 +47,7 @@ public class TokenizerApplierHash extends TokenizerApplier {
 
 	public int num_features = 1048576;  // 2^20
 
+	private List<Map<Integer, Long>> hashes;
 
 	public TokenizerApplierHash( int numIdCols, int maxTokens, boolean wideFormat, boolean applyPadding, JSONObject params) throws JSONException {
 		super(numIdCols, maxTokens, wideFormat, applyPadding);
@@ -54,25 +60,36 @@ public class TokenizerApplierHash extends TokenizerApplier {
 	}
 
 	@Override
-	public int applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
+	public void allocateInternalMeta(int numDocuments) {
+		hashes = new ArrayList<>(Collections.nCopies(numDocuments,null));
+	}
+
+	@Override
+	public void build(DocumentRepresentation[] internalRepresentation, int inputRowStart, int blk){
 		int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
-		int outputRow = wideFormat ? inputRowStart : Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> applyPadding? maxTokens:doc.tokens.size()).sum();
-		for(int i = inputRowStart; i < endIndex; i++) {
-			List<Object> keys = internalRepresentation[i].keys;
-			List<Token> tokenList = internalRepresentation[i].tokens;
-			// Transform to hashes
-			List<Integer> hashList = tokenList.stream().map(token -> {
+		for(int i = inputRowStart; i < endIndex; i++){
+			List<Integer> hashList = internalRepresentation[i].tokens.stream().map(token -> {
 				int mod = (token.hashCode() % this.num_features);
 				if(mod < 0)
 					mod += this.num_features;
 				return mod;
 			}).collect(Collectors.toList());
-			// Counting the hashes
 			Map<Integer, Long> hashCounts = hashList.stream().collect(Collectors.groupingBy(Function.identity(),
-				Collectors.counting()));
-			// Sorted by hash
-			Map<Integer, Long> sortedHashes = new TreeMap<>(hashCounts);
+					Collectors.counting()));
+			hashes.set(i, new TreeMap<>(hashCounts));
+		}
+	}
 
+
+
+
+	@Override
+	public int applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
+		int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
+		int outputRow = getOutputRow(inputRowStart, hashes);
+		for(int i = inputRowStart; i < endIndex; i++) {
+			List<Object> keys = internalRepresentation[i].keys;
+			Map<Integer, Long> sortedHashes = hashes.get(i);
 			if (wideFormat) {
 				outputRow = this.setTokensWide(outputRow, keys, sortedHashes, out);
 			} else {

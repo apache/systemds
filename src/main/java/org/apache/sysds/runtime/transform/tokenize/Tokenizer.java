@@ -30,8 +30,13 @@ import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 public class Tokenizer implements Serializable {
@@ -76,6 +81,7 @@ public class Tokenizer implements Serializable {
 
     public void allocateInternalRepresentation(int numDocuments){
         internalRepresentation = new DocumentRepresentation[numDocuments];
+        tokenizerApplier.allocateInternalMeta(numDocuments);
     }
 
     public FrameBlock tokenize(FrameBlock in) {
@@ -83,7 +89,6 @@ public class Tokenizer implements Serializable {
     }
 
     public FrameBlock tokenize(FrameBlock in, int k){
-        System.out.println(k);
         allocateInternalRepresentation(in.getNumRows());
         // First convert to internal representation
         this.build(in, k);
@@ -91,13 +96,6 @@ public class Tokenizer implements Serializable {
         out.ensureAllocatedColumns(getNumRowsEstimate());
         // Then convert to output representation
         return this.apply(out, k);
-        /*
-
-        // First convert to internal representation
-        List<DocumentToTokens> documentsToTokenList = tokenizerPre.tokenizePre(in);
-        // Then convert to output representation
-        return tokenizerPost.tokenizePost(documentsToTokenList, out);
-         */
     }
 
     public FrameBlock apply(FrameBlock out, int k) {
@@ -105,8 +103,8 @@ public class Tokenizer implements Serializable {
         if(k > 1){
             DependencyThreadPool pool = new DependencyThreadPool(k);
             try{
-                List<DependencyTask<?>> taskList = tokenizerApplier.getTasks(this.internalRepresentation, out, k);
-                lastRow = (Integer) pool.submitAllAndWait(taskList).get(taskList.size()-1);
+                List<DependencyTask<?>> taskList = tokenizerApplier.getApplyTasks(this.internalRepresentation, out, k);
+                lastRow = (Integer) pool.submitAllAndWait(taskList).stream().map(s -> (Integer)s).max(Integer::compare).get();
             }
             catch(ExecutionException | InterruptedException e) {
                 LOG.error("MT Tokenizer apply failed");
@@ -120,14 +118,32 @@ public class Tokenizer implements Serializable {
         if(lastRow != out.getNumRows()){
             out = out.slice(0, lastRow - 1, 0, out.getNumColumns() - 1, null);
         }
+
         return out;
     }
 
+    public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int k){
+        List<DependencyTask<?>> tasks = tokenizerBuilder.getTasks(in, this.internalRepresentation, k);
+        List<DependencyTask<?>> applierBuildTaskList = tokenizerApplier.getBuildTasks(this.internalRepresentation, k);
+        if(tasks.size() != applierBuildTaskList.size())
+            throw new DMLRuntimeException("Cannot create dependencies for mismatched array sizes");
+        tasks.addAll(applierBuildTaskList);
+        List<List<? extends Callable<?>>> deps = new ArrayList<>(Collections.nCopies(tasks.size(), null));
+        Map<Integer[], Integer[]> depMap = new HashMap<>();
+        for(int i = 0; i < tasks.size() / 2; i++){
+            depMap.put(new Integer[]{i+applierBuildTaskList.size(), i+applierBuildTaskList.size() + 1}, new Integer[] {i, i+1});
+        }
+        DependencyThreadPool.createDependencyList(tasks, depMap, deps);
+        tasks = DependencyThreadPool.createDependencyTasks(tasks, deps);
+        return tasks;
+    }
+
     public void build(FrameBlock in, int k){
+        tokenizerApplier.allocateInternalMeta(in.getNumRows());
         if(k > 1){
             DependencyThreadPool pool = new DependencyThreadPool(k);
             try{
-                pool.submitAllAndWait(tokenizerBuilder.getTasks(in, this.internalRepresentation, k));
+                pool.submitAllAndWait(getBuildTasks(in, k));
             }
             catch(ExecutionException | InterruptedException e) {
                 LOG.error("MT Tokenizer build failed");
@@ -136,8 +152,8 @@ public class Tokenizer implements Serializable {
             pool.shutdown();
 
         }else{
-
             tokenizerBuilder.createInternalRepresentation(in, this.internalRepresentation);
+            tokenizerApplier.build(this.internalRepresentation, 0, -1);
         }
     }
 

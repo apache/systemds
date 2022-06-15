@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.util.DependencyThreadPool;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import static org.apache.sysds.runtime.util.UtilFunctions.getBlockSizes;
@@ -57,7 +58,24 @@ public abstract class TokenizerApplier implements Serializable {
     }
     abstract int applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int startRow, int blk);
 
-    public List<DependencyTask<?>> getTasks(DocumentRepresentation[] internalRepresentation, FrameBlock out, int k) {
+    public void build(DocumentRepresentation[] internalRepresentation, int inputRowStart, int blk){ }
+
+    public List<DependencyTask<?>> getBuildTasks(DocumentRepresentation[] internalRepresentation, int k){
+        int nRows = internalRepresentation.length;
+        List<Callable<Object>> tasks = new ArrayList<>();
+        int[] blockSizes = getBlockSizes(nRows, k);
+        if(blockSizes.length == 1){
+            tasks.add(new TokenizerApplierBuildTask<>(this, internalRepresentation, 0, -1));
+        }
+        else {
+            for(int startRow = 0, i = 0; i < blockSizes.length; startRow+=blockSizes[i], i++){
+                tasks.add(new TokenizerApplierBuildTask<>(this, internalRepresentation, startRow, blockSizes[i]));
+            }
+        }
+        return DependencyThreadPool.createDependencyTasks(tasks, null);
+    }
+
+    public List<DependencyTask<?>> getApplyTasks(DocumentRepresentation[] internalRepresentation, FrameBlock out, int k) {
         int nRows = out.getNumRows();
         List<Callable<Object>> tasks = new ArrayList<>();
         int[] blockSizes = getBlockSizes(nRows, k);
@@ -115,6 +133,15 @@ public abstract class TokenizerApplier implements Serializable {
         }
     }
 
+    public <T, E> int getOutputRow(int inputRowStart, List<Map<T, E>> internalData){
+        if(wideFormat)
+            return inputRowStart;
+        if(applyPadding)
+            return maxTokens * inputRowStart;
+        return internalData.stream().limit(inputRowStart).mapToInt(hashMap -> Math.min(hashMap.size(), maxTokens)).sum();
+    }
+
+
     public long getNumCols() {
         return this.getOutSchema().length;
     }
@@ -122,6 +149,8 @@ public abstract class TokenizerApplier implements Serializable {
     public boolean isWideFormat() {
         return wideFormat;
     }
+
+    public void allocateInternalMeta(int numDocuments) { }
 
 
     protected static class TokenizerApplyTask<T extends TokenizerApplier> implements Callable<Object>{
@@ -145,6 +174,29 @@ public abstract class TokenizerApplier implements Serializable {
         @Override
         public Object call() throws Exception {
             return this._tokenizerApplier.applyInternalRepresentation(this._internalRepresentation, this._output, this._rowStart, this._blk);
+        }
+    }
+
+    protected static class TokenizerApplierBuildTask<T extends TokenizerApplier> implements Callable<Object>{
+
+        protected final T _tokenizerApplier;
+        protected final DocumentRepresentation[] _internalRepresentation;
+        protected final int _rowStart;
+        protected final int _blk;
+
+        protected TokenizerApplierBuildTask(T tokenizerApplier,
+                                            DocumentRepresentation[] internalRepresentation,
+                                            int rowStart, int blk){
+            this._tokenizerApplier = tokenizerApplier;
+            this._internalRepresentation = internalRepresentation;
+            this._rowStart = rowStart;
+            this._blk = blk;
+        }
+
+        @Override
+        public Object call() throws Exception {
+            this._tokenizerApplier.build(this._internalRepresentation, this._rowStart, this._blk);
+            return null;
         }
     }
 

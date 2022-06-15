@@ -197,16 +197,10 @@ public class TokenizeTest extends AutomatedTestBase  {
             String HOME = "/home/lukas/Documents/Uni/AMLS/scripts/";
             fullDMLScriptName = HOME + "tokenize.dml";
             programArgs = new String[]{"-stats","-args",
-                    datasetDir + "AminerParsed.csv", HOME +  "ngramSpec.json",  outDir + "test.csv"};
+                    datasetDir + "AminerParsedIDK.csv", HOME +  "ngramSpec.json",  outDir + "test.csv"};
+
 
             runTest(true, false, null, -1);
-//          TODO add assertion tests
-            //read input/output and compare
-//            FrameReader reader2 = parRead ?
-//                    new FrameReaderTextCSVParallel( new FileFormatPropertiesCSV() ) :
-//                    new FrameReaderTextCSV( new FileFormatPropertiesCSV()  );
-//            FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
-//            System.out.println(DataConverter.toString(fb2));
         }
         catch(Exception ex) {
             throw new RuntimeException(ex);

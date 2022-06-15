@@ -75,7 +75,13 @@ public class Token {
         if(subTokens.size() == 1){
             return subTokens.get(0).text;
         }
-        return "\"('" + subTokens.stream().map(subToken -> subToken.text).collect(Collectors.joining("', '")) + "')\"";
+        StringBuilder sb = new StringBuilder().append("\"('");
+        for(SubToken t: subTokens){
+            sb.append("', '").append(t.text);
+        }
+        sb.append("'\"");
+        //return "\"('" + subTokens.stream().map(subToken -> subToken.text).collect(Collectors.joining("', '")) + "')\"";
+        return sb.toString();
     }
 
 

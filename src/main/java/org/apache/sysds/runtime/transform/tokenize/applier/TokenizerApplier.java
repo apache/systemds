@@ -52,11 +52,10 @@ public abstract class TokenizerApplier implements Serializable {
         this.applyPadding = applyPadding;
     }
 
-    public void applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out){
-        applyInternalRepresentation(internalRepresentation, out, 0, -1);
+    public int applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out){
+        return applyInternalRepresentation(internalRepresentation, out, 0, -1);
     }
-
-    abstract void applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int startRow, int blk);
+    abstract int applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int startRow, int blk);
 
     public List<DependencyTask<?>> getTasks(DocumentRepresentation[] internalRepresentation, FrameBlock out, int k) {
         int nRows = out.getNumRows();
@@ -145,8 +144,7 @@ public abstract class TokenizerApplier implements Serializable {
 
         @Override
         public Object call() throws Exception {
-            this._tokenizerApplier.applyInternalRepresentation(this._internalRepresentation, this._output, this._rowStart, this._blk);
-            return null;
+            return this._tokenizerApplier.applyInternalRepresentation(this._internalRepresentation, this._output, this._rowStart, this._blk);
         }
     }
 

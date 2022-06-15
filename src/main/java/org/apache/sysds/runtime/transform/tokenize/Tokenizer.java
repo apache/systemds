@@ -26,13 +26,13 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplier;
 import org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilder;
+import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 public class Tokenizer implements Serializable {
 
@@ -56,7 +56,8 @@ public class Tokenizer implements Serializable {
         return tokenizerApplier.getMaxNumRows(inRows);
     }
 
-    public int getNumRows(){
+    public int getNumRowsEstimate(){
+        // Estimate because Count Applier has less since it only outputs each unique token once
         if(internalRepresentation != null){
             if(tokenizerApplier.isWideFormat()){
                 return internalRepresentation.length;
@@ -78,15 +79,16 @@ public class Tokenizer implements Serializable {
     }
 
     public FrameBlock tokenize(FrameBlock in) {
-        return tokenize(in, 1);
+        return tokenize(in, 12);
     }
 
     public FrameBlock tokenize(FrameBlock in, int k){
+        System.out.println(k);
         allocateInternalRepresentation(in.getNumRows());
         // First convert to internal representation
         this.build(in, k);
         FrameBlock out = new FrameBlock(this.getSchema());
-        out.ensureAllocatedColumns(getNumRows());
+        out.ensureAllocatedColumns(getNumRowsEstimate());
         // Then convert to output representation
         return this.apply(out, k);
         /*
@@ -99,10 +101,12 @@ public class Tokenizer implements Serializable {
     }
 
     public FrameBlock apply(FrameBlock out, int k) {
+        int lastRow = -1;
         if(k > 1){
             DependencyThreadPool pool = new DependencyThreadPool(k);
             try{
-                pool.submitAllAndWait(tokenizerApplier.getTasks(this.internalRepresentation, out, k));
+                List<DependencyTask<?>> taskList = tokenizerApplier.getTasks(this.internalRepresentation, out, k);
+                lastRow = (Integer) pool.submitAllAndWait(taskList).get(taskList.size()-1);
             }
             catch(ExecutionException | InterruptedException e) {
                 LOG.error("MT Tokenizer apply failed");
@@ -111,7 +115,10 @@ public class Tokenizer implements Serializable {
             pool.shutdown();
 
         }else{
-            tokenizerApplier.applyInternalRepresentation(this.internalRepresentation, out);
+            lastRow = tokenizerApplier.applyInternalRepresentation(this.internalRepresentation, out);
+        }
+        if(lastRow != out.getNumRows()){
+            out = out.slice(0, lastRow - 1, 0, out.getNumColumns() - 1, null);
         }
         return out;
     }

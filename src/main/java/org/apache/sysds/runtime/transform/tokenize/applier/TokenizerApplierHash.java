@@ -23,13 +23,10 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation;
 import org.apache.sysds.runtime.transform.tokenize.Token;
-import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
-import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +54,7 @@ public class TokenizerApplierHash extends TokenizerApplier {
 	}
 
 	@Override
-	public void applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
+	public int applyInternalRepresentation(DocumentRepresentation[] internalRepresentation, FrameBlock out, int inputRowStart, int blk) {
 		int endIndex = getEndIndex(internalRepresentation.length, inputRowStart, blk);
 		int outputRow = wideFormat ? inputRowStart : Arrays.stream(internalRepresentation).limit(inputRowStart).mapToInt(doc -> applyPadding? maxTokens:doc.tokens.size()).sum();
 		for(int i = inputRowStart; i < endIndex; i++) {
@@ -82,6 +79,7 @@ public class TokenizerApplierHash extends TokenizerApplier {
 				outputRow = this.setTokensLong(outputRow, keys, sortedHashes, out);
 			}
 		}
+		return outputRow;
 	}
 
 

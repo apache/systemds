@@ -36,6 +36,8 @@ public class TokenizeTest extends AutomatedTestBase  {
     private static final String TEST_NGRAM_POS_WIDE = "tokenize/TokenizeNgramPosWide";
     private static final String TEST_UNI_HASH_WIDE = "tokenize/TokenizeUniHashWide";
 
+    private static final String CUSTOM = "tokenize/custom.dml";
+
     //dataset and transform tasks without missing values
     private final static String DATASET 	= "20news/20news_subset_untokenized.csv";
 
@@ -50,6 +52,7 @@ public class TokenizeTest extends AutomatedTestBase  {
                 new TestConfiguration(TEST_CLASS_DIR, TEST_NGRAM_POS_WIDE, new String[] { "R" }) );
         addTestConfiguration(TEST_UNI_HASH_WIDE,
                 new TestConfiguration(TEST_CLASS_DIR, TEST_UNI_HASH_WIDE, new String[] { "R" }) );
+        addTestConfiguration("custom", new TestConfiguration("/home/lukas/Documents/Uni/AMLS/scripts", "tokenize", new String[]{"test"}));
     }
 
     @Test
@@ -173,6 +176,46 @@ public class TokenizeTest extends AutomatedTestBase  {
     @Test
     public void testTokenizeParReadHybridUniHasWide() {
         runTokenizeTest(ExecMode.HYBRID, TEST_UNI_HASH_WIDE, true);
+    }
+
+    @Test
+    public void custom(){
+
+        ExecMode rtold = rtplatform;
+        rtplatform = ExecMode.SINGLE_NODE;
+
+        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+        if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
+            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
+        try
+        {
+            getAndLoadTestConfiguration("custom");
+
+            String datasetDir = "/home/lukas/Documents/Uni/AMLS/data/";
+            String outDir = "/home/lukas/Documents/Uni/AMLS/out/";
+            String HOME = "/home/lukas/Documents/Uni/AMLS/scripts/";
+            fullDMLScriptName = HOME + "tokenize.dml";
+            programArgs = new String[]{"-stats","-args",
+                    datasetDir + "AminerParsed.csv", HOME +  "ngramSpec.json",  outDir + "test.csv"};
+
+            runTest(true, false, null, -1);
+//          TODO add assertion tests
+            //read input/output and compare
+//            FrameReader reader2 = parRead ?
+//                    new FrameReaderTextCSVParallel( new FileFormatPropertiesCSV() ) :
+//                    new FrameReaderTextCSV( new FileFormatPropertiesCSV()  );
+//            FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
+//            System.out.println(DataConverter.toString(fb2));
+        }
+        catch(Exception ex) {
+            throw new RuntimeException(ex);
+        }
+        finally {
+            rtplatform = rtold;
+            DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+        }
+
     }
 
     private void runTokenizeTest(ExecMode rt, String test_name, boolean parRead )

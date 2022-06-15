@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -62,6 +63,9 @@ public class TokenizerBuilderWhitespaceSplit extends TokenizerBuilder {
         String[] textTokens = text.split(this.regex);
         int curIndex = 0;
         for(String textToken: textTokens) {
+            if(Objects.equals(textToken, "")){
+                continue;
+            }
             int tokenIndex = text.indexOf(textToken, curIndex);
             curIndex = tokenIndex;
             tokenList.add(new Token(textToken, tokenIndex));

@@ -72,10 +72,10 @@ if [ -z "$SPARK_HOME" ] ; then
     printUsageExit;
 fi
 
-if [ -z "$HADOOP_HOME" ] ; then
-    echo "`date +%Y-%m-%dT%H:%M:%S`: ERROR: Environment variable 'HADOOP_HOME' has not been defined.";
-    printUsageExit;
-fi
+#if [ -z "$HADOOP_HOME" ] ; then
+#    echo "`date +%Y-%m-%dT%H:%M:%S`: ERROR: Environment variable 'HADOOP_HOME' has not been defined.";
+#    printUsageExit;
+#fi
 
 # find the root path which contains the script file
 # tolerate path with spaces
@@ -121,7 +121,7 @@ echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Downloading binaries from distribution lo
 runCommand "mkdir -p $WORKING_DIR/downloads"
 runCommand "cd $WORKING_DIR/downloads"
 #ToDo: release staging location
-#runCommand "wget -r -nH -nd -np -R 'index.html*' https://dist.apache.org/repos/dist/dev/systemml/$DIST_DIR/"
+runCommand "wget -r -nH -nd -np -R 'index.html*' https://dist.apache.org/repos/dist/dev/systemds/$DIST_DIR/"
 echo "=========================================================================================================" >> $OUT_FILE
 
 ## Verify binary tgz files
@@ -131,7 +131,7 @@ runCommand "rm -rf systemds-$VER_NAME-bin"
 runCommand "tar -xvzf systemds-$VER_NAME-bin.tgz"
 runCommand "cd systemds-$VER_NAME-bin"
 runCommand "echo \"print('hello world');\" > hello.dml"
-runCommand "./systemds-standalone.sh hello.dml"
+runCommand "./bin/systemds hello.dml"
 runCommand "cd .."
 
 ## Verify binary zip files
@@ -141,7 +141,7 @@ runCommand "rm -rf systemds-$VER_NAME-bin"
 runCommand "unzip systemds-$VER_NAME-bin.zip"
 runCommand "cd systemds-$VER_NAME-bin"
 runCommand "echo \"print('hello world');\" > hello.dml"
-runCommand "./systemds-standalone.sh hello.dml"
+runCommand "./bin/systemds hello.dml"
 runCommand "cd .."
 
 ## Verify src tgz files

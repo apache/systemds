@@ -178,40 +178,6 @@ public class TokenizeTest extends AutomatedTestBase  {
         runTokenizeTest(ExecMode.HYBRID, TEST_UNI_HASH_WIDE, true);
     }
 
-    @Test
-    public void custom(){
-
-        ExecMode rtold = rtplatform;
-        rtplatform = ExecMode.SINGLE_NODE;
-
-        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
-        try
-        {
-            getAndLoadTestConfiguration("custom");
-
-            String datasetDir = "/home/lukas/Documents/Uni/AMLS/data/";
-            String outDir = "/home/lukas/Documents/Uni/AMLS/out/";
-            String HOME = "/home/lukas/Documents/Uni/AMLS/scripts/";
-            fullDMLScriptName = HOME + "tokenize.dml";
-            programArgs = new String[]{"-stats","-args",
-                    datasetDir + "AminerParsedIDK.csv", HOME +  "ngramSpec.json",  outDir + "test.csv"};
-
-
-            runTest(true, false, null, -1);
-        }
-        catch(Exception ex) {
-            throw new RuntimeException(ex);
-        }
-        finally {
-            rtplatform = rtold;
-            DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-        }
-
-    }
-
     private void runTokenizeTest(ExecMode rt, String test_name, boolean parRead )
     {
         //set runtime platform

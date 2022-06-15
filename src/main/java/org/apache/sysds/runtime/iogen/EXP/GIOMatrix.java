@@ -33,7 +33,7 @@ public class GIOMatrix {
 		MatrixBlock sampleMB = util.loadMatrixData(sampleMatrixFileName, sampleRawDelimiter);
 		String sampleRaw = util.readEntireTextFile(sampleRawFileName);
 
-		GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
+		GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB, false);
 		MatrixReader matrixReader = gr.getReader();
 		MatrixBlock matrixBlock = matrixReader.readMatrixFromHDFS(dataFileName, rows, sampleMB.getNumColumns(), -1, -1);
 	}

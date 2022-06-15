@@ -18,7 +18,7 @@ public class GIOMatrixIdentification {
 		MatrixBlock sampleMB = util.loadMatrixData(sampleMatrixFileName, sampleRawDelimiter);
 		String sampleRaw = util.readEntireTextFile(sampleRawFileName);
 
-		GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
+		GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB, false);
 		gr.getReader();
 	}
 }

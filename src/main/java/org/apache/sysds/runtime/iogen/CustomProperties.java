@@ -33,6 +33,8 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private KeyTrie valueKeyPattern;
 	private Types.ValueType[] schema;
 	private int ncols;
+	private boolean sparse;
+	private boolean parallel;
 
 	public CustomProperties(MappingProperties mappingProperties, RowIndexStructure rowIndexStructure, ColIndexStructure colIndexStructure) {
 		this.mappingProperties = mappingProperties;
@@ -102,5 +104,21 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public void setNcols(int ncols) {
 		this.ncols = ncols;
+	}
+
+	public boolean isSparse() {
+		return sparse;
+	}
+
+	public void setSparse(boolean sparse) {
+		this.sparse = sparse;
+	}
+
+	public boolean isParallel() {
+		return parallel;
+	}
+
+	public void setParallel(boolean parallel) {
+		this.parallel = parallel;
 	}
 }

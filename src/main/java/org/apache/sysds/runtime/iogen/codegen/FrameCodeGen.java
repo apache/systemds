@@ -86,6 +86,11 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 	}
 
 	@Override
+	public String generateCodeJavaParallel() {
+		return null;
+	}
+
+	@Override
 	public String generateCodeCPP() {
 		return null;
 	}

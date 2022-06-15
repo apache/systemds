@@ -44,6 +44,9 @@ public class RowIndexStructure {
 	private KeyTrie keyPattern;
 	private int rowIndexBegin;
 
+	private String seqBeginString;
+	private String seqEndString;
+
 	public HashSet<String> endWithValueStrings() {
 		HashSet<String> endWithValueString = keyPattern.getFirstSuffixKeyPatterns();
 		return endWithValueString;
@@ -73,5 +76,19 @@ public class RowIndexStructure {
 		this.rowIndexBegin = rowIndexBegin;
 	}
 
+	public String getSeqBeginString() {
+		return seqBeginString;
+	}
 
+	public void setSeqBeginString(String seqBeginString) {
+		this.seqBeginString = seqBeginString;
+	}
+
+	public String getSeqEndString() {
+		return seqEndString;
+	}
+
+	public void setSeqEndString(String seqEndString) {
+		this.seqEndString = seqEndString;
+	}
 }

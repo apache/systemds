@@ -439,6 +439,8 @@ public class FormatIdentifying {
 						endString = beginString;
 
 					updateMapsAndExtractAllSuffixStringsOfColsMultiLine(beginString, endString);
+					rowIndexStructure.setSeqBeginString(beginString);
+					rowIndexStructure.setSeqEndString(endString);
 					KeyTrie[] colKeyPatterns;
 					colKeyPatterns = buildColsKeyPatternSingleRow();
 					properties.setColKeyPatterns(colKeyPatterns);

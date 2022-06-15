@@ -82,20 +82,19 @@ public abstract class GenerateReader {
 			super(sampleProperties);
 		}
 
-		public GenerateReaderMatrix(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {
+		public GenerateReaderMatrix(String sampleRaw, MatrixBlock sampleMatrix, boolean parallel) throws Exception {
 			super(new SampleProperties(sampleRaw, sampleMatrix));
+			properties.setParallel(parallel);
 		}
 
 		public MatrixReader getReader() throws Exception {
 			String className = getRandomClassName();
 			MatrixCodeGen src = new MatrixCodeGen(properties, className);
-
-			// constructor with arguments as CustomProperties
+		// constructor with arguments as CustomProperties
 			Class[] cArg = new Class[1];
 			cArg[0] = CustomProperties.class;
-			String ss = src.generateCodeJava();
-
-			matrixReader = (MatrixReader) CodegenUtils.compileClass(className, src.generateCodeJava()).getDeclaredConstructor(cArg).newInstance(properties);
+			String srcJava = properties.isParallel() ? src.generateCodeJavaParallel(): src.generateCodeJava();
+			matrixReader = (MatrixReader) CodegenUtils.compileClass(className, srcJava).getDeclaredConstructor(cArg).newInstance(properties);
 			return matrixReader;
 		}
 	}

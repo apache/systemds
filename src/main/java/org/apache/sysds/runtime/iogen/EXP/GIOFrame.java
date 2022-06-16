@@ -17,6 +17,7 @@ public class GIOFrame {
 		String sampleRawDelimiter;
 		String schemaFileName;
 		String dataFileName;
+		boolean parallel;
 		long rows = -1;
 
 		sampleRawFileName = System.getProperty("sampleRawFileName");
@@ -24,6 +25,7 @@ public class GIOFrame {
 		sampleRawDelimiter = "\t";
 		schemaFileName = System.getProperty("schemaFileName");
 		dataFileName = System.getProperty("dataFileName");
+		parallel = Boolean.parseBoolean(System.getProperty("parallel"));
 		Util util = new Util();
 
 		// read and parse mtd file
@@ -42,7 +44,7 @@ public class GIOFrame {
 		String[][] sampleFrameStrings = util.loadFrameData(sampleFrameFileName, sampleRawDelimiter, ncols);
 		FrameBlock sampleFrame = new FrameBlock(sampleSchema, sampleFrameStrings);
 		String sampleRaw = util.readEntireTextFile(sampleRawFileName);
-		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, false);
+		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, parallel);
 		FrameReader fr = gr.getReader();
 		FrameBlock frameBlock = fr.readFrameFromHDFS(dataFileName, sampleSchema, rows, sampleSchema.length);
 

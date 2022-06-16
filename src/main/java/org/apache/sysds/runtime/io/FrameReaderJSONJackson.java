@@ -55,7 +55,7 @@ public class FrameReaderJSONJackson
 	}
 
 
-	public void readJSONLFrameFromHDFS(Path path, JobConf jobConf, FileSystem fileSystem, FrameBlock dest,
+	protected void readJSONLFrameFromHDFS(Path path, JobConf jobConf, FileSystem fileSystem, FrameBlock dest,
 		Types.ValueType[] schema, Map<String, Integer> schemaMap) throws IOException
 	{
 		TextInputFormat inputFormat = new TextInputFormat();
@@ -69,7 +69,7 @@ public class FrameReaderJSONJackson
 	}
 
 
-	private  int readJSONLFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> inputFormat,
+	protected static int readJSONLFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> inputFormat,
 		JobConf jobConf, Types.ValueType[] schema, Map<String, Integer> schemaMap, FrameBlock dest, int currentRow)
 		throws IOException
 	{

@@ -2,6 +2,7 @@ package org.apache.sysds.runtime.iogen.EXP;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FrameReaderJSONGson;
+import org.apache.sysds.runtime.io.FrameReaderJSONGsonParallel;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.wink.json4j.JSONException;
 
@@ -16,19 +17,27 @@ public class SystemDSGson {
 		String schemaMapFileName;
 		String dataFileName;
 		long nrows;
+		boolean parallel;
 
 		schemaFileName = System.getProperty("schemaFileName");
 		schemaMapFileName = System.getProperty("schemaMapFileName");
 		dataFileName = System.getProperty("dataFileName");
 		nrows = Long.parseLong(System.getProperty("nrows"));
+		parallel = Boolean.parseBoolean(System.getProperty("parallel"));
 
 		Util util = new Util();
 		Types.ValueType[] schema = util.getSchema(schemaFileName);
 		int ncols = schema.length;
 		Map<String, Integer> schemaMap = util.getSchemaMap(schemaMapFileName);
 
-		FrameReaderJSONGson frameReaderJSONGson = new FrameReaderJSONGson();
-		FrameBlock readBlock = frameReaderJSONGson.readFrameFromHDFS(dataFileName, schema, schemaMap, nrows, ncols);
+		if(!parallel) {
+			FrameReaderJSONGson frameReaderJSONGson = new FrameReaderJSONGson();
+			FrameBlock readBlock = frameReaderJSONGson.readFrameFromHDFS(dataFileName, schema, schemaMap, nrows, ncols);
+		}
+		else {
+			FrameReaderJSONGsonParallel frameReaderJSONGson = new FrameReaderJSONGsonParallel();
+			FrameBlock readBlock = frameReaderJSONGson.readFrameFromHDFS(dataFileName, schema, schemaMap, nrows, ncols);
+		}
 
 	}
 }

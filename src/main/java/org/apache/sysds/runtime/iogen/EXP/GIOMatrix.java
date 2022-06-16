@@ -12,12 +12,14 @@ public class GIOMatrix {
 		String sampleMatrixFileName;
 		String sampleRawDelimiter;
 		String dataFileName;
+		boolean parallel;
 		long rows = -1;
 
 		sampleRawFileName = System.getProperty("sampleRawFileName");
 		sampleMatrixFileName = System.getProperty("sampleMatrixFileName");
 		sampleRawDelimiter = "\t";
 		dataFileName = System.getProperty("dataFileName");
+		parallel = Boolean.parseBoolean(System.getProperty("parallel"));
 		Util util = new Util();
 		// read and parse mtd file
 		String mtdFileName = dataFileName + ".mtd";
@@ -33,7 +35,7 @@ public class GIOMatrix {
 		MatrixBlock sampleMB = util.loadMatrixData(sampleMatrixFileName, sampleRawDelimiter);
 		String sampleRaw = util.readEntireTextFile(sampleRawFileName);
 
-		GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB, false);
+		GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB, parallel);
 		MatrixReader matrixReader = gr.getReader();
 		MatrixBlock matrixBlock = matrixReader.readMatrixFromHDFS(dataFileName, rows, sampleMB.getNumColumns(), -1, -1);
 	}

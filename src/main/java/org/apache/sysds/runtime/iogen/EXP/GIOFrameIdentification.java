@@ -11,9 +11,11 @@ public class GIOFrameIdentification {
 		String sampleFrameFileName;
 		String sampleRawDelimiter;
 		String schemaFileName;
+		boolean parallel;
 
 		sampleRawFileName = System.getProperty("sampleRawFileName");
 		sampleFrameFileName = System.getProperty("sampleFrameFileName");
+		parallel = Boolean.parseBoolean(System.getProperty("parallel"));
 		sampleRawDelimiter = "\t";
 
 		schemaFileName = System.getProperty("schemaFileName");
@@ -25,7 +27,7 @@ public class GIOFrameIdentification {
 		FrameBlock sampleFrame = new FrameBlock(sampleSchema, sampleFrameStrings);
 
 		String sampleRaw = util.readEntireTextFile(sampleRawFileName);
-		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, false);
+		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, parallel);
 		gr.getReader();
 	}
 }

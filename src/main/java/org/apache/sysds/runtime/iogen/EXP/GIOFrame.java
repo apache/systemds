@@ -42,7 +42,7 @@ public class GIOFrame {
 		String[][] sampleFrameStrings = util.loadFrameData(sampleFrameFileName, sampleRawDelimiter, ncols);
 		FrameBlock sampleFrame = new FrameBlock(sampleSchema, sampleFrameStrings);
 		String sampleRaw = util.readEntireTextFile(sampleRawFileName);
-		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
+		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, false);
 		FrameReader fr = gr.getReader();
 		FrameBlock frameBlock = fr.readFrameFromHDFS(dataFileName, sampleSchema, rows, sampleSchema.length);
 

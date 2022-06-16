@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.iogen.codegen;
 
 import org.apache.sysds.runtime.iogen.CustomProperties;
+import org.apache.sysds.runtime.iogen.RowIndexStructure;
 import org.apache.sysds.runtime.iogen.template.TemplateCodeGenBase;
 
 public class FrameCodeGen extends TemplateCodeGenBase {
@@ -56,7 +57,21 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 			"}} \n";
 			}
 		else {
-
+			javaTemplate = "import org.apache.hadoop.io.LongWritable;\n" +
+							"import org.apache.hadoop.io.Text;\n" +
+							"import org.apache.hadoop.mapred.RecordReader;\n" +
+							"import org.apache.sysds.runtime.iogen.CustomProperties;\n" +
+							"import org.apache.sysds.runtime.iogen.template.FrameGenerateReaderParallel;\n" +
+							"import org.apache.sysds.runtime.matrix.data.FrameBlock;\n" +
+							"import java.io.IOException;\n" + "import java.util.HashSet;\n" +
+							"public class "+className+" extends FrameGenerateReaderParallel {\n" +
+								"public "+className+"(CustomProperties _props) {\n" +
+									"super(_props);} \n" +
+									"@Override \n" +
+									"protected void reaFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, " +
+									"FrameBlock dest, int row, SplitInfo splitInfo) throws IOException {\n"+
+								code+
+								"}} \n";
 		}
 	}
 
@@ -91,7 +106,53 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 
 	@Override
 	public String generateCodeJavaParallel() {
-		return null;
+		StringBuilder src = new StringBuilder();
+		CodeGenTrie trie = new CodeGenTrie(properties, "dest.set", false);
+		trie.setMatrix(true);
+		src.append("String str=\"\"; \n");
+		src.append("String remainStr = \"\"; \n");
+		src.append("int col = -1; \n");
+		src.append("long lnnz = 0; \n");
+		src.append("int index, endPos, strLen; \n");
+		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
+		src.append("try { \n");
+		src.append("int ri = -1; \n");
+		src.append("int beginPosStr, endPosStr; \n");
+		src.append("StringBuilder sb = new StringBuilder(); \n");
+		src.append("int beginIndex = splitInfo.getRecordIndexBegin(0); \n");
+		src.append("int endIndex = splitInfo.getRecordIndexEnd(0); \n");
+		src.append("boolean flag = true; \n");
+		src.append("while(flag) { \n");
+		src.append("flag = reader.next(key, value); \n");
+		src.append("if(flag) { \n");
+		if(properties.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.SeqScatter){
+			src.append("ri++; \n");
+			src.append("String valStr = value.toString(); \n");
+			src.append("beginPosStr = ri == beginIndex ? splitInfo.getRecordPositionBegin(row) : 0; \n");
+			src.append("endPosStr = ri == endIndex ? splitInfo.getRecordPositionEnd(row): valStr.length(); \n");
+			src.append("if(ri >= beginIndex && ri <= endIndex){ \n");
+			src.append("sb.append(valStr.substring(beginPosStr, endPosStr)); \n");
+			src.append("remainStr = valStr.substring(endPosStr); \n");
+			src.append("continue; \n");
+			src.append("} \n");
+			src.append("else { \n");
+			src.append("str = sb.toString(); \n");
+			src.append("sb = new StringBuilder(); \n");
+			src.append("sb.append(remainStr).append(valStr); \n");
+			src.append("beginIndex = splitInfo.getRecordIndexBegin(row+1); \n");
+			src.append("endIndex = splitInfo.getRecordIndexEnd(row+1); \n");
+			src.append("} \n");
+		}
+		src.append("} \n");
+		src.append("else \n");
+		src.append("str = sb.toString(); \n");
+		src.append("strLen = str.length(); \n");
+		src.append(trie.getJavaCode());
+		src.append("} \n");
+		src.append("} \n");
+		src.append("catch(Exception ex){ \n");
+		src.append("} \n");
+		return javaTemplate.replace(code, src.toString());
 	}
 
 	@Override

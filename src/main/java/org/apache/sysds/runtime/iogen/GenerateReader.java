@@ -31,17 +31,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.util.Random;
 
-/*
-   Generate Reader has two steps:
-      1. Identify file format and extract the properties of it based on the Sample Matrix.
-      The ReaderMapping class tries to map the Sample Matrix on the Sample Raw Matrix.
-      The result of a ReaderMapping is a FileFormatProperties object.
-
-      2. Generate a reader based on inferred properties.
-
-    Note. Base on this implementation, it is possible to generate a reader 
-    base on Sample Matrix and generate a reader for a frame or vice versa.
-*/
 public abstract class GenerateReader {
 
 	protected static final Log LOG = LogFactory.getLog(GenerateReader.class.getName());
@@ -90,7 +79,7 @@ public abstract class GenerateReader {
 		public MatrixReader getReader() throws Exception {
 			String className = getRandomClassName();
 			MatrixCodeGen src = new MatrixCodeGen(properties, className);
-		// constructor with arguments as CustomProperties
+			// constructor with arguments as CustomProperties
 			Class[] cArg = new Class[1];
 			cArg[0] = CustomProperties.class;
 			String srcJava = properties.isParallel() ? src.generateCodeJavaParallel(): src.generateCodeJava();
@@ -108,18 +97,19 @@ public abstract class GenerateReader {
 			super(sampleProperties);
 		}
 
-		public GenerateReaderFrame(String sampleRaw, FrameBlock sampleFrame) throws Exception {
+		public GenerateReaderFrame(String sampleRaw, FrameBlock sampleFrame, boolean parallel) throws Exception {
 			super(new SampleProperties(sampleRaw, sampleFrame));
+			properties.setParallel(parallel);
 		}
 
 		public FrameReader getReader() throws Exception {
 			String className = getRandomClassName();
 			FrameCodeGen src = new FrameCodeGen(properties, className);
-
 			// constructor with arguments as CustomProperties
 			Class[] cArg = new Class[1];
 			cArg[0] = CustomProperties.class;
-			frameReader = (FrameReader) CodegenUtils.compileClass(className, src.generateCodeJava()).getDeclaredConstructor(cArg).newInstance(properties);
+			String srcJava = properties.isParallel() ? src.generateCodeJavaParallel(): src.generateCodeJava();
+			frameReader = (FrameReader) CodegenUtils.compileClass(className, srcJava).getDeclaredConstructor(cArg).newInstance(properties);
 			return frameReader;
 		}
 	}

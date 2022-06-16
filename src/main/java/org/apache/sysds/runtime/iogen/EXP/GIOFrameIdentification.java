@@ -25,7 +25,7 @@ public class GIOFrameIdentification {
 		FrameBlock sampleFrame = new FrameBlock(sampleSchema, sampleFrameStrings);
 
 		String sampleRaw = util.readEntireTextFile(sampleRawFileName);
-		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
+		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, false);
 		gr.getReader();
 	}
 }

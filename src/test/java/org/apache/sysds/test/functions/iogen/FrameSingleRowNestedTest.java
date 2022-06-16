@@ -88,4 +88,15 @@ public class FrameSingleRowNestedTest extends GenerateReaderFrameTest {
 		data = new String[][] {{"1", "2", "3", "4", "5"}, {"6", "7", "8", "9", "10"}, {"11", "12", "13", "14", "15"}};
 		runGenerateReaderTest();
 	}
+
+	@Test
+	public void test7() {
+		sampleRaw = "{\n\"a\":1,\n\"b\":2,\n\"c\":3,\n\"d\":4,\n\"e\":5\n}\n" +
+			"{\"a\":6,\n\"b\":7,\"c\":8,\"d\":9,\"e\":10\n}\n" +
+			"{\"a\":11,\"b\":12,\n\"c\":13,\"d\":14,\"e\":15\n}";
+
+		data = new String[][] {{"1", "2"}, {"6", "7"}, {"11", "12"}};
+		schema = new Types.ValueType[] {Types.ValueType.INT32, Types.ValueType.INT32};
+		runGenerateReaderTest();
+	}
 }

@@ -307,7 +307,7 @@ public class MatrixGRRowColIdentifyTest extends GenerateReaderMatrixTest {
 
 			String sampleRaw = util.readEntireTextFile(sampleRawFileName);
 
-			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
+			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, false);
 			FrameReader fr =gr.getReader();
 
 			FrameBlock frameBlock = fr.readFrameFromHDFS(dataFileName, sampleSchema, -1, sampleSchema.length);

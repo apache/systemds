@@ -175,10 +175,12 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			String dataPath = HOME + "frame_data.raw";
 			int clen = data[0].length;
 			writeRawString(sampleRaw, dataPath);
-			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
+			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, true);
 
 			FrameReader fr = gr.getReader();
 			FrameBlock frameBlock = fr.readFrameFromHDFS(dataPath, schema, data.length, clen);
+
+			int a = 100;
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

@@ -28,36 +28,41 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 		super(properties, className);
 
 		// 1. set java code template
-		javaTemplate = "import org.apache.hadoop.io.LongWritable; \n" +
-		"import org.apache.hadoop.io.Text; \n" +
-		"import org.apache.hadoop.mapred.InputFormat; \n" +
-		"import org.apache.hadoop.mapred.InputSplit; \n" +
-		"import org.apache.hadoop.mapred.JobConf; \n" +
-		"import org.apache.hadoop.mapred.RecordReader; \n" +
-		"import org.apache.hadoop.mapred.Reporter; \n" +
-		"import org.apache.sysds.common.Types; \n" +
-		"import org.apache.sysds.runtime.io.IOUtilFunctions; \n" +
-		"import org.apache.sysds.runtime.iogen.CustomProperties; \n" +
-		"import org.apache.sysds.runtime.matrix.data.FrameBlock; \n" +
-		"import org.apache.sysds.runtime.iogen.template.FrameGenerateReader; \n" +
-		"import java.io.IOException; \n" +
-		"import java.util.HashSet; \n" +
-		"public class "+className+" extends FrameGenerateReader{ \n" +
-		"public "+className+"(CustomProperties _props) { \n" +
-		"		super(_props); \n" +
-		"	} \n" +
+		// 1.a: single thread code gen
+		if(!properties.isParallel()){
+			javaTemplate = "import org.apache.hadoop.io.LongWritable; \n" +
+			"import org.apache.hadoop.io.Text; \n" +
+			"import org.apache.hadoop.mapred.InputFormat; \n" +
+			"import org.apache.hadoop.mapred.InputSplit; \n" +
+			"import org.apache.hadoop.mapred.JobConf; \n" +
+			"import org.apache.hadoop.mapred.RecordReader; \n" +
+			"import org.apache.hadoop.mapred.Reporter; \n" +
+			"import org.apache.sysds.common.Types; \n" +
+			"import org.apache.sysds.runtime.io.IOUtilFunctions; \n" +
+			"import org.apache.sysds.runtime.iogen.CustomProperties; \n" +
+			"import org.apache.sysds.runtime.matrix.data.FrameBlock; \n" +
+			"import org.apache.sysds.runtime.iogen.template.FrameGenerateReader; \n" +
+			"import java.io.IOException; \n" +
+			"import java.util.HashSet; \n" +
+			"public class "+className+" extends FrameGenerateReader{ \n" +
+			"public "+className+"(CustomProperties _props) { \n" +
+			"		super(_props); \n" +
+			"	} \n" +
 
-		"@Override protected int readFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat, \n" +
-		"		JobConf job, FrameBlock dest, Types.ValueType[] schema, String[] names, long rlen, long clen, int rl, \n" +
-		"		boolean first) throws IOException { \n" +
-		code+
-		"}} \n";
+			"@Override protected int readFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat, \n" +
+			"		JobConf job, FrameBlock dest, Types.ValueType[] schema, String[] names, long rlen, long clen, int rl, \n" +
+			"		boolean first) throws IOException { \n" +
+			code+
+			"}} \n";
+			}
+		else {
 
+		}
 	}
+
 
 	@Override
 	public String generateCodeJava() {
-
 		StringBuilder src = new StringBuilder();
 		src.append("RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL); \n");
 		src.append("LongWritable key = new LongWritable(); \n");
@@ -65,8 +70,7 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 		src.append("int row = rl; \n");
 		src.append("long lnnz = 0; \n");
 		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
-//		if(properties.getRowIndex() == CustomProperties.IndexProperties.PREFIX)
-//			src.append("HashSet<String> endWithValueStringRow = _props.endWithValueStringsRow(); \n");
+
 		src.append("int index, endPos, strLen; \n");
 		src.append("try { \n");
 		src.append("while(reader.next(key, value)){ \n");

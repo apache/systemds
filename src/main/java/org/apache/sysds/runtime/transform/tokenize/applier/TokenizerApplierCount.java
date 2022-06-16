@@ -109,10 +109,7 @@ public class TokenizerApplierCount extends TokenizerApplier {
                 if (numTokens >= maxTokens) {
                     break;
                 }
-                int col = 0;
-                for(; col < keys.size(); col++){
-                    out.set(outputRow, col, keys.get(col));
-                }
+                int col = setKeys(outputRow, keys, out);
                 // Create a row per token
                 long count = tokenCounts.get(token);
                 out.set(outputRow, col, token);

@@ -166,7 +166,7 @@ public class Tokenizer implements Serializable {
             DependencyThreadPool pool = new DependencyThreadPool(k);
             try{
                 List<DependencyTask<?>> taskList = tokenizerApplier.getApplyTasks(this.internalRepresentation, out);
-                lastRow = (Integer) pool.submitAllAndWait(taskList).stream().map(s -> (Integer)s).max(Integer::compare).get();
+                lastRow = pool.submitAllAndWait(taskList).stream().map(s -> (Integer)s).max(Integer::compare).get();
             }
             catch(ExecutionException | InterruptedException e) {
                 LOG.error("MT Tokenizer apply failed");

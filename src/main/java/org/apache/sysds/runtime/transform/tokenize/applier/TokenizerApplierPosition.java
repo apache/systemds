@@ -69,10 +69,7 @@ public class TokenizerApplierPosition extends TokenizerApplier {
 			if (numTokens >= maxTokens) {
 				break;
 			}
-			int col = 0;
-			for(; col < keys.size(); col++){
-				out.set(row, col, keys.get(col));
-			}
+			int col = setKeys(row, keys, out);
 			out.set(row, col, token.getStartIndex(0) + 1);
 			out.set(row, col + 1, token.toString());
 			row++;

@@ -108,7 +108,7 @@ public class Tokenizer implements Serializable {
                     out = out.slice(0, lastRow - 1, 0, out.getNumColumns() - 1, null);
                 }
             } catch (ExecutionException | InterruptedException e) {
-                LOG.error("MT Column encode failed");
+                LOG.error("MT tokenize failed");
                 e.printStackTrace();
             }
             pool.shutdown();

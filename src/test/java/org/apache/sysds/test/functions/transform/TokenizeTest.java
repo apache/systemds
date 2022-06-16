@@ -36,8 +36,6 @@ public class TokenizeTest extends AutomatedTestBase  {
     private static final String TEST_NGRAM_POS_WIDE = "tokenize/TokenizeNgramPosWide";
     private static final String TEST_UNI_HASH_WIDE = "tokenize/TokenizeUniHashWide";
 
-    private static final String CUSTOM = "tokenize/custom.dml";
-
     //dataset and transform tasks without missing values
     private final static String DATASET 	= "20news/20news_subset_untokenized.csv";
 
@@ -52,7 +50,6 @@ public class TokenizeTest extends AutomatedTestBase  {
                 new TestConfiguration(TEST_CLASS_DIR, TEST_NGRAM_POS_WIDE, new String[] { "R" }) );
         addTestConfiguration(TEST_UNI_HASH_WIDE,
                 new TestConfiguration(TEST_CLASS_DIR, TEST_UNI_HASH_WIDE, new String[] { "R" }) );
-        addTestConfiguration("custom", new TestConfiguration("/home/lukas/Documents/Uni/AMLS/scripts", "tokenize", new String[]{"test"}));
     }
 
     @Test

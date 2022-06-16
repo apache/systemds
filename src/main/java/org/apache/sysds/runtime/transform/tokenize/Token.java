@@ -91,10 +91,12 @@ public class Token {
             return subTokens.get(0).text;
         }
         StringBuilder sb = new StringBuilder().append("\"('");
-        for(SubToken t: subTokens){
-            sb.append("', '").append(t.text);
+        for(int i = 0; i < subTokens.size(); i++){
+            sb.append(subTokens.get(i).text);
+            if(i < subTokens.size()-1)
+                sb.append("', '");
         }
-        sb.append("'\"");
+        sb.append("')\"");
         //return "\"('" + subTokens.stream().map(subToken -> subToken.text).collect(Collectors.joining("', '")) + "')\"";
         return sb.toString();
     }

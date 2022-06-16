@@ -31,8 +31,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def sigmoid(X: Matrix):
     """
-    :return: 'OperationNode' containing meaning 
+     The Sigmoid function is a type of activation function, and also defined as a squashing function which limit the
+     output to a range between 0 and 1, which will make these functions useful in the prediction of probabilities.
+    
+    
+    
+    :param X: Matrix of feature vectors.
+    :return: 1-column matrix of weights.
     """
+
     params_dict = {'X': X}
     return Matrix(X.sds_context,
         'sigmoid',

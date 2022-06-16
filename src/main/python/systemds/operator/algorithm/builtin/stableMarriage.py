@@ -33,12 +33,62 @@ def stableMarriage(P: Matrix,
                    A: Matrix,
                    **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param It: a square matrix with no zeros.
-    :param It: a square matrix with no zeros.
+     This script computes a solution for the stable marriage problem.
+    
+     result description:
+    
+     If cell [i,j] is non-zero, it means that acceptor i has matched with
+     proposer j. Further, if cell [i,j] is non-zero, it holds the preference
+     value that led to the match.
+     Proposers.mtx:
+     2.0,1.0,3.0
+     1.0,2.0,3.0
+     1.0,3.0,2.0
+     
+     Since ordered=TRUE, this means that proposer 1 (row 1) likes acceptor 2
+     the most, followed by acceptor 1 and acceptor 3.
+     If ordered=FALSE, this would mean that proposer 1 (row 1) likes acceptor 3
+     the most (since the value at [1,3] is the row max),
+     followed by acceptor 1 (2.0 preference value) and acceptor 2 (1.0 preference value).
+     
+     Acceptors.mtx:
+     3.0,1.0,2.0
+     2.0,1.0,3.0
+     3.0,2.0,1.0
+     
+     Since ordered=TRUE, this means that acceptor 1 (row 1) likes proposer 3
+     the most, followed by proposer 1 and proposer 2.
+     If ordered=FALSE, this would mean that acceptor 1 (row 1) likes proposer 1
+     the most (since the value at [1,1] is the row max),
+     followed by proposer 3 (2.0 preference value) and proposer 2
+     (1.0 preference value).
+     
+     Output.mtx (assuming ordered=TRUE):
+     0.0,0.0,3.0
+     0.0,3.0,0.0
+     1.0,0.0,0.0
+     
+     Acceptor 1 has matched with proposer 3 (since [1,3] is non-zero) at a
+     preference level of 3.0.
+     Acceptor 2 has matched with proposer 2 (since [2,2] is non-zero) at a
+     preference level of 3.0.
+     Acceptor 3 has matched with proposer 1 (since [3,1] is non-zero) at a
+     preference level of 1.0.
+    
+    
+    
+    :param P: proposer matrix P.
+        It must be a square matrix with no zeros.
+    :param A: acceptor matrix A.
+        It must be a square matrix with no zeros.
     :param ordered: If true, P and A are assumed to be ordered,
-    :param index: vice-versa (higher is better).
-    :return: 'OperationNode' containing to the match. & 1 (2.0 preference value) and acceptor 2 (1.0 preference value). & 3 (2.0 preference value) and proposer 2 & matched with proposer 3 (since [1,3] is non-zero) at a & 3.0. & matched with proposer 2 (since [2,2] is non-zero) at a & 3.0. & matched with proposer 1 (since [3,1] is non-zero) at a & 1.0. 
+        i.e. the leftmost value in a row is the most preferred partner's index.
+        i.e. the leftmost value in a row in P is the preference value for the acceptor with
+        index 1 and vice-versa (higher is better).
+    :param verbose: if the algorithm should print verbosely
+    :return: Result Matrix
     """
+
     params_dict = {'P': P, 'A': A}
     params_dict.update(kwargs)
     return Matrix(P.sds_context,

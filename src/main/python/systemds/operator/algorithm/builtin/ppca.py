@@ -32,13 +32,22 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def ppca(X: Matrix,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     This script performs Probabilistic Principal Component Analysis (PCA) on the given input data.
+     It is based on paper: sPCA: Scalable Principal Component Analysis for Big Data on Distributed
+     Platforms. Tarek Elgamal et.al.
+    
+    
+    
+    :param X: n x m input feature matrix
     :param k: indicates dimension of the new vector space constructed from eigen vectors
     :param maxi: maximum number of iterations until convergence
     :param tolobj: objective function tolerance value to stop ppca algorithm
     :param tolrecerr: reconstruction error tolerance value to stop the algorithm
     :param verbose: verbose debug output
-    :return: 'OperationNode' containing  
+    :return: Output feature matrix with K columns
+    :return: Output dominant eigen vectors (can be used for projections)
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     

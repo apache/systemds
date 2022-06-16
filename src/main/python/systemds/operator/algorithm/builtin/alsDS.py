@@ -32,15 +32,27 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def alsDS(X: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     Alternating-Least-Squares (ALS) algorithm using a direct solve method for
+     individual least squares problems (reg="L2"). This script computes an 
+     approximate factorization of a low-rank matrix V into two matrices L and R.
+     Matrices L and R are computed by minimizing a loss function (with regularization).
+    
+    
+    
+    :param X: Location to read the input matrix V to be factorized
     :param rank: Rank of the factorization
     :param reg: Regularization parameter, no regularization if 0.0
     :param maxi: Maximum number of iterations
     :param check: Check for convergence after every iteration, i.e., updating L and R once
     :param thr: Assuming check is set to TRUE, the algorithm stops and convergence is declared
-    :param if: in loss in any two consecutive iterations falls below this threshold;
-    :param if: FALSE thr is ignored
-    :return: 'OperationNode' containing  
+        if the decrease in loss in any two consecutive iterations falls below this threshold;
+        if check is FALSE thr is ignored
+    :param seed: The seed to random parts of the algorithm
+    :param verbose: If the algorithm should run verbosely
+    :return: An m x r matrix where r is the factorization rank
+    :return: An m x r matrix where r is the factorization rank
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     

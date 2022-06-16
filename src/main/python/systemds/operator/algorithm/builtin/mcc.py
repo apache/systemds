@@ -31,7 +31,17 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def mcc(predictions: Matrix,
         labels: Matrix):
+    """
+     Built-in function mcc: Matthews' Correlation Coefficient for binary classification evaluation
     
+    
+    
+    :param predictions: Vector of predicted 0/1 values.
+        (requires setting 'labels' parameter)
+    :param labels: Vector of 0/1 labels.
+    :return: Matthews' Correlation Coefficient
+    """
+
     params_dict = {'predictions': predictions, 'labels': labels}
     return Matrix(predictions.sds_context,
         'mcc',

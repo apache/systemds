@@ -30,7 +30,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def dist(X: Matrix):
+    """
+     Returns Euclidean distance matrix (distances between N n-dimensional points)
     
+    
+    
+    :param X: Matrix to calculate the distance inside
+    :return: Euclidean distance matrix
+    """
+
     params_dict = {'X': X}
     return Matrix(X.sds_context,
         'dist',

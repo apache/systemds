@@ -21,21 +21,17 @@
 
 # This script implements KNN (K Nearest Neighbor) algorithm.
 #
-# INPUT PARAMETERS:
-# -----------------------------------------------------------
-# NAME           TYPE              DEFAULT  MEANING
-# -----------------------------------------------------------
-# X              Matrix[Double]    ---      ---
-# T              Matrix[Double]    ---      ---
-# k_value        Integer           5        ---
-# -----------------------------------------------------------
+# INPUT:
+# --------------------------
+# X        ---
+# T        ---
+# k_value  ---
+# --------------------------
 #
 # OUTPUT:
-# -----------------------------------------------------------
-# NAME           TYPE                       MEANING
-# -----------------------------------------------------------
-# NNR            Matrix[Double]             ---
-# -----------------------------------------------------------
+# ------------------------
+# NNR    ---
+# ------------------------
 
 m_knnbf = function(Matrix[Double] X, Matrix[Double] T, Integer k_value = 5) 
   return(Matrix[Double] NNR)

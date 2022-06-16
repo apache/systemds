@@ -33,10 +33,18 @@ def naiveBayes(D: Matrix,
                C: Matrix,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param Laplace: Any Double value.
-    :param Verbose: Boolean value.
-    :return: 'OperationNode' containing  
+     The naiveBayes-function computes the class conditional probabilities and class priors.
+    
+    
+    
+    :param D: One dimensional column matrix with N rows.
+    :param C: One dimensional column matrix with N rows.
+    :param laplace: Any Double value.
+    :param verbose: Boolean value.
+    :return: Class priors, One dimensional column matrix with N rows.
+    :return: Class conditional probabilities, One dimensional column matrix with N rows.
     """
+
     params_dict = {'D': D, 'C': C}
     params_dict.update(kwargs)
     

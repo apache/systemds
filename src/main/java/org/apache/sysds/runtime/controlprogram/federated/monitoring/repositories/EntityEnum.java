@@ -21,5 +21,6 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositorie
 
 public enum EntityEnum {
 	WORKER,
+	WORKER_STATS,
 	COORDINATOR
 }

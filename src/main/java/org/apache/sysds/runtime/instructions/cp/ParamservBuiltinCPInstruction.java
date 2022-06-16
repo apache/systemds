@@ -19,28 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import static org.apache.sysds.parser.Statement.PS_AGGREGATION_FUN;
-import static org.apache.sysds.parser.Statement.PS_BATCH_SIZE;
-import static org.apache.sysds.parser.Statement.PS_EPOCHS;
-import static org.apache.sysds.parser.Statement.PS_FEATURES;
-import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
-import static org.apache.sysds.parser.Statement.PS_FED_WEIGHTING;
-import static org.apache.sysds.parser.Statement.PS_FREQUENCY;
-import static org.apache.sysds.parser.Statement.PS_HYPER_PARAMS;
-import static org.apache.sysds.parser.Statement.PS_LABELS;
-import static org.apache.sysds.parser.Statement.PS_MODE;
-import static org.apache.sysds.parser.Statement.PS_MODEL;
-import static org.apache.sysds.parser.Statement.PS_MODELAVG;
-import static org.apache.sysds.parser.Statement.PS_NBATCHES;
-import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
-import static org.apache.sysds.parser.Statement.PS_SCHEME;
-import static org.apache.sysds.parser.Statement.PS_SEED;
-import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
-import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
-import static org.apache.sysds.parser.Statement.PS_VAL_FEATURES;
-import static org.apache.sysds.parser.Statement.PS_VAL_FUN;
-import static org.apache.sysds.parser.Statement.PS_VAL_LABELS;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -71,24 +49,21 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.paramserv.FederatedPSControlThread;
-import org.apache.sysds.runtime.controlprogram.paramserv.LocalPSWorker;
-import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
-import org.apache.sysds.runtime.controlprogram.paramserv.ParamServer;
-import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
-import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSBody;
-import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSWorker;
-import org.apache.sysds.runtime.controlprogram.paramserv.SparkParamservUtils;
+import org.apache.sysds.runtime.controlprogram.paramserv.*;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionFederatedScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.FederatedDataPartitioner;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
+import org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption.PublicKey;
 import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.stats.ParamServStatistics;
+
+import static org.apache.sysds.parser.Statement.*;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
@@ -102,6 +77,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private static final PSUpdateType DEFAULT_TYPE = PSUpdateType.ASP;
 	public static final int DEFAULT_NBATCHES = 1;
 	private static final Boolean DEFAULT_MODELAVG = false;
+	private static final Boolean DEFAULT_HE = false;
 
 	public ParamservBuiltinCPInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out, String opcode, String istr) {
 		super(op, paramsMap, out, opcode, istr);
@@ -188,23 +164,56 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject val_features = (getParam(PS_VAL_FEATURES) != null) ? ec.getMatrixObject(getParam(PS_VAL_FEATURES)) : null;
 		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
 		boolean modelAvg = Boolean.parseBoolean(getParam(PS_MODELAVG));
-		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
-			getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), val_features, val_labels, nbatches, modelAvg);
+
+		// check if we need homomorphic encryption
+		boolean use_homomorphic_encryption_ = getHe();
+		for (int i = 0; i < workerNum; i++) {
+			use_homomorphic_encryption_ = use_homomorphic_encryption_ || checkIsPrivate(result._pFeatures.get(i));
+			use_homomorphic_encryption_ = use_homomorphic_encryption_ || checkIsPrivate(result._pLabels.get(i));
+		}
+		final boolean use_homomorphic_encryption = use_homomorphic_encryption_;
+		if (use_homomorphic_encryption && !modelAvg) {
+			throw new DMLRuntimeException("can't use homomorphic encryption without modelAvg");
+		}
+
+		if (use_homomorphic_encryption && weighting) {
+			throw new DMLRuntimeException("can't use homomorphic encryption with weighting");
+		}
+
+		LocalParamServer ps = (LocalParamServer)createPS(PSModeType.FEDERATED, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
+			getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), val_features, val_labels, nbatches, modelAvg, use_homomorphic_encryption);
 		// Create the local workers
 		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
 			.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, weighting,
-				getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps, nbatches, modelAvg))
+				getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps, nbatches, modelAvg, use_homomorphic_encryption))
 			.collect(Collectors.toList());
 		if(workerNum != threads.size()) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: Federated data partitioning does not match threads!");
 		}
+
 		// Set features and lables for the control threads and write the program and instructions and hyperparams to the federated workers
 		for (int i = 0; i < threads.size(); i++) {
 			threads.get(i).setFeatures(result._pFeatures.get(i));
 			threads.get(i).setLabels(result._pLabels.get(i));
 			threads.get(i).setup(result._weightingFactors.get(i));
 		}
+
+		if (use_homomorphic_encryption) {
+			// generate public key from partial public keys
+			PublicKey[] partial_public_keys = new PublicKey[threads.size()];
+			for (int i = 0; i < threads.size(); i++) {
+				partial_public_keys[i] = threads.get(i).getPartialPublicKey();
+			}
+
+			// TODO: accumulate public keys with SEAL
+			PublicKey public_key = ((HEParamServer)ps).aggregatePartialPublicKeys(partial_public_keys);
+
+			for (FederatedPSControlThread thread : threads) {
+				thread.setPublicKey(public_key);
+			}
+		}
+
 		if (DMLScript.STATISTICS)
 			ParamServStatistics.accSetupTime((long) tSetup.stop());
 
@@ -479,21 +488,32 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 * @return parameter server
 	 */
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
-		PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, int nbatches, boolean modelAvg)
+										PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, int nbatches, boolean modelAvg)
 	{
 		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, null, -1, null, null, nbatches, modelAvg);
+	}
+
+
+	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
+										PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, String valFunc,
+										int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg)	{
+		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches, modelAvg, false);
 	}
 
 	// When this creation is used the parameter server is able to validate after each epoch
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
 		PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, String valFunc,
-		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg)
+		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg, boolean use_homomorphic_encryption)
 	{
 		switch (mode) {
 			case FEDERATED:
 			case LOCAL:
 			case REMOTE_SPARK:
-				return LocalParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches, modelAvg);
+				if (use_homomorphic_encryption) {
+					return HEParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches);
+				} else {
+					return LocalParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches, modelAvg);
+				}
 			default:
 				throw new DMLRuntimeException("Unsupported parameter server: " + mode.name());
 		}
@@ -613,5 +633,16 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			return DEFAULT_NBATCHES;
 		}
 		return Integer.parseInt(getParam(PS_NBATCHES));
+	}
+
+	private boolean checkIsPrivate(MatrixObject obj) {
+		PrivacyConstraint pc = obj.getPrivacyConstraint();
+		return pc != null && pc.hasPrivateElements();
+	}
+
+	private boolean getHe() {
+		if(!getParameterMap().containsKey(PS_HE))
+			return DEFAULT_HE;
+		return Boolean.parseBoolean(getParam(PS_HE));
 	}
 }

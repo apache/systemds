@@ -87,6 +87,7 @@ public class DataExpression extends DataIdentifier
 	public static final String FED_ADDRESSES = "addresses";
 	public static final String FED_RANGES = "ranges";
 	public static final String FED_TYPE = "type";
+	public static final String FED_LOCAL_OBJECT = "local_matrix";
 	
 	public static final String FORMAT_TYPE = "format";
 	
@@ -132,7 +133,7 @@ public class DataExpression extends DataIdentifier
 		Arrays.asList(SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY));
 	
 	public static final Set<String> FEDERATED_VALID_PARAM_NAMES = new HashSet<>(
-		Arrays.asList(FED_ADDRESSES, FED_RANGES, FED_TYPE));
+		Arrays.asList(FED_ADDRESSES, FED_RANGES, FED_TYPE, FED_LOCAL_OBJECT));
 
 	/** Valid parameter names in metadata file */
 	public static final Set<String> READ_VALID_MTD_PARAM_NAMES =new HashSet<>(
@@ -540,6 +541,16 @@ public class DataExpression extends DataIdentifier
 				param = passedParamExprs.get(2);
 				dataExpr.addFederatedExprParam(DataExpression.FED_TYPE, param.getExpr());
 			}
+			else if(unnamedParamCount == 4) {
+				ParameterExpression param = passedParamExprs.get(0);
+				dataExpr.addFederatedExprParam(DataExpression.FED_LOCAL_OBJECT, param.getExpr());
+				param = passedParamExprs.get(1);
+				dataExpr.addFederatedExprParam(DataExpression.FED_ADDRESSES, param.getExpr());
+				param = passedParamExprs.get(2);
+				dataExpr.addFederatedExprParam(DataExpression.FED_RANGES, param.getExpr());
+				param = passedParamExprs.get(3);
+				dataExpr.addFederatedExprParam(DataExpression.FED_TYPE, param.getExpr());
+			}
 			else {
 				errorListener.validationError(parseInfo,
 					"for federated statement, at most 3 arguments are supported: addresses, ranges, type");
@@ -888,7 +899,7 @@ public class DataExpression extends DataIdentifier
 				raiseValidateError("UDF function call not supported as parameter to built-in function call", false,LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			inputParamExpr.validateExpression(ids, currConstVars, conditional);
-			if (s != null && !s.equals(RAND_DATA) && !s.equals(RAND_DIMS) && !s.equals(FED_ADDRESSES) && !s.equals(FED_RANGES)
+			if (s != null && !s.equals(RAND_DATA) && !s.equals(RAND_DIMS) && !s.equals(FED_ADDRESSES) && !s.equals(FED_RANGES) && !s.equals(FED_LOCAL_OBJECT)
 					&& !s.equals(DELIM_NA_STRINGS) && !s.equals(SCHEMAPARAM) && getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
 				raiseValidateError("Non-scalar data types are not supported for data expression.", conditional,LanguageErrorCodes.INVALID_PARAMETERS);
 			}
@@ -2195,7 +2206,16 @@ public class DataExpression extends DataIdentifier
 			else if(fedType.getValue().equalsIgnoreCase(FED_FRAME_IDENTIFIER)) {
 				getOutput().setDataType(DataType.FRAME);
 			}
+
+			if(_varParams.size() == 4) {
+				exp = getVarParam(FED_LOCAL_OBJECT);
+				if( !(exp instanceof DataIdentifier) ) {
+					raiseValidateError("for federated statement " + FED_LOCAL_OBJECT + " has incorrect value type", conditional);
+				}
+				getVarParam(FED_LOCAL_OBJECT).validateExpression(ids, currConstVars, conditional);
+			}
 			getOutput().setDimensions(-1, -1);
+
 			break;
 			
 		default:

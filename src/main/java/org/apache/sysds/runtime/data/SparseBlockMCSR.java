@@ -148,11 +148,18 @@ public class SparseBlockMCSR extends SparseBlock
 	
 	@Override
 	public void compact(int r) {
-		if( isAllocated(r) && _rows[r] instanceof SparseRowVector
-			&& _rows[r].size() > SparseBlock.INIT_CAPACITY
-			&& _rows[r].size() * SparseBlock.RESIZE_FACTOR1 
-				< ((SparseRowVector)_rows[r]).capacity() ) {
-			((SparseRowVector)_rows[r]).compact();
+		if( isAllocated(r) ){
+			if(_rows[r] instanceof SparseRowVector
+			  && _rows[r].size() > SparseBlock.INIT_CAPACITY
+			  && _rows[r].size() * SparseBlock.RESIZE_FACTOR1 
+				  < ((SparseRowVector)_rows[r]).capacity() ) {
+			  ((SparseRowVector)_rows[r]).compact();
+		  }
+		  else if(_rows[r] instanceof SparseRowScalar) {
+				SparseRowScalar s = (SparseRowScalar) _rows[r];
+				if(s.getValue() == 0)
+					_rows[r] = null;
+			}
 		}
 	}
 	
@@ -173,7 +180,7 @@ public class SparseBlockMCSR extends SparseBlock
 	
 	@Override
 	public boolean isAllocated(int r) {
-		return (_rows[r] != null);
+		return _rows[r] != null;
 	}
 
 	@Override
@@ -319,8 +326,13 @@ public class SparseBlockMCSR extends SparseBlock
 	public boolean add(int r, int c, double v) {
 		if( !isAllocated(r) )
 			_rows[r] = new SparseRowScalar();
-		else if( _rows[r] instanceof SparseRowScalar && !_rows[r].isEmpty())
-			_rows[r] = new SparseRowVector(_rows[r]);
+		else if( _rows[r] instanceof SparseRowScalar && !_rows[r].isEmpty()){
+			SparseRowScalar s = (SparseRowScalar) _rows[r];
+			if(s.getIndex() == c)
+				return s.set(s.getIndex(), v + s.getValue());
+			else
+			  _rows[r] = new SparseRowVector(_rows[r]);
+		}
 		return _rows[r].add(c, v);
 	}
 	
@@ -414,19 +426,17 @@ public class SparseBlockMCSR extends SparseBlock
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
+		final int nRow = numRows();
 		sb.append("SparseBlockMCSR: rlen=");
-		sb.append(numRows());
+		sb.append(nRow);
 		sb.append(", nnz=");
 		sb.append(size());
 		sb.append("\n");
-		for( int i=0; i<numRows(); i++ ) {
+		final int rowDigits = (int)Math.max(Math.ceil(Math.log10(nRow)),1) ;
+		for( int i=0; i<nRow; i++ ) {
 			if(isEmpty(i))
 				continue;
-			sb.append("row +");
-			sb.append(i);
-			sb.append(": ");
-			sb.append(_rows[i]);
-			sb.append("\n");
+			sb.append(String.format("row %0"+rowDigits+"d -- %s\n", i, _rows[i].toString()));
 		}
 		
 		return sb.toString();

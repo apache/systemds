@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":6,"i3":6};
+var data = {"i0":10,"i1":10,"i2":10,"i3":6,"i4":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -163,16 +163,21 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumWorkers()">getNumWorkers</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getResult()">getResult</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#pull(int)">pull</a></span>&#8203;(int&nbsp;workerID)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#push(int,org.apache.sysds.runtime.instructions.cp.ListObject)">push</a></span>&#8203;(int&nbsp;workerID,
     <a href="../../instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a>&nbsp;value)</code></th>
@@ -228,6 +233,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <li class="blockList">
 <h4>getResult</h4>
 <pre class="methodSignature">public&nbsp;<a href="../../instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a>&nbsp;getResult()</pre>
+</li>
+</ul>
+<a id="getNumWorkers()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getNumWorkers</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getNumWorkers()</pre>
 </li>
 </ul>
 <a id="getAggInst()">

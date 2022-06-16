@@ -37,5 +37,3 @@ A = as.frame(A)
 
 A[from:to, from2:to2] = B;
 write(A, $11);
-
-print(toString(A))

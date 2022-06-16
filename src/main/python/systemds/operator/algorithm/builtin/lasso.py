@@ -33,13 +33,21 @@ def lasso(X: Matrix,
           y: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     Builtin function for the SpaRSA algorithm to perform lasso regression
+     (SpaRSA .. Sparse Reconstruction by Separable Approximation)
+    
+    
+    
+    :param X: input feature matrix
+    :param y: matrix Y columns of the design matrix
     :param tol: target convergence tolerance
     :param M: history length
     :param tau: regularization component
     :param maxi: maximum number of iterations until convergence
     :param verbose: if the builtin should be verbose
-    :return: 'OperationNode' containing  
+    :return: model matrix
     """
+
     params_dict = {'X': X, 'y': y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

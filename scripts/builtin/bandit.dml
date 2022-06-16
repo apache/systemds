@@ -19,37 +19,34 @@
 #
 #-------------------------------------------------------------
 
-# In The bandit function the objective is to find an arm that optimises a known functional of the unknown arm-reward distributions.
+# In The bandit function the objective is to find an arm that optimizes
+# a known functional of the unknown arm-reward distributions.
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME              TYPE               DEFAULT            MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X_train           Matrix[Double]     ---
-# Y_train           Matrix[Double]     ---
-# X_test            Matrix[Double]     ---
-# Y_test            Matrix[Double]     ---
-# metaList          List[Unknown]      ---
-# evaluationFunc    String             ---
-# evalFunHp         Matrix[Double]     ---
-# lp                Frame[Unknown]     ---
-# primitives        Frame[Unknown]     ---
-# params            Frame[Unknown]     ---
-# K                 Integer            3
-# R                 Integer            50
-# baseLineScore     Double
-# cv                Boolean
-# cvk               Integer            2
-# verbose           Boolean            TRUE
-# output            String             ""
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# -----------------------------------------------------------------------------------
+# X_train         ---
+# Y_train         ---
+# X_test          ---
+# Y_test          ---
+# metaList        ---
+# evaluationFunc  ---
+# evalFunHp       ---
+# lp              ---
+# primitives      ---
+# params          ---
+# K               ---
+# R               ---
+# baseLineScore   ---
+# cv              ---
+# cvk             ---
+# verbose         ---
+# output          ---
+# -----------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME      TYPE             MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# perf      Boolean
-# ----------------------------------------------------------------------------------------------------------------------
+# --------------------------------------
+# perf    ---
+# --------------------------------------
 
 m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Double] X_test, Matrix[Double] Y_test, List[Unknown] metaList,
   String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] lp, Matrix[Double] lpHp, Frame[Unknown] primitives, Frame[Unknown] param, Integer k = 3,

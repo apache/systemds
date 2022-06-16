@@ -34,5 +34,9 @@ cmake . -B OPENBLAS -DUSE_OPEN_BLAS=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build OPENBLAS --target install --config Release
 rmdir /Q /S OPENBLAS
 
+cmake he\ -B HE -DCMAKE_BUILD_TYPE=Release
+cmake --build HE --target install --config Release
+rmdir /Q /S HE
+
 echo.
 echo "Make sure to re-run mvn package to make use of the newly compiled libraries"

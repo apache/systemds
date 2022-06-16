@@ -36,9 +36,24 @@ def bivar(X: Matrix,
           T2: Matrix,
           verbose: bool):
     """
+     For a given pair of attribute sets, compute bivariate statistics between all attribute pairs.
+     Given, index1 = {A_11, A_12, ... A_1m} and index2 = {A_21, A_22, ... A_2n}
+     compute bivariate stats for m*n pairs (A_1i, A_2j), (1<= i <=m) and (1<= j <=n).
+    
+    
+    
+    :param X: Input matrix
+    :param S1: First attribute set {A_11, A_12, ... A_1m}
+    :param S2: Second attribute set {A_21, A_22, ... A_2n}
+    :param T1: Kind for attributes in S1
+        (kind=1 for scale, kind=2 for nominal, kind=3 for ordinal)
     :param verbose: Print bivar stats
-    :return: 'OperationNode' containing as output with bivar stats & as output with bivar stats & as output with bivar stats & as output with bivar stats 
+    :return: basestats_scale_scale as output with bivar stats
+    :return: basestats_nominal_scale as output with bivar stats
+    :return: basestats_nominal_nominal as output with bivar stats
+    :return: basestats_ordinal_ordinal as output with bivar stats
     """
+
     params_dict = {'X': X, 'S1': S1, 'S2': S2, 'T1': T1, 'T2': T2, 'verbose': verbose}
     
     vX_0 = Matrix(X.sds_context, '')

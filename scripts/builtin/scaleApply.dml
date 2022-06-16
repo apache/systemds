@@ -21,21 +21,17 @@
 
 # This function scales and center individual features in the input matrix (column wise.) using the input matrices.
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME         TYPE              DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X            Matrix[Double]    ---       Input feature matrix
-# Centering    Matrix[Double]    ---       The column means to subtract from X (not done if empty)
-# ScaleFactor  Matrix[Double]    ---       The column scaling to multiply with X (not done if empty)
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# ------------------------------------------------------------------------------------------
+# X            Input feature matrix
+# Centering    The column means to subtract from X (not done if empty)
+# ScaleFactor  The column scaling to multiply with X (not done if empty)
+# ------------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME       TYPE                         MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# Y          Matrix[Double]               Output feature matrix with K columns
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------
+# Y     Output feature matrix with K columns
+# ------------------------------------------------------------------------------------
 
 m_scaleApply = function(Matrix[Double] X, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
   return (Matrix[Double] Y) 

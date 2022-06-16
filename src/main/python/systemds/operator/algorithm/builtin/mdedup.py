@@ -36,10 +36,21 @@ def mdedup(X: Frame,
            RHSthreshold: Matrix,
            verbose: bool):
     """
+     Implements builtin for deduplication using matching dependencies (e.g. Street 0.95, City 0.90 -> ZIP 1.0)
+     and Jaccard distance.
+     
+    
+    
     :param X: Input Frame X
+    :param LHSfeatures: A matrix 1xd with numbers of columns for MDs
+        (e.g. Street 0.95, City 0.90 -> ZIP 1.0)
+    :param LHSthreshold: A matrix 1xd with threshold values in interval [0, 1] for MDs
+    :param RHSfeatures: A matrix 1xd with numbers of columns for MDs
+    :param RHSthreshold: A matrix 1xd with threshold values in interval [0, 1] for MDs
     :param verbose: To print the output
-    :return: 'OperationNode' containing  
+    :return: Matrix nx1 of duplicates
     """
+
     params_dict = {'X': X, 'LHSfeatures': LHSfeatures, 'LHSthreshold': LHSthreshold, 'RHSfeatures': RHSfeatures, 'RHSthreshold': RHSthreshold, 'verbose': verbose}
     return Matrix(X.sds_context,
         'mdedup',

@@ -33,10 +33,21 @@ def splitBalanced(X: Matrix,
                   Y: Matrix,
                   **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     This functions split input data X and Y into contiguous balanced ratio
+     Related to [SYSTEMDS-2902] dependency function for cleaning pipelines
+    
+    
+    
+    :param X: Input feature matrix
+    :param Y: Input Labels
     :param f: Train set fraction [0,1]
     :param verbose: print available
-    :return: 'OperationNode' containing  
+    :return: Train split of feature matrix
+    :return: Test split of feature matrix
+    :return: Train split of label matrix
+    :return: Test split of label matrix
     """
+
     params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)
     

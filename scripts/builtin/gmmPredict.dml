@@ -21,27 +21,22 @@
 
 # This function is a Prediction function for a Gaussian Mixture Model (gmm).
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME                   TYPE             DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X                      Matrix[Double]   ---       Matrix X (instances to be clustered)
-# weight                 Matrix[Double]   ---       Weight of learned model
-# mu                     Matrix[Double]   ---       fitted clusters mean
-# precisions_cholesky    Matrix[Double]   ---       fitted precision matrix for each mixture
-# model                  String           ---       fitted model
+# compute posterior probabilities for new instances given the variance and mean of fitted data
 #
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# ------------------------------------------------------------------------------------------
+# X                     Matrix X (instances to be clustered)
+# weight                Weight of learned model
+# mu                    fitted clusters mean
+# precisions_cholesky   fitted precision matrix for each mixture
+# model                 fitted model
+# ------------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME                   TYPE        MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# predict                Double      predicted cluster labels
-# posterior_prob         Double      probabilities of belongingness
-# ----------------------------------------------------------------------------------------------------------------------
-#
-# compute posterior probabilities for new instances given the variance and mean of fitted data
+# ---------------------------------------------------------------------------------------------------
+# predict         predicted cluster labels
+# posterior_prob  probabilities of belongingness
+# ---------------------------------------------------------------------------------------------------
 
 m_gmmPredict = function(Matrix[Double] X, Matrix[Double] weight,
   Matrix[Double] mu, Matrix[Double] precisions_cholesky, String model = "VVV")

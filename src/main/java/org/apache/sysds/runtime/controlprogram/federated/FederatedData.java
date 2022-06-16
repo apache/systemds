@@ -34,7 +34,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MetaData;
 
@@ -149,6 +151,19 @@ public class FederatedData {
 		return executeFederatedOperation(request);
 	}
 
+	public synchronized Future<FederatedResponse> initFederatedDataFromLocal(long id, CacheBlock block) {
+		if(isInitialized())
+			throw new DMLRuntimeException("Tried to init already initialized data");
+		if(!_dataType.isMatrix() && !_dataType.isFrame())
+			throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
+		_varID = id;
+		FederatedRequest request = new FederatedRequest(RequestType.READ_VAR, id);
+		request.appendParam(_filepath);
+		request.appendParam(_dataType.name());
+		request.appendParam(block);
+		return executeFederatedOperation(request);
+	}
+
 	public Future<FederatedResponse> executeFederatedOperation(FederatedRequest... request) {
 		return executeFederatedOperation(_address, request);
 	}
@@ -193,6 +208,7 @@ public class FederatedData {
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
 				final ChannelPipeline cp = ch.pipeline();
+				cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logServerTraffic));
 				if(ssl)
 					cp.addLast(createSSLHandler(ch, address));
 				if(timeout > -1)

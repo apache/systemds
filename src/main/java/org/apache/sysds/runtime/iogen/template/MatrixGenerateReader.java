@@ -167,7 +167,6 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return endPos;
 	}
 
-
 	protected int getColIndex(HashMap<String, Integer> colKeyPatternMap, String key){
 		if(colKeyPatternMap.containsKey(key))
 			return colKeyPatternMap.get(key);

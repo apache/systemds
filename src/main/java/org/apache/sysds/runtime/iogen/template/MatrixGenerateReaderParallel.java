@@ -433,7 +433,6 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 	protected abstract long readMatrixFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, MatrixBlock dest,
 		int rowPos, SplitInfo splitInfo) throws IOException;
 
-
 	protected int getEndPos(String str, int strLen, int currPos, HashSet<String> endWithValueString) {
 		int endPos = strLen;
 		for(String d : endWithValueString) {

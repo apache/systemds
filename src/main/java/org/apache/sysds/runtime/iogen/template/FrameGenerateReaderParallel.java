@@ -53,7 +53,7 @@ import java.util.concurrent.Future;
 public abstract class FrameGenerateReaderParallel extends FrameReader {
 
 	protected CustomProperties _props;
-	protected int _numThreads = 1;
+	protected int _numThreads;
 	protected JobConf job;
 	protected SplitOffsetInfos _offsets;
 	protected int _rLen;
@@ -216,7 +216,6 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 			throw new IOException("Threadpool issue, while parallel read.", e);
 		}
 	}
-
 
 	protected int getEndPos(String str, int strLen, int currPos, HashSet<String> endWithValueString) {
 		int endPos = strLen;
@@ -452,7 +451,4 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 
 	protected abstract void reaFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, FrameBlock dest,
 		int rowPos, SplitInfo splitInfo) throws IOException;
-
-
-
 }

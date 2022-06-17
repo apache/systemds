@@ -163,7 +163,7 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 			}
 		}
 
-		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
+		FrameBlock ret = createOutputFrameBlock(lschema, lnames, _rLen);
 		return ret;
 	}
 

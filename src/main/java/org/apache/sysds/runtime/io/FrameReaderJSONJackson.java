@@ -1,32 +1,21 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
 package org.apache.sysds.runtime.io;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.*;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.InputSplit;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -34,15 +23,19 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static org.apache.sysds.runtime.io.FrameReader.*;
 
 
-public class FrameReaderJSONL
+public class FrameReaderJSONJackson
 {
 	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, Map<String, Integer> schemaMap,
-		long rlen, long clen) throws IOException, DMLRuntimeException, JSONException
+		long rlen, long clen) throws IOException, DMLRuntimeException
 	{
 		//prepare file access
 		JobConf jobConf = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -52,7 +45,6 @@ public class FrameReaderJSONL
 
 		//check existence and non-empty file
 		checkValidInputFile(fileSystem, path);
-
 
 		Types.ValueType[] lschema = createOutputSchema(schema, clen);
 		String[] lnames = createOutputNamesFromSchemaMap(schemaMap);
@@ -64,7 +56,7 @@ public class FrameReaderJSONL
 
 
 	protected void readJSONLFrameFromHDFS(Path path, JobConf jobConf, FileSystem fileSystem, FrameBlock dest,
-		Types.ValueType[] schema, Map<String, Integer> schemaMap) throws IOException, JSONException
+		Types.ValueType[] schema, Map<String, Integer> schemaMap) throws IOException
 	{
 		TextInputFormat inputFormat = new TextInputFormat();
 		inputFormat.configure(jobConf);
@@ -79,7 +71,7 @@ public class FrameReaderJSONL
 
 	protected static int readJSONLFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> inputFormat,
 		JobConf jobConf, Types.ValueType[] schema, Map<String, Integer> schemaMap, FrameBlock dest, int currentRow)
-			throws IOException, JSONException 
+		throws IOException
 	{
 		RecordReader<LongWritable, Text> reader = inputFormat.getRecordReader(split, jobConf, Reporter.NULL);
 		LongWritable key = new LongWritable();
@@ -88,11 +80,19 @@ public class FrameReaderJSONL
 		int row = currentRow;
 		try {
 			while (reader.next(key, value)) {
-				// Potential Problem if JSON/L Object is very large
-				JSONObject jsonObject = new JSONObject(value.toString());
+				ObjectMapper mapper = new ObjectMapper();
+				JsonNode root = mapper.readTree(value.toString());
+				Map<String, String> map = new HashMap<>();
+				addKeys("", root, map, new ArrayList<>());
 				for (Map.Entry<String, Integer> entry : schemaMap.entrySet()) {
-					String strCellValue = getStringFromJSONPath(jsonObject, entry.getKey());
-					dest.set(row, entry.getValue(), UtilFunctions.stringToObject(schema[entry.getValue()], strCellValue));
+					String strCellValue = map.get(entry.getKey());
+					if(strCellValue!=null){
+						try {
+							dest.set(row, entry.getValue(), UtilFunctions.stringToObject(schema[entry.getValue()], strCellValue));
+						}
+						catch(Exception e){}
+
+					}
 				}
 				row++;
 			}
@@ -102,40 +102,39 @@ public class FrameReaderJSONL
 		}
 		return row;
 	}
-	// TODO Needs Optimisation! "split" is inefficient
-	private static String getStringFromJSONPath(JSONObject jsonObject, String path) 
-		throws IOException 
-	{
-		String[] splitPath = path.split("/");
-		Object temp = null;
-		for (String split : splitPath) {
-			if(split.equals("")) continue;
-			try{
-				if (temp == null) {
-					temp = jsonObject.get(split);
-				} else if (temp instanceof JSONObject) {
-					temp = ((JSONObject) temp).get(split);
-				} else if (temp instanceof JSONArray) {
-					throw new IOException("Cannot traverse JSON Array in a meaningful manner");
-				} else {
-					return null;
+	private static void addKeys(String currentPath, JsonNode jsonNode, Map<String, String> map, List<Integer> suffix) {
+		if (jsonNode.isObject()) {
+			ObjectNode objectNode = (ObjectNode) jsonNode;
+			Iterator<Map.Entry<String, JsonNode>> iter = objectNode.fields();
+			String pathPrefix = currentPath.isEmpty() ? "" : currentPath + "/";
+
+			while (iter.hasNext()) {
+				Map.Entry<String, JsonNode> entry = iter.next();
+				addKeys(pathPrefix + entry.getKey(), entry.getValue(), map, suffix);
+			}
+		} else if (jsonNode.isArray()) {
+			ArrayNode arrayNode = (ArrayNode) jsonNode;
+			for (int i = 0; i < arrayNode.size(); i++) {
+				suffix.add(i + 1);
+				addKeys(currentPath+"-"+i, arrayNode.get(i), map, suffix);
+				if (i + 1 <arrayNode.size()){
+					suffix.remove(suffix.size() - 1);
 				}
 			}
-			catch (JSONException e){
-				// Value not in JsonObject
-				return null;
-			}
 
+		} else if (jsonNode.isValueNode()) {
+			if (currentPath.contains("/") && !currentPath.contains("-")) {
+				for (int i = 0; i < suffix.size(); i++) {
+					currentPath += "/" + suffix.get(i);
+				}
+				suffix = new ArrayList<>();
+			}
+			ValueNode valueNode = (ValueNode) jsonNode;
+			map.put("/"+currentPath, valueNode.asText());
 		}
-		if(temp == null){
-			return null;
-			//throw new IOException("Could not traverse the JSON path: '" + path + "'!");
-		}
-		return temp.toString();
 	}
 
-
-	private static String[] createOutputNamesFromSchemaMap(Map<String, Integer> schemaMap) {
+	private  String[] createOutputNamesFromSchemaMap(Map<String, Integer> schemaMap) {
 		String[] names = new String[schemaMap.size()];
 		schemaMap.forEach((key, value) -> names[value] = key);
 		return names;

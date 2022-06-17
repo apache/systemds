@@ -17,8 +17,9 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.iogen;
+package org.apache.sysds.test.functions.iogen.Identify;
 
+import org.apache.sysds.test.functions.iogen.GenerateReaderFrameTest;
 import org.junit.Test;
 
 public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
@@ -48,9 +49,9 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 
 	@Test
 	public void test1() {
-		String[] naStrings = {"NULL", "inf", "NaN"};
+		String[] naStrings = {};
 		String separator = ",";
-		generateRandomData(10, 10, -100, 100, 1, naStrings);
+		generateRandomData(10, 5, 1, 100, 1, naStrings);
 		extractSampleRawCSV(separator);
 		runGenerateReaderTest();
 	}

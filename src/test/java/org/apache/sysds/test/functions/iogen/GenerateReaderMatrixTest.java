@@ -23,6 +23,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.runtime.io.MatrixReader;
+import org.apache.sysds.runtime.iogen.FormatIdentifying;
 import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -83,16 +84,25 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			File directory = new File(HOME);
-			if (! directory.exists()){
+			if(!directory.exists()) {
 				directory.mkdir();
 			}
 			String dataPath = HOME + "matrix_data.raw";
 			int clen = sampleMatrix[0].length;
 			writeRawString(sampleRaw, dataPath);
-			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
+//			FormatIdentifying formatIdentifying = new FormatIdentifying(sampleRaw, sampleMB);
+//			myTest mt = new myTest(formatIdentifying.getFormatProperties());
+//			mt.readMatrixFromHDFS(dataPath, sampleMB.getNumRows(), clen, -1, -1);
+//			int a = 100;
 
-			MatrixReader mr= gr.getReader();
-			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, -1, clen, -1, -1);
+			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB, true);
+			MatrixReader mr = gr.getReader();
+			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, sampleMB.getNumRows(), clen, -1, -1);
+
+//			TestUtils.compareMatrices(sampleMB, matrixBlock, 0);
+
+			int a = 100;
+
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

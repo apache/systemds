@@ -20,7 +20,14 @@
 package org.apache.sysds.test.functions.iogen;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.io.FrameReader;
+import org.apache.sysds.runtime.iogen.EXP.Util;
+import org.apache.sysds.runtime.iogen.GenerateReader;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.wink.json4j.JSONObject;
 import org.junit.Test;
+
+import java.io.IOException;
 
 public class FrameSingleRowNestedTest extends GenerateReaderFrameTest {
 
@@ -98,5 +105,41 @@ public class FrameSingleRowNestedTest extends GenerateReaderFrameTest {
 		data = new String[][] {{"1", "2"}, {"6", "7"}, {"11", "12"}};
 		schema = new Types.ValueType[] {Types.ValueType.INT32, Types.ValueType.INT32};
 		runGenerateReaderTest();
+	}
+
+	@Test
+	public void test8() throws Exception {
+		//java -Xms15g -Xmx15g  -Dparallel=true -cp ./lib/*:./SystemDS.jar org.apache.sysds.runtime.iogen.EXP.GIOFrame
+		String dpath = "/home/sfathollahzadeh/Documents/GitHub/papers/2022-vldb-GIO/Experiments/";
+		String sampleRawFileName = dpath+"data/aminer-author-json/Q4/sample-aminer-author-json200.raw";
+		String sampleFrameFileName = dpath+"data/aminer-author-json/Q4/sample-aminer-author-json200.frame";
+		String sampleRawDelimiter = "\t";
+		String schemaFileName = dpath+"data/aminer-author-json/Q4/aminer-author-json.schema";
+		String dataFileName = dpath+"data/aminer-author-json.dat";
+		boolean parallel = false;
+		long rows = -1;
+		Util util = new Util();
+
+		// read and parse mtd file
+		String mtdFileName = dataFileName + ".mtd";
+		try {
+			String mtd = util.readEntireTextFile(mtdFileName);
+			mtd = mtd.replace("\n", "").replace("\r", "");
+			mtd = mtd.toLowerCase().trim();
+			JSONObject jsonObject = new JSONObject(mtd);
+			if (jsonObject.containsKey("rows")) rows = jsonObject.getLong("rows");
+		} catch (Exception exception) {}
+
+		Types.ValueType[] sampleSchema = util.getSchema(schemaFileName);
+		int ncols = sampleSchema.length;
+
+		String[][] sampleFrameStrings = util.loadFrameData(sampleFrameFileName, sampleRawDelimiter, ncols);
+		FrameBlock sampleFrame = new FrameBlock(sampleSchema, sampleFrameStrings);
+		String sampleRaw = util.readEntireTextFile(sampleRawFileName);
+		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, parallel);
+		FrameReader fr = gr.getReader();
+		FrameBlock frameBlock = fr.readFrameFromHDFS(dataFileName, sampleSchema, rows, sampleSchema.length);
+
+		int a = 100;
 	}
 }

@@ -6,9 +6,6 @@ import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.wink.json4j.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-
 public class GIOFrame {
 
 	public static void main(String[] args) throws Exception {

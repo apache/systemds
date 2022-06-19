@@ -20,100 +20,101 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 
 @Component({
-  selector: 'app-connection',
-  templateUrl: './connection.component.html',
-  styleUrls: ['./connection.component.scss']
+	selector: 'app-connection',
+	templateUrl: './connection.component.html',
+	styleUrls: ['./connection.component.scss']
 })
 export class ConnectionComponent implements OnInit, OnDestroy {
-  public options: any;
-  public updateOptions: any;
+	public options: any;
+	public updateOptions: any;
 
-  private oneDay = 24 * 3600 * 1000;
-  private now!: Date;
-  private value!: number ;
-  private data!: any[];
-  private timer: any;
+	private oneDay = 24 * 3600 * 1000;
+	private now!: Date;
+	private value!: number;
+	private data!: any[];
+	private timer: any;
 
-  constructor() { }
+	constructor() {
+	}
 
-  ngOnInit(): void {
-    // generate some random testing data:
-    this.data = [];
-    this.now = new Date();
-    this.value = Math.random() * 10;
+	ngOnInit(): void {
+		// generate some random testing data:
+		this.data = [];
+		this.now = new Date();
+		this.value = Math.random() * 10;
 
-    for (let i = 0; i < 20; i++) {
-      this.data.push(this.randomData());
-    }
+		for (let i = 0; i < 20; i++) {
+			this.data.push(this.randomData());
+		}
 
-    // initialize chart options:
-    this.options = {
-      title: {
-        text: 'I/O (Byte amount)'
-      },
-      tooltip: {
-        trigger: 'axis',
-        formatter: (params: any) => {
-          params = params[0];
-          const date = new Date(params.name);
-          return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
-        },
-        axisPointer: {
-          animation: false
-        }
-      },
-      xAxis: {
-        type: 'time',
-        splitLine: {
-          show: false
-        },
-        show: false
-      },
-      yAxis: {
-        type: 'value',
-        boundaryGap: [0, '100%'],
-        splitLine: {
-          show: false
-        }
-      },
-      series: [{
-        name: 'Mocking Data',
-        type: 'line',
-        showSymbol: false,
-        hoverAnimation: false,
-        areaStyle: { },
-        data: this.data
-      }]
-    };
+		// initialize chart options:
+		this.options = {
+			title: {
+				text: 'I/O (Byte amount)'
+			},
+			tooltip: {
+				trigger: 'axis',
+				formatter: (params: any) => {
+					params = params[0];
+					const date = new Date(params.name);
+					return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
+				},
+				axisPointer: {
+					animation: false
+				}
+			},
+			xAxis: {
+				type: 'time',
+				splitLine: {
+					show: false
+				},
+				show: false
+			},
+			yAxis: {
+				type: 'value',
+				boundaryGap: [0, '100%'],
+				splitLine: {
+					show: false
+				}
+			},
+			series: [{
+				name: 'Mocking Data',
+				type: 'line',
+				showSymbol: false,
+				hoverAnimation: false,
+				areaStyle: {},
+				data: this.data
+			}]
+		};
 
-    // Mock dynamic data:
-    this.timer = setInterval(() => {
+		// Mock dynamic data:
+		this.timer = setInterval(() => {
 
-      this.data.shift();
-      this.data.push(this.randomData());
+			this.data.shift();
+			this.data.push(this.randomData());
 
-      // update series data:
-      this.updateOptions = {
-        series: [{
-          data: this.data
-        }]
-      };
-    }, 1000);
-  }
+			// update series data:
+			this.updateOptions = {
+				series: [{
+					data: this.data
+				}]
+			};
+		}, 1000);
+	}
 
-  ngOnDestroy() {
-    clearInterval(this.timer);
-  }
+	ngOnDestroy() {
+		clearInterval(this.timer);
+	}
 
-  randomData() {
-    this.now = new Date(this.now.getTime() + this.oneDay);
-    this.value = Math.random() * 10;
-    return {
-      name: this.now.toString(),
-      value: [
-        [this.now.getFullYear(), this.now.getMonth() + 1, this.now.getDate()].join('/'),
-        Math.round(this.value)
-      ]
-    };
-  }
+	randomData() {
+		this.now = new Date(this.now.getTime() + this.oneDay);
+		this.value = Math.random() * 10;
+		return {
+			name: this.now.toString(),
+			value: [
+				[this.now.getFullYear(), this.now.getMonth() + 1, this.now.getDate()].join('/'),
+				Math.round(this.value)
+			]
+		};
+	}
 }

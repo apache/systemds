@@ -22,23 +22,23 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ViewCoordinatorComponent } from './view.component';
 
 describe('ViewCoordinatorComponent', () => {
-  let component: ViewCoordinatorComponent;
-  let fixture: ComponentFixture<ViewCoordinatorComponent>;
+	let component: ViewCoordinatorComponent;
+	let fixture: ComponentFixture<ViewCoordinatorComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [ ViewCoordinatorComponent ]
-    })
-    .compileComponents();
-  });
+	beforeEach(async () => {
+		await TestBed.configureTestingModule({
+			declarations: [ViewCoordinatorComponent]
+		})
+			.compileComponents();
+	});
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(ViewCoordinatorComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+	beforeEach(() => {
+		fixture = TestBed.createComponent(ViewCoordinatorComponent);
+		component = fixture.componentInstance;
+		fixture.detectChanges();
+	});
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+	it('should create', () => {
+		expect(component).toBeTruthy();
+	});
 });

@@ -23,44 +23,45 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { FedSiteData } from 'src/app/models/fedSiteData.model';
 
 @Component({
-  selector: 'app-dialog-dashboard',
-  templateUrl: './dialog-dashboard.component.html',
-  styleUrls: ['./dialog-dashboard.component.scss']
+	selector: 'app-dialog-dashboard',
+	templateUrl: './dialog-dashboard.component.html',
+	styleUrls: ['./dialog-dashboard.component.scss']
 })
 export class DialogDashboardComponent {
 
-  private selectedCoordinatorIds: number[] = [];
-  private selectedWorkerIds: number[] = [];
+	private selectedCoordinatorIds: number[] = [];
+	private selectedWorkerIds: number[] = [];
 
-  constructor(
-    public dialogRef: MatDialogRef<DashboardComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: FedSiteData
-  ) { }
+	constructor(
+		public dialogRef: MatDialogRef<DashboardComponent>,
+		@Inject(MAT_DIALOG_DATA) public data: FedSiteData
+	) {
+	}
 
-  changeSelectedCoordinators(id: number): void {
-    if (this.selectedCoordinatorIds.some(c => c === id)) {
-      this.selectedCoordinatorIds = this.selectedCoordinatorIds.filter(c => c !== id);
-    } else {
-      this.selectedCoordinatorIds.push(id);
-    }
-  }
+	changeSelectedCoordinators(id: number): void {
+		if (this.selectedCoordinatorIds.some(c => c === id)) {
+			this.selectedCoordinatorIds = this.selectedCoordinatorIds.filter(c => c !== id);
+		} else {
+			this.selectedCoordinatorIds.push(id);
+		}
+	}
 
-  changeSelectedWorkers(id: number): void {
-    if (this.selectedWorkerIds.some(w => w === id)) {
-      this.selectedWorkerIds = this.selectedWorkerIds.filter(w => w !== id);
-    } else {
-      this.selectedWorkerIds.push(id);
-    }
-  }
+	changeSelectedWorkers(id: number): void {
+		if (this.selectedWorkerIds.some(w => w === id)) {
+			this.selectedWorkerIds = this.selectedWorkerIds.filter(w => w !== id);
+		} else {
+			this.selectedWorkerIds.push(id);
+		}
+	}
 
-  onSaveClick(): void {
-    this.dialogRef.close({
-      selectedWorkerIds: this.selectedWorkerIds,
-      selectedCoordinatorIds: this.selectedCoordinatorIds
-    });
-  }
+	onSaveClick(): void {
+		this.dialogRef.close({
+			selectedWorkerIds: this.selectedWorkerIds,
+			selectedCoordinatorIds: this.selectedCoordinatorIds
+		});
+	}
 
-  onCancelClick(): void {
-    this.dialogRef.close();
-  }
+	onCancelClick(): void {
+		this.dialogRef.close();
+	}
 }

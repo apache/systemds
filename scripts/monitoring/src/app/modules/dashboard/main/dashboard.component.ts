@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import {Component, OnInit, Output, ViewChild, ViewEncapsulation} from '@angular/core';
+import { Component, OnInit, Output, ViewChild, ViewEncapsulation } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 
 import { jsPlumb, jsPlumbInstance } from 'jsplumb';
@@ -28,106 +28,105 @@ import { DialogDashboardComponent } from '../dialog-dashboard/dialog-dashboard.c
 import { WorkerComponent } from '../worker/worker.component';
 import { DashboardDirective } from './dashboard.directive';
 import { FedSiteData } from "../../../models/fedSiteData.model";
-import {Coordinator} from "../../../models/coordinator.model";
-import {Worker} from "../../../models/worker.model";
+import { Coordinator } from "../../../models/coordinator.model";
+import { Worker } from "../../../models/worker.model";
 
 @Component({
-  selector: 'app-dashboard',
-  templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.scss']
+	selector: 'app-dashboard',
+	templateUrl: './dashboard.component.html',
+	styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
 
-  private jsPlumbInstance: jsPlumbInstance;
+	public fedSiteData: FedSiteData;
+	@ViewChild(DashboardDirective, {static: true}) fedSiteHost!: DashboardDirective;
+	private jsPlumbInstance: jsPlumbInstance;
 
-  public fedSiteData: FedSiteData;
+	constructor(public dialog: MatDialog,
+				private fedSiteService: FederatedSiteService) {
+	}
 
-  @ViewChild(DashboardDirective, {static: true}) fedSiteHost!: DashboardDirective;
+	ngOnInit(): void {
 
-  constructor(public dialog: MatDialog,
-              private fedSiteService: FederatedSiteService) {}
+		this.fedSiteData = {
+			workers: [],
+			coordinators: []
+		};
 
-  ngOnInit(): void {
+		this.jsPlumbInstance = jsPlumb.getInstance();
+		this.jsPlumbInstance.setContainer('dashboard-content');
+	}
 
-    this.fedSiteData = {
-      workers: [],
-      coordinators: []
-    };
+	openConfigDialog(): void {
 
-    this.jsPlumbInstance = jsPlumb.getInstance();
-    this.jsPlumbInstance.setContainer('dashboard-content');
-  }
+		this.fedSiteService.loadCoordinators().subscribe(coordinators =>
+			coordinators.forEach(coordinator => this.fedSiteService.addCachedCoordinator(coordinator)));
+		this.fedSiteService.loadWorkers().subscribe(workers =>
+			workers.forEach(worker => this.fedSiteService.addCachedWorker(worker)));
 
-  openConfigDialog(): void {
+		this.fedSiteService.getAllCoordinators().subscribe(coordinators => this.fedSiteData.coordinators = coordinators);
+		this.fedSiteService.getAllWorkers().subscribe(workers => this.fedSiteData.workers = workers);
 
-    this.fedSiteService.loadCoordinators().subscribe(coordinators =>
-      coordinators.forEach(coordinator => this.fedSiteService.addCachedCoordinator(coordinator)));
-    this.fedSiteService.loadWorkers().subscribe(workers =>
-      workers.forEach(worker => this.fedSiteService.addCachedWorker(worker)));
+		const dialogRef = this.dialog.open(DialogDashboardComponent, {
+			width: '500px',
+			data: this.fedSiteData,
+		});
 
-    this.fedSiteService.getAllCoordinators().subscribe(coordinators => this.fedSiteData.coordinators = coordinators);
-    this.fedSiteService.getAllWorkers().subscribe(workers => this.fedSiteData.workers = workers);
+		dialogRef.afterClosed().subscribe(result => {
+			if (result) {
+				let selectedCoordinators = this.fedSiteData.coordinators.filter(c => result['selectedCoordinatorIds'].includes(c.id));
+				let selectedWorkers = this.fedSiteData.workers.filter(w => result['selectedWorkerIds'].includes(w.id));
 
-    const dialogRef = this.dialog.open(DialogDashboardComponent, {
-      width: '500px',
-      data: this.fedSiteData,
-    });
+				this.fedSiteHost.viewContainerRef.clear();
+				this.jsPlumbInstance.removeAllEndpoints('dashboard-content');
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        let selectedCoordinators = this.fedSiteData.coordinators.filter(c => result['selectedCoordinatorIds'].includes(c.id));
-        let selectedWorkers = this.fedSiteData.workers.filter(w => result['selectedWorkerIds'].includes(w.id));
+				this.redrawDiagram(selectedCoordinators, selectedWorkers);
+			}
+		});
+	}
 
-        this.fedSiteHost.viewContainerRef.clear();
-        this.jsPlumbInstance.removeAllEndpoints('dashboard-content');
+	private redrawDiagram(selectedCoordinators: Coordinator[], selectedWorkers: Worker[]) {
 
-        this.redrawDiagram(selectedCoordinators, selectedWorkers);
-      }
-    });
-  }
+		for (const worker of selectedWorkers) {
+			const workerComponentRef = this.fedSiteHost.viewContainerRef.createComponent(WorkerComponent);
+			workerComponentRef.instance.model = worker;
+			workerComponentRef.location.nativeElement.id = constants.prefixes.worker + worker.id;
+			workerComponentRef.location.nativeElement.style = 'position: absolute;';
 
-  private redrawDiagram(selectedCoordinators: Coordinator[], selectedWorkers: Worker[]) {
+			this.jsPlumbInstance.draggable(constants.prefixes.worker + worker.id);
+		}
 
-    for (const worker of selectedWorkers) {
-      const workerComponentRef = this.fedSiteHost.viewContainerRef.createComponent(WorkerComponent);
-      workerComponentRef.instance.model = worker;
-      workerComponentRef.location.nativeElement.id = constants.prefixes.worker + worker.id;
-      workerComponentRef.location.nativeElement.style = 'position: absolute;';
+		for (const coordinator of selectedCoordinators) {
+			const coordinatorComponentRef = this.fedSiteHost.viewContainerRef.createComponent(CoordinatorComponent);
+			coordinatorComponentRef.instance.model = coordinator;
+			coordinatorComponentRef.location.nativeElement.id = constants.prefixes.coordinator + coordinator.id;
+			coordinatorComponentRef.location.nativeElement.style = 'position: absolute;';
 
-      this.jsPlumbInstance.draggable(constants.prefixes.worker + worker.id);
-    }
+			this.jsPlumbInstance.draggable(constants.prefixes.coordinator + coordinator.id);
 
-    for (const coordinator of selectedCoordinators) {
-      const coordinatorComponentRef = this.fedSiteHost.viewContainerRef.createComponent(CoordinatorComponent);
-      coordinatorComponentRef.instance.model = coordinator;
-      coordinatorComponentRef.location.nativeElement.id = constants.prefixes.coordinator + coordinator.id;
-      coordinatorComponentRef.location.nativeElement.style = 'position: absolute;';
-
-      this.jsPlumbInstance.draggable(constants.prefixes.coordinator + coordinator.id);
-
-      // for (const childWorker of coordinator.workers) {
-      //   if (!selectedWorkers.some(w => w.id == childWorker.id)) {
-      //     continue;
-      //   }
-      //
-      //   const connectionComponentRef = this.fedSiteHost.viewContainerRef.createComponent(ConnectionComponent);
-      //   connectionComponentRef.location.nativeElement.id =
-      //     constants.prefixes.coordinator + coordinator.id + constants.prefixes.worker + childWorker.id
-      //
-      //   this.jsPlumbInstance.connect({
-      //     source: constants.prefixes.coordinator + coordinator.id,
-      //     target: constants.prefixes.worker + childWorker.id,
-      //     anchor: ['AutoDefault'],
-      //     overlays: [
-      //       ['Custom', {
-      //         create: function(component: any) {
-      //           return constants.prefixes.coordinator + coordinator.id + constants.prefixes.worker + childWorker.id;
-      //         },
-      //         location: 0.5,
-      //       }]
-      //     ]
-      //   });
-      // }
-    }
-  }
+			// for (const childWorker of coordinator.workers) {
+			//   if (!selectedWorkers.some(w => w.id == childWorker.id)) {
+			//     continue;
+			//   }
+			//
+			//   const connectionComponentRef = this.fedSiteHost.viewContainerRef.createComponent(ConnectionComponent);
+			//   connectionComponentRef.location.nativeElement.id =
+			//     constants.prefixes.coordinator + coordinator.id + constants.prefixes.worker + childWorker.id
+			//
+			//   this.jsPlumbInstance.connect({
+			//     source: constants.prefixes.coordinator + coordinator.id,
+			//     target: constants.prefixes.worker + childWorker.id,
+			//     anchor: ['AutoDefault'],
+			//     overlays: [
+			//       ['Custom', {
+			//         create: function(component: any) {
+			//           return constants.prefixes.coordinator + coordinator.id + constants.prefixes.worker + childWorker.id;
+			//         },
+			//         location: 0.5,
+			//       }]
+			//     ]
+			//   });
+			// }
+		}
+	}
 }

@@ -20,17 +20,17 @@
 const BASE_URI = 'http://localhost:8080';
 
 let uriParts = {
-  dashboard: '/dashboard',
-  coordinators: BASE_URI + '/coordinators',
-  workers: BASE_URI + '/workers'
+	dashboard: '/dashboard',
+	coordinators: BASE_URI + '/coordinators',
+	workers: BASE_URI + '/workers'
 }
 
 let prefixes = {
-  coordinator: 'coordinator-',
-  worker: 'worker-'
+	coordinator: 'coordinator-',
+	worker: 'worker-'
 }
 
 export const constants = {
-  uriParts: uriParts,
-  prefixes: prefixes
+	uriParts: uriParts,
+	prefixes: prefixes
 }

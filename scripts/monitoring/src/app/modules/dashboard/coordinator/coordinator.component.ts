@@ -22,17 +22,18 @@ import { Component } from '@angular/core';
 import { Coordinator } from 'src/app/models/coordinator.model';
 
 @Component({
-  selector: 'app-coordinator',
-  templateUrl: './coordinator.component.html',
-  styleUrls: ['./coordinator.component.scss']
+	selector: 'app-coordinator',
+	templateUrl: './coordinator.component.html',
+	styleUrls: ['./coordinator.component.scss']
 })
 export class CoordinatorComponent {
 
-  public model: Coordinator;
+	public model: Coordinator;
 
-  constructor() { }
+	constructor() {
+	}
 
-  ngOnInit(): void {
-  }
+	ngOnInit(): void {
+	}
 
 }

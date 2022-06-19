@@ -1,34 +1,54 @@
+<!--
+	Licensed to the Apache Software Foundation (ASF) under one
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+
+		http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->
+
 <div class="metrics-cards">
-  <mat-card id="data-metric-card" class="worker-metrics-card">
-    <mat-card-title *ngIf="!isLoadingResults">{{model.name}}</mat-card-title>
-    <mat-card-content>
-      <h3>Address: <span *ngIf="!isLoadingResults">{{model.address}}</span></h3>
-      <mat-divider inset></mat-divider>
-      <h3 *ngIf="!isLoadingResults">Status:
-        <span class="online-worker" *ngIf="model.isOnline">
+	<mat-card class="worker-metrics-card" id="data-metric-card">
+		<mat-card-title *ngIf="!isLoadingResults">{{model.name}}</mat-card-title>
+		<mat-card-content>
+			<h3>Address: <span *ngIf="!isLoadingResults">{{model.address}}</span></h3>
+			<mat-divider inset></mat-divider>
+			<h3 *ngIf="!isLoadingResults">Status:
+				<span *ngIf="model.isOnline" class="online-worker">
             Online
           </span>
-        <span class="offline-worker" *ngIf="!model.isOnline">
+				<span *ngIf="!model.isOnline" class="offline-worker">
             Offline
           </span>
-      </h3>
-      <mat-divider inset></mat-divider>
-      <h3>JIT Compile time: <span *ngIf="!isLoadingResults">{{model.jitCompileTime}} s</span></h3>
-    </mat-card-content>
-  </mat-card>
-  <mat-card id="requests-metric-card" class="worker-metrics-card">
-    <div echarts [initOpts]="optionsRequests" [options]="optionsRequests" [merge]="updateOptionsRequests" class="demo-chart"></div>
-  </mat-card>
+			</h3>
+			<mat-divider inset></mat-divider>
+			<h3>JIT Compile time: <span *ngIf="!isLoadingResults">{{model.jitCompileTime}} s</span></h3>
+		</mat-card-content>
+	</mat-card>
+	<mat-card class="worker-metrics-card" id="requests-metric-card">
+		<div [initOpts]="optionsRequests" [merge]="updateOptionsRequests" [options]="optionsRequests" class="demo-chart"
+			 echarts></div>
+	</mat-card>
 
 </div>
 
 <div class="metrics-cards">
-  <mat-card id="cpu-metric-card" class="worker-metrics-card">
-    <div echarts [options]="optionsCPU" [merge]="updateOptionsCPU" class="demo-chart"></div>
-  </mat-card>
+	<mat-card class="worker-metrics-card" id="cpu-metric-card">
+		<div [merge]="updateOptionsCPU" [options]="optionsCPU" class="demo-chart" echarts></div>
+	</mat-card>
 
-  <mat-card id="memory-metric-card" class="worker-metrics-card">
-    <div echarts [options]="optionsMemory" [merge]="updateOptionsMemory" class="demo-chart"></div>
-  </mat-card>
+	<mat-card class="worker-metrics-card" id="memory-metric-card">
+		<div [merge]="updateOptionsMemory" [options]="optionsMemory" class="demo-chart" echarts></div>
+	</mat-card>
 </div>
 

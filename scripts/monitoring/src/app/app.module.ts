@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { NgModule,  } from '@angular/core';
+import { NgModule, } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -47,36 +47,37 @@ import { CreateEditCoordinatorsComponent } from "./modules/coordinators/create-e
 import { CreateEditWorkersComponent } from "./modules/workers/create-edit/create-edit.component";
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    LayoutComponent,
-    DashboardComponent,
-    CoordinatorComponent,
-    ConnectionComponent,
-    WorkerComponent,
-    DialogDashboardComponent,
-    DashboardDirective,
-    ListCoordinatorsComponent,
-    ViewCoordinatorComponent,
-    ListWorkersComponent,
-    ViewWorkerComponent,
-    CreateEditCoordinatorsComponent,
-    CreateEditWorkersComponent
-  ],
-  imports: [
-    BrowserModule,
-    HttpClientModule,
-    AppRoutingModule,
-    BrowserAnimationsModule,
-    MaterialModule,
-    DragDropModule,
-    FormsModule,
-    ReactiveFormsModule,
-    NgxEchartsModule.forRoot({
-      echarts: () => import('echarts')
-    })
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
+	declarations: [
+		AppComponent,
+		LayoutComponent,
+		DashboardComponent,
+		CoordinatorComponent,
+		ConnectionComponent,
+		WorkerComponent,
+		DialogDashboardComponent,
+		DashboardDirective,
+		ListCoordinatorsComponent,
+		ViewCoordinatorComponent,
+		ListWorkersComponent,
+		ViewWorkerComponent,
+		CreateEditCoordinatorsComponent,
+		CreateEditWorkersComponent
+	],
+	imports: [
+		BrowserModule,
+		HttpClientModule,
+		AppRoutingModule,
+		BrowserAnimationsModule,
+		MaterialModule,
+		DragDropModule,
+		FormsModule,
+		ReactiveFormsModule,
+		NgxEchartsModule.forRoot({
+			echarts: () => import('echarts')
+		})
+	],
+	providers: [],
+	bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+}

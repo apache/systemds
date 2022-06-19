@@ -17,117 +17,116 @@
  * under the License.
  */
 
-import {Component} from '@angular/core';
+import { Component } from '@angular/core';
 import { Worker } from 'src/app/models/worker.model';
-import {FederatedSiteService} from "../../../services/federatedSiteService.service";
-import {ActivatedRoute} from "@angular/router";
+import { FederatedSiteService } from "../../../services/federatedSiteService.service";
+import { ActivatedRoute } from "@angular/router";
 
 @Component({
-  selector: 'app-worker',
-  templateUrl: './worker.component.html',
-  styleUrls: ['./worker.component.scss']
+	selector: 'app-worker',
+	templateUrl: './worker.component.html',
+	styleUrls: ['./worker.component.scss']
 })
 export class WorkerComponent {
 
-  public model: Worker;
+	public model: Worker;
 
-  public optionsMemory: any;
-  public updateOptionsMemory: any;
-  private dataMemory!: any[];
+	public optionsMemory: any;
+	public updateOptionsMemory: any;
+	public displayedColumns: string[] = ['type', 'time', 'frequency'];
+	dataSource = [
+		{type: 'fed_-', time: '0.417', frequency: 3},
+		{type: 'fed_uamin', time: '0.156', frequency: 2},
+		{type: 'JVM GC', time: '0.062', frequency: 1},
+	];
+	private dataMemory!: any[];
+	private timer: any;
 
-  public displayedColumns: string[] = ['type', 'time', 'frequency'];
+	constructor(
+		private fedSiteService: FederatedSiteService,
+		private router: ActivatedRoute) {
+	}
 
-  private timer: any;
-  dataSource = [
-    {type: 'fed_-', time: '0.417', frequency: 3},
-    {type: 'fed_uamin', time: '0.156', frequency: 2},
-    {type: 'JVM GC', time: '0.062', frequency: 1},
-  ];
+	ngOnInit(): void {
+		this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
+			this.model = worker;
 
-  constructor(
-    private fedSiteService: FederatedSiteService,
-    private router: ActivatedRoute) { }
+			this.updateMetrics();
+		});
 
-  ngOnInit(): void {
-    this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
-        this.model = worker;
+		this.dataMemory = [];
 
-        this.updateMetrics();
-      });
+		this.optionsMemory = {
+			title: {
+				text: 'Memory (%)'
+			},
+			tooltip: {
+				trigger: 'axis',
+				formatter: (params: any) => {
+					params = params[0];
+					const date = new Date(params.name);
+					return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
+				},
+				axisPointer: {
+					animation: false
+				}
+			},
+			xAxis: {
+				type: 'time',
+				splitLine: {
+					show: false
+				},
+				show: false
+			},
+			yAxis: {
+				type: 'value',
+				boundaryGap: [0, '100%'],
+				splitLine: {
+					show: false
+				}
+			},
+			series: [{
+				name: 'Mocking Data',
+				type: 'line',
+				showSymbol: false,
+				hoverAnimation: false,
+				areaStyle: {},
+				data: this.dataMemory
+			}]
+		};
 
-      this.dataMemory = [];
+		this.timer = setInterval(() => {
+			this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
+				this.model = worker;
 
-      this.optionsMemory = {
-        title: {
-          text: 'Memory (%)'
-        },
-        tooltip: {
-          trigger: 'axis',
-          formatter: (params: any) => {
-            params = params[0];
-            const date = new Date(params.name);
-            return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
-          },
-          axisPointer: {
-            animation: false
-          }
-        },
-        xAxis: {
-          type: 'time',
-          splitLine: {
-            show: false
-          },
-          show: false
-        },
-        yAxis: {
-          type: 'value',
-          boundaryGap: [0, '100%'],
-          splitLine: {
-            show: false
-          }
-        },
-        series: [{
-          name: 'Mocking Data',
-          type: 'line',
-          showSymbol: false,
-          hoverAnimation: false,
-          areaStyle: { },
-          data: this.dataMemory
-        }]
-      };
+				this.updateMetrics();
+			})
+		}, 3000);
+	}
 
-      this.timer = setInterval(() => {
-        this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
-          this.model = worker;
+	ngOnDestroy() {
+		clearInterval(this.timer);
+	}
 
-          this.updateMetrics();
-        })
-      }, 3000);
-  }
+	private updateMetrics(): void {
 
-  ngOnDestroy() {
-    clearInterval(this.timer);
-  }
+		console.log(this.model.stats);
 
-  private updateMetrics(): void {
+		this.dataMemory = this.model.stats.map(s => {
+			return {
+				name: s.timestamp,
+				value: [
+					s.timestamp,
+					s.memoryUsage
+				]
+			}
+		})
 
-    console.log(this.model.stats);
-
-    this.dataMemory = this.model.stats.map(s => {
-      return {
-        name: s.timestamp,
-        value: [
-          s.timestamp,
-          s.memoryUsage
-        ]
-      }
-    })
-
-    // update series data:
-    this.updateOptionsMemory = {
-      series: [{
-        data: this.dataMemory
-      }]
-    };
-  }
+		// update series data:
+		this.updateOptionsMemory = {
+			series: [{
+				data: this.dataMemory
+			}]
+		};
+	}
 }

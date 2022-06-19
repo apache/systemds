@@ -17,53 +17,54 @@
  * under the License.
  */
 
-import {Component, Inject} from '@angular/core';
-import {Worker} from "../../../models/worker.model";
-import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
-import {FederatedSiteService} from "../../../services/federatedSiteService.service";
+import { Component, Inject } from '@angular/core';
+import { Worker } from "../../../models/worker.model";
+import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
+import { FederatedSiteService } from "../../../services/federatedSiteService.service";
 
 @Component({
-  selector: 'app-create-edit-worker',
-  templateUrl: './create-edit.component.html',
-  styleUrls: ['./create-edit.component.scss']
+	selector: 'app-create-edit-worker',
+	templateUrl: './create-edit.component.html',
+	styleUrls: ['./create-edit.component.scss']
 })
 export class CreateEditWorkersComponent {
 
-  public model: Worker;
+	public model: Worker;
 
-  constructor(
-    private fedSiteService: FederatedSiteService,
-    public dialogRef: MatDialogRef<CreateEditWorkersComponent>,
-    @Inject(MAT_DIALOG_DATA) public id: number) {}
+	constructor(
+		private fedSiteService: FederatedSiteService,
+		public dialogRef: MatDialogRef<CreateEditWorkersComponent>,
+		@Inject(MAT_DIALOG_DATA) public id: number) {
+	}
 
-  ngOnInit(): void {
-    this.model = new Worker(-1, '', '', false,0, [],[]);
+	ngOnInit(): void {
+		this.model = new Worker(-1, '', '', false, 0, [], []);
 
-    if (this.id !== null) {
-      this.fedSiteService.getWorker(this.id).subscribe(worker => this.model = worker);
-    }
-  }
+		if (this.id !== null) {
+			this.fedSiteService.getWorker(this.id).subscribe(worker => this.model = worker);
+		}
+	}
 
-  onSaveClick() {
+	onSaveClick() {
 
-    if (this.id !== null) {
-      this.fedSiteService.editWorker(this.model).subscribe(() => {
-        this.updateWorkerList(this.model.id);
-      });
-    } else {
-      this.fedSiteService.createWorker(this.model).subscribe(worker => {
-        this.updateWorkerList(worker.id)
-      });
-    }
+		if (this.id !== null) {
+			this.fedSiteService.editWorker(this.model).subscribe(() => {
+				this.updateWorkerList(this.model.id);
+			});
+		} else {
+			this.fedSiteService.createWorker(this.model).subscribe(worker => {
+				this.updateWorkerList(worker.id)
+			});
+		}
 
-    this.dialogRef.close()
-  }
+		this.dialogRef.close()
+	}
 
-  onCancelClick() {
-    this.dialogRef.close()
-  }
+	onCancelClick() {
+		this.dialogRef.close()
+	}
 
-  private updateWorkerList(id: number): void {
-    this.fedSiteService.getWorker(id).subscribe(worker => this.fedSiteService.addCachedWorker(worker))
-  }
+	private updateWorkerList(id: number): void {
+		this.fedSiteService.getWorker(id).subscribe(worker => this.fedSiteService.addCachedWorker(worker))
+	}
 }

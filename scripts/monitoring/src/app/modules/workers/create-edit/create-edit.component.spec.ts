@@ -22,23 +22,23 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CreateEditWorkersComponent } from './create-edit.component';
 
 describe('CreateEditWorkersComponent', () => {
-  let component: CreateEditWorkersComponent;
-  let fixture: ComponentFixture<CreateEditWorkersComponent>;
+	let component: CreateEditWorkersComponent;
+	let fixture: ComponentFixture<CreateEditWorkersComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [ CreateEditWorkersComponent ]
-    })
-    .compileComponents();
-  });
+	beforeEach(async () => {
+		await TestBed.configureTestingModule({
+			declarations: [CreateEditWorkersComponent]
+		})
+			.compileComponents();
+	});
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(CreateEditWorkersComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+	beforeEach(() => {
+		fixture = TestBed.createComponent(CreateEditWorkersComponent);
+		component = fixture.componentInstance;
+		fixture.detectChanges();
+	});
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+	it('should create', () => {
+		expect(component).toBeTruthy();
+	});
 });

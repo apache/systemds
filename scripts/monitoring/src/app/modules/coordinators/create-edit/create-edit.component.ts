@@ -17,50 +17,51 @@
  * under the License.
  */
 
-import {Component, Inject} from '@angular/core';
-import {Coordinator} from "../../../models/coordinator.model";
-import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
-import {FederatedSiteService} from "../../../services/federatedSiteService.service";
+import { Component, Inject } from '@angular/core';
+import { Coordinator } from "../../../models/coordinator.model";
+import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
+import { FederatedSiteService } from "../../../services/federatedSiteService.service";
 
 @Component({
-  selector: 'app-create-edit-coordinator',
-  templateUrl: './create-edit.component.html',
-  styleUrls: ['./create-edit.component.scss']
+	selector: 'app-create-edit-coordinator',
+	templateUrl: './create-edit.component.html',
+	styleUrls: ['./create-edit.component.scss']
 })
 export class CreateEditCoordinatorsComponent {
 
-  public model: Coordinator;
+	public model: Coordinator;
 
-  constructor(
-    private fedSiteService: FederatedSiteService,
-    public dialogRef: MatDialogRef<CreateEditCoordinatorsComponent>,
-    @Inject(MAT_DIALOG_DATA) public id: number) {}
+	constructor(
+		private fedSiteService: FederatedSiteService,
+		public dialogRef: MatDialogRef<CreateEditCoordinatorsComponent>,
+		@Inject(MAT_DIALOG_DATA) public id: number) {
+	}
 
-  ngOnInit(): void {
-    this.model = new Coordinator(-1, '', '');
+	ngOnInit(): void {
+		this.model = new Coordinator(-1, '', '');
 
-    if (this.id !== null) {
-      this.fedSiteService.getCoordinator(this.id).subscribe(coordinator => this.model = coordinator);
-    }
-  }
+		if (this.id !== null) {
+			this.fedSiteService.getCoordinator(this.id).subscribe(coordinator => this.model = coordinator);
+		}
+	}
 
-  onSaveClick() {
+	onSaveClick() {
 
-    if (this.id !== null) {
-      this.fedSiteService.editCoordinator(this.model).subscribe(() => {
-        this.fedSiteService.addCachedCoordinator(this.model)
-      });
-    } else {
-      this.fedSiteService.createCoordinator(this.model).subscribe(coordinator => {
-        this.model.id = coordinator.id;
-        this.fedSiteService.addCachedCoordinator(this.model)
-      });
-    }
+		if (this.id !== null) {
+			this.fedSiteService.editCoordinator(this.model).subscribe(() => {
+				this.fedSiteService.addCachedCoordinator(this.model)
+			});
+		} else {
+			this.fedSiteService.createCoordinator(this.model).subscribe(coordinator => {
+				this.model.id = coordinator.id;
+				this.fedSiteService.addCachedCoordinator(this.model)
+			});
+		}
 
-    this.dialogRef.close()
-  }
+		this.dialogRef.close()
+	}
 
-  onCancelClick() {
-    this.dialogRef.close()
-  }
+	onCancelClick() {
+		this.dialogRef.close()
+	}
 }

@@ -23,48 +23,49 @@ import { Router } from '@angular/router';
 
 import { Coordinator } from 'src/app/models/coordinator.model';
 import { FederatedSiteService } from 'src/app/services/federatedSiteService.service';
-import {MatTableDataSource} from "@angular/material/table";
-import {MatDialog} from "@angular/material/dialog";
-import {CreateEditCoordinatorsComponent} from "../create-edit/create-edit.component";
+import { MatTableDataSource } from "@angular/material/table";
+import { MatDialog } from "@angular/material/dialog";
+import { CreateEditCoordinatorsComponent } from "../create-edit/create-edit.component";
 
 @Component({
-  selector: 'app-list-coordinators',
-  templateUrl: './list.component.html',
-  styleUrls: ['./list.component.scss']
+	selector: 'app-list-coordinators',
+	templateUrl: './list.component.html',
+	styleUrls: ['./list.component.scss']
 })
 export class ListCoordinatorsComponent {
 
-  public displayedColumns: string[] = ['name', 'address', 'actions'];
-  public dataSource: MatTableDataSource<Coordinator> = new MatTableDataSource<Coordinator>([]);
+	public displayedColumns: string[] = ['name', 'address', 'actions'];
+	public dataSource: MatTableDataSource<Coordinator> = new MatTableDataSource<Coordinator>([]);
 
-  @ViewChild(MatSort, { static: true })
-  sort: MatSort = new MatSort;
+	@ViewChild(MatSort, {static: true})
+	sort: MatSort = new MatSort;
 
-  constructor(
-    public dialog: MatDialog,
-    private fedSiteService: FederatedSiteService,
-    private router: Router) {}
+	constructor(
+		public dialog: MatDialog,
+		private fedSiteService: FederatedSiteService,
+		private router: Router) {
+	}
 
-  ngOnInit(): void {
-    this.fedSiteService.loadCoordinators().subscribe(coordinators =>
-      coordinators.forEach(coordinator => this.fedSiteService.addCachedCoordinator(coordinator)));
+	ngOnInit(): void {
+		this.fedSiteService.loadCoordinators().subscribe(coordinators =>
+			coordinators.forEach(coordinator => this.fedSiteService.addCachedCoordinator(coordinator)));
 
-    this.fedSiteService.getAllCoordinators().subscribe(coordinators => this.dataSource.data = coordinators);
-  }
+		this.fedSiteService.getAllCoordinators().subscribe(coordinators => this.dataSource.data = coordinators);
+	}
 
-  viewCoordinator(id: number) {
-    this.router.navigate(['/coordinators/' + id])
-  }
+	viewCoordinator(id: number) {
+		this.router.navigate(['/coordinators/' + id])
+	}
 
-  editCoordinator(id: number) {
-    this.dialog.open(CreateEditCoordinatorsComponent, {
-      width: '500px',
-      data: id
-    });
-  }
+	editCoordinator(id: number) {
+		this.dialog.open(CreateEditCoordinatorsComponent, {
+			width: '500px',
+			data: id
+		});
+	}
 
-  deleteCoordinator(id: number) {
-    this.fedSiteService.deleteCoordinator(id).subscribe(() => this.fedSiteService.removeCachedCoordinator(id));
-  }
+	deleteCoordinator(id: number) {
+		this.fedSiteService.deleteCoordinator(id).subscribe(() => this.fedSiteService.removeCachedCoordinator(id));
+	}
 
 }

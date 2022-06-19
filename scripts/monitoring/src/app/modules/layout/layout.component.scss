@@ -18,66 +18,66 @@
  */
 
 .navbar-spacer {
-  flex: 1 1 auto;
+	flex: 1 1 auto;
 }
 
 .navbar {
-  z-index: 2;
+	z-index: 2;
 }
 
 .navbar-brand {
-  text-decoration: none;
-  color: white;
+	text-decoration: none;
+	color: white;
 }
 
 .navbar-container {
-  display: flex;
-  flex-direction: column;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+	display: flex;
+	flex-direction: column;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
 }
 
 .navbar-is-mobile .navbar {
-  position: fixed;
-  /* Make sure the toolbar will stay on top of the content as it scrolls past. */
-  z-index: 2;
+	position: fixed;
+	/* Make sure the toolbar will stay on top of the content as it scrolls past. */
+	z-index: 2;
 }
 
 .navbar-sidenav-container {
-  /* When the sidenav is not fixed, stretch the sidenav container to fill the available space. This
-           causes `<mat-sidenav-content>` to act as our scrolling element for desktop layouts. */
-  flex: 1;
+	/* When the sidenav is not fixed, stretch the sidenav container to fill the available space. This
+			 causes `<mat-sidenav-content>` to act as our scrolling element for desktop layouts. */
+	flex: 1;
 }
 
 .navbar-is-mobile .navbar-sidenav-container {
-  /* When the sidenav is fixed, don't constrain the height of the sidenav container. This allows the
-           `<body>` to be our scrolling element for mobile layouts. */
-  flex: 1 0 auto;
+	/* When the sidenav is fixed, don't constrain the height of the sidenav container. This allows the
+			 `<body>` to be our scrolling element for mobile layouts. */
+	flex: 1 0 auto;
 }
 
 /*Set sidenav width*/
 
 mat-sidenav {
-  min-width: 180px !important;
-  border-right: 1px solid #eee;
-  box-shadow: 6px 0 6px rgba(0, 0, 0, .1);
-  /* background-color:rgb(63, 81, 181); */
+	min-width: 180px !important;
+	border-right: 1px solid #eee;
+	box-shadow: 6px 0 6px rgba(0, 0, 0, .1);
+	/* background-color:rgb(63, 81, 181); */
 }
 
 /* Set height of wrapper to stop content from moving up & down */
 
 .progress-bar-container {
-  height: 5px;
+	height: 5px;
 }
 
 a.mat-list-item.active {
-  background: rgba(0, 0, 0, .04);
+	background: rgba(0, 0, 0, .04);
 }
 
 #push-bottom {
-  position: absolute;
-  bottom: 0;
+	position: absolute;
+	bottom: 0;
 }

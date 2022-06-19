@@ -19,54 +19,54 @@
 
 import { Component, OnInit, ChangeDetectorRef, OnDestroy, AfterViewInit } from '@angular/core';
 import { MediaMatcher } from '@angular/cdk/layout';
-import {MatDialog} from "@angular/material/dialog";
-import {CreateEditCoordinatorsComponent} from "../coordinators/create-edit/create-edit.component";
-import {CreateEditWorkersComponent} from "../workers/create-edit/create-edit.component";
+import { MatDialog } from "@angular/material/dialog";
+import { CreateEditCoordinatorsComponent } from "../coordinators/create-edit/create-edit.component";
+import { CreateEditWorkersComponent } from "../workers/create-edit/create-edit.component";
 
 @Component({
-    selector: 'app-layout',
-    templateUrl: './layout.component.html',
-    styleUrls: ['./layout.component.scss']
+	selector: 'app-layout',
+	templateUrl: './layout.component.html',
+	styleUrls: ['./layout.component.scss']
 })
 export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  private _mobileQueryListener: () => void;
-  mobileQuery: MediaQueryList;
+	mobileQuery: MediaQueryList;
+	private _mobileQueryListener: () => void;
 
-  constructor(public dialog: MatDialog,
-              private changeDetectorRef: ChangeDetectorRef,
-              private media: MediaMatcher) {
+	constructor(public dialog: MatDialog,
+				private changeDetectorRef: ChangeDetectorRef,
+				private media: MediaMatcher) {
 
-    this.mobileQuery = this.media.matchMedia('(max-width: 1000px)');
-    this._mobileQueryListener = () => changeDetectorRef.detectChanges();
-    // tslint:disable-next-line: deprecation
-    this.mobileQuery.addListener(this._mobileQueryListener);
-  }
+		this.mobileQuery = this.media.matchMedia('(max-width: 1000px)');
+		this._mobileQueryListener = () => changeDetectorRef.detectChanges();
+		// tslint:disable-next-line: deprecation
+		this.mobileQuery.addListener(this._mobileQueryListener);
+	}
 
-  ngOnInit(): void {
-  }
+	ngOnInit(): void {
+	}
 
-  ngOnDestroy(): void {
-    // tslint:disable-next-line: deprecation
-    this.mobileQuery.removeListener(this._mobileQueryListener);
-  }
+	ngOnDestroy(): void {
+		// tslint:disable-next-line: deprecation
+		this.mobileQuery.removeListener(this._mobileQueryListener);
+	}
 
-  ngAfterViewInit(): void {
-    this.changeDetectorRef.detectChanges();
-  }
+	ngAfterViewInit(): void {
+		this.changeDetectorRef.detectChanges();
+	}
 
-  openNewEntityDialog(type: 'worker'|'coordinator'): void {
+	openNewEntityDialog(type: 'worker' | 'coordinator'): void {
 
-    if (type === 'worker') {
-      this.dialog.open(CreateEditWorkersComponent, {
-        width: '500px',
-        data: null
-      });
-    } else {
-      this.dialog.open(CreateEditCoordinatorsComponent, {
-        width: '500px',
-        data: null
-      });
-    }
-  }
+		if (type === 'worker') {
+			this.dialog.open(CreateEditWorkersComponent, {
+				width: '500px',
+				data: null
+			});
+		} else {
+			this.dialog.open(CreateEditCoordinatorsComponent, {
+				width: '500px',
+				data: null
+			});
+		}
+	}
 }

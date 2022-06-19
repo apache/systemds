@@ -25,32 +25,33 @@ import { Coordinator } from 'src/app/models/coordinator.model';
 import { FederatedSiteService } from 'src/app/services/federatedSiteService.service';
 
 @Component({
-  selector: 'app-view-coordinator',
-  templateUrl: './view.component.html',
-  styleUrls: ['./view.component.scss']
+	selector: 'app-view-coordinator',
+	templateUrl: './view.component.html',
+	styleUrls: ['./view.component.scss']
 })
 export class ViewCoordinatorComponent {
 
-  public model: Coordinator;
+	public model: Coordinator;
 
-  public displayedColumns: string[] = ['type', 'executionTime'];
-  public resultsLength = 0;
-  public isLoadingResults = true;
+	public displayedColumns: string[] = ['type', 'executionTime'];
+	public resultsLength = 0;
+	public isLoadingResults = true;
 
-  @ViewChild(MatPaginator) paginator: MatPaginator;
-  @ViewChild(MatSort) sort: MatSort;
+	@ViewChild(MatPaginator) paginator: MatPaginator;
+	@ViewChild(MatSort) sort: MatSort;
 
-  constructor(
-    private fedSiteService: FederatedSiteService,
-    private router: ActivatedRoute) { }
+	constructor(
+		private fedSiteService: FederatedSiteService,
+		private router: ActivatedRoute) {
+	}
 
-  ngOnInit(): void {
-    const id = Number(this.router.snapshot.paramMap.get('id'));
-    this.fedSiteService.getCoordinator(id).subscribe(coordinator => {
-      this.model = coordinator;
-      this.isLoadingResults = false;
+	ngOnInit(): void {
+		const id = Number(this.router.snapshot.paramMap.get('id'));
+		this.fedSiteService.getCoordinator(id).subscribe(coordinator => {
+			this.model = coordinator;
+			this.isLoadingResults = false;
 
-    });
-  }
+		});
+	}
 
 }

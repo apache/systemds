@@ -25,216 +25,212 @@ import { Worker } from 'src/app/models/worker.model';
 import { FederatedSiteService } from 'src/app/services/federatedSiteService.service';
 
 @Component({
-  selector: 'app-view-worker',
-  templateUrl: './view.component.html',
-  styleUrls: ['./view.component.scss']
+	selector: 'app-view-worker',
+	templateUrl: './view.component.html',
+	styleUrls: ['./view.component.scss']
 })
 export class ViewWorkerComponent {
 
-  public optionsCPU: any;
-  public optionsMemory: any;
-  public optionsRequests: any;
+	public optionsCPU: any;
+	public optionsMemory: any;
+	public optionsRequests: any;
 
-  public updateOptionsCPU: any;
-  public updateOptionsMemory: any;
-  public updateOptionsRequests: any;
+	public updateOptionsCPU: any;
+	public updateOptionsMemory: any;
+	public updateOptionsRequests: any;
+	public model: Worker;
+	public resultsLength = 0;
+	public isLoadingResults = true;
+	@ViewChild(MatPaginator) paginator: MatPaginator;
+	@ViewChild(MatSort) sort: MatSort;
+	private dataCPU!: any[];
+	private dataMemory!: any[];
+	private timer: any;
 
-  private dataCPU!: any[];
-  private dataMemory!: any[];
+	constructor(
+		private fedSiteService: FederatedSiteService,
+		private router: ActivatedRoute) {
+	}
 
-  private timer: any;
+	ngOnInit(): void {
+		const id = Number(this.router.snapshot.paramMap.get('id'));
+		this.fedSiteService.getWorker(id).subscribe(worker => {
+			this.model = worker;
 
-  public model: Worker;
+			this.isLoadingResults = false;
+			this.resultsLength = this.model.stats!.length;
 
-  public resultsLength = 0;
-  public isLoadingResults = true;
+			this.updateMetrics();
+		});
 
-  @ViewChild(MatPaginator) paginator: MatPaginator;
-  @ViewChild(MatSort) sort: MatSort;
+		this.dataCPU = [];
+		this.dataMemory = [];
 
-  constructor(
-    private fedSiteService: FederatedSiteService,
-    private router: ActivatedRoute) { }
+		// initialize chart options:
+		this.optionsCPU = {
+			title: {
+				text: 'CPU (%)'
+			},
+			tooltip: {
+				trigger: 'axis',
+				formatter: (params: any) => {
+					params = params[0];
+					const date = new Date(params.name);
+					return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
+				},
+				axisPointer: {
+					animation: false
+				}
+			},
+			xAxis: {
+				type: 'time',
+				splitLine: {
+					show: false
+				},
+				show: false
+			},
+			yAxis: {
+				type: 'value',
+				boundaryGap: [0, '100%'],
+				splitLine: {
+					show: false
+				}
+			},
+			series: [{
+				name: 'Mocking Data',
+				type: 'line',
+				showSymbol: false,
+				hoverAnimation: false,
+				areaStyle: {},
+				data: this.dataCPU
+			}]
+		};
 
-  ngOnInit(): void {
-    const id = Number(this.router.snapshot.paramMap.get('id'));
-    this.fedSiteService.getWorker(id).subscribe(worker => {
-      this.model = worker;
+		this.optionsMemory = {
+			title: {
+				text: 'Memory (%)'
+			},
+			tooltip: {
+				trigger: 'axis',
+				formatter: (params: any) => {
+					params = params[0];
+					const date = new Date(params.name);
+					return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
+				},
+				axisPointer: {
+					animation: false
+				}
+			},
+			xAxis: {
+				type: 'time',
+				splitLine: {
+					show: false
+				},
+				show: false
+			},
+			yAxis: {
+				type: 'value',
+				boundaryGap: [0, '100%'],
+				splitLine: {
+					show: false
+				}
+			},
+			series: [{
+				name: 'Mocking Data',
+				type: 'line',
+				showSymbol: false,
+				hoverAnimation: false,
+				areaStyle: {},
+				data: this.dataMemory
+			}]
+		};
 
-      this.isLoadingResults = false;
-      this.resultsLength = this.model.stats!.length;
+		this.optionsRequests = {
+			tooltip: {
+				trigger: 'axis',
+				axisPointer: {
+					type: 'shadow'
+				}
+			},
+			grid: {
+				left: '3%',
+				right: '4%',
+				bottom: '3%',
+				containLabel: true
+			},
+			xAxis: [
+				{
+					type: 'category',
+					data: ["GET_VAR", "PUT_VAR", "READ_VAR", "EXEC_UDF", "EXEC_INST"],
+					axisTick: {
+						alignWithLabel: true
+					}
+				}
+			],
+			yAxis: [{
+				type: 'value'
+			}],
+			series: [{
+				name: 'Count',
+				type: 'bar',
+				barWidth: '60%',
+				data: []
+			}]
+		}
 
-      this.updateMetrics();
-    });
+		this.timer = setInterval(() => {
+			this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
+				this.model = worker;
 
-    this.dataCPU = [];
-    this.dataMemory = [];
+				this.updateMetrics();
+			})
+		}, 3000);
 
-    // initialize chart options:
-    this.optionsCPU = {
-      title: {
-        text: 'CPU (%)'
-      },
-      tooltip: {
-        trigger: 'axis',
-        formatter: (params: any) => {
-          params = params[0];
-          const date = new Date(params.name);
-          return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
-        },
-        axisPointer: {
-          animation: false
-        }
-      },
-      xAxis: {
-        type: 'time',
-        splitLine: {
-          show: false
-        },
-        show: false
-      },
-      yAxis: {
-        type: 'value',
-        boundaryGap: [0, '100%'],
-        splitLine: {
-          show: false
-        }
-      },
-      series: [{
-        name: 'Mocking Data',
-        type: 'line',
-        showSymbol: false,
-        hoverAnimation: false,
-        areaStyle: { },
-        data: this.dataCPU
-      }]
-    };
+	}
 
-    this.optionsMemory = {
-      title: {
-        text: 'Memory (%)'
-      },
-      tooltip: {
-        trigger: 'axis',
-        formatter: (params: any) => {
-          params = params[0];
-          const date = new Date(params.name);
-          return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
-        },
-        axisPointer: {
-          animation: false
-        }
-      },
-      xAxis: {
-        type: 'time',
-        splitLine: {
-          show: false
-        },
-        show: false
-      },
-      yAxis: {
-        type: 'value',
-        boundaryGap: [0, '100%'],
-        splitLine: {
-          show: false
-        }
-      },
-      series: [{
-        name: 'Mocking Data',
-        type: 'line',
-        showSymbol: false,
-        hoverAnimation: false,
-        areaStyle: { },
-        data: this.dataMemory
-      }]
-    };
+	ngOnDestroy() {
+		clearInterval(this.timer);
+	}
 
-    this.optionsRequests = {
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'shadow'
-        }
-      },
-      grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '3%',
-        containLabel: true
-      },
-      xAxis: [
-        {
-          type: 'category',
-          data: ["GET_VAR", "PUT_VAR", "READ_VAR", "EXEC_UDF", "EXEC_INST"],
-          axisTick: {
-            alignWithLabel: true
-          }
-        }
-      ],
-      yAxis: [{
-        type: 'value'
-      }],
-      series: [{
-        name: 'Count',
-        type: 'bar',
-        barWidth: '60%',
-        data: []
-      }]
-    }
+	private updateMetrics(): void {
+		this.dataCPU = this.model.stats.map(s => {
+			return {
+				name: s.timestamp,
+				value: [
+					s.timestamp,
+					s.cpuUsage
+				]
+			}
+		});
 
-    this.timer = setInterval(() => {
-      this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
-        this.model = worker;
+		this.dataMemory = this.model.stats.map(s => {
+			return {
+				name: s.timestamp,
+				value: [
+					s.timestamp,
+					s.memoryUsage
+				]
+			}
+		})
 
-        this.updateMetrics();
-      })
-    }, 3000);
+		this.updateOptionsCPU = {
+			series: [{
+				data: this.dataCPU
+			}]
+		};
 
-  }
+		this.updateOptionsRequests = {
+			series: [{
+				data: this.model.requestTypeCounts.map(e => e['count'])
+			}]
+		};
 
-  ngOnDestroy() {
-    clearInterval(this.timer);
-  }
-
-  private updateMetrics(): void {
-    this.dataCPU = this.model.stats.map(s => {
-      return {
-        name: s.timestamp,
-        value: [
-          s.timestamp,
-          s.cpuUsage
-        ]
-      }
-    });
-
-    this.dataMemory = this.model.stats.map(s => {
-      return {
-        name: s.timestamp,
-        value: [
-          s.timestamp,
-          s.memoryUsage
-        ]
-      }
-    })
-
-    this.updateOptionsCPU = {
-      series: [{
-        data: this.dataCPU
-      }]
-    };
-
-    this.updateOptionsRequests = {
-      series: [{
-        data: this.model.requestTypeCounts.map(e => e['count'])
-      }]
-    };
-
-    // update series data:
-    this.updateOptionsMemory = {
-      series: [{
-        data: this.dataMemory
-      }]
-    };
-  }
+		// update series data:
+		this.updateOptionsMemory = {
+			series: [{
+				data: this.dataMemory
+			}]
+		};
+	}
 
 }

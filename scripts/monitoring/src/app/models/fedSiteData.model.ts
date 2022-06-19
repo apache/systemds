@@ -17,10 +17,10 @@
  * under the License.
  */
 
-import {Coordinator} from "./coordinator.model";
-import {Worker} from "./worker.model";
+import { Coordinator } from "./coordinator.model";
+import { Worker } from "./worker.model";
 
 export interface FedSiteData {
-  coordinators: Coordinator[];
-  workers: Worker[];
+	coordinators: Coordinator[];
+	workers: Worker[];
 }

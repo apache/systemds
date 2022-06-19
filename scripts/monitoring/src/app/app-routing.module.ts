@@ -27,37 +27,38 @@ import { ListWorkersComponent } from "./modules/workers/list/list.component";
 import { ViewWorkerComponent } from "./modules/workers/view/view.component";
 
 const routes: Routes = [
-  {
-    path: '',
-    component: LayoutComponent,
-    children: [
-      {
-        path: 'dashboard',
-        component: DashboardComponent
-      },
-      {
-        path: 'coordinators',
-        component: ListCoordinatorsComponent,
-      },
-      {
-        path: 'coordinators/:id',
-        component: ViewCoordinatorComponent
-      },
-      {
-        path: 'workers',
-        component: ListWorkersComponent,
-      },
-      {
-        path: 'workers/:id',
-        component: ViewWorkerComponent
-      },
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
-    ]
-  },
+	{
+		path: '',
+		component: LayoutComponent,
+		children: [
+			{
+				path: 'dashboard',
+				component: DashboardComponent
+			},
+			{
+				path: 'coordinators',
+				component: ListCoordinatorsComponent,
+			},
+			{
+				path: 'coordinators/:id',
+				component: ViewCoordinatorComponent
+			},
+			{
+				path: 'workers',
+				component: ListWorkersComponent,
+			},
+			{
+				path: 'workers/:id',
+				component: ViewWorkerComponent
+			},
+			{path: '', redirectTo: 'dashboard', pathMatch: 'full'}
+		]
+	},
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes, { useHash: true })],
-  exports: [RouterModule]
+	imports: [RouterModule.forRoot(routes, {useHash: true})],
+	exports: [RouterModule]
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {
+}

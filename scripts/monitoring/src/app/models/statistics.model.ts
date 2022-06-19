@@ -18,9 +18,10 @@
  */
 
 export class Statistics {
-    constructor(public timestamp: any,
-                public cpuUsage: number,
-                public memoryUsage: number,
-                public coordinatorTraffic: [],
-                public heavyHitters: []) {}
-  }
+	constructor(public timestamp: any,
+				public cpuUsage: number,
+				public memoryUsage: number,
+				public coordinatorTraffic: [],
+				public heavyHitters: []) {
+	}
+}

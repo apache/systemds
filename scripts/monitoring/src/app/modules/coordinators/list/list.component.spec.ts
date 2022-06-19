@@ -22,23 +22,23 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ListCoordinatorsComponent } from './list.component';
 
 describe('ListCoordinatorsComponent', () => {
-  let component: ListCoordinatorsComponent;
-  let fixture: ComponentFixture<ListCoordinatorsComponent>;
+	let component: ListCoordinatorsComponent;
+	let fixture: ComponentFixture<ListCoordinatorsComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [ ListCoordinatorsComponent ]
-    })
-    .compileComponents();
-  });
+	beforeEach(async () => {
+		await TestBed.configureTestingModule({
+			declarations: [ListCoordinatorsComponent]
+		})
+			.compileComponents();
+	});
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(ListCoordinatorsComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+	beforeEach(() => {
+		fixture = TestBed.createComponent(ListCoordinatorsComponent);
+		component = fixture.componentInstance;
+		fixture.detectChanges();
+	});
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+	it('should create', () => {
+		expect(component).toBeTruthy();
+	});
 });

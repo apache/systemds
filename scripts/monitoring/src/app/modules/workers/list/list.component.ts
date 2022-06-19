@@ -23,48 +23,49 @@ import { Router } from '@angular/router';
 
 import { Worker } from 'src/app/models/worker.model';
 import { FederatedSiteService } from 'src/app/services/federatedSiteService.service';
-import {MatTableDataSource} from "@angular/material/table";
-import {CreateEditWorkersComponent} from "../create-edit/create-edit.component";
-import {MatDialog} from "@angular/material/dialog";
+import { MatTableDataSource } from "@angular/material/table";
+import { CreateEditWorkersComponent } from "../create-edit/create-edit.component";
+import { MatDialog } from "@angular/material/dialog";
 
 @Component({
-  selector: 'app-list-workers',
-  templateUrl: './list.component.html',
-  styleUrls: ['./list.component.scss']
+	selector: 'app-list-workers',
+	templateUrl: './list.component.html',
+	styleUrls: ['./list.component.scss']
 })
 export class ListWorkersComponent {
 
-  public displayedColumns: string[] = ['name', 'address', 'status', 'actions'];
-  public dataSource: MatTableDataSource<Worker> = new MatTableDataSource<Worker>([]);
+	public displayedColumns: string[] = ['name', 'address', 'status', 'actions'];
+	public dataSource: MatTableDataSource<Worker> = new MatTableDataSource<Worker>([]);
 
-  @ViewChild(MatSort, { static: true })
-  sort: MatSort = new MatSort;
+	@ViewChild(MatSort, {static: true})
+	sort: MatSort = new MatSort;
 
-  constructor(
-    public dialog: MatDialog,
-    private fedSiteService: FederatedSiteService,
-    private router: Router) {}
+	constructor(
+		public dialog: MatDialog,
+		private fedSiteService: FederatedSiteService,
+		private router: Router) {
+	}
 
-  ngOnInit(): void {
-    this.fedSiteService.loadWorkers().subscribe(workers =>
-      workers.forEach(worker => this.fedSiteService.addCachedWorker(worker)));
+	ngOnInit(): void {
+		this.fedSiteService.loadWorkers().subscribe(workers =>
+			workers.forEach(worker => this.fedSiteService.addCachedWorker(worker)));
 
-    this.fedSiteService.getAllWorkers().subscribe(workers => this.dataSource.data = workers);
-  }
+		this.fedSiteService.getAllWorkers().subscribe(workers => this.dataSource.data = workers);
+	}
 
-  viewWorker(id: number) {
-    this.router.navigate(['/workers/' + id])
-  }
+	viewWorker(id: number) {
+		this.router.navigate(['/workers/' + id])
+	}
 
-  editWorker(id: number) {
-    this.dialog.open(CreateEditWorkersComponent, {
-      width: '500px',
-      data: id
-    });
-  }
+	editWorker(id: number) {
+		this.dialog.open(CreateEditWorkersComponent, {
+			width: '500px',
+			data: id
+		});
+	}
 
-  deleteWorker(id: number) {
-    this.fedSiteService.deleteWorker(id).subscribe(() => this.fedSiteService.removeCachedWorker(id));
-  }
+	deleteWorker(id: number) {
+		this.fedSiteService.deleteWorker(id).subscribe(() => this.fedSiteService.removeCachedWorker(id));
+	}
 
 }

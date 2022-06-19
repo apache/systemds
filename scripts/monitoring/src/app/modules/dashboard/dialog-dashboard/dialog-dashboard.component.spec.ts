@@ -22,23 +22,23 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DialogDashboardComponent } from './dialog-dashboard.component';
 
 describe('DialogDashboardComponent', () => {
-  let component: DialogDashboardComponent;
-  let fixture: ComponentFixture<DialogDashboardComponent>;
+	let component: DialogDashboardComponent;
+	let fixture: ComponentFixture<DialogDashboardComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [ DialogDashboardComponent ]
-    })
-    .compileComponents();
-  });
+	beforeEach(async () => {
+		await TestBed.configureTestingModule({
+			declarations: [DialogDashboardComponent]
+		})
+			.compileComponents();
+	});
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(DialogDashboardComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+	beforeEach(() => {
+		fixture = TestBed.createComponent(DialogDashboardComponent);
+		component = fixture.componentInstance;
+		fixture.detectChanges();
+	});
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+	it('should create', () => {
+		expect(component).toBeTruthy();
+	});
 });

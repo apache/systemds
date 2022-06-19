@@ -19,87 +19,89 @@
 
 /* Structure */
 .worker-container {
-    position: relative;
-    margin: 2em;
-  }
-  .worker-metrics-card {
-    margin: 2em;
-  }
+	position: relative;
+	margin: 2em;
+}
 
-  .metrics-cards {
-    display: flex;
-    mat-card {
-      width: 100%;
-    }
-  }
+.worker-metrics-card {
+	margin: 2em;
+}
 
-  .worker-table-container {
-    position: relative;
-    min-height: 200px;
-    max-height: 400px;
-    overflow: auto;
-  }
+.metrics-cards {
+	display: flex;
 
-  table {
-    width: 100%;
-  }
+	mat-card {
+		width: 100%;
+	}
+}
 
-  .worker-loading-shade {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 56px;
-    right: 0;
-    background: rgba(0, 0, 0, 0.15);
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.worker-table-container {
+	position: relative;
+	min-height: 200px;
+	max-height: 400px;
+	overflow: auto;
+}
 
-  .worker-rate-limit-reached {
-    max-width: 360px;
-    text-align: center;
-  }
+table {
+	width: 100%;
+}
 
-  /* Column Widths */
-  .mat-column-number,
-  .mat-column-state {
-    max-width: 64px;
-  }
+.worker-loading-shade {
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 56px;
+	right: 0;
+	background: rgba(0, 0, 0, 0.15);
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
 
-  .mat-column-created {
-    max-width: 124px;
-  }
+.worker-rate-limit-reached {
+	max-width: 360px;
+	text-align: center;
+}
 
-  .requests-table-title {
-    padding: 1em;
-  }
+/* Column Widths */
+.mat-column-number,
+.mat-column-state {
+	max-width: 64px;
+}
+
+.mat-column-created {
+	max-width: 124px;
+}
+
+.requests-table-title {
+	padding: 1em;
+}
 
 .online-worker {
-  color: green;
+	color: green;
 }
 
 .offline-worker {
-  color: darkred;
+	color: darkred;
 }
 
 #cpu-metric-card {
-  margin-top: 0.5em;
-  margin-right: 0.5em;
+	margin-top: 0.5em;
+	margin-right: 0.5em;
 }
 
 #memory-metric-card {
-  margin-top: 0.5em;
-  margin-left: 0.5em;
+	margin-top: 0.5em;
+	margin-left: 0.5em;
 }
 
 #data-metric-card {
-  margin-bottom: 0.5em;
-  margin-right: 0.5em;
+	margin-bottom: 0.5em;
+	margin-right: 0.5em;
 }
 
 #requests-metric-card {
-  margin-bottom: 0.5em;
-  margin-left: 0.5em;
+	margin-bottom: 0.5em;
+	margin-left: 0.5em;
 }

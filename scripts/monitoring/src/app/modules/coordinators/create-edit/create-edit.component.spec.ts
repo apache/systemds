@@ -22,23 +22,23 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CreateEditCoordinatorsComponent } from './create-edit.component';
 
 describe('CreateEditCoordinatorsComponent', () => {
-  let component: CreateEditCoordinatorsComponent;
-  let fixture: ComponentFixture<CreateEditCoordinatorsComponent>;
+	let component: CreateEditCoordinatorsComponent;
+	let fixture: ComponentFixture<CreateEditCoordinatorsComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [ CreateEditCoordinatorsComponent ]
-    })
-    .compileComponents();
-  });
+	beforeEach(async () => {
+		await TestBed.configureTestingModule({
+		  declarations: [ CreateEditCoordinatorsComponent ]
+		})
+		.compileComponents();
+	});
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(CreateEditCoordinatorsComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+	beforeEach(() => {
+		fixture = TestBed.createComponent(CreateEditCoordinatorsComponent);
+		component = fixture.componentInstance;
+		fixture.detectChanges();
+	});
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+	it('should create', () => {
+		expect(component).toBeTruthy();
+	});
 });

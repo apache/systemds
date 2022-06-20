@@ -239,7 +239,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				for(Encoder compositeEncoder : ((ColumnEncoderComposite) enc).getEncoders())
 					if(compositeEncoder instanceof ColumnEncoderBin && ((ColumnEncoderBin) compositeEncoder)
 						.getBinMethod() == ColumnEncoderBin.BinMethod.EQUI_HEIGHT)
-						((ColumnEncoderBin) compositeEncoder).buildEquiHeight(equiHeightBinsPerColumn
+						((ColumnEncoderBin) compositeEncoder).build(null, equiHeightBinsPerColumn
 							.get(((ColumnEncoderBin) compositeEncoder).getColID() - 1));
 				((ColumnEncoderComposite) enc).updateAllDCEncoders();
 			}

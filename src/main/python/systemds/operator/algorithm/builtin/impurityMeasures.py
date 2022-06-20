@@ -34,7 +34,28 @@ def impurityMeasures(X: Matrix,
                      R: Matrix,
                      method: str,
                      **kwargs: Dict[str, VALID_INPUT_TYPES]):
+    """
+     This function computes the measure of impurity for the given dataset based on the passed method (gini or entropy).
+     The current version expects the target vector to contain only 0 or 1 values.
     
+    
+    
+    :param X: Feature matrix.
+    :param Y: Target vector containing 0 and 1 values.
+    :param R: Vector indicating whether a feature is categorical or continuous.
+        1 denotes a continuous feature, 2 denotes a categorical feature.
+    :param n_bins: Number of bins for binning in case of scale features.
+    :param method: String indicating the method to use; either "entropy" or "gini".
+    :return: (1 x ncol(X)) row vector containing information/gini gain for
+        each feature of the dataset.
+        In case of gini, the values denote the gini gains, i.e. how much
+        impurity was removed with the respective split. The higher the
+        value, the better the split.
+        In case of entropy, the values denote the information gain, i.e.
+        how much entropy was removed. The higher the information gain,
+        the better the split.
+    """
+
     params_dict = {'X': X, 'Y': Y, 'R': R, 'method': method}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

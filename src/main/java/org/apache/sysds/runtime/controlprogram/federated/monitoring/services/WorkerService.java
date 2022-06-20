@@ -19,71 +19,106 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatsEntityModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
 
-import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Future;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class WorkerService {
 	private static final IRepository _entityRepository = new DerbyRepository();
+	private static final Map<Long, String> _cachedWorkers = new HashMap<>();
+
+	public WorkerService() {
+		updateCachedWorkers(null);
+
+		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+		executor.scheduleAtFixedRate(syncWorkerStatisticsWithDB(), 0, 3, TimeUnit.SECONDS);
+	}
 
 	public void create(BaseEntityModel model) {
-		_entityRepository.createEntity(EntityEnum.WORKER, model);
+		long id = _entityRepository.createEntity(EntityEnum.WORKER, model);
+
+		var modelEntity = (NodeEntityModel) model;
+
+		_cachedWorkers.putIfAbsent(id, modelEntity.getAddress());
+	}
+
+	public void update(BaseEntityModel model) {
+		_entityRepository.updateEntity(EntityEnum.WORKER, model);
+	}
+
+	public void remove(Long id) {
+		_entityRepository.removeEntity(EntityEnum.WORKER, id);
+
+		_cachedWorkers.remove(id);
 	}
 
 	public BaseEntityModel get(Long id) {
-		var model = _entityRepository.getEntity(EntityEnum.WORKER, id);
+		var model = (NodeEntityModel) _entityRepository.getEntity(EntityEnum.WORKER, id);
+		var stats = (List<BaseEntityModel>) _entityRepository.getAllEntitiesByField(EntityEnum.WORKER_STATS, id);
 
-		try {
-			var statisticsResponse = getWorkerStatistics(model.getAddress()).get();
+		updateCachedWorkers(null);
 
-			if (statisticsResponse.isSuccessful()) {
-				FederatedStatistics.FedStatsCollection aggFedStats = new FederatedStatistics.FedStatsCollection();
-
-				Object[] tmp = statisticsResponse.getData();
-				if(tmp[0] instanceof FederatedStatistics.FedStatsCollection)
-					aggFedStats.aggregate((FederatedStatistics.FedStatsCollection)tmp[0]);
-
-				var statsStr = FederatedStatistics.displayStatistics(aggFedStats, 5);
-				model.setData(statsStr);
-			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+		model.setStats(stats);
 
 		return model;
 	}
 
 	public List<BaseEntityModel> getAll() {
-		return _entityRepository.getAllEntities(EntityEnum.WORKER);
-	}
+		var workersRaw = _entityRepository.getAllEntities(EntityEnum.WORKER);
+		var workersResult = new ArrayList<BaseEntityModel>();
 
-	private Future<FederatedResponse> getWorkerStatistics(String address) {
-		Future<FederatedResponse> result = null;
+		updateCachedWorkers(workersRaw);
 
-		String host = address.split(":")[0];
-		int port = Integer.parseInt(address.split(":")[1]);
+		for (var worker: workersRaw) {
+			var workerModel = (NodeEntityModel) worker;
+			var stats = (List<BaseEntityModel>) _entityRepository.getAllEntitiesByField(EntityEnum.WORKER_STATS, workerModel.getId());
 
-		InetSocketAddress isa = new InetSocketAddress(host, port);
-		FederatedRequest frUDF = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-				new FederatedStatistics.FedStatsCollectFunction());
-		try {
-			result = FederatedData.executeFederatedOperation(isa, frUDF);
-		} catch(DMLRuntimeException dre) {
-			// silently ignore this exception --> caused by offline federated workers
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+			workerModel.setStats(stats);
+
+			workersResult.add(workerModel);
 		}
 
-		return result;
+		return workersResult;
+	}
+
+	private void updateCachedWorkers(List<BaseEntityModel> workersRaw) {
+		List<BaseEntityModel> workersBaseModel = workersRaw;
+
+		if (workersBaseModel == null) {
+			workersBaseModel = getAll();
+		}
+
+		for(var workerBaseModel : workersBaseModel) {
+			var worker = (NodeEntityModel) workerBaseModel;
+
+			_cachedWorkers.putIfAbsent(worker.getId(), worker.getAddress());
+		}
+	}
+
+	private static Runnable syncWorkerStatisticsWithDB() {
+		return () -> {
+
+			for(Map.Entry<Long, String> entry : _cachedWorkers.entrySet()) {
+				Long id = entry.getKey();
+				String address = entry.getValue();
+
+				var stats = (StatsEntityModel) StatsService.getWorkerStatistics(id, address);
+
+				if (stats != null) {
+					_entityRepository.createEntity(EntityEnum.WORKER_STATS, stats);
+				}
+			}
+		};
 	}
 }

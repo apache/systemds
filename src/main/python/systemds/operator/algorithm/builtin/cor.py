@@ -30,7 +30,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def cor(X: Matrix):
+    """
+     This Function compute correlation matrix
     
+    
+    
+    :param X: A Matrix Input to compute the correlation on
+    :return: Correlation matrix of the input matrix
+    """
+
     params_dict = {'X': X}
     return Matrix(X.sds_context,
         'cor',

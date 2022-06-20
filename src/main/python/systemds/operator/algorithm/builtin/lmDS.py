@@ -33,14 +33,22 @@ def lmDS(X: Matrix,
          y: Matrix,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     The lmDC function solves linear regression using the direct solve method
+    
+    
+    
+    :param X: Matrix of feature vectors.
+    :param y: 1-column matrix of response values.
     :param icpt: Intercept presence, shifting and rescaling the columns of X
     :param reg: Regularization constant (lambda) for L2-regularization. set to nonzero
+        for highly dependant/sparse/numerous features
     :param tol: Tolerance (epsilon); conjugate gradient procedure terminates early if L2
-    :param norm: beta-residual is less than tolerance * its initial norm
+        norm of the beta-residual is less than tolerance * its initial norm
     :param maxi: Maximum number of conjugate gradient iterations. 0 = no maximum
     :param verbose: If TRUE print messages are activated
-    :return: 'OperationNode' containing  
+    :return: The model fit
     """
+
     params_dict = {'X': X, 'y': y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

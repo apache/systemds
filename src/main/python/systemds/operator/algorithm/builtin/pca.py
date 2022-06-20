@@ -32,11 +32,20 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def pca(X: Matrix,
         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     The function Principal Component Analysis (PCA) is used for dimensionality reduction
+    
+    
+    
+    :param X: Input feature matrix
     :param K: Number of reduced dimensions (i.e., columns)
     :param Center: Indicates whether or not to center the feature matrix
     :param Scale: Indicates whether or not to scale the feature matrix
-    :return: 'OperationNode' containing  
+    :return: Output feature matrix with K columns
+    :return: Output dominant eigen vectors (can be used for projections)
+    :return: The column means of the input, subtracted to construct the PCA
+    :return: The Scaling of the values, to make each dimension same size.
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     

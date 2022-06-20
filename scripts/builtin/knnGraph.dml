@@ -19,7 +19,18 @@
 #
 #-------------------------------------------------------------
 
-# Builtin for k nearest neighbour graph construction
+# Builtin for k nearest neighbor graph construction
+#
+# INPUT:
+# --------------------------
+# X        ---
+# k        ---
+# --------------------------
+#
+# OUTPUT:
+# ------------------------
+# graph  ---
+# ------------------------
 
 m_knnGraph = function(Matrix[double] X, integer k) return (Matrix[double] graph) {
   distances = dist(X);

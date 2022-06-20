@@ -32,9 +32,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def img_invert(img_in: Matrix,
                max_value: float):
     """
+     This is an image data augmentation function. It inverts an image.
+    
+    
+    
+    :param img_in: Input image
     :param max_value: The maximum value pixels can have
-    :return: 'OperationNode' containing  
+    :return: Output image
     """
+
     params_dict = {'img_in': img_in, 'max_value': max_value}
     return Matrix(img_in.sds_context,
         'img_invert',

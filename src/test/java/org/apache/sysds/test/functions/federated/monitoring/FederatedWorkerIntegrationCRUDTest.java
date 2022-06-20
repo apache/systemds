@@ -21,9 +21,12 @@ package org.apache.sysds.test.functions.federated.monitoring;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class FederatedWorkerIntegrationCRUDTest extends FederatedMonitoringTestBase {
@@ -41,23 +44,52 @@ public class FederatedWorkerIntegrationCRUDTest extends FederatedMonitoringTestB
 
 	@Test
 	public void testWorkerAddedForMonitoring() {
-		var addedWorkers = addWorkers(1);
+		var addedWorkers = addEntities(EntityEnum.WORKER,1);
 		var firstWorkerStatus = addedWorkers.get(0).statusCode();
 
 		Assert.assertEquals("Added worker status code", HttpStatus.SC_OK, firstWorkerStatus);
 	}
 
 	@Test
+	@Ignore
+	public void testWorkerRemovedFromMonitoring() {
+		addEntities(EntityEnum.WORKER,2);
+		var statusCode = removeEntity(EntityEnum.WORKER,1L).statusCode();
+
+		var getAllWorkersResponse = getEntities(EntityEnum.WORKER);
+		var numReturnedWorkers = StringUtils.countMatches(getAllWorkersResponse.body().toString(), "id");
+
+		Assert.assertEquals("Removed worker status code", HttpStatus.SC_OK, statusCode);
+		Assert.assertEquals("Removed workers num", 1, numReturnedWorkers);
+	}
+
+	@Test
+	@Ignore
+	public void testWorkerDataUpdated() {
+		addEntities(EntityEnum.WORKER,3);
+		var newWorkerData = new NodeEntityModel(1L, "NonExistentName", "nonexistent.address");
+
+		var editedWorker = updateEntity(EntityEnum.WORKER, newWorkerData);
+
+		var getAllWorkersResponse = getEntities(EntityEnum.WORKER);
+		var numWorkersNewData = StringUtils.countMatches(getAllWorkersResponse.body().toString(), newWorkerData.getName());
+
+		Assert.assertEquals("Updated worker status code", HttpStatus.SC_OK, editedWorker.statusCode());
+		Assert.assertEquals("Updated workers num", 1, numWorkersNewData);
+	}
+
+	@Test
+	@Ignore
 	public void testCorrectAmountAddedWorkersForMonitoring() {
 		int numWorkers = 3;
-		var addedWorkers = addWorkers(numWorkers);
+		var addedWorkers = addEntities(EntityEnum.WORKER, numWorkers);
 
 		for (int i = 0; i < numWorkers; i++) {
 			var workerStatus = addedWorkers.get(i).statusCode();
 			Assert.assertEquals("Added worker status code", HttpStatus.SC_OK, workerStatus);
 		}
 
-		var getAllWorkersResponse = getWorkers();
+		var getAllWorkersResponse = getEntities(EntityEnum.WORKER);
 		var numReturnedWorkers = StringUtils.countMatches(getAllWorkersResponse.body().toString(), "id");
 
 		Assert.assertEquals("Amount of workers to get", numWorkers, numReturnedWorkers);

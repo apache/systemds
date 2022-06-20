@@ -28,29 +28,25 @@
 # Split feature matrix into four different feature categories and train neural networks on the
 # respective single features. Then combine all trained features to train final neural network.
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME         TYPE            DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X_train      Matrix[Double]  ---       maxtrix of feature vectors
-# y_train      Matrix[Double]  ---       matrix Y of class labels of semantic data type
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# ----------------------------------------------------------------------------------------
+# X_train  matrix of feature vectors
+# y_train  matrix Y of class labels of semantic data type
+# ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME         TYPE                       MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# cW           Matrix[Double]             weights (parameters) matrices for character distribtions
-# cb           Matrix[Double]             biases vectors for character distribtions
-# wW           Matrix[Double]             weights (parameters) matrices for word embeddings
-# wb           Matrix[Double]             biases vectors for word embeddings
-# pW           Matrix[Double]             weights (parameters) matrices for paragraph vectors
-# pb           Matrix[Double]             biases vectors for paragraph vectors
-# sW           Matrix[Double]             weights (parameters) matrices for global statistics
-# sb           Matrix[Double]             biases vectors for global statistics
-# fW           Matrix[Double]             weights (parameters) matrices for  combining all trained features (final)
-# fb           Matrix[Double]             biases vectors for combining all trained features (final)
-# ----------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------
+# cW    weights (parameters) matrices for character distributions
+# cb    biases vectors for character distributions
+# wW    weights (parameters) matrices for word embeddings
+# wb    biases vectors for word embeddings
+# pW    weights (parameters) matrices for paragraph vectors
+# pb    biases vectors for paragraph vectors
+# sW    weights (parameters) matrices for global statistics
+# sb    biases vectors for global statistics
+# fW    weights (parameters) matrices for  combining all trained features (final)
+# fb    biases vectors for combining all trained features (final)
+# ------------------------------------------------------------------------------------
 
 source("scripts/nn/examples/sherlockNet.dml") as sherlockNet
 

@@ -17,6 +17,12 @@
  * under the License.
  */
 
+#ifdef _WIN32
+#include <winsock.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 #include "common.h"
 #include "libmatrixdnn.h"
 #include "libmatrixmult.h"

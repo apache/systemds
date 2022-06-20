@@ -24,29 +24,26 @@
 # and simply swaps strings that do not occur often with similar strings that 
 # occur more often
 #
-# References:
-# Fred J. Damerau. 1964. 
-#   A technique for computer detection and correction of spelling errors. 
-#   Commun. ACM 7, 3 (March 1964), 171–176. 
-#   DOI:https://doi.org/10.1145/363958.363994
+# .. code-block:: txt
 #
-# INPUT PARAMETERS:
-# ------------------------------------------------------------------------------------------------------------------------
-# NAME                       TYPE             DEFAULT  MEANING
-# ------------------------------------------------------------------------------------------------------------------------
-# strings                    Frame[String]    ---      The nx1 input frame of corrupted strings
-# frequency_threshold        Double           0.05     Strings that occur above this frequency level will not be corrected
-# distance_threshold         integer          2        Max distance at which strings are considered similar
-# is_verbose                 Boolean          FALSE    Print debug information
+#   References:
+#   Fred J. Damerau. 1964. 
+#     A technique for computer detection and correction of spelling errors. 
+#     Commun. ACM 7, 3 (March 1964), 171–176. 
+#     DOI:https://doi.org/10.1145/363958.363994
 #
-# ------------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# ----------------------------------------------------------------------------------------
+# strings              The nx1 input frame of corrupted strings
+# frequency_threshold  Strings that occur above this frequency level will not be corrected
+# distance_threshold   Max distance at which strings are considered similar
+# is_verbose           Print debug information
+# ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ------------------------------------------------------------------------------------------------------------------------
-# NAME     TYPE                    MEANING
-# ------------------------------------------------------------------------------------------------------------------------
-# Y        Frame[String]           Corrected nx1 output frame
-# ------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
+# Y     Corrected nx1 output frame
+# ---------------------------------------------------------------------------------------------
 
 # TODO: future: add parameter for list of words that are sure to be correct
 

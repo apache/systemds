@@ -31,7 +31,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def intersect(X: Matrix,
               Y: Matrix):
+    """
+     Implements set intersection for numeric data
     
+    
+    
+    :param X: matrix X, set A
+    :param Y: matrix Y, set B
+    :return: intersection matrix, set of intersecting items
+    """
+
     params_dict = {'X': X, 'Y': Y}
     return Matrix(X.sds_context,
         'intersect',

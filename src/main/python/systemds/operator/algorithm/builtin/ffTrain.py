@@ -35,17 +35,28 @@ def ffTrain(X: Matrix,
             loss_fcn: str,
             **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     This builtin function trains simple feed-forward neural network. The architecture of the
+     networks is: affine1 -> relu -> dropout -> affine2 -> configurable output activation function.
+     Hidden layer has 128 neurons. Dropout rate is 0.35. Input and output sizes are inferred from X and Y.
+    
+    
+    
+    :param X: Training data
+    :param Y: Labels/Target values
     :param batch_size: Batch size
     :param epochs: Number of epochs
     :param learning_rate: Learning rate
-    :param out_activation: User specified ouptut activation function. Possible values:
+    :param out_activation: User specified output activation function. Possible values:
+        "sigmoid", "relu", "lrelu", "tanh", "softmax", "logits" (no activation).
     :param loss_fcn: User specified loss function. Possible values:
+        "l1", "l2", "log_loss", "logcosh_loss", "cel" (cross-entropy loss).
     :param shuffle: Flag which indicates if dataset should be shuffled or not
     :param validation_split: Fraction of training set used as validation set
     :param seed: Seed for model initialization
     :param verbose: Flag which indicates if function should print to stdout
-    :return: 'OperationNode' containing by the model & by the model 
+    :return: Trained model which can be used in ffPredict
     """
+
     params_dict = {'X': X, 'Y': Y, 'out_activation': out_activation, 'loss_fcn': loss_fcn}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

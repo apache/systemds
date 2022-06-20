@@ -21,33 +21,22 @@
 
 # Builtin function for repairing outliers by IQR 
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE             DEFAULT     MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X               Matrix[Double]   ---      Matrix X
-# Q1              Matrix[Double]   ---      first quartile
-# Q3              Matrix[Double]   ---      third quartile
-# IQR             Matrix[Double]   ---      Inter-quartile range
-# k               Double           --       a constant used to discern outliers k*IQR
-# repairMethod    Integer          1         values: 0 = delete rows having outliers,
-#                                               1 = replace outliers with zeros
-#                                               2 = replace outliers as missing values
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# ------------------------------------------------------------------------------------------
+# X             Matrix X
+# Q1            first quartile
+# Q3            third quartile
+# IQR           Inter-quartile range
+# k             a constant used to discern outliers k*IQR
+# repairMethod   values: 0 = delete rows having outliers,
+#                   1 = replace outliers with zeros
+#                   2 = replace outliers as missing values
+# ------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE                       MEANING
+# Y    Matrix X with no outliers
 # ----------------------------------------------------------------------------------------------------------------------
-# Y               Matrix[Double]             Matrix X with no outliers
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# Y               Double   ---       Matrix X with no outliers
 
 m_outlierByIQRApply = function(Matrix[Double] X, Matrix[Double] Q1, Matrix[Double] Q3, Matrix[Double] IQR, Double k, Integer repairMethod) 
   return(Matrix[Double] Y) 

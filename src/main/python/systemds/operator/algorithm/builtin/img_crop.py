@@ -35,12 +35,18 @@ def img_crop(img_in: Matrix,
              x_offset: int,
              y_offset: int):
     """
+     The img_crop-function is an image data augmentation function. It cuts out a subregion of an image.
+    
+    
+    
+    :param img_in: Input matrix/image
     :param w: The width of the subregion required
     :param h: The height of the subregion required
     :param x_offset: The horizontal coordinate in the image to begin the crop operation
     :param y_offset: The vertical coordinate in the image to begin the crop operation
-    :return: 'OperationNode' containing  
+    :return: Cropped matrix/image
     """
+
     params_dict = {'img_in': img_in, 'w': w, 'h': h, 'x_offset': x_offset, 'y_offset': y_offset}
     return Matrix(img_in.sds_context,
         'img_crop',

@@ -247,9 +247,11 @@ public class FederatedReuseSlicesTest extends MultiTenantTestBase {
 		boolean retVal = false;
 		int multiplier = 1;
 		int numInst = -1;
+		int resSerial = 0; // serialized responses written to lineage cache
 		switch(opType) {
 			case EW_MULT:
 				numInst = 1;
+				resSerial = 1;
 				break;
 			case RM_EMPTY:
 				numInst = 1;
@@ -262,7 +264,7 @@ public class FederatedReuseSlicesTest extends MultiTenantTestBase {
 		if(coordIX <= 1) {
 			retVal = outputLog.contains(LINCACHE_MULTILVL + "0/");
 			retVal &= outputLog.contains(LINCACHE_WRITES + Integer.toString(
-				(((coordIX == 0) ? 1 : 0) + numInst) // read + instructions
+				(((coordIX == 0) ? 1 : 0) + numInst + resSerial) // read + instructions + serialization
 				* workerProcesses.size()) + "/");
 		}
 		else {

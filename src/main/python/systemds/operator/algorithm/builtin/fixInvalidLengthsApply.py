@@ -33,7 +33,19 @@ def fixInvalidLengthsApply(X: Frame,
                            mask: Matrix,
                            qLow: Matrix,
                            qUp: Matrix):
+    """
+     Fix invalid lengths
     
+    
+    
+    :param X: ---
+    :param mask: ---
+    :param ql: ---
+    :param qu: ---
+    :return: ---
+    :return: ---
+    """
+
     params_dict = {'X': X, 'mask': mask, 'qLow': qLow, 'qUp': qUp}
     return Matrix(X.sds_context,
         'fixInvalidLengthsApply',

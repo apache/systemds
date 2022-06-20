@@ -31,7 +31,32 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def sherlock(X_train: Matrix,
              y_train: Matrix):
+    """
+     This function implements training phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
     
+     [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
+     Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining.
+     2019.]
+    
+     Split feature matrix into four different feature categories and train neural networks on the
+     respective single features. Then combine all trained features to train final neural network.
+    
+    
+    
+    :param X_train: matrix of feature vectors
+    :param y_train: matrix Y of class labels of semantic data type
+    :return: weights (parameters) matrices for character distributions
+    :return: biases vectors for character distributions
+    :return: weights (parameters) matrices for word embeddings
+    :return: biases vectors for word embeddings
+    :return: weights (parameters) matrices for paragraph vectors
+    :return: biases vectors for paragraph vectors
+    :return: weights (parameters) matrices for global statistics
+    :return: biases vectors for global statistics
+    :return: weights (parameters) matrices for  combining all trained features (final)
+    :return: biases vectors for combining all trained features (final)
+    """
+
     params_dict = {'X_train': X_train, 'y_train': y_train}
     
     vX_0 = Matrix(X_train.sds_context, '')

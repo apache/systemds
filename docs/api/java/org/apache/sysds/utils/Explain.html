@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -367,6 +367,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getIdentation(int)">getIdentation</a></span>&#8203;(int&nbsp;level)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr id="i29" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setMemo(org.apache.sysds.hops.fedplanner.MemoTable)">setMemo</a></span>&#8203;(<a href="../hops/fedplanner/MemoTable.html" title="class in org.apache.sysds.hops.fedplanner">MemoTable</a>&nbsp;memoTable)</code></th>
+<td class="colLast">
+<div class="block">Store memo table for adding additional explain info regarding hops.</div>
+</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -410,6 +417,20 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="setMemo(org.apache.sysds.hops.fedplanner.MemoTable)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setMemo</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;setMemo&#8203;(<a href="../hops/fedplanner/MemoTable.html" title="class in org.apache.sysds.hops.fedplanner">MemoTable</a>&nbsp;memoTable)</pre>
+<div class="block">Store memo table for adding additional explain info regarding hops.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>memoTable</code> - to store in Explain</dd>
+</dl>
+</li>
+</ul>
 <a id="display(org.apache.sysds.parser.DMLProgram,org.apache.sysds.runtime.controlprogram.Program,org.apache.sysds.utils.Explain.ExplainType,org.apache.sysds.utils.Explain.ExplainCounts)">
 <!--   -->
 </a>

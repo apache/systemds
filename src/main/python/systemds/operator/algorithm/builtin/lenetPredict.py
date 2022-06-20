@@ -36,12 +36,19 @@ def lenetPredict(model: List,
                  Win: int,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     This builtin function makes prediction given data and trained LeNet model
+    
+    
+    
+    :param model: Trained LeNet model
+    :param X: Input data matrix, of shape (N, C*Hin*Win)
     :param C: Number of input channels
     :param Hin: Input height
     :param Win: Input width
     :param batch_size: Batch size
-    :return: 'OperationNode' containing  
+    :return: Predicted values
     """
+
     params_dict = {'model': model, 'X': X, 'C': C, 'Hin': Hin, 'Win': Win}
     params_dict.update(kwargs)
     return Matrix(model.sds_context,

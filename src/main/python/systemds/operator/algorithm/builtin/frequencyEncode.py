@@ -31,7 +31,17 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def frequencyEncode(X: Matrix,
                     mask: Matrix):
+    """
+     function frequency conversion
     
+    
+    
+    :param X: dataset x
+    :param mask: mask of the columns for frequency conversion
+    :return: categorical columns are replaced with their frequencies
+    :return: the frequency counts for the different categoricals
+    """
+
     params_dict = {'X': X, 'mask': mask}
     
     vX_0 = Matrix(X.sds_context, '')

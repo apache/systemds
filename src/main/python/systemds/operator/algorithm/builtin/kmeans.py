@@ -32,6 +32,11 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def kmeans(X: Matrix,
            **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     Builtin function that implements the k-Means clustering algorithm
+    
+    
+    
+    :param X: The input Matrix to do KMeans on.
     :param k: Number of centroids
     :param runs: Number of runs (with different initial centroids)
     :param max_iter: Maximum number of iterations per run
@@ -39,9 +44,11 @@ def kmeans(X: Matrix,
     :param is_verbose: do not print per-iteration stats
     :param avg_sample_size_per_centroid: Average number of records per centroid in data samples
     :param seed: The seed used for initial sampling. If set to -1
-    :param random: selected.
-    :return: 'OperationNode' containing  
+        random seeds are selected.
+    :return: The mapping of records to centroids
+    :return: The output matrix with the centroids
     """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     

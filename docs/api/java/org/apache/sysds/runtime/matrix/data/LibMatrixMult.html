@@ -385,7 +385,9 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                        <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                        boolean&nbsp;leftTranspose,
                        int&nbsp;k)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">TSMM with optional transposed left side or not (Transposed self matrix multiplication)</div>
+</td>
 </tr>
 <tr id="i22" class="altColor">
 <td class="colFirst"><code>static void</code></td>
@@ -935,6 +937,14 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                                            <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                                            boolean&nbsp;leftTranspose,
                                            int&nbsp;k)</pre>
+<div class="block">TSMM with optional transposed left side or not (Transposed self matrix multiplication)</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>m1</code> - The matrix to do tsmm</dd>
+<dd><code>ret</code> - The output matrix to allocate the result to</dd>
+<dd><code>leftTranspose</code> - If the left side should be considered transposed</dd>
+<dd><code>k</code> - the number of threads to use</dd>
+</dl>
 </li>
 </ul>
 <a id="matrixMultPermute(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">

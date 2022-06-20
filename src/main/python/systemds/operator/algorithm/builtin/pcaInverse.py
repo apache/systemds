@@ -33,7 +33,20 @@ def pcaInverse(Y: Matrix,
                Clusters: Matrix,
                Centering: Matrix,
                ScaleFactor: Matrix):
+    """
+     Principal Component Analysis (PCA) for reconstruction of approximation of the original data.
+     This methods allows to reconstruct an approximation of the original matrix, and is useful for
+     calculating how much information is lost in the PCA.
     
+    
+    
+    :param Y: Input features that have PCA applied to them
+    :param Clusters: The previous PCA components computed
+    :param Centering: The column means of the PCA model, subtracted to construct the PCA
+    :param ScaleFactor: The scaling of each dimension in the PCA model
+    :return: Output feature matrix reconstructing and approximation of the original matrix
+    """
+
     params_dict = {'Y': Y, 'Clusters': Clusters, 'Centering': Centering, 'ScaleFactor': ScaleFactor}
     return Matrix(Y.sds_context,
         'pcaInverse',

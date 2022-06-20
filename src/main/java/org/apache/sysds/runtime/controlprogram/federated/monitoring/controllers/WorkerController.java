@@ -19,14 +19,11 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.FullHttpResponse;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.WorkerService;
-
-import java.io.IOException;
 
 public class WorkerController implements IController {
 
@@ -35,26 +32,27 @@ public class WorkerController implements IController {
 	@Override
 	public FullHttpResponse create(Request request) {
 
-		ObjectMapper mapper = new ObjectMapper();
+		var model = MapperService.getModelFromBody(request);
 
-		try {
-			BaseEntityModel model = mapper.readValue(request.getBody(), BaseEntityModel.class);
-			_workerService.create(model);
-			return Response.ok("Success");
-		}
-		catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		_workerService.create(model);
+
+		return Response.ok("Success");
 	}
 
 	@Override
 	public FullHttpResponse update(Request request, Long objectId) {
-		return null;
+		var model = MapperService.getModelFromBody(request);
+
+		_workerService.update(model);
+
+		return Response.ok("Success");
 	}
 
 	@Override
 	public FullHttpResponse delete(Request request, Long objectId) {
-		return null;
+		_workerService.remove(objectId);
+
+		return Response.ok("Success");
 	}
 
 	@Override

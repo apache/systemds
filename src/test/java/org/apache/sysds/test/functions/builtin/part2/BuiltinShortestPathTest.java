@@ -33,7 +33,7 @@ public class BuiltinShortestPathTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinShortestPathTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
-	
+
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
@@ -44,18 +44,16 @@ public class BuiltinShortestPathTest extends AutomatedTestBase {
 	public void testShortestPathNode1CP() {
 		runShortestPathNodeTest(1, new double[][] {{0}, {2}, {5}, {5}});
 	}
-	
+
 	@Test
 	public void testShortestPathNode2CP() {
 		runShortestPathNodeTest(2, new double[][] {{1}, {0}, {4}, {5}});
 	}
-	
+
 	@Test
 	public void testShortestPathNode3CP() {
 		runShortestPathNodeTest(3, new double[][] {{4}, {3}, {0}, {1}});
 	}
-	
-	
 
 	private void runShortestPathNodeTest(int node, double [][] Res) {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));

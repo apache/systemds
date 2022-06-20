@@ -32,10 +32,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def union(X: Matrix,
           Y: Matrix):
     """
+     Builtin function that implements union operation on vectors
+    
+    
+    
     :param X: input vector
     :param Y: input vector
-    :return: 'OperationNode' containing with all unique rows existing in x and y 
+    :return: matrix with all unique rows existing in X and Y
     """
+
     params_dict = {'X': X, 'Y': Y}
     return Matrix(X.sds_context,
         'union',

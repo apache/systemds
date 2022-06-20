@@ -19,9 +19,23 @@
 #
 #-------------------------------------------------------------
 
+# function Weight of evidence / information gain apply on new data
+#
+# INPUT:
+# --------------------------------------------------
+# X              ---
+# Y              ---
+# entropyMatrix  ---
+# --------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------
+# F              Weighted X matrix where the entropy mask is applied
+# ------------------------------------------------
+
 m_WoEApply = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] entropyMatrix)
-return (Matrix[Double] X) {
-  
+return (Matrix[Double] F) {
+  F = matrix(1, nrow(X), ncol(X)) # allocate dense output matrix
   for(i in 1:ncol(X))
   {
     if(sum(abs(entropyMatrix[i])) > 0)
@@ -32,7 +46,7 @@ return (Matrix[Double] X) {
       resp = matrix(0, nrow(L), idx)
       resp = (resp + t(seq(1, idx))) == L
       resp = resp * entropy
-      X[, i] = rowSums(resp)
+      F[, i] = rowSums(resp)
     }  
   }
   

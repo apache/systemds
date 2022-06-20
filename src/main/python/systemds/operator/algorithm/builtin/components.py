@@ -32,16 +32,26 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def components(G: Matrix,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     Computes the connected components of a graph and returns a
+     vector indicating the assignment of vertices to components,
+     where each component is identified by the maximum vertex ID
+     (i.e., row/column position of the input graph) 
+    
+    
+    
     :param X: Location to read the matrix of feature vectors
     :param Y: Location to read the matrix with category labels
     :param icpt: Intercept presence, shifting and rescaling X columns: 0 = no intercept,
+        no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X;
+        2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
     :param tol: tolerance ("epsilon")
     :param reg: regularization parameter (lambda = 1/C); intercept is not regularized
     :param maxi: max. number of outer (Newton) iterations
     :param maxii: max. number of inner (conjugate gradient) iterations, 0 = no max
     :param verbose: flag specifying if logging information should be printed
-    :return: 'OperationNode' containing  
+    :return: regression betas as output for prediction
     """
+
     params_dict = {'G': G}
     params_dict.update(kwargs)
     return Matrix(G.sds_context,

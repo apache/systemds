@@ -35,12 +35,27 @@ def miceApply(X: Matrix,
               dM: Frame,
               betaList: List):
     """
+     This Builtin function implements multiple imputation using Chained Equations (MICE)
+    
+     Assumption missing value are represented with empty string i.e ",," in CSV file  
+     variables with suffix n are storing continuos/numeric data and variables with 
+     suffix c are storing categorical data
+    
+    
+    
+    :param X: Data Matrix (Recoded Matrix for categorical features)
+    :param mtea: A meta matrix with each rows storing values 1) mask of original matrix,
+        2) information of columns with missing values on  original data 0 for no missing value in column and 1 otherwise
+        3) dist values in each columns in original data 1 for continuous columns and colMax for categorical
     :param threshold: confidence value [0, 1] for robust imputation, values will only be imputed
-    :param if: value has probability greater than threshold,
-    :param only: categorical data
+        if the predicted value has probability greater than threshold,
+        only applicable for categorical data
+    :param dM: meta frame from OHE on original data
+    :param betaList: List of machine learning models trained for each column imputation
     :param verbose: Boolean value.
-    :return: 'OperationNode' containing are represented with empty string i.e ",," in csv file   & n are storing continuos/numeric data and variables with  & storing categorical data 
+    :return: imputed dataset
     """
+
     params_dict = {'X': X, 'meta': meta, 'threshold': threshold, 'dM': dM, 'betaList': betaList}
     return Matrix(X.sds_context,
         'miceApply',

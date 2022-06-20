@@ -49,6 +49,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.Instruction.IType;
@@ -73,6 +74,7 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.ParamServStatistics;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -91,9 +93,12 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	/** Read cache shared by all worker handlers */
 	private final FederatedReadCache _frc;
-
+	private Timing _timing = null;
+	
 	/** Federated workload analyzer */
 	private final FederatedWorkloadAnalyzer _fan;
+
+	private String _remoteAddress = FederatedLookupTable.NOHOST;
 
 	/**
 	 * Create a Federated Worker Handler.
@@ -110,7 +115,12 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		_frc = frc;
 		_fan = fan;
 	}
-
+	
+	public FederatedWorkerHandler(FederatedLookupTable flt, FederatedReadCache frc, FederatedWorkloadAnalyzer fan, Timing timing) {
+		this(flt, frc, fan);
+		_timing = timing;
+	}
+	
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) {
 		ctx.writeAndFlush(createResponse(msg, ctx.channel().remoteAddress()))
@@ -122,7 +132,16 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse createResponse(Object msg, SocketAddress remoteAddress) {
+		try {
+			if (_timing != null) {
+				ParamServStatistics.accFedNetworkTime((long) _timing.stop());
+			}
+		} catch (RuntimeException ignored) {
+			// ignore timing if it wasn't started yet
+		}
+		
 		String host;
+		_remoteAddress = remoteAddress.toString();
 		if(remoteAddress instanceof InetSocketAddress) {
 			host = ((InetSocketAddress) remoteAddress).getHostString();
 		}
@@ -135,7 +154,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			host = FederatedLookupTable.NOHOST;
 		}
 
-		return createResponse(msg, host);
+		FederatedResponse res = createResponse(msg, host);
+		if (_timing != null) {
+			_timing.start();
+		}
+		return res;
 	}
 
 	private FederatedResponse createResponse(Object msg, String remoteHost) {
@@ -196,12 +219,28 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				response = tmp; // return last
 			}
 
+
+			if(t == RequestType.PUT_VAR || t == RequestType.EXEC_UDF) {
+				for (int paramIndex = 0; paramIndex < request.getNumParams(); paramIndex++) {
+					FederatedStatistics.incFedTransfer(request.getParam(paramIndex), _remoteAddress);
+				}
+			}
+
+			if(t == RequestType.GET_VAR) {
+				var data = response.getData();
+				for (int dataObjIndex = 0; dataObjIndex < Arrays.stream(data).count(); dataObjIndex++) {
+					FederatedStatistics.incFedTransfer(data[dataObjIndex], _remoteAddress);
+				}
+			}
+
 			if(t == RequestType.CLEAR)
 				containsCLEAR = true;
 		}
 
-		if(containsCLEAR)
+		if(containsCLEAR) {
+			_flt.clear();
 			printStatistics();
+		}
 
 		return response;
 	}
@@ -251,14 +290,15 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse readData(FederatedRequest request, ExecutionContextMap ecm) {
-		checkNumParams(request.getNumParams(), 2);
+		checkNumParams(request.getNumParams(), 2, 3);
 		String filename = (String) request.getParam(0);
 		DataType dt = DataType.valueOf((String) request.getParam(1));
-		return readData(filename, dt, request.getID(), request.getTID(), ecm);
+		return readData(filename, dt, request.getID(), request.getTID(), ecm,
+			request.getNumParams() == 2 ? null : (CacheBlock)request.getParam(2));
 	}
 
 	private FederatedResponse readData(String filename, DataType dataType,
-		long id, long tid, ExecutionContextMap ecm) {
+		long id, long tid, ExecutionContextMap ecm, CacheBlock localBlock) {
 		MatrixCharacteristics mc = new MatrixCharacteristics();
 		mc.setBlocksize(ConfigurationManager.getBlocksize());
 
@@ -278,7 +318,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			cd = _frc.get(filename, !linReuse);
 			try {
 				if(cd == null) { // data is neither in lineage cache nor in read cache
-					cd = readDataNoReuse(filename, dataType, mc); // actual read of the data
+					cd = localBlock == null ? readDataNoReuse(filename, dataType, mc) : ExecutionContext.createCacheableData(localBlock); // actual read of the data
 					if(linReuse) // put the object into the lineage cache
 						LineageCache.putFedReadObject(cd, linItem, ec);
 					else
@@ -377,7 +417,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		checkNumParams(request.getNumParams(), 1, 2);
 		final String varName = String.valueOf(request.getID());
 		ExecutionContext ec = ecm.get(request.getTID());
-
+		
 		if(ec.containsVariable(varName)) {
 			final Data tgtData = ec.removeVariable(varName);
 			if(tgtData != null)
@@ -429,7 +469,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse getVariable(FederatedRequest request, ExecutionContextMap ecm) {
 		try{
-
 			checkNumParams(request.getNumParams(), 0);
 			ExecutionContext ec = ecm.get(request.getTID());
 			if(!ec.containsVariable(String.valueOf(request.getID())))
@@ -473,7 +512,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		//handle missing spark execution context
 		//TODO handling of spark instructions should be under control of federated site not coordinator
 		if(ins.getType() == IType.SPARK
-		&& !(ec instanceof SparkExecutionContext) ) {
+			&& !(ec instanceof SparkExecutionContext) )
+		{
 			ecm.convertToSparkCtx();
 			return ecm.get(id);
 		}

@@ -54,7 +54,7 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 	@Test
 	public void testFindBestPipelineCensus() {
 		runtopkCleaning(DATA_DIR+ "dirty.csv", RESOURCE+ "meta/meta_census.csv", 1.0, 3,5,
-			2.0,"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
+			27.0,"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
 	}
 
 	// this test is ignored due to it long running time in Git actions
@@ -80,7 +80,7 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] { "-stats", "20", "-exec", "singlenode", "-nvargs", "dirtyData="+data,
 				"metaData="+meta, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources, "expectedIncrease="+inc,
-				"max_iter="+5, "sample="+sample, "testCV="+cv, "cvk="+cvk, "split="+split, "output="+OUTPUT, "O="+output("O")};
+				"max_iter="+10, "sample="+sample, "testCV="+cv, "cvk="+cvk, "split="+split, "output="+OUTPUT, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 

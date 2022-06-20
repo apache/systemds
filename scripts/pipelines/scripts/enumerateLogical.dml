@@ -44,6 +44,7 @@
 #   1. crossover to create children by adding n operation from p1 to p2 and vice versa. 
 #   2. mutation to swap two operations in the children based on a mutation rate, swap is randomly based on mutationRatio.
 #   3. removal to remove n operations from a child
+#   4. Add to randomly add a new operation in existing child
 # These new children will be the population in next iteration.
 # Repeat the process max_iter time. Converge in between if the best_score of previous generation is better then
 # best_score of new generation.
@@ -52,26 +53,30 @@
 source("scripts/builtin/bandit.dml") as bandit;
 
 enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest, Matrix[Double] ytest,
-  Frame[Unknown] initial_population, Frame[String] refSol = as.frame("NaN"), Integer seed = -1, Integer max_iter=10, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
+  Frame[Unknown] initial_population, Frame[String] refSol = as.frame("NaN"), Integer seed = -1, Integer max_iter=10,
+  List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
   Frame[Unknown] primitives, Frame[Unknown] param, Double dirtyScore = 79, Boolean cv=FALSE, Boolean cvk=3,
   Boolean verbose, List[Unknown] ctx=list(prefix="----"))
 return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Double refChanges, Frame[Unknown] acc)
 {
 
-  finalOutput = list()
-  finalOutputHp = list()
+  # # # initialize mask and other meta variables
   mask = as.matrix(metaList['mask'])
   prefix = as.scalar(ctx["prefix"]);  
   iter = 1
-  populationLength = 0
-  hpLength = 0
+
+  # # # initialize variables for convergence check. If there is not improvement in last three iterations then we converge
+  convCheck = matrix(0, rows=3, cols=1)
+  convCounter = 0
   converged = FALSE
-  start = 1; 
-  end = 0;
+  
+  # # # get the operations to add in transitions
   [allOps, ref] = getOps(param[, 2], refSol, as.scalar(metaList['distY']), nrow(y), min(y))
 
-  # unrolled by physical pipelines
+  # unrolled by physical pipelines; get the physical pipeline
   pipelines = frame(0, rows=nrow(primitives)^ncol(primitives), cols=max(ncol(initial_population), ncol(ref)))
+  start = 1; 
+  end = 0;
   for(i in 1:nrow(initial_population)) { 
     pconf = bandit::get_physical_configurations(initial_population[i], 0, primitives)
     end = end + nrow(pconf)
@@ -79,34 +84,63 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
     start = end + 1
   }
   pipelines = removeEmpty(target = pipelines, margin="rows") 
+  
+  # # # initialize output variable to store final pipelines and hyp
+  FLAGS = 5
+  ROWS = (max_iter+1)*(nrow(pipelines))
+  finalOutputFrame = frame(0, rows=ROWS, cols=max_iter*2)
+  # num of max operations * max hp per operation * no of flag + buffer for pipeline no and acc
+  maxParam = ncol(finalOutputFrame) * max(as.matrix(param[, 3])) * FLAGS + 2 
+  finalOutputMatrix = matrix(0, rows=ROWS, cols=maxParam)
+  
+  # # if the data has categorical columns then add the dummycode operation
   if(sum(mask) > 0)
   {
     dummyEncode = frame("dummycoding", rows=nrow(pipelines), cols=1)
     pipelines[, 2] = dummyEncode
   }
+  
   pipelines = rbind(ref, pipelines)
+  # # # treat the pipelines as initial population
   population = pipelines
   populationSize = nrow(pipelines)
+  
+  # # initialize the transitions add, remove, mutate and crossover
   transitions = sample(4, (populationSize * max_iter), TRUE, seed)
   opToAdd = sample(nrow(allOps), (populationSize * max_iter), TRUE, seed)
-  # opToRemove = sample(max_iter, (populationSize * max_iter), TRUE, seed)
-  refChangesInternal = 0
+  
+  # # # initialize the indexing variables to store outputs of all iterations
+  outputFrameStart = 1
+  outputFrameEnd = 0
   while(!converged & iter <= max_iter)
   {
-    populationLength = max(populationLength, ncol(population))
+    # populationLength = max(populationLength, ncol(population))
     id = matrix(seq(1, nrow(population)*2), rows=nrow(population), cols=2)
     print(prefix+" EnumLP iteration "+iter+"/"+as.integer(max_iter)+":" );
+    
     # # # execute the physical pipelines
     [outPip, outHp, p, refChanges] = bandit::run_with_hyperparam(ph_pip=cbind(as.frame(id), population),
-      X=X, Y=y, Xtest=Xtest, Ytest=ytest, metaList=metaList, evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, param=param, cv=cv, cvk=cvk, seed=seed, default=TRUE)
+      X=X, Y=y, Xtest=Xtest, Ytest=ytest, metaList=metaList, evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, param=param,
+      cv=cv, cvk=cvk, seed=seed, default=TRUE)
+    
     # # sort the configurations score-wise
     actPip = cbind(as.frame(outPip[, 1]), as.frame(refChanges))
     actPip = cbind(actPip, population)
     sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(population)))
     sortedPipelines = frameSort(actPip, sort_mask, TRUE)
     sortedHp = order(target = outHp, by = 1, decreasing=TRUE)
-    converged = as.double(as.scalar(sortedPipelines[1, 1])) > dirtyScore
-    hpLength = max(hpLength, ncol(outHp))
+    
+    # # fix the convergence: converge when there is no change in the last three iterations
+    bestSoFar = as.double(as.scalar(sortedPipelines[1, 1]))
+    if(bestSoFar > min(convCheck))
+    {
+      idx = as.scalar(rowIndexMin(t(convCheck)))
+      convCheck[idx] = bestSoFar
+    }
+    else convCounter =  convCounter + 1
+    converged = convCounter > nrow(convCheck) #as.double(as.scalar(sortedPipelines[1, 1])) > dirtyScore
+
+    # # if not converged then keep the top-k successive halving
     if(converged)
       print(prefix+" EnumLP  converged after "+iter+" / "+max_iter+" iterations")  
     diR = round(nrow(sortedPipelines)/2)
@@ -114,25 +148,22 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
       sortedPipelines = sortedPipelines[1:diR]
       sortedHp = sortedHp[1:diR]
     }
-    finalOutput = append(finalOutput, sortedPipelines)
-    finalOutputHp = append(finalOutputHp, sortedHp)
+    
+    # # # store the topk in final output variables
+    outputFrameEnd = outputFrameEnd + nrow(sortedPipelines) 
+    finalOutputFrame[outputFrameStart:outputFrameEnd, 1:ncol(sortedPipelines)] = sortedPipelines
+    finalOutputMatrix[outputFrameStart:outputFrameEnd, 1:ncol(sortedHp)] = sortedHp
+    outputFrameStart = outputFrameEnd + 1
+
     # # # if converged then stop otherwise generate new population
     children = frame(0, rows=populationSize, cols=ncol(sortedPipelines)+(ncol(sortedPipelines)/2))
     sortedPipelines = sortedPipelines[, 3:ncol(sortedPipelines)]
-    start = 1; 
-    end = 0;
-    topk = frame(0, rows=round((populationSize/2)) * length(finalOutput) , cols=populationLength + 2) 
-    for(i in 1:length(finalOutput))
-    {
-      pipFrame = as.frame(finalOutput[i])
-      end = end + nrow(pipFrame)
-      topk[start:end, 1:ncol(pipFrame)] = pipFrame
-      start = end + 1
-    }
+    topk = finalOutputFrame
     sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(topk) - 2))
     topk = removeEmpty(target=topk, margin="rows")
     topk = frameSort(topk, sort_mask, TRUE)
     topk = topk[, 3:ncol(topk)]
+    
     # # randomly pick the pipelines for transitions
     pipRand = sample(nrow(sortedPipelines), populationSize, TRUE, seed)
     if(!converged) {
@@ -140,10 +171,9 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
         idxR = (nrow(children) * (iter - 1)) + i
         idx = as.scalar(pipRand[i])
         top = removeEmpty(target=topk[idx], margin="cols")
-        # top = removeEmpty(target=sortedPipelines[idx], margin="cols")
         idx2 = min(max(pipRand), idx + 1)
         top2 = removeEmpty(target=topk[idx2], margin="cols")
-        # top2 = removeEmpty(target=sortedPipelines[idx2], margin="cols")
+        # # # keep the tail "dummycode" operation from transitions
         if(sum(mask) > 0) {
           tail = top[, ncol(top)]
           tail2 = top2[, ncol(top2)]
@@ -161,6 +191,7 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
         else if(random == 4)
           c1 = crossover(top, top2, seed)
         
+        # # # put back the tail operation 
         if(sum(mask) > 0)
           c1 = cbind(c1, tail)
         children[i, 1:ncol(c1)] = c1
@@ -172,31 +203,21 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
   if(!converged) {
     print(prefix+" EnumLP did not converge after "+(iter - 1)+" / "+max_iter+" iterations")  
   }
-  # # # prepare the final frame outputPip
-  outputPip = frame(0, rows=round((populationSize/2)) * length(finalOutput) , cols=populationLength + 2) 
-  outputHp = matrix(0, rows=round((populationSize/2)) * length(finalOutput) , cols=hpLength) 
-  start = 1; 
-  end = 0;
-  for(i in 1:length(finalOutput))
-  {
-    pipFrame = as.frame(finalOutput[i])
-    pipHp = as.matrix(finalOutputHp[i])
-    end = end + nrow(pipFrame)
-    outputPip[start:end, 1:ncol(pipFrame)] = pipFrame
-    outputHp[start:end, 1:ncol(pipHp)] = pipHp
-    start = end + 1
-  }
-  finalOutputHp = rbind(finalOutputHp)
-  outputHp = order(target = outputHp, by = 1, decreasing=FALSE)
+
+  # # sort the final output in increasing order
+  outputPip = finalOutputFrame
   sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(outputPip) - 2))
   outputPip = removeEmpty(target=outputPip, margin="rows")
   outputPip = frameSort(outputPip, sort_mask, FALSE)
   
   refChanges = as.double(as.scalar(outputPip[nrow(outputPip), 2]))
   acc = outputPip[, 1]
-  print(toString(outputPip))
-  outputPip = outputPip[,3:ncol(outputPip)]
 
+  outputPip = outputPip[,3:ncol(outputPip)]
+  # # # prepare the hyp output
+  hpLength = ((ncol(outputPip) + 2) * FLAGS * 3) + 1 
+  outputHp = finalOutputMatrix[, 1:hpLength]
+  outputHp = order(target = outputHp, by = 1, decreasing=FALSE)
 }
 
 addition = function(Frame[Unknown] top, Frame[Unknown] opToAdd)
@@ -242,9 +263,6 @@ return(Frame[Unknown] child)
     lp1 = as.scalar(sample(ncol(p1), 1, FALSE, seed))
     lp2 = as.scalar(sample(ncol(p2), 1, FALSE, seed))
     child = cbind(p1[, 1:lp1], p2[, lp2:ncol(p2)])
-    print("p1 "+toString(p1))
-    print("p2 "+toString(p2))
-    print("child "+toString(child))
 }
 
 

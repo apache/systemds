@@ -1,5 +1,5 @@
-winsorizeApply,imputeByMeanApply,normalizeApply,scaleApply,0,0,0
-miceApply,forward_fill,imputeByMeanApply,normalizeApply,scaleApply,0,0
-miceApply,imputeByMeanApply,forward_fill,normalizeApply,scaleApply,0,0
-normalizeApply,miceApply,forward_fill,scaleApply,0,0,0
-normalizeApply,miceApply,forward_fill,scaleApply,0,0,0
+outlierByIQRApply,normalizeApply,normalizeApply,imputeByMedianApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0
+scaleApply,normalizeApply,imputeByMedianApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+outlierByIQRApply,normalizeApply,normalizeApply,imputeByMedianApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0
+normalizeApply,imputeByMedianApply,normalizeApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+imputeByMedianApply,outlierByIQRApply,normalizeApply,imputeByMedianApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0

@@ -51,12 +51,12 @@ public class BuiltinTopkLogicalTest extends AutomatedTestBase {
 
 	@Test
 	public void testLogical1() {
-		runTestLogical(5, 1, 5, ExecMode.SINGLE_NODE);
+		runTestLogical(7, 1, 5, ExecMode.SINGLE_NODE);
 	}
 
-	@Test
+	@Ignore
 	public void testLogical2() {
-		runTestLogical(2, 2, 2, ExecMode.SINGLE_NODE);
+		runTestLogical(10, 2, 2, ExecMode.SINGLE_NODE);
 	}
 
 //	TODO support removeEmpty spark instruction

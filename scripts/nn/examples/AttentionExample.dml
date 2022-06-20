@@ -27,6 +27,10 @@
 # We use the clickbait dataset
 # (https://www.kaggle.com/datasets/amananandrai/clickbait-dataset?select=clickbait_data.csv)
 # which is a simple binary text classification with 32000 samples.
+#
+# To load the data set and insert it into the right folder, simply run the download_attentionExample.sh
+# script, which can be found in the datagen folder (.../systemds/scripts/datagen/download_attentionExample.sh).
+#
 #-------------------------------------------------------------
 
 

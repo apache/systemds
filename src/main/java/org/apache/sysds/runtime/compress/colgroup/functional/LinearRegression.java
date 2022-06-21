@@ -25,19 +25,18 @@ import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class LinearRegression {
-	public static double[][] regressMatrixBlock(MatrixBlock rawBlock, int[] colIndexes, boolean transposed) {
+
+	public static double[] regressMatrixBlock(MatrixBlock rawBlock, int[] colIndexes, boolean transposed) {
 		final int nRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
 
-		if(nRows <= 1) {
+		if(nRows <= 1)
 			throw new DMLCompressionException("At least 2 data points are required to fit a linear function.");
-		}
-
-		if(colIndexes.length < 1) {
+		else if(colIndexes.length < 1)
 			throw new DMLCompressionException("At least 1 column must be specified for compression.");
-		}
 
-		double[] beta0 = new double[colIndexes.length];
-		double[] beta1 = new double[colIndexes.length];
+		// the first `colIndexes.length` entries represent the intercepts (beta0)
+		// the second `colIndexes.length` entries represent the slopes (beta1)
+		double[] beta0_beta1 = new double[2 * colIndexes.length];
 
 		double s_xx = (Math.pow(nRows, 3) - nRows) / 12;
 		double x_bar = (double) (nRows + 1) / 2;
@@ -67,10 +66,10 @@ public class LinearRegression {
 		}
 
 		for(int i = 0; i < colIndexes.length; i++) {
-			beta1[i] = (-x_bar * colSums[i] + weightedColSums[i]) / s_xx;
-			beta0[i] = (colSums[i] / nRows) - beta1[i] * x_bar;
+			beta0_beta1[colIndexes.length + i] = (-x_bar * colSums[i] + weightedColSums[i]) / s_xx;
+			beta0_beta1[i] = (colSums[i] / nRows) - beta0_beta1[colIndexes.length + i] * x_bar;
 		}
 
-		return new double[][] {beta0, beta1};
+		return beta0_beta1;
 	}
 }

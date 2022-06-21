@@ -499,7 +499,7 @@ public class ColGroupFactory {
 	}
 
 	private static AColGroup compressLinearFunctional(int[] colIndexes, MatrixBlock in, CompressionSettings cs) {
-		double[][] coefficients = LinearRegression.regressMatrixBlock(in, colIndexes, cs.transposed);
+		double[] coefficients = LinearRegression.regressMatrixBlock(in, colIndexes, cs.transposed);
 		int numRows = cs.transposed ? in.getNumColumns() : in.getNumRows();
 		return ColGroupLinearFunctional.create(colIndexes, coefficients, numRows);
 	}

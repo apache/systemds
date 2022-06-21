@@ -19,18 +19,21 @@
 
 package org.apache.sysds.test.component.compress.colgroup;
 
+import static org.junit.Assert.fail;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.*;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.functionobjects.*;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -40,508 +43,298 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
-import java.util.EnumSet;
-import java.util.Random;
+import java.util.*;
 
-public class ColGroupLinearFunctionalTest {
-
+@RunWith(value = Parameterized.class)
+public class ColGroupLinearFunctionalTest extends ColGroupLinearFunctionalBase {
 	protected static final Log LOG = LogFactory.getLog(ColGroupLinearFunctionalTest.class.getName());
-	private final static Random random = new Random();
 
-	public double[][] generatePointsOnLine(double intercept, double slope, int length) {
-		double[] result = new double[length];
-		for(int i = 0; i < length; i++) {
-			result[i] = intercept + slope * i;
+	public ColGroupLinearFunctionalTest(AColGroup base, ColGroupLinearFunctional lin, AColGroup baseLeft, AColGroup cgLeft,
+		int nRowLeft, int nColLeft, int nRowRight, int nColRight, ColGroupUncompressed cgRight, double tolerance) {
+		super(base, lin, baseLeft, cgLeft, nRowLeft, nColLeft, nRowRight, nColRight, cgRight, tolerance);
+	}
+
+	@Test
+	public void testContainsValue() {
+		double[] linValues = getValues(lin);
+		double[] baseValues = getValues(base);
+
+		for(int i = 0; i < linValues.length; i++) {
+			Assert.assertEquals("Base ColGroup and linear ColGroup must be initialized with the same values",
+				linValues[i], baseValues[i], tolerance);
+			if(!lin.containsValue(baseValues[i])) {
+				//debug
+				System.out.println(baseValues[i]);
+				System.out.println(i);
+				Assert.assertTrue(base.containsValue(baseValues[i]) && lin.containsValue(baseValues[i]));
+
+			}
+			Assert.assertTrue(base.containsValue(baseValues[i]) && lin.containsValue(baseValues[i]));
 		}
-
-		return new double[][] {result};
 	}
 
 	@Test
 	public void testTsmm() {
-		boolean isTransposed = true;
-		// only column 0 and 2 will be compressed using LF
-		int[] colIndexes = new int[]{0, 2};
-		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {0, -1, 5, 12, 33}, {-4, -2, 0, 2, 4}};
-		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+		int nCol = lin.getNumCols();
 
-		final int numCols = isTransposed ? mbt.getNumRows() : mbt.getNumColumns();
-		final int numRows = isTransposed ? mbt.getNumColumns() : mbt.getNumRows();
-
-		AColGroup cgCompressed = createCompressedColGroup(mbt, colIndexes, isTransposed);
-		AColGroup cgUncompressed = createUncompressedColGroup(mbt, colIndexes, isTransposed);
-
-		final MatrixBlock resultUncompressed = new MatrixBlock(numCols, numCols, false);
+		final MatrixBlock resultUncompressed = new MatrixBlock(lin.getNumCols(), nCol, false);
 		resultUncompressed.allocateDenseBlock();
-		cgUncompressed.tsmm(resultUncompressed, numRows);
+		base.tsmm(resultUncompressed, nRow);
 
-		final MatrixBlock resultCompressed = new MatrixBlock(numCols, numCols, false);
+		final MatrixBlock resultCompressed = new MatrixBlock(nCol, nCol, false);
 		resultCompressed.allocateDenseBlock();
-		cgCompressed.tsmm(resultCompressed, numRows);
+		lin.tsmm(resultCompressed, nRow);
 
-		Assert.assertArrayEquals(resultUncompressed.getDenseBlockValues(), resultCompressed.getDenseBlockValues(), 0.001);
+		Assert.assertArrayEquals(resultUncompressed.getDenseBlockValues(), resultCompressed.getDenseBlockValues(), tolerance);
 	}
 
 	@Test
 	public void testRightMultByMatrix() {
-		boolean transposedRight = true;
-		boolean transposedLeft = true;
-		double[][] dataRight = new double[][] {{1, -2, 23, 7}, {4, 11, -10, -2}};
-		double[][] dataLeft = new double[][] {{8, 4, 0, -4, -8}, {-1, 0, 1, 2, 3}, {5, 4, 3, 2, 1}, {-8, 0, 8, 16, 24}};
-		int[] colIndexesLeft = new int[]{1, 2, 3};
+		MatrixBlock mbtRight = cgRight.getData();
 
-		MatrixBlock mbtLeft = DataConverter.convertToMatrixBlock(dataLeft);
-		MatrixBlock mbtRight = DataConverter.convertToMatrixBlock(dataRight);
-
-		if(transposedRight) {
-			mbtRight = LibMatrixReorg.transpose(mbtRight, InfrastructureAnalyzer.getLocalParallelism());
-		}
-
-		AColGroup cgCompressedLeft = createCompressedColGroup(mbtLeft, colIndexesLeft, transposedLeft);;
-		AColGroup cgUncompressedLeft = createUncompressedColGroup(mbtLeft, colIndexesLeft, transposedLeft);
-
-		AColGroup colGroupResultExpected = cgUncompressedLeft.rightMultByMatrix(mbtRight);
+		AColGroup colGroupResultExpected = base.rightMultByMatrix(mbtRight);
 		MatrixBlock resultExpected = ((ColGroupUncompressed)colGroupResultExpected).getData();
-		AColGroup colGroupResult = cgCompressedLeft.rightMultByMatrix(mbtRight);
+		AColGroup colGroupResult = lin.rightMultByMatrix(mbtRight);
 		MatrixBlock result = ((ColGroupUncompressed)colGroupResult).getData();
 
-		// check if output is equal to uncompressed
-		Assert.assertArrayEquals(resultExpected.getDenseBlockValues(), result.getDenseBlockValues(), 0.001);
-
-		int[][] colIndexesArray = new int[][]{colIndexesLeft};
-		MatrixBlock[] mbts = new MatrixBlock[]{mbtLeft};
-		boolean[] transposedArray = new boolean[]{transposedLeft};
-
-		for(int idx = 0; idx < mbts.length; idx++) {
-			MatrixBlock mbt = mbts[idx];
-			int[] colIndexes = colIndexesArray[idx];
-			boolean transposed = transposedArray[idx];
-
-			zeroColumsNotInColIndexes(mbt, colIndexes, transposed);
-		}
-
-		if(transposedLeft) {
-			mbtLeft = LibMatrixReorg.transpose(mbtLeft, InfrastructureAnalyzer.getLocalParallelism());
-		}
-
-		LibMatrixMult.matrixMult(mbtLeft, mbtRight, resultExpected);
-		// check if output is equal to true matrix multiply (with the columns not in the left ColGroup zeroed out)
-		Assert.assertArrayEquals(resultExpected.getDenseBlockValues(), result.getDenseBlockValues(), 0.001);
+		Assert.assertArrayEquals(resultExpected.getDenseBlockValues(), result.getDenseBlockValues(), tolerance);
 	}
 
 	@Test
-	public void testLeftMultByAColGroupLFCompressed() {
-		leftMultByAColGroup(true);
-	}
-
-	@Test
-	public void testLeftMultByAColGroupUncompressed() {
-		leftMultByAColGroup(false);
+	public void testLeftMultByAColGroup() {
+		if(cgLeft.getCompType() == AColGroup.CompressionType.LinearFunctional)
+			leftMultByAColGroup(true);
+		else if(cgLeft.getCompType() == AColGroup.CompressionType.UNCOMPRESSED)
+			leftMultByAColGroup(false);
+		else
+			fail("CompressionType not supported for leftMultByAColGrup");
 	}
 
 	public void leftMultByAColGroup(boolean compressedLeft) {
-		boolean transposedRight = true;
-		boolean transposedLeft = true;
-		double[][] dataRight = new double[][] {{1, 2, 3, 4, 5}, {-4, -2, 0, 2, 4}};
-		int[] colIndexesRight = new int[]{1};
-		double[][] dataLeft;
-		int[] colIndexesLeft;
-		if(compressedLeft) {
-			dataLeft = new double[][] {{8, 4, 0, -4, -8}, {-1, 0, 1, 2, 3}};
-			colIndexesLeft = new int[]{0};
-		} else {
-			dataLeft = new double[][] {{8, 3, 7, 12, -3}, {-1, 8, 4, -2, -2}, {3, 4, 2, 0, -1}};
-			colIndexesLeft = new int[]{0, 2};
-		}
-
-		MatrixBlock mbtLeft = DataConverter.convertToMatrixBlock(dataLeft);
-		MatrixBlock mbtRight = DataConverter.convertToMatrixBlock(dataRight);
-
-		final int numColsRight = transposedRight ? mbtRight.getNumRows() : mbtRight.getNumColumns();
-		final int numColsLeft = transposedLeft ? mbtLeft.getNumRows() : mbtLeft.getNumColumns();
-
-		AColGroup cgCompressedRight = createCompressedColGroup(mbtRight, colIndexesRight, transposedRight);
-		AColGroup cgUncompressedRight = createUncompressedColGroup(mbtRight, colIndexesRight, transposedRight);
-		AColGroup cgCompressedLeft = createCompressedColGroup(mbtLeft, colIndexesLeft, transposedLeft);;
-		AColGroup cgUncompressedLeft = createUncompressedColGroup(mbtLeft, colIndexesLeft, transposedLeft);
-
-		final MatrixBlock result = new MatrixBlock(numColsLeft, numColsRight, false);
-		final MatrixBlock resultExpected = new MatrixBlock(numColsLeft, numColsRight, false);
+		final MatrixBlock result = new MatrixBlock(nRowLeft, nColRight, false);
+		final MatrixBlock resultExpected = new MatrixBlock(nRowLeft, nColRight, false);
 		result.allocateDenseBlock();
 		resultExpected.allocateDenseBlock();
 
-		cgUncompressedRight.leftMultByAColGroup(cgUncompressedLeft, resultExpected);
+		base.leftMultByAColGroup(baseLeft, resultExpected);
+		lin.leftMultByAColGroup(cgLeft, result);
 
-		if(compressedLeft) {
-			cgCompressedRight.leftMultByAColGroup(cgCompressedLeft, result);
-		} else {
-			cgCompressedRight.leftMultByAColGroup(cgUncompressedLeft, result);
-		}
-
-		// check if output is equal to uncompressed
-		Assert.assertArrayEquals(resultExpected.getDenseBlockValues(), result.getDenseBlockValues(), 0.001);
-
-		int[][] colIndexesArray = new int[][]{colIndexesLeft, colIndexesRight};
-		MatrixBlock[] mbts = new MatrixBlock[]{mbtLeft, mbtRight};
-		boolean[] transposedArray = new boolean[]{transposedLeft, transposedRight};
-
-		for(int idx = 0; idx < mbts.length; idx++) {
-			MatrixBlock mbt = mbts[idx];
-			int[] colIndexes = colIndexesArray[idx];
-			boolean transposed = transposedArray[idx];
-
-			zeroColumsNotInColIndexes(mbt, colIndexes, transposed);
-		}
-
-		// since left matrix is transposed in leftMultByAColGroup, we simulate this behaviour here
-		if(!transposedLeft) {
-			mbtLeft = LibMatrixReorg.transpose(mbtLeft, InfrastructureAnalyzer.getLocalParallelism());
-		}
-
-		if(transposedRight) {
-			mbtRight = LibMatrixReorg.transpose(mbtRight, InfrastructureAnalyzer.getLocalParallelism());
-		}
-
-		LibMatrixMult.matrixMult(mbtLeft, mbtRight, resultExpected);
-
-		// check if output is equal to true matrix multiply
-		Assert.assertArrayEquals(resultExpected.getDenseBlockValues(), result.getDenseBlockValues(), 0.001);
-	}
-
-	public void zeroColumsNotInColIndexes(MatrixBlock mbt, int[] colIndexes, boolean transposed) {
-		for(int r = 0; r < mbt.getNumRows(); r++) {
-			for(int c = 0; c < mbt.getNumColumns(); c++) {
-				boolean setZero = true;
-				for(int colIndex : colIndexes) {
-					if((!transposed && colIndex == c) || (transposed && colIndex == r)) {
-						setZero = false;
-						break;
-					}
-				}
-
-				if(setZero) {
-					mbt.setValue(r, c, 0);
-				}
-			}
-		}
+		Assert.assertArrayEquals(resultExpected.getDenseBlockValues(), result.getDenseBlockValues(), tolerance);
 	}
 
 	@Test
 	public void testColSumsSq() {
-		boolean isTransposed = false;
-		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 53, -100}};
-
-		double[] colSumsExpected = new double[data[0].length];
-		for(int j = 0; j < data[0].length; j++) {
-			double colSum = 0;
-			for(int i = 0; i < data.length; i++) {
-				colSum += Math.pow(data[i][j], 2);
-			}
-			colSumsExpected[j] = colSum;
-		}
-
-		double[] colSums = new double[data[0].length];
+		double[] colSumsExpected = new double[base.getNumCols()];
 		AggregateOperator aop = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject());
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceRow.getReduceRowFnObject());
-		unaryAggregate(data, isTransposed, auop, colSums);
 
-		Assert.assertArrayEquals(colSumsExpected, colSums, 0.001);
+		if(base instanceof AColGroupCompressed) {
+			AColGroupCompressed baseComp = (AColGroupCompressed)base;
+			baseComp.unaryAggregateOperations(auop, colSumsExpected, nRow, 0, nRow, baseComp.preAggRows(auop));
+		} else if(base instanceof ColGroupUncompressed) {
+			MatrixBlock mb = ((ColGroupUncompressed) base).getData();
+
+			for(int j = 0; j < base.getNumCols(); j++) {
+				double colSum = 0;
+				for(int i = 0; i < nRow; i++) {
+					colSum += Math.pow(mb.getDouble(i, j), 2);
+				}
+				colSumsExpected[j] = colSum;
+			}
+		} else {
+			fail("Base ColGroup type does not support colSumSq.");
+		}
+
+		double[] colSums = new double[lin.getNumCols()];
+		lin.unaryAggregateOperations(auop, colSums, nRow, 0, nRow, lin.preAggRows(auop));
+
+		Assert.assertArrayEquals(colSumsExpected, colSums, tolerance);
 	}
 
 	@Test
 	public void testProduct() {
-		boolean isTransposed = false;
-		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 5.3, -100}};
+		double[] productExpected = new double[]{1};
 
-		double productExpected = 1;
-		for(int j = 0; j < data[0].length; j++) {
-			for(int i = 0; i < data.length; i++) {
-				productExpected *= data[i][j];
-			}
-		}
-
-		double[] product = new double[data[0].length];
 		AggregateOperator aop = new AggregateOperator(0, Multiply.getMultiplyFnObject());
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceAll.getReduceAllFnObject());
-		unaryAggregate(data, isTransposed, auop, product);
 
-		Assert.assertEquals(productExpected, product[0], 0.001);
+		if(base instanceof AColGroupCompressed) {
+			AColGroupCompressed baseComp = (AColGroupCompressed)base;
+			baseComp.unaryAggregateOperations(auop, productExpected, nRow, 0, nRow, baseComp.preAggRows(auop));
+		} else if(base instanceof ColGroupUncompressed) {
+			MatrixBlock mb = ((ColGroupUncompressed) base).getData();
+
+			for(int j = 0; j < base.getNumCols(); j++) {
+				for(int i = 0; i < nRow; i++) {
+					productExpected[0] *= mb.getDouble(i, j);
+				}
+			}
+		} else {
+			fail("Base ColGroup type does not support colProduct.");
+		}
+
+		double[] product = new double[]{1};
+		lin.unaryAggregateOperations(auop, product, nRow, 0, nRow, lin.preAggRows(auop));
+
+		// use relative tolerance since products can get very large
+		double relTolerance = tolerance * Math.abs(productExpected[0]);
+		Assert.assertEquals(productExpected[0], product[0], relTolerance);
 	}
 
 	@Test
 	public void testMax() {
-		boolean isTransposed = false;
-		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 5.3, -100}};
-
-		double maxExpected = Double.NEGATIVE_INFINITY;
-		for(int j = 0; j < data[0].length; j++) {
-			for(int i = 0; i < data.length; i++) {
-				if(data[i][j] > maxExpected) {
-					maxExpected = data[i][j];
-				}
-			}
-		}
-
-		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
-
-		final int numCols = isTransposed ? mbt.getNumRows() : mbt.getNumColumns();
-		final int numRows = isTransposed ? mbt.getNumColumns() : mbt.getNumRows();
-		int[] colIndexes = new int[numCols];
-		for(int x = 0; x < numCols; x++)
-			colIndexes[x] = x;
-
-		AColGroup cg = createCompressedColGroup(mbt, colIndexes, isTransposed);
-
-		Assert.assertEquals(maxExpected, cg.getMax(), 0.001);
+		Assert.assertEquals(base.getMax(), lin.getMax(), tolerance);
 	}
 
 	@Test
 	public void testMin() {
-		boolean isTransposed = false;
-		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 5.3, -100}};
-
-		double minExpected = Double.POSITIVE_INFINITY;
-		for(int j = 0; j < data[0].length; j++) {
-			for(int i = 0; i < data.length; i++) {
-				if(data[i][j] < minExpected) {
-					minExpected = data[i][j];
-				}
-			}
-		}
-
-		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
-
-		final int numCols = isTransposed ? mbt.getNumRows() : mbt.getNumColumns();
-		final int numRows = isTransposed ? mbt.getNumColumns() : mbt.getNumRows();
-		int[] colIndexes = new int[numCols];
-		for(int x = 0; x < numCols; x++)
-			colIndexes[x] = x;
-
-		AColGroup cg = createCompressedColGroup(mbt, colIndexes, isTransposed);
-
-		Assert.assertEquals(minExpected, cg.getMin(), 0.001);
+		Assert.assertEquals(base.getMin(), lin.getMin(), tolerance);
 	}
 
 	@Test
-	public void testColProduct() {
-		boolean isTransposed = false;
-		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 5.3, -100}};
+	public void testColProducts() {
+		double[] colProductsExpected = new double[base.getNumCols()];
 
-		double[] productExpected = new double[data[0].length];
-		for(int j = 0; j < data[0].length; j++) {
-			double colProduct = 1;
-			for(int i = 0; i < data.length; i++) {
-				colProduct *= data[i][j];
-			}
-			productExpected[j] = colProduct;
-		}
-
-		double[] product = new double[data[0].length];
 		AggregateOperator aop = new AggregateOperator(0, Multiply.getMultiplyFnObject());
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceRow.getReduceRowFnObject());
-		unaryAggregate(data, isTransposed, auop, product);
 
-		Assert.assertArrayEquals(productExpected, product, 0.001);
+		if(base instanceof AColGroupCompressed) {
+			AColGroupCompressed baseComp = (AColGroupCompressed)base;
+			baseComp.unaryAggregateOperations(auop, colProductsExpected, nRow, 0, nRow, baseComp.preAggRows(auop));
+		} else if(base instanceof ColGroupUncompressed) {
+			MatrixBlock mb = ((ColGroupUncompressed) base).getData();
+
+			for(int j = 0; j < base.getNumCols(); j++) {
+				double colProduct = 1;
+				for(int i = 0; i < nRow; i++) {
+					colProduct *= mb.getDouble(i, j);
+				}
+				colProductsExpected[j] = colProduct;
+			}
+		} else {
+			fail("Base ColGroup type does not support colProduct.");
+		}
+
+		double[] colProducts = new double[base.getNumCols()];
+		for(int j = 0; j < base.getNumCols(); j++) {
+			colProducts[j] = 1;
+		}
+
+		lin.unaryAggregateOperations(auop, colProducts, nRow, 0, nRow, lin.preAggRows(auop));
+
+		// use relative tolerance since column products can get very large
+		double relTolerance = tolerance * Math.abs(Arrays.stream(colProductsExpected).max().orElse(0));
+		Assert.assertArrayEquals(colProductsExpected, colProducts, relTolerance);
 	}
 
 	@Test
 	public void testSumSq() {
-		boolean isTransposed = false;
-		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 53, -100}};
+		double[] sumSqExpected = new double[]{0};
 
-		double sumSqExpected = 0;
-		for(int j = 0; j < data[0].length; j++) {
-			for(int i = 0; i < data.length; i++) {
-				sumSqExpected += Math.pow(data[i][j], 2);
-			}
-		}
-
-		double[] sumSq = new double[data[0].length];
 		AggregateOperator aop = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject());
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceAll.getReduceAllFnObject());
-		unaryAggregate(data, isTransposed, auop, sumSq);
 
-		Assert.assertEquals(sumSqExpected, sumSq[0], 0.001);
+		if(base instanceof AColGroupCompressed) {
+			AColGroupCompressed baseComp = (AColGroupCompressed)base;
+			baseComp.unaryAggregateOperations(auop, sumSqExpected, nRow, 0, nRow, baseComp.preAggRows(auop));
+		} else if(base instanceof ColGroupUncompressed) {
+			MatrixBlock mb = ((ColGroupUncompressed) base).getData();
+
+			for(int j = 0; j < base.getNumCols(); j++) {
+				for(int i = 0; i < nRow; i++) {
+					sumSqExpected[0] += Math.pow(mb.getDouble(i, j), 2);
+				}
+			}
+		} else {
+			fail("Base ColGroup type does not support sumSq.");
+		}
+
+		double[] sumSq = new double[]{0};
+		lin.unaryAggregateOperations(auop, sumSq, nRow, 0, nRow, lin.preAggRows(auop));
+
+		Assert.assertEquals(sumSqExpected[0], sumSq[0], tolerance);
 	}
 
 	@Test
 	public void testSum() {
-		boolean isTransposed = false;
-		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 53, -100}};
+		double[] colSums = new double[base.getNumCols()];
+		base.computeColSums(colSums, nRow);
+		double sumExpected = Arrays.stream(colSums).sum();
 
-		double sumExpected = 0;
-		for(int j = 0; j < data[0].length; j++) {
-			for(int i = 0; i < data.length; i++) {
-				sumExpected += data[i][j];
-			}
-		}
-
-		double[] sumSq = new double[data[0].length];
+		double[] sum = new double[1];
 		AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceAll.getReduceAllFnObject());
-		unaryAggregate(data, isTransposed, auop, sumSq);
+		lin.unaryAggregateOperations(auop, sum, nRow, 0, nRow, lin.preAggRows(auop));
 
-		Assert.assertEquals(sumExpected, sumSq[0], 0.001);
+		Assert.assertEquals(sumExpected, sum[0], tolerance);
 	}
 
 	@Test
 	public void testRowSums() {
-		boolean isTransposed = false;
-		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 53, -100}};
+		double[] rowSumsExpected = new double[nRow];
 
-		double[] rowSumExpected = new double[data.length];
-		for(int i = 0; i < data.length; i++) {
-			double rowSum = 0;
-			for(int j = 0; j < data[0].length; j++) {
-				rowSum += data[i][j];
-			}
-			rowSumExpected[i] = rowSum;
-		}
-
-		double[] rowSums = new double[data.length];
 		AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceCol.getReduceColFnObject());
-		unaryAggregate(data, isTransposed, auop, rowSums);
 
-		Assert.assertArrayEquals(rowSumExpected, rowSums, 0.001);
-	}
+		if(base instanceof AColGroupCompressed) {
+			AColGroupCompressed baseComp = (AColGroupCompressed)base;
+			baseComp.unaryAggregateOperations(auop, rowSumsExpected, nRow, 0, nRow, baseComp.preAggRows(auop));
+		} else if(base instanceof ColGroupUncompressed) {
+			MatrixBlock mb = ((ColGroupUncompressed) base).getData();
 
-	public void unaryAggregate(double[][] data, boolean isTransposed, AggregateUnaryOperator auop, double[] res) {
-		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+			for(int i = 0; i < nRow; i++) {
+				double rowSum = 0;
+				for(int j = 0; j < base.getNumCols(); j++) {
+					rowSum += mb.getDouble(i, j);
+				}
+				rowSumsExpected[i] = rowSum;
+			}
+		} else {
+			fail("Base ColGroup type does not support rowSum.");
+		}
 
-		final int numCols = isTransposed ? mbt.getNumRows() : mbt.getNumColumns();
-		final int numRows = isTransposed ? mbt.getNumColumns() : mbt.getNumRows();
-		int[] colIndexes = new int[numCols];
-		for(int x = 0; x < numCols; x++)
-			colIndexes[x] = x;
+		double[] rowSums = new double[nRow];
+		lin.unaryAggregateOperations(auop, rowSums, nRow, 0, nRow, lin.preAggRows(auop));
 
-		AColGroup cg = createCompressedColGroup(mbt, colIndexes, isTransposed);
-		cg.unaryAggregateOperations(auop, res, numRows, 0, numRows);
+		Assert.assertArrayEquals(rowSumsExpected, rowSums, tolerance);
 	}
 
 	@Test
 	public void testColSums() {
-		boolean isTransposed = false;
-		double[][] data = new double[][] {{1, 2, 3, 4, 5}, {-4, 2, 8, 53, -100}};
+		double[] colSumsExpected = new double[base.getNumCols()];
+		double[] colSums = new double[base.getNumCols()];
+		base.computeColSums(colSumsExpected, nRow);
+		lin.computeColSums(colSums, nRow);
 
-		double[] colSumsExpected = new double[data[0].length];
-		for(int j = 0; j < data[0].length; j++) {
-			double colSum = 0;
-			for(int i = 0; i < data.length; i++) {
-				colSum += data[i][j];
-			}
-			colSumsExpected[j] = colSum;
-		}
-
-		double[] colSums = new double[data[0].length];
-		AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
-		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, ReduceRow.getReduceRowFnObject());
-		unaryAggregate(data, isTransposed, auop, colSums);
-
-		Assert.assertArrayEquals(colSumsExpected, colSums, 0.001);
-	}
-
-	public AColGroup createCompressedColGroup(MatrixBlock mbt, int[] colIndexes, boolean isTransposed) {
-		CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
-			.setValidCompressions(EnumSet.of(AColGroup.CompressionType.LinearFunctional)).create();
-		cs.transposed = isTransposed;
-
-		final CompressedSizeInfoColGroup cgi = new CompressedSizeEstimatorExact(mbt, cs)
-			.getColGroupInfo(colIndexes);
-		CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
-		AColGroup cg = ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
-
-		Assert.assertSame(cg.getCompType(), AColGroup.CompressionType.LinearFunctional);
-		return cg;
-	}
-
-	public AColGroup createUncompressedColGroup(MatrixBlock mbt, int[] colIndexes, boolean isTransposed) {
-		CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
-			.setValidCompressions(EnumSet.of(AColGroup.CompressionType.UNCOMPRESSED)).create();
-		cs.transposed = isTransposed;
-
-		final CompressedSizeInfoColGroup cgi = new CompressedSizeEstimatorExact(mbt, cs)
-			.getColGroupInfo(colIndexes);
-		CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
-		AColGroup cg = ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
-
-		Assert.assertSame(cg.getCompType(), AColGroup.CompressionType.UNCOMPRESSED);
-		return cg;
+		Assert.assertArrayEquals(colSumsExpected, colSums, tolerance);
 	}
 
 	@Test
-	public void testRandomColumnCompression() {
-		double intercept = random.nextInt(1000) - 500 + random.nextDouble();
-		double slope = random.nextInt(1000) - 500 + random.nextDouble();
+	public void testColumnGroupConstruction() {
+		double[][] constColumn = new double[][] {{1, 1, 1, 1, 1}};
+		AColGroup cgConst = cgLinCompressed(constColumn, true);
+		Assert.assertSame(AColGroup.CompressionType.CONST, cgConst.getCompType());
 
-		double[][] column = generatePointsOnLine(intercept, slope, 5000);
-
-		testDecompressToDenseBlock(column, true);
+		double[][] zeroColumn = new double[][] {{0, 0, 0, 0, 0}};
+		AColGroup cgEmpty = cgLinCompressed(zeroColumn, true);
+		Assert.assertSame(AColGroup.CompressionType.EMPTY, cgEmpty.getCompType());
 	}
 
 	@Test
-	public void testDecompressToDenseBlockSingleColumn() {
-		testDecompressToDenseBlock(new double[][] {{1, 2, 3, 4, 5}}, true);
-	}
+	public void testDecompressToDenseBlock() {
+		MatrixBlock ret = new MatrixBlock(nRow, lin.getNumCols(), false);
+		ret.allocateDenseBlock();
+		lin.decompressToDenseBlock(ret.getDenseBlock(), 0, nRow);
 
-	@Test
-	public void testDecompressToDenseBlockSingleColumnTransposed() {
-		testDecompressToDenseBlock(new double[][] {{1}, {2}, {3}, {4}, {5}}, false);
-	}
+		MatrixBlock expected = new MatrixBlock(nRow, lin.getNumCols(), false);
+		expected.allocateDenseBlock();
+		base.decompressToDenseBlock(expected.getDenseBlock(), 0, nRow);
 
-	@Test
-	public void testDecompressToDenseBlockTwoColumns() {
-		testDecompressToDenseBlock(new double[][] {{1, 1}, {2, 1}, {3, 1}, {4, 1}, {5, 1}}, false);
-	}
-
-	@Test
-	public void testDecompressToDenseBlockTwoColumnsUnequalSlopeTransposed() {
-		testDecompressToDenseBlock(new double[][] {{1, 2, 3, 4, 5}, {-1, -2, -3, -4, -5}}, true);
-	}
-
-	@Test
-	public void testDecompressToDenseBlockTwoColumnsTransposed() {
-		testDecompressToDenseBlock(new double[][] {{1, 2, 3, 4, 5}, {1, 1, 1, 1, 1}}, true);
-	}
-
-	@Test(expected = AssertionError.class)
-	public void testDecompressToDenseBlockTwoColumnsNonLinearTransposed() {
-		testDecompressToDenseBlock(new double[][] {{1, 2, 3, 4, 5, 0}, {1, 1, 1, 1, 1, 2}}, true);
-	}
-
-	public void testDecompressToSparseBlock(double[][] data, boolean isTransposed) {
-		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
-
-	}
-
-	public void testDecompressToDenseBlock(double[][] data, boolean isTransposed) {
-		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
-
-		final int numCols = isTransposed ? mbt.getNumRows() : mbt.getNumColumns();
-		final int numRows = isTransposed ? mbt.getNumColumns() : mbt.getNumRows();
-		int[] colIndexes = new int[numCols];
-		for(int x = 0; x < numCols; x++)
-			colIndexes[x] = x;
-
-		AColGroup cg = createCompressedColGroup(mbt, colIndexes, isTransposed);
-
-		try {
-			// Decompress to dense block
-			MatrixBlock ret = new MatrixBlock(numRows, numCols, false);
-			ret.allocateDenseBlock();
-			cg.decompressToDenseBlock(ret.getDenseBlock(), 0, numRows);
-
-			MatrixBlock expected = DataConverter.convertToMatrixBlock(data);
-			if(isTransposed)
-				LibMatrixReorg.transposeInPlace(expected, 1);
-			Assert.assertArrayEquals(expected.getDenseBlockValues(), ret.getDenseBlockValues(), 0.01);
-
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new DMLRuntimeException("Failed construction : " + this.getClass().getSimpleName());
-		}
+		Assert.assertArrayEquals(expected.getDenseBlockValues(), ret.getDenseBlockValues(), tolerance);
 	}
 
 }

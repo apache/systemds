@@ -112,8 +112,7 @@ public final class ColGroupSizes {
 		long size = 0;
 		// Since the Object is a col group the overhead from the Memory Size group is added
 		size += estimateInMemorySizeGroup(nrColumns);
-		size += 2L * 8L * nrColumns; // coefficients; per column, we store 2 doubles (slope & intercept)
-		size += 8; // reference to coefficients array
+		size += MemoryEstimates.doubleArrayCost(2L * nrColumns); // coefficients; per column, we store 2 doubles (slope & intercept)
 		size += 4; // _numRows
 		return size;
 	}

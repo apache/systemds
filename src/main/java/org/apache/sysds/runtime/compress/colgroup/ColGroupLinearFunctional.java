@@ -456,7 +456,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 			throw new NotImplementedException();
 		}
 
-		ColGroupUtils.moveValuesColGroupMatrixBlocks(lhs, this, tmpRet, result);
+		ColGroupUtils.copyValuesColGroupMatrixBlocks(lhs, this, tmpRet, result);
 	}
 
 	@Override

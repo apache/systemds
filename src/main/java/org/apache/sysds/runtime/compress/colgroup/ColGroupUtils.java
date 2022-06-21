@@ -65,16 +65,14 @@ public class ColGroupUtils {
 	}
 
 	/**
-	 * Calculate the result of performing the binary operation on an empty row to the right
-	 *
-	 * empty op v
+	 * Copy values from tmpResult into correct positions of result (according to colIndexes in lhs and rhs)
 	 *
 	 * @param lhs        Left ColumnGroup
 	 * @param rhs        Right ColumnGroup
 	 * @param tmpResult  The matrix block to move values from
 	 * @param result     The result matrix block to move values to
 	 */
-	protected final static void moveValuesColGroupMatrixBlocks(AColGroup lhs, AColGroup rhs, MatrixBlock tmpResult, MatrixBlock result) {
+	protected final static void copyValuesColGroupMatrixBlocks(AColGroup lhs, AColGroup rhs, MatrixBlock tmpResult, MatrixBlock result) {
 		final double[] resV = result.getDenseBlockValues();
 		if(tmpResult.isEmpty())
 			return;

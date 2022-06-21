@@ -560,7 +560,7 @@ public class ColGroupUncompressed extends AColGroup {
 				LibMatrixMult.matrixMult(transposed, this._data, tmpRet);
 			}
 
-			ColGroupUtils.moveValuesColGroupMatrixBlocks(lhs, this, tmpRet, result);
+			ColGroupUtils.copyValuesColGroupMatrixBlocks(lhs, this, tmpRet, result);
 		}
 		else if(lhs instanceof APreAgg) {
 			// throw new NotImplementedException();

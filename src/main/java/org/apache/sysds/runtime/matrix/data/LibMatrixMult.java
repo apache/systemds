@@ -3317,10 +3317,11 @@ public class LibMatrixMult
 	public static void vectMultiplyAdd( final double aval, double[] b, double[] c, int bi, int ci, final int len )
 	{
 		int j = 0;
+		var avalVec = DoubleVector.broadcast(SPECIES, aval);
 		for(; j < SPECIES.loopBound(len); j += SPECIES.length()) {
 			var res = DoubleVector.fromArray(SPECIES, c, ci + j);
-			var bVec = DoubleVector.fromArray(SPECIES, b, bi + j).mul(aval);
-			res = res.add(bVec);
+			var bVec = SPECIES.fromArray(b, bi + j);
+			res = avalVec.fma(bVec, res);
 			res.intoArray(c, ci + j);
 		}
 		for(; j < len; ++j) {
@@ -3331,12 +3332,14 @@ public class LibMatrixMult
 	private static void vectMultiplyAdd2(final double aval1, final double aval2, double[] b, double[] c, int bi1,
 		int bi2, int ci, final int len) {
 		int j = 0;
+		var aval1Vec = DoubleVector.broadcast(SPECIES, aval1);
+		var aval2Vec = DoubleVector.broadcast(SPECIES, aval2);
 		for(; j < SPECIES.loopBound(len); j += SPECIES.length()) {
 			var res = DoubleVector.fromArray(SPECIES, c, ci + j);
-			var b1Vec = DoubleVector.fromArray(SPECIES, b, bi1 + j).mul(aval1);
-			res = res.add(b1Vec);
-			var b2Vec = DoubleVector.fromArray(SPECIES, b, bi2 + j).mul(aval2);
-			res = res.add(b2Vec);
+			var b1Vec = SPECIES.fromArray(b, bi1 + j);
+			res = aval1Vec.fma(b1Vec, res);
+			var b2Vec = SPECIES.fromArray(b, bi2 + j);
+			res = aval2Vec.fma(b2Vec, res);
 			res.intoArray(c, ci + j);
 		}
 		for(; j < len; ++j) {
@@ -3347,14 +3350,17 @@ public class LibMatrixMult
 	private static void vectMultiplyAdd3( final double aval1, final double aval2, final double aval3, double[] b, double[] c, int bi1, int bi2, int bi3, int ci, final int len )
 	{
 		int j = 0;
+		var aval1Vec = DoubleVector.broadcast(SPECIES, aval1);
+		var aval2Vec = DoubleVector.broadcast(SPECIES, aval2);
+		var aval3Vec = DoubleVector.broadcast(SPECIES, aval3);
 		for(; j < SPECIES.loopBound(len); j += SPECIES.length()) {
 			var res = DoubleVector.fromArray(SPECIES, c, ci + j);
-			var b1Vec = DoubleVector.fromArray(SPECIES, b, bi1 + j).mul(aval1);
-			res = res.add(b1Vec);
-			var b2Vec = DoubleVector.fromArray(SPECIES, b, bi2 + j).mul(aval2);
-			res = res.add(b2Vec);
-			var b3Vec = DoubleVector.fromArray(SPECIES, b, bi3 + j).mul(aval3);
-			res = res.add(b3Vec);
+			var b1Vec = SPECIES.fromArray(b, bi1 + j);
+			res = aval1Vec.fma(b1Vec, res);
+			var b2Vec = SPECIES.fromArray(b, bi2 + j);
+			res = aval2Vec.fma(b2Vec, res);
+			var b3Vec = SPECIES.fromArray(b, bi3 + j);
+			res = aval3Vec.fma(b3Vec, res);
 			res.intoArray(c, ci + j);
 		}
 		for(; j < len; ++j) {
@@ -3365,16 +3371,20 @@ public class LibMatrixMult
 	private static void vectMultiplyAdd4( final double aval1, final double aval2, final double aval3, final double aval4, double[] b, double[] c, int bi1, int bi2, int bi3, int bi4, int ci, final int len )
 	{
 		int j = 0;
+		var aval1Vec = DoubleVector.broadcast(SPECIES, aval1);
+		var aval2Vec = DoubleVector.broadcast(SPECIES, aval2);
+		var aval3Vec = DoubleVector.broadcast(SPECIES, aval3);
+		var aval4Vec = DoubleVector.broadcast(SPECIES, aval4);
 		for(; j < SPECIES.loopBound(len); j += SPECIES.length()) {
 			var res = DoubleVector.fromArray(SPECIES, c, ci + j);
-			var b1Vec = DoubleVector.fromArray(SPECIES, b, bi1 + j).mul(aval1);
-			res = res.add(b1Vec);
-			var b2Vec = DoubleVector.fromArray(SPECIES, b, bi2 + j).mul(aval2);
-			res = res.add(b2Vec);
-			var b3Vec = DoubleVector.fromArray(SPECIES, b, bi3 + j).mul(aval3);
-			res = res.add(b3Vec);
-			var b4Vec = DoubleVector.fromArray(SPECIES, b, bi4 + j).mul(aval4);
-			res = res.add(b4Vec);
+			var b1Vec = SPECIES.fromArray(b, bi1 + j);
+			res = aval1Vec.fma(b1Vec, res);
+			var b2Vec = SPECIES.fromArray(b, bi2 + j);
+			res = aval2Vec.fma(b2Vec, res);
+			var b3Vec = SPECIES.fromArray(b, bi3 + j);
+			res = aval3Vec.fma(b3Vec, res);
+			var b4Vec = SPECIES.fromArray(b, bi4 + j);
+			res = aval4Vec.fma(b4Vec, res);
 			res.intoArray(c, ci + j);
 		}
 		for(; j < len; ++j) {

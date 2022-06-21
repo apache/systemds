@@ -411,7 +411,7 @@ public class FormatIdentifying {
 						String str = prefixSuffixBeginEndCells.get(i).getValue();
 						int indexBeginString = str.indexOf(beginString);
 						if(indexBeginString != -1)
-							suffixes.add(str.substring(0, indexBeginString));
+							suffixes.add(str.substring(0, indexBeginString+beginString.length()));
 						else
 							suffixes.add(str);
 					}
@@ -427,6 +427,7 @@ public class FormatIdentifying {
 						}
 					}
 					keys = textTrieEnd.getAllKeys();
+
 					if(keys.get(0).getValue().size() == nrows){
 						index = keys.get(0).getKey().indexOf(Lop.OPERAND_DELIMITOR);
 						if(index == -1)
@@ -731,12 +732,11 @@ public class FormatIdentifying {
 		}
 		int lastLine = 0;
 		int lastPos = 0;
-		int nextLine = 0;
 		for(int r = 0; r < nrows; r++) {
 			int beginLine = 0;
 			int endLine = 0;
 			int beginPos = 0;
-			int endPos, nextPos;
+			int endPos;
 			for(int i = 0; i < nlines; i++)
 				if(recordUsedLines[r].get(i)) {
 					beginLine = i;
@@ -747,36 +747,17 @@ public class FormatIdentifying {
 					endLine = i;
 					break;
 				}
-			if(r + 1 < nrows) {
-				for(int i = 0; i < nlines; i++)
-					if(recordUsedLines[r + 1].get(i)) {
-						nextLine = i;
-						break;
-					}
-			}
-			else
-				nextLine = nlines - 1;
 
-			endPos = sampleRawIndexes.get(endLine).getRawLength();
-			nextPos = sampleRawIndexes.get(nextLine).getRawLength();
+			endPos = 0;
 			beginPos = sampleRawIndexes.get(beginLine).getRawLength();
 			for(int c = 0; c < ncols; c++) {
 				if(mapRow[r][c] == beginLine)
 					beginPos = Math.min(beginPos, mapCol[r][c]);
 
 				if(mapRow[r][c] == endLine)
-					endPos = Math.min(endPos, mapCol[r][c] + mapLen[r][c]);
-
-				if(r + 1 < nrows) {
-					if(mapRow[r + 1][c] == nextLine)
-						nextPos = Math.min(nextPos, mapCol[r + 1][c]);
-				}
-				else
-					nextPos = sampleRawIndexes.get(sampleRawIndexes.size() - 1).getRawLength();
+					endPos = Math.max(endPos, mapCol[r][c] + mapLen[r][c]);
 			}
 			StringBuilder sbPrefix = new StringBuilder();
-			StringBuilder sbSuffix = new StringBuilder();
-
 			if(lastLine != beginLine)
 				sbPrefix.append(sampleRawIndexes.get(lastLine).getRaw().substring(lastPos)).append("\n");
 
@@ -784,16 +765,35 @@ public class FormatIdentifying {
 				sbPrefix.append(sampleRawIndexes.get(i).getRaw()).append("\n");
 			sbPrefix.append(sampleRawIndexes.get(beginLine).getRaw().substring(0, beginPos));
 
-			sbSuffix.append(sampleRawIndexes.get(endLine).getRaw().substring(endPos)).append("\n");
-			for(int i = endLine + 1; i < nextLine; i++)
-				sbSuffix.append(sampleRawIndexes.get(i).getRaw()).append("\n");
-
-			sbSuffix.append(sampleRawIndexes.get(nextLine).getRaw().substring(0, nextPos));
 			lastLine = endLine;
 			lastPos = endPos;
 
-			result.add(new Pair<>(sbPrefix.toString(), sbSuffix.toString()));
+			result.add(new Pair<>(sbPrefix.toString(), null));
 		}
+
+		// set suffix
+		for(int r = 0; r<nrows-1; r++){
+			result.get(r).setValue(result.get(r+1).getKey());
+		}
+		int beginLine = 0;
+		int endPos = 0;
+		for(int c= 0; c<ncols; c++){
+			beginLine = Math.max(mapRow[nrows-1][c], beginLine);
+		}
+		for(int c= 0; c<ncols; c++)
+			if(beginLine == mapRow[nrows -1][c])
+				endPos = Math.max(mapCol[nrows - 1][c]+mapLen[nrows-1][c], endPos);
+
+		StringBuilder sbLastSuffix = new StringBuilder();
+		if(beginLine == sampleRawIndexes.size() -1)
+			sbLastSuffix.append(sampleRawIndexes.get(beginLine).getRaw().substring(endPos)).append("\n");
+		for(int i=beginLine+1; i<sampleRawIndexes.size(); i++){
+			sbLastSuffix.append(sampleRawIndexes.get(i).getRaw()).append("\n");
+		}
+		sbLastSuffix.deleteCharAt(sbLastSuffix.length()-1);
+		sbLastSuffix.append(result.get(0).getKey());
+
+		result.get(nrows-1).setValue(sbLastSuffix.toString());
 
 		return result;
 	}
@@ -1114,7 +1114,7 @@ public class FormatIdentifying {
 		int i = 0;
 		int j = 0;
 		StringBuilder sb = new StringBuilder();
-		while(i < beginIndexes.size() && j < endIndexes.size()) {
+		while(i < beginIndexes.size() && j < endIndexes.size() && r<nrows) {
 			Pair<Integer, Integer> p1 = beginIndexes.get(i);
 			Pair<Integer, Integer> p2 = endIndexes.get(j);
 			int n = 0;

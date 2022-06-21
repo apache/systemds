@@ -89,8 +89,6 @@ public class TextTrie {
 
 		for(Key k: sortedKeys){
 			result.add(new Pair<>(k.getKey().toString(), k.getIndexSet()));
-			//k.print();
-			//System.out.println("++++++++++++++");
 		}
 		return result;
 	}

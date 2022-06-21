@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.iogen.codegen;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.iogen.ColIndexStructure;
 import org.apache.sysds.runtime.iogen.CustomProperties;
 import org.apache.sysds.runtime.iogen.KeyTrie;
@@ -182,10 +183,14 @@ public class CodeGenTrie {
 			for(String key : node.getChildren().keySet()) {
 				if(key.length() > 0) {
 					currPosVariable = getRandomName("curPos");
-					if(node.getKey() == null)
-						src.append("index = str.indexOf(\"" + key.replace("\\\"", "\"").replace("\"", "\\\"") + "\"); \n");
+					String mKey = key.replace("\\\"", Lop.OPERAND_DELIMITOR);
+					mKey = mKey.replace("\\", "\\\\");
+					mKey = mKey.replace(Lop.OPERAND_DELIMITOR,"\\\"");
+					if(node.getKey() == null) {
+						src.append("index = str.indexOf(\"" + mKey.replace("\\\"", "\"").replace("\"", "\\\"") + "\"); \n");
+					}
 					else
-						src.append("index = str.indexOf(\"" + key.replace("\\\"", "\"").replace("\"", "\\\"") + "\", " + currPos + "); \n");
+						src.append("index = str.indexOf(\"" + mKey.replace("\\\"", "\"").replace("\"", "\\\"") + "\", " + currPos + "); \n");
 					src.append("if(index != -1) { \n");
 					src.append("int " + currPosVariable + " = index + " + key.length() + "; \n");
 				}

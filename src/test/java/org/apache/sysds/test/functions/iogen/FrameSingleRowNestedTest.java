@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.iogen;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.iogen.EXP.Util;
 import org.apache.sysds.runtime.iogen.GenerateReader;
@@ -98,25 +99,38 @@ public class FrameSingleRowNestedTest extends GenerateReaderFrameTest {
 
 	@Test
 	public void test7() {
-		sampleRaw = "{\n\"a\":1,\n\"b\":2,\n\"c\":3,\n\"d\":4,\n\"e\":5\n}\n" +
-			"{\"a\":6,\n\"b\":7,\"c\":8,\"d\":9,\"e\":10\n}\n" +
-			"{\"a\":11,\"b\":12,\n\"c\":13,\"d\":14,\"e\":15\n}";
+		String key = "\\aaa\"";
+		key = key.replace("\\\"", Lop.OPERAND_DELIMITOR);
+		key = key.replace("\\", "\\\\");
+		key = key.replace(Lop.OPERAND_DELIMITOR,"\\\"");
+		//System.out.println(key.length());
 
-		data = new String[][] {{"1", "2"}, {"6", "7"}, {"11", "12"}};
-		schema = new Types.ValueType[] {Types.ValueType.INT32, Types.ValueType.INT32};
-		runGenerateReaderTest();
+		StringBuilder src = new StringBuilder();
+		src.append("index = str.indexOf(\"" +
+			key.replace("\\\"", "\"").replace("\"", "\\\"")
+
+			+ "\"); \n");
+
+		System.out.println(src);
+//		sampleRaw = "{\n\"a\":1,\n\"b\":2,\n\"c\":3,\n\"d\":4,\n\"e\":5\n}\n" +
+//			"{\"a\":6,\n\"b\":7,\"c\":8,\"d\":9,\"e\":10\n}\n" +
+//			"{\"a\":11,\"b\":12,\n\"c\":13,\"d\":14,\"e\":15\n}";
+//
+//		data = new String[][] {{"1", "2"}, {"6", "7"}, {"11", "12"}};
+//		schema = new Types.ValueType[] {Types.ValueType.INT32, Types.ValueType.INT32};
+//		runGenerateReaderTest();
 	}
 
 	@Test
 	public void test8() throws Exception {
 		//java -Xms15g -Xmx15g  -Dparallel=true -cp ./lib/*:./SystemDS.jar org.apache.sysds.runtime.iogen.EXP.GIOFrame
 		String dpath = "/home/sfathollahzadeh/Documents/GitHub/papers/2022-vldb-GIO/Experiments/";
-		String sampleRawFileName = dpath+"data/aminer-author-json/Q4/sample-aminer-author-json200.raw";
-		String sampleFrameFileName = dpath+"data/aminer-author-json/Q4/sample-aminer-author-json200.frame";
+		String sampleRawFileName = dpath+"data/message-hl7/F173/sample-message-hl7200.raw";
+		String sampleFrameFileName = dpath+"data/message-hl7/F173/sample-message-hl7200.frame";
 		String sampleRawDelimiter = "\t";
-		String schemaFileName = dpath+"data/aminer-author-json/Q4/aminer-author-json.schema";
-		String dataFileName = dpath+"data/aminer-author-json.dat";
-		boolean parallel = false;
+		String schemaFileName = dpath+"data/message-hl7/F173/message-hl7.schema";
+		String dataFileName = dpath+"data/message-hl7.dat";
+		boolean parallel = true;
 		long rows = -1;
 		Util util = new Util();
 
@@ -139,6 +153,11 @@ public class FrameSingleRowNestedTest extends GenerateReaderFrameTest {
 		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, parallel);
 		FrameReader fr = gr.getReader();
 		FrameBlock frameBlock = fr.readFrameFromHDFS(dataFileName, sampleSchema, rows, sampleSchema.length);
+		for(int r=0; r< 10; r++) {
+			for(int c = 0; c < frameBlock.getNumColumns(); c++)
+				System.out.print(c+":"+frameBlock.get(r,c)+"   ");
+			System.out.println();
+		}
 
 		int a = 100;
 	}

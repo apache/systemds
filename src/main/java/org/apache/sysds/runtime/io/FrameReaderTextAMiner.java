@@ -43,17 +43,17 @@ import java.util.ArrayList;
 
 public class FrameReaderTextAMiner extends FrameReader {
 	protected final FileFormatPropertiesAMiner _props;
-	private DatasetMetaDataPaper paperMetaData;
-	private DatasetMetaDataAuthor authorMetaData;
-	private ArrayList<Integer>[] rowIndexs;
-	private ArrayList<Integer>[] colBeginIndexs;
+	protected DatasetMetaDataPaper paperMetaData;
+	protected DatasetMetaDataAuthor authorMetaData;
+	protected ArrayList<Integer>[] rowIndexs;
+	protected ArrayList<Integer>[] colBeginIndexs;
 
 	public FrameReaderTextAMiner(FileFormatPropertiesAMiner props) {
 		//if unspecified use default properties for robustness
 		_props = props;
 	}
 
-	@Override public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
+	@Override public FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException {
 		LOG.debug("readFrameFromHDFS AMiner");
 		// prepare file access
@@ -361,7 +361,7 @@ public class FrameReaderTextAMiner extends FrameReader {
 		}
 		ncol += maxAuthors + maxAffiliations + maxReferences;
 
-		DatasetMetaDataPaper datasetMetaDataPaper = new DatasetMetaDataPaper(ncol, row + 1, maxAuthors, maxAffiliations);
+		DatasetMetaDataPaper datasetMetaDataPaper = new DatasetMetaDataPaper(ncol, row + 1, maxAuthors, maxAffiliations, maxReferences);
 		return datasetMetaDataPaper;
 	}
 
@@ -399,8 +399,7 @@ public class FrameReaderTextAMiner extends FrameReader {
 		}
 		ncol += maxAffiliations + maxResearchInterest;
 
-		DatasetMetaDataAuthor datasetMetaDataAuthor = new DatasetMetaDataAuthor(ncol, row + 1, maxAffiliations, maxResearchInterest);
-		return datasetMetaDataAuthor;
+		return new DatasetMetaDataAuthor(ncol, row + 1, maxAffiliations, maxResearchInterest);
 	}
 
 	protected static abstract class DatasetMetaData {
@@ -408,7 +407,12 @@ public class FrameReaderTextAMiner extends FrameReader {
 		protected final int nrow;
 		protected ValueType[] schema;
 		protected String[] names;
-		private int affiliationStartCol;
+		private final int affiliationStartCol;
+		protected int index;
+		protected int maxAffiliation = 0;
+		protected int maxResearchInterest = 0;
+		protected int maxReference = 0;
+		protected int maxAuthor = 0;
 
 		public DatasetMetaData(int ncol, int nrow, int affiliationStartCol) {
 			this.ncol = ncol;
@@ -438,13 +442,53 @@ public class FrameReaderTextAMiner extends FrameReader {
 		public int getNrow() {
 			return nrow;
 		}
+
+		public int getIndex() {
+			return index;
+		}
+
+		public void setIndex(int index) {
+			this.index = index;
+		}
+
+		public int getMaxAffiliation() {
+			return maxAffiliation;
+		}
+
+		public void setMaxAffiliation(int maxAffiliation) {
+			this.maxAffiliation = maxAffiliation;
+		}
+
+		public int getMaxResearchInterest() {
+			return maxResearchInterest;
+		}
+
+		public void setMaxResearchInterest(int maxResearchInterest) {
+			this.maxResearchInterest = maxResearchInterest;
+		}
+
+		public int getMaxReference() {
+			return maxReference;
+		}
+
+		public void setMaxReference(int maxReference) {
+			this.maxReference = maxReference;
+		}
+
+		public int getMaxAuthor() {
+			return maxAuthor;
+		}
+
+		public void setMaxAuthor(int maxAuthor) {
+			this.maxAuthor = maxAuthor;
+		}
 	}
 
 	protected static class DatasetMetaDataPaper extends DatasetMetaData {
 		private final int authorStartCol;
 		private final int referenceStartCol;
 
-		public DatasetMetaDataPaper(int ncol, int nrow, int maxAuthor, int maxAffiliation) {
+		public DatasetMetaDataPaper(int ncol, int nrow, int maxAuthor, int maxAffiliation, int maxReference) {
 			super(ncol, nrow, 5 + maxAuthor);
 			this.schema = new ValueType[ncol];
 			this.schema[0] = ValueType.INT64; // index id of this paper
@@ -452,6 +496,9 @@ public class FrameReaderTextAMiner extends FrameReader {
 			this.schema[2] = ValueType.INT32; //year
 			this.schema[3] = ValueType.STRING; //publication venue
 			this.schema[4] = ValueType.STRING; // abstract
+			this.maxAffiliation = maxAffiliation;
+			this.maxAuthor = maxAuthor;
+			this.maxReference = maxReference;
 
 			for(int i = 5; i < maxAuthor + maxAffiliation + 5; i++)
 				this.schema[i] = ValueType.STRING;
@@ -485,6 +532,8 @@ public class FrameReaderTextAMiner extends FrameReader {
 			this.schema[4] = ValueType.FP32; // the H-index of this author
 			this.schema[5] = ValueType.FP32; // the P-index with equal A-index of this author
 			this.schema[6] = ValueType.FP32; // the P-index with unequal A-index of this author
+			this.maxAffiliation = maxAffiliation;
+			this.maxResearchInterest = maxResearchInterest;
 
 			for(int i = 7; i < maxAffiliation + maxResearchInterest + 7; i++)
 				this.schema[i] = ValueType.STRING;

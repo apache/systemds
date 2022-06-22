@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -51,6 +52,7 @@ import java.util.concurrent.Future;
  */
 public class FrameReaderTextAMinerParallel extends FrameReaderTextAMiner {
 	protected int _numThreads;
+	protected BitSet[] bitSets;
 
 	public FrameReaderTextAMinerParallel(FileFormatPropertiesAMiner props) {
 		super(props);
@@ -85,6 +87,7 @@ public class FrameReaderTextAMinerParallel extends FrameReaderTextAMiner {
 			ExecutorService pool = CommonThreadPool.get(Math.min(_numThreads, splits.length));
 			this.rowIndexs = new ArrayList[splits.length];
 			this.colBeginIndexs = new ArrayList[splits.length];
+			this.bitSets = new BitSet[splits.length];
 
 			//compute num rows per split
 			ArrayList<CountRowsColsTask> tasks = new ArrayList<>();
@@ -94,7 +97,8 @@ public class FrameReaderTextAMinerParallel extends FrameReaderTextAMiner {
 					tasks.add(new CountRowsColsTaskAuthor(splits[i], informat, job, rowIndexs[i], i));
 				else {
 					colBeginIndexs[i] = new ArrayList<>();
-					tasks.add(new CountRowsColsTaskPaper(splits[i], informat, job, rowIndexs[i], colBeginIndexs[i], i));
+					bitSets[i] = new BitSet();
+					tasks.add(new CountRowsColsTaskPaper(splits[i], informat, job, rowIndexs[i], colBeginIndexs[i], bitSets[i], i));
 				}
 			}
 			List<Future<DatasetMetaData>> cret = pool.invokeAll(tasks);
@@ -124,7 +128,8 @@ public class FrameReaderTextAMinerParallel extends FrameReaderTextAMiner {
 					int negativeEndPos = -1;
 					for(int i = 0; i < ri.size(); i++) {
 						int valIndex = ri.get(i);
-						if(valIndex == -1) {
+						if(valIndex == -1 && ((i == 0 && bitSets[metaData.getIndex()].get(i)) || (i > 0 && bitSets[metaData.getIndex()].get(
+							i) && !bitSets[metaData.getIndex()].get(i - 1)))) {
 							if(negativeBeginPos == -1) {
 								negativeBeginPos = i;
 							}
@@ -132,11 +137,13 @@ public class FrameReaderTextAMinerParallel extends FrameReaderTextAMiner {
 						}
 					}
 					if(negativeBeginPos != -1) {
-						int bcIndex = colBeginIndexs[metaData.getIndex() - 1].get(colBeginIndexs[metaData.getIndex() - 1].size() - 1);
+						int bcIndex = colBeginIndexs[metaData.getIndex() - 1].get(colBeginIndexs[metaData.getIndex() - 1].size() - 1) + 1;
+						int counter = 0;
 						for(int i = negativeBeginPos; i <= negativeEndPos; i++) {
-							colBeginIndexs[metaData.getIndex()].set(i, i - negativeBeginPos + bcIndex + 1);
+							colBeginIndexs[metaData.getIndex()].set(i, counter + bcIndex);
+							counter++;
 						}
-						int tMax = Math.max(bcIndex + negativeEndPos - negativeBeginPos + 1, metaData.maxReference);
+						int tMax = Math.max(bcIndex + counter, metaData.maxReference);
 						metaData.setMaxReference(tMax);
 					}
 					maxReference = Math.max(maxReference, metaData.maxReference);
@@ -181,15 +188,17 @@ public class FrameReaderTextAMinerParallel extends FrameReaderTextAMiner {
 		protected JobConf _job = null;
 		protected ArrayList<Integer> _rowIndex;
 		protected ArrayList<Integer> _colBeginIndex;
+		protected BitSet _bitSet;
 
 		public CountRowsColsTask(InputSplit split, TextInputFormat informat, JobConf job, ArrayList<Integer> rowIndex,
-			ArrayList<Integer> colBeginIndex, int splitIndex) {
+			ArrayList<Integer> colBeginIndex, BitSet bitSet, int splitIndex) {
 			_split = split;
 			_informat = informat;
 			_job = job;
 			_rowIndex = rowIndex;
 			_colBeginIndex = colBeginIndex;
 			_splitIndex = splitIndex;
+			_bitSet = bitSet;
 		}
 
 		@Override public DatasetMetaData call() throws Exception {
@@ -200,7 +209,7 @@ public class FrameReaderTextAMinerParallel extends FrameReaderTextAMiner {
 	private static class CountRowsColsTaskAuthor extends CountRowsColsTask {
 
 		public CountRowsColsTaskAuthor(InputSplit split, TextInputFormat informat, JobConf job, ArrayList<Integer> rowIndex, int splitIndex) {
-			super(split, informat, job, rowIndex, null, splitIndex);
+			super(split, informat, job, rowIndex, null, null, splitIndex);
 		}
 
 		@Override public DatasetMetaDataAuthor call() throws Exception {
@@ -237,8 +246,8 @@ public class FrameReaderTextAMinerParallel extends FrameReaderTextAMiner {
 	private static class CountRowsColsTaskPaper extends CountRowsColsTask {
 
 		public CountRowsColsTaskPaper(InputSplit split, TextInputFormat informat, JobConf job, ArrayList<Integer> rowIndex,
-			ArrayList<Integer> colBeginIndex, int splitIndex) {
-			super(split, informat, job, rowIndex, colBeginIndex, splitIndex);
+			ArrayList<Integer> colBeginIndex, BitSet bitSet, int splitIndex) {
+			super(split, informat, job, rowIndex, colBeginIndex, bitSet, splitIndex);
 		}
 
 		@Override public DatasetMetaDataPaper call() throws Exception {
@@ -251,9 +260,11 @@ public class FrameReaderTextAMinerParallel extends FrameReaderTextAMiner {
 			int maxReferences = 0;
 			int row = -1;
 			int refCount = 0;
+			int bIndex = 0;
 
 			while(reader.next(key, value)) {
 				String raw = value.toString().trim();
+				bIndex++;
 				if(raw.startsWith("#index ")) {
 					row++;
 					maxReferences = Math.max(maxReferences, refCount);
@@ -270,6 +281,7 @@ public class FrameReaderTextAMinerParallel extends FrameReaderTextAMiner {
 				}
 				else if(raw.startsWith("#%")) { // the id of references of this paper (there are multiple lines, with each indicating a reference)
 					this._colBeginIndex.add(refCount);
+					this._bitSet.set(bIndex);
 					refCount++;
 				}
 				else

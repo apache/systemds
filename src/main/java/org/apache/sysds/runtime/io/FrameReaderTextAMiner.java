@@ -65,40 +65,52 @@ public class FrameReaderTextAMiner extends FrameReader {
 		// check existence and non-empty file
 		checkValidInputFile(fs, path);
 
+		TextInputFormat informat = new TextInputFormat();
+		informat.configure(job);
+		InputSplit[] splits = informat.getSplits(job, 1);
+		splits = IOUtilFunctions.sortInputSplits(splits);
+
 		ValueType[] lschema = null;
 		String[] lnames = null;
 		if(_props.getType().equals("paper")) {
-			paperMetaData = computeAMinerSizePaper(job);
+			paperMetaData = computeAMinerSizePaper(informat,job, splits);
 			rlen = paperMetaData.nrow;
 			lschema = paperMetaData.schema;
 			lnames = paperMetaData.names;
 		}
 		else {
-			authorMetaData = computeAMinerSizeAuthor(job);
+			authorMetaData = computeAMinerSizeAuthor(informat,job, splits);
 			rlen = authorMetaData.nrow;
 			lschema = authorMetaData.schema;
 			lnames = authorMetaData.names;
 		}
 		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
-		// core read (sequential/parallel)
-		readAMinerFrameFromHDFS(job, ret, lschema);
 
+		// core read (sequential/parallel)
+		readAMinerFrameFromHDFS(informat,job, splits, ret, lschema);
 		return ret;
 	}
 
 	@Override public FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException {
+
+		// TODO: fix stream reader. incomplete
 		LOG.debug("readFrameFromInputStream csv");
 		ValueType[] lschema = null;
 		String[] lnames = null;
+
+		InputStreamInputFormat informat = new InputStreamInputFormat(is);
+		InputSplit[] splits = informat.getSplits(null, 1);
+		splits = IOUtilFunctions.sortInputSplits(splits);
+
 		if(_props.getType().equals("paper")) {
-			paperMetaData = computeAMinerSizePaper(null);
+			paperMetaData = computeAMinerSizePaper(null,null, splits);
 			rlen = paperMetaData.nrow;
 			lschema = paperMetaData.schema;
 			lnames = paperMetaData.names;
 		}
 		else {
-			authorMetaData = computeAMinerSizeAuthor(null);
+			authorMetaData = computeAMinerSizeAuthor(null,null, splits);
 			rlen = authorMetaData.nrow;
 			lschema = authorMetaData.schema;
 			lnames = authorMetaData.names;
@@ -106,24 +118,18 @@ public class FrameReaderTextAMiner extends FrameReader {
 		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 
 		// core read (sequential/parallel)
-		InputStreamInputFormat informat = new InputStreamInputFormat(is);
-		InputSplit split = informat.getSplits(null, 1)[0];
 		if(_props.getType().equals("paper")) {
-			readAMinerPaperFrameFromInputSplit(split, rowIndexs[0], colBeginIndexs[0], informat, null, ret, schema);
+			readAMinerPaperFrameFromInputSplit(splits[0], rowIndexs[0], colBeginIndexs[0], informat, null, ret, schema);
 		}
 		else {
-			readAMinerAuthorFrameFromInputSplit(split, rowIndexs[0], informat, null, ret, schema);
+			readAMinerAuthorFrameFromInputSplit(splits[0], rowIndexs[0], informat, null, ret, schema);
 		}
-
 		return ret;
+
 	}
 
-	protected void readAMinerFrameFromHDFS(JobConf job, FrameBlock dest, ValueType[] schema) throws IOException {
+	protected void readAMinerFrameFromHDFS(TextInputFormat informat, JobConf job, InputSplit[] splits, FrameBlock dest, ValueType[] schema) throws IOException {
 		LOG.debug("readAMinerFrameFromHDFS csv");
-		TextInputFormat informat = new TextInputFormat();
-		informat.configure(job);
-		InputSplit[] splits = informat.getSplits(job, 1);
-		splits = IOUtilFunctions.sortInputSplits(splits);
 		if(_props.getType().equals("paper")) {
 			for(int i = 0; i < splits.length; i++)
 				readAMinerPaperFrameFromInputSplit(splits[i], rowIndexs[i], colBeginIndexs[i], informat, job, dest, schema);
@@ -300,11 +306,7 @@ public class FrameReaderTextAMiner extends FrameReader {
 		}
 	}
 
-	protected DatasetMetaDataPaper computeAMinerSizePaper(JobConf job) throws IOException {
-		TextInputFormat informat = new TextInputFormat();
-		informat.configure(job);
-		InputSplit[] splits = informat.getSplits(job, 1);
-		splits = IOUtilFunctions.sortInputSplits(splits);
+	protected DatasetMetaDataPaper computeAMinerSizePaper(TextInputFormat informat, JobConf job, InputSplit[] splits) throws IOException {
 		this.rowIndexs = new ArrayList[splits.length];
 		this.colBeginIndexs = new ArrayList[splits.length];
 
@@ -365,11 +367,7 @@ public class FrameReaderTextAMiner extends FrameReader {
 		return datasetMetaDataPaper;
 	}
 
-	protected DatasetMetaDataAuthor computeAMinerSizeAuthor(JobConf job) throws IOException {
-		TextInputFormat informat = new TextInputFormat();
-		informat.configure(job);
-		InputSplit[] splits = informat.getSplits(job, 1);
-		splits = IOUtilFunctions.sortInputSplits(splits);
+	protected DatasetMetaDataAuthor computeAMinerSizeAuthor(TextInputFormat informat, JobConf job, InputSplit[] splits) throws IOException {
 		this.rowIndexs = new ArrayList[splits.length];
 		this.colBeginIndexs = new ArrayList[splits.length];
 

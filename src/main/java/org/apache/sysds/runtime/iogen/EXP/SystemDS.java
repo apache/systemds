@@ -26,6 +26,7 @@ public class SystemDS {
 		String config = null;
 		String schemaMapFileName = null;
 		boolean parallel;
+		Types.ValueType[] schema;
 
 		Util util = new Util();
 		schemaFileName = System.getProperty("schemaFileName");
@@ -67,6 +68,7 @@ public class SystemDS {
 
 		}
 		catch(Exception exception) {
+
 		}
 
 		if(dataType.equalsIgnoreCase("matrix")) {
@@ -110,18 +112,20 @@ public class SystemDS {
 			matrixReader.readMatrixFromHDFS(dataFileName, rows, cols, -1, -1);
 		}
 		else {
-			Types.ValueType[] schema = util.getSchema(schemaFileName);
-			cols = schema.length;
-			FrameBlock frameBlock = null;
 
+			FrameBlock frameBlock = null;
 			if(!parallel) {
 				switch(format) {
 					case "csv":
+						schema = util.getSchema(schemaFileName);
+						cols = schema.length;
 						FileFormatPropertiesCSV propertiesCSV = new FileFormatPropertiesCSV(header, sep, false);
 						FrameReader frameReader = new FrameReaderTextCSV(propertiesCSV);
 						frameBlock = frameReader.readFrameFromHDFS(dataFileName, schema, rows, cols);
 						break;
 					case "json":
+						schema = util.getSchema(schemaFileName);
+						cols = schema.length;
 						schemaMapFileName = System.getProperty("schemaMapFileName");
 						Map<String, Integer> schemaMap = util.getSchemaMap(schemaMapFileName);
 						config = System.getProperty("config");
@@ -143,16 +147,31 @@ public class SystemDS {
 								throw new IOException("JSON Config don't support!!" + config);
 						}
 						break;
+
+					case "aminer-author":
+						FileFormatPropertiesAMiner propertiesAMinerAuthor = new FileFormatPropertiesAMiner("author");
+						FrameReader frAuthor = new FrameReaderTextAMiner(propertiesAMinerAuthor);
+						frameBlock = frAuthor.readFrameFromHDFS(dataFileName, null, null, -1,-1);
+						break;
+					case "aminer-paper":
+						FileFormatPropertiesAMiner propertiesAMinerPaper = new FileFormatPropertiesAMiner("paper");
+						FrameReader frPaper = new FrameReaderTextAMiner(propertiesAMinerPaper);
+						frameBlock = frPaper.readFrameFromHDFS(dataFileName, null, null, -1,-1);
+						break;
 				}
 			}
 			else {
 				switch(format) {
 					case "csv":
+						schema = util.getSchema(schemaFileName);
+						cols = schema.length;
 						FileFormatPropertiesCSV propertiesCSV = new FileFormatPropertiesCSV(header, sep, false);
 						FrameReader frameReader = new FrameReaderTextCSVParallel(propertiesCSV);
 						frameBlock = frameReader.readFrameFromHDFS(dataFileName, schema, rows, cols);
 						break;
 					case "json":
+						schema = util.getSchema(schemaFileName);
+						cols = schema.length;
 						schemaMapFileName = System.getProperty("schemaMapFileName");
 						Map<String, Integer> schemaMap = util.getSchemaMap(schemaMapFileName);
 						config = System.getProperty("config");
@@ -173,6 +192,16 @@ public class SystemDS {
 							default:
 								throw new IOException("JSON Config don't support!!" + config);
 						}
+						break;
+					case "aminer-author":
+						FileFormatPropertiesAMiner propertiesAMinerAuthor = new FileFormatPropertiesAMiner("author");
+						FrameReader frAuthor = new FrameReaderTextAMinerParallel(propertiesAMinerAuthor);
+						frameBlock = frAuthor.readFrameFromHDFS(dataFileName, null, null, -1,-1);
+						break;
+					case "aminer-paper":
+						FileFormatPropertiesAMiner propertiesAMinerPaper = new FileFormatPropertiesAMiner("paper");
+						FrameReader frPaper = new FrameReaderTextAMinerParallel(propertiesAMinerPaper);
+						frameBlock = frPaper.readFrameFromHDFS(dataFileName, null, null, -1,-1);
 						break;
 				}
 			}

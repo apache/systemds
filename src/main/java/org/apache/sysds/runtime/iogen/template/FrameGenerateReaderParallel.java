@@ -449,6 +449,6 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		return result;
 	}
 
-	protected abstract void reaFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, FrameBlock dest,
+	protected abstract int reaFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, FrameBlock dest,
 		int rowPos, SplitInfo splitInfo) throws IOException;
 }

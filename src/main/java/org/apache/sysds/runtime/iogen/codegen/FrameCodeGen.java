@@ -30,82 +30,28 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 
 		// 1. set java code template
 		// 1.a: single thread code gen
-		if(!properties.isParallel()){
-			javaTemplate = "import org.apache.hadoop.io.LongWritable; \n" +
-			"import org.apache.hadoop.io.Text; \n" +
-			"import org.apache.hadoop.mapred.InputFormat; \n" +
-			"import org.apache.hadoop.mapred.InputSplit; \n" +
-			"import org.apache.hadoop.mapred.JobConf; \n" +
-			"import org.apache.hadoop.mapred.RecordReader; \n" +
-			"import org.apache.hadoop.mapred.Reporter; \n" +
-			"import org.apache.sysds.common.Types; \n" +
-			"import org.apache.sysds.runtime.io.IOUtilFunctions; \n" +
-			"import org.apache.sysds.runtime.iogen.CustomProperties; \n" +
-			"import org.apache.sysds.runtime.matrix.data.FrameBlock; \n" +
-			"import org.apache.sysds.runtime.iogen.template.FrameGenerateReader; \n" +
-			"import java.io.IOException; \n" +
-			"import java.util.HashSet; \n" +
-			"public class "+className+" extends FrameGenerateReader{ \n" +
-			"public "+className+"(CustomProperties _props) { \n" +
-			"		super(_props); \n" +
-			"	} \n" +
+		String javaBaseClass = !properties.isParallel() ? "FrameGenerateReader" : "FrameGenerateReaderParallel";
 
-			"@Override protected int readFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat, \n" +
-			"		JobConf job, FrameBlock dest, Types.ValueType[] schema, String[] names, long rlen, long clen, int rl, \n" +
-			"		boolean first) throws IOException { \n" +
+		javaTemplate = "import org.apache.hadoop.io.LongWritable;\n" +
+			"import org.apache.hadoop.io.Text;\n" +
+			"import org.apache.hadoop.mapred.RecordReader;\n" +
+			"import org.apache.sysds.runtime.iogen.CustomProperties;\n" +
+			"import org.apache.sysds.runtime.iogen.template."+javaBaseClass+";\n" +
+			"import org.apache.sysds.runtime.matrix.data.FrameBlock;\n" +
+			"import java.io.IOException;\n" + "import java.util.HashSet;\n" +
+			"public class "+className+" extends "+javaBaseClass+" {\n" +
+			"public "+className+"(CustomProperties _props) {\n" +
+			"super(_props);} \n" +
+			"@Override \n" +
+			"protected int reaFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, " +
+			"FrameBlock dest, int row, SplitInfo splitInfo) throws IOException {\n"+
 			code+
 			"}} \n";
-			}
-		else {
-			javaTemplate = "import org.apache.hadoop.io.LongWritable;\n" +
-							"import org.apache.hadoop.io.Text;\n" +
-							"import org.apache.hadoop.mapred.RecordReader;\n" +
-							"import org.apache.sysds.runtime.iogen.CustomProperties;\n" +
-							"import org.apache.sysds.runtime.iogen.template.FrameGenerateReaderParallel;\n" +
-							"import org.apache.sysds.runtime.matrix.data.FrameBlock;\n" +
-							"import java.io.IOException;\n" + "import java.util.HashSet;\n" +
-							"public class "+className+" extends FrameGenerateReaderParallel {\n" +
-								"public "+className+"(CustomProperties _props) {\n" +
-									"super(_props);} \n" +
-									"@Override \n" +
-									"protected void reaFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, " +
-									"FrameBlock dest, int row, SplitInfo splitInfo) throws IOException {\n"+
-								code+
-								"}} \n";
-		}
 	}
 
 
 	@Override
 	public String generateCodeJava() {
-		StringBuilder src = new StringBuilder();
-		src.append("RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL); \n");
-		src.append("LongWritable key = new LongWritable(); \n");
-		src.append("Text value = new Text(); \n");
-		src.append("int row = rl; \n");
-		src.append("long lnnz = 0; \n");
-		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
-
-		src.append("int index, endPos, strLen; \n");
-		src.append("try { \n");
-		src.append("while(reader.next(key, value)){ \n");
-		src.append("String str = value.toString(); \n");
-		src.append("strLen = str.length(); \n");
-
-		CodeGenTrie trie = new CodeGenTrie(properties, "dest.set", false);
-		src.append(trie.getJavaCode());
-
-		src.append("}} \n");
-		src.append("finally { \n");
-		src.append("IOUtilFunctions.closeSilently(reader); \n");
-		src.append("} \n");
-		src.append("return row; \n");
-
-		return javaTemplate.replace(code, src.toString());
-	}
-
-	@Override
-	public String generateCodeJavaParallel() {
 		StringBuilder src = new StringBuilder();
 		CodeGenTrie trie = new CodeGenTrie(properties, "dest.set", false);
 		trie.setMatrix(true);
@@ -156,6 +102,7 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 		src.append("} \n");
 		src.append("catch(Exception ex){ \n");
 		src.append("} \n");
+		src.append("return row; \n");
 		return javaTemplate.replace(code, src.toString());
 	}
 

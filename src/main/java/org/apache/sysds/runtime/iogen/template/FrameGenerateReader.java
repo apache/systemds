@@ -32,45 +32,25 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.iogen.CustomProperties;
 import org.apache.sysds.runtime.iogen.RowIndexStructure;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.InputStreamInputFormat;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 
 public abstract class FrameGenerateReader extends FrameReader {
 
 	protected CustomProperties _props;
+	protected SplitOffsetInfos _offsets;
 
 	public FrameGenerateReader(CustomProperties _props) {
 		this._props = _props;
 	}
 
-	private int getNumRows(List<Path> files, FileSystem fs) throws IOException, DMLRuntimeException {
-		int rows = 0;
-		for(int fileNo = 0; fileNo < files.size(); fileNo++) {
-			BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
-			try {
-				// Row Identify
-				if(_props.getRowIndexStructure().getProperties().equals(RowIndexStructure.IndexProperties.Identity)) {
-					while(br.readLine() != null)
-						rows++;
-				}
-			}
-			finally {
-				IOUtilFunctions.closeSilently(br);
-			}
-		}
-		return rows;
-	}
-
 	@Override
-	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen,
-		long clen) throws IOException, DMLRuntimeException {
+	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen, long clen) throws IOException, DMLRuntimeException {
 
 		// prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -81,23 +61,129 @@ public abstract class FrameGenerateReader extends FrameReader {
 		// check existence and non-empty file
 		checkValidInputFile(fs, path);
 
-		// compute size if necessary
-		if(rlen <= 0) {
-			ArrayList<Path> paths = new ArrayList<>();
-			paths.add(path);
-			rlen = getNumRows(paths, fs);
-		}
+		TextInputFormat informat = new TextInputFormat();
+		informat.configure(job);
+		InputSplit[] splits = informat.getSplits(job, 1);
+		splits = IOUtilFunctions.sortInputSplits(splits);
 
 		// allocate output frame block
 		Types.ValueType[] lschema = createOutputSchema(schema, clen);
 		String[] lnames = createOutputNames(names, clen);
-		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 
-		// core read (sequential/parallel)
-		readFrameFromHDFS(path, job, fs, ret, lschema, lnames, rlen, clen);
+		FrameBlock ret;
+		if(rlen <= 0 || _props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.SeqScatter)
+			ret = computeSizeAndCreateOutputFrameBlock(job, schema, names, splits, path);
+		else
+			ret = createOutputFrameBlock(lschema, lnames, rlen);
 
+		readFrameFromHDFS(informat, splits, job, ret);
 		return ret;
 
+	}
+
+	private FrameBlock computeSizeAndCreateOutputFrameBlock(JobConf job, Types.ValueType[] schema, String[] names, InputSplit[] splits, Path path)
+		throws IOException, DMLRuntimeException {
+
+		//Types.ValueType[] lschema = createOutputSchema(schema, clen);
+		//String[] lnames = createOutputNames(names, clen);
+
+		FileInputFormat.addInputPath(job, path);
+		TextInputFormat informat = new TextInputFormat();
+		informat.configure(job);
+		int row = 0;
+		// count rows in parallel per split
+		try {
+			if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.Identity) {
+				// compute number of rows
+				for(InputSplit inputSplit : splits) {
+					RecordReader<LongWritable, Text> reader = informat.getRecordReader(inputSplit, job, Reporter.NULL);
+					LongWritable key = new LongWritable();
+					Text value = new Text();
+					try {
+						// count remaining number of rows, ignore meta data
+						while(reader.next(key, value)) {
+							row++;
+						}
+					}
+					finally {
+						IOUtilFunctions.closeSilently(reader);
+					}
+				}
+			}
+			else if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.SeqScatter) {
+				_offsets = new SplitOffsetInfos(splits.length);
+				int splitIndex = 0;
+				for(InputSplit inputSplit : splits) {
+					int nrows = 0;
+					SplitInfo splitInfo = new SplitInfo();
+					ArrayList<Pair<Integer, Integer>> beginIndexes = getTokenIndexOnMultiLineRecords(inputSplit, informat, job,
+						_props.getRowIndexStructure().getSeqBeginString());
+
+					ArrayList<Pair<Integer, Integer>> endIndexes;
+					int tokenLength = 0;
+					if(!_props.getRowIndexStructure().getSeqBeginString().equals(_props.getRowIndexStructure().getSeqEndString())) {
+						endIndexes = getTokenIndexOnMultiLineRecords(inputSplit, informat, job, _props.getRowIndexStructure().getSeqEndString());
+						tokenLength = _props.getRowIndexStructure().getSeqEndString().length();
+					}
+					else {
+						endIndexes = new ArrayList<>();
+						for(int i = 1; i < beginIndexes.size(); i++)
+							endIndexes.add(beginIndexes.get(i));
+					}
+
+					int i = 0;
+					int j = 0;
+					while(i < beginIndexes.size() && j < endIndexes.size()) {
+						Pair<Integer, Integer> p1 = beginIndexes.get(i);
+						Pair<Integer, Integer> p2 = endIndexes.get(j);
+						int n = 0;
+						while(p1.getKey() < p2.getKey() || (p1.getKey() == p2.getKey() && p1.getValue() < p2.getValue())) {
+							n++;
+							i++;
+							if(i == beginIndexes.size())
+								break;
+							p1 = beginIndexes.get(i);
+						}
+						j += n - 1;
+						splitInfo.addIndexAndPosition(beginIndexes.get(i - n).getKey(), endIndexes.get(j).getKey(), beginIndexes.get(i - n).getValue(),
+							endIndexes.get(j).getValue() + tokenLength);
+						j++;
+						nrows++;
+					}
+					if(i == beginIndexes.size() && j < endIndexes.size())
+						nrows++;
+					if(beginIndexes.get(0).getKey() == 0 && beginIndexes.get(0).getValue() == 0)
+						splitInfo.setRemainString("");
+					else {
+						RecordReader<LongWritable, Text> reader = informat.getRecordReader(inputSplit, job, Reporter.NULL);
+						LongWritable key = new LongWritable();
+						Text value = new Text();
+
+						StringBuilder sb = new StringBuilder();
+						for(int ri = 0; ri < beginIndexes.get(0).getKey(); ri++) {
+							reader.next(key, value);
+							String raw = value.toString();
+							sb.append(raw);
+						}
+						if(beginIndexes.get(0).getValue() != 0) {
+							reader.next(key, value);
+							sb.append(value.toString().substring(0, beginIndexes.get(0).getValue()));
+						}
+						splitInfo.setRemainString(sb.toString());
+					}
+					splitInfo.setNrows(nrows);
+					_offsets.setSeqOffsetPerSplit(splitIndex, splitInfo);
+					_offsets.setOffsetPerSplit(splitIndex, row);
+					row += nrows;
+					splitIndex++;
+				}
+			}
+		}
+		catch(Exception e) {
+			throw new IOException("Thread pool Error " + e.getMessage(), e);
+		}
+		FrameBlock ret = createOutputFrameBlock(schema, names, row);
+		return ret;
 	}
 
 	@Override
@@ -112,25 +198,28 @@ public abstract class FrameGenerateReader extends FrameReader {
 		// core read (sequential/parallel)
 		InputStreamInputFormat informat = new InputStreamInputFormat(is);
 		InputSplit split = informat.getSplits(null, 1)[0];
-		readFrameFromInputSplit(split, informat, null, ret, schema, names, rlen, clen, 0, true);
+		//readFrameFromInputSplit(split, informat, null, ret, schema, names, rlen, clen, 0, true);
 
 		return ret;
 	}
 
-	protected void readFrameFromHDFS(Path path, JobConf job, FileSystem fs, FrameBlock dest, Types.ValueType[] schema,
-		String[] names, long rlen, long clen) throws IOException {
-
-		TextInputFormat informat = new TextInputFormat();
-		informat.configure(job);
-		InputSplit[] splits = informat.getSplits(job, 1);
-		splits = IOUtilFunctions.sortInputSplits(splits);
-		for(int i = 0, rpos = 0; i < splits.length; i++)
-			rpos = readFrameFromInputSplit(splits[i], informat, job, dest, schema, names, rlen, clen, rpos, i == 0);
+	protected void readFrameFromHDFS(TextInputFormat informat, InputSplit[] splits, JobConf job, FrameBlock dest) throws IOException {
+		int rpos = 0;
+		for(int i = 0; i < splits.length; i++) {
+			RecordReader<LongWritable, Text> reader = informat.getRecordReader(splits[i], job, Reporter.NULL);
+			LongWritable key = new LongWritable();
+			Text value = new Text();
+			SplitInfo splitInfo = null;
+			if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.SeqScatter){
+				splitInfo = _offsets.getSeqOffsetPerSplit(i);
+				rpos = _offsets.getOffsetPerSplit(i);
+			}
+			reaFrameFromHDFS(reader, key, value, dest, rpos, splitInfo);
+		}
 	}
 
-	protected abstract int readFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat,
-		JobConf job, FrameBlock dest, Types.ValueType[] schema, String[] names, long rlen, long clen, int rl,
-		boolean first) throws IOException;
+	protected abstract int reaFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, FrameBlock dest,
+		int rowPos, SplitInfo splitInfo) throws IOException;
 
 	protected int getEndPos(String str, int strLen, int currPos, HashSet<String> endWithValueString) {
 		int endPos = strLen;
@@ -141,5 +230,125 @@ public abstract class FrameGenerateReader extends FrameReader {
 		}
 		return endPos;
 	}
+
+	private static ArrayList<Pair<Integer, Integer>> getTokenIndexOnMultiLineRecords(InputSplit split, TextInputFormat inputFormat, JobConf job,
+		String token) throws IOException {
+		RecordReader<LongWritable, Text> reader = inputFormat.getRecordReader(split, job, Reporter.NULL);
+		LongWritable key = new LongWritable();
+		Text value = new Text();
+		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
+
+		int ri = 0;
+		while (reader.next(key, value)){
+			String raw = value.toString();
+			int index;
+			int fromIndex = 0;
+			do {
+				index = raw.indexOf(token, fromIndex);
+				if(index !=-1){
+					result.add(new Pair<>(ri, index));
+					fromIndex = index+token.length();
+				}
+				else
+					break;
+			}while(true);
+			ri++;
+		}
+		return result;
+	}
+
+	private static class SplitOffsetInfos {
+		// offset & length info per split
+		private int[] offsetPerSplit = null;
+		private int[] lenghtPerSplit = null;
+		private SplitInfo[] seqOffsetPerSplit = null;
+
+		public SplitOffsetInfos(int numSplits) {
+			lenghtPerSplit = new int[numSplits];
+			offsetPerSplit = new int[numSplits];
+			seqOffsetPerSplit = new SplitInfo[numSplits];
+		}
+
+		public int getLenghtPerSplit(int split) {
+			return lenghtPerSplit[split];
+		}
+
+		public void setLenghtPerSplit(int split, int r) {
+			lenghtPerSplit[split] = r;
+		}
+
+		public int getOffsetPerSplit(int split) {
+			return offsetPerSplit[split];
+		}
+
+		public void setOffsetPerSplit(int split, int o) {
+			offsetPerSplit[split] = o;
+		}
+
+		public SplitInfo getSeqOffsetPerSplit(int split) {
+			return seqOffsetPerSplit[split];
+		}
+
+		public void setSeqOffsetPerSplit(int split, SplitInfo splitInfo) {
+			seqOffsetPerSplit[split] = splitInfo;
+		}
+	}
+
+	protected static class SplitInfo{
+		private int nrows;
+		private ArrayList<Integer> recordIndexBegin;
+		private ArrayList<Integer> recordIndexEnd;
+		private ArrayList<Integer> recordPositionBegin;
+		private ArrayList<Integer> recordPositionEnd;
+		private String remainString;
+
+		public SplitInfo() {
+			recordIndexBegin = new ArrayList<>();
+			recordIndexEnd = new ArrayList<>();
+			recordPositionBegin = new ArrayList<>();
+			recordPositionEnd = new ArrayList<>();
+		}
+
+		public void addIndexAndPosition(int beginIndex, int endIndex, int beginPos, int endPos){
+			recordIndexBegin.add(beginIndex);
+			recordIndexEnd.add(endIndex);
+			recordPositionBegin.add(beginPos);
+			recordPositionEnd.add(endPos);
+		}
+
+		public int getNrows() {
+			return nrows;
+		}
+
+		public void setNrows(int nrows) {
+			this.nrows = nrows;
+		}
+
+		public String getRemainString() {
+			return remainString;
+		}
+
+		public void setRemainString(String remainString) {
+			this.remainString = remainString;
+		}
+
+		public int getRecordIndexBegin(int index) {
+			return recordIndexBegin.get(index);
+		}
+
+		public int getRecordIndexEnd(int index) {
+			return recordIndexEnd.get(index);
+		}
+
+		public int getRecordPositionBegin(int index) {
+			return recordPositionBegin.get(index);
+		}
+
+		public int getRecordPositionEnd(int index) {
+			return recordPositionEnd.get(index);
+		}
+	}
+
+
 
 }

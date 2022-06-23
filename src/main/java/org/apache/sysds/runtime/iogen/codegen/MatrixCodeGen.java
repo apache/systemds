@@ -128,59 +128,59 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 		return javaTemplate.replace(code, src.toString());
 	}
 
-	@Override
-	public String generateCodeJavaParallel() {
-		StringBuilder src = new StringBuilder();
-		CodeGenTrie trie = new CodeGenTrie(properties, "dest.appendValue", true);
-		trie.setMatrix(true);
-		src.append("String str=\"\"; \n");
-		src.append("String remainStr = \"\"; \n");
-		src.append("int col = -1; \n");
-		src.append("long lnnz = 0; \n");
-		src.append("int index, endPos, strLen; \n");
-		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
-		src.append("try { \n");
-		// seq-scattered
-		if(properties.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.SeqScatter){
-			src.append("int ri = -1; \n");
-			src.append("int beginPosStr, endPosStr; \n");
-			src.append("StringBuilder sb = new StringBuilder(); \n");
-			src.append("int beginIndex = splitInfo.getRecordIndexBegin(0); \n");
-			src.append("int endIndex = splitInfo.getRecordIndexEnd(0); \n");
-			src.append("boolean flag = true; \n");
-			src.append("while(flag) { \n");
-			src.append("flag = reader.next(key, value); \n");
-			src.append("if(flag) { \n");
-			src.append("ri++; \n");
-			src.append("String valStr = value.toString(); \n");
-			src.append("beginPosStr = ri == beginIndex ? splitInfo.getRecordPositionBegin(row) : 0; \n");
-			src.append("endPosStr = ri == endIndex ? splitInfo.getRecordPositionEnd(row): valStr.length(); \n");
-			src.append("if(ri >= beginIndex && ri <= endIndex){ \n");
-			src.append("sb.append(valStr.substring(beginPosStr, endPosStr)); \n");
-			src.append("remainStr = valStr.substring(endPosStr); \n");
-			src.append("continue; \n");
-			src.append("} \n");
-			src.append("else { \n");
-			src.append("str = sb.toString(); \n");
-			src.append("sb = new StringBuilder(); \n");
-			src.append("sb.append(remainStr).append(valStr); \n");
-			src.append("beginIndex = splitInfo.getRecordIndexBegin(row+1); \n");
-			src.append("endIndex = splitInfo.getRecordIndexEnd(row+1); \n");
-			src.append("} \n");
-			//src.append("} \n");
-			src.append("else \n");
-			src.append("str = sb.toString(); \n");
-		}
-		src.append("str = value.toString();\n");
-		src.append("strLen = str.length(); \n");
-		src.append(trie.getJavaCode());
-		src.append("} \n");
-		src.append("} \n");
-		src.append("catch(Exception ex){ \n");
-		src.append("} \n");
-		src.append("return lnnz; \n");
-		return javaTemplate.replace(code, src.toString());
-	}
+//	@Override
+//	public String generateCodeJavaParallel() {
+//		StringBuilder src = new StringBuilder();
+//		CodeGenTrie trie = new CodeGenTrie(properties, "dest.appendValue", true);
+//		trie.setMatrix(true);
+//		src.append("String str=\"\"; \n");
+//		src.append("String remainStr = \"\"; \n");
+//		src.append("int col = -1; \n");
+//		src.append("long lnnz = 0; \n");
+//		src.append("int index, endPos, strLen; \n");
+//		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
+//		src.append("try { \n");
+//		// seq-scattered
+//		if(properties.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.SeqScatter){
+//			src.append("int ri = -1; \n");
+//			src.append("int beginPosStr, endPosStr; \n");
+//			src.append("StringBuilder sb = new StringBuilder(); \n");
+//			src.append("int beginIndex = splitInfo.getRecordIndexBegin(0); \n");
+//			src.append("int endIndex = splitInfo.getRecordIndexEnd(0); \n");
+//			src.append("boolean flag = true; \n");
+//			src.append("while(flag) { \n");
+//			src.append("flag = reader.next(key, value); \n");
+//			src.append("if(flag) { \n");
+//			src.append("ri++; \n");
+//			src.append("String valStr = value.toString(); \n");
+//			src.append("beginPosStr = ri == beginIndex ? splitInfo.getRecordPositionBegin(row) : 0; \n");
+//			src.append("endPosStr = ri == endIndex ? splitInfo.getRecordPositionEnd(row): valStr.length(); \n");
+//			src.append("if(ri >= beginIndex && ri <= endIndex){ \n");
+//			src.append("sb.append(valStr.substring(beginPosStr, endPosStr)); \n");
+//			src.append("remainStr = valStr.substring(endPosStr); \n");
+//			src.append("continue; \n");
+//			src.append("} \n");
+//			src.append("else { \n");
+//			src.append("str = sb.toString(); \n");
+//			src.append("sb = new StringBuilder(); \n");
+//			src.append("sb.append(remainStr).append(valStr); \n");
+//			src.append("beginIndex = splitInfo.getRecordIndexBegin(row+1); \n");
+//			src.append("endIndex = splitInfo.getRecordIndexEnd(row+1); \n");
+//			src.append("} \n");
+//			//src.append("} \n");
+//			src.append("else \n");
+//			src.append("str = sb.toString(); \n");
+//		}
+//		src.append("str = value.toString();\n");
+//		src.append("strLen = str.length(); \n");
+//		src.append(trie.getJavaCode());
+//		src.append("} \n");
+//		src.append("} \n");
+//		src.append("catch(Exception ex){ \n");
+//		src.append("} \n");
+//		src.append("return lnnz; \n");
+//		return javaTemplate.replace(code, src.toString());
+//	}
 
 	@Override
 	public String generateCodeCPP() {

@@ -38,7 +38,5 @@ public abstract class TemplateCodeGenBase {
 
 	public abstract String generateCodeJava();
 
-	public abstract String generateCodeJavaParallel();
-
 	public abstract String generateCodeCPP();
 }

@@ -82,7 +82,7 @@ public abstract class GenerateReader {
 			// constructor with arguments as CustomProperties
 			Class[] cArg = new Class[1];
 			cArg[0] = CustomProperties.class;
-			String srcJava = properties.isParallel() ? src.generateCodeJavaParallel(): src.generateCodeJava();
+			String srcJava =  src.generateCodeJava();
 			matrixReader = (MatrixReader) CodegenUtils.compileClass(className, srcJava).getDeclaredConstructor(cArg).newInstance(properties);
 			return matrixReader;
 		}
@@ -108,7 +108,7 @@ public abstract class GenerateReader {
 			// constructor with arguments as CustomProperties
 			Class[] cArg = new Class[1];
 			cArg[0] = CustomProperties.class;
-			String srcJava = properties.isParallel() ? src.generateCodeJavaParallel(): src.generateCodeJava();
+			String srcJava = src.generateCodeJava();
 			frameReader = (FrameReader) CodegenUtils.compileClass(className, srcJava).getDeclaredConstructor(cArg).newInstance(properties);
 			return frameReader;
 		}

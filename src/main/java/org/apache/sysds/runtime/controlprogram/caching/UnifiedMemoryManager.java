@@ -206,10 +206,12 @@ public class UnifiedMemoryManager
 	/**
 	 * Print current status of UMM, including all entries.
 	 * NOTE: use only for debugging or testing.
+	 *
+	 * @param operation e.g. BEFORE PIN, AFTER UNPIN, AT MAKESPACE
 	 */
 	public static void printStatus(String operation)
 	{
-		System.out.println("UMM STATUS AT "+operation+" --"); //before pin, after unpin, at makespace
+		System.out.println("UMM STATUS AT "+operation+" --");
 
 		synchronized (_mQueue) {
 			// print UMM meta data

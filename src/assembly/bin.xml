@@ -102,7 +102,6 @@
 				<include>*:hadoop-hdfs*</include>
 				<include>*:hadoop-mapreduce-client*</include>
 				<include>*:hadoop-yarn*</include>
-				<include>*:htrace-core*</include>
 				<include>*:jackson-core-asl*</include>
 				<include>*:jackson-mapper-asl*</include>
 				<include>*:janino*</include>

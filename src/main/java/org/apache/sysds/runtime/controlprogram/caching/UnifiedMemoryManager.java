@@ -203,6 +203,36 @@ public class UnifiedMemoryManager
 		_pinnedVirtualMemSize = 0;
 	}
 
+	/**
+	 * Print current status of UMM, including all entries.
+	 * NOTE: use only for debugging or testing.
+	 */
+	public static void printStatus(String operation)
+	{
+		System.out.println("UMM STATUS AT "+operation+" --"); //before pin, after unpin, at makespace
+
+		synchronized (_mQueue) {
+			// print UMM meta data
+			System.out.println("\tUMM: Meta Data: " +
+				"UMM limit="+_limit+", " +
+				"size[bytes]="+_totCachedSize+", " +
+				"size[elements]="+_mQueue.size()+", " +
+				"pinned[elements]="+_pinnedEntries.size()+", " +
+				"pinned[bytes]="+_pinnedPhysicalMemSize);
+
+			// print current cached entries
+			int count = _mQueue.size();
+			for (Map.Entry<String, ByteBuffer> entry : _mQueue.entrySet()) {
+				String fname = entry.getKey();
+				ByteBuffer bbuff = entry.getValue();
+				System.out.println("\tUMM: Cached element ("+count+"): "
+					+fname+", "+(bbuff.isShallow()?bbuff._cdata.getClass().getSimpleName():"?")
+					+", "+bbuff.getSize()+", "+bbuff.isShallow());
+				count--;
+			}
+		}
+	}
+
 	public static void setUMMLimit(long val) {
 		_limit = val;
 	}

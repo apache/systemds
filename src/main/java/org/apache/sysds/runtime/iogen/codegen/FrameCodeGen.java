@@ -116,16 +116,16 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 		src.append("int index, endPos, strLen; \n");
 		src.append("HashSet<String>[] endWithValueString = _props.endWithValueStrings(); \n");
 		src.append("try { \n");
-		src.append("int ri = -1; \n");
-		src.append("int beginPosStr, endPosStr; \n");
-		src.append("StringBuilder sb = new StringBuilder(); \n");
-		src.append("int beginIndex = splitInfo.getRecordIndexBegin(0); \n");
-		src.append("int endIndex = splitInfo.getRecordIndexEnd(0); \n");
-		src.append("boolean flag = true; \n");
-		src.append("while(flag) { \n");
-		src.append("flag = reader.next(key, value); \n");
-		src.append("if(flag) { \n");
 		if(properties.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.SeqScatter){
+			src.append("int ri = -1; \n");
+			src.append("int beginPosStr, endPosStr; \n");
+			src.append("StringBuilder sb = new StringBuilder(); \n");
+			src.append("int beginIndex = splitInfo.getRecordIndexBegin(0); \n");
+			src.append("int endIndex = splitInfo.getRecordIndexEnd(0); \n");
+			src.append("boolean flag = true; \n");
+			src.append("while(flag) { \n");
+			src.append("flag = reader.next(key, value); \n");
+			src.append("if(flag) { \n");
 			src.append("ri++; \n");
 			src.append("String valStr = value.toString(); \n");
 			src.append("beginPosStr = ri == beginIndex ? splitInfo.getRecordPositionBegin(row) : 0; \n");
@@ -142,10 +142,14 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 			src.append("beginIndex = splitInfo.getRecordIndexBegin(row+1); \n");
 			src.append("endIndex = splitInfo.getRecordIndexEnd(row+1); \n");
 			src.append("} \n");
+			src.append("} \n");
+			src.append("else \n");
+			src.append("str = sb.toString(); \n");
 		}
-		src.append("} \n");
-		src.append("else \n");
-		src.append("str = sb.toString(); \n");
+		else {
+			src.append("while(reader.next(key, value)) { \n");
+			src.append("str = value.toString(); \n");
+		}
 		src.append("strLen = str.length(); \n");
 		src.append(trie.getJavaCode());
 		src.append("} \n");

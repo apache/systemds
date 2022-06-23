@@ -451,6 +451,11 @@ public class FormatIdentifying {
 				}
 			}
 		}
+
+		if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist||
+		colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist){
+			properties.setSparse(true);
+		}
 	}
 
 	// check row-index Exist

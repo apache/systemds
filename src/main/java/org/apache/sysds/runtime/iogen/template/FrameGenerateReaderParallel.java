@@ -215,23 +215,12 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		}
 	}
 
-	protected int getEndPos(String str, int strLen, int currPos, HashSet<String> endWithValueString) {
-		int endPos = strLen;
-		for(String d : endWithValueString) {
-			int pos = d.length() > 0 ? str.indexOf(d, currPos) : strLen;
-			if(pos != -1)
-				endPos = Math.min(endPos, pos);
-		}
-		return endPos;
-	}
-
 	private class ReadTask implements Callable<Long> {
 
 		private final InputSplit _split;
 		private final TextInputFormat _informat;
 		private final FrameBlock _dest;
 		private final int _splitCount;
-		private int _row = 0;
 
 		public ReadTask(InputSplit split, TextInputFormat informat, FrameBlock dest, int splitCount) {
 			_split = split;
@@ -244,9 +233,9 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 			RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, job, Reporter.NULL);
 			LongWritable key = new LongWritable();
 			Text value = new Text();
-			_row = _offsets.getOffsetPerSplit(_splitCount);
+			int row = _offsets.getOffsetPerSplit(_splitCount);
 			TemplateUtil.SplitInfo _splitInfo = _offsets.getSeqOffsetPerSplit(_splitCount);
-			readFrameFromHDFS(reader, key, value, _dest, _row, _splitInfo);
+			readFrameFromHDFS(reader, key, value, _dest, row, _splitInfo);
 			return 0L;
 		}
 	}
@@ -269,11 +258,12 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		@Override public TemplateUtil.SplitInfo call() throws Exception {
 			TemplateUtil.SplitInfo splitInfo = new TemplateUtil.SplitInfo();
 			int nrows = 0;
-			ArrayList<Pair<Integer, Integer>> beginIndexes = getTokenIndexOnMultiLineRecords(_split, _inputFormat, _jobConf, _beginString);
+			ArrayList<Pair<Integer, Integer>> beginIndexes = TemplateUtil.getTokenIndexOnMultiLineRecords(_split, _inputFormat, _jobConf,
+				_beginString);
 			ArrayList<Pair<Integer, Integer>> endIndexes;
 			int tokenLength = 0;
 			if(!_beginString.equals(_endString)) {
-				endIndexes = getTokenIndexOnMultiLineRecords(_split, _inputFormat, _jobConf, _endString);
+				endIndexes = TemplateUtil.getTokenIndexOnMultiLineRecords(_split, _inputFormat, _jobConf, _endString);
 				tokenLength = _endString.length();
 			}
 			else {
@@ -327,32 +317,6 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		}
 	}
 
-	private static ArrayList<Pair<Integer, Integer>> getTokenIndexOnMultiLineRecords(InputSplit split, TextInputFormat inputFormat, JobConf job,
-		String token) throws IOException {
-		RecordReader<LongWritable, Text> reader = inputFormat.getRecordReader(split, job, Reporter.NULL);
-		LongWritable key = new LongWritable();
-		Text value = new Text();
-		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
-
-		int ri = 0;
-		while(reader.next(key, value)) {
-			String raw = value.toString();
-			int index;
-			int fromIndex = 0;
-			do {
-				index = raw.indexOf(token, fromIndex);
-				if(index != -1) {
-					result.add(new Pair<>(ri, index));
-					fromIndex = index + token.length();
-				}
-				else
-					break;
-			}
-			while(true);
-			ri++;
-		}
-		return result;
-	}
 
 	protected abstract int readFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, FrameBlock dest, int rowPos,
 		TemplateUtil.SplitInfo splitInfo) throws IOException;

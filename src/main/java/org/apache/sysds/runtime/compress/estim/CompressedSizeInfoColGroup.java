@@ -189,6 +189,8 @@ public class CompressedSizeInfoColGroup {
 	private static long getCompressionSize(int numCols, CompressionType ct, EstimationFactors fact) {
 		int nv;
 		switch(ct) {
+			case LinearFunctional:
+				return ColGroupSizes.estimateInMemorySizeLinearFunctional(numCols);
 			case DeltaDDC: // TODO add proper extraction
 			case DDC:
 				nv = fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0);

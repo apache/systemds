@@ -64,7 +64,7 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 			2.0,"TRUE", 3,0.8, Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Ignore // TODO fix rmempty for frame in spark context
+	@Test // TODO fix rmempty for frame in spark context
 	public void testFindBestPipelineHybrid() {
 		runtopkCleaning(DATA_DIR+ "dirty.csv", RESOURCE+ "meta/meta_census.csv", 1.0, 3,5,
 			1.5,"FALSE", 0,0.8, Types.ExecMode.HYBRID);

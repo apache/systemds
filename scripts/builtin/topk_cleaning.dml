@@ -112,7 +112,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, primitives=primitives, param=parameters,
   dirtyScore = (dirtyScore + expectedIncrease), cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)
   t6 = time(); print("---- finalized in: "+(t6-t5)/1e9+"s");
-  topKPipelines = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); features = as.frame("NULL")
+  topKPipelines = as.frame("NULL"); applyFunc = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); features = as.frame("NULL")
   # write(acc, output+"/acc.csv", format="csv")
   # stop("end of enumlp")
   [topKPipelines, topKHyperParams, topKScores, applyFunc] = bandit(X_train=eXtrain, Y_train=eYtrain, X_test=eXtest, Y_test=eYtest,  metaList=metaList,

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.util;
 
+import java.lang.reflect.Array;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -957,7 +959,6 @@ public class UtilFunctions {
 			if (values[i] == null || values[i].trim().isEmpty() || values[i].equalsIgnoreCase("NULL")
 				|| values[i].equals("0")) continue;
 			String tmp = values[i];
-			System.out.println("tmp "+tmp);
 			String dateFormat = getDateFormat(tmp);
 			//find pattern which matches values[i] -> increase count for this pattern
 			format_matches.put(dateFormat, format_matches.get(dateFormat) + 1);
@@ -1213,5 +1214,31 @@ public class UtilFunctions {
 //		return ret;
 
 		return Arrays.stream(original).mapToDouble(Double::parseDouble).toArray();
+	}
+
+	public static String[] removeEmptyRows(String[] row)
+	{
+		boolean isEmpty = true;
+		for(int j = 0; j < row.length; j++) {
+			row[j] = row[j].equals("null") || row[j] == null? "0": row[j];
+			isEmpty &= ArrayUtils.contains(new double[]{0.0, Double.NaN, 0},
+				UtilFunctions.objectToDoubleSafe(ValueType.STRING, row[j]));
+		}
+		String[] empty = new String[row.length];
+		Arrays.fill(empty, "0");
+		if(!isEmpty)
+			return row;
+		else
+			return empty;
+
+	}
+
+	public static String[][] transpose(String[][] arr) {
+		// assume that we have a rectangular array, i.e. matrix
+		String[][] transposed = new String[arr[0].length][arr.length];
+		IntStream.range(0, arr.length)
+			.forEach(i -> IntStream.range(0, arr[0].length)
+				.forEach(j -> transposed[j][i] = arr[i][j]));
+		return transposed;
 	}
 }

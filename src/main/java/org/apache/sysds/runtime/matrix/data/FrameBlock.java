@@ -2439,6 +2439,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	public FrameBlock map (FrameMapFunction lambdaExpr, long margin) {
 		// Prepare temporary output array
 		String[][] output = new String[getNumRows()][getNumColumns()];
+		int ncol = getNumColumns();
 
 		if (margin == 1) {
 			// Execute map function on rows
@@ -2459,7 +2460,46 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				for(int i = 0; i < getNumRows(); i++)
 					output[i][j] = outColumn[i];
 			}
-		} else {
+		}
+		else if(margin == 3) // special case for removeEmpty needs to go away when removeEmpty frame is fixed
+		{
+			String[][] tmp =  new String[getNumRows()][getNumColumns()];
+			// Execute map function on rows
+			for(int i = 0; i < getNumRows(); i++) {
+				String[] row = new String[getNumColumns()];
+				for(int j = 0; j < getNumColumns(); j++) {
+					Array input = getColumn(j);
+					row[j] = String.valueOf(input.get(i));
+				}
+				tmp[i] = lambdaExpr.apply(row);
+			}
+			output = Arrays.stream(tmp)
+				// filter out rows consisting of all zeros
+				.filter(row -> !Arrays.stream(row).allMatch(i -> i.equals("0")))
+				.toArray(String[][]::new);
+		}
+		else if(margin == 4) // special case for removeEmpty needs to go away when removeEmpty frame is fixed
+		{
+			String[][] tmp =  new String[getNumRows()][getNumColumns()];
+			// Execute map function on columns
+			for(int j = 0; j < getNumColumns(); j++) {
+				String[] actualColumn = Arrays.copyOfRange((String[]) getColumnData(j), 0, getNumRows()); // since more rows can be allocated, mutable array
+				String[] outColumn = lambdaExpr.apply(actualColumn);
+
+				for(int i = 0; i < getNumRows(); i++)
+					tmp[i][j] = outColumn[i];
+			}
+//			output = new String[output[0].length][2];
+
+			tmp = UtilFunctions.transpose(tmp);
+			String[][] tmpClean =  Arrays.stream(tmp)
+				// filter out rows consisting of all zeros
+				.filter(row -> !Arrays.stream(row).allMatch(i -> i.equals("0")))
+				.toArray(String[][]::new);
+			output = UtilFunctions.transpose(tmpClean);
+			ncol = output[0].length;
+		}
+		else {
 			// Execute map function on all cells
 			for(int j = 0; j < getNumColumns(); j++) {
 				Array input = getColumn(j);
@@ -2468,7 +2508,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 						output[i][j] = lambdaExpr.apply(String.valueOf(input.get(i)));
 			}
 		}
-		return new FrameBlock(UtilFunctions.nCopies(getNumColumns(), ValueType.STRING), output);
+		return new FrameBlock(UtilFunctions.nCopies(ncol, ValueType.STRING), output);
 	}
 
 	public FrameBlock mapDist (FrameMapFunction lambdaExpr) {

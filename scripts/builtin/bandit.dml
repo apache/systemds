@@ -153,7 +153,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
   applyFunc = bestPipeline
   for(k in 1:nrow(bestPipeline))
   {
-    bestPip = removeEmpty(target=bestPipeline[k], margin="cols")
+    bestPip = map(bestPipeline[k], "x -> UtilFunctions.removeEmptyRows(x)", 4)
     applyOp = getParamMeta(bestPip, param)
     applyFunc[k, 1:ncol(applyOp)] = applyOp
   }
@@ -236,7 +236,8 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Do
   i = 1
   while(i <= nrow(ph_pip))
   {
-    op = removeEmpty(target=ph_pip[i], margin="cols")
+    # op = removeEmpty(target=ph_pip[i], margin="cols")
+    op = map(ph_pip[i], "x -> UtilFunctions.removeEmptyRows(x)", 4)
     [hp, applyFunctions, no_of_res, no_of_flag_vars] = getHyperparam(op, param, r_i, default, seed, enablePruning)
     tmpFrameApply = frame(0, rows=no_of_res, cols=ncol(applyFunctions))
     tmpFrameApply = freplicate(tmpFrameApply, applyFunctions)
@@ -269,47 +270,52 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Do
     }
     start = end + 1
   }
-  allPipelines = removeEmpty(target = allPipelines, margin="rows")
+  # allPipelines = removeEmpty(target = allPipelines, margin="rows")
+  allPipelines = map(allPipelines, "x -> UtilFunctions.removeEmptyRows(x)", 3)
   inputHpMatrix = removeEmpty(target = inputHpMatrix, margin="rows")
   opPre = allIds[1]
   accuracy = 0
   changesByPip = 0
-
-  parfor(i in 1:nrow(allPipelines), check = 0) # opt=CONSTRAINED, mode=REMOTE_SPARK
+  for(i in 1:nrow(allPipelines), check = 0) # , opt=CONSTRAINED, mode=REMOTE_SPARK 
   {
+    op1 = allPipelines[i]
     evalFunOutput = as.matrix(0)
     # execute configurations with r resources
-    op = removeEmpty(target=allPipelines[i], margin="cols")
+    op1 = map(op1, "x -> UtilFunctions.removeEmptyRows(x)", 4)
+    # # # unnecessary block just to avoid unexpected behaviour
+    if(ncol(op) > 0)
+      bool = TRUE
     opNew = allIds[i]
     hp = inputHpMatrix[i]
     totalVals = as.scalar(hp[1, 1]) + 1
     hp = hp[, 2:totalVals]
     applyFunctions = allApplyFunctions[i]
     no_of_res = nrow(hp)
-    print("PIPELINE EXECUTION START ... "+toString(op))
-    hpForPruning = matrix(0, rows=1, cols=ncol(op))
-    changesByOp = matrix(0, rows=1, cols=ncol(op))
+    print("PIPELINE EXECUTION START ... "+toString(op1))
+    hpForPruning = matrix(0, rows=1, cols=ncol(op1))
+    changesByOp = matrix(0, rows=1, cols=ncol(op1))
     metaList2 = metaList; #ensure metaList is no result var
     metaList2["applyFunc"] = applyFunctions
-    hp_matrix = matrix(hp, rows=ncol(op), cols=ncol(hp)/ncol(op)) #removeEmpty(target = hp, margin="rows", select = indexes)
+    hp_matrix = matrix(hp, rows=ncol(op1), cols=ncol(hp)/ncol(op1)) #removeEmpty(target = hp, margin="rows", select = indexes)
     # # check if the pruning could be applied to avoid unnecessary executions
     pruneSignal = pruningSignal(opPre, opNew, hp_matrix, hpForPruning, changesByOp)
     opPre = opNew
     executionSingnal = TRUE #ifelse(enablePruning, pruneSignal, TRUE)
     ref = ifelse(enablePruning, ref, 0)
+    
     if(executionSingnal)
     {
       t1 = time()
       if(cv)
       {
-        pipList = list(ph = op, hp = hp_matrix, flags = no_of_flag_vars)
+        pipList = list(ph = op1, hp = hp_matrix, flags = no_of_flag_vars)
         [accuracy, evalHp, hpForPruning, changesByOp, changesByPip] = crossV(X=X, y=Y, cvk=cvk, evalFunHp=evalFunHp,
           pipList=pipList, metaList=metaList2, hpForPruning=hpForPruning, 
         changesByOp=changesByOp, evalFunc=evaluationFunc, ref=ref)
       }
       else 
       {
-        [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=op, 
+        [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=op1, 
           Xtrain=X, Ytrain=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList2,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
           changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
         if(max(eYtrain) == min(eYtrain)) 
@@ -641,7 +647,8 @@ run_with_hyperparamNested = function(Frame[Unknown] ph_pip, Integer r_i = 1, Mat
   parfor(i in 1:nrow(ph_pip), check = 0) # , opt=CONSTRAINED, mode=REMOTE_SPARK
   {
     # execute configurations with r resources
-    op = removeEmpty(target=ph_pip[i], margin="cols")
+    # op = removeEmpty(target=ph_pip[i], margin="cols")
+    op = map(ph_pip[i], "x -> UtilFunctions.removeEmptyRows(x)", 4)
     # print("PIPELINE EXECUTION START ... "+toString(op))
     [hp, applyFunctions, no_of_res, no_of_flag_vars] = getHyperparam(op, param, r_i, default, seed, enablePruning)
     hpForPruning = matrix(0, rows=1, cols=ncol(op))

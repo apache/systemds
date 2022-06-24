@@ -1585,7 +1585,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				output.setValueType(ValueType.FP64);
 			}
 			else {
-				output.setDimensions(id.getDim1(), id.getDim2());
+				output.setDimensions(-1, -1);
 				output.setValueType(ValueType.STRING);
 			}
 			break;

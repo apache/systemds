@@ -50,7 +50,7 @@ public class TernaryFrameScalarSPInstruction extends TernarySPInstruction {
 			sec.getDataCharacteristics(output.getName()).setDimension(rows, rows);
 		} else {
 			long rows = sec.getDataCharacteristics(output.getName()).getRows();
-			long cols = sec.getDataCharacteristics(output.getName()).getCols();
+			long cols = out.first()._2.getNumColumns();
 			sec.getDataCharacteristics(output.getName()).setDimension(rows, cols);
 		}
 		sec.setRDDHandleForVariable(output.getName(), out);

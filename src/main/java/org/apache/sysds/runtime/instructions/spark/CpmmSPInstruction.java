@@ -23,6 +23,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.storage.RDDInfo;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -137,14 +138,24 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 				if( !_outputEmptyBlocks || mc1.isNoEmptyBlocks() || mc2.isNoEmptyBlocks() )
 					out = out.filter(new FilterNonEmptyBlocksFunction());
 				out = RDDAggregateUtils.sumByKeyStable(out, false);
-				
 				//put output RDD handle into symbol table
 				sec.setRDDHandleForVariable(output.getName(), out);
 				sec.addLineageRDD(output.getName(), input1.getName());
 				sec.addLineageRDD(output.getName(), input2.getName());
-				
+
+				System.out.println("CPMM MB: input1 dims: "+sec.getDataCharacteristics(input1.getName()).getLongDims()[0]+" "+sec.getDataCharacteristics(output.getName()).getLongDims()[1]);
+				System.out.println("CPMM MB: input2 dims: "+sec.getDataCharacteristics(input2.getName()).getLongDims()[0]+" "+sec.getDataCharacteristics(output.getName()).getLongDims()[1]);
+				System.out.println("CPMM MB: output dims: "+sec.getDataCharacteristics(output.getName()).getLongDims()[0]+" "+sec.getDataCharacteristics(output.getName()).getLongDims()[1]);
 				//update output statistics if not inferred
 				updateBinaryMMOutputDataCharacteristics(sec, true);
+				for(RDDInfo info : sec.getSparkContext().sc().getRDDStorageInfo()) {
+					if(info.id() == out.id())
+						System.out.println("out memsize "+info.memSize());
+					else if(info.id() == in1.id())
+						System.out.println("in1 memsize "+info.memSize());
+					else
+						System.out.println("in2 memsize "+info.memSize());
+				}
 			}
 		}
 	}

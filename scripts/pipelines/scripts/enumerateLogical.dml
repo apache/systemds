@@ -83,8 +83,8 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
     pipelines[start:end, 1:ncol(pconf)] = pconf
     start = end + 1
   }
-  pipelines = removeEmpty(target = pipelines, margin="rows") 
-  
+  # pipelines = removeEmpty(target = pipelines, margin="rows") 
+  pipelines  = map(pipelines, "x -> UtilFunctions.removeEmptyRows(x)", 3)
   # # # initialize output variable to store final pipelines and hyp
   FLAGS = 5
   ROWS = (max_iter+1)*(nrow(pipelines))
@@ -129,7 +129,6 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
     sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(population)))
     sortedPipelines = frameSort(actPip, sort_mask, TRUE)
     sortedHp = order(target = outHp, by = 1, decreasing=TRUE)
-    
     # # fix the convergence: converge when there is no change in the last three iterations
     bestSoFar = as.double(as.scalar(sortedPipelines[1, 1]))
     if(bestSoFar > min(convCheck))
@@ -138,7 +137,7 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
       convCheck[idx] = bestSoFar
     }
     else convCounter =  convCounter + 1
-    converged = convCounter > nrow(convCheck) #as.double(as.scalar(sortedPipelines[1, 1])) > dirtyScore
+    converged = (convCounter > nrow(convCheck)) & (as.scalar(convCheck[1]) > dirtyScore)  #as.double(as.scalar(sortedPipelines[1, 1])) > dirtyScore
 
     # # if not converged then keep the top-k successive halving
     if(converged)
@@ -160,7 +159,8 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
     sortedPipelines = sortedPipelines[, 3:ncol(sortedPipelines)]
     topk = finalOutputFrame
     sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(topk) - 2))
-    topk = removeEmpty(target=topk, margin="rows")
+    # topk = removeEmpty(target=topk, margin="rows")
+    topk = map(topk, "x -> UtilFunctions.removeEmptyRows(x)", 3)
     topk = frameSort(topk, sort_mask, TRUE)
     topk = topk[, 3:ncol(topk)]
     
@@ -170,9 +170,11 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
       parfor(i in 1:nrow(children), check=0) {
         idxR = (nrow(children) * (iter - 1)) + i
         idx = as.scalar(pipRand[i])
-        top = removeEmpty(target=topk[idx], margin="cols")
+        # top = removeEmpty(target=topk[idx], margin="cols")
+        top = map(topk[idx], "x -> UtilFunctions.removeEmptyRows(x)", 4)
         idx2 = min(max(pipRand), idx + 1)
-        top2 = removeEmpty(target=topk[idx2], margin="cols")
+        # top2 = removeEmpty(target=topk[idx2], margin="cols")
+        top2 = map(topk[idx2], "x -> UtilFunctions.removeEmptyRows(x)", 4)
         # # # keep the tail "dummycode" operation from transitions
         if(sum(mask) > 0) {
           tail = top[, ncol(top)]
@@ -180,7 +182,6 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
           top = top[, 1:ncol(top) - 1]
           top2 = top2[, 1:ncol(top2) - 1]
         }
-          
         random = ifelse(ncol(top) <=2, 1, as.scalar(transitions[idxR]))
         if(random == 1)
           c1 = addition(top, allOps[as.scalar(opToAdd[idxR])]) 
@@ -196,8 +197,10 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
           c1 = cbind(c1, tail)
         children[i, 1:ncol(c1)] = c1
       }
+      # population = removeEmpty(target=children, margin="cols")
+      population = map(children, "x -> UtilFunctions.removeEmptyRows(x)", 4)
     }
-    population = removeEmpty(target=children, margin="cols")
+
     iter  = iter + 1
   }
   if(!converged) {
@@ -207,7 +210,8 @@ return (Frame[Unknown] outputPip, Matrix[Double] outputHp, boolean converged, Do
   # # sort the final output in increasing order
   outputPip = finalOutputFrame
   sort_mask = cbind(matrix(0, rows=1, cols=2), matrix(1, rows=1, cols=ncol(outputPip) - 2))
-  outputPip = removeEmpty(target=outputPip, margin="rows")
+  # outputPip = removeEmpty(target=outputPip, margin="rows")
+  outputPip = map(outputPip, "x -> UtilFunctions.removeEmptyRows(x)", 3)
   outputPip = frameSort(outputPip, sort_mask, FALSE)
   
   refChanges = as.double(as.scalar(outputPip[nrow(outputPip), 2]))
@@ -252,7 +256,8 @@ return (Frame[Unknown] child)
   {
     pos = as.scalar(sample(ncol(child), 1, FALSE, seed))
     child[1, pos] = as.frame(0)
-    child = removeEmpty(target=child, margin="cols")
+    # child = removeEmpty(target=child, margin="cols")
+    child = map(child, "x -> UtilFunctions.removeEmptyRows(x)", 4)
   }
 }
 
@@ -287,5 +292,6 @@ getOps = function( Frame[string] allOps, Frame[String] refSol, Integer dist, Int
   }
   if(as.scalar(refSol[1,1]) == "NaN")
     refSol = ref
-  allOps = removeEmpty(target=allOps, margin="rows")
+  # allOps = removeEmpty(target=allOps, margin="rows")
+  allOps = map(allOps, "x -> UtilFunctions.removeEmptyRows(x)", 3)
 }

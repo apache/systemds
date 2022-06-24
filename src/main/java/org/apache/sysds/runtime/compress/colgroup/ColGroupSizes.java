@@ -107,4 +107,13 @@ public final class ColGroupSizes {
 		size += MatrixBlock.estimateSizeInMemory(nrRows, nrColumns, (nrColumns > 1) ? sparsity : 1);
 		return size;
 	}
+
+	public static long estimateInMemorySizeLinearFunctional(int nrColumns) {
+		long size = 0;
+		// Since the Object is a col group the overhead from the Memory Size group is added
+		size += estimateInMemorySizeGroup(nrColumns);
+		size += MemoryEstimates.doubleArrayCost(2L * nrColumns); // coefficients; per column, we store 2 doubles (slope & intercept)
+		size += 4; // _numRows
+		return size;
+	}
 }

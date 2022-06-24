@@ -19,7 +19,9 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
 public class ColGroupUtils {
@@ -62,4 +64,41 @@ public class ColGroupUtils {
 		return ret;
 	}
 
+	/**
+	 * Copy values from tmpResult into correct positions of result (according to colIndexes in lhs and rhs)
+	 *
+	 * @param lhs        Left ColumnGroup
+	 * @param rhs        Right ColumnGroup
+	 * @param tmpResult  The matrix block to move values from
+	 * @param result     The result matrix block to move values to
+	 */
+	protected final static void copyValuesColGroupMatrixBlocks(AColGroup lhs, AColGroup rhs, MatrixBlock tmpResult, MatrixBlock result) {
+		final double[] resV = result.getDenseBlockValues();
+		if(tmpResult.isEmpty())
+			return;
+		else if(tmpResult.isInSparseFormat()) {
+			SparseBlock sb = tmpResult.getSparseBlock();
+			for(int row = 0; row < lhs._colIndexes.length; row++) {
+				if(sb.isEmpty(row))
+					continue;
+				final int apos = sb.pos(row);
+				final int alen = sb.size(row) + apos;
+				final int[] aix = sb.indexes(row);
+				final double[] avals = sb.values(row);
+				final int offRes = lhs._colIndexes[row] * result.getNumColumns();
+				for(int col = apos; col < alen; col++)
+					resV[offRes + rhs._colIndexes[aix[col]]] += avals[col];
+			}
+		}
+		else {
+			double[] tmpRetV = tmpResult.getDenseBlockValues();
+			for(int row = 0; row < lhs.getNumCols(); row++) {
+				final int offRes = lhs._colIndexes[row] * result.getNumColumns();
+				final int offTmp = row * rhs.getNumCols();
+				for(int col = 0; col < rhs.getNumCols(); col++) {
+					resV[offRes + rhs._colIndexes[col]] += tmpRetV[offTmp + col];
+				}
+			}
+		}
+	}
 }

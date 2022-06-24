@@ -351,7 +351,7 @@ public class ColGroupUncompressed extends AColGroup {
 		}
 	}
 
-	// @Override
+//	 @Override
 	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
 
 		final MatrixBlock tmpRet = new MatrixBlock(ru - rl, _data.getNumColumns(), false);
@@ -560,33 +560,7 @@ public class ColGroupUncompressed extends AColGroup {
 				LibMatrixMult.matrixMult(transposed, this._data, tmpRet);
 			}
 
-			final double[] resV = result.getDenseBlockValues();
-			if(tmpRet.isEmpty())
-				return;
-			else if(tmpRet.isInSparseFormat()) {
-				SparseBlock sb = tmpRet.getSparseBlock();
-				for(int row = 0; row < lhs._colIndexes.length; row++) {
-					if(sb.isEmpty(row))
-						continue;
-					final int apos = sb.pos(row);
-					final int alen = sb.size(row) + apos;
-					final int[] aix = sb.indexes(row);
-					final double[] avals = sb.values(row);
-					final int offRes = lhs._colIndexes[row] * result.getNumColumns();
-					for(int col = apos; col < alen; col++)
-						resV[offRes + _colIndexes[aix[col]]] += avals[col];
-				}
-			}
-			else {
-				double[] tmpRetV = tmpRet.getDenseBlockValues();
-				for(int row = 0; row < lhs._colIndexes.length; row++) {
-					final int offRes = lhs._colIndexes[row] * result.getNumColumns();
-					final int offTmp = lhs._colIndexes.length * row;
-					for(int col = 0; col < _colIndexes.length; col++) {
-						resV[offRes + _colIndexes[col]] += tmpRetV[offTmp + col];
-					}
-				}
-			}
+			ColGroupUtils.copyValuesColGroupMatrixBlocks(lhs, this, tmpRet, result);
 		}
 		else if(lhs instanceof APreAgg) {
 			// throw new NotImplementedException();

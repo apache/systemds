@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.functional.LinearRegression;
 import org.apache.sysds.runtime.compress.colgroup.insertionsort.AInsertionSorter;
 import org.apache.sysds.runtime.compress.colgroup.insertionsort.InsertionSorterFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -129,13 +130,13 @@ public class ColGroupFactory {
 	}
 
 	private List<AColGroup> compress() {
-		try{
+		try {
 			List<AColGroup> ret = compressExecute();
 			if(pool != null)
 				pool.shutdown();
-				return ret;
+			return ret;
 		}
-		catch(Exception e ){
+		catch(Exception e) {
 			if(pool != null)
 				pool.shutdown();
 			throw new DMLCompressionException("Compression Failed", e);
@@ -359,6 +360,8 @@ public class ColGroupFactory {
 			return compressSDCFromSparseTransposedBlock(colIndexes, nrUniqueEstimate, cg.getTupleSparsity());
 		else if(ct == CompressionType.DDC)
 			return directCompressDDC(colIndexes, cg);
+		else if(ct == CompressionType.LinearFunctional)
+			return compressLinearFunctional(colIndexes, in, cs);
 		else {
 			LOG.debug("Default slow path: " + ct + "  " + cs.transposed + " " + Arrays.toString(colIndexes));
 			final int numRows = cs.transposed ? in.getNumColumns() : in.getNumRows();
@@ -445,19 +448,20 @@ public class ColGroupFactory {
 		if(dict == null)
 			// Again highly unlikely but possible.
 			return new ColGroupEmpty(colIndexes);
-		try{
+		try {
 			if(extra)
 				d.replace(fill, map.size());
-	
+
 			final int nUnique = map.size() + (extra ? 1 : 0);
-	
+
 			final AMapToData resData = MapToFactory.resize(d, nUnique);
 			return ColGroupDDC.create(colIndexes, nRow, dict, resData, null);
 
 		}
-		catch(Exception e ){
+		catch(Exception e) {
 			ReaderColumnSelection reader = ReaderColumnSelection.createReader(in, colIndexes, cs.transposed, 0, nRow);
-			throw new DMLCompressionException("direct compress DDC Multi col failed extra:" + extra + " with reader type:" + reader.getClass().getSimpleName(), e);
+			throw new DMLCompressionException("direct compress DDC Multi col failed extra:" + extra + " with reader type:"
+				+ reader.getClass().getSimpleName(), e);
 		}
 	}
 
@@ -651,6 +655,12 @@ public class ColGroupFactory {
 		AOffset off = OffsetFactory.createOffset(indexes);
 
 		return ColGroupSDCSingle.create(colIndexes, rlen, dict, defaultTuple, off, null);
+	}
+
+	private static AColGroup compressLinearFunctional(int[] colIndexes, MatrixBlock in, CompressionSettings cs) {
+		double[] coefficients = LinearRegression.regressMatrixBlock(in, colIndexes, cs.transposed);
+		int numRows = cs.transposed ? in.getNumColumns() : in.getNumRows();
+		return ColGroupLinearFunctional.create(colIndexes, coefficients, numRows);
 	}
 
 	private static AColGroup compressDDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,

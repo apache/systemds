@@ -19,11 +19,21 @@
 
 package org.apache.sysds.test.component.compress.colgroup;
 
+import static org.junit.Assert.fail;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Random;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
-import org.apache.sysds.runtime.compress.colgroup.*;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupLinearFunctional;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -34,14 +44,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Random;
-
-import static org.junit.Assert.fail;
-
-@RunWith(value = Parameterized.class) public abstract class ColGroupLinearFunctionalBase {
+@RunWith(value = Parameterized.class)
+public abstract class ColGroupLinearFunctionalBase {
 
 	protected static final Log LOG = LogFactory.getLog(ColGroupLinearFunctionalBase.class.getName());
 	private final static Random random = new Random();
@@ -59,7 +63,8 @@ import static org.junit.Assert.fail;
 	protected final int nRow;
 	protected final double tolerance;
 
-	@Parameters public static Collection<Object[]> data() {
+	@Parameters
+	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
 
 		try {
@@ -84,8 +89,7 @@ import static org.junit.Assert.fail;
 
 		int[] colIndices = lin.getColIndices();
 		if(colIndices[colIndices.length - 1] > nRowRight)
-			fail(
-				"Right ColGroup must have at least as many rows as the largest column index of center ColGroup (`lin`)");
+			fail("Right ColGroup must have at least as many rows as the largest column index of center ColGroup (`lin`)");
 
 		this.base = base;
 		this.lin = lin;
@@ -109,45 +113,39 @@ import static org.junit.Assert.fail;
 		double[][] dataLeftCompressed = new double[][] {{8, 4, 0, -4, -8}, {-1, 0, 1, 2, 3}};
 		int[] colIndexesLeftCompressed = new int[] {0};
 
-		tests.add(
-			createInitParams(data, true, null, dataLeft, true, colIndexesLeft, false, dataRight, true, null, 0.001));
+		tests
+			.add(createInitParams(data, true, null, dataLeft, true, colIndexesLeft, false, dataRight, true, null, 0.001));
 
-		tests.add(
-			createInitParams(data, true, null, dataLeftCompressed, true, colIndexesLeftCompressed, true, dataRight,
-				true, null, 0.001));
+		tests.add(createInitParams(data, true, null, dataLeftCompressed, true, colIndexesLeftCompressed, true, dataRight,
+			true, null, 0.001));
 
-		tests.add(
-			createInitParams(new double[][] {{1, 2, 3, 4, 5}}, true, null, null, true, null, true, dataRight, true,
-				null, 0.001));
+		tests.add(createInitParams(new double[][] {{1, 2, 3, 4, 5}}, true, null, null, true, null, true, dataRight, true,
+			null, 0.001));
 
-		tests.add(
-			createInitParams(new double[][] {{1, 2, 3, 4, 5}}, true, null, null, true, null, true, dataRight, true,
-				null, 0.001));
+		tests.add(createInitParams(new double[][] {{1, 2, 3, 4, 5}}, true, null, null, true, null, true, dataRight, true,
+			null, 0.001));
 
-		tests.add(
-			createInitParams(new double[][] {{1, 2, 3, 4, 5}, {1, 1, 1, 1, 1}, {4, 2, 4, 2, 4}}, true, new int[] {0, 1},
-				null, true, null, true, dataRight, true, null, 0.001));
+		tests.add(createInitParams(new double[][] {{1, 2, 3, 4, 5}, {1, 1, 1, 1, 1}, {4, 2, 4, 2, 4}}, true,
+			new int[] {0, 1}, null, true, null, true, dataRight, true, null, 0.001));
 
-		tests.add(
-			createInitParams(new double[][] {{1, 2, 3, 4, 5}, {-1, -2, -3, -4, -5}}, true, null, null, true, null, true,
-				dataRight, true, null, 0.001));
+		tests.add(createInitParams(new double[][] {{1, 2, 3, 4, 5}, {-1, -2, -3, -4, -5}}, true, null, null, true, null,
+			true, dataRight, true, null, 0.001));
 
 		double[][] randomData = generateTestMatrixLinear(80, 100, -100, 100, -1, 1, 42);
 		double[][] randomDataLeft = generateTestMatrixLinear(80, 50, -100, 100, -1, 1, 43);
 		double[][] randomDataRight = generateTestMatrixLinear(100, 500, -100, 100, -1, 1, 44);
 
-		tests.add(
-			createInitParams(randomData, false, null, randomDataLeft, false, null, true, randomDataRight, true, null,
-				0.001));
+		tests.add(createInitParams(randomData, false, null, randomDataLeft, false, null, true, randomDataRight, true,
+			null, 0.001));
 	}
 
 	protected static Object[] createInitParams(double[][] data, boolean isTransposed, int[] colIndexes,
-		double[][] dataLeft, boolean transposedLeft, int[] colIndexesLeft, boolean linCompressLeft,
-		double[][] dataRight, boolean transposedRight, int[] colIndexesRight, double tolerance) {
+		double[][] dataLeft, boolean transposedLeft, int[] colIndexesLeft, boolean linCompressLeft, double[][] dataRight,
+		boolean transposedRight, int[] colIndexesRight, double tolerance) {
 		if(dataLeft == null)
 			dataLeft = data;
 
-		int nRow = isTransposed ? data[0].length : data.length;
+		// int nRow = isTransposed ? data[0].length : data.length;
 		int nCol = isTransposed ? data.length : data[0].length;
 		int nRowLeft = transposedLeft ? dataLeft[0].length : dataLeft.length;
 		int nColLeft = transposedLeft ? dataLeft.length : dataLeft[0].length;
@@ -166,8 +164,9 @@ import static org.junit.Assert.fail;
 		return new Object[] {cgUncompressed(data, colIndexes, isTransposed),
 			cgLinCompressed(data, colIndexes, isTransposed), cgUncompressed(dataLeft, colIndexesLeft, transposedLeft),
 			linCompressLeft ? cgLinCompressed(dataLeft, colIndexesLeft, transposedLeft) : cgUncompressed(dataLeft,
-				colIndexesLeft, transposedLeft), nRowLeft, nColLeft, nRowRight, nColRight,
-			cgUncompressed(dataRight, colIndexesRight, transposedRight), tolerance};
+				colIndexesLeft, transposedLeft),
+			nRowLeft, nColLeft, nRowRight, nColRight, cgUncompressed(dataRight, colIndexesRight, transposedRight),
+			tolerance};
 	}
 
 	protected static AColGroup cgUncompressed(double[][] data, int[] colIndexes, boolean isTransposed) {
@@ -199,7 +198,7 @@ import static org.junit.Assert.fail;
 	public static double[] generateLinearColumn(double intercept, double slope, int length) {
 		double[] result = new double[length];
 		for(int i = 0; i < length; i++) {
-			result[i] = intercept + slope * (i+1);
+			result[i] = intercept + slope * (i + 1);
 		}
 
 		return result;
@@ -207,13 +206,13 @@ import static org.junit.Assert.fail;
 
 	public static double[][] generateTestMatrixLinear(int rows, int cols, double minIntercept, double maxIntercept,
 		double minSlope, double maxSlope, long seed) {
-		double[][] coefficients = generateRandomInterceptsSlopes(cols, minIntercept, maxIntercept, minSlope,
-			maxSlope, seed);
+		double[][] coefficients = generateRandomInterceptsSlopes(cols, minIntercept, maxIntercept, minSlope, maxSlope,
+			seed);
 		return generateTestMatrixLinearColumns(rows, cols, coefficients[0], coefficients[1]);
 	}
 
-	public static double[][] generateRandomInterceptsSlopes(int cols, double minIntercept,
-		double maxIntercept, double minSlope, double maxSlope, long seed) {
+	public static double[][] generateRandomInterceptsSlopes(int cols, double minIntercept, double maxIntercept,
+		double minSlope, double maxSlope, long seed) {
 
 		double[] intercepts = new double[cols];
 		double[] slopes = new double[cols];

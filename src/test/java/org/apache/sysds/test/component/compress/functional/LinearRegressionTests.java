@@ -19,6 +19,15 @@
 
 package org.apache.sysds.test.component.compress.functional;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.DoubleStream;
+
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.functional.LinearRegression;
 import org.apache.sysds.runtime.compress.utils.Util;
@@ -29,14 +38,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.stream.DoubleStream;
-
-import static org.junit.Assert.*;
-
-@RunWith(value = Parameterized.class) public class LinearRegressionTests {
+@RunWith(value = Parameterized.class)
+public class LinearRegressionTests {
 	protected final double[][] data;
 	protected final int[] colIndexes;
 	protected final boolean isTransposed;
@@ -45,9 +48,9 @@ import static org.junit.Assert.*;
 
 	protected final double EQUALITY_TOLERANCE = 1e-4;
 
-	@Parameterized.Parameters public static Collection<Object[]> data() {
+	@Parameterized.Parameters
+	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
-
 		try {
 			addCases(tests);
 		}
@@ -86,21 +89,24 @@ import static org.junit.Assert.*;
 		int rows = 100;
 		int cols = 200;
 		// TODO: move generateRandomInterceptsSlopes in an appropriate Util class
-		double[][] randomCoefficients = ColGroupLinearFunctionalBase
-			.generateRandomInterceptsSlopes(cols, -1000, 1000, -20, 20, 42);
+		double[][] randomCoefficients = ColGroupLinearFunctionalBase.generateRandomInterceptsSlopes(cols, -1000, 1000,
+			-20, 20, 42);
 		// TODO: move generateTestMatrixLinearColumns in an appropriate Util class
-		double[][] testData = ColGroupLinearFunctionalBase.generateTestMatrixLinearColumns(rows, cols, randomCoefficients[0], randomCoefficients[1]);
+		double[][] testData = ColGroupLinearFunctionalBase.generateTestMatrixLinearColumns(rows, cols,
+			randomCoefficients[0], randomCoefficients[1]);
 		tests.add(new Object[] {testData, Util.genColsIndices(cols), false,
-			DoubleStream.concat(Arrays.stream(randomCoefficients[0]), Arrays.stream(randomCoefficients[1])).toArray(), null});
+			DoubleStream.concat(Arrays.stream(randomCoefficients[0]), Arrays.stream(randomCoefficients[1])).toArray(),
+			null});
 	}
 
-	@Test public void testLinearRegression() {
+	@Test
+	public void testLinearRegression() {
 		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
-
 		try {
 			double[] coefficients = LinearRegression.regressMatrixBlock(mbt, colIndexes, isTransposed);
 			assertArrayEquals(expectedCoefficients, coefficients, EQUALITY_TOLERANCE);
-		} catch(Exception e) {
+		}
+		catch(Exception e) {
 			assertEquals(expectedException.getClass(), e.getClass());
 			assertEquals(expectedException.getMessage(), e.getMessage());
 		}

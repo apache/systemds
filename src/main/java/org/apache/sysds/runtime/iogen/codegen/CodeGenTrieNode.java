@@ -83,7 +83,7 @@ public class CodeGenTrieNode {
 		else
 			ewvs = "endWithValueStringCol";
 
-		src.append("endPos = getEndPos(str, strLen, " + currPos + "," + ewvs + "); \n");
+		src.append("endPos = TemplateUtil.getEndPos(str, strLen, " + currPos + "," + ewvs + "); \n");
 		subStr = "str.substring(" + currPos + ",endPos)";
 		src.append("try{ \n");
 		if(this.colIndex.equals("0")) {
@@ -107,9 +107,9 @@ public class CodeGenTrieNode {
 
 		StringBuilder src = new StringBuilder();
 		if(this.colIndex.equals("col"))
-			src.append("endPos = getEndPos(str, strLen, " + currPos + ", endWithValueStringVal); \n");
+			src.append("endPos = TemplateUtil.getEndPos(str, strLen, " + currPos + ", endWithValueStringVal); \n");
 		else
-			src.append("endPos = getEndPos(str, strLen, " + currPos + ", endWithValueString[" + colIndex + "]); \n");
+			src.append("endPos = TemplateUtil.getEndPos(str, strLen, " + currPos + ", endWithValueString[" + colIndex + "]); \n");
 
 		src.append("String cellStr" + colIndex + " = str.substring(" + currPos + ",endPos); \n");
 

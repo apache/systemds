@@ -48,8 +48,12 @@ public class RowIndexStructure {
 	private String seqEndString;
 
 	public HashSet<String> endWithValueStrings() {
-		HashSet<String> endWithValueString = keyPattern.getFirstSuffixKeyPatterns();
-		return endWithValueString;
+		if(keyPattern!=null) {
+			HashSet<String> endWithValueString = keyPattern.getFirstSuffixKeyPatterns();
+			return endWithValueString;
+		}
+		else
+			return null;
 	}
 
 	public IndexProperties getProperties() {

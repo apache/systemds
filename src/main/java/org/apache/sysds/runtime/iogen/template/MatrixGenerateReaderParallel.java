@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.iogen.template;
 
+import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -43,7 +44,6 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -53,7 +53,7 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 	protected static CustomProperties _props;
 	protected int _numThreads = 1;
 	protected JobConf job;
-	protected SplitOffsetInfos _offsets;
+	protected TemplateUtil.SplitOffsetInfos _offsets;
 	protected int _rLen;
 	protected int _cLen;
 
@@ -84,7 +84,7 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 		MatrixBlock ret = computeSizeAndCreateOutputMatrixBlock(splits, path, rlen, _props.getNcols(), blen, estnnz);
 
 		// Second Read Pass (read, parse strings, append to matrix block)
-		readMatrixFromHDFS(splits, path, job, ret, rlen, clen, blen);
+		readMatrixFromHDFS(informat,splits, path, job, ret, rlen, clen, blen);
 
 		return ret;
 	}
@@ -108,7 +108,7 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 
 				// collect row counts for offset computation
 				// early error notify in case not all tasks successful
-				_offsets = new SplitOffsetInfos(tasks.size());
+				_offsets = new TemplateUtil.SplitOffsetInfos(tasks.size());
 				int i = 0;
 				for(Future<Long> rc : pool.invokeAll(tasks)) {
 					int lnrow = (int) rc.get().longValue(); // incl error handling
@@ -127,13 +127,13 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 
 				// collect row counts for offset computation
 				// early error notify in case not all tasks successful
-				_offsets = new SplitOffsetInfos(tasks.size());
+				_offsets = new TemplateUtil.SplitOffsetInfos(tasks.size());
 				int i = 0;
-				for(Future<SplitInfo> rc : pool.invokeAll(tasks)) {
-					SplitInfo splitInfo = rc.get();
+				for(Future<TemplateUtil.SplitInfo> rc : pool.invokeAll(tasks)) {
+					TemplateUtil.SplitInfo splitInfo = rc.get();
 					_offsets.setSeqOffsetPerSplit(i, splitInfo);
 					_offsets.setOffsetPerSplit(i, _rLen);
-					_rLen = _rLen + splitInfo.nrows;
+					_rLen = _rLen + splitInfo.getNrows();
 					i++;
 				}
 				pool.shutdown();
@@ -160,6 +160,11 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 
 		// allocate target matrix block based on given size;
 		// need to allocate sparse as well since lock-free insert into target
+		if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.RowWiseExist ||
+			_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.CellWiseExist ){
+			_rLen++;
+			_cLen++;
+		}
 		long estnnz2 = (estnnz < 0) ? (long) _rLen * _cLen : estnnz;
 		return createOutputMatrixBlock(_rLen, _cLen, blen, estnnz2, !_props.isSparse(), _props.isSparse());
 	}
@@ -175,12 +180,9 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 		return ret;
 	}
 
-	private void readMatrixFromHDFS(InputSplit[] splits, Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int blen) throws IOException
+	private void readMatrixFromHDFS(TextInputFormat informat, InputSplit[] splits, Path path, JobConf job, MatrixBlock dest, long rlen, long clen,
+		int blen) throws IOException
 	{
-		FileInputFormat.addInputPath(job, path);
-		TextInputFormat informat = new TextInputFormat();
-		informat.configure(job);
-
 		ExecutorService pool = CommonThreadPool.get(_numThreads);
 		try{
 			// create read tasks for all splits
@@ -203,50 +205,12 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 		}
 	}
 
-	private static class SplitOffsetInfos {
-		// offset & length info per split
-		private int[] offsetPerSplit = null;
-		private int[] lenghtPerSplit = null;
-		private SplitInfo[] seqOffsetPerSplit = null;
-
-		public SplitOffsetInfos(int numSplits) {
-			lenghtPerSplit = new int[numSplits];
-			offsetPerSplit = new int[numSplits];
-			seqOffsetPerSplit = new SplitInfo[numSplits];
-		}
-
-		public int getLenghtPerSplit(int split) {
-			return lenghtPerSplit[split];
-		}
-
-		public void setLenghtPerSplit(int split, int r) {
-			lenghtPerSplit[split] = r;
-		}
-
-		public int getOffsetPerSplit(int split) {
-			return offsetPerSplit[split];
-		}
-
-		public void setOffsetPerSplit(int split, int o) {
-			offsetPerSplit[split] = o;
-		}
-
-		public SplitInfo getSeqOffsetPerSplit(int split) {
-			return seqOffsetPerSplit[split];
-		}
-
-		public void setSeqOffsetPerSplit(int split, SplitInfo splitInfo) {
-			seqOffsetPerSplit[split] = splitInfo;
-		}
-	}
-
 	private class ReadTask implements Callable<Long> {
 
 		private final InputSplit _split;
 		private final TextInputFormat _informat;
 		private final MatrixBlock _dest;
 		private final int _splitCount;
-		private int _row = 0;
 		private long _nnz = 0;
 
 		public ReadTask(InputSplit split, TextInputFormat informat, MatrixBlock dest, int splitCount) {
@@ -261,9 +225,9 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 			RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, job, Reporter.NULL);
 			LongWritable key = new LongWritable();
 			Text value = new Text();
-			_row = _offsets.getOffsetPerSplit(_splitCount);
-			SplitInfo _splitInfo = _offsets.getSeqOffsetPerSplit(_splitCount);
-			_nnz = readMatrixFromHDFS(reader, key, value, _dest, _row, _splitInfo);
+			MutableInt rowPos = new MutableInt(_offsets.getOffsetPerSplit(_splitCount));
+			TemplateUtil.SplitInfo _splitInfo = _offsets.getSeqOffsetPerSplit(_splitCount);
+			_nnz = readMatrixFromHDFS(reader, key, value, _dest, rowPos, _splitInfo);
 			return _nnz;
 		}
 
@@ -272,7 +236,7 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 		}
 	}
 
-	private static class CountSeqScatteredRowsTask implements Callable<SplitInfo> {
+	private static class CountSeqScatteredRowsTask implements Callable<TemplateUtil.SplitInfo> {
 		private final InputSplit _split;
 		private final TextInputFormat _inputFormat;
 		private final JobConf _jobConf;
@@ -288,14 +252,14 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 		}
 
 		@Override
-		public SplitInfo call() throws Exception {
-			SplitInfo splitInfo = new SplitInfo();
+		public TemplateUtil.SplitInfo call() throws Exception {
+			TemplateUtil.SplitInfo splitInfo = new TemplateUtil.SplitInfo();
 			int nrows = 0;
-			ArrayList<Pair<Integer, Integer>> beginIndexes = getTokenIndexOnMultiLineRecords(_split, _inputFormat, _jobConf, _beginString);
+			ArrayList<Pair<Integer, Integer>> beginIndexes = TemplateUtil.getTokenIndexOnMultiLineRecords(_split, _inputFormat, _jobConf, _beginString);
 			ArrayList<Pair<Integer, Integer>> endIndexes;
 			int tokenLength = 0;
 			if(!_beginString.equals(_endString)) {
-				endIndexes = getTokenIndexOnMultiLineRecords(_split, _inputFormat, _jobConf, _endString);
+				endIndexes = TemplateUtil.getTokenIndexOnMultiLineRecords(_split, _inputFormat, _jobConf, _endString);
 				tokenLength = _endString.length();
 			}
 			else {
@@ -349,97 +313,7 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 		}
 	}
 
-	protected static class SplitInfo{
-		private int nrows;
-		private ArrayList<Integer> recordIndexBegin;
-		private ArrayList<Integer> recordIndexEnd;
-		private ArrayList<Integer> recordPositionBegin;
-		private ArrayList<Integer> recordPositionEnd;
-		private String remainString;
-
-		public SplitInfo() {
-			recordIndexBegin = new ArrayList<>();
-			recordIndexEnd = new ArrayList<>();
-			recordPositionBegin = new ArrayList<>();
-			recordPositionEnd = new ArrayList<>();
-		}
-
-		public void addIndexAndPosition(int beginIndex, int endIndex, int beginPos, int endPos){
-			recordIndexBegin.add(beginIndex);
-			recordIndexEnd.add(endIndex);
-			recordPositionBegin.add(beginPos);
-			recordPositionEnd.add(endPos);
-		}
-
-		public int getNrows() {
-			return nrows;
-		}
-
-		public void setNrows(int nrows) {
-			this.nrows = nrows;
-		}
-
-		public String getRemainString() {
-			return remainString;
-		}
-
-		public void setRemainString(String remainString) {
-			this.remainString = remainString;
-		}
-
-		public int getRecordIndexBegin(int index) {
-			return recordIndexBegin.get(index);
-		}
-
-		public int getRecordIndexEnd(int index) {
-			return recordIndexEnd.get(index);
-		}
-
-		public int getRecordPositionBegin(int index) {
-			return recordPositionBegin.get(index);
-		}
-
-		public int getRecordPositionEnd(int index) {
-			return recordPositionEnd.get(index);
-		}
-	}
-
-	private static ArrayList<Pair<Integer, Integer>> getTokenIndexOnMultiLineRecords(InputSplit split, TextInputFormat inputFormat, JobConf job,
-		String token) throws IOException {
-		RecordReader<LongWritable, Text> reader = inputFormat.getRecordReader(split, job, Reporter.NULL);
-		LongWritable key = new LongWritable();
-		Text value = new Text();
-		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
-
-		int ri = 0;
-		while (reader.next(key, value)){
-			String raw = value.toString();
-			int index;
-			int fromIndex = 0;
-			do {
-				index = raw.indexOf(token, fromIndex);
-				if(index !=-1){
-					result.add(new Pair<>(ri, index));
-					fromIndex = index+token.length();
-				}
-				else
-					break;
-			}while(true);
-			ri++;
-		}
-		return result;
-	}
-
 	protected abstract long readMatrixFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, MatrixBlock dest,
-		int rowPos, SplitInfo splitInfo) throws IOException;
+		MutableInt rowPos, TemplateUtil.SplitInfo splitInfo) throws IOException;
 
-	protected int getEndPos(String str, int strLen, int currPos, HashSet<String> endWithValueString) {
-		int endPos = strLen;
-		for(String d : endWithValueString) {
-			int pos = d.length()> 0 ? str.indexOf(d, currPos): strLen;
-			if(pos != -1)
-				endPos = Math.min(endPos, pos);
-		}
-		return endPos;
-	}
 }

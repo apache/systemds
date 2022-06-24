@@ -83,11 +83,15 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	}
 
 	public HashSet<String>[] endWithValueStrings() {
-		HashSet<String>[] endWithValueString = new HashSet[colKeyPatterns.length];
-		for(int i = 0; i < colKeyPatterns.length; i++)
-			if(colKeyPatterns[i] != null)
-				endWithValueString[i] = colKeyPatterns[i].getFirstSuffixKeyPatterns();
-		return endWithValueString;
+		if(colKeyPatterns !=null) {
+			HashSet<String>[] endWithValueString = new HashSet[colKeyPatterns.length];
+			for(int i = 0; i < colKeyPatterns.length; i++)
+				if(colKeyPatterns[i] != null)
+					endWithValueString[i] = colKeyPatterns[i].getFirstSuffixKeyPatterns();
+			return endWithValueString;
+		}
+		else
+			return null;
 	}
 
 	public KeyTrie getValueKeyPattern() {

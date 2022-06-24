@@ -145,11 +145,11 @@ public class CodeGenTrie {
 			src.append("String strIndexValue[] = si.split(\""+ properties.getColIndexStructure().getIndexDelim()+"\", -1); \n");
 			src.append("if(strIndexValue.length == 2){ \n");
 			src.append("col = UtilFunctions.parseToInt(strIndexValue[0]); \n");
-			src.append("if(col < "+ncols+"){ \n");
+			src.append("if(col <= "+ncols+"){ \n");
 			if(this.isMatrix){
 				src.append("try{ \n");
-				src.append(destination).append("(row, col, Double.parseDouble(strIndexValue[1]); \n");
-				src.append("} catch(Exception e){"+destination+".append(row, col, 0d);} \n");
+				src.append(destination).append("(row, col, Double.parseDouble(strIndexValue[1])); \n");
+				src.append("} catch(Exception e){"+destination+"(row, col, 0d);} \n");
 			}
 			else {
 				src.append(destination).append("(row, col, UtilFunctions.stringToObject(_props.getSchema()[col], strIndexValue[1]); \n");
@@ -157,6 +157,7 @@ public class CodeGenTrie {
 			src.append("} \n");
 			src.append("} \n");
 			src.append("} \n");
+			src.append("row++; \n");
 		}
 		return src.toString();
 	}

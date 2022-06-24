@@ -29,7 +29,6 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 		super(properties, className);
 
 		// 1. set java code template
-		// 1.a: single thread code gen
 		String javaBaseClass = !properties.isParallel() ? "FrameGenerateReader" : "FrameGenerateReaderParallel";
 
 		javaTemplate = "import org.apache.hadoop.io.LongWritable;\n" +
@@ -38,13 +37,16 @@ public class FrameCodeGen extends TemplateCodeGenBase {
 			"import org.apache.sysds.runtime.iogen.CustomProperties;\n" +
 			"import org.apache.sysds.runtime.iogen.template."+javaBaseClass+";\n" +
 			"import org.apache.sysds.runtime.matrix.data.FrameBlock;\n" +
-			"import java.io.IOException;\n" + "import java.util.HashSet;\n" +
+			"import java.io.IOException;\n" +
+			"import java.util.HashSet;\n" +
+			"import org.apache.sysds.runtime.iogen.template.TemplateUtil; \n" +
+			"import org.apache.sysds.runtime.util.UtilFunctions; \n" +
 			"public class "+className+" extends "+javaBaseClass+" {\n" +
 			"public "+className+"(CustomProperties _props) {\n" +
 			"super(_props);} \n" +
 			"@Override \n" +
-			"protected int reaFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, " +
-			"FrameBlock dest, int row, SplitInfo splitInfo) throws IOException {\n"+
+			"protected int readFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, " +
+			"FrameBlock dest, int row, TemplateUtil.SplitInfo splitInfo) throws IOException {\n"+
 			code+
 			"}} \n";
 	}

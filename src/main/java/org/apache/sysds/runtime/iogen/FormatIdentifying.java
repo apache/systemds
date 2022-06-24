@@ -180,25 +180,26 @@ public class FormatIdentifying {
 				}
 
 				// build key pattern for row index
-				int numberOfSelectedCols = 3;
+				int numberOfSelectedCols = (int) (ncols * 0.1);
+				int numberOfSelectedRows = (int) (nrows * 0.1);
 				int begin = rowIndexStructure.getRowIndexBegin();
 				boolean check, flagReconstruct;
-				int[] selectedRowIndex = new int[2];
+				int[] selectedRowIndex = new int[numberOfSelectedRows];
 				KeyTrie rowKeyPattern = null;
 
 				// Select two none zero row as a row index candidate
 				int index = 0;
-				for(int r = 1; r < nrows; r++) {
+				for(int r = 1; r<nrows; r++) {
 					for(int c = 0; c < ncols; c++)
 						if(mapRow[r][c] != -1) {
 							selectedRowIndex[index++] = r;
 							break;
 						}
-					if(index > 1)
+					if(index >= numberOfSelectedRows)
 						break;
 				}
 
-				for(int c = 0; c < Math.min(numberOfSelectedCols, ncols); c++) {
+				for(int c = ncols -1; c >= Math.max(ncols - numberOfSelectedCols, 0); c--) {
 					Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
 					ArrayList<String> prefixStrings = colPrefixString.getKey();
 					ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
@@ -226,12 +227,12 @@ public class FormatIdentifying {
 							prefixRawIndex.add(new RawIndex(sb.toString()));
 						}
 					}
-					if(c == numberOfSelectedCols - 1) {
+					if(c == ncols - 1) {
 						ArrayList<String> rowPrefixStrings = new ArrayList<>();
 						MappingTrie rowTrie = new MappingTrie();
 						rowKeyPattern = new KeyTrie();
 						for(int si : selectedRowIndex) {
-							for(int ci = 0; ci < ncols; ci++) {
+							for(int ci = ncols - 1; ci >=0; ci--) {
 								int cri = mapRow[si][ci];
 								if(cri != -1) {
 									String str = sampleRawIndexes.get(cri).getSubString(0, mapCol[si][ci]);
@@ -283,22 +284,22 @@ public class FormatIdentifying {
 
 				// build key pattern for column index
 				begin = colIndexStructure.getColIndexBegin();
-				int[] selectedColIndex = new int[2];
+				int[] selectedColIndex = new int[numberOfSelectedCols];
 				KeyTrie colKeyPattern = null;
 
 				// Select two none zero row as a row index candidate
 				index = 0;
-				for(int c = 0; c < ncols; c++) {
+				for(int c = ncols - 1; c>=0; c--) {
 					for(int r = 1; r < nrows; r++)
 						if(mapRow[r][c] != -1) {
 							selectedColIndex[index++] = c;
 							break;
 						}
-					if(index > 1)
+					if(index >= numberOfSelectedCols)
 						break;
 				}
 
-				for(int c = 0; c < Math.min(numberOfSelectedCols, ncols); c++) {
+				for(int c = ncols -1; c >= Math.max(ncols - numberOfSelectedCols, 0); c--) {
 					Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
 					ArrayList<String> prefixStrings = colPrefixString.getKey();
 					ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
@@ -326,7 +327,7 @@ public class FormatIdentifying {
 							prefixRawIndex.add(new RawIndex(sb.toString()));
 						}
 					}
-					if(c == numberOfSelectedCols - 1) {
+					if(c == ncols - 1) {
 						ArrayList<String> colPrefixStrings = new ArrayList<>();
 						MappingTrie colTrie = new MappingTrie();
 						colKeyPattern = new KeyTrie();
@@ -646,7 +647,7 @@ public class FormatIdentifying {
 			}
 		}
 
-		if(nne > nrows * 0.3) {
+		if(nne > 0) {
 			if(beginPos == 1)
 				return -1;
 			else

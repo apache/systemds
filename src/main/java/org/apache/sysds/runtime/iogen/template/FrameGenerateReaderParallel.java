@@ -55,7 +55,7 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 	protected CustomProperties _props;
 	protected int _numThreads;
 	protected JobConf job;
-	protected SplitOffsetInfos _offsets;
+	protected TemplateUtil.SplitOffsetInfos _offsets;
 	protected int _rLen;
 	protected int _cLen;
 
@@ -64,9 +64,8 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		this._props = _props;
 	}
 
-	@Override
-	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen,
-		long clen) throws IOException, DMLRuntimeException {
+	@Override public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
 
 		//prepare file access
 		job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -113,7 +112,7 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 
 				// collect row counts for offset computation
 				// early error notify in case not all tasks successful
-				_offsets = new SplitOffsetInfos(tasks.size());
+				_offsets = new TemplateUtil.SplitOffsetInfos(tasks.size());
 				int i = 0;
 				for(Future<Long> rc : pool.invokeAll(tasks)) {
 					int lnrow = (int) rc.get().longValue(); // incl error handling
@@ -132,13 +131,13 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 
 				// collect row counts for offset computation
 				// early error notify in case not all tasks successful
-				_offsets = new SplitOffsetInfos(tasks.size());
+				_offsets = new TemplateUtil.SplitOffsetInfos(tasks.size());
 				int i = 0;
-				for(Future<SplitInfo> rc : pool.invokeAll(tasks)) {
-					SplitInfo splitInfo = rc.get();
+				for(Future<TemplateUtil.SplitInfo> rc : pool.invokeAll(tasks)) {
+					TemplateUtil.SplitInfo splitInfo = rc.get();
 					_offsets.setSeqOffsetPerSplit(i, splitInfo);
 					_offsets.setOffsetPerSplit(i, _rLen);
-					_rLen = _rLen + splitInfo.nrows;
+					_rLen = _rLen + splitInfo.getNrows();
 					i++;
 				}
 				pool.shutdown();
@@ -150,7 +149,7 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 
 		// robustness for wrong dimensions which are already compiled into the plan
 		if(rlen != -1 && _rLen != rlen) {
-			String msg = "Read frame dimensions differ from meta data: [" + _rLen + "x" + _cLen + "] vs. [" + rlen+ "x" + clen + "].";
+			String msg = "Read frame dimensions differ from meta data: [" + _rLen + "x" + _cLen + "] vs. [" + rlen + "x" + clen + "].";
 			if(rlen < _rLen || clen < _cLen) {
 				// a) specified matrix dimensions too small
 				throw new DMLRuntimeException(msg);
@@ -167,29 +166,28 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		return ret;
 	}
 
-	@Override
-	public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names,
-		long rlen, long clen) throws IOException, DMLRuntimeException {
+	@Override public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
 
 		// allocate output frame block
 		InputStreamInputFormat informat = new InputStreamInputFormat(is);
 		InputSplit[] splits = informat.getSplits(null, 1);
-		FrameBlock ret = computeSizeAndCreateOutputFrameBlock(schema, names, splits,null, rlen, clen);
-//
-//		// core read (sequential/parallel)
-//
-//
-//		ReadTask rt = new ReadTask(splits[0], informat, ret, 1)
-//
-//		//readFrameFromInputSplit(split, informat, null, ret, schema, names, rlen, clen, 0, true);
-//
-//		ArrayList<ReadTask> tasks = new ArrayList<>();
-//		int splitCount = 0;
-//		for (InputSplit split : splits) {
-//			tasks.add( new ReadTask(split, informat, dest, splitCount++). );
-//		}
-//		pool.invokeAll(tasks);
-//		pool.shutdown();
+		FrameBlock ret = computeSizeAndCreateOutputFrameBlock(schema, names, splits, null, rlen, clen);
+		//
+		//		// core read (sequential/parallel)
+		//
+		//
+		//		ReadTask rt = new ReadTask(splits[0], informat, ret, 1)
+		//
+		//		//readFrameFromInputSplit(split, informat, null, ret, schema, names, rlen, clen, 0, true);
+		//
+		//		ArrayList<ReadTask> tasks = new ArrayList<>();
+		//		int splitCount = 0;
+		//		for (InputSplit split : splits) {
+		//			tasks.add( new ReadTask(split, informat, dest, splitCount++). );
+		//		}
+		//		pool.invokeAll(tasks);
+		//		pool.shutdown();
 		// TODO: implement parallel reader for input stream
 		return ret;
 	}
@@ -201,18 +199,18 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		informat.configure(job);
 
 		ExecutorService pool = CommonThreadPool.get(_numThreads);
-		try{
+		try {
 			// create read tasks for all splits
 			ArrayList<ReadTask> tasks = new ArrayList<>();
 			int splitCount = 0;
-			for (InputSplit split : splits) {
-				tasks.add( new ReadTask(split, informat, dest, splitCount++) );
+			for(InputSplit split : splits) {
+				tasks.add(new ReadTask(split, informat, dest, splitCount++));
 			}
 			pool.invokeAll(tasks);
 			pool.shutdown();
 
 		}
-		catch (Exception e) {
+		catch(Exception e) {
 			throw new IOException("Threadpool issue, while parallel read.", e);
 		}
 	}
@@ -220,48 +218,11 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 	protected int getEndPos(String str, int strLen, int currPos, HashSet<String> endWithValueString) {
 		int endPos = strLen;
 		for(String d : endWithValueString) {
-			int pos = d.length()> 0 ? str.indexOf(d, currPos): strLen;
+			int pos = d.length() > 0 ? str.indexOf(d, currPos) : strLen;
 			if(pos != -1)
 				endPos = Math.min(endPos, pos);
 		}
 		return endPos;
-	}
-
-	private static class SplitOffsetInfos {
-		// offset & length info per split
-		private int[] offsetPerSplit = null;
-		private int[] lenghtPerSplit = null;
-		private SplitInfo[] seqOffsetPerSplit = null;
-
-		public SplitOffsetInfos(int numSplits) {
-			lenghtPerSplit = new int[numSplits];
-			offsetPerSplit = new int[numSplits];
-			seqOffsetPerSplit = new SplitInfo[numSplits];
-		}
-
-		public int getLenghtPerSplit(int split) {
-			return lenghtPerSplit[split];
-		}
-
-		public void setLenghtPerSplit(int split, int r) {
-			lenghtPerSplit[split] = r;
-		}
-
-		public int getOffsetPerSplit(int split) {
-			return offsetPerSplit[split];
-		}
-
-		public void setOffsetPerSplit(int split, int o) {
-			offsetPerSplit[split] = o;
-		}
-
-		public SplitInfo getSeqOffsetPerSplit(int split) {
-			return seqOffsetPerSplit[split];
-		}
-
-		public void setSeqOffsetPerSplit(int split, SplitInfo splitInfo) {
-			seqOffsetPerSplit[split] = splitInfo;
-		}
 	}
 
 	private class ReadTask implements Callable<Long> {
@@ -279,26 +240,25 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 			_splitCount = splitCount;
 		}
 
-		@Override
-		public Long call() throws IOException {
+		@Override public Long call() throws IOException {
 			RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, job, Reporter.NULL);
 			LongWritable key = new LongWritable();
 			Text value = new Text();
 			_row = _offsets.getOffsetPerSplit(_splitCount);
-			SplitInfo _splitInfo = _offsets.getSeqOffsetPerSplit(_splitCount);
-			reaFrameFromHDFS(reader, key, value, _dest, _row, _splitInfo);
+			TemplateUtil.SplitInfo _splitInfo = _offsets.getSeqOffsetPerSplit(_splitCount);
+			readFrameFromHDFS(reader, key, value, _dest, _row, _splitInfo);
 			return 0L;
 		}
 	}
 
-	private static class CountSeqScatteredRowsTask implements Callable<SplitInfo> {
+	private static class CountSeqScatteredRowsTask implements Callable<TemplateUtil.SplitInfo> {
 		private final InputSplit _split;
 		private final TextInputFormat _inputFormat;
 		private final JobConf _jobConf;
 		private final String _beginString;
 		private final String _endString;
 
-		public CountSeqScatteredRowsTask(InputSplit split, TextInputFormat inputFormat, JobConf jobConf, String beginString, String endString){
+		public CountSeqScatteredRowsTask(InputSplit split, TextInputFormat inputFormat, JobConf jobConf, String beginString, String endString) {
 			_split = split;
 			_inputFormat = inputFormat;
 			_jobConf = jobConf;
@@ -306,9 +266,8 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 			_endString = endString;
 		}
 
-		@Override
-		public SplitInfo call() throws Exception {
-			SplitInfo splitInfo = new SplitInfo();
+		@Override public TemplateUtil.SplitInfo call() throws Exception {
+			TemplateUtil.SplitInfo splitInfo = new TemplateUtil.SplitInfo();
 			int nrows = 0;
 			ArrayList<Pair<Integer, Integer>> beginIndexes = getTokenIndexOnMultiLineRecords(_split, _inputFormat, _jobConf, _beginString);
 			ArrayList<Pair<Integer, Integer>> endIndexes;
@@ -336,9 +295,9 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 						break;
 					p1 = beginIndexes.get(i);
 				}
-				j += n-1;
+				j += n - 1;
 				splitInfo.addIndexAndPosition(beginIndexes.get(i - n).getKey(), endIndexes.get(j).getKey(), beginIndexes.get(i - n).getValue(),
-					endIndexes.get(j).getValue()+tokenLength);
+					endIndexes.get(j).getValue() + tokenLength);
 				j++;
 				nrows++;
 			}
@@ -346,13 +305,13 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 				nrows++;
 			if(beginIndexes.get(0).getKey() == 0 && beginIndexes.get(0).getValue() == 0)
 				splitInfo.setRemainString("");
-			else{
+			else {
 				RecordReader<LongWritable, Text> reader = _inputFormat.getRecordReader(_split, _jobConf, Reporter.NULL);
 				LongWritable key = new LongWritable();
 				Text value = new Text();
 
 				StringBuilder sb = new StringBuilder();
-				for(int ri = 0; ri< beginIndexes.get(0).getKey(); ri++){
+				for(int ri = 0; ri < beginIndexes.get(0).getKey(); ri++) {
 					reader.next(key, value);
 					String raw = value.toString();
 					sb.append(raw);
@@ -368,61 +327,6 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		}
 	}
 
-	protected static class SplitInfo{
-		private int nrows;
-		private ArrayList<Integer> recordIndexBegin;
-		private ArrayList<Integer> recordIndexEnd;
-		private ArrayList<Integer> recordPositionBegin;
-		private ArrayList<Integer> recordPositionEnd;
-		private String remainString;
-
-		public SplitInfo() {
-			recordIndexBegin = new ArrayList<>();
-			recordIndexEnd = new ArrayList<>();
-			recordPositionBegin = new ArrayList<>();
-			recordPositionEnd = new ArrayList<>();
-		}
-
-		public void addIndexAndPosition(int beginIndex, int endIndex, int beginPos, int endPos){
-			recordIndexBegin.add(beginIndex);
-			recordIndexEnd.add(endIndex);
-			recordPositionBegin.add(beginPos);
-			recordPositionEnd.add(endPos);
-		}
-
-		public int getNrows() {
-			return nrows;
-		}
-
-		public void setNrows(int nrows) {
-			this.nrows = nrows;
-		}
-
-		public String getRemainString() {
-			return remainString;
-		}
-
-		public void setRemainString(String remainString) {
-			this.remainString = remainString;
-		}
-
-		public int getRecordIndexBegin(int index) {
-			return recordIndexBegin.get(index);
-		}
-
-		public int getRecordIndexEnd(int index) {
-			return recordIndexEnd.get(index);
-		}
-
-		public int getRecordPositionBegin(int index) {
-			return recordPositionBegin.get(index);
-		}
-
-		public int getRecordPositionEnd(int index) {
-			return recordPositionEnd.get(index);
-		}
-	}
-
 	private static ArrayList<Pair<Integer, Integer>> getTokenIndexOnMultiLineRecords(InputSplit split, TextInputFormat inputFormat, JobConf job,
 		String token) throws IOException {
 		RecordReader<LongWritable, Text> reader = inputFormat.getRecordReader(split, job, Reporter.NULL);
@@ -431,24 +335,25 @@ public abstract class FrameGenerateReaderParallel extends FrameReader {
 		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
 
 		int ri = 0;
-		while (reader.next(key, value)){
+		while(reader.next(key, value)) {
 			String raw = value.toString();
 			int index;
 			int fromIndex = 0;
 			do {
 				index = raw.indexOf(token, fromIndex);
-				if(index !=-1){
+				if(index != -1) {
 					result.add(new Pair<>(ri, index));
-					fromIndex = index+token.length();
+					fromIndex = index + token.length();
 				}
 				else
 					break;
-			}while(true);
+			}
+			while(true);
 			ri++;
 		}
 		return result;
 	}
 
-	protected abstract int reaFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, FrameBlock dest,
-		int rowPos, SplitInfo splitInfo) throws IOException;
+	protected abstract int readFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, FrameBlock dest, int rowPos,
+		TemplateUtil.SplitInfo splitInfo) throws IOException;
 }

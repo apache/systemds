@@ -398,16 +398,6 @@ public class FormatIdentifying {
 						if(startChar == prefix.charAt(j))
 							textTrie.insert(prefix.substring(j, j+Math.min(minSubStringLength, prefix.length() - j)),i);
 					}
-					if(i % 10 == 0){
-						keys = textTrie.getAllKeys();
-						String upIntersect;
-						int index = keys.get(0).getKey().indexOf("\n");
-						if(index == -1)
-							upIntersect = keys.get(0).getKey();
-						else
-							upIntersect = keys.get(0).getKey().substring(0, index);
-						minSubStringLength = upIntersect.length();
-					}
 				}
 				// scoring the prefix tree
 				keys = textTrie.getAllKeys();
@@ -442,17 +432,6 @@ public class FormatIdentifying {
 						for(int j=0; j< str.length(); j++){
 							if(startChar == str.charAt(j))
 								textTrieEnd.insert(str.substring(j, j+Math.min(minSubStringLength, str.length() - j)),i);
-						}
-						if(i % 10 == 0){
-							keys = textTrieEnd.getAllKeys();
-							index = keys.get(0).getKey().indexOf(Lop.OPERAND_DELIMITOR);
-							String upIntersect;
-							if(index == -1)
-								upIntersect = new StringBuilder(keys.get(0).getKey()).reverse().toString();
-							else
-								upIntersect = new StringBuilder(keys.get(0).getKey().substring(0, index)).reverse().toString();
-
-							minSubStringLength = upIntersect.length();
 						}
 					}
 					keys = textTrieEnd.getAllKeys();

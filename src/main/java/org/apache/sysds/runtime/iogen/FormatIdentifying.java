@@ -386,17 +386,31 @@ public class FormatIdentifying {
 			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.SeqScatter){
 				ArrayList<Pair<String, String>> prefixSuffixBeginEndCells = extractPrefixSuffixBeginEndCells(false);
 
+				ArrayList<Pair<String, Set<Integer>>> keys;
 				TextTrie textTrie = new TextTrie();
 				textTrie.insert(prefixSuffixBeginEndCells.get(0).getKey(), 0);
+				char startChar = prefixSuffixBeginEndCells.get(0).getKey().charAt(0);
 
+				int minSubStringLength = Math.min(80, prefixSuffixBeginEndCells.get(0).getKey().length());
 				for(int i=1; i< prefixSuffixBeginEndCells.size(); i++){
 					String prefix = prefixSuffixBeginEndCells.get(i).getKey();
 					for(int j=0; j< prefix.length(); j++){
-						textTrie.insert(prefix.substring(j),i);
+						if(startChar == prefix.charAt(j))
+							textTrie.insert(prefix.substring(j, j+Math.min(minSubStringLength, prefix.length() - j)),i);
+					}
+					if(i % 10 == 0){
+						keys = textTrie.getAllKeys();
+						String upIntersect;
+						int index = keys.get(0).getKey().indexOf("\n");
+						if(index == -1)
+							upIntersect = keys.get(0).getKey();
+						else
+							upIntersect = keys.get(0).getKey().substring(0, index);
+						minSubStringLength = upIntersect.length();
 					}
 				}
 				// scoring the prefix tree
-				ArrayList<Pair<String, Set<Integer>>> keys = textTrie.getAllKeys();
+				keys = textTrie.getAllKeys();
 				String beginString = null;
 				String endString = null;
 				if(keys.get(0).getValue().size() == nrows){
@@ -417,14 +431,28 @@ public class FormatIdentifying {
 							suffixes.add(str);
 					}
 
+					String str = new StringBuilder(suffixes.get(0).replace("\n", "")).reverse().toString();
+					minSubStringLength = Math.min(80, str.length());
 					TextTrie textTrieEnd = new TextTrie();
-					textTrieEnd.insert(new StringBuilder(suffixes.get(0).replace("\n", "")).reverse().toString(), 0);
-
+					textTrieEnd.insert(str, 0);
+					startChar = str.charAt(0);
 					for(int i=1; i< suffixes.size(); i++){
 						StringBuilder sb = new StringBuilder(suffixes.get(i).replace("\n", Lop.OPERAND_DELIMITOR)).reverse();
-						String str = sb.toString();
+						str = sb.toString();
 						for(int j=0; j< str.length(); j++){
-							textTrieEnd.insert(str.substring(j),i);
+							if(startChar == str.charAt(j))
+								textTrieEnd.insert(str.substring(j, j+Math.min(minSubStringLength, str.length() - j)),i);
+						}
+						if(i % 10 == 0){
+							keys = textTrieEnd.getAllKeys();
+							index = keys.get(0).getKey().indexOf(Lop.OPERAND_DELIMITOR);
+							String upIntersect;
+							if(index == -1)
+								upIntersect = new StringBuilder(keys.get(0).getKey()).reverse().toString();
+							else
+								upIntersect = new StringBuilder(keys.get(0).getKey().substring(0, index)).reverse().toString();
+
+							minSubStringLength = upIntersect.length();
 						}
 					}
 					keys = textTrieEnd.getAllKeys();
@@ -1230,5 +1258,4 @@ public class FormatIdentifying {
 		else
 			return new Pair<>(-1, -1);
 	}
-
 }

@@ -155,24 +155,28 @@ public class ReaderMapping {
 		boolean singleLine = true;
 
 		// first mapped value
-		int firstLineNumber = -1;
+		int[] firstLineNumbers = new int[nrows];
 		for(int r = 0; r < nrows; r++) {
 			int c = 0;
-			firstLineNumber = -1;
-			for(; c < ncols && firstLineNumber == -1; c++)
-				firstLineNumber = mapRow[r][c];
+			firstLineNumbers[r] = -1;
+			for(; c < ncols && firstLineNumbers[r] == -1; c++)
+				firstLineNumbers[r] = mapRow[r][c];
 			// other mapped 
 			for(; c < ncols && singleLine; c++)
 				if(mapRow[r][c] != -1)
-					singleLine = firstLineNumber == mapRow[r][c];
+					singleLine = firstLineNumbers[r] == mapRow[r][c];
+
 		}
+		for(int r=0; r<nrows-1 && singleLine; r++)
+				singleLine = firstLineNumbers[r+1] - firstLineNumbers[r] == 1;
+
 		if(singleLine) {
 			mappingProperties.setRecordSingleLine();
 			// 3.a check for array representation
 			boolean allValuesInALine = true;
 			for(int r=0; r<nrows && allValuesInALine; r++){
 				for(int c=0; c<ncols; c++){
-					if(mapRow[r][c] != -1 && mapRow[r][c] != firstLineNumber) {
+					if(mapRow[r][c] != -1 && mapRow[r][c] != firstLineNumbers[0]) {
 						allValuesInALine = false;
 						break;
 					}

@@ -20,25 +20,60 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { LayoutComponent } from './layout.component';
+import { MatDialog } from "@angular/material/dialog";
+import { ChangeDetectorRef, DebugElement } from "@angular/core";
+import { MediaMatcher } from "@angular/cdk/layout";
+import { By } from "@angular/platform-browser";
 
 describe('LayoutComponent', () => {
 	let component: LayoutComponent;
 	let fixture: ComponentFixture<LayoutComponent>;
+	let de: DebugElement;
 
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
-			declarations: [LayoutComponent]
+			declarations: [LayoutComponent],
+			providers: [
+				{ provide: MatDialog, useValue: {} },
+				{ provide: ChangeDetectorRef, useValue: {} },
+				{
+					provide: MediaMatcher,
+					useValue: {
+						matchMedia: () => {
+							return {
+								addListener: () => {},
+								removeListener: () => {}
+							}
+						}
+					}
+				}
+			]
 		})
-			.compileComponents();
+		.compileComponents();
 	});
 
 	beforeEach(() => {
 		fixture = TestBed.createComponent(LayoutComponent);
 		component = fixture.componentInstance;
+		de = fixture.debugElement;
+
 		fixture.detectChanges();
 	});
 
 	it('should create', () => {
 		expect(component).toBeTruthy();
+	});
+
+	it('should contain dashboard, coordinators and workers menu elements', () => {
+		let html = de.query(By.css('#menu-elements')).nativeElement.innerText;
+
+		expect(html).not.toBeNull();
+		expect(html).toContain('Dashboard');
+		expect(html).toContain('Coordinators');
+		expect(html).toContain('Workers');
+	});
+
+	it('should contain register entity button', () => {
+		expect(de.query(By.css('#register-entity'))).not.toBeNull();
 	});
 });

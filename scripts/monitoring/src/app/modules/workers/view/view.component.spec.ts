@@ -20,25 +20,67 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ViewWorkerComponent } from './view.component';
+import { FederatedSiteService } from "../../../services/federatedSiteService.service";
+import { FederatedSiteServiceStub } from "../../../services/federatedSiteService.stub";
+import { ActivatedRoute } from "@angular/router";
+import { DebugElement } from "@angular/core";
+import { By } from "@angular/platform-browser";
 
 describe('ViewWorkerComponent', () => {
 	let component: ViewWorkerComponent;
 	let fixture: ComponentFixture<ViewWorkerComponent>;
+	let de: DebugElement;
 
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
-			declarations: [ViewWorkerComponent]
+			declarations: [ViewWorkerComponent],
+			providers: [
+				{ provide: FederatedSiteService , useClass: FederatedSiteServiceStub },
+				{
+					provide : ActivatedRoute,
+					useValue : {
+						snapshot: {
+							paramMap: {
+								get: () => {
+									return { id: 1 }
+								}
+							}
+						}
+					}
+				}
+			]
 		})
-			.compileComponents();
+		.compileComponents();
 	});
 
 	beforeEach(() => {
 		fixture = TestBed.createComponent(ViewWorkerComponent);
 		component = fixture.componentInstance;
+		de = fixture.debugElement;
+
 		fixture.detectChanges();
 	});
 
 	it('should create', () => {
 		expect(component).toBeTruthy();
+	});
+
+	it('should not contain null model', () => {
+		expect(component.model).not.toBeNull();
+	});
+
+	it('should contain address, status and JIT information', () => {
+		let html = de.query(By.css('#main-worker-information')).nativeElement.innerText;
+		expect(html).toContain('Address');
+		expect(html).toContain('Status');
+		expect(html).toContain('JIT');
+	});
+
+	it('should contain CPU metrics diagram', () => {
+		expect(de.query(By.css('#cpu-metric-card'))).not.toBeNull();
+	});
+
+	it('should contain memory metrics diagram', () => {
+		expect(de.query(By.css('#memory-metric-card'))).not.toBeNull();
 	});
 });

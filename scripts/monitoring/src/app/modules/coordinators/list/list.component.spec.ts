@@ -20,25 +20,53 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ListCoordinatorsComponent } from './list.component';
+import { DebugElement } from "@angular/core";
+import { FederatedSiteService } from "../../../services/federatedSiteService.service";
+import { FederatedSiteServiceStub } from "../../../services/federatedSiteService.stub";
+import { MatDialog } from "@angular/material/dialog";
+import { Router } from "@angular/router";
+import { By } from "@angular/platform-browser";
 
 describe('ListCoordinatorsComponent', () => {
 	let component: ListCoordinatorsComponent;
 	let fixture: ComponentFixture<ListCoordinatorsComponent>;
+	let de: DebugElement;
 
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
-			declarations: [ListCoordinatorsComponent]
+			declarations: [ListCoordinatorsComponent],
+			providers: [
+				{ provide: FederatedSiteService , useClass: FederatedSiteServiceStub },
+				{ provide : Router, useValue : {} },
+				{ provide: MatDialog, useValue: {} }
+			]
 		})
-			.compileComponents();
+		.compileComponents();
 	});
 
 	beforeEach(() => {
 		fixture = TestBed.createComponent(ListCoordinatorsComponent);
 		component = fixture.componentInstance;
+		de = fixture.debugElement;
+
 		fixture.detectChanges();
 	});
 
 	it('should create', () => {
 		expect(component).toBeTruthy();
+	});
+
+	it('should contain table of coordinators', () => {
+		expect(de.query(By.css('table'))).not.toBeNull();
+	});
+
+	it('should contain name, address and actions table fields', () => {
+		expect(component.displayedColumns).toContain('name');
+		expect(component.displayedColumns).toContain('address');
+		expect(component.displayedColumns).toContain('actions');
+	});
+
+	it('should not have null data source', () => {
+		expect(component.dataSource).not.toBeNull();
 	});
 });

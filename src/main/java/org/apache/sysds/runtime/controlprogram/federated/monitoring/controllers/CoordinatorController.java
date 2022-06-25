@@ -35,7 +35,7 @@ public class CoordinatorController implements IController {
 
 		long id = _coordinatorService.create(model);
 
-		return Response.ok(String.format("{\"id\": %d}", id));
+		return Response.ok(String.format(Constants.ID_JSON_MSG, id));
 	}
 
 	@Override

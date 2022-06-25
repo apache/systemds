@@ -18,16 +18,16 @@
 -->
 
 <h1 mat-dialog-title>Register new coordinator</h1>
-<div mat-dialog-content>
+<div id="register-coordinator-content" mat-dialog-content>
 
 	<mat-form-field appearance="fill">
 		<mat-label>Name</mat-label>
-		<input [(ngModel)]="model.name" matInput>
+		<input *ngIf="model" [(ngModel)]="model.name" matInput>
 	</mat-form-field>
 
 	<mat-form-field appearance="fill">
 		<mat-label>Address</mat-label>
-		<input [(ngModel)]="model.address" matInput>
+		<input *ngIf="model" [(ngModel)]="model.address" matInput>
 	</mat-form-field>
 
 

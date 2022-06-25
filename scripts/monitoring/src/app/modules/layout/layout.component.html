@@ -34,11 +34,11 @@
 
 		<span class="navbar-spacer"></span>
 
-		<button [matMenuTriggerFor]="addItemMenu" color="warn" color="accent" mat-fab>
+		<button id="register-entity" [matMenuTriggerFor]="addItemMenu" color="warn" color="accent" mat-fab>
 			<mat-icon>add</mat-icon>
 		</button>
 
-		<mat-menu #addItemMenu="matMenu" [overlapTrigger]="false" xPosition="before" yPosition="above">
+		<mat-menu #addItemMenu [overlapTrigger]="false" xPosition="before" yPosition="above">
 
 			<a (click)="openNewEntityDialog('coordinator')" mat-menu-item>
 				<span>Add new coordinator</span>
@@ -57,7 +57,7 @@
 		<mat-sidenav #snav [fixedInViewport]="mobileQuery.matches" [mode]="mobileQuery.matches ? 'over' : 'side'"
 					 [opened]="!mobileQuery.matches" class="sidenav" fixedTopGap="56">
 
-			<mat-nav-list>
+			<mat-nav-list id="menu-elements">
 				<h3 mat-subheader>Home</h3>
 
 				<a [routerLink]="['/dashboard']" mat-list-item routerLinkActive="active">

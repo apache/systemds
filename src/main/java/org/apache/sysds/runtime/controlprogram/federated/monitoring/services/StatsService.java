@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
-import org.apache.log4j.Logger;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -34,8 +33,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class StatsService {
-	protected static Logger log = Logger.getLogger(StatsService.class);
-
 	public static BaseEntityModel getWorkerStatistics(Long id, String address) {
 		StatsEntityModel parsedStats = null;
 
@@ -61,9 +58,10 @@ public class StatsService {
 			}
 		} catch (DMLRuntimeException dre) {
 			// silently ignore -> caused by offline federated workers
-			log.error("Worker offline: " + dre.getMessage());
 		} catch (Exception e) {
-			log.error("Error: " + e.getMessage());
+			// the method used in a background thread
+			// if thread stops the whole app should be restarted to start the thread again
+			// -> should never stop running
 		}
 
 		return parsedStats;

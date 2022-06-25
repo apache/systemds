@@ -20,25 +20,41 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DashboardComponent } from './dashboard.component';
+import { FederatedSiteService } from "../../../services/federatedSiteService.service";
+import { FederatedSiteServiceStub } from "../../../services/federatedSiteService.stub";
+import { MatDialog } from "@angular/material/dialog";
+import { DebugElement } from "@angular/core";
+import { By } from "@angular/platform-browser";
 
 describe('DashboardComponent', () => {
 	let component: DashboardComponent;
 	let fixture: ComponentFixture<DashboardComponent>;
+	let de: DebugElement;
 
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
-			declarations: [DashboardComponent]
+			declarations: [DashboardComponent],
+			providers: [
+				{ provide: FederatedSiteService , useClass: FederatedSiteServiceStub },
+				{ provide: MatDialog, useValue: {} }
+			]
 		})
-			.compileComponents();
+		.compileComponents();
 	});
 
 	beforeEach(() => {
 		fixture = TestBed.createComponent(DashboardComponent);
 		component = fixture.componentInstance;
+		de = fixture.debugElement;
+
 		fixture.detectChanges();
 	});
 
 	it('should create', () => {
 		expect(component).toBeTruthy();
+	});
+
+	it('should contain config button', () => {
+		expect(de.query(By.css('button')).nativeElement.innerText.toLowerCase()).toContain('config');
 	});
 });

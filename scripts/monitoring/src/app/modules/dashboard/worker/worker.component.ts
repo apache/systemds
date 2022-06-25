@@ -42,12 +42,11 @@ export class WorkerComponent {
 	private dataMemory!: any[];
 	private timer: any;
 
-	constructor(
-		private fedSiteService: FederatedSiteService,
-		private router: ActivatedRoute) {
-	}
+	constructor(private fedSiteService: FederatedSiteService) {	}
 
 	ngOnInit(): void {
+		this.model = this.model ? this.model : new Worker(-1, '', '', false, 0, [], []);
+
 		this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
 			this.model = worker;
 

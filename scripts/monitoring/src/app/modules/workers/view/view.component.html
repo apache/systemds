@@ -19,20 +19,20 @@
 
 <div class="metrics-cards">
 	<mat-card class="worker-metrics-card" id="data-metric-card">
-		<mat-card-title *ngIf="!isLoadingResults">{{model.name}}</mat-card-title>
-		<mat-card-content>
-			<h3>Address: <span *ngIf="!isLoadingResults">{{model.address}}</span></h3>
+		<mat-card-title *ngIf="model">{{model.name}}</mat-card-title>
+		<mat-card-content id="main-worker-information">
+			<h3>Address: <span *ngIf="model">{{model.address}}</span></h3>
 			<mat-divider inset></mat-divider>
-			<h3 *ngIf="!isLoadingResults">Status:
-				<span *ngIf="model.isOnline" class="online-worker">
+			<h3>Status:
+				<span *ngIf="model && model.isOnline" class="online-worker">
             Online
           </span>
-				<span *ngIf="!model.isOnline" class="offline-worker">
+				<span *ngIf="model && !model.isOnline" class="offline-worker">
             Offline
           </span>
 			</h3>
 			<mat-divider inset></mat-divider>
-			<h3>JIT Compile time: <span *ngIf="!isLoadingResults">{{model.jitCompileTime}} s</span></h3>
+			<h3>JIT Compile time: <span *ngIf="model">{{model.jitCompileTime}} s</span></h3>
 		</mat-card-content>
 	</mat-card>
 	<mat-card class="worker-metrics-card" id="requests-metric-card">

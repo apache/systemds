@@ -18,9 +18,9 @@
 -->
 
 <mat-card class="coordinator-card">
-	<mat-card-title>{{ model.name }}</mat-card-title>
+	<mat-card-title *ngIf="model">{{ model.name }}</mat-card-title>
 	<mat-divider inset></mat-divider>
-	<mat-card-content>
+	<mat-card-content *ngIf="model">
 		<p>Address: {{ model.address }}</p>
 	</mat-card-content>
 </mat-card>

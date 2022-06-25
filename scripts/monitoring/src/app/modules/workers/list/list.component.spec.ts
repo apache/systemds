@@ -20,25 +20,54 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ListWorkersComponent } from './list.component';
+import { DebugElement } from "@angular/core";
+import { FederatedSiteService } from "../../../services/federatedSiteService.service";
+import { FederatedSiteServiceStub } from "../../../services/federatedSiteService.stub";
+import { Router } from "@angular/router";
+import { MatDialog } from "@angular/material/dialog";
+import { By } from "@angular/platform-browser";
 
 describe('ListWorkersComponent', () => {
 	let component: ListWorkersComponent;
 	let fixture: ComponentFixture<ListWorkersComponent>;
+	let de: DebugElement;
 
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
-			declarations: [ListWorkersComponent]
+			declarations: [ListWorkersComponent],
+			providers: [
+				{ provide: FederatedSiteService , useClass: FederatedSiteServiceStub },
+				{ provide : Router, useValue : {} },
+				{ provide: MatDialog, useValue: {} }
+			]
 		})
-			.compileComponents();
+		.compileComponents();
 	});
 
 	beforeEach(() => {
 		fixture = TestBed.createComponent(ListWorkersComponent);
 		component = fixture.componentInstance;
+		de = fixture.debugElement;
+
 		fixture.detectChanges();
 	});
 
 	it('should create', () => {
 		expect(component).toBeTruthy();
+	});
+
+	it('should contain table of workers', () => {
+		expect(de.query(By.css('table'))).not.toBeNull();
+	});
+
+	it('should contain name, address, status and actions table fields', () => {
+		expect(component.displayedColumns).toContain('name');
+		expect(component.displayedColumns).toContain('address');
+		expect(component.displayedColumns).toContain('status');
+		expect(component.displayedColumns).toContain('actions');
+	});
+
+	it('should not have null data source', () => {
+		expect(component.dataSource).not.toBeNull();
 	});
 });

@@ -96,10 +96,9 @@ public class NodeEntityModel extends BaseEntityModel {
 
 		if (_requestTypeCount != null) {
 			for(var entry : _requestTypeCount) {
-				requestTypeCountStrArr.add(String.format("{" +
-						"\"type\": \"%s\"," +
-						"\"count\": %d" +
-						"}", entry.getLeft().toString(), entry.getRight()));
+				requestTypeCountStrArr.add(String.format(Constants.REQUEST_TYPE_COUNT_JSON_STR,
+								entry.getLeft().toString(),
+								entry.getRight()));
 			}
 		}
 
@@ -112,14 +111,6 @@ public class NodeEntityModel extends BaseEntityModel {
 
 	@Override
 	public String toString() {
-		return String.format("{" +
-				"\"id\": %d," +
-				"\"name\": \"%s\"," +
-				"\"address\": \"%s\"," +
-				"\"isOnline\": %b," +
-				"\"jitCompileTime\": %.2f," +
-				"\"requestTypeCounts\": [%s]," +
-				"\"stats\": %s" +
-				"}", _id, _name, _address, _isOnline, _jitCompileTime, getRequestTypeCount(), _stats);
+		return String.format(Constants.NODE_ENTITY_JSON_STR, _id, _name, _address, _isOnline, _jitCompileTime, getRequestTypeCount(), _stats);
 	}
 }

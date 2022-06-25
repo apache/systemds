@@ -40,7 +40,6 @@ export class ViewWorkerComponent {
 	public updateOptionsRequests: any;
 	public model: Worker;
 	public resultsLength = 0;
-	public isLoadingResults = true;
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	@ViewChild(MatSort) sort: MatSort;
 	private dataCPU!: any[];
@@ -57,7 +56,6 @@ export class ViewWorkerComponent {
 		this.fedSiteService.getWorker(id).subscribe(worker => {
 			this.model = worker;
 
-			this.isLoadingResults = false;
 			this.resultsLength = this.model.stats!.length;
 
 			this.updateMetrics();

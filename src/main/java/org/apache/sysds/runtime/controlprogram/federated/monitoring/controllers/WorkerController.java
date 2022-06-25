@@ -35,7 +35,7 @@ public class WorkerController implements IController {
 
 		long id = _workerService.create(model);
 
-		return Response.ok(String.format("{\"id\": %d}", id));
+		return Response.ok(String.format(Constants.ID_JSON_MSG, id));
 	}
 
 	@Override

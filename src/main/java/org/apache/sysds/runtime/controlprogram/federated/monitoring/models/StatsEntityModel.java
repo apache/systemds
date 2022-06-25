@@ -114,11 +114,7 @@ public class StatsEntityModel extends BaseEntityModel {
 				String instruction = entry.getKey();
 				Long count = entry.getValue().getLeft();
 				double duration = entry.getValue().getRight();
-				heavyHittersStrArr.add(String.format("{" +
-					"\"instruction\": \"%s\"," +
-					"\"count\": %d," +
-					"\"duration\": %.2f" +
-					"}", instruction, count, duration));
+				heavyHittersStrArr.add(String.format(Constants.HEAVY_HITTER_INSTRUCTIONS_JSON_STR, instruction, count, duration));
 			}
 
 			if (!heavyHittersStrArr.isEmpty()) {
@@ -139,11 +135,7 @@ public class StatsEntityModel extends BaseEntityModel {
 			List<String> transferredBytesStrArr = new ArrayList<>();
 
 			for (var entry: _transferredBytesObj) {
-				transferredBytesStrArr.add(String.format("{" +
-					"\"datetime\": \"%s\"," +
-					"\"coordinatorAddress\": \"%s\"," +
-					"\"byteAmount\": %d" +
-					"}", entry.getLeft().format(DateTimeFormatter.ISO_DATE_TIME),
+				transferredBytesStrArr.add(String.format(Constants.TRANSFERRED_BYTES_JSON_STR, entry.getLeft().format(DateTimeFormatter.ISO_DATE_TIME),
 					entry.getMiddle(), entry.getRight()));
 			}
 
@@ -161,13 +153,7 @@ public class StatsEntityModel extends BaseEntityModel {
 
 	@Override
 	public String toString() {
-		return String.format("{" +
-			"\"timestamp\": \"%s\"," +
-			"\"cpuUsage\": %.2f," +
-			"\"memoryUsage\": %.2f," +
-			"\"coordinatorTraffic\": [%s]," +
-			"\"heavyHitters\": [%s]" +
-			"}", _timeStamp.toString(), _cpuUsage, _memoryUsage,
+		return String.format(Constants.STATS_ENTITY_JSON_STR, _timeStamp.toString(), _cpuUsage, _memoryUsage,
 				getTransferredBytes(), getHeavyHitterInstructions());
 	}
 }

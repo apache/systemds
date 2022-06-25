@@ -20,10 +20,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { CoordinatorComponent } from './coordinator.component';
+import { DebugElement } from "@angular/core";
 
 describe('CoordinatorComponent', () => {
 	let component: CoordinatorComponent;
 	let fixture: ComponentFixture<CoordinatorComponent>;
+	let de: DebugElement;
 
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
@@ -35,6 +37,8 @@ describe('CoordinatorComponent', () => {
 	beforeEach(() => {
 		fixture = TestBed.createComponent(CoordinatorComponent);
 		component = fixture.componentInstance;
+		de = fixture.debugElement;
+
 		fixture.detectChanges();
 	});
 

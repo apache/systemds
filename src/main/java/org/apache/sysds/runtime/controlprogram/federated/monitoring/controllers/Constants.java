@@ -22,4 +22,5 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers
 public class Constants {
 	public static final String GENERIC_SUCCESS_MSG = "{\"message\": \"Success\"}";
 	public static final String NOT_FOUND_MSG = "{\"message\": \"Entity not found\"}";
+	public static final String ID_JSON_MSG = "{\"id\": %d}";
 }

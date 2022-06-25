@@ -20,25 +20,51 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ViewCoordinatorComponent } from './view.component';
+import { FederatedSiteService } from "../../../services/federatedSiteService.service";
+import { FederatedSiteServiceStub } from "../../../services/federatedSiteService.stub";
+import { ActivatedRoute } from "@angular/router";
+import { DebugElement } from "@angular/core";
 
 describe('ViewCoordinatorComponent', () => {
 	let component: ViewCoordinatorComponent;
 	let fixture: ComponentFixture<ViewCoordinatorComponent>;
+	let de: DebugElement;
 
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
-			declarations: [ViewCoordinatorComponent]
+			declarations: [ViewCoordinatorComponent],
+			providers: [
+				{ provide: FederatedSiteService , useClass: FederatedSiteServiceStub },
+				{
+					provide : ActivatedRoute,
+					useValue : {
+						snapshot: {
+							paramMap: {
+								get: () => {
+									return { id: 1 }
+								}
+							}
+						}
+					}
+				}
+			]
 		})
-			.compileComponents();
+		.compileComponents();
 	});
 
 	beforeEach(() => {
 		fixture = TestBed.createComponent(ViewCoordinatorComponent);
 		component = fixture.componentInstance;
+		de = fixture.debugElement;
+
 		fixture.detectChanges();
 	});
 
 	it('should create', () => {
 		expect(component).toBeTruthy();
+	});
+
+	it('should not contain null model', () => {
+		expect(component.model).not.toBeNull();
 	});
 });

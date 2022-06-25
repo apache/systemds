@@ -18,15 +18,15 @@
 -->
 
 <mat-card class="worker-card">
-	<mat-card-title>{{ model.name }}</mat-card-title>
+	<mat-card-title *ngIf="model">{{ model.name }}</mat-card-title>
 	<mat-divider inset></mat-divider>
 	<mat-card-content>
-		<p>Address: {{ model.address }}</p>
+		<p>Address: <span *ngIf="model">{{ model.address }}</span></p>
 		<p>Status:
-			<span *ngIf="model.isOnline" class="online-worker">
+			<span *ngIf="model && model.isOnline" class="online-worker">
         Online
       </span>
-			<span *ngIf="!model.isOnline" class="offline-worker">
+			<span *ngIf="model && !model.isOnline" class="offline-worker">
         Offline
       </span>
 		</p>

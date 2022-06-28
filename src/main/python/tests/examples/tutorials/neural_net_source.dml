@@ -56,7 +56,6 @@ eval = function(matrix[double] probs, matrix[double] y)
   accuracy = mean(correct_pred)
 }
 
-
 gradients = function(list[unknown] model,
                      list[unknown] hyperparams,
                      matrix[double] features,
@@ -117,7 +116,6 @@ aggregation = function(list[unknown] model,
   model_result = list(W1, W2, W3, b1, b2, b3)
 }
 
-
 train = function(matrix[double] X, matrix[double] y,
                  int epochs, int batch_size, double learning_rate, 
                  int seed = -1)
@@ -131,9 +129,6 @@ train = function(matrix[double] X, matrix[double] y,
   W1 = as.matrix(model[1]); b1 = as.matrix(model[4])
   W2 = as.matrix(model[2]); b2 = as.matrix(model[5])
   W3 = as.matrix(model[3]); b3 = as.matrix(model[6])
-  
-  
-  
   
   # Create the hyper parameter list
   hyperparams = list(learning_rate=learning_rate)
@@ -193,4 +188,3 @@ train_paramserv = function(matrix[Double] X, matrix[Double] y,
     k=workers, hyperparams=params, checkpointing="NONE")
 
 }
-

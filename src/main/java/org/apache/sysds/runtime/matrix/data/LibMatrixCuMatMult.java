@@ -18,11 +18,14 @@
  */
 package org.apache.sysds.runtime.matrix.data;
 
+import static jcuda.jcusparse.JCusparse.*;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
+import static jcuda.jcusparse.cusparseOrder.CUSPARSE_ORDER_ROW;
+import static jcuda.jcusparse.cusparseSpMMAlg.CUSPARSE_MM_ALG_DEFAULT;
+import static jcuda.jcusparse.cusparseSpMVAlg.CUSPARSE_MV_ALG_DEFAULT;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
-import jcuda.Pointer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,7 +37,9 @@ import org.apache.sysds.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.utils.Statistics;
 
-import jcuda.jcusparse.cusparseHandle;
+import jcuda.Pointer;
+import jcuda.jcusparse.*;
+
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcublas.cublasOperation;
 import jcuda.runtime.JCuda;
@@ -42,6 +47,9 @@ import jcuda.runtime.JCuda;
 public class LibMatrixCuMatMult extends LibMatrixCUDA {
 
 	private static final Log LOG = LogFactory.getLog(LibMatrixCuMatMult.class.getName());
+
+	// Definitions missing in jCuda 11.4.1
+	static int CUSPARSE_SPGEMM_DEFAULT = 0;
 
 	private static class CuMatMultParameters {
 		/*
@@ -79,6 +87,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		}
 
 		public void rowToColumnMajor() {
+			// TLDR: swapping inputs to change from row to col major for cublas
 			// To compensate for the input matrices being in row-major format
 			// instead of column-major (the way cublas expects)
 			isRightTransposed = swap(isLeftTransposed, isLeftTransposed = isRightTransposed);
@@ -115,6 +124,9 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 * The user is expected to call
 	 * ec.releaseMatrixOutputForGPUInstruction(outputName);
 	 *
+	 * @see <a href="https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSPARSE/spgemm/spgemm_example.c">
+	 *     CUDALibrarySamples</a> for the original sample code used for the SpGEMM part of this method.
+	 *
 	 * @param ec
 	 *            Current {@link ExecutionContext} instance
 	 * @param gCtx
@@ -126,12 +138,11 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 * @param right
 	 *            Matrix B
 	 * @param outputName
-	 *            Name of the output matrix C (in code generated after LOP
-	 *            layer)
+	 *            Name of the output matrix C (in code generated after LOP layer)
 	 * @param isLeftTransposed
 	 *            op for A, transposed or not
 	 * @param isRightTransposed
-	 *            op for B, tranposed or not
+	 *            op for B, transposed or not
 	 * @return output of matrix multiply
 	 */
 	public static MatrixObject matmult(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject left,
@@ -145,61 +156,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		CuMatMultParameters params = new CuMatMultParameters(left.getNumRows(), left.getNumColumns(),
 				right.getNumRows(), right.getNumColumns(), isLeftTransposed, isRightTransposed);
 
-		if (isM1Sparse && isM2Sparse) {
-			// -------------------------------------------------------------------------------------
-			// sparse-sparse matrix multiplication
-			params.validate();
-			int transa = cusparseOp(isLeftTransposed);
-			int transb = cusparseOp(isRightTransposed);
-
-			// Step 1: Allocate output => sparse format
-			ec.allocateGPUMatrixObject(outputName, outRLen, outCLen);
-
-			// Step 2: Get the handles to sparse/dense pointers for left, right
-			// and output
-			CSRPointer A = left.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
-			CSRPointer B = right.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
-			CSRPointer C = CSRPointer.allocateForMatrixMultiply(gCtx, getCusparseHandle(gCtx), A, transa, B, transb,
-					params.m, params.n, params.k);
-		
-			// Step 3: Invoke the kernel
-			cudaSupportFunctions.cusparsecsrgemm(getCusparseHandle(gCtx), transa, transb, params.m, params.n, params.k, A.descr,
-					(int) A.nnz, A.val, A.rowPtr, A.colInd, B.descr, (int) B.nnz, B.val, B.rowPtr, B.colInd, C.descr,
-					C.val, C.rowPtr, C.colInd);
-			output.getGPUObject(gCtx).setSparseMatrixCudaPointer(C);
-			// -------------------------------------------------------------------------------------
-		} else if (!isM1Sparse && isM2Sparse) {
-			// -------------------------------------------------------------------------------------
-			// dense-sparse matrix multiplication
-			// Step 1: Allocate output => dense format
-			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen);
-
-			// Step 2: Get the handles to sparse/dense pointers for left, right
-			// and output
-			Pointer A = getDensePointer(gCtx, left, instName);
-			CSRPointer B = right.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
-			Pointer C = getDensePointer(gCtx, output, instName);
-
-			// Step 3: Invoke the kernel
-			denseSparseMatMult(getCusparseHandle(gCtx), instName, C, A, B, params);
-			// -------------------------------------------------------------------------------------
-		} else if (isM1Sparse && !isM2Sparse) {
-			// -------------------------------------------------------------------------------------
-			// sparse-dense matrix multiplication
-			// Step 1: Allocate output => dense format
-			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen);
-
-			// Step 2: Get the handles to sparse/dense pointers for left, right
-			// and output
-			CSRPointer A = left.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
-			Pointer B = getDensePointer(gCtx, right, instName);
-			Pointer C = getDensePointer(gCtx, output, instName);
-
-			// Step 3: Invoke the kernel
-			sparseDenseMatMult(gCtx, instName, C, A, B, left.getNumRows(), left.getNumColumns(), right.getNumRows(),
-					right.getNumColumns(), outRLen, outCLen, isLeftTransposed, isRightTransposed);
-			// -------------------------------------------------------------------------------------
-		} else {
+		if (!isM1Sparse && !isM2Sparse) {
 			// -------------------------------------------------------------------------------------
 			// dense-dense matrix multiplication
 			// Step 1: Allocate output => dense format
@@ -215,7 +172,128 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			denseDenseMatMult(getCublasHandle(gCtx), instName, C, A, B, params);
 			// -------------------------------------------------------------------------------------
 		}
+		else if (isM1Sparse && !isM2Sparse) {
+			// -------------------------------------------------------------------------------------
+			// sparse-dense matrix multiplication
+			// Step 1: Allocate output => dense format
+			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen);
+
+			// Step 2: Get the handles to sparse/dense pointers for left, right
+			// and output
+			CSRPointer A = left.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+			Pointer B = getDensePointer(gCtx, right, instName);
+			Pointer C = getDensePointer(gCtx, output, instName);
+
+			// Step 3: Invoke the kernel
+			sparseDenseMatMult(gCtx, instName, C, A, B, left.getNumRows(), left.getNumColumns(), right.getNumRows(),
+					right.getNumColumns(), outRLen, outCLen, isLeftTransposed, isRightTransposed);
+			// -------------------------------------------------------------------------------------
+		}
+		else if(!isM1Sparse) {
+			// -------------------------------------------------------------------------------------
+			// dense-sparse matrix multiplication
+			// Step 1: Allocate output => dense format
+			getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, outRLen, outCLen);
+
+			// Step 2: Get the handles to sparse/dense pointers for left, right
+			// and output
+			Pointer A = getDensePointer(gCtx, left, instName);
+			CSRPointer B = right.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+			Pointer C = getDensePointer(gCtx, output, instName);
+
+			// Step 3: Invoke the kernel
+			denseSparseMatMult(gCtx, getCusparseHandle(gCtx), instName, C, A, B, params);
+			// -------------------------------------------------------------------------------------
+		}
+		else {
+			// -------------------------------------------------------------------------------------
+			// sparse-sparse matrix multiplication
+			params.validate();
+			// Step 1: Allocate output => sparse format
+			ec.allocateGPUMatrixObject(outputName, outRLen, outCLen);
+			if(isLeftTransposed || isRightTransposed)
+				throw new DMLRuntimeException("Transposed SpGEMM operation not supported as of CUDA 11.4.2");
+
+			CSRPointer C = SpGEMM(gCtx, instName, left, right);
+
+			output.getGPUObject(gCtx).setSparseMatrixCudaPointer(C);
+		}
+
 		return output;
+	}
+
+	public static void SpMM(GPUContext gCtx, String instName, Pointer C, CSRPointer left, Pointer right, int opA, int opB,
+			CuMatMultParameters param) {
+
+		Pointer alpha = one();
+		Pointer beta = zero();
+		cusparseSpMatDescr matA = left.createSpMatDescr(param.leftNumRows, param.leftNumCols);
+		cusparseDnMatDescr matB = createDnMatDescr(param.leftNumCols, param.rightNumCols, param.rightNumRows, right);
+		cusparseDnMatDescr matC = createDnMatDescr(param.rightNumRows, param.rightNumCols, param.leftNumRows, C);
+
+		long[] bufferSize = { -1 };
+
+		JCusparse.cusparseSpMM_bufferSize(getCusparseHandle(gCtx), opA, opB, alpha, matA, matB, beta, matC,
+				LibMatrixCUDA.CUDA_DATA_TYPE, CUSPARSE_MM_ALG_DEFAULT, bufferSize);
+
+		Pointer buf1 = gCtx.allocate(instName, bufferSize[0]);
+
+		cusparseSpMM(getCusparseHandle(gCtx), opA, opB, one(), matA, matB, zero(), matC, LibMatrixCUDA.CUDA_DATA_TYPE,
+				CUSPARSE_MM_ALG_DEFAULT, buf1);
+	}
+
+	// ToDo: This is based on a CUDA sample but crashes (jcuda bug?)
+	public static CSRPointer SpGEMM(GPUContext gCtx, String instName, MatrixObject left, MatrixObject right) {
+		// Transposed operation not supported as of CUDA 11.4.2
+		int opA, opB;
+		opA = opB = CUSPARSE_OPERATION_NON_TRANSPOSE;
+
+		Pointer alpha = one();
+		Pointer beta = zero();
+
+		// Step 2: Get the handles to sparse/dense pointers for left, right
+		// and output
+		CSRPointer A = left.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+		cusparseSpMatDescr matA = A.createSpMatDescr(left.getNumRows(), left.getNumColumns());
+
+		CSRPointer B = right.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+		cusparseSpMatDescr matB = B.createSpMatDescr(right.getNumRows(), right.getNumColumns());
+		cusparseSpMatDescr matC = CSRPointer.createSpMatDescr(left.getNumRows(), right.getNumColumns(), null);
+
+		cusparseSpGEMMDescr spgemmDesc = new cusparseSpGEMMDescr();
+		JCusparse.cusparseSpGEMM_createDescr(spgemmDesc);
+
+		// determine buf1 size (used for another estimate)
+		long[] bufSize = { -1 };
+		JCusparse.cusparseSpGEMM_workEstimation(getCusparseHandle(gCtx), opA, opB, alpha, matA, matB, beta, matC,
+				LibMatrixCUDA.CUDA_DATA_TYPE, CUSPARSE_SPGEMM_DEFAULT, spgemmDesc, bufSize, null);
+		Pointer buf1 = gCtx.allocate(instName, bufSize[0]);
+
+		// inspect matrices A and B to determine mem requirements
+		JCusparse.cusparseSpGEMM_workEstimation(getCusparseHandle(gCtx), opA, opB, alpha, matA, matB, beta, matC,
+				LibMatrixCUDA.CUDA_DATA_TYPE, CUSPARSE_SPGEMM_DEFAULT, spgemmDesc, bufSize,  buf1);
+
+		// determine buf2 size (used for actual multiply)
+		JCusparse.cusparseSpGEMM_compute(getCusparseHandle(gCtx), opA, opB, alpha, matA, matB, beta, matC,
+				LibMatrixCUDA.CUDA_DATA_TYPE, CUSPARSE_SPGEMM_DEFAULT, spgemmDesc, bufSize, null);
+		Pointer buf2 = gCtx.allocate(instName, bufSize[0]);
+
+		// compute A %*% B
+		JCusparse.cusparseSpGEMM_compute(getCusparseHandle(gCtx), opA, opB, alpha, matA, matB, beta, matC,
+				LibMatrixCUDA.CUDA_DATA_TYPE, CUSPARSE_SPGEMM_DEFAULT, spgemmDesc, bufSize, buf2);
+
+		// allocate output matrix
+		long[] C_rows = { -1 };
+		long[] C_cols = { -1 };
+		long[] C_nnz = { -1 };
+		JCusparse.cusparseSpMatGetSize(matC, C_rows, C_cols, C_nnz);
+		CSRPointer C = CSRPointer.allocateEmpty(gCtx, C_nnz[0], C_rows[0]);
+		JCusparse.cusparseCsrSetPointers(matC, C.rowPtr, C.colInd, C.val);
+
+		// Copy final product
+		JCusparse.cusparseSpGEMM_copy(getCusparseHandle(gCtx), opA, opB, alpha, matA, matB, beta, matC,
+				LibMatrixCUDA.CUDA_DATA_TYPE, CUSPARSE_MM_ALG_DEFAULT, spgemmDesc);
+		return C;
 	}
 
 	/**
@@ -257,7 +335,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			long leftNumRows, long leftNumColumns, long rightNumRows, long rightNumColumns, long outRLen, long outCLen,
 			boolean isLeftTransposed, boolean isRightTransposed) {
 		// t(C) = t(B) %*% t(A)
-		Pointer output = null;
+		Pointer output;
 		if (outRLen != 1 && outCLen != 1) {
 			output = gCtx.allocate(instName, outRLen * outCLen * sizeOfDataType, false);
 		} else {
@@ -266,7 +344,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		}
 		CuMatMultParameters params = new CuMatMultParameters(rightNumRows, rightNumColumns, leftNumRows,
 				leftNumColumns, !isRightTransposed, !isLeftTransposed);
-		denseSparseMatMult(getCusparseHandle(gCtx), instName, output, B, A, params);
+		denseSparseMatMult(gCtx, getCusparseHandle(gCtx), instName, output, B, A, params);
 		if (outRLen != 1 && outCLen != 1) {
 			// Transpose: C = t(output)
 			cudaSupportFunctions.cublasgeam(gCtx.getCublasHandle(), cublasOperation.CUBLAS_OP_T, cublasOperation.CUBLAS_OP_T,
@@ -282,7 +360,9 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 * Internal method to invoke the appropriate CuSPARSE kernel for matrix
 	 * multiplication for operation: C = op(A) * op(B) This assumes B and C are
 	 * allocated in dense row-major format and A is sparse.
-	 * 
+	 *
+	 * @param gCtx
+	 *            Current {@link ExecutionContext} instance
 	 * @param handle
 	 *            cusparse handle
 	 * @param instName
@@ -296,28 +376,38 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 * @param param
 	 *            BLAS parameters
 	 */
-	private static void denseSparseMatMult(cusparseHandle handle, String instName, Pointer C, Pointer A, CSRPointer B,
-			CuMatMultParameters param) {
+	private static void denseSparseMatMult(GPUContext gCtx, cusparseHandle handle, String instName, Pointer C, Pointer A,
+			CSRPointer B, CuMatMultParameters param) {
 		// Ignoring sparse vector dense matrix multiplication and dot product
 		boolean isVector = (param.leftNumRows == 1 && !param.isLeftTransposed)
 				|| (param.leftNumCols == 1 && param.isLeftTransposed);
 		if (isVector) {
-			LOG.debug(" GPU Sparse-Dense Matrix Vector ");
+			LOG.debug("GPU Sparse-Dense Matrix Vector (instName="+instName+")");
 			int m = toInt(param.rightNumRows);
 			int n = toInt(param.rightNumCols);
-			int transa = reverseCusparseOp(cusparseOp(param.isLeftTransposed));
-			cudaSupportFunctions.cusparsecsrmv(handle, transa, m, n, toInt(B.nnz), one(), B.descr, B.val, B.rowPtr, B.colInd, A,
-					zero(), C);
-		} else {
-			int m = toInt(param.rightNumRows);
-			int k = toInt(param.rightNumCols);
-			param.rowToColumnMajor();
+			int opA = reverseCusparseOp(cusparseOp(param.isLeftTransposed));
+
+			cusparseDnVecDescr vecA = new cusparseDnVecDescr();
+			cusparseCreateDnVec(vecA, param.leftNumRows == 1 ? param.leftNumCols : param.leftNumRows, A, LibMatrixCUDA.CUDA_DATA_TYPE);
+			cusparseSpMatDescr matB = B.createSpMatDescr(param.leftNumRows, param.leftNumCols);
+			cusparseDnVecDescr vecC = new cusparseDnVecDescr();
+			cusparseCreateDnVec(vecC, param.leftNumRows == 1 ? param.leftNumCols : param.leftNumRows, C, LibMatrixCUDA.CUDA_DATA_TYPE);
+			long[] bufferSize = { -1 };
+			cusparseSpMV_bufferSize(handle, opA, one(), B.createSpMatDescr(m, n), vecA,
+					zero(), vecC, LibMatrixCUDA.CUDA_DATA_TYPE, CUSPARSE_MV_ALG_DEFAULT, bufferSize);
+
+			Pointer buf1 = gCtx.allocate(instName, bufferSize[0]);
+
+			cusparseSpMV(handle, opA, one(), matB, vecA, zero(), vecC, LibMatrixCUDA.CUDA_DATA_TYPE,
+					CUSPARSE_MV_ALG_DEFAULT, buf1);
+		}
+		else {
+//			param.rowToColumnMajor();
 			param.validate();
 			int transa = reverseCusparseOp(cusparseOp(param.isLeftTransposed));
 			int transb = cusparseOp(param.isRightTransposed);
-			LOG.debug(" GPU Sparse-Dense Matrix Multiply (rhs transpose) ");
-			cudaSupportFunctions.cusparsecsrmm2(handle, transa, transb, m, param.n, k, toInt(B.nnz), one(), B.descr, B.val,
-					B.rowPtr, B.colInd, A, param.ldb, zero(), C, param.ldc);
+			LOG.debug(" GPU Sparse-Dense Matrix Multiply (rhs transpose) (instName="+instName+")");
+			SpMM(gCtx, instName, C, B, A, transa, transb, param);
 		}
 	}
 
@@ -349,50 +439,52 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		B = swap(A, A = B);
 		if (param.m == 1 && param.n == 1) {
 			// Vector product
-			LOG.debug(" GPU Dense-dense Vector Product");
+			LOG.debug(" GPU Dense-dense Vector Product (instName=" + instName + ")");
 			double[] result = { 0 };
 			cudaSupportFunctions.cublasdot(handle, param.k, A, 1, B, 1, Pointer.to(result));
-			// By default in CuBlas V2, cublas pointer mode is set to
+			// By default, in CuBlas V2, cublas pointer mode is set to
 			// CUBLAS_POINTER_MODE_HOST.
 			// This means that scalar values passed are on host (as opposed to
 			// on device).
 			// The result is copied from the host back to the device so that the
 			// rest of
 			// infrastructure can treat it uniformly.
-			cudaMemcpy(C, Pointer.to(result), 1 * sizeOfDataType, cudaMemcpyHostToDevice);
+			cudaMemcpy(C, Pointer.to(result), sizeOfDataType, cudaMemcpyHostToDevice);
 		} else if (param.m == 1) {
 			// Vector-matrix multiply
-			LOG.debug(" GPU Dense Vector-Matrix Multiply");
+			LOG.debug(" GPU Dense Vector-Matrix Multiply (instName=" + instName + ")");
 			transb = reverseCublasOp(transb);
 			int rightNumRows = (transb == CUSPARSE_OPERATION_TRANSPOSE) ? param.k : param.n;
 			int rightNumCols = (transb == CUSPARSE_OPERATION_TRANSPOSE) ? param.n : param.k;
 			cudaSupportFunctions.cublasgemv(handle, transb, rightNumRows, rightNumCols, one(), B, param.ldb, A, 1, zero(), C, 1);
 		} else if (param.n == 1) {
 			// Matrix-vector multiply
-			LOG.debug(" GPU Dense Matrix-Vector Multiply");
+			LOG.debug(" GPU Dense Matrix-Vector Multiply (instName=" + instName + ")");
 			int leftNumRows = (transa == CUSPARSE_OPERATION_NON_TRANSPOSE) ? param.m : param.k;
 			int leftNumCols = (transa == CUSPARSE_OPERATION_NON_TRANSPOSE) ? param.k : param.m;
 			cudaSupportFunctions.cublasgemv(handle, transa, leftNumRows, leftNumCols, one(), A, param.lda, B, 1, zero(), C, 1);
 		} else {
-			LOG.debug(" GPU Dense-Dense Matrix Multiply ");
+			LOG.debug(" GPU Dense-Dense Matrix Multiply (instName=" + instName + ")");
 			cudaSupportFunctions.cublasgemm(handle, transa, transb, param.m, param.n, param.k, one(), A, param.lda, B, param.ldb,
 					zero(), C, param.ldc);
 		}
 	}
 
+	// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
 	// Convenient methods to swap two values
 	// Usage: y = swap(x, x=y);
-	private static long swap(long x, long y) {
+	@SuppressWarnings("unused") private static long swap(long x, long y) {
 		return x;
 	}
 
-	private static boolean swap(boolean x, boolean y) {
+	@SuppressWarnings("unused") private static boolean swap(boolean x, boolean y) {
 		return x;
 	}
 
-	private static Pointer swap(Pointer x, Pointer y) {
+	@SuppressWarnings("unused") private static Pointer swap(Pointer x, Pointer y) {
 		return x;
 	}
+	// *** END HACK ***
 
 	/**
 	 * Convenient wrapper to return appropriate cuSPARSE trans value
@@ -438,5 +530,11 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 */
 	private static int reverseCusparseOp(int trans) {
 		return trans == CUSPARSE_OPERATION_TRANSPOSE ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE;
+	}
+
+	public static cusparseDnMatDescr createDnMatDescr(long rows, long cols, long ld, Pointer ptr) {
+		cusparseDnMatDescr descr = new cusparseDnMatDescr();
+		JCusparse.cusparseCreateDnMat(descr, rows, cols, ld, ptr, LibMatrixCUDA.CUDA_DATA_TYPE, CUSPARSE_ORDER_ROW);
+		return descr;
 	}
 }

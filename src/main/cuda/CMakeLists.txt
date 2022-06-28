@@ -21,13 +21,6 @@
 
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
-# default to gcc 8.x while we're still supporting CUDA 10.x only
-if (UNIX)
-    set(CMAKE_CUDA_HOST_COMPILER g++-8 CACHE INTERNAL "")
-    set(CMAKE_CUDA_COMPILER nvcc CACHE INTERNAL "")
-    set(CMAKE_CXX_COMPILER g++ CACHE INTERNAL "")
-endif()
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH True CACHE INTERNAL "")
 

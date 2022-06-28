@@ -54,7 +54,7 @@ public class GPULazyCudaFreeMemoryManager {
 	synchronized public Pointer getRmvarPointer(String opcode, long size) {
 		if (rmvarGPUPointers.containsKey(size)) {
 			if(LOG.isTraceEnabled())
-				LOG.trace("Getting rmvar-ed pointers for size:" + size);
+				LOG.trace("Getting rmvar-ed pointers for opcode: " + opcode + " size: " + size);
 			Pointer A = remove(rmvarGPUPointers, size); // remove from rmvarGPUPointers as you are not calling cudaFree
 			if(DMLScript.STATISTICS)
 				GPUStatistics.cudaAllocReuseCount.increment();

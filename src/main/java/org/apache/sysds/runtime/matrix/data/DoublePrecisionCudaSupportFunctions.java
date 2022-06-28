@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.matrix.data;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixCUDA.getCusparseHandle;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -40,43 +41,16 @@ import jcuda.jcusparse.cusparseMatDescr;
 public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions {
 
 	private static final Log LOG = LogFactory.getLog(DoublePrecisionCudaSupportFunctions.class.getName());
-	
+
 	@Override
-	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int m, int n, int k,
-			cusparseMatDescr descrA, int nnzA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA,
-			cusparseMatDescr descrB, int nnzB, Pointer csrValB, Pointer csrRowPtrB, Pointer csrColIndB,
-			cusparseMatDescr descrC, Pointer csrValC, Pointer csrRowPtrC, Pointer csrColIndC) {
-		return JCusparse.cusparseDcsrgemm(handle, transA,  transB,  m,  n,  k,
-				 descrA,  nnzA,  csrValA,  csrRowPtrA,  csrColIndA,
-				 descrB,  nnzB,  csrValB,  csrRowPtrB,  csrColIndB,
-				 descrC,  csrValC,  csrRowPtrC,  csrColIndC);
-	}
-	
-	@Override
-	public int cublasgeam(cublasHandle handle, int transa, int transb, int m, int n, Pointer alpha, Pointer A, int lda,
+	public void cublasgeam(cublasHandle handle, int transa, int transb, int m, int n, Pointer alpha, Pointer A, int lda,
 			Pointer beta, Pointer B, int ldb, Pointer C, int ldc) {
-		return JCublas2.cublasDgeam(handle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc);
+		JCublas2.cublasDgeam(handle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc);
 	}
 	
 	@Override
-	public int cusparsecsrmv(cusparseHandle handle, int transA, int m, int n, int nnz, Pointer alpha,
-			cusparseMatDescr descrA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, Pointer x, Pointer beta,
-			Pointer y) {
-		return JCusparse.cusparseDcsrmv(handle, transA, m, n, nnz, alpha, 
-				descrA, csrValA, csrRowPtrA, csrColIndA, x, beta, y);
-	}
-	
-	@Override
-	public int	cusparsecsrmm2(cusparseHandle handle, int transa, int transb, int m, int n, int k, int nnz, jcuda.Pointer alpha, cusparseMatDescr descrA, 
-			jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA, 
-			jcuda.Pointer B, int ldb, jcuda.Pointer beta, jcuda.Pointer C, int ldc) {
-		return JCusparse.cusparseDcsrmm2(handle, transa, transb, m, n, k, nnz, alpha, descrA, csrValA, 
-				csrRowPtrA, csrColIndA, B, ldb, beta, C, ldc);
-	}
-	
-	@Override
-	public int cublasdot(cublasHandle handle, int n, Pointer x, int incx, Pointer y, int incy, Pointer result) {
-		return JCublas2.cublasDdot(handle, n, x, incx, y, incy, result);
+	public void cublasdot(cublasHandle handle, int n, Pointer x, int incx, Pointer y, int incy, Pointer result) {
+		JCublas2.cublasDdot(handle, n, x, incx, y, incy, result);
 	}
 	
 	@Override
@@ -90,13 +64,7 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			int lda, Pointer B, int ldb, Pointer beta, Pointer C, int ldc) {
 		return JCublas2.cublasDgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
 	}
-	
-	@Override
-	public int cusparsecsr2csc(cusparseHandle handle, int m, int n, int nnz, Pointer csrVal, Pointer csrRowPtr,
-			Pointer csrColInd, Pointer cscVal, Pointer cscRowInd, Pointer cscColPtr, int copyValues, int idxBase) {
-		return JCusparse.cusparseDcsr2csc(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscRowInd, cscColPtr, copyValues, idxBase);
-	}
-	
+
 	@Override
 	public int cublassyrk(cublasHandle handle, int uplo, int trans, int n, int k, Pointer alpha, Pointer A, int lda,
 			Pointer beta, Pointer C, int ldc) {
@@ -130,17 +98,25 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			Pointer tau, Pointer C, int ldc, Pointer work, int lwork, Pointer devInfo) {
 		return JCusolverDn.cusolverDnDormqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc, work, lwork, devInfo);
 	}
-	
+
 	@Override
-	public int cusparsecsrgeam(cusparseHandle handle, int m, int n, Pointer alpha, cusparseMatDescr descrA, int nnzA,
-			Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, Pointer beta, cusparseMatDescr descrB, int nnzB,
-			Pointer csrValB, Pointer csrRowPtrB, Pointer csrColIndB, cusparseMatDescr descrC, Pointer csrValC,
-			Pointer csrRowPtrC, Pointer csrColIndC) {
-		return JCusparse.cusparseDcsrgeam(handle, m, n, alpha, descrA, nnzA, 
-				csrValA, csrRowPtrA, csrColIndA, beta, descrB, nnzB, 
-				csrValB, csrRowPtrB, csrColIndB, descrC, csrValC, csrRowPtrC, csrColIndC);
+	public int cusparsecsrgeam(GPUContext gCtx, int m, int n, Pointer alpha, cusparseMatDescr descrA, int nnzA,
+							   Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, Pointer beta, cusparseMatDescr descrB, int nnzB,
+							   Pointer csrValB, Pointer csrRowPtrB, Pointer csrColIndB, cusparseMatDescr descrC, Pointer csrValC,
+							   Pointer csrRowPtrC, Pointer csrColIndC) {
+		long[] bufferSize = { -1 };
+
+		JCusparse.cusparseDcsrgeam2_bufferSizeExt(getCusparseHandle(gCtx), m, n, alpha, descrA, nnzA,
+				csrValA, csrRowPtrA, csrColIndA, beta, descrB, nnzB,
+				csrValB, csrRowPtrB, csrColIndB, descrC, csrValC, csrRowPtrC, csrColIndC, bufferSize);
+
+		Pointer buf1 = gCtx.allocate("", bufferSize[0]);
+
+		return JCusparse.cusparseDcsrgeam2(getCusparseHandle(gCtx), m, n, alpha, descrA, nnzA,
+				csrValA, csrRowPtrA, csrColIndA, beta, descrB, nnzB,
+				csrValB, csrRowPtrB, csrColIndB, descrC, csrValC, csrRowPtrC, csrColIndC, buf1);
 	}
-	
+
 	@Override
 	public int cusparsecsr2dense(cusparseHandle handle, int m, int n, cusparseMatDescr descrA, Pointer csrValA,
 			Pointer csrRowPtrA, Pointer csrColIndA, Pointer A, int lda) {
@@ -161,6 +137,7 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 
 	@Override
 	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) {
+		// ToDo: stats
 		if(src == null)
 			throw new DMLRuntimeException("The source pointer in deviceToHost is null");
 		if(dest == null)
@@ -173,6 +150,7 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 
 	@Override
 	public void hostToDevice(GPUContext gCtx, double[] src, Pointer dest, String instName) {
+		// ToDo: stats
 		cudaMemcpy(dest, Pointer.to(src), ((long)src.length)*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
 	}
 }

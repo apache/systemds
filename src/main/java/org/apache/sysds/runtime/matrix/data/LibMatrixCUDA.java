@@ -19,6 +19,9 @@
  
 package org.apache.sysds.runtime.matrix.data;
 
+import jcuda.cudaDataType;
+import jcuda.jcusparse.JCusparse;
+import jcuda.jcusparse.cusparseMatDescr;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
@@ -86,6 +89,7 @@ import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseIndexBase;
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_N;
 import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
+import static jcuda.jcusparse.cusparseCsr2CscAlg.CUSPARSE_CSR2CSC_ALG1;
 import static jcuda.runtime.JCuda.cudaDeviceSynchronize;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
@@ -103,6 +107,7 @@ public class LibMatrixCUDA {
 	private static final Log LOG = LogFactory.getLog(LibMatrixCUDA.class.getName());
 
 	protected static int CUDNN_DATA_TYPE = jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
+	public static int CUDA_DATA_TYPE = cudaDataType.CUDA_R_64F;
 	// The below variables are used in CSRPointer, GPUObjects, etc.
 	public static CudaSupportFunctions cudaSupportFunctions = new DoublePrecisionCudaSupportFunctions();
 	public static int sizeOfDataType = jcuda.Sizeof.DOUBLE;
@@ -114,12 +119,14 @@ public class LibMatrixCUDA {
 	public static void resetFloatingPointPrecision() {
 		if(DMLScript.FLOATING_POINT_PRECISION.equalsIgnoreCase("double")) {
 			LibMatrixCUDA.CUDNN_DATA_TYPE = jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
+			LibMatrixCUDA.CUDA_DATA_TYPE = cudaDataType.CUDA_R_64F;
 			LibMatrixCUDA.cudaSupportFunctions = new DoublePrecisionCudaSupportFunctions();
 			LibMatrixCUDA.sizeOfDataType = jcuda.Sizeof.DOUBLE;
 			LibMatrixCUDA.customKernelSuffix = "_d";
 		}
 		else if(DMLScript.FLOATING_POINT_PRECISION.equalsIgnoreCase("single")) {
 			LibMatrixCUDA.CUDNN_DATA_TYPE = jcuda.jcudnn.cudnnDataType.CUDNN_DATA_FLOAT;
+			LibMatrixCUDA.CUDA_DATA_TYPE = cudaDataType.CUDA_R_32F;
 			LibMatrixCUDA.cudaSupportFunctions = new SinglePrecisionCudaSupportFunctions();
 			LibMatrixCUDA.sizeOfDataType = jcuda.Sizeof.FLOAT;
 			LibMatrixCUDA.customKernelSuffix = "_f";
@@ -1632,7 +1639,18 @@ public class LibMatrixCUDA {
 				int nnz = (int)A.nnz;
 				CSRPointer C = CSRPointer.allocateEmpty(gCtx, nnz, n);
 				out.getGPUObject(gCtx).setSparseMatrixCudaPointer(C);
-				cudaSupportFunctions.cusparsecsr2csc(getCusparseHandle(gCtx), m, n, nnz, A.val, A.rowPtr, A.colInd, C.val, C.colInd, C.rowPtr, cusparseAction.CUSPARSE_ACTION_NUMERIC, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
+				long[] bufferSize = { -1 };
+
+				JCusparse.cusparseCsr2cscEx2_bufferSize(getCusparseHandle(gCtx), m, n, nnz, A.val, A.rowPtr, A.colInd,
+						C.val, C.colInd, C.rowPtr, LibMatrixCUDA.CUDA_DATA_TYPE, cusparseAction.CUSPARSE_ACTION_NUMERIC,
+						cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO, CUSPARSE_CSR2CSC_ALG1, bufferSize);
+
+				Pointer buf1 = gCtx.allocate("", bufferSize[0]);
+
+				JCusparse.cusparseCsr2cscEx2(getCusparseHandle(gCtx), m, n, nnz, A.val, A.rowPtr, A.colInd,
+						C.val, C.colInd, C.rowPtr, LibMatrixCUDA.CUDA_DATA_TYPE, cusparseAction.CUSPARSE_ACTION_NUMERIC,
+						cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO, CUSPARSE_CSR2CSC_ALG1, buf1);
+
 			} else {
 				// General case (cusparse does not support accept the transpose operator for dgeam)
 				// TODO: to implement the transposed + dgeam for sparse matrices, they need to be converted to csc, which is effectively a tranpose
@@ -1643,11 +1661,11 @@ public class LibMatrixCUDA {
 
 				CSRPointer C = CSRPointer.allocateForDgeam(gCtx, getCusparseHandle(gCtx), A, B, m, n);
 				out.getGPUObject(gCtx).setSparseMatrixCudaPointer(C);
-				//long sizeOfC = CSRPointer.estimateSize(C.nnz, out.getNumRows());
-				cudaSupportFunctions.cusparsecsrgeam(getCusparseHandle(gCtx), m, n, alphaPtr, A.descr, toInt(A.nnz), A.val, A.rowPtr, A.colInd, betaPtr,
+				cudaSupportFunctions.cusparsecsrgeam(gCtx, m, n, alphaPtr, A.descr, toInt(A.nnz), A.val, A.rowPtr, A.colInd, betaPtr,
 						B.descr, toInt(B.nnz), B.val, B.rowPtr, B.colInd, C.descr, C.val, C.rowPtr, C.colInd);
 			}
-		} else {
+		}
+		else {
 			// Dense-Dense dgeam
 
 			int lda = toInt(in1.getNumColumns());

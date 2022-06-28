@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,19 +45,19 @@ public class LocalVariableMap implements Cloneable
 	private static final IDSequence _seq = new IDSequence();
 	
 	//variable map data and id
-	private final HashMap<String, Data> localMap;
+	private final ConcurrentHashMap<String, Data> localMap;
 	private final long localID;
 	
 	//optional set of registered outputs
 	private HashSet<String> outputs = null;
 	
 	public LocalVariableMap() {
-		localMap = new HashMap<>();
+		localMap = new ConcurrentHashMap<>();
 		localID = _seq.getNextID();
 	}
 	
 	public LocalVariableMap(LocalVariableMap vars) {
-		localMap = new HashMap<>(vars.localMap);
+		localMap = new ConcurrentHashMap<>(vars.localMap);
 		localID = _seq.getNextID();
 	}
 

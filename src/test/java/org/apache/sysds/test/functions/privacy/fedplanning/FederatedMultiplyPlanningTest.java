@@ -55,6 +55,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	private final static String TEST_NAME_8 = "FederatedMultiplyPlanningTest8";
 	private final static String TEST_NAME_9 = "FederatedMultiplyPlanningTest9";
 	private final static String TEST_NAME_10 = "FederatedMultiplyPlanningTest10";
+	private final static String TEST_NAME_11 = "FederatedMultiplyPlanningTest11";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedMultiplyPlanningTest.class.getSimpleName() + "/";
 	private static File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, "SystemDS-config-cost-based.xml");
 
@@ -77,6 +78,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME_8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_8, new String[] {"Z.scalar"}));
 		addTestConfiguration(TEST_NAME_9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_9, new String[] {"Z.scalar"}));
 		addTestConfiguration(TEST_NAME_10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_10, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME_11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_11, new String[] {"Z"}));
 	}
 
 	@Parameterized.Parameters
@@ -151,6 +153,12 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		String[] expectedHeavyHitters = new String[]{"fed_fedinit", "fed_^2"};
 		TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, "SystemDS-config-fout.xml");
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_10, expectedHeavyHitters);
+	}
+
+	@Test
+	public void federatedMultiplyPlanningTest11(){
+		String[] expectedHeavyHitters = new String[]{"fed_fedinit"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_11, expectedHeavyHitters);
 	}
 
 	private void writeStandardMatrix(String matrixName, long seed){

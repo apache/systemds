@@ -23,6 +23,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FederatedPlanner;
+import org.apache.sysds.hops.fedplanner.PrivacyConstraintLoader;
 import org.apache.sysds.parser.DMLProgram;
 
 /**
@@ -58,16 +59,24 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 */
 	@Override
 	public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes) {
-		// obtain planner instance according to config
 		String splanner = ConfigurationManager.getDMLConfig()
 			.getTextValue(DMLConfig.FEDERATED_PLANNER);
+		loadPrivacyConstraints(prog, splanner);
+		generatePlan(prog, fgraph, fcallSizes, splanner);
+		return false;
+	}
+
+	private void loadPrivacyConstraints(DMLProgram prog, String splanner){
+		if (FederatedPlanner.isCompiled(splanner))
+			new PrivacyConstraintLoader().loadConstraints(prog);
+	}
+
+	private void generatePlan(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes, String splanner){
 		FederatedPlanner planner = FederatedPlanner.isCompiled(splanner) ?
 			FederatedPlanner.valueOf(splanner.toUpperCase()) :
 			FederatedPlanner.COMPILE_COST_BASED;
-		
+
 		// run planner rewrite with forced federated exec types
 		planner.getPlanner().rewriteProgram(prog, fgraph, fcallSizes);
-		
-		return false;
 	}
 }

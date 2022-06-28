@@ -262,8 +262,11 @@ public class PrivacyConstraint implements Externalizable
 
 	@Override
 	public String toString(){
-		return "General privacy level: " + privacyLevel + System.getProperty("line.separator")
-			+ "Fine-grained privacy level: " + fineGrainedPrivacy.toString();
+		String constraintString = "General privacy level: " + privacyLevel;
+		if ( fineGrainedPrivacy != null && fineGrainedPrivacy.hasConstraints() )
+			constraintString = constraintString + System.getProperty("line.separator")
+				+ "Fine-grained privacy level: " + fineGrainedPrivacy.toString();
+		return constraintString;
 	}
 
 }

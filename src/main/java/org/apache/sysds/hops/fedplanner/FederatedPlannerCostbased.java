@@ -170,7 +170,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 				selectFederatedExecutionPlan(sbHop, paramMap);
 				if(sbHop instanceof FunctionOp) {
 					String funcName = ((FunctionOp) sbHop).getFunctionName();
-					Map<String, Hop> funcParamMap = getParamMap((FunctionOp) sbHop);
+					Map<String, Hop> funcParamMap = FederatedPlannerUtils.getParamMap((FunctionOp) sbHop);
 					if ( paramMap != null && funcParamMap != null)
 						funcParamMap.putAll(paramMap);
 					paramMap = funcParamMap;
@@ -180,22 +180,6 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 			}
 		}
 		return new ArrayList<>(Collections.singletonList(sb));
-	}
-
-	/**
-	 * Return parameter map containing the mapping from parameter name to input hop
-	 * for all parameters of the function hop.
-	 * @param funcOp hop for which the mapping of parameter names to input hops are made
-	 * @return parameter map or empty map if function has no parameters
-	 */
-	private Map<String,Hop> getParamMap(FunctionOp funcOp){
-		String[] inputNames = funcOp.getInputVariableNames();
-		Map<String,Hop> paramMap = new HashMap<>();
-		if ( inputNames != null ){
-			for ( int i = 0; i < funcOp.getInput().size(); i++ )
-				paramMap.put(inputNames[i],funcOp.getInput(i));
-		}
-		return paramMap;
 	}
 
 	/**
@@ -327,13 +311,21 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		ArrayList<HopRel> hopRels = getFedPlans(currentHop, paramMap);
 		// Put NONE HopRel into memo table if no FOUT or LOUT HopRels were added
 		if(hopRels.isEmpty())
-			hopRels.add(getNONEHopRel(currentHop));
+			hopRels.add(getNONEHopRel(currentHop, paramMap));
 		addTrace(hopRels);
 		hopRelMemo.put(currentHop, hopRels);
 	}
 
-	private HopRel getNONEHopRel(Hop currentHop){
-		HopRel noneHopRel = new HopRel(currentHop, FederatedOutput.NONE, hopRelMemo);
+	private ArrayList<Hop> getHopInputs(Hop currentHop, Map<String, Hop> paramMap){
+		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) )
+			return FederatedPlannerUtils.getTransientInputs(currentHop, paramMap, transientWrites);
+		else
+			return currentHop.getInput();
+	}
+
+	private HopRel getNONEHopRel(Hop currentHop, Map<String, Hop> paramMap){
+		ArrayList<Hop> inputs = getHopInputs(currentHop, paramMap);
+		HopRel noneHopRel = new HopRel(currentHop, FederatedOutput.NONE, hopRelMemo, inputs);
 		FType[] inputFType = noneHopRel.getInputDependency().stream().map(HopRel::getFType).toArray(FType[]::new);
 		FType outputFType = getFederatedOut(currentHop, inputFType);
 		noneHopRel.setFType(outputFType);
@@ -348,9 +340,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 */
 	private ArrayList<HopRel> getFedPlans(Hop currentHop, Map<String, Hop> paramMap){
 		ArrayList<HopRel> hopRels = new ArrayList<>();
-		ArrayList<Hop> inputHops = currentHop.getInput();
-		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) )
-			inputHops = getTransientInputs(currentHop, paramMap);
+		ArrayList<Hop> inputHops = getHopInputs(currentHop, paramMap);
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) )
 			transientWrites.put(currentHop.getName(), currentHop);
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.FEDERATED) )
@@ -453,6 +443,8 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	private void debugLog(Hop currentHop){
 		if ( LOG.isDebugEnabled() ){
 			LOG.debug("Visiting HOP: " + currentHop + " Input size: " + currentHop.getInput().size());
+			if (currentHop.getPrivacy() != null)
+				LOG.debug(currentHop.getPrivacy());
 			int index = 0;
 			for ( Hop hop : currentHop.getInput()){
 				if ( hop == null )

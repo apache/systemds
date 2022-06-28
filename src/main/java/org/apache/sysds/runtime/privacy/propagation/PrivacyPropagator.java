@@ -23,11 +23,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
+import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.DataGenOp;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.NaryOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
@@ -168,12 +175,39 @@ public class PrivacyPropagator
 	 * @param hop which the privacy constraints are propagated to
 	 */
 	public static void hopPropagation(Hop hop){
-		PrivacyConstraint[] inputConstraints = hop.getInput().stream()
+		hopPropagation(hop, hop.getInput());
+	}
+
+	/**
+	 * Propagate privacy constraints from input hops to given hop.
+	 * @param hop which the privacy constraints are propagated to
+	 * @param inputHops inputs to given hop
+	 */
+	public static void hopPropagation(Hop hop, ArrayList<Hop> inputHops){
+		PrivacyConstraint[] inputConstraints = inputHops.stream()
 			.map(Hop::getPrivacy).toArray(PrivacyConstraint[]::new);
-		if ( hop instanceof TernaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp )
-			hop.setPrivacy(mergeNary(inputConstraints, OperatorType.NonAggregate));
+		OperatorType opType = getOpType(hop);
+		hop.setPrivacy(mergeNary(inputConstraints, opType));
+		if (opType == null && Arrays.stream(inputConstraints).anyMatch(Objects::nonNull))
+			throw new DMLException("Input has constraint but hop type not recognized by PrivacyPropagator. " +
+				"Hop is " + hop + " " + hop.getClass());
+	}
+
+	/**
+	 * Get operator type of given hop.
+	 * Returns null if hop type is not known.
+	 * @param hop for which operator type is returned
+	 * @return operator type of hop or null if hop type is unknown
+	 */
+	private static OperatorType getOpType(Hop hop){
+		if ( hop instanceof TernaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
+			|| hop instanceof DataOp || hop instanceof LiteralOp || hop instanceof NaryOp
+			|| hop instanceof DataGenOp || hop instanceof FunctionOp )
+			return OperatorType.NonAggregate;
 		else if ( hop instanceof AggBinaryOp || hop instanceof AggUnaryOp  || hop instanceof UnaryOp )
-			hop.setPrivacy(mergeNary(inputConstraints, OperatorType.Aggregate));
+			return OperatorType.Aggregate;
+		else
+			return null;
 	}
 
 	/**
@@ -406,7 +440,7 @@ public class PrivacyPropagator
 		if (inputOperands != null){
 			for ( CPOperand input : inputOperands ){
 				PrivacyConstraint privacyConstraint = getInputPrivacyConstraint(ec, input);
-				if ( privacyConstraint != null){
+				if ( privacyConstraint != null && privacyConstraint.hasConstraints()){
 					throw new DMLPrivacyException("Input of instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
 				}
 			}

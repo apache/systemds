@@ -626,6 +626,9 @@ public class Explain
 			}
 		}
 
+		if ( hop.getPrivacy() != null )
+			sb.append(" ").append(hop.getPrivacy().getPrivacyLevel().name());
+
 		sb.append('\n');
 
 		hop.setVisited();

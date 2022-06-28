@@ -406,7 +406,7 @@ public class PrivacyPropagator
 		if (inputOperands != null){
 			for ( CPOperand input : inputOperands ){
 				PrivacyConstraint privacyConstraint = getInputPrivacyConstraint(ec, input);
-				if ( privacyConstraint != null){
+				if ( privacyConstraint != null && privacyConstraint.hasConstraints()){
 					throw new DMLPrivacyException("Input of instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
 				}
 			}

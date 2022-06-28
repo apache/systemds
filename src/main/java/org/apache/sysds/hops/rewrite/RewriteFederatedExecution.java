@@ -44,7 +44,6 @@ import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 import org.apache.sysds.utils.JSONHelper;
 import org.apache.wink.json4j.JSONObject;
 
-import javax.net.ssl.SSLException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
@@ -104,35 +103,56 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 		if ( hop.isFederatedDataOp() && hop.getPrivacy() == null){
 			try {
 				LOG.debug("Load privacy constraints of " + hop);
-				PrivacyConstraint privConstraint = unwrapPrivConstraint(sendPrivConstraintRequest(hop));
-				LOG.debug("PrivacyConstraint retrieved: " + privConstraint);
-				hop.setPrivacy(privConstraint);
+
+				PrivacyConstraint.PrivacyLevel constraintLevel = hop.getInput(0).getInput().stream().parallel()
+					.map( in -> ((LiteralOp)in).getStringValue() )
+					.map(RewriteFederatedExecution::sendPrivConstraintRequest)
+					.map(RewriteFederatedExecution::unwrapPrivConstraint)
+					.map(constraint -> (constraint != null) ? constraint.getPrivacyLevel() : PrivacyConstraint.PrivacyLevel.None)
+					.reduce(PrivacyConstraint.PrivacyLevel.None, (out,in) -> {
+						if ( out == PrivacyConstraint.PrivacyLevel.Private || in == PrivacyConstraint.PrivacyLevel.Private )
+							return PrivacyConstraint.PrivacyLevel.Private;
+						else if ( out == PrivacyConstraint.PrivacyLevel.PrivateAggregation || in == PrivacyConstraint.PrivacyLevel.PrivateAggregation )
+							return PrivacyConstraint.PrivacyLevel.PrivateAggregation;
+						else
+							return out;
+					});
+				PrivacyConstraint fedDataPrivConstraint = (constraintLevel != PrivacyConstraint.PrivacyLevel.None) ?
+					new PrivacyConstraint(constraintLevel) : null;
+
+				LOG.debug("PrivacyConstraint retrieved: " + fedDataPrivConstraint);
+				hop.setPrivacy(fedDataPrivConstraint);
 			}
-			catch(Exception e) {
-				throw new DMLException(e);
+			catch(Exception ex) {
+				throw new DMLException(ex);
 			}
 		}
 	}
 
-	private static Future<FederatedResponse> sendPrivConstraintRequest(Hop hop)
-		throws UnknownHostException, SSLException
+	private static Future<FederatedResponse> sendPrivConstraintRequest(String address)
 	{
-		String address = ((LiteralOp) hop.getInput(0).getInput(0)).getStringValue();
-		String[] parsedAddress = InitFEDInstruction.parseURL(address);
-		String host = parsedAddress[0];
-		int port = Integer.parseInt(parsedAddress[1]);
-		PrivacyConstraintRetriever retriever = new PrivacyConstraintRetriever(parsedAddress[2]);
-		FederatedRequest privacyRetrieval =
-			new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1, retriever);
-		InetSocketAddress inetAddress = new InetSocketAddress(InetAddress.getByName(host), port);
-		return FederatedData.executeFederatedOperation(inetAddress, privacyRetrieval);
+		try{
+			String[] parsedAddress = InitFEDInstruction.parseURL(address);
+			String host = parsedAddress[0];
+			int port = Integer.parseInt(parsedAddress[1]);
+			PrivacyConstraintRetriever retriever = new PrivacyConstraintRetriever(parsedAddress[2]);
+			FederatedRequest privacyRetrieval =
+				new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1, retriever);
+			InetSocketAddress inetAddress = new InetSocketAddress(InetAddress.getByName(host), port);
+			return FederatedData.executeFederatedOperation(inetAddress, privacyRetrieval);
+		} catch(UnknownHostException ex){
+			throw new DMLException(ex);
+		}
 	}
 
 	private static PrivacyConstraint unwrapPrivConstraint(Future<FederatedResponse> privConstraintFuture)
-		throws Exception
 	{
-		FederatedResponse privConstraintResponse = privConstraintFuture.get();
-		return (PrivacyConstraint) privConstraintResponse.getData()[0];
+		try {
+			FederatedResponse privConstraintResponse = privConstraintFuture.get();
+			return (PrivacyConstraint) privConstraintResponse.getData()[0];
+		} catch(Exception ex){
+			throw new DMLException(ex);
+		}
 	}
 
 	/**

@@ -1,5 +1,4 @@
 
-
 # Git ignore for python files.
 systemds/lib/
 systemds.egg-info/
@@ -15,10 +14,10 @@ tests/onnx_systemds/output_test
 tests/onnx_systemds/dml_output
 tests/onnx_systemds/test_models/*.onnx
 
-# git ignore tmp federated files
+# git ignore tmp test files
 tests/federated/output
 tests/federated/worker
 tests/federated/tmp
-
 tests/list/tmp
 tests/algorithms/readwrite/
+tests/examples/tutorials/model

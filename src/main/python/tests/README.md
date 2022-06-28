@@ -24,7 +24,11 @@ Tests are easily executed using unittest:
 But before executing the tests it is recommended to go through systemds [Setting SYSTEMDS_ROOT environment](/bin/README.md)
 
 ```bash
+# Single thread:
 python -m unittest discover -s tests -p 'test_*.py'
+
+# Parallel
+unittest-parallel -t . -s tests --module-fixtures
 ```
 
 This command searches through the test directory and finds all python files starting with `test_` and executes them.

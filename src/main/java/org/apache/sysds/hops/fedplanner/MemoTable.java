@@ -45,7 +45,7 @@ public class MemoTable {
 	/**
 	 * Map holding the relation between Hop IDs and execution plan alternatives.
 	 */
-	private final static Map<Long, List<HopRel>> hopRelMemo = new HashMap<>();
+	private final Map<Long, List<HopRel>> hopRelMemo = new HashMap<>();
 
 	/**
 	 * Get list of strings representing the different

@@ -53,6 +53,10 @@ import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainType;
@@ -60,19 +64,24 @@ import org.apache.sysds.utils.Explain.ExplainType;
 public class FederatedPlannerCostbased extends AFederatedPlanner {
 	private static final Log LOG = LogFactory.getLog(FederatedPlannerCostbased.class.getName());
 
-	private final static MemoTable hopRelMemo = new MemoTable();
+	private final MemoTable hopRelMemo = new MemoTable();
 	/**
 	 * IDs of hops for which the final fedout value has been set.
 	 */
-	private final static Set<Long> hopRelUpdatedFinal = new HashSet<>();
+	private final Set<Long> hopRelUpdatedFinal = new HashSet<>();
 	/**
 	 * Terminal hops in DML program given to this rewriter.
 	 */
-	private final static List<Hop> terminalHops = new ArrayList<>();
-	private final static Map<String, Hop> transientWrites = new HashMap<>();
+	private final List<Hop> terminalHops = new ArrayList<>();
+	private final Map<String, Hop> transientWrites = new HashMap<>();
+	private LocalVariableMap runtimeVars = new LocalVariableMap();
 
 	public List<Hop> getTerminalHops(){
 		return terminalHops;
+	}
+
+	public void setRuntimeVars(LocalVariableMap runtimeVars) {
+		this.runtimeVars = runtimeVars;
 	}
 
 	@Override
@@ -201,7 +210,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	/**
 	 * Set final fedouts of all hops starting from terminal hops.
 	 */
-	private void setFinalFedouts(){
+	public void setFinalFedouts(){
 		for ( Hop root : terminalHops)
 			setFinalFedout(root);
 	}
@@ -264,6 +273,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		root.setFederatedCost(updateHopRel.getCostObject());
 		root.setForcedExecType(updateHopRel.getExecType());
 		forceFixedFedOut(root);
+		
 		LOG.trace("Updated fedOut to " + updateHopRel.getFederatedOutput() + " for hop "
 			+ root.getHopID() + " opcode: " + root.getOpString());
 		hopRelUpdatedFinal.add(root.getHopID());
@@ -349,8 +359,13 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	private ArrayList<HopRel> getFedPlans(Hop currentHop, Map<String, Hop> paramMap){
 		ArrayList<HopRel> hopRels = new ArrayList<>();
 		ArrayList<Hop> inputHops = currentHop.getInput();
-		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) )
+		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) ) {
 			inputHops = getTransientInputs(currentHop, paramMap);
+			if (inputHops == null) {
+				// check if transient read on a runtime variable (only when planning during dynamic recompilation)
+				return createHopRelsFromRuntimeVars(currentHop, hopRels);
+			}
+		}
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) )
 			transientWrites.put(currentHop.getName(), currentHop);
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.FEDERATED) )
@@ -362,6 +377,24 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		return hopRels;
 	}
 
+	private ArrayList<HopRel> createHopRelsFromRuntimeVars(Hop currentHop, ArrayList<HopRel> hopRels) {
+		Data variable = runtimeVars.get(currentHop.getName());
+		if (variable == null) {
+			throw new DMLRuntimeException("Transient write not found for " + currentHop);
+		}
+		FederationMap fedMapping = null;
+		if (variable instanceof CacheableData<?>) {
+			CacheableData<?> cacheable = (CacheableData<?>) variable;
+			fedMapping = cacheable.getFedMapping();
+		}
+		if(fedMapping != null)
+			hopRels.add(new HopRel(currentHop, FederatedOutput.FOUT, fedMapping.getType(), hopRelMemo,
+				new ArrayList<>()));
+		else
+			hopRels.add(new HopRel(currentHop, FederatedOutput.LOUT, hopRelMemo, new ArrayList<>()));
+		return hopRels;
+	}
+	
 	/**
 	 * Get transient inputs from either paramMap or transientWrites.
 	 * Inputs from paramMap has higher priority than inputs from transientWrites.
@@ -370,13 +403,20 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 * @return inputs of currentHop
 	 */
 	private ArrayList<Hop> getTransientInputs(Hop currentHop, Map<String, Hop> paramMap){
+		// FIXME: does not work for function calls (except when the return names match the variables their results are assigned to)
+		//  `model = l2svm(...)` works (because `m_l2svm = function(...) return(Matrix[Double] model)`),
+		//  `m = l2svm(...)` does not
 		Hop tWriteHop = null;
 		if ( paramMap != null)
 			tWriteHop = paramMap.get(currentHop.getName());
 		if ( tWriteHop == null )
 			tWriteHop = transientWrites.get(currentHop.getName());
-		if ( tWriteHop == null )
-			throw new DMLRuntimeException("Transient write not found for " + currentHop);
+		if ( tWriteHop == null ) {
+			if(runtimeVars.get(currentHop.getName()) != null)
+				return null;
+			else
+				throw new DMLRuntimeException("Transient write not found for " + currentHop);
+		}
 		else
 			return new ArrayList<>(Collections.singletonList(tWriteHop));
 	}
@@ -441,7 +481,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	/**
 	 * Add hopRelMemo to Explain class to get explain info related to federated enumeration.
 	 */
-	private void updateExplain(){
+	public void updateExplain(){
 		if (DMLScript.EXPLAIN == ExplainType.HOPS)
 			Explain.setMemo(hopRelMemo);
 	}

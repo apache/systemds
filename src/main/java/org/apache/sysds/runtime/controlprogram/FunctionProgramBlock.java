@@ -29,11 +29,13 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FunctionBlock;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.fedplanner.FederatedPlannerCostbased;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.recompile.Recompiler.ResetType;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.util.ProgramConverter;
@@ -121,7 +123,22 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 				boolean codegen = ConfigurationManager.isCodegenEnabled();
 				boolean singlenode = DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE;
 				ResetType reset = (codegen || singlenode) ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
-				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
+
+				// only (re-)compile federated plan if inputs are federated
+				boolean useDynamicFedPlanner = tmp.keySet().stream().anyMatch(varName -> {
+					Data data = ec.getVariable(varName);
+					return data instanceof CacheableData<?> && ((CacheableData<?>) data).isFederated();
+				});
+				if (useDynamicFedPlanner) {
+					Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
+					recompileFederatedPlan(tmp);
+					// recreate instructions/LOPs from new updated HOPs
+					Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, true, reset);
+				}
+				else {
+					Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
+				}
+
 
 				if( DMLScript.STATISTICS ){
 					long t1 = System.nanoTime();
@@ -151,6 +168,14 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 		checkOutputParameters(ec.getVariables());
 	}
 
+	private void recompileFederatedPlan(LocalVariableMap tmp) {
+		FederatedPlannerCostbased planner = new FederatedPlannerCostbased();
+		planner.setRuntimeVars(tmp);
+		planner.rewriteStatementBlock(_prog.getDMLProg(), _sb, null);
+		planner.setFinalFedouts();
+		planner.updateExplain();
+	}
+	
 	protected void checkOutputParameters( LocalVariableMap vars )
 	{
 		for( DataIdentifier diOut : _outputParams ) {

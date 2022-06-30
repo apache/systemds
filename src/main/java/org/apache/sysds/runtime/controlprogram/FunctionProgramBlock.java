@@ -124,20 +124,11 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 				boolean singlenode = DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE;
 				ResetType reset = (codegen || singlenode) ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
 
-				// only (re-)compile federated plan if inputs are federated
-				boolean useDynamicFedPlanner = tmp.keySet().stream().anyMatch(varName -> {
-					Data data = ec.getVariable(varName);
-					return data instanceof CacheableData<?> && ((CacheableData<?>) data).isFederated();
-				});
-				if (useDynamicFedPlanner) {
-					Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
-					recompileFederatedPlan(tmp);
-					// recreate instructions/LOPs from new updated HOPs
-					Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, true, reset);
-				}
-				else {
-					Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
-				}
+				// TODO: only (re-)compile federated plan if inputs are federated differently
+				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
+				recompileFederatedPlan(tmp);
+				// recreate instructions/LOPs from new updated HOPs
+				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, true, reset);
 
 
 				if( DMLScript.STATISTICS ){

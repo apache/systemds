@@ -54,6 +54,7 @@ import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
+import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainType;
 
@@ -309,6 +310,24 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		}
 	}
 
+	/*private void propagatePrivConstraints(Hop root, Map<String, Hop> paramMap){
+		ArrayList<Hop> inputHops;
+		if ( HopRewriteUtils.isData(root, Types.OpOpData.TRANSIENTREAD) ){
+			inputHops = getTransientInputs(root, paramMap); //Why is paramMap null?
+			if ( inputHops == null || inputHops.isEmpty() || inputHops.get(0) == null)
+				inputHops = transientWrites.get(root.getName()).getInput();
+		}
+		else
+			inputHops = root.getInput();
+		for ( Hop input : inputHops ){
+			if ( input != null ){
+				propagatePrivConstraints(input, paramMap);
+				PrivacyPropagator.hopPropagation(input);
+				System.out.println("Hop " + input + " priv constraint: " + input.getPrivacy());
+			}
+		}
+	}*/
+
 	/**
 	 * Go through the Hop DAG and set the FederatedOutput field and cost estimate for each Hop from leaf to given currentHop.
 	 *
@@ -323,17 +342,34 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		// If the currentHop has input, then the input should be visited depth-first
 		for(Hop input : currentHop.getInput())
 			visitFedPlanHop(input, paramMap);
+		propagatePrivConstraintsLocal(currentHop, paramMap);
 		// Put FOUT and LOUT HopRels into the memo table
 		ArrayList<HopRel> hopRels = getFedPlans(currentHop, paramMap);
 		// Put NONE HopRel into memo table if no FOUT or LOUT HopRels were added
 		if(hopRels.isEmpty())
-			hopRels.add(getNONEHopRel(currentHop));
+			hopRels.add(getNONEHopRel(currentHop, paramMap));
 		addTrace(hopRels);
 		hopRelMemo.put(currentHop, hopRels);
 	}
 
-	private HopRel getNONEHopRel(Hop currentHop){
-		HopRel noneHopRel = new HopRel(currentHop, FederatedOutput.NONE, hopRelMemo);
+	private void propagatePrivConstraintsLocal(Hop currentHop, Map<String, Hop> paramMap){
+		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) ){
+			currentHop.setPrivacy(getTransientInputs(currentHop, paramMap).get(0).getPrivacy());
+		} else if (!currentHop.isFederatedDataOp()) {
+			PrivacyPropagator.hopPropagation(currentHop);
+		}
+	}
+
+	private ArrayList<Hop> getHopInputs(Hop currentHop, Map<String, Hop> paramMap){
+		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) )
+			return getTransientInputs(currentHop, paramMap);
+		else
+			return currentHop.getInput();
+	}
+
+	private HopRel getNONEHopRel(Hop currentHop, Map<String, Hop> paramMap){
+		ArrayList<Hop> inputs = getHopInputs(currentHop, paramMap);
+		HopRel noneHopRel = new HopRel(currentHop, FederatedOutput.NONE, hopRelMemo, inputs);
 		FType[] inputFType = noneHopRel.getInputDependency().stream().map(HopRel::getFType).toArray(FType[]::new);
 		FType outputFType = getFederatedOut(currentHop, inputFType);
 		noneHopRel.setFType(outputFType);
@@ -348,9 +384,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 */
 	private ArrayList<HopRel> getFedPlans(Hop currentHop, Map<String, Hop> paramMap){
 		ArrayList<HopRel> hopRels = new ArrayList<>();
-		ArrayList<Hop> inputHops = currentHop.getInput();
-		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) )
-			inputHops = getTransientInputs(currentHop, paramMap);
+		ArrayList<Hop> inputHops = getHopInputs(currentHop, paramMap);
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) )
 			transientWrites.put(currentHop.getName(), currentHop);
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.FEDERATED) )

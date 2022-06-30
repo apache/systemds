@@ -92,7 +92,6 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 	 */
 	private static void privacyBasedHopDecisionWithFedCall(Hop hop){
 		loadFederatedPrivacyConstraints(hop);
-		PrivacyPropagator.hopPropagation(hop);
 	}
 
 	/**

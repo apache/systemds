@@ -27,6 +27,7 @@ import java.util.List;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
@@ -168,9 +169,18 @@ public class PrivacyPropagator
 	 * @param hop which the privacy constraints are propagated to
 	 */
 	public static void hopPropagation(Hop hop){
-		PrivacyConstraint[] inputConstraints = hop.getInput().stream()
+		hopPropagation(hop, hop.getInput());
+	}
+
+	/**
+	 * Propagate privacy constraints from input hops to given hop.
+	 * @param hop which the privacy constraints are propagated to
+	 * @param inputHops inputs to given hop
+	 */
+	public static void hopPropagation(Hop hop, ArrayList<Hop> inputHops){
+		PrivacyConstraint[] inputConstraints = inputHops.stream()
 			.map(Hop::getPrivacy).toArray(PrivacyConstraint[]::new);
-		if ( hop instanceof TernaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp )
+		if ( hop instanceof TernaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp || hop instanceof DataOp)
 			hop.setPrivacy(mergeNary(inputConstraints, OperatorType.NonAggregate));
 		else if ( hop instanceof AggBinaryOp || hop instanceof AggUnaryOp  || hop instanceof UnaryOp )
 			hop.setPrivacy(mergeNary(inputConstraints, OperatorType.Aggregate));

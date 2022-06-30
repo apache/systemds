@@ -185,8 +185,11 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		long id = FederationUtils.getNextFedDataID();
 		FederatedRequest tmp = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, in.getMetaData().getDataCharacteristics(), in.getDataType());
 
+		Types.ExecType execType = InstructionUtils.getExecType(instString);
+		if (execType == Types.ExecType.FED)
+			execType = Types.ExecType.CP;
 		FederatedRequest[] fr1 = FederationUtils.callInstruction(instStrings, output, id,
-			new CPOperand[] {input1}, new long[] {fedMap.getID()}, InstructionUtils.getExecType(instString));
+			new CPOperand[] {input1}, new long[] {fedMap.getID()}, execType);
 		fedMap.execute(getTID(), true, tmp);
 		fedMap.execute(getTID(), true, fr1, new FederatedRequest[0]);
 

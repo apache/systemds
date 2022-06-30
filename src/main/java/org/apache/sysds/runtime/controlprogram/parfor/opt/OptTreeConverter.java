@@ -464,6 +464,9 @@ public class OptTreeConverter
 					node.setExecType(ExecType.CP); break;
 				case SPARK:
 					node.setExecType(ExecType.SPARK); break;
+				// TODO: create execution mode for parfor loop
+				case FED:
+					node.setExecType(ExecType.CP); break;
 				default:
 					throw new DMLRuntimeException("Unsupported optnode exec type: "+et);
 			}

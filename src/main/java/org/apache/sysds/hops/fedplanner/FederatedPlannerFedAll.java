@@ -41,6 +41,9 @@ import org.apache.sysds.parser.IfStatementBlock;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 
 /**
@@ -59,7 +62,21 @@ public class FederatedPlannerFedAll extends AFederatedPlanner {
 		for(StatementBlock sb : prog.getStatementBlocks())
 			rRewriteStatementBlock(sb, fedVars);
 	}
-	
+
+	@Override
+	public void rewriteFunctionDynamic(FunctionStatementBlock function, LocalVariableMap funcArgs) {
+		Map<String, FType> fedVars = new HashMap<>();
+		for(Map.Entry<String, Data> varName : funcArgs.entrySet()) {
+			Data data = varName.getValue();
+			FType fType = null;
+			if(data instanceof CacheableData<?> && ((CacheableData<?>) data).isFederated()) {
+				fType = ((CacheableData<?>) data).getFedMapping().getType();
+			}
+			fedVars.put(varName.getKey(), fType);
+		}
+		rRewriteStatementBlock(function, fedVars);
+	}
+
 	private void rRewriteStatementBlock(StatementBlock sb, Map<String, FType> fedVars) {
 		//TODO currently this rewrite assumes consistent decisions in conditional control flow
 		

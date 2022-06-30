@@ -37,6 +37,8 @@ import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 
 public abstract class AFederatedPlanner {
 	
@@ -51,6 +53,14 @@ public abstract class AFederatedPlanner {
 	public abstract void rewriteProgram( DMLProgram prog,
 		FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes );
 	
+	/**
+	 * Selects a federated execution plan for the given function, taking into account
+	 * federation types of the arguments.
+	 *
+	 * @param function The function statement block to recompile.
+	 * @param funcArgs The function arguments.
+	 */
+	public abstract void rewriteFunctionDynamic(FunctionStatementBlock function, LocalVariableMap funcArgs);
 	
 	protected boolean allowsFederated(Hop hop, Map<Long, FType> fedHops) {
 		//generically obtain the input FTypes

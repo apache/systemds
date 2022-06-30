@@ -1594,6 +1594,8 @@ public abstract class Hop implements ParseInfo {
 		
 		_etype = that._etype;
 		_etypeForced = that._etypeForced;
+		_federatedOutput = that._federatedOutput;
+		_federatedCost = that._federatedCost;
 		_outputMemEstimate = that._outputMemEstimate;
 		_memEstimate = that._memEstimate;
 		_processingMemEstimate = that._processingMemEstimate;

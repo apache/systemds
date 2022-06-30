@@ -42,6 +42,7 @@ import org.apache.sysds.hops.ipa.FunctionCallGraph;
 import org.apache.sysds.hops.ipa.FunctionCallSizeInfo;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
 import org.apache.sysds.parser.FunctionStatement;
@@ -53,6 +54,11 @@ import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainType;
@@ -60,16 +66,17 @@ import org.apache.sysds.utils.Explain.ExplainType;
 public class FederatedPlannerCostbased extends AFederatedPlanner {
 	private static final Log LOG = LogFactory.getLog(FederatedPlannerCostbased.class.getName());
 
-	private final static MemoTable hopRelMemo = new MemoTable();
+	private final MemoTable hopRelMemo = new MemoTable();
 	/**
 	 * IDs of hops for which the final fedout value has been set.
 	 */
-	private final static Set<Long> hopRelUpdatedFinal = new HashSet<>();
+	private final Set<Long> hopRelUpdatedFinal = new HashSet<>();
 	/**
 	 * Terminal hops in DML program given to this rewriter.
 	 */
-	private final static List<Hop> terminalHops = new ArrayList<>();
-	private final static Map<String, Hop> transientWrites = new HashMap<>();
+	private final List<Hop> terminalHops = new ArrayList<>();
+	private final Map<String, Hop> transientWrites = new HashMap<>();
+	private LocalVariableMap localVariableMap = new LocalVariableMap();
 
 	public List<Hop> getTerminalHops(){
 		return terminalHops;
@@ -82,7 +89,15 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		setFinalFedouts();
 		updateExplain();
 	}
-	
+
+	@Override
+	public void rewriteFunctionDynamic(FunctionStatementBlock function, LocalVariableMap funcArgs) {
+		localVariableMap = funcArgs;
+		rewriteStatementBlock(function.getDMLProg(), function, null);
+		setFinalFedouts();
+		updateExplain();
+	}
+
 	/**
 	 * Estimates cost and enumerates federated execution plans in hopRelMemo.
 	 * The method calls the contained statement blocks recursively.
@@ -149,10 +164,18 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		selectFederatedExecutionPlan(forSB.getFromHops(), paramMap);
 		selectFederatedExecutionPlan(forSB.getToHops(), paramMap);
 		selectFederatedExecutionPlan(forSB.getIncrementHops(), paramMap);
+
+		// add iter variable to local variable map allowing us to reason over transient reads in the HOP DAG
+		DataIdentifier iterVar = ((ForStatement) forSB.getStatement(0)).getIterablePredicate().getIterVar();
+		LocalVariableMap tmpLocalVariableMap = localVariableMap;
+		localVariableMap = (LocalVariableMap) localVariableMap.clone();
+		// value doesn't matter, localVariableMap is just used to check if the variable is federated
+		localVariableMap.put(iterVar.getName(), new IntObject(-1));
 		for(Statement statement : forSB.getStatements()) {
 			ForStatement forStatement = ((ForStatement) statement);
 			forStatement.setBody(rewriteStatementBlocks(prog, forStatement.getBody(), paramMap));
 		}
+		localVariableMap = tmpLocalVariableMap;
 		return new ArrayList<>(Collections.singletonList(forSB));
 	}
 
@@ -170,12 +193,17 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 				selectFederatedExecutionPlan(sbHop, paramMap);
 				if(sbHop instanceof FunctionOp) {
 					String funcName = ((FunctionOp) sbHop).getFunctionName();
+					String funcNamespace = ((FunctionOp) sbHop).getFunctionNamespace();
 					Map<String, Hop> funcParamMap = FederatedPlannerUtils.getParamMap((FunctionOp) sbHop);
 					if ( paramMap != null && funcParamMap != null)
 						funcParamMap.putAll(paramMap);
 					paramMap = funcParamMap;
-					FunctionStatementBlock sbFuncBlock = prog.getBuiltinFunctionDictionary().getFunction(funcName);
+					FunctionStatementBlock sbFuncBlock = prog.getFunctionDictionary(funcNamespace)
+						.getFunction(funcName);
 					rewriteStatementBlock(prog, sbFuncBlock, paramMap);
+
+					FunctionStatement funcStatement = (FunctionStatement) sbFuncBlock.getStatement(0);
+					mapFunctionOutputs((FunctionOp) sbHop, funcStatement);
 				}
 			}
 		}
@@ -183,9 +211,46 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	}
 
 	/**
+	 * Saves the HOPs (TWrite) of the function return values for
+	 * the variable name used when calling the function.
+	 *
+	 * Example:
+	 * <code>
+	 *     f = function() return (matrix[double] model) {a = rand(1, 1);}
+	 *     b = f();
+	 * </code>
+	 * This function saves the HOP writing to <code>a</code> for identifier <code>b</code>.
+	 *
+	 * @param sbHop The <code>FunctionOp</code> for the call
+	 * @param funcStatement The <code>FunctionStatement</code> of the called function
+	 */
+	private void mapFunctionOutputs(FunctionOp sbHop, FunctionStatement funcStatement) {
+		for (int i = 0; i < sbHop.getOutputVariableNames().length; ++i) {
+			Hop outputWrite = transientWrites.get(funcStatement.getOutputParams().get(i).getName());
+			transientWrites.put(sbHop.getOutputVariableNames()[i], outputWrite);
+		}
+	}
+
+	/**
+	 * Return parameter map containing the mapping from parameter name to input hop
+	 * for all parameters of the function hop.
+	 * @param funcOp hop for which the mapping of parameter names to input hops are made
+	 * @return parameter map or empty map if function has no parameters
+	 */
+	private Map<String,Hop> getParamMap(FunctionOp funcOp){
+		String[] inputNames = funcOp.getInputVariableNames();
+		Map<String,Hop> paramMap = new HashMap<>();
+		if ( inputNames != null ){
+			for ( int i = 0; i < funcOp.getInput().size(); i++ )
+				paramMap.put(inputNames[i],funcOp.getInput(i));
+		}
+		return paramMap;
+	}
+
+	/**
 	 * Set final fedouts of all hops starting from terminal hops.
 	 */
-	private void setFinalFedouts(){
+	public void setFinalFedouts(){
 		for ( Hop root : terminalHops)
 			setFinalFedout(root);
 	}
@@ -248,6 +313,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		root.setFederatedCost(updateHopRel.getCostObject());
 		root.setForcedExecType(updateHopRel.getExecType());
 		forceFixedFedOut(root);
+
 		LOG.trace("Updated fedOut to " + updateHopRel.getFederatedOutput() + " for hop "
 			+ root.getHopID() + " opcode: " + root.getOpString());
 		hopRelUpdatedFinal.add(root.getHopID());
@@ -340,7 +406,14 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 */
 	private ArrayList<HopRel> getFedPlans(Hop currentHop, Map<String, Hop> paramMap){
 		ArrayList<HopRel> hopRels = new ArrayList<>();
-		ArrayList<Hop> inputHops = getHopInputs(currentHop, paramMap);
+		ArrayList<Hop> inputHops = currentHop.getInput();
+		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) ) {
+			inputHops = getTransientInputs(currentHop, paramMap);
+			if (inputHops == null) {
+				// check if transient read on a runtime variable (only when planning during dynamic recompilation)
+				return createHopRelsFromRuntimeVars(currentHop, hopRels);
+			}
+		}
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) )
 			transientWrites.put(currentHop.getName(), currentHop);
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.FEDERATED) )
@@ -352,6 +425,24 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		return hopRels;
 	}
 
+	private ArrayList<HopRel> createHopRelsFromRuntimeVars(Hop currentHop, ArrayList<HopRel> hopRels) {
+		Data variable = localVariableMap.get(currentHop.getName());
+		if (variable == null) {
+			throw new DMLRuntimeException("Transient write not found for " + currentHop);
+		}
+		FederationMap fedMapping = null;
+		if (variable instanceof CacheableData<?>) {
+			CacheableData<?> cacheable = (CacheableData<?>) variable;
+			fedMapping = cacheable.getFedMapping();
+		}
+		if(fedMapping != null)
+			hopRels.add(new HopRel(currentHop, FederatedOutput.FOUT, fedMapping.getType(), hopRelMemo,
+				new ArrayList<>()));
+		else
+			hopRels.add(new HopRel(currentHop, FederatedOutput.LOUT, hopRelMemo, new ArrayList<>()));
+		return hopRels;
+	}
+
 	/**
 	 * Get transient inputs from either paramMap or transientWrites.
 	 * Inputs from paramMap has higher priority than inputs from transientWrites.
@@ -360,13 +451,20 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 * @return inputs of currentHop
 	 */
 	private ArrayList<Hop> getTransientInputs(Hop currentHop, Map<String, Hop> paramMap){
+		// FIXME: does not work for function calls (except when the return names match the variables their results are assigned to)
+		//  `model = l2svm(...)` works (because `m_l2svm = function(...) return(Matrix[Double] model)`),
+		//  `m = l2svm(...)` does not
 		Hop tWriteHop = null;
 		if ( paramMap != null)
 			tWriteHop = paramMap.get(currentHop.getName());
 		if ( tWriteHop == null )
 			tWriteHop = transientWrites.get(currentHop.getName());
-		if ( tWriteHop == null )
-			throw new DMLRuntimeException("Transient write not found for " + currentHop);
+		if ( tWriteHop == null ) {
+			if(localVariableMap.get(currentHop.getName()) != null)
+				return null;
+			else
+				throw new DMLRuntimeException("Transient write not found for " + currentHop);
+		}
 		else
 			return new ArrayList<>(Collections.singletonList(tWriteHop));
 	}
@@ -431,7 +529,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	/**
 	 * Add hopRelMemo to Explain class to get explain info related to federated enumeration.
 	 */
-	private void updateExplain(){
+	public void updateExplain(){
 		if (DMLScript.EXPLAIN == ExplainType.HOPS)
 			Explain.setMemo(hopRelMemo);
 	}

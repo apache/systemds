@@ -645,6 +645,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 				matmultCP = new MatMultCP(getInput().get(0).constructLops(),
 					getInput().get(1).constructLops(), getDataType(), getValueType(), et, k);
+				updateLopFedOut(matmultCP);
 			}
 			setOutputDimensions(matmultCP);
 		}
@@ -668,7 +669,8 @@ public class AggBinaryOp extends MultiThreadedHop {
 				new Transform(lY, ReOrgOp.TRANS, getDataType(), getValueType(), inputReorgExecType, k);
 		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getBlocksize(), Y.getNnz());
 		setLineNumbers(tY);
-		updateLopFedOut(tY);
+		if (Y.hasFederatedOutput())
+			updateLopFedOut(tY);
 		
 		//matrix mult
 		Lop mult = new MatMultCP(tY, X.constructLops(), getDataType(), getValueType(), et, k); //CP or FED

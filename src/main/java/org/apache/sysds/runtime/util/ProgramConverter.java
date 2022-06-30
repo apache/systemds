@@ -87,6 +87,7 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.SpoofCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.Lineage;
@@ -472,7 +473,7 @@ public class ProgramConverter
 		
 		try
 		{
-			if( oInst instanceof CPInstruction || oInst instanceof SPInstruction 
+			if( oInst instanceof CPInstruction || oInst instanceof SPInstruction || oInst instanceof FEDInstruction
 				|| oInst instanceof GPUInstruction ) {
 				if( oInst instanceof FunctionCallCPInstruction && cpFunctions ) {
 					FunctionCallCPInstruction tmp = (FunctionCallCPInstruction) oInst;

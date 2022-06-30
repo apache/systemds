@@ -652,8 +652,9 @@ public class FederationMap {
 		while(iter.hasNext()) {
 			Entry<FederatedRange, FederatedData> e = iter.next();
 			FederatedRange range = e.getKey();
-			long rs = range.getBeginDims()[0], re = range.getEndDims()[0], cs = range.getBeginDims()[1],
-				ce = range.getEndDims()[1];
+			// ends converted from exclusive to inclusive
+			long rs = range.getBeginDims()[0], re = range.getEndDims()[0] - 1, cs = range.getBeginDims()[1],
+				ce = range.getEndDims()[1] - 1;
 			boolean overlap = ((ixrange.colStart <= ce) && (ixrange.colEnd >= cs) && (ixrange.rowStart <= re) &&
 				(ixrange.rowEnd >= rs));
 			if(!overlap)

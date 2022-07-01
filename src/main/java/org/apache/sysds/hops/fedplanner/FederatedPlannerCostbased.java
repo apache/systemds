@@ -42,6 +42,7 @@ import org.apache.sysds.hops.ipa.FunctionCallGraph;
 import org.apache.sysds.hops.ipa.FunctionCallSizeInfo;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
 import org.apache.sysds.parser.FunctionStatement;
@@ -57,6 +58,7 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainType;
@@ -158,10 +160,18 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		selectFederatedExecutionPlan(forSB.getFromHops(), paramMap);
 		selectFederatedExecutionPlan(forSB.getToHops(), paramMap);
 		selectFederatedExecutionPlan(forSB.getIncrementHops(), paramMap);
+		
+		// add iter variable to local variable map allowing us to reason over transient reads in the HOP DAG
+		DataIdentifier iterVar = ((ForStatement) forSB.getStatement(0)).getIterablePredicate().getIterVar();
+		LocalVariableMap tmpLocalVariableMap = localVariableMap;
+		localVariableMap = (LocalVariableMap) localVariableMap.clone();
+		// value doesn't matter, localVariableMap is just used to check if the variable is federated
+		localVariableMap.put(iterVar.getName(), new IntObject(-1));
 		for(Statement statement : forSB.getStatements()) {
 			ForStatement forStatement = ((ForStatement) statement);
 			forStatement.setBody(rewriteStatementBlocks(prog, forStatement.getBody(), paramMap));
 		}
+		localVariableMap = tmpLocalVariableMap;
 		return new ArrayList<>(Collections.singletonList(forSB));
 	}
 
@@ -179,16 +189,42 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 				selectFederatedExecutionPlan(sbHop, paramMap);
 				if(sbHop instanceof FunctionOp) {
 					String funcName = ((FunctionOp) sbHop).getFunctionName();
+					String funcNamespace = ((FunctionOp) sbHop).getFunctionNamespace();
 					Map<String, Hop> funcParamMap = getParamMap((FunctionOp) sbHop);
 					if ( paramMap != null && funcParamMap != null)
 						funcParamMap.putAll(paramMap);
 					paramMap = funcParamMap;
-					FunctionStatementBlock sbFuncBlock = prog.getBuiltinFunctionDictionary().getFunction(funcName);
+					FunctionStatementBlock sbFuncBlock = prog.getFunctionDictionary(funcNamespace)
+						.getFunction(funcName);
 					rewriteStatementBlock(prog, sbFuncBlock, paramMap);
+
+					FunctionStatement funcStatement = (FunctionStatement) sbFuncBlock.getStatement(0);
+					mapFunctionOutputs((FunctionOp) sbHop, funcStatement);
 				}
 			}
 		}
 		return new ArrayList<>(Collections.singletonList(sb));
+	}
+
+	/**
+	 * Saves the HOPs (TWrite) of the function return values for
+	 * the variable name used when calling the function.
+	 *
+	 * Example:
+	 * <code>
+	 *     f = function() return (matrix[double] model) {a = rand(1, 1);}
+	 *     b = f();
+	 * </code>
+	 * This function saves the HOP writing to <code>a</code> for identifier <code>b</code>.
+	 *
+	 * @param sbHop The <code>FunctionOp</code> for the call
+	 * @param funcStatement The <code>FunctionStatement</code> of the called function
+	 */
+	private void mapFunctionOutputs(FunctionOp sbHop, FunctionStatement funcStatement) {
+		for (int i = 0; i < sbHop.getOutputVariableNames().length; ++i) {
+			Hop outputWrite = transientWrites.get(funcStatement.getOutputParams().get(i).getName());
+			transientWrites.put(sbHop.getOutputVariableNames()[i], outputWrite);
+		}
 	}
 
 	/**

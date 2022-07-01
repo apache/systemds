@@ -74,14 +74,14 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 */
 	private final List<Hop> terminalHops = new ArrayList<>();
 	private final Map<String, Hop> transientWrites = new HashMap<>();
-	private LocalVariableMap runtimeVars = new LocalVariableMap();
+	private LocalVariableMap localVariableMap = new LocalVariableMap();
 
 	public List<Hop> getTerminalHops(){
 		return terminalHops;
 	}
 
-	public void setRuntimeVars(LocalVariableMap runtimeVars) {
-		this.runtimeVars = runtimeVars;
+	public void setLocalVariableMap(LocalVariableMap localVariableMap) {
+		this.localVariableMap = localVariableMap;
 	}
 
 	@Override
@@ -378,7 +378,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	}
 
 	private ArrayList<HopRel> createHopRelsFromRuntimeVars(Hop currentHop, ArrayList<HopRel> hopRels) {
-		Data variable = runtimeVars.get(currentHop.getName());
+		Data variable = localVariableMap.get(currentHop.getName());
 		if (variable == null) {
 			throw new DMLRuntimeException("Transient write not found for " + currentHop);
 		}
@@ -412,7 +412,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		if ( tWriteHop == null )
 			tWriteHop = transientWrites.get(currentHop.getName());
 		if ( tWriteHop == null ) {
-			if(runtimeVars.get(currentHop.getName()) != null)
+			if(localVariableMap.get(currentHop.getName()) != null)
 				return null;
 			else
 				throw new DMLRuntimeException("Transient write not found for " + currentHop);

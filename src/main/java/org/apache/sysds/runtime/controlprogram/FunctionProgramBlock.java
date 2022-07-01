@@ -35,7 +35,6 @@ import org.apache.sysds.hops.recompile.Recompiler.ResetType;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.util.ProgramConverter;
@@ -124,11 +123,11 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 				boolean singlenode = DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE;
 				ResetType reset = (codegen || singlenode) ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
 
-				// TODO: only (re-)compile federated plan if inputs are federated differently
 				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
-				recompileFederatedPlan(tmp);
-				// recreate instructions/LOPs from new updated HOPs
-				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, true, reset);
+				// TODO: only (re-)compile federated plan if inputs are federated differently
+				recompileFederatedPlan((LocalVariableMap) ec.getVariables().clone());
+				// recreate instructions/LOPs for new updated HOPs
+				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
 
 
 				if( DMLScript.STATISTICS ){
@@ -159,9 +158,13 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 		checkOutputParameters(ec.getVariables());
 	}
 
-	private void recompileFederatedPlan(LocalVariableMap tmp) {
+	/**
+	 * Recompile the HOPs of the function, keeping federation in mind.
+	 * @param variableMap The variable map for the function arguments
+	 */
+	private void recompileFederatedPlan(LocalVariableMap variableMap) {
 		FederatedPlannerCostbased planner = new FederatedPlannerCostbased();
-		planner.setRuntimeVars(tmp);
+		planner.setLocalVariableMap(variableMap);
 		planner.rewriteStatementBlock(_prog.getDMLProg(), _sb, null);
 		planner.setFinalFedouts();
 		planner.updateExplain();

@@ -185,8 +185,11 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		long id = FederationUtils.getNextFedDataID();
 		FederatedRequest tmp = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, in.getMetaData().getDataCharacteristics(), in.getDataType());
 
+		Types.ExecType execType = InstructionUtils.getExecType(instString);
+		if (execType == Types.ExecType.FED)
+			execType = Types.ExecType.CP;
 		FederatedRequest[] fr1 = FederationUtils.callInstruction(instStrings, output, id,
-			new CPOperand[] {input1}, new long[] {fedMap.getID()}, InstructionUtils.getExecType(instString));
+			new CPOperand[] {input1}, new long[] {fedMap.getID()}, execType);
 		fedMap.execute(getTID(), true, tmp);
 		fedMap.execute(getTID(), true, fr1, new FederatedRequest[0]);
 
@@ -308,11 +311,14 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		FederatedRequest tmp = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in1.getDataType());
 		fedMap.execute(getTID(), true, tmp);
 
+		Types.ExecType execType = InstructionUtils.getExecType(instString);
+		if (execType == Types.ExecType.FED)
+			execType = Types.ExecType.CP;
 		if(in2 != null) { // matrix, frame
 			FederatedRequest[] fr1 = fedMap.broadcastSliced(in2, DMLScript.LINEAGE ? ec.getLineageItem(input2) : null,
 				input2.isFrame(), sliceIxs);
 			FederatedRequest[] fr2 = FederationUtils.callInstruction(instStrings, output, id, new CPOperand[]{input1, input2},
-				new long[]{fedMap.getID(), fr1[0].getID()}, null);
+				new long[]{fedMap.getID(), fr1[0].getID()}, execType);
 			FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1[0].getID());
 
 			//execute federated instruction and cleanup intermediates
@@ -324,7 +330,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		else { // scalar
 			FederatedRequest fr1 = fedMap.broadcast(scalar);
 			FederatedRequest[] fr2 = FederationUtils.callInstruction(instStrings, output, id, new CPOperand[]{input1, input2},
-				new long[]{fedMap.getID(), fr1.getID()}, null);
+				new long[]{fedMap.getID(), fr1.getID()}, execType);
 			FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1.getID());
 
 			if(fr2.length == 1)

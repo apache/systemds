@@ -35,6 +35,7 @@ import org.apache.sysds.hops.recompile.Recompiler.ResetType;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.util.ProgramConverter;
@@ -51,6 +52,7 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 	
 	private boolean _recompileOnce = false;
 	private boolean _nondeterministic = false;
+	private boolean _isFedPlan = false;
 	
 	public FunctionProgramBlock( Program prog, List<DataIdentifier> inputParams, List<DataIdentifier> outputParams) {
 		super(prog);
@@ -124,10 +126,11 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 				ResetType reset = (codegen || singlenode) ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
 
 				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
-				// TODO: only (re-)compile federated plan if inputs are federated differently
-				recompileFederatedPlan((LocalVariableMap) ec.getVariables().clone());
-				// recreate instructions/LOPs for new updated HOPs
-				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
+				if (shouldRunFedPlanner(ec)) {
+					recompileFederatedPlan((LocalVariableMap) ec.getVariables().clone());
+					// recreate instructions/LOPs for new updated HOPs
+					Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
+				}
 
 
 				if( DMLScript.STATISTICS ){
@@ -158,6 +161,25 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 		checkOutputParameters(ec.getVariables());
 	}
 
+	private boolean shouldRunFedPlanner(ExecutionContext ec) {
+		for (String varName : ec.getVariables().keySet()) {
+			Data variable = ec.getVariable(varName);
+			if (variable instanceof CacheableData<?> && ((CacheableData<?>) variable).isFederated()) {
+				_isFedPlan = true;
+				return true;
+			}
+		}
+		if (_isFedPlan) {
+			_isFedPlan = false;
+			// current function uses HOPs with FED execution type. Remove the forced FED execution type by running
+			// planner again
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
 	/**
 	 * Recompile the HOPs of the function, keeping federation in mind.
 	 * @param variableMap The variable map for the function arguments

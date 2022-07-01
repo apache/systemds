@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.instructions;
 
 import org.apache.sysds.lops.Append;
+import org.apache.sysds.lops.LeftIndex;
+import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.fed.AggregateBinaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.AggregateTernaryFEDInstruction;
@@ -30,6 +32,7 @@ import org.apache.sysds.runtime.instructions.fed.CentralMomentFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.CovarianceFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
+import org.apache.sysds.runtime.instructions.fed.IndexingFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.QuantilePickFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.QuantileSortFEDInstruction;
@@ -53,6 +56,7 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "uark+"   , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uack+"   , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uamax"   , FEDType.AggregateUnary );
+		String2FEDInstructionType.put( "uacmax"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uamin"   , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uasqk+"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uarsqk+" , FEDType.AggregateUnary );
@@ -92,6 +96,9 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "cov",   FEDType.Covariance);
 		String2FEDInstructionType.put( "qsort", FEDType.QSort);
 		String2FEDInstructionType.put( "qpick", FEDType.QPick);
+
+		String2FEDInstructionType.put(RightIndex.OPCODE, FEDType.MatrixIndexing);
+		String2FEDInstructionType.put(LeftIndex.OPCODE, FEDType.MatrixIndexing);
 
 		String2FEDInstructionType.put(Append.OPCODE, FEDType.Append);
 	}
@@ -138,6 +145,8 @@ public class FEDInstructionParser extends InstructionParser
 				return QuantileSortFEDInstruction.parseInstruction(str, true);
 			case QPick:
 				return QuantilePickFEDInstruction.parseInstruction(str);
+			case MatrixIndexing:
+				return IndexingFEDInstruction.parseInstruction(str);
 			default:
 				throw new DMLRuntimeException("Invalid FEDERATED Instruction Type: " + fedtype );
 		}

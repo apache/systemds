@@ -52,49 +52,93 @@ public class KMVSketch extends CountDistinctApproxSketch {
 	}
 
 	@Override
-	public Integer getScalarValue(MatrixBlock in) {
+	public MatrixBlock getValue(MatrixBlock in) {
 
-		// D is the number of possible distinct values in the MatrixBlock.
-		// plus 1 to take account of 0 input.
-		long D = in.getNonZeros() + 1;
+		if (this.op.getDirection().isRowCol()) {
+			// D is the number of possible distinct values in the MatrixBlock.
+			// plus 1 to take account of 0 input.
+			long D = in.getNonZeros() + 1;
 
-		/**
-		 * To ensure that the likelihood to hash to the same value we need O(D^2) positions to hash to assign. If the
-		 * value is higher than int (which is the area we hash to) then use Integer Max value as largest hashing space.
-		 */
-		long tmp = D * D;
-		int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
-		/**
-		 * The estimator is asymptotically unbiased as k becomes large, but memory usage also scales with k. Furthermore k
-		 * value must be within range: D >> k >> 0
-		 */
-		int k = D > 64 ? 64 : (int) D;
+			/**
+			 * To ensure that the likelihood to hash to the same value we need O(D^2) positions to hash to assign. If the
+			 * value is higher than int (which is the area we hash to) then use Integer Max value as largest hashing space.
+			 */
+			long tmp = D * D;
+			int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
+			/**
+			 * The estimator is asymptotically unbiased as k becomes large, but memory usage also scales with k. Furthermore k
+			 * value must be within range: D >> k >> 0
+			 */
+			int k = D > 64 ? 64 : (int) D;
 
-		SmallestPriorityQueue spq = getKSmallestHashes(in, k, M);
-
-		if(LOG.isDebugEnabled()) {
-			LOG.debug("M not forced to int size: " + tmp);
-			LOG.debug("M: " + M);
-			LOG.debug("M: " + M);
-			LOG.debug("kth smallest hash:" + spq.peek());
-			LOG.debug("spq: " + spq.toString());
-		}
-
-		if(spq.size() < k) {
-			return spq.size();
-		}
-		else {
-			double kthSmallestHash = spq.poll();
-			double U_k = kthSmallestHash / (double) M;
-			double estimate = (double) (k - 1) / U_k;
-			double ceilEstimate = Math.min(estimate, (double) D);
+			SmallestPriorityQueue spq = getKSmallestHashes(in, k, M);
 
 			if(LOG.isDebugEnabled()) {
-				LOG.debug("U_k : " + U_k);
-				LOG.debug("Estimate: " + estimate);
-				LOG.debug("Ceil worst case: " + D);
+				LOG.debug("M not forced to int size: " + tmp);
+				LOG.debug("M: " + M);
+				LOG.debug("M: " + M);
+				LOG.debug("kth smallest hash:" + spq.peek());
+				LOG.debug("spq: " + spq);
 			}
-			return (int) ceilEstimate;
+
+
+			long res = countDistinctValuesKMV(spq, k, M, D);
+			if(res <= 0) {
+				throw new DMLRuntimeException("Impossible estimate of distinct values");
+			}
+
+			// Result is a 1x1 matrix block
+			return new MatrixBlock(res);
+
+		} else if (this.op.getDirection().isRow()) {
+			long D = (long) Math.floor(in.getNonZeros() / (double) in.getNumRows()) + 1;
+			long tmp = D * D;
+			int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
+			int k = D > 64 ? 64 : (int) D;
+
+			// Result is a Mx1 matrix block.
+			// TODO We are reusing memory allocated for input matrix block here - explore whether it would be better to
+			//  allocate new
+			MatrixBlock resultMatrix = in.slice(0, in.getNumRows() - 1, 0, 0);
+
+			SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
+			for (int i=0; i<in.getNumRows(); ++i) {
+				for (int j=0; j<in.getNumColumns(); ++j) {
+					spq.add(in.getValue(i, j));
+				}
+
+				long res = countDistinctValuesKMV(spq, k, M, D);
+				resultMatrix.setValue(i, 0, res);
+
+				spq.clear();
+			}
+
+			return resultMatrix;
+
+		} else {  // Col
+			long D = (long) Math.floor(in.getNonZeros() / (double) in.getNumColumns()) + 1;
+			long tmp = D * D;
+			int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
+			int k = D > 64 ? 64 : (int) D;
+
+			// Result is a 1xN matrix block.
+			// TODO We are reusing memory allocated for input matrix block here - explore whether it would be better to
+			//  allocate new
+			MatrixBlock resultMatrix = in.slice(0, 0, 0, in.getNumColumns() - 1);
+
+			SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
+			for (int j=0; j<in.getNumColumns(); ++j) {
+				for (int i=0; i<in.getNumRows(); ++i) {
+					spq.add(in.getValue(i, j));
+				}
+
+				long res = countDistinctValuesKMV(spq, k, M, D);
+				resultMatrix.setValue(0, j, res);
+
+				spq.clear();
+			}
+
+			return resultMatrix;
 		}
 	}
 
@@ -146,10 +190,32 @@ public class KMVSketch extends CountDistinctApproxSketch {
 		}
 	}
 
+	private long countDistinctValuesKMV(SmallestPriorityQueue spq, int k, int M, long D) {
+		long res = 0;
+		if(spq.size() < k) {
+			res = spq.size();
+		}
+		else {
+			double kthSmallestHash = spq.poll();
+			double U_k = kthSmallestHash / (double) M;
+			double estimate = (double) (k - 1) / U_k;
+			double ceilEstimate = Math.min(estimate, (double) D);
+
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("U_k : " + U_k);
+				LOG.debug("Estimate: " + estimate);
+				LOG.debug("Ceil worst case: " + D);
+			}
+			res = Math.round(ceilEstimate);
+		}
+
+		return res;
+	}
+
 	@Override
-	public MatrixBlock getMatrixValue(CorrMatrixBlock arg0) {
+	public MatrixBlock getValueFromSketch(CorrMatrixBlock arg0) {
 		MatrixBlock blkIn = arg0.getValue();
-		if(op.getDirection() == Types.Direction.Row) {
+		if(op.getDirection().isRow()) {
 			// 1000 x 1 blkOut -> slice out the first column of the matrix
 			MatrixBlock blkOut = blkIn.slice(0, blkIn.getNumRows() - 1, 0, 0);
 			for(int i = 0; i < blkIn.getNumRows(); ++i) {
@@ -158,7 +224,7 @@ public class KMVSketch extends CountDistinctApproxSketch {
 
 			return blkOut;
 		}
-		else if(op.getDirection() == Types.Direction.Col) {
+		else if(op.getDirection().isCol()) {
 			// 1 x 1000 blkOut -> slice out the first row of the matrix
 			MatrixBlock blkOut = blkIn.slice(0, 0, 0, blkIn.getNumColumns() - 1);
 			for(int j = 0; j < blkIn.getNumColumns(); ++j) {
@@ -181,41 +247,43 @@ public class KMVSketch extends CountDistinctApproxSketch {
 		MatrixBlock blkIn = arg0.getValue();
 		MatrixBlock blkInCorr = arg0.getCorrection();
 
-		if(op.getOperatorType() == CountDistinctOperatorTypes.KMV) {
-			double kthSmallestHash;
-			if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
-				kthSmallestHash = blkIn.getValue(idx, 0);
-			}
-			else { // op.getDirection().isCol()
-				kthSmallestHash = blkIn.getValue(0, idx);
-			}
+		if(op.getOperatorType() != CountDistinctOperatorTypes.KMV) {
+			throw new IllegalArgumentException(this.getClass().getSimpleName() + " cannot use " + op.getOperatorType());
+		}
 
-			double nHashes = blkInCorr.getValue(idx, 0);
-			double k = blkInCorr.getValue(idx, 1);
-			double D = blkInCorr.getValue(idx, 2);
+		double kthSmallestHash;
+		if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
+			kthSmallestHash = blkIn.getValue(idx, 0);
+		}
+		else { // op.getDirection().isCol()
+			kthSmallestHash = blkIn.getValue(0, idx);
+		}
 
-			double D2 = D * D;
-			double M = (D2 > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : D2;
+		double nHashes = blkInCorr.getValue(idx, 0);
+		double k = blkInCorr.getValue(idx, 1);
+		double D = blkInCorr.getValue(idx, 2);
 
-			double ceilEstimate;
-			if(nHashes != 0 && nHashes < k) {
-				ceilEstimate = nHashes;
-			}
-			else if(nHashes == 0) {
-				ceilEstimate = 1;
-			}
-			else {
-				double U_k = kthSmallestHash / M;
-				double estimate = (k - 1) / U_k;
-				ceilEstimate = Math.min(estimate, D);
-			}
+		double D2 = D * D;
+		double M = (D2 > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : D2;
 
-			if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
-				blkOut.setValue(idx, 0, ceilEstimate);
-			}
-			else { // op.getDirection().isCol()
-				blkOut.setValue(0, idx, ceilEstimate);
-			}
+		double ceilEstimate;
+		if(nHashes != 0 && nHashes < k) {
+			ceilEstimate = nHashes;
+		}
+		else if(nHashes == 0) {
+			ceilEstimate = 1;
+		}
+		else {
+			double U_k = kthSmallestHash / M;
+			double estimate = (k - 1) / U_k;
+			ceilEstimate = Math.min(estimate, D);
+		}
+
+		if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
+			blkOut.setValue(idx, 0, ceilEstimate);
+		}
+		else { // op.getDirection().isCol()
+			blkOut.setValue(0, idx, ceilEstimate);
 		}
 	}
 

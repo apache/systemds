@@ -19,6 +19,7 @@
 
 package org.apache.sysds.hops.rewrite;
 
+import org.apache.sysds.common.Types;
 import static org.apache.sysds.hops.OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 
 import java.util.ArrayList;
@@ -2398,7 +2399,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			}
 			
 			//rewire parent-child operators if rewrite applied
-			if( ternop != null ) { 
+			if( ternop != null ) {
+				if (right.getForcedExecType() == Types.ExecType.FED)
+					ternop.setForcedExecType(Types.ExecType.FED);
 				HopRewriteUtils.replaceChildReference(parent, hi, ternop, pos);
 				hi = ternop;
 			}

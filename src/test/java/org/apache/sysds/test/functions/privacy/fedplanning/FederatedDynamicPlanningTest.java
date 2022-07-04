@@ -40,7 +40,7 @@ public class FederatedDynamicPlanningTest extends AutomatedTestBase {
 	private static final Log LOG = LogFactory.getLog(FederatedDynamicPlanningTest.class.getName());
 
 	private final static String TEST_DIR = "functions/privacy/fedplanning/";
-	private final static String TEST_NAME = "FederatedFunctionPlanningTest";
+	private final static String TEST_NAME = "FederatedDynamicFunctionPlanningTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedDynamicPlanningTest.class.getSimpleName() + "/";
 	private static File TEST_CONF_FILE;
 
@@ -55,7 +55,26 @@ public class FederatedDynamicPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void runFunctionTest() {
+	public void runDynamicFullFunctionTest() {
+		// compared to `FederatedL2SVMPlanningTest` this does not create `fed_+*` or `fed_tsmm`, probably due to
+		// some rewrites not being applied. Might be a bug.
+		String[] expectedHeavyHitters = new String[] {"fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_max",
+				"fed_1-*", "fed_>"};
+		setTestConf("SystemDS-config-fout.xml");
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
+	}
+
+	@Test
+	public void runDynamicHeuristicFunctionTest() {
+		// compared to `FederatedL2SVMPlanningTest` this does not create `fed_+*` or `fed_tsmm`, probably due to
+		// some rewrites not being applied. Might be a bug.
+		String[] expectedHeavyHitters = new String[] {"fed_fedinit", "fed_ba+*"};
+		setTestConf("SystemDS-config-heuristic.xml");
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
+	}
+
+	@Test
+	public void runDynamicCostBasedFunctionTest() {
 		// compared to `FederatedL2SVMPlanningTest` this does not create `fed_+*` or `fed_tsmm`, probably due to
 		// some rewrites not being applied. Might be a bug.
 		String[] expectedHeavyHitters = new String[] {"fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_max",

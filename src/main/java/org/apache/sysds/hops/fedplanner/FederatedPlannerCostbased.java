@@ -82,10 +82,6 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		return terminalHops;
 	}
 
-	public void setLocalVariableMap(LocalVariableMap localVariableMap) {
-		this.localVariableMap = localVariableMap;
-	}
-
 	@Override
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		prog.updateRepetitionEstimates();
@@ -93,7 +89,15 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		setFinalFedouts();
 		updateExplain();
 	}
-	
+
+	@Override
+	public void rewriteFunctionDynamic(FunctionStatementBlock function, LocalVariableMap funcArgs) {
+		localVariableMap = funcArgs;
+		rewriteStatementBlock(function.getDMLProg(), function, null);
+		setFinalFedouts();
+		updateExplain();
+	}
+
 	/**
 	 * Estimates cost and enumerates federated execution plans in hopRelMemo.
 	 * The method calls the contained statement blocks recursively.

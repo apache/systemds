@@ -29,10 +29,15 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FunctionBlock;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.fedplanner.AFederatedPlanner;
+import org.apache.sysds.hops.fedplanner.FTypes;
 import org.apache.sysds.hops.fedplanner.FederatedPlannerCostbased;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.recompile.Recompiler.ResetType;
 import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.parser.FunctionStatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -162,6 +167,9 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 	}
 
 	private boolean shouldRunFedPlanner(ExecutionContext ec) {
+		String planner = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.FEDERATED_PLANNER);
+		if (!OptimizerUtils.FEDERATED_COMPILATION && !FTypes.FederatedPlanner.isCompiled(planner))
+			return false;
 		for (String varName : ec.getVariables().keySet()) {
 			Data variable = ec.getVariable(varName);
 			if (variable instanceof CacheableData<?> && ((CacheableData<?>) variable).isFederated()) {
@@ -185,11 +193,16 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 	 * @param variableMap The variable map for the function arguments
 	 */
 	private void recompileFederatedPlan(LocalVariableMap variableMap) {
-		FederatedPlannerCostbased planner = new FederatedPlannerCostbased();
-		planner.setLocalVariableMap(variableMap);
-		planner.rewriteStatementBlock(_prog.getDMLProg(), _sb, null);
-		planner.setFinalFedouts();
-		planner.updateExplain();
+		String splanner = ConfigurationManager.getDMLConfig()
+				.getTextValue(DMLConfig.FEDERATED_PLANNER);
+		AFederatedPlanner planner = FTypes.FederatedPlanner.isCompiled(splanner) ?
+				FTypes.FederatedPlanner.valueOf(splanner.toUpperCase()).getPlanner() :
+				new FederatedPlannerCostbased();
+		if (planner == null)
+			// unreachable, if planner does not support compilation cost based would be chosen
+			throw new DMLRuntimeException(
+				"Recompilation chose to apply federation planner, but configured planner does not support compilation.");
+		planner.rewriteFunctionDynamic((FunctionStatementBlock) _sb, variableMap);
 	}
 	
 	protected void checkOutputParameters( LocalVariableMap vars )

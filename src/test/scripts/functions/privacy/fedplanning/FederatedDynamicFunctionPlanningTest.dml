@@ -28,7 +28,7 @@ D = rbind(read($lB1), read($lB2))
 
 model = l2svm(X=D, Y=A)
 Z = model
-# TODO: call would perform `Y %*% X` internally due to rewrite, but MM with RHS column federated is not implemented
+# TODO: call would perform `Y %*% X` internally due to rewrite, but MM with RHS column-federated is not implemented
 #model = l2svm(X=C, Y=A)
 #Z = rbind(Z, model)
 model = l2svm(X=B, Y=A)

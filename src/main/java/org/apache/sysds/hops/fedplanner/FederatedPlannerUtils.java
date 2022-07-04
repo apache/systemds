@@ -34,6 +34,7 @@ public class FederatedPlannerUtils {
 	 * Inputs from paramMap has higher priority than inputs from transientWrites.
 	 * @param currentHop hop for which inputs are read from maps
 	 * @param paramMap of local parameters
+	 * @param transientWrites map of transient writes
 	 * @return inputs of currentHop
 	 */
 	public static ArrayList<Hop> getTransientInputs(Hop currentHop, Map<String, Hop> paramMap, Map<String,Hop> transientWrites){

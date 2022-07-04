@@ -27,8 +27,6 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
-import org.apache.sysds.hops.ipa.FunctionCallGraph;
-import org.apache.sysds.hops.ipa.FunctionCallSizeInfo;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataExpression;
@@ -64,8 +62,6 @@ import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +72,7 @@ public class PrivacyConstraintLoader {
 	private final Map<Long, Hop> memo = new HashMap<>();
 	private final Map<String, Hop> transientWrites = new HashMap<>();
 
-	public void loadConstraints(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes){
+	public void loadConstraints(DMLProgram prog){
 		rewriteStatementBlocks(prog, prog.getStatementBlocks(), null);
 	}
 
@@ -142,7 +138,7 @@ public class PrivacyConstraintLoader {
 				loadPrivacyConstraint(sbHop, paramMap);
 				if(sbHop instanceof FunctionOp) {
 					String funcName = ((FunctionOp) sbHop).getFunctionName();
-					Map<String, Hop> funcParamMap = getParamMap((FunctionOp) sbHop);
+					Map<String, Hop> funcParamMap = FederatedPlannerUtils.getParamMap((FunctionOp) sbHop);
 					if ( paramMap != null && funcParamMap != null)
 						funcParamMap.putAll(paramMap);
 					paramMap = funcParamMap;
@@ -151,16 +147,6 @@ public class PrivacyConstraintLoader {
 				}
 			}
 		}
-	}
-
-	private Map<String,Hop> getParamMap(FunctionOp funcOp){
-		String[] inputNames = funcOp.getInputVariableNames();
-		Map<String,Hop> paramMap = new HashMap<>();
-		if ( inputNames != null ){
-			for ( int i = 0; i < funcOp.getInput().size(); i++ )
-				paramMap.put(inputNames[i],funcOp.getInput(i));
-		}
-		return paramMap;
 	}
 
 	private void loadPrivacyConstraint(Hop root, Map<String, Hop> paramMap){
@@ -176,10 +162,12 @@ public class PrivacyConstraintLoader {
 	private void propagatePrivConstraintsLocal(Hop currentHop, Map<String, Hop> paramMap){
 		if ( currentHop.isFederatedDataOp() )
 			loadFederatedPrivacyConstraints(currentHop);
-		else if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) )
+		else if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) ){
+			currentHop.setPrivacy(currentHop.getInput(0).getPrivacy());
 			transientWrites.put(currentHop.getName(), currentHop);
+		}
 		else if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) ){
-			currentHop.setPrivacy(getTransientInputs(currentHop, paramMap).get(0).getPrivacy());
+			currentHop.setPrivacy(FederatedPlannerUtils.getTransientInputs(currentHop, paramMap, transientWrites).get(0).getPrivacy());
 		} else {
 			PrivacyPropagator.hopPropagation(currentHop);
 		}
@@ -238,25 +226,6 @@ public class PrivacyConstraintLoader {
 		} catch(Exception ex){
 			throw new DMLException(ex);
 		}
-	}
-
-	/**
-	 * Get transient inputs from either paramMap or transientWrites.
-	 * Inputs from paramMap has higher priority than inputs from transientWrites.
-	 * @param currentHop hop for which inputs are read from maps
-	 * @param paramMap of local parameters
-	 * @return inputs of currentHop
-	 */
-	private ArrayList<Hop> getTransientInputs(Hop currentHop, Map<String, Hop> paramMap){
-		Hop tWriteHop = null;
-		if ( paramMap != null)
-			tWriteHop = paramMap.get(currentHop.getName());
-		if ( tWriteHop == null )
-			tWriteHop = transientWrites.get(currentHop.getName());
-		if ( tWriteHop == null )
-			throw new DMLRuntimeException("Transient write not found for " + currentHop);
-		else
-			return new ArrayList<>(Collections.singletonList(tWriteHop));
 	}
 
 	/**

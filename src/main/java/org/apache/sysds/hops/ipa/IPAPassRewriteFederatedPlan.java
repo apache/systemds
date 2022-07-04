@@ -61,14 +61,14 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes) {
 		String splanner = ConfigurationManager.getDMLConfig()
 			.getTextValue(DMLConfig.FEDERATED_PLANNER);
-		loadPrivacyConstraints(prog, fgraph, fcallSizes, splanner);
+		loadPrivacyConstraints(prog, splanner);
 		generatePlan(prog, fgraph, fcallSizes, splanner);
 		return false;
 	}
 
-	private void loadPrivacyConstraints(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes, String splanner){
+	private void loadPrivacyConstraints(DMLProgram prog, String splanner){
 		if (FederatedPlanner.isCompiled(splanner))
-			new PrivacyConstraintLoader().loadConstraints(prog, fgraph, fcallSizes);
+			new PrivacyConstraintLoader().loadConstraints(prog);
 	}
 
 	private void generatePlan(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes, String splanner){

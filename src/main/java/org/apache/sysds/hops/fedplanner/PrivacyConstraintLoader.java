@@ -164,7 +164,7 @@ public class PrivacyConstraintLoader {
 	}
 
 	private void loadPrivacyConstraint(Hop root, Map<String, Hop> paramMap){
-		if ( root != null && memo.containsKey(root.getHopID()) ){
+		if ( root != null && !memo.containsKey(root.getHopID()) ){
 			for ( Hop input : root.getInput() ){
 				loadPrivacyConstraint(input, paramMap);
 			}
@@ -174,7 +174,7 @@ public class PrivacyConstraintLoader {
 	}
 
 	private void propagatePrivConstraintsLocal(Hop currentHop, Map<String, Hop> paramMap){
-		if (currentHop.isFederatedDataOp() && currentHop.getPrivacy() == null)
+		if ( currentHop.isFederatedDataOp() )
 			loadFederatedPrivacyConstraints(currentHop);
 		else if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTWRITE) )
 			transientWrites.put(currentHop.getName(), currentHop);

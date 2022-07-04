@@ -459,6 +459,8 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	private void debugLog(Hop currentHop){
 		if ( LOG.isDebugEnabled() ){
 			LOG.debug("Visiting HOP: " + currentHop + " Input size: " + currentHop.getInput().size());
+			if (currentHop.getPrivacy() != null)
+				LOG.debug(currentHop.getPrivacy());
 			int index = 0;
 			for ( Hop hop : currentHop.getInput()){
 				if ( hop == null )

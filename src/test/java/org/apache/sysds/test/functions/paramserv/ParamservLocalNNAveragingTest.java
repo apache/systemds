@@ -62,6 +62,31 @@ public class ParamservLocalNNAveragingTest extends AutomatedTestBase {
 		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.OVERLAP_RESHUFFLE, true);
 	}
 
+	@Test
+	public void testParamservSBPBatchDisjointContiguous() {
+		runDMLTest(10, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
+	}
+
+	@Test
+	public void testParamservSBPEpoch() {
+		runDMLTest(10, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
+	}
+
+	@Test
+	public void testParamservSBPBatchDisjointRoundRobin() {
+		runDMLTest(10, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN, true);
+	}
+
+	@Test
+	public void testParamservSBPBatchDisjointRandom() {
+		runDMLTest(10, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM, true);
+	}
+
+	@Test
+	public void testParamservSBPBatchOverlapReshuffle() {
+		runDMLTest(10, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.OVERLAP_RESHUFFLE, true);
+	}
+
 	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme, boolean modelAvg) {
 		TestConfiguration config = getTestConfiguration(ParamservLocalNNAveragingTest.TEST_NAME);
 		loadTestConfiguration(config);

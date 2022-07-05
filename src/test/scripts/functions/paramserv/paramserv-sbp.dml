@@ -19,25 +19,32 @@
 #
 #-------------------------------------------------------------
 
-e1 = "element1"
-paramsList = list(e1=e1)
-X = matrix(1, rows=2, cols=3)
-Y = matrix(2, rows=2, cols=3)
-X_val = matrix(3, rows=2, cols=3)
-Y_val = matrix(4, rows=2, cols=3)
-
-gradients = function (matrix[double] input) return (matrix[double] output) {
-  output = input
+gradients = function(list[unknown] model,
+                     list[unknown] hyperparams,
+                     matrix[double] features,
+                     matrix[double] labels)
+          return (list[unknown] gradients) {
+  gradients = model;
 }
 
-aggregation = function (matrix[double] input) return (matrix[double] output) {
-  output = input
+aggregation = function(list[unknown] model,
+                       list[unknown] hyperparams,
+                       list[unknown] gradients)
+   return (list[unknown] modelResult) {
+  modelResult = model;
 }
 
-e2 = "element2"
-hps = list(e2=e2)
+model = list(matrix(0, 2, 3))
+X = matrix(1, 2, 3)
+Y = matrix(2, 2, 3)
+X_val = matrix(3, 2, 3)
+Y_val = matrix(4, 2, 3)
+hps = list()
 
 # Use paramserv function
-paramsList2 = paramserv(model=paramsList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_CONTIGUOUS", hyperparams=hps, checkpointing="NONE", num_backup_workers=1)
+supd = ".defaultNS::gradients";
+sagg = ".defaultNS::aggregation";
+model = paramserv(model=model, k=$workers, features=X, labels=Y, val_features=X_val, val_labels=Y_val,
+  upd=supd, agg=sagg, mode="LOCAL", utype="SBP", freq="EPOCH", scheme=$scheme, epochs=1, hyperparams=hps, num_backup_workers=$backup_workers)
 
-print(length(paramsList2))
+print(toString(model))

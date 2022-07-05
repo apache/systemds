@@ -62,13 +62,11 @@ The Documentation is separated into different parts by sub folders.
    
    and install any other missing packages
 
-4. Make sure Maven and Java 8 are installed.
+4. Make sure Maven and [Java 11 and above](https://www.java.com/releases/) are installed.
 
    ```bash
    mvn --version
    ```
-
-   Note: After Java 8, `jdk.tools:jdk.tools:jar` are [removed from jdk](https://openjdk.java.net/jeps/220#:~:text=rt.jar%20and%20tools.jar)
 
 5. Now, update the API docs (Optional)
 

@@ -88,7 +88,6 @@
 				<include>*:commons-configuration*</include>
 				<include>*:commons-compress*</include>
 				<include>*:commons-compiler*</include>
-				<!-- <include>*:commons-httpclient*</include> -->
 				<include>*:commons-io*</include>
 				<include>*:commons-lang</include>
 				<include>*:commons-lang3</include>
@@ -102,16 +101,17 @@
 				<include>*:hadoop-hdfs*</include>
 				<include>*:hadoop-mapreduce-client*</include>
 				<include>*:hadoop-yarn*</include>
-				<include>*:jackson-core-asl*</include>
-				<include>*:jackson-mapper-asl*</include>
+				<include>*:hadoop-shaded-guava*</include>
+				<include>*:jackson-core*</include>
+				<include>*:jackson-mapper*</include>
 				<include>*:janino*</include>
 				<include>*:log4j*</include>
 				<include>*:netty*</include>
 				<include>*:protobuf-java*</include>
 				<include>*:py4j*</include>
 				<include>*:re2j*</include>
+				<include>*:reload4j*</include>
 				<include>*:slf4j-api*</include>
-				<include>*:slf4j-log4j*</include>
 				<include>*:spark-core*</include>
 				<include>*:stax2-api*</include>
 				<include>*:woodstox*</include>

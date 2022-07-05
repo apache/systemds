@@ -73,6 +73,6 @@ jobs:
         context: .
         file: ./docker/sysds.Dockerfile
         push: false
-        tags: ${{ github.event.inputs.branch_or_tag }}
+        tags: ${{ github.event.inputs.branch_or_tag }},latest
 #       Use the below labels entry for images for cpu, gpu for the same release
 #       labels: ${{ steps.meta.outputs.labels }}

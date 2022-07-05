@@ -105,10 +105,12 @@
 				<include>*:jackson-core*</include>
 				<include>*:jackson-mapper*</include>
 				<include>*:janino*</include>
+				<include>*:log4j*</include>
 				<include>*:netty*</include>
 				<include>*:protobuf-java*</include>
 				<include>*:py4j*</include>
 				<include>*:re2j*</include>
+				<include>*:reload4j*</include>
 				<include>*:slf4j-api*</include>
 				<include>*:spark-core*</include>
 				<include>*:stax2-api*</include>

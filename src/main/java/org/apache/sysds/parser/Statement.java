@@ -77,17 +77,25 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_MODELAVG = "modelAvg";
 	public static final String PS_NBATCHES = "nbatches";
 	public static final String PS_HE = "he";
+	public static final String PS_NUM_BACKUP_WORKERS = "num_backup_workers";
+
 	public enum PSModeType {
 		FEDERATED, LOCAL, REMOTE_SPARK
 	}
 	public static final String PS_UPDATE_TYPE = "utype";
 	public enum PSUpdateType {
-		BSP, ASP, SSP;
+		BSP, // Bulk Synchronous Parallel
+		ASP, // Asynchronous Parallel
+		SSP, // Stale-Synchronous Parallel
+		SBP; // Synchronous w/ Backup-workers Parallel
 		public boolean isBSP() {
 			return this == BSP;
 		}
 		public boolean isASP() {
 			return this == ASP;
+		}
+		public boolean isSBP() {
+			return this == SBP;
 		}
 	}
 	public static final String PS_FREQUENCY = "freq";

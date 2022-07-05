@@ -52,6 +52,16 @@ public class ParamservLocalNNTestwithNbatches extends AutomatedTestBase {
 		runDMLTest(3, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.NBATCHES, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, 8, false);
 	}
 
+	@Test
+	public void testParamservSBPNBatchesDisjointContiguous() {
+		runDMLTest(3, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.NBATCHES, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, 8, false );
+	}
+
+	@Test
+	public void testParamservSBPNBatchesDisjointContiguousModelAvg() {
+		runDMLTest(3, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.NBATCHES, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, 8, true );
+	}
+
 	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme, int nbatches, boolean modelAvg) {
 		TestConfiguration config = getTestConfiguration(ParamservLocalNNTestwithNbatches.TEST_NAME);
 		loadTestConfiguration(config);

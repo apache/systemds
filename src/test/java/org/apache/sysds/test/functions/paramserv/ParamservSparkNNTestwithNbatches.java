@@ -51,6 +51,11 @@ public class ParamservSparkNNTestwithNbatches extends AutomatedTestBase {
 		runDMLTest(2, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.BATCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS, 16, false);
 	}
 
+	@Test
+	public void testParamservSBPNbatchesDisjointContiguous() {
+		runDMLTest(2, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS, 16, false);
+	}
+
 	private void internalRunDMLTest(String testname, boolean exceptionExpected, Class<?> expectedException,
 		String errMessage) {
 		ExecMode oldRtplatform = AutomatedTestBase.rtplatform;
@@ -71,7 +76,7 @@ public class ParamservSparkNNTestwithNbatches extends AutomatedTestBase {
 	}
 
 	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme, int nbatches, boolean modelAvg) {
-		programArgs = new String[] { "-nvargs", "mode=REMOTE_SPARK", "epochs=" + epochs, "workers=" + workers, "utype=" + utype, "freq=" + freq, "batchsize=" + batchsize, "scheme=" + scheme + "nbatches=" + nbatches, "modelAvg=" + modelAvg};
+		programArgs = new String[] { "-nvargs", "mode=REMOTE_SPARK", "epochs=" + epochs, "workers=" + workers, "utype=" + utype, "freq=" + freq, "batchsize=" + batchsize, "scheme=" + scheme, "nbatches=" + nbatches, "modelAvg=" + modelAvg};
 		internalRunDMLTest(TEST_NAME1, false, null, null);
 	}
 }

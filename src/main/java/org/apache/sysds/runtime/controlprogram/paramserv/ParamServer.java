@@ -77,13 +77,16 @@ public abstract class ParamServer
 	private int _numBatchesPerEpoch;
 
 	private int _numWorkers;
+	private int _numBackupWorkers;
+	private boolean[] _discardWorkerRes;
 	private boolean _modelAvg;
 	private ListObject _accModels = null;
 
 	protected ParamServer() {}
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
-		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc, int numBatchesPerEpoch,	MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg)
+		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc, int numBatchesPerEpoch,
+		MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg, int numBackupWorkers)
 	{
 		// init worker queues and global model
 		_modelMap = new HashMap<>(workerNum);
@@ -105,6 +108,8 @@ public abstract class ParamServer
 		}
 		_numBatchesPerEpoch = numBatchesPerEpoch;
 		_numWorkers = workerNum;
+		_numBackupWorkers = numBackupWorkers;
+		_discardWorkerRes = new boolean[workerNum];
 		_modelAvg = modelAvg;
 
 		// broadcast initial model
@@ -207,39 +212,8 @@ public abstract class ParamServer
 					else
 						updateGlobalModel(gradients);
 
-					if (allFinished()) {
-						// Update the global model with accrued gradients
-						if( ACCRUE_BSP_GRADIENTS ) {
-							updateGlobalModel(_accGradients);
-							_accGradients = null;
-						}
-
-						// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
-						// In the BSP batch case that occurs after the sync counter reaches the number of batches and in the
-						// BSP epoch case every time
-						if (_numBatchesPerEpoch != -1 &&
-							(_freq == Statement.PSFrequency.EPOCH ||
-							(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))||
-							(_freq == Statement.PSFrequency.NBATCHES)) {
-
-						if(LOG.isInfoEnabled())
-								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
-
-							time_epoch();
-
-							if(_validationPossible)
-								validate();
-
-							_epochCounter++;
-							_syncCounter = 0;
-						}
-
-						// Broadcast the updated model
-						resetFinishedStates();
-						broadcastModel(true);
-						if (LOG.isDebugEnabled())
-							LOG.debug("Global parameter is broadcasted successfully.");
-					}
+					if (allFinished())
+						performGlobalGradientUpdate();
 					break;
 				}
 				case ASP: {
@@ -265,6 +239,28 @@ public abstract class ParamServer
 					broadcastModel(workerID);
 					break;
 				}
+				case SBP: {
+					if(_discardWorkerRes[workerID]) {
+						LOG.info("[+] PRAMSERV: discarding result of backup-worker/straggler " + workerID);
+						broadcastModel(workerID);
+						_discardWorkerRes[workerID] = false;
+						break;
+					}
+					setFinishedState(workerID);
+
+					// Accumulate the intermediate gradients
+					if(ACCRUE_BSP_GRADIENTS)
+						_accGradients = ParamservUtils.accrueGradients(_accGradients, gradients, true);
+					else
+						updateGlobalModel(gradients);
+
+					if(enoughFinished()) {
+						// set flags to throwaway backup worker results
+						tagStragglers();
+						performGlobalGradientUpdate();
+					}
+					break;
+				}
 				default:
 					throw new DMLRuntimeException("Unsupported update: " + _updateType.name());
 			}
@@ -272,6 +268,50 @@ public abstract class ParamServer
 		catch (Exception e) {
 			throw new DMLRuntimeException("Aggregation or validation service failed: ", e);
 		}
+	}
+
+	private void performGlobalGradientUpdate() {
+		// Update the global model with accrued gradients
+		if(ACCRUE_BSP_GRADIENTS) {
+			updateGlobalModel(_accGradients);
+			_accGradients = null;
+		}
+
+		if(finishedEpoch()) {
+			if(LOG.isInfoEnabled())
+				LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
+
+			time_epoch();
+
+			if(_validationPossible)
+				validate();
+
+			_epochCounter++;
+			_syncCounter = 0;
+		}
+
+		// Broadcast the updated model
+		broadcastModel(_finishedStates);
+		resetFinishedStates();
+		if(LOG.isDebugEnabled())
+			LOG.debug("Global parameter is broadcasted successfully.");
+	}
+
+	private void tagStragglers() {
+		for(int i = 0; i < _finishedStates.length; ++i) {
+			if(!_finishedStates[i])
+				_discardWorkerRes[i] = true;
+		}
+	}
+
+	private boolean finishedEpoch() {
+		// Validate at the end of each epoch
+		// In the BSP batch case that occurs after the sync counter reaches the number of batches and in the
+		// BSP epoch case every time
+		return _numBatchesPerEpoch != -1 &&
+			(_freq == Statement.PSFrequency.EPOCH ||
+				(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0)) ||
+			(_freq == Statement.PSFrequency.NBATCHES);
 	}
 
 	private void updateGlobalModel(ListObject gradients) {
@@ -314,16 +354,36 @@ public abstract class ParamServer
 			}
 			Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
 
-			//first weight the models based on number of workers
-			ListObject weightParams = weightModels(model, _numWorkers);
 			switch(_updateType) {
 				case BSP: {
+					//first weight the models based on number of workers
+					ListObject weightParams = weightModels(model, _numWorkers);
 					setFinishedState(workerID);
 					// second Accumulate the given weightModels into the accrued models
 					_accModels = ParamservUtils.accrueGradients(_accModels, weightParams, true);
 
 					if(allFinished()) {
 						updateAndBroadcastModel(_accModels, tAgg);
+						resetFinishedStates();
+					}
+					break;
+				}
+				case SBP: {
+					// first weight the models based on number of workers
+					ListObject weightParams = weightModels(model, _numWorkers - _numBackupWorkers);
+					if(_discardWorkerRes[workerID]) {
+						LOG.info("[+] PRAMSERV: discarding result of backup-worker/straggler " + workerID);
+						broadcastModel(workerID);
+						_discardWorkerRes[workerID] = false;
+						break;
+					}
+					setFinishedState(workerID);
+					// second Accumulate the given weightModels into the accrued models
+					_accModels = ParamservUtils.accrueGradients(_accModels, weightParams, true);
+
+					if(enoughFinished()) {
+						tagStragglers();
+						updateAndBroadcastModel(_accModels, tAgg, _finishedStates);
 						resetFinishedStates();
 					}
 					break;
@@ -341,15 +401,28 @@ public abstract class ParamServer
 	}
 
 	protected void updateAndBroadcastModel(ListObject new_model, Timing tAgg) {
+		updateAndBroadcastModel(new_model, tAgg, null);
+	}
+
+	/**
+	 * Update the model and broadcast to (possibly a subset) the workers.
+	 * 
+	 * @param new_model           the new model
+	 * @param tAgg                time for statistics
+	 * @param workerBroadcastMask if null, broadcast to all workers, otherwise only to the ids with
+	 *                            <code>workerBroadcastMask[workerId] == true</code>
+	 */
+	protected void updateAndBroadcastModel(ListObject new_model, Timing tAgg, boolean[] workerBroadcastMask) {
 		_model = setParams(_ec, new_model, _model);
-		if (DMLScript.STATISTICS && tAgg != null)
+		if(DMLScript.STATISTICS && tAgg != null)
 			ParamServStatistics.accAggregationTime((long) tAgg.stop());
-		_accModels = null; //reset for next accumulation
+		_accModels = null; // reset for next accumulation
 
 		// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
 		// In the BSP batch case that occurs after the sync counter reaches the number of batches and in the
 		// BSP epoch case every time
-		if(_numBatchesPerEpoch != -1 && (_freq == Statement.PSFrequency.EPOCH || (_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
+		if(_numBatchesPerEpoch != -1 && (_freq == Statement.PSFrequency.EPOCH ||
+			(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
 
 			if(LOG.isInfoEnabled())
 				LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
@@ -361,7 +434,10 @@ public abstract class ParamServer
 			_syncCounter = 0;
 		}
 		// Broadcast the updated model
-		broadcastModel(true);
+		if(workerBroadcastMask == null)
+			broadcastModel(true);
+		else
+			broadcastModel(workerBroadcastMask);
 		if(LOG.isDebugEnabled())
 			LOG.debug("Global parameter is broadcasted successfully ");
 	}
@@ -395,8 +471,19 @@ public abstract class ParamServer
 		return accModels;
 	}
 
-		private boolean allFinished() {
+	private boolean allFinished() {
 		return !ArrayUtils.contains(_finishedStates, false);
+	}
+
+	private boolean enoughFinished() {
+		if(_finishedStates.length == 1)
+			return _finishedStates[0];
+		int numFinished = 0;
+		for(boolean finished : _finishedStates) {
+			if(finished)
+				numFinished++;
+		}
+		return _numWorkers - numFinished <= _numBackupWorkers;
 	}
 
 	private void resetFinishedStates() {
@@ -416,6 +503,24 @@ public abstract class ParamServer
 			try {
 				broadcastModel(workerID);
 			} catch (InterruptedException e) {
+				throw new DMLRuntimeException("Paramserv func: some error occurred when broadcasting model", e);
+			}
+		});
+	}
+
+	/**
+	 * Broadcast model for a selection of workers
+	 * 
+	 * @param mask the mask being true for all workers that should get the updated models
+	 */
+	private void broadcastModel(boolean[] mask) {
+		IntStream stream = IntStream.range(0, _modelMap.size());
+		stream.parallel().forEach(workerID -> {
+			try {
+				if(mask[workerID])
+					broadcastModel(workerID);
+			}
+			catch(InterruptedException e) {
 				throw new DMLRuntimeException("Paramserv func: some error occurred when broadcasting model", e);
 			}
 		});

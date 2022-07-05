@@ -42,7 +42,7 @@
 		<hadoop.version>3.3.3</hadoop.version>
 		<antlr.version>4.8</antlr.version>
 		<protobuf.version>3.20.1</protobuf.version>
-		<spark.version>3.2.0</spark.version>
+		<spark.version>3.3.0</spark.version>
 		<scala.version>2.12.0</scala.version>
 		<scala.binary.version>2.12</scala.binary.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
@@ -50,6 +50,9 @@
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
 		<jcuda.version>10.2.0</jcuda.version>
+		<slf4j.version>1.7.36</slf4j.version>
+		<log4j.version>2.17.2</log4j.version>
+		<hadoop.deps.scope>compile</hadoop.deps.scope>
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
 		<java.level>11</java.level>
 		<!-->Testing settings<!-->
@@ -77,8 +80,8 @@
 
 	<scm>
 		<developerConnection>scm:git:https://github.com/apache/systemds.git</developerConnection>
-	  <tag>HEAD</tag>
-  </scm>
+		<tag>HEAD</tag>
+	</scm>
 
 	<build>
 		<!-- Adds scripts to main jar, in-memory jar, sources jar, and standalone jar -->
@@ -201,8 +204,7 @@
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<mainClass>org.apache.sysds.api.DMLScript</mainClass>
 								</transformer>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer">
-								</transformer>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"></transformer>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
 									<resource>META-INF/LICENSE</resource>
 									<file>src/assembly/bin/LICENSE</file>
@@ -240,7 +242,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version><!--$NO-MVN-MAN-VER$-->
+				<version>3.8.1</version> <!--$NO-MVN-MAN-VER$-->
 				<configuration>
 					<source>${java.level}</source>
 					<target>${java.level}</target>
@@ -291,7 +293,8 @@
 				</executions>
 			</plugin>
 
-			<plugin> <!-- unit tests -->
+			<plugin>
+				<!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.0.0-M5</version>
@@ -514,8 +517,7 @@
 												</goals>
 											</pluginExecutionFilter>
 											<action>
-												<ignore>
-												</ignore>
+												<ignore></ignore>
 											</action>
 										</pluginExecution>
 										<pluginExecution>
@@ -528,8 +530,7 @@
 												</goals>
 											</pluginExecutionFilter>
 											<action>
-												<ignore>
-												</ignore>
+												<ignore></ignore>
 											</action>
 										</pluginExecution>
 										<pluginExecution>
@@ -542,8 +543,7 @@
 												</goals>
 											</pluginExecutionFilter>
 											<action>
-												<ignore>
-												</ignore>
+												<ignore></ignore>
 											</action>
 										</pluginExecution>
 									</pluginExecutions>
@@ -647,7 +647,7 @@
 				</plugins>
 			</build>
 		</profile>
-		
+
 		<profile>
 			<id>proton</id>
 			<build>
@@ -831,10 +831,10 @@
 			<exclusions>
 				<exclusion>
 					<!-- always exclude recursive fetching of native libraries -->
-			  		<groupId>org.jcuda</groupId>
+					<groupId>org.jcuda</groupId>
 					<artifactId>jcuda-natives</artifactId>
 				</exclusion>
-		  	</exclusions>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -845,10 +845,10 @@
 			<exclusions>
 				<exclusion>
 					<!-- always exclude recursive fetching of native libraries -->
-			  		<groupId>org.jcuda</groupId>
+					<groupId>org.jcuda</groupId>
 					<artifactId>jcublas-natives</artifactId>
 				</exclusion>
-		  	</exclusions>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -859,10 +859,10 @@
 			<exclusions>
 				<exclusion>
 					<!-- always exclude recursive fetching of native libraries -->
-			  		<groupId>org.jcuda</groupId>
+					<groupId>org.jcuda</groupId>
 					<artifactId>jcusparse-natives</artifactId>
 				</exclusion>
-		  	</exclusions>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -873,10 +873,10 @@
 			<exclusions>
 				<exclusion>
 					<!-- always exclude recursive fetching of native libraries -->
-			  		<groupId>org.jcuda</groupId>
+					<groupId>org.jcuda</groupId>
 					<artifactId>jcusolver-natives</artifactId>
 				</exclusion>
-		  	</exclusions>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -887,10 +887,10 @@
 			<exclusions>
 				<exclusion>
 					<!-- always exclude recursive fetching of native libraries -->
-			  		<groupId>org.jcuda</groupId>
+					<groupId>org.jcuda</groupId>
 					<artifactId>jcudnn-natives</artifactId>
 				</exclusion>
-		  	</exclusions>
+			</exclusions>
 		</dependency>
 
 		<!-- for all platforms, to be included in the extra jar -->
@@ -1018,18 +1018,60 @@
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-core_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>log4j</groupId>
+					<artifactId>log4j</artifactId>
+				  </exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-reload4j</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-sql_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>log4j</groupId>
+					<artifactId>log4j</artifactId>
+				  </exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-reload4j</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-mllib_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>log4j</groupId>
+					<artifactId>log4j</artifactId>
+				  </exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-reload4j</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -1040,6 +1082,14 @@
 				<exclusion>
 					<groupId>javax.servlet</groupId>
 					<artifactId>servlet-api</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-reload4j</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -1053,6 +1103,14 @@
 					<groupId>javax.servlet</groupId>
 					<artifactId>servlet-api</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-reload4j</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 
@@ -1060,12 +1118,36 @@
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-client</artifactId>
 			<version>${hadoop.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>log4j</groupId>
+					<artifactId>log4j</artifactId>
+				  </exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-reload4j</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
 			<version>1.1.3</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-reload4j</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -1186,6 +1268,47 @@
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-assembly-plugin</artifactId>
 			<version>3.3.0</version>
+		</dependency>
+
+		<!-- log4j -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+			<scope>${hadoop.deps.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jul-to-slf4j</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j-impl</artifactId>
+			<version>${log4j.version}</version>
+			<scope>${hadoop.deps.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>${log4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>${log4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-1.2-api</artifactId>
+			<version>${log4j.version}</version>
+			<scope>${hadoop.deps.scope}</scope>
 		</dependency>
 
 	</dependencies>

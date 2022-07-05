@@ -68,6 +68,9 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",	200},
 			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"BASELINE",		"true",	"IMBALANCED", 	200},
 			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE",			"true",	"BALANCED",		200},
+			{"TwoNN",	2, 4, 1, 4, 0.01, 		"SBP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",	200},
+			{"TwoNN",	2, 4, 1, 4, 0.01, 		"SBP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"BALANCED",	200},
+			{"CNN",		2, 4, 1, 4, 0.01, 		"SBP", "EPOCH", "SHUFFLE",			 	"BASELINE",		"true",	"BALANCED",	200},
 
 			/*
 				// runtime balancing

@@ -78,6 +78,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	public static final int DEFAULT_NBATCHES = 1;
 	private static final Boolean DEFAULT_MODELAVG = false;
 	private static final Boolean DEFAULT_HE = false;
+	public static final int DEFAULT_NUM_BACKUP_WORKERS = 1;
 
 	public ParamservBuiltinCPInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out, String opcode, String istr) {
 		super(op, paramsMap, out, opcode, istr);
@@ -124,6 +125,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		boolean weighting = getWeighting();
 		int seed = getSeed();
 		int nbatches = getNbatches();
+		int numBackupWorkers = getNumBackupWorkers();
 
 		if( LOG.isInfoEnabled() ) {
 			LOG.info("[+] Update Type: " + updateType);
@@ -180,8 +182,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			throw new DMLRuntimeException("can't use homomorphic encryption with weighting");
 		}
 
-		LocalParamServer ps = (LocalParamServer)createPS(PSModeType.FEDERATED, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
-			getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), val_features, val_labels, nbatches, modelAvg, use_homomorphic_encryption);
+		LocalParamServer ps = (LocalParamServer) createPS(PSModeType.FEDERATED, aggFunc, updateType, freq, workerNum,
+			model, aggServiceEC, getValFunction(), getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics),
+			val_features, val_labels, nbatches, modelAvg, use_homomorphic_encryption, numBackupWorkers);
 		// Create the local workers
 		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
@@ -490,29 +493,34 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
 										PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, int nbatches, boolean modelAvg)
 	{
-		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, null, -1, null, null, nbatches, modelAvg);
+		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, null, -1, null, null, nbatches,
+			modelAvg);
 	}
 
 
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
 										PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, String valFunc,
 										int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg)	{
-		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches, modelAvg, false);
+		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, valFunc, numBatchesPerEpoch, valFeatures,
+			valLabels, nbatches, modelAvg, false, 1);
 	}
 
 	// When this creation is used the parameter server is able to validate after each epoch
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
 		PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, String valFunc,
-		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg, boolean use_homomorphic_encryption)
+		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg,
+		boolean use_homomorphic_encryption, int numBackupWorkers)
 	{
 		switch (mode) {
 			case FEDERATED:
 			case LOCAL:
 			case REMOTE_SPARK:
 				if (use_homomorphic_encryption) {
-					return HEParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches);
+					return HEParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc,
+						numBatchesPerEpoch, valFeatures, valLabels, nbatches, numBackupWorkers);
 				} else {
-					return LocalParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches, modelAvg);
+					return LocalParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc,
+						numBatchesPerEpoch, valFeatures, valLabels, nbatches, modelAvg, numBackupWorkers);
 				}
 			default:
 				throw new DMLRuntimeException("Unsupported parameter server: " + mode.name());
@@ -633,6 +641,13 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			return DEFAULT_NBATCHES;
 		}
 		return Integer.parseInt(getParam(PS_NBATCHES));
+	}
+
+	private int getNumBackupWorkers() {
+		if(!getParameterMap().containsKey(PS_NUM_BACKUP_WORKERS)) {
+			return DEFAULT_NUM_BACKUP_WORKERS;
+		}
+		return Integer.parseInt(getParam(PS_NUM_BACKUP_WORKERS));
 	}
 
 	private boolean checkIsPrivate(MatrixObject obj) {

@@ -321,7 +321,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			Statement.PS_VAL_FUN, Statement.PS_MODE, Statement.PS_UPDATE_TYPE, Statement.PS_FREQUENCY, Statement.PS_EPOCHS,
 			Statement.PS_BATCH_SIZE, Statement.PS_PARALLELISM, Statement.PS_SCHEME, Statement.PS_FED_RUNTIME_BALANCING,
 			Statement.PS_FED_WEIGHTING, Statement.PS_HYPER_PARAMS, Statement.PS_CHECKPOINTING, Statement.PS_SEED, Statement.PS_NBATCHES,
-			Statement.PS_MODELAVG, Statement.PS_HE);
+			Statement.PS_MODELAVG, Statement.PS_HE, Statement.PS_NUM_BACKUP_WORKERS);
 		checkInvalidParameters(getOpCode(), getVarParams(), valid);
 
 		// check existence and correctness of parameters

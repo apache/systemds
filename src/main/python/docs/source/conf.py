@@ -34,11 +34,11 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'SystemDS'
-copyright = '2021, Apache SystemDS'
+copyright = '2022, Apache SystemDS'
 author = 'Apache SystemDS'
 
 # The full version, including alpha/beta/rc tags
-release = '2.3.0-SNAPSHOT'
+release = '3.1.0-dev'
 
 # -- General configuration ---------------------------------------------------
 # Add any Sphinx extension module names here, as strings.

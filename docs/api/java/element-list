@@ -28,6 +28,7 @@ org.apache.sysds.runtime.compress.bitmap
 org.apache.sysds.runtime.compress.cocode
 org.apache.sysds.runtime.compress.colgroup
 org.apache.sysds.runtime.compress.colgroup.dictionary
+org.apache.sysds.runtime.compress.colgroup.functional
 org.apache.sysds.runtime.compress.colgroup.insertionsort
 org.apache.sysds.runtime.compress.colgroup.mapping
 org.apache.sysds.runtime.compress.colgroup.offset

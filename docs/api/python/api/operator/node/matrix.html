@@ -1,68 +1,35 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Matrix &mdash; SystemDS 2.3.0-SNAPSHOT documentation</title>
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-  
-  <link rel="stylesheet" href="../../../static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../static/pygments.css" type="text/css" />
-
-  
-  
-  
-  
-
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matrix &mdash; SystemDS 3.1.0-dev documentation</title>
+      <link rel="stylesheet" href="../../../static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../static/documentation_options.js"></script>
         <script src="../../../static/jquery.js"></script>
         <script src="../../../static/underscore.js"></script>
+        <script src="../../../static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../static/doctools.js"></script>
-        <script src="../../../static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../../static/js/theme.js"></script>
-
-    
+    <script src="../../../static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Frame" href="frame.html" />
     <link rel="prev" title="Algorithms" href="../algorithms.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
-            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> SystemDS
-          
-
-          
+            <a href="../../../index.html" class="icon icon-home"> SystemDS
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -70,30 +37,19 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started:</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../getting_started/install.html">Install SystemDS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../getting_started/simple_examples.html">QuickStart</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Guides</span></p>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../guide/federated.html">Federated Environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../guide/python_end_to_end_tut.html">Python end-to-end tutorial</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../context/systemds_context.html">SystemDSContext</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../algorithms.html">Algorithms</a></li>
@@ -103,7 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="scalar.html">Scalar</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source.html">Source</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Internals API</span></p>
+<p class="caption" role="heading"><span class="caption-text">Internals API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../operation_node.html">Operation Node</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../script_building/dag.html">Dag</a></li>
@@ -112,81 +68,42 @@
 <li class="toctree-l1"><a class="reference internal" href="../../utils/helpers.html">Helpers</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">SystemDS</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
       <li>Matrix</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../../../sources/api/operator/node/matrix.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="matrix">
-<h1>Matrix<a class="headerlink" href="#matrix" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="matrix">
+<h1>Matrix<a class="headerlink" href="#matrix" title="Permalink to this heading"></a></h1>
 <p>A <code class="docutils literal notranslate"><span class="pre">Matrix</span></code> is represented either by an <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code>, or the derived class <code class="docutils literal notranslate"><span class="pre">Matrix</span></code>.
 Matrices are the most fundamental objects SystemDS operates on.</p>
 <p>Although it is possible to generate matrices with the function calls or object construction specified below,
 the recommended way is to use the methods defined on <code class="docutils literal notranslate"><span class="pre">SystemDSContext</span></code>.</p>
 <dl class="py class">
-<dt id="systemds.operator.Matrix">
-<em class="property">class </em><code class="sig-prename descclassname">systemds.operator.</code><code class="sig-name descname">Matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sds_context</span></em>, <em class="sig-param"><span class="n">operation</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">unnamed_input_nodes</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Iterable<span class="p">[</span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">named_input_nodes</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">local_data</span><span class="p">:</span> <span class="n">numpy.array</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">brackets</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.Matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">systemds.operator.</span></span><span class="sig-name descname"><span class="pre">Matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sds_context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unnamed_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">named_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">array</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">brackets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.Matrix" title="Permalink to this definition"></a></dt>
 <dd><dl class="py method">
-<dt id="systemds.operator.Matrix.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sds_context</span></em>, <em class="sig-param"><span class="n">operation</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">unnamed_input_nodes</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>str<span class="p">, </span>Iterable<span class="p">[</span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">named_input_nodes</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">local_data</span><span class="p">:</span> <span class="n">numpy.array</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">brackets</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.Matrix">Matrix</a><a class="headerlink" href="#systemds.operator.Matrix.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sds_context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unnamed_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">named_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">array</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">brackets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.__init__" title="Permalink to this definition"></a></dt>
 <dd><p>Create general <cite>OperationNode</cite></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -207,8 +124,8 @@ Default is None, and means every multi output is a matrix.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.abs">
-<code class="sig-name descname">abs</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.abs" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.abs">
+<span class="sig-name descname"><span class="pre">abs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.abs" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate absolute.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -218,8 +135,8 @@ Default is None, and means every multi output is a matrix.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.acos">
-<code class="sig-name descname">acos</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.acos" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.acos">
+<span class="sig-name descname"><span class="pre">acos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.acos" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate arccos.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -229,8 +146,8 @@ Default is None, and means every multi output is a matrix.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.asin">
-<code class="sig-name descname">asin</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.asin" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.asin">
+<span class="sig-name descname"><span class="pre">asin</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.asin" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate arcsin.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -240,8 +157,8 @@ Default is None, and means every multi output is a matrix.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.atan">
-<code class="sig-name descname">atan</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.atan" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.atan">
+<span class="sig-name descname"><span class="pre">atan</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.atan" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate arctan.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -251,16 +168,16 @@ Default is None, and means every multi output is a matrix.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.cbind">
-<code class="sig-name descname">cbind</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">other</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.cbind" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.cbind">
+<span class="sig-name descname"><span class="pre">cbind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.cbind" title="Permalink to this definition"></a></dt>
 <dd><p>Column-wise matrix concatenation, by concatenating the second matrix as additional columns to the first matrix. 
 :param: The other matrix to bind to the right hand side.
 :return: The OperationNode containing the concatenated matrices/frames.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.cholesky">
-<code class="sig-name descname">cholesky</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">safe</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.cholesky" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.cholesky">
+<span class="sig-name descname"><span class="pre">cholesky</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">safe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.cholesky" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the Cholesky decomposition of a symmetric, positive definite matrix</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -274,8 +191,8 @@ that the matrix is symmetric positive definite are applied, if False, checks wil
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.code_line">
-<code class="sig-name descname">code_line</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">var_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">unnamed_input_vars</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">named_input_vars</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#systemds.operator.Matrix.code_line" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.code_line">
+<span class="sig-name descname"><span class="pre">code_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unnamed_input_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">named_input_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#systemds.operator.Matrix.code_line" title="Permalink to this definition"></a></dt>
 <dd><p>Generates the DML code line equal to the intended action of this node.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -292,8 +209,8 @@ that the matrix is symmetric positive definite are applied, if False, checks wil
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.compute">
-<code class="sig-name descname">compute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">verbose</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">lineage</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; numpy.array<a class="headerlink" href="#systemds.operator.Matrix.compute" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.compute">
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lineage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">array</span></span></span><a class="headerlink" href="#systemds.operator.Matrix.compute" title="Permalink to this definition"></a></dt>
 <dd><p>Get result of this operation. Builds the dml script and executes it in SystemDS, before this method is called
 all operations are only building the DAG without actually executing (lazy evaluation).</p>
 <dl class="field-list simple">
@@ -310,8 +227,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.cos">
-<code class="sig-name descname">cos</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.cos" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.cos">
+<span class="sig-name descname"><span class="pre">cos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.cos" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate cos.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -321,8 +238,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.cosh">
-<code class="sig-name descname">cosh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.cosh" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.cosh">
+<span class="sig-name descname"><span class="pre">cosh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.cosh" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate cos.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -332,8 +249,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.max">
-<code class="sig-name descname">max</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.Matrix.max" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.max">
+<span class="sig-name descname"><span class="pre">max</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../operation_node.html#systemds.operator.OperationNode" title="systemds.operator.operation_node.OperationNode"><span class="pre">OperationNode</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.max" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate max of matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -346,8 +263,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.mean">
-<code class="sig-name descname">mean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.Matrix.mean" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.mean">
+<span class="sig-name descname"><span class="pre">mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../operation_node.html#systemds.operator.OperationNode" title="systemds.operator.operation_node.OperationNode"><span class="pre">OperationNode</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.mean" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate mean of matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -360,8 +277,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.min">
-<code class="sig-name descname">min</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.Matrix.min" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.min">
+<span class="sig-name descname"><span class="pre">min</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../operation_node.html#systemds.operator.OperationNode" title="systemds.operator.operation_node.OperationNode"><span class="pre">OperationNode</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.min" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate max of matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -374,8 +291,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.order">
-<code class="sig-name descname">order</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">by</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">decreasing</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">index_return</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.order" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.order">
+<span class="sig-name descname"><span class="pre">order</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">by</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decreasing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_return</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.order" title="Permalink to this definition"></a></dt>
 <dd><p>Sort by a column of the matrix X in increasing/decreasing order and returns either the index or data</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -392,8 +309,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.pass_python_data_to_prepared_script">
-<code class="sig-name descname">pass_python_data_to_prepared_script</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sds</span></em>, <em class="sig-param"><span class="n">var_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">prepared_script</span><span class="p">:</span> <span class="n">py4j.java_gateway.JavaObject</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#systemds.operator.Matrix.pass_python_data_to_prepared_script" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.pass_python_data_to_prepared_script">
+<span class="sig-name descname"><span class="pre">pass_python_data_to_prepared_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepared_script</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">JavaObject</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#systemds.operator.Matrix.pass_python_data_to_prepared_script" title="Permalink to this definition"></a></dt>
 <dd><p>Passes data from python to the prepared script object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -407,22 +324,22 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.rbind">
-<code class="sig-name descname">rbind</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">other</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.rbind" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.rbind">
+<span class="sig-name descname"><span class="pre">rbind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.rbind" title="Permalink to this definition"></a></dt>
 <dd><p>Row-wise matrix concatenation, by concatenating the second matrix as additional rows to the first matrix. 
 :param: The other matrix to bind to the right hand side
 :return: The OperationNode containing the concatenated matrices/frames.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.replace">
-<code class="sig-name descname">replace</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pattern</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">replacement</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.Matrix">Matrix</a><a class="headerlink" href="#systemds.operator.Matrix.replace" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.replace">
+<span class="sig-name descname"><span class="pre">replace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replacement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.replace" title="Permalink to this definition"></a></dt>
 <dd><p>Replace all values with replacement value</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.rev">
-<code class="sig-name descname">rev</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.rev" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.rev">
+<span class="sig-name descname"><span class="pre">rev</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.rev" title="Permalink to this definition"></a></dt>
 <dd><p>Reverses the rows</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -432,8 +349,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.round">
-<code class="sig-name descname">round</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.round" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.round">
+<span class="sig-name descname"><span class="pre">round</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.round" title="Permalink to this definition"></a></dt>
 <dd><p>round all values to nearest natural number</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -443,8 +360,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.sin">
-<code class="sig-name descname">sin</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.sin" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.sin">
+<span class="sig-name descname"><span class="pre">sin</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.sin" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate sin.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -454,8 +371,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.sinh">
-<code class="sig-name descname">sinh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.sinh" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.sinh">
+<span class="sig-name descname"><span class="pre">sinh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.sinh" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate sin.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -465,8 +382,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.sum">
-<code class="sig-name descname">sum</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.Matrix.sum" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.sum">
+<span class="sig-name descname"><span class="pre">sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../operation_node.html#systemds.operator.OperationNode" title="systemds.operator.operation_node.OperationNode"><span class="pre">OperationNode</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.sum" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate sum of matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -479,8 +396,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.t">
-<code class="sig-name descname">t</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.t" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.t">
+<span class="sig-name descname"><span class="pre">t</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.t" title="Permalink to this definition"></a></dt>
 <dd><p>Transposes the input</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -490,8 +407,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.tan">
-<code class="sig-name descname">tan</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.tan" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.tan">
+<span class="sig-name descname"><span class="pre">tan</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.tan" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate tan.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -501,8 +418,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.tanh">
-<code class="sig-name descname">tanh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.tanh" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.tanh">
+<span class="sig-name descname"><span class="pre">tanh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.tanh" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate tan.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -512,8 +429,8 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.to_one_hot">
-<code class="sig-name descname">to_one_hot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_classes</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.to_one_hot" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.to_one_hot">
+<span class="sig-name descname"><span class="pre">to_one_hot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.to_one_hot" title="Permalink to this definition"></a></dt>
 <dd><p>OneHot encode the matrix.</p>
 <p>It is assumed that there is only one column to encode, and all values are whole numbers &gt; 0</p>
 <dl class="field-list simple">
@@ -527,15 +444,15 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.to_string">
-<code class="sig-name descname">to_string</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="scalar.html#systemds.operator.Scalar" title="systemds.operator.Scalar">Scalar</a><a class="headerlink" href="#systemds.operator.Matrix.to_string" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="scalar.html#systemds.operator.Scalar" title="systemds.operator.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.to_string" title="Permalink to this definition"></a></dt>
 <dd><p>Converts the input to a string representation.
 :return: <cite>Scalar</cite> containing the string.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.Matrix.var">
-<code class="sig-name descname">var</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.Matrix.var" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.Matrix.var">
+<span class="sig-name descname"><span class="pre">var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../operation_node.html#systemds.operator.OperationNode" title="systemds.operator.operation_node.OperationNode"><span class="pre">OperationNode</span></a></span></span><a class="headerlink" href="#systemds.operator.Matrix.var" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate variance of matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -549,62 +466,37 @@ all operations are only building the DAG without actually executing (lazy evalua
 
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="frame.html" class="btn btn-neutral float-right" title="Frame" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="../algorithms.html" class="btn btn-neutral float-left" title="Algorithms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../algorithms.html" class="btn btn-neutral float-left" title="Algorithms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="frame.html" class="btn btn-neutral float-right" title="Frame" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        
-        &copy; Copyright 2021, Apache SystemDS
-
-    </p>
+    <p>&#169; Copyright 2022, Apache SystemDS.</p>
   </div>
-    
-    
-    
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
-    
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

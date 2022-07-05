@@ -1,68 +1,35 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Python end-to-end tutorial &mdash; SystemDS 2.3.0-SNAPSHOT documentation</title>
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-  
-  <link rel="stylesheet" href="../static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
-
-  
-  
-  
-  
-
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Python end-to-end tutorial &mdash; SystemDS 3.1.0-dev documentation</title>
+      <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../static/documentation_options.js"></script>
         <script src="../static/jquery.js"></script>
         <script src="../static/underscore.js"></script>
+        <script src="../static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../static/doctools.js"></script>
-        <script src="../static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../static/js/theme.js"></script>
-
-    
+    <script src="../static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="SystemDSContext" href="../api/context/systemds_context.html" />
     <link rel="prev" title="Built-in Algorithms" href="algorithms_basics.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
-            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> SystemDS
-          
-
-          
+            <a href="../index.html" class="icon icon-home"> SystemDS
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -70,24 +37,13 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started:</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/install.html">Install SystemDS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/simple_examples.html">QuickStart</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Guides</span></p>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="federated.html">Federated Environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="algorithms_basics.html">Built-in Algorithms</a></li>
@@ -118,7 +74,7 @@
 </ul>
 </li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api/context/systemds_context.html">SystemDSContext</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/algorithms.html">Algorithms</a></li>
@@ -128,7 +84,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/node/scalar.html">Scalar</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/node/source.html">Source</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Internals API</span></p>
+<p class="caption" role="heading"><span class="caption-text">Internals API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/operation_node.html">Operation Node</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/script_building/dag.html">Dag</a></li>
@@ -137,71 +93,32 @@
 <li class="toctree-l1"><a class="reference internal" href="../api/utils/helpers.html">Helpers</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">SystemDS</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-        
       <li>Python end-to-end tutorial</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../sources/guide/python_end_to_end_tut.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="python-end-to-end-tutorial">
-<h1>Python end-to-end tutorial<a class="headerlink" href="#python-end-to-end-tutorial" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="python-end-to-end-tutorial">
+<h1>Python end-to-end tutorial<a class="headerlink" href="#python-end-to-end-tutorial" title="Permalink to this heading"></a></h1>
 <p>The goal of this tutorial is to showcase different features of the SystemDS framework that can be accessed with the Python API.
 For this, we want to use the <a class="reference external" href="https://archive.ics.uci.edu/ml/datasets/adult/">Adult</a> dataset and predict whether the income of a person exceeds $50K/yr based on census data.
 The Adult dataset contains attributes like age, workclass, education, marital-status, occupation, race, […] and the labels &gt;50K or &lt;=50K.
@@ -214,16 +131,16 @@ With the third level, we want to show how we can integrate custom-built networks
 <ul class="simple">
 <li><p><a class="reference internal" href="../getting_started/install.html"><span class="doc">Install SystemDS</span></a></p></li>
 </ul>
-<div class="section" id="level-1">
-<h2>Level 1<a class="headerlink" href="#level-1" title="Permalink to this headline">¶</a></h2>
+<section id="level-1">
+<h2>Level 1<a class="headerlink" href="#level-1" title="Permalink to this heading"></a></h2>
 <p>This example shows how one can work with NumPy data within the SystemDS framework. More precisely, we will make use of the
 built-in DataManager, Multinomial Logistic Regression function, and the Confusion Matrix function. The dataset used in this
 tutorial is a preprocessed version of the “UCI Adult Data Set”. If you are interested in data preprocessing, take a look at level 2.
 If one wants to skip the explanation then the full script is available at the end of this level.</p>
 <p>We will train a Multinomial Logistic Regression model on the training dataset and subsequently we will use the test dataset
 to assess how well our model can predict if the income is above or below $50K/yr based on the features.</p>
-<div class="section" id="step-1-load-and-prepare-data">
-<h3>Step 1: Load and prepare data<a class="headerlink" href="#step-1-load-and-prepare-data" title="Permalink to this headline">¶</a></h3>
+<section id="step-1-load-and-prepare-data">
+<h3>Step 1: Load and prepare data<a class="headerlink" href="#step-1-load-and-prepare-data" title="Permalink to this heading"></a></h3>
 <p>First, we get our training and testing data from the built-in DataManager. Since the multiLogReg function requires the
 labels (Y) to be &gt; 0, we add 1 to all labels. This ensures that the smallest label is &gt;= 1. Additionally we will only take
 a fraction of the training and test set into account to speed up the execution.</p>
@@ -252,9 +169,9 @@ a fraction of the training and test set into account to speed up the execution.<
 </div>
 <p>Here the DataManager contains the code for downloading and setting up NumPy arrays containing the data.
 It is noteworthy that the function get_preprocessed_dataset has options for basic standardization, interpolation, and combining categorical features inside one column whose occurrences are below a certain threshold.</p>
-</div>
-<div class="section" id="step-2-training">
-<h3>Step 2: Training<a class="headerlink" href="#step-2-training" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="step-2-training">
+<h3>Step 2: Training<a class="headerlink" href="#step-2-training" title="Permalink to this heading"></a></h3>
 <p>Now that we prepared the data, we can use the multiLogReg function. First, we will train the model on our
 training data. Afterward, we can make predictions on the test data and assess the performance of the model.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
@@ -276,9 +193,9 @@ E.g. betas_res = betas.compute().</p>
 </ul>
 </dd>
 </dl>
-</div>
-<div class="section" id="step-3-confusion-matrix">
-<h3>Step 3: Confusion Matrix<a class="headerlink" href="#step-3-confusion-matrix" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="step-3-confusion-matrix">
+<h3>Step 3: Confusion Matrix<a class="headerlink" href="#step-3-confusion-matrix" title="Permalink to this heading"></a></h3>
 <p>A confusion matrix is a useful tool to analyze the performance of the model and to obtain a better understanding
 which classes the model has difficulties separating.
 The confusionMatrix function takes the predicted labels and the true labels. It then returns the confusion matrix
@@ -288,9 +205,9 @@ for the predictions and the confusion matrix averages of each true class.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">confusion_matrix_abs</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="full-script">
-<h3>Full Script<a class="headerlink" href="#full-script" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="full-script">
+<h3>Full Script<a class="headerlink" href="#full-script" title="Permalink to this heading"></a></h3>
 <p>In the full script, some steps are combined to reduce the overall script.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
@@ -323,16 +240,16 @@ for the predictions and the confusion matrix averages of each true class.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">confusion_matrix_abs</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="level-2">
-<h2>Level 2<a class="headerlink" href="#level-2" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="level-2">
+<h2>Level 2<a class="headerlink" href="#level-2" title="Permalink to this heading"></a></h2>
 <p>This part of the tutorial shows an overview of the preprocessing capabilities that SystemDS has to offer.
 We will take an unprocessed dataset using the csv format and read it with SystemDS. Then do the heavy lifting for the preprocessing with SystemDS.
 As mentioned before, we want to use the Adult dataset for this task.
 If one wants to skip the explanation, then the full script is available at the end of this level.</p>
-<div class="section" id="step-1-metadata-and-reading">
-<h3>Step 1: Metadata and reading<a class="headerlink" href="#step-1-metadata-and-reading" title="Permalink to this headline">¶</a></h3>
+<section id="step-1-metadata-and-reading">
+<h3>Step 1: Metadata and reading<a class="headerlink" href="#step-1-metadata-and-reading" title="Permalink to this heading"></a></h3>
 <p>First of all, we need to download the dataset and create a mtd-file for specifying different metadata about the dataset.
 We download the train and test dataset from: <a class="reference external" href="https://archive.ics.uci.edu/ml/datasets/adult">https://archive.ics.uci.edu/ml/datasets/adult</a></p>
 <p>The downloaded dataset will be slightly modified for convenience. These modifications entail removing unnecessary newlines at the end of the files and
@@ -385,9 +302,9 @@ The schema simply defines the data types for each column.</p>
 <span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="step-2-defining-preprocess-operations">
-<h3>Step 2: Defining preprocess operations<a class="headerlink" href="#step-2-defining-preprocess-operations" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="step-2-defining-preprocess-operations">
+<h3>Step 2: Defining preprocess operations<a class="headerlink" href="#step-2-defining-preprocess-operations" title="Permalink to this heading"></a></h3>
 <p>Now that the read operation has been declared, we can define an additional file for the further preprocessing of the dataset.
 For this, we create a .json file that holds information about the operations that will be performed on individual columns.
 For the sake of this tutorial we will use the file “jspec.json” with the following content:</p>
@@ -458,9 +375,9 @@ The preprocess.dml file can be read with the following command:</p>
 </pre></div>
 </div>
 <p>The print_imported_methods flag can be used to verify whether every method has been parsed correctly.</p>
-</div>
-<div class="section" id="step-3-applying-the-preprocessing-steps">
-<h3>Step 3: Applying the preprocessing steps<a class="headerlink" href="#step-3-applying-the-preprocessing-steps" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="step-3-applying-the-preprocessing-steps">
+<h3>Step 3: Applying the preprocessing steps<a class="headerlink" href="#step-3-applying-the-preprocessing-steps" title="Permalink to this heading"></a></h3>
 <p>Generally speaking, we would use the transform_encode function on the train dataset and with the returned encoding call the transform_apply function on the test dataset.
 In the case of the Adult dataset, we have inconsistent label names inside the test dataset and the train dataset, which is why we will show how we can deal with that using SystemDS.
 First of all, we combine the train and the test dataset by using the rbind() function. This function simply appends the Frame F2 at the end of Frame F1.
@@ -486,9 +403,9 @@ file is parsed such that we can directly call the function names from the Python
 <span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">replace_value</span><span class="p">(</span><span class="n">Yt</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="step-4-training-and-confusion-matrix">
-<h3>Step 4: Training and confusion matrix<a class="headerlink" href="#step-4-training-and-confusion-matrix" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="step-4-training-and-confusion-matrix">
+<h3>Step 4: Training and confusion matrix<a class="headerlink" href="#step-4-training-and-confusion-matrix" title="Permalink to this heading"></a></h3>
 <p>Now that we prepared the data we can use the multiLogReg function.
 These steps are identical to step 2 and 3 that have already been described in level 1 of this tutorial.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
@@ -500,9 +417,9 @@ These steps are identical to step 2 and 3 that have already been described in le
 <span class="nb">print</span><span class="p">(</span><span class="n">confusion_matrix_abs</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="id1">
-<h3>Full Script<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="id1">
+<h3>Full Script<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h3>
 <p>The complete script now can be seen here:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
@@ -546,14 +463,14 @@ These steps are identical to step 2 and 3 that have already been described in le
 <span class="nb">print</span><span class="p">(</span><span class="n">confusion_matrix_abs</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="level-3">
-<h2>Level 3<a class="headerlink" href="#level-3" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="level-3">
+<h2>Level 3<a class="headerlink" href="#level-3" title="Permalink to this heading"></a></h2>
 <p>In this level we want to show how we can integrate a custom built algorithm using the Python API.
 For this we will introduce another dml file, which can be used to train a basic feed forward network.</p>
-<div class="section" id="step-1-obtain-data">
-<h3>Step 1: Obtain data<a class="headerlink" href="#step-1-obtain-data" title="Permalink to this headline">¶</a></h3>
+<section id="step-1-obtain-data">
+<h3>Step 1: Obtain data<a class="headerlink" href="#step-1-obtain-data" title="Permalink to this heading"></a></h3>
 <p>For the whole data setup please refer to level 2, Step 1 to 3, as these steps are identical.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
@@ -589,9 +506,9 @@ For this we will introduce another dml file, which can be used to train a basic 
 <span class="n">Yt</span> <span class="o">=</span> <span class="n">PREPROCESS_package</span><span class="o">.</span><span class="n">replace_value</span><span class="p">(</span><span class="n">Yt</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="step-2-load-the-algorithm">
-<h3>Step 2: Load the algorithm<a class="headerlink" href="#step-2-load-the-algorithm" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="step-2-load-the-algorithm">
+<h3>Step 2: Load the algorithm<a class="headerlink" href="#step-2-load-the-algorithm" title="Permalink to this heading"></a></h3>
 <p>We use a neural network with 2 hidden layers, each consisting of 200 neurons.
 First, we need to source the dml file for neural networks.
 This file includes all the necessary functions for training, evaluating, and storing the model.
@@ -605,9 +522,9 @@ The file can be found here:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FFN_package</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">neural_net_src_path</span><span class="p">,</span> <span class="s2">&quot;fnn&quot;</span><span class="p">,</span> <span class="n">print_imported_methods</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="step-3-training-the-neural-network">
-<h3>Step 3: Training the neural network<a class="headerlink" href="#step-3-training-the-neural-network" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="step-3-training-the-neural-network">
+<h3>Step 3: Training the neural network<a class="headerlink" href="#step-3-training-the-neural-network" title="Permalink to this heading"></a></h3>
 <p>Training a neural network in SystemDS using the train function is straightforward.
 The first two arguments are the training features and the target values we want to fit our model on.
 Then we need to set the hyperparameters of the model.
@@ -621,18 +538,18 @@ The seed argument ensures that running the code again yields the same results.</
 <span class="n">network</span> <span class="o">=</span> <span class="n">FFN_package</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="step-4-saving-the-model">
-<h3>Step 4: Saving the model<a class="headerlink" href="#step-4-saving-the-model" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="step-4-saving-the-model">
+<h3>Step 4: Saving the model<a class="headerlink" href="#step-4-saving-the-model" title="Permalink to this heading"></a></h3>
 <p>For later usage, we can save the trained model.
 We only need to specify the name of our model and the file path.
 This call stores the weights and biases of our model.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FFN_package</span><span class="o">.</span><span class="n">save_model</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="s1">&#39;&quot;model/python_FFN/&quot;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="id2">
-<h3>Full Script<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="id2">
+<h3>Full Script<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h3>
 <p>The complete script now can be seen here:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
@@ -680,64 +597,39 @@ This call stores the weights and biases of our model.</p>
 <span class="n">FFN_package</span><span class="o">.</span><span class="n">save_model</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="s1">&#39;&quot;model/python_FFN/&quot;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="../api/context/systemds_context.html" class="btn btn-neutral float-right" title="SystemDSContext" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="algorithms_basics.html" class="btn btn-neutral float-left" title="Built-in Algorithms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="algorithms_basics.html" class="btn btn-neutral float-left" title="Built-in Algorithms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api/context/systemds_context.html" class="btn btn-neutral float-right" title="SystemDSContext" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        
-        &copy; Copyright 2021, Apache SystemDS
-
-    </p>
+    <p>&#169; Copyright 2022, Apache SystemDS.</p>
   </div>
-    
-    
-    
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
-    
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

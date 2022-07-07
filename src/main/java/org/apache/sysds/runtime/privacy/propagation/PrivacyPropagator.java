@@ -33,8 +33,11 @@ import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.IndexingOp;
+import org.apache.sysds.hops.LeftIndexingOp;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.NaryOp;
+import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
@@ -202,7 +205,8 @@ public class PrivacyPropagator
 	private static OperatorType getOpType(Hop hop){
 		if ( hop instanceof TernaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
 			|| hop instanceof DataOp || hop instanceof LiteralOp || hop instanceof NaryOp
-			|| hop instanceof DataGenOp || hop instanceof FunctionOp )
+			|| hop instanceof DataGenOp || hop instanceof FunctionOp || hop instanceof IndexingOp
+			|| hop instanceof ParameterizedBuiltinOp || hop instanceof LeftIndexingOp )
 			return OperatorType.NonAggregate;
 		else if ( hop instanceof AggBinaryOp || hop instanceof AggUnaryOp  || hop instanceof UnaryOp )
 			return OperatorType.Aggregate;

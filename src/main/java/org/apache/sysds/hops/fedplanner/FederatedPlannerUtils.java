@@ -21,30 +21,42 @@ package org.apache.sysds.hops.fedplanner;
 
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.parser.FunctionStatement;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Utility class for federated planners.
+ */
 public class FederatedPlannerUtils {
+
 	/**
 	 * Get transient inputs from either paramMap or transientWrites.
 	 * Inputs from paramMap has higher priority than inputs from transientWrites.
 	 * @param currentHop hop for which inputs are read from maps
 	 * @param paramMap of local parameters
 	 * @param transientWrites map of transient writes
+	 * @param localVariableMap map of local variables
 	 * @return inputs of currentHop
 	 */
-	public static ArrayList<Hop> getTransientInputs(Hop currentHop, Map<String, Hop> paramMap, Map<String,Hop> transientWrites){
+	public static ArrayList<Hop> getTransientInputs(Hop currentHop, Map<String, Hop> paramMap,
+		Map<String,Hop> transientWrites, LocalVariableMap localVariableMap){
 		Hop tWriteHop = null;
 		if ( paramMap != null)
 			tWriteHop = paramMap.get(currentHop.getName());
 		if ( tWriteHop == null )
 			tWriteHop = transientWrites.get(currentHop.getName());
-		if ( tWriteHop == null )
-			throw new DMLRuntimeException("Transient write not found for " + currentHop);
+		if ( tWriteHop == null ) {
+			if(localVariableMap.get(currentHop.getName()) != null)
+				return null;
+			else
+				throw new DMLRuntimeException("Transient write not found for " + currentHop);
+		}
 		else
 			return new ArrayList<>(Collections.singletonList(tWriteHop));
 	}
@@ -63,5 +75,27 @@ public class FederatedPlannerUtils {
 				paramMap.put(inputNames[i],funcOp.getInput(i));
 		}
 		return paramMap;
+	}
+
+	/**
+	 * Saves the HOPs (TWrite) of the function return values for
+	 * the variable name used when calling the function.
+	 *
+	 * Example:
+	 * <code>
+	 *     f = function() return (matrix[double] model) {a = rand(1, 1);}
+	 *     b = f();
+	 * </code>
+	 * This function saves the HOP writing to <code>a</code> for identifier <code>b</code>.
+	 *
+	 * @param sbHop The <code>FunctionOp</code> for the call
+	 * @param funcStatement The <code>FunctionStatement</code> of the called function
+	 * @param transientWrites map of transient writes
+	 */
+	public static void mapFunctionOutputs(FunctionOp sbHop, FunctionStatement funcStatement, Map<String,Hop> transientWrites) {
+		for (int i = 0; i < sbHop.getOutputVariableNames().length; ++i) {
+			Hop outputWrite = transientWrites.get(funcStatement.getOutputParams().get(i).getName());
+			transientWrites.put(sbHop.getOutputVariableNames()[i], outputWrite);
+		}
 	}
 }

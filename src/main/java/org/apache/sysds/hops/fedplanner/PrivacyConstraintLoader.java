@@ -30,6 +30,7 @@ import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
 import org.apache.sysds.parser.FunctionStatement;
@@ -41,6 +42,7 @@ import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -48,6 +50,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorkerHandlerException;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -62,6 +65,7 @@ import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +75,7 @@ public class PrivacyConstraintLoader {
 
 	private final Map<Long, Hop> memo = new HashMap<>();
 	private final Map<String, Hop> transientWrites = new HashMap<>();
+	private LocalVariableMap localVariableMap = new LocalVariableMap();
 
 	public void loadConstraints(DMLProgram prog){
 		rewriteStatementBlocks(prog, prog.getStatementBlocks(), null);
@@ -119,10 +124,17 @@ public class PrivacyConstraintLoader {
 		loadPrivacyConstraint(forSB.getFromHops(), paramMap);
 		loadPrivacyConstraint(forSB.getToHops(), paramMap);
 		loadPrivacyConstraint(forSB.getIncrementHops(), paramMap);
+
+		// add iter variable to local variable map allowing us to reason over transient reads in the HOP DAG
+		DataIdentifier iterVar = ((ForStatement) forSB.getStatement(0)).getIterablePredicate().getIterVar();
+		LocalVariableMap tmpLocalVariableMap = localVariableMap;
+		localVariableMap = (LocalVariableMap) localVariableMap.clone();
+		localVariableMap.put(iterVar.getName(), new IntObject(-1));
 		for(Statement statement : forSB.getStatements()) {
 			ForStatement forStatement = ((ForStatement) statement);
 			rewriteStatementBlocks(prog, forStatement.getBody(), paramMap);
 		}
+		localVariableMap = tmpLocalVariableMap;
 	}
 
 	private void rewriteFunctionStatementBlock(DMLProgram prog, FunctionStatementBlock funcSB, Map<String, Hop> paramMap) {
@@ -144,6 +156,9 @@ public class PrivacyConstraintLoader {
 					paramMap = funcParamMap;
 					FunctionStatementBlock sbFuncBlock = prog.getBuiltinFunctionDictionary().getFunction(funcName);
 					rewriteStatementBlock(prog, sbFuncBlock, paramMap);
+
+					FunctionStatement funcStatement = (FunctionStatement) sbFuncBlock.getStatement(0);
+					FederatedPlannerUtils.mapFunctionOutputs((FunctionOp) sbHop, funcStatement, transientWrites);
 				}
 			}
 		}
@@ -167,7 +182,10 @@ public class PrivacyConstraintLoader {
 			transientWrites.put(currentHop.getName(), currentHop);
 		}
 		else if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) ){
-			currentHop.setPrivacy(FederatedPlannerUtils.getTransientInputs(currentHop, paramMap, transientWrites).get(0).getPrivacy());
+			ArrayList<Hop> tInputs = FederatedPlannerUtils.getTransientInputs(currentHop, paramMap, transientWrites, localVariableMap);
+			if ( tInputs != null && tInputs.get(0) != null ){
+				currentHop.setPrivacy(tInputs.get(0).getPrivacy());
+			}
 		} else {
 			PrivacyPropagator.hopPropagation(currentHop);
 		}

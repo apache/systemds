@@ -203,32 +203,11 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 					rewriteStatementBlock(prog, sbFuncBlock, paramMap);
 
 					FunctionStatement funcStatement = (FunctionStatement) sbFuncBlock.getStatement(0);
-					mapFunctionOutputs((FunctionOp) sbHop, funcStatement);
+					FederatedPlannerUtils.mapFunctionOutputs((FunctionOp) sbHop, funcStatement, transientWrites);
 				}
 			}
 		}
 		return new ArrayList<>(Collections.singletonList(sb));
-	}
-
-	/**
-	 * Saves the HOPs (TWrite) of the function return values for
-	 * the variable name used when calling the function.
-	 *
-	 * Example:
-	 * <code>
-	 *     f = function() return (matrix[double] model) {a = rand(1, 1);}
-	 *     b = f();
-	 * </code>
-	 * This function saves the HOP writing to <code>a</code> for identifier <code>b</code>.
-	 *
-	 * @param sbHop The <code>FunctionOp</code> for the call
-	 * @param funcStatement The <code>FunctionStatement</code> of the called function
-	 */
-	private void mapFunctionOutputs(FunctionOp sbHop, FunctionStatement funcStatement) {
-		for (int i = 0; i < sbHop.getOutputVariableNames().length; ++i) {
-			Hop outputWrite = transientWrites.get(funcStatement.getOutputParams().get(i).getName());
-			transientWrites.put(sbHop.getOutputVariableNames()[i], outputWrite);
-		}
 	}
 
 	/**
@@ -368,7 +347,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 
 	private ArrayList<Hop> getHopInputs(Hop currentHop, Map<String, Hop> paramMap){
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) )
-			return getTransientInputs(currentHop, paramMap);
+			return FederatedPlannerUtils.getTransientInputs(currentHop, paramMap, transientWrites, localVariableMap);
 		else
 			return currentHop.getInput();
 	}
@@ -392,7 +371,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		ArrayList<HopRel> hopRels = new ArrayList<>();
 		ArrayList<Hop> inputHops = currentHop.getInput();
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) ) {
-			inputHops = getTransientInputs(currentHop, paramMap);
+			inputHops = FederatedPlannerUtils.getTransientInputs(currentHop, paramMap, transientWrites, localVariableMap);
 			if (inputHops == null) {
 				// check if transient read on a runtime variable (only when planning during dynamic recompilation)
 				return createHopRelsFromRuntimeVars(currentHop, hopRels);
@@ -425,29 +404,6 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 		else
 			hopRels.add(new HopRel(currentHop, FederatedOutput.LOUT, hopRelMemo, new ArrayList<>()));
 		return hopRels;
-	}
-
-	/**
-	 * Get transient inputs from either paramMap or transientWrites.
-	 * Inputs from paramMap has higher priority than inputs from transientWrites.
-	 * @param currentHop hop for which inputs are read from maps
-	 * @param paramMap of local parameters
-	 * @return inputs of currentHop
-	 */
-	private ArrayList<Hop> getTransientInputs(Hop currentHop, Map<String, Hop> paramMap){
-		Hop tWriteHop = null;
-		if ( paramMap != null)
-			tWriteHop = paramMap.get(currentHop.getName());
-		if ( tWriteHop == null )
-			tWriteHop = transientWrites.get(currentHop.getName());
-		if ( tWriteHop == null ) {
-			if(localVariableMap.get(currentHop.getName()) != null)
-				return null;
-			else
-				throw new DMLRuntimeException("Transient write not found for " + currentHop);
-		}
-		else
-			return new ArrayList<>(Collections.singletonList(tWriteHop));
 	}
 
 	/**

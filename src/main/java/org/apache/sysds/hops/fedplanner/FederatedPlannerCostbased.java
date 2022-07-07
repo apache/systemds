@@ -161,9 +161,6 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	}
 
 	private ArrayList<StatementBlock> rewriteForStatementBlock(DMLProgram prog, ForStatementBlock forSB, Map<String, Hop> paramMap) {
-		//Hop predHop = new LiteralOp(-1);
-		//transientWrites.put(forSB.getIterPredicate().getIterVar().getName(), predHop);
-		//selectFederatedExecutionPlan(predHop, paramMap);
 		selectFederatedExecutionPlan(forSB.getFromHops(), paramMap);
 		selectFederatedExecutionPlan(forSB.getToHops(), paramMap);
 		selectFederatedExecutionPlan(forSB.getIncrementHops(), paramMap);

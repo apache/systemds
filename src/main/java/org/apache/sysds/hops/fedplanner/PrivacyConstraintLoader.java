@@ -121,7 +121,6 @@ public class PrivacyConstraintLoader {
 	}
 
 	private void rewriteForStatementBlock(DMLProgram prog, ForStatementBlock forSB, Map<String, Hop> paramMap) {
-		//transientWrites.put(forSB.getIterPredicate().getIterVar().getName(), new LiteralOp(-1));
 		loadPrivacyConstraint(forSB.getFromHops(), paramMap);
 		loadPrivacyConstraint(forSB.getToHops(), paramMap);
 		loadPrivacyConstraint(forSB.getIncrementHops(), paramMap);

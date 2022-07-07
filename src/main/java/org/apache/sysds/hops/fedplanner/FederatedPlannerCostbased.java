@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.FunctionOp;
@@ -161,6 +162,9 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	}
 
 	private ArrayList<StatementBlock> rewriteForStatementBlock(DMLProgram prog, ForStatementBlock forSB, Map<String, Hop> paramMap) {
+		//Hop predHop = new LiteralOp(-1);
+		//transientWrites.put(forSB.getIterPredicate().getIterVar().getName(), predHop);
+		//selectFederatedExecutionPlan(predHop, paramMap);
 		selectFederatedExecutionPlan(forSB.getFromHops(), paramMap);
 		selectFederatedExecutionPlan(forSB.getToHops(), paramMap);
 		selectFederatedExecutionPlan(forSB.getIncrementHops(), paramMap);

@@ -58,6 +58,7 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "uamax"   , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uacmax"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uamin"   , FEDType.AggregateUnary );
+		String2FEDInstructionType.put( "uarmin"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uasqk+"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uarsqk+" , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uacsqk+" , FEDType.AggregateUnary );

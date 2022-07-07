@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -54,17 +55,16 @@ public class FederatedKMeansPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void runKMeansFOUTTest(){
-		//String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
-		//	"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
 		String[] expectedHeavyHitters = new String[]{};
 		setTestConf("SystemDS-config-fout.xml");
 		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
 	}
 
 	@Test
+	@Ignore
 	public void runKMeansHeuristicTest(){
-		//String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*"};
 		String[] expectedHeavyHitters = new String[]{};
 		setTestConf("SystemDS-config-heuristic.xml");
 		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
@@ -72,10 +72,15 @@ public class FederatedKMeansPlanningTest extends AutomatedTestBase {
 
 	@Test
 	public void runKMeansCostBasedTest(){
-		//String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
-		//	"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
-		String[] expectedHeavyHitters = new String[]{};
+		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_*", "fed_uack+", "fed_bcumoffk+"};
 		setTestConf("SystemDS-config-cost-based.xml");
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
+	}
+
+	@Test
+	public void runRuntimeTest(){
+		String[] expectedHeavyHitters = new String[]{};
+		TEST_CONF_FILE = new File("src/test/config/SystemDS-config.xml");
 		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
 	}
 

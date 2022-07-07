@@ -232,22 +232,6 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	}
 
 	/**
-	 * Return parameter map containing the mapping from parameter name to input hop
-	 * for all parameters of the function hop.
-	 * @param funcOp hop for which the mapping of parameter names to input hops are made
-	 * @return parameter map or empty map if function has no parameters
-	 */
-	private Map<String,Hop> getParamMap(FunctionOp funcOp){
-		String[] inputNames = funcOp.getInputVariableNames();
-		Map<String,Hop> paramMap = new HashMap<>();
-		if ( inputNames != null ){
-			for ( int i = 0; i < funcOp.getInput().size(); i++ )
-				paramMap.put(inputNames[i],funcOp.getInput(i));
-		}
-		return paramMap;
-	}
-
-	/**
 	 * Set final fedouts of all hops starting from terminal hops.
 	 */
 	public void setFinalFedouts(){
@@ -384,7 +368,7 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 
 	private ArrayList<Hop> getHopInputs(Hop currentHop, Map<String, Hop> paramMap){
 		if ( HopRewriteUtils.isData(currentHop, Types.OpOpData.TRANSIENTREAD) )
-			return FederatedPlannerUtils.getTransientInputs(currentHop, paramMap, transientWrites);
+			return getTransientInputs(currentHop, paramMap);
 		else
 			return currentHop.getInput();
 	}
@@ -451,9 +435,6 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 * @return inputs of currentHop
 	 */
 	private ArrayList<Hop> getTransientInputs(Hop currentHop, Map<String, Hop> paramMap){
-		// FIXME: does not work for function calls (except when the return names match the variables their results are assigned to)
-		//  `model = l2svm(...)` works (because `m_l2svm = function(...) return(Matrix[Double] model)`),
-		//  `m = l2svm(...)` does not
 		Hop tWriteHop = null;
 		if ( paramMap != null)
 			tWriteHop = paramMap.get(currentHop.getName());

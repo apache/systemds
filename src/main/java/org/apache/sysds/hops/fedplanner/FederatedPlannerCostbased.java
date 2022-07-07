@@ -435,9 +435,6 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 	 * @return inputs of currentHop
 	 */
 	private ArrayList<Hop> getTransientInputs(Hop currentHop, Map<String, Hop> paramMap){
-		// FIXME: does not work for function calls (except when the return names match the variables their results are assigned to)
-		//  `model = l2svm(...)` works (because `m_l2svm = function(...) return(Matrix[Double] model)`),
-		//  `m = l2svm(...)` does not
 		Hop tWriteHop = null;
 		if ( paramMap != null)
 			tWriteHop = paramMap.get(currentHop.getName());

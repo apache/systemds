@@ -58,7 +58,7 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservSBPBatchDisjointContiguous() {
-		runDMLTest(2, 2, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(2, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test
@@ -73,7 +73,7 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservSBPEpochDisjointContiguous() {
-		runDMLTest(2, 2, Statement.PSUpdateType.SBP, Statement.PSFrequency.EPOCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(2, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.EPOCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test

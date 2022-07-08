@@ -94,6 +94,9 @@ public abstract class Statement implements ParseInfo
 		public boolean isASP() {
 			return this == ASP;
 		}
+		public boolean isSBP() {
+			return this == SBP;
+		}
 	}
 	public static final String PS_FREQUENCY = "freq";
 	public enum PSFrequency {

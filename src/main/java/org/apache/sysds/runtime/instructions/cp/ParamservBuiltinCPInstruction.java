@@ -242,6 +242,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
 		int nbatches = getNbatches();
+		int numBackupWorkers = getNumBackupWorkers();
 		boolean modelAvg = Boolean.parseBoolean(getParam(PS_MODELAVG));
 
 		// Get the compiled execution context
@@ -254,7 +255,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create the parameter server
 		ListObject model = sec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), getFrequency(), workerNum, model, aggServiceEC, nbatches, modelAvg);
+		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), getFrequency(), workerNum, model, aggServiceEC,
+			nbatches, modelAvg, numBackupWorkers);
 
 		// Get driver host
 		String host = sec.getSparkContext().getConf().get("spark.driver.host");
@@ -343,14 +345,15 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		double rows_per_worker = Math.ceil((float) ec.getMatrixObject(getParam(PS_FEATURES)).getNumRows() / workerNum);
 		int num_batches_per_epoch = (int) Math.ceil(rows_per_worker / getBatchSize());
 		int nbatches = getNbatches();
+		int numBackupWorkers = getNumBackupWorkers();
 
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
 		MatrixObject val_features = (getParam(PS_VAL_FEATURES) != null) ? ec.getMatrixObject(getParam(PS_VAL_FEATURES)) : null;
 		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
 		boolean modelAvg = getModelAvg();
-		ParamServer ps = createPS(mode, aggFunc, updateType, freq, workerNum, model, aggServiceEC,
-			getValFunction(), num_batches_per_epoch, val_features, val_labels, nbatches, modelAvg);
+		ParamServer ps = createPS(mode, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
+			num_batches_per_epoch, val_features, val_labels, nbatches, modelAvg, numBackupWorkers);
 
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
@@ -491,18 +494,18 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 * @return parameter server
 	 */
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
-										PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, int nbatches, boolean modelAvg)
+										PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, int nbatches, boolean modelAvg, int numBackupWorkers)
 	{
 		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, null, -1, null, null, nbatches,
-			modelAvg);
+			modelAvg, numBackupWorkers);
 	}
 
 
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
 										PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, String valFunc,
-										int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg)	{
+										int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg, int numBackupWorkers) {
 		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, valFunc, numBatchesPerEpoch, valFeatures,
-			valLabels, nbatches, modelAvg, false, 1);
+			valLabels, nbatches, modelAvg, false, numBackupWorkers);
 	}
 
 	// When this creation is used the parameter server is able to validate after each epoch
@@ -511,6 +514,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg,
 		boolean use_homomorphic_encryption, int numBackupWorkers)
 	{
+		if(updateType.isSBP()) {
+			if(numBackupWorkers < 0 || numBackupWorkers >= workerNum)
+				throw new DMLRuntimeException(
+					"Invalid number of backup workers (with #workers=" + workerNum + "): #backup-workers="
+						+ numBackupWorkers);
+			if (numBackupWorkers == 0)
+				LOG.warn("SBP mode with 0 backup workers is the same as choosing BSP mode.");
+		}
 		switch (mode) {
 			case FEDERATED:
 			case LOCAL:
@@ -558,6 +569,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			if (LOG.isWarnEnabled()) {
 				LOG.warn(String.format("There is only %d batches of data but has %d workers. "
 					+ "Hence, reset the number of workers with %d.", pfs.size(), workers.size(), pfs.size()));
+			}
+			if (getUpdateType().isSBP() && pfs.size() <= getNumBackupWorkers()) {
+				throw new DMLRuntimeException(
+					"Effective number of workers is smaller or equal to the number of backup workers."
+						+ " Change partitioning scheme to OVERLAP_RESHUFFLE, decrease number of backup workers or increase number of rows in dataset.");
 			}
 			workers = workers.subList(0, pfs.size());
 		}
@@ -645,6 +661,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	private int getNumBackupWorkers() {
 		if(!getParameterMap().containsKey(PS_NUM_BACKUP_WORKERS)) {
+			if (!getUpdateType().isSBP())
+				LOG.warn("Specifying number of backup-workers without SBP mode has no effect");
 			return DEFAULT_NUM_BACKUP_WORKERS;
 		}
 		return Integer.parseInt(getParam(PS_NUM_BACKUP_WORKERS));

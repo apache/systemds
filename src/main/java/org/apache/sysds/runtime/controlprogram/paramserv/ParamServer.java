@@ -212,32 +212,8 @@ public abstract class ParamServer
 					else
 						updateGlobalModel(gradients);
 
-					if (allFinished()) {
-						// Update the global model with accrued gradients
-						if( ACCRUE_BSP_GRADIENTS ) {
-							updateGlobalModel(_accGradients);
-							_accGradients = null;
-						}
-
-						if(finishedEpoch()) {
-							if(LOG.isInfoEnabled())
-								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
-
-							time_epoch();
-
-							if(_validationPossible)
-								validate();
-
-							_epochCounter++;
-							_syncCounter = 0;
-						}
-
-						// Broadcast the updated model
-						resetFinishedStates();
-						broadcastModel(true);
-						if (LOG.isDebugEnabled())
-							LOG.debug("Global parameter is broadcasted successfully.");
-					}
+					if (allFinished())
+						performGlobalGradientUpdate();
 					break;
 				}
 				case ASP: {
@@ -281,30 +257,7 @@ public abstract class ParamServer
 					if(enoughFinished()) {
 						// set flags to throwaway backup worker results
 						tagStragglers();
-						// Update the global model with accrued gradients
-						if(ACCRUE_BSP_GRADIENTS) {
-							updateGlobalModel(_accGradients);
-							_accGradients = null;
-						}
-
-						if(finishedEpoch()) {
-							if(LOG.isInfoEnabled())
-								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
-
-							time_epoch();
-
-							if(_validationPossible)
-								validate();
-
-							_epochCounter++;
-							_syncCounter = 0;
-						}
-
-						// Broadcast the updated model
-						broadcastModel(_finishedStates);
-						resetFinishedStates();
-						if(LOG.isDebugEnabled())
-							LOG.debug("Global parameter is broadcasted successfully.");
+						performGlobalGradientUpdate();
 					}
 					break;
 				}
@@ -315,6 +268,33 @@ public abstract class ParamServer
 		catch (Exception e) {
 			throw new DMLRuntimeException("Aggregation or validation service failed: ", e);
 		}
+	}
+
+	private void performGlobalGradientUpdate() {
+		// Update the global model with accrued gradients
+		if(ACCRUE_BSP_GRADIENTS) {
+			updateGlobalModel(_accGradients);
+			_accGradients = null;
+		}
+
+		if(finishedEpoch()) {
+			if(LOG.isInfoEnabled())
+				LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
+
+			time_epoch();
+
+			if(_validationPossible)
+				validate();
+
+			_epochCounter++;
+			_syncCounter = 0;
+		}
+
+		// Broadcast the updated model
+		broadcastModel(_finishedStates);
+		resetFinishedStates();
+		if(LOG.isDebugEnabled())
+			LOG.debug("Global parameter is broadcasted successfully.");
 	}
 
 	private void tagStragglers() {

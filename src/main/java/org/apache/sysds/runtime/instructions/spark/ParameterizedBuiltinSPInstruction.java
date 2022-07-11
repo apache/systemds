@@ -33,6 +33,7 @@ import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -473,7 +474,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			sec.addLineageRDD(output.getName(), params.get("target"));
 
 			// get max tokens for row upper bound
-			long numRows = tokenizer.getNumRows(mc.getRows());
+			long numRows = tokenizer.getMaxNumRows((int)mc.getRows());
 			long numCols = tokenizer.getNumCols();
 
 			sec.getDataCharacteristics(output.getName()).set(numRows, numCols, mc.getBlocksize());
@@ -852,7 +853,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			long key = in._1();
 			FrameBlock blk = in._2();
 
-			FrameBlock fbout = _tokenizer.tokenize(blk, new FrameBlock(_tokenizer.getSchema()));
+			FrameBlock fbout = _tokenizer.tokenize(blk, OptimizerUtils.getTokenizeNumThreads());
 			return new Tuple2<>(key, fbout);
 		}
 	}

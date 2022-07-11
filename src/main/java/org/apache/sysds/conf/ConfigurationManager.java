@@ -173,8 +173,16 @@ public class ConfigurationManager
 		return getDMLConfig().getBooleanValue(DMLConfig.PARALLEL_ENCODE);
 	}
 
+	public static boolean isParallelTokenize() {
+		return getDMLConfig().getBooleanValue(DMLConfig.PARALLEL_TOKENIZE);
+	}
+
 	public static boolean isStagedParallelTransform() {
 		return getDMLConfig().getBooleanValue(DMLConfig.PARALLEL_ENCODE_STAGED);
+	}
+
+	public static int getNumberTokenizeBlocks(){
+		return getDMLConfig().getIntValue(DMLConfig.PARALLEL_TOKENIZE_NUM_BLOCKS);
 	}
 
 	public static int getParallelApplyBlocks(){

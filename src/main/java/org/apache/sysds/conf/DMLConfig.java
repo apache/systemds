@@ -75,6 +75,8 @@ public class DMLConfig
 	public static final String PARALLEL_ENCODE_APPLY_BLOCKS = "sysds.parallel.encode.applyBlocks";
 	public static final String PARALLEL_ENCODE_BUILD_BLOCKS = "sysds.parallel.encode.buildBlocks";
 	public static final String PARALLEL_ENCODE_NUM_THREADS  = "sysds.parallel.encode.numThreads";
+	public static final String PARALLEL_TOKENIZE = "sysds.parallel.tokenize";
+	public static final String PARALLEL_TOKENIZE_NUM_BLOCKS = "sysds.parallel.tokenize.numBlocks";
 	public static final String COMPRESSED_LINALG    = "sysds.compressed.linalg";
 	public static final String COMPRESSED_LOSSY     = "sysds.compressed.lossy";
 	public static final String COMPRESSED_VALID_COMPRESSIONS = "sysds.compressed.valid.compressions";
@@ -141,6 +143,8 @@ public class DMLConfig
 		_defaultVals.put(DEFAULT_BLOCK_SIZE,     String.valueOf(OptimizerUtils.DEFAULT_BLOCKSIZE) );
 		_defaultVals.put(CP_PARALLEL_OPS,        "true" );
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
+		_defaultVals.put(PARALLEL_TOKENIZE,      "false");
+		_defaultVals.put(PARALLEL_TOKENIZE_NUM_BLOCKS, "64");
 		_defaultVals.put(PARALLEL_ENCODE,        "false" );
 		_defaultVals.put(PARALLEL_ENCODE_STAGED, "false" );
 		_defaultVals.put(PARALLEL_ENCODE_APPLY_BLOCKS, "-1");

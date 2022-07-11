@@ -50,7 +50,13 @@
 
     <!-- #threads in multi-threaded transformencode -->
     <sysds.parallel.encode.numThreads>-1</sysds.parallel.encode.numThreads>
-    
+
+    <!-- enable multi-threaded tokenize -->
+    <sysds.parallel.tokenize>false</sysds.parallel.tokenize>
+
+    <!-- #blocks the input frame is split up for multithreaded tokenization -->
+    <sysds.parallel.tokenize.numBlocks>64</sysds.parallel.tokenize.numBlocks>
+
     <!-- enables compressed linear algebra, experimental feature -->
     <sysds.compressed.linalg>false</sysds.compressed.linalg>
     

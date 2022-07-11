@@ -289,7 +289,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			// compute tokenizer
 			Tokenizer tokenizer = TokenizerFactory.createTokenizer(getParameterMap().get("spec"),
 				Integer.parseInt(getParameterMap().get("max_tokens")));
-			FrameBlock fbout = tokenizer.tokenize(data, new FrameBlock(tokenizer.getSchema()));
+			FrameBlock fbout = tokenizer.tokenize(data, OptimizerUtils.getTokenizeNumThreads());
 
 			// release locks
 			ec.setFrameOutput(output.getName(), fbout);

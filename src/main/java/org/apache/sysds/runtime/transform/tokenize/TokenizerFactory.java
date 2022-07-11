@@ -20,6 +20,13 @@
 package org.apache.sysds.runtime.transform.tokenize;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplier;
+import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierCount;
+import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierHash;
+import org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierPosition;
+import org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilder;
+import org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilderNgram;
+import org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilderWhitespaceSplit;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.wink.json4j.JSONArray;
 
@@ -53,13 +60,13 @@ public class TokenizerFactory {
             int tokenizeCol = jSpec.getInt("tokenize_col");
 
             // tokenization needs one or more idCols that define the document and are replicated per token
-            List<Integer> idCols = new ArrayList<>();
             JSONArray idColsJsonArray = jSpec.getJSONArray("id_cols");
+            int[] idCols = new int[idColsJsonArray.length()];
             for (int i=0; i < idColsJsonArray.length(); i++) {
-                idCols.add(idColsJsonArray.getInt(i));
+                idCols[i] = idColsJsonArray.getInt(i);
             }
             // Output schema is derived from specified id cols
-            int numIdCols = idCols.size();
+            int numIdCols = idCols.length;
 
             // get difference between long and wide format
             boolean wideFormat = false;  // long format is default
@@ -67,18 +74,23 @@ public class TokenizerFactory {
                 wideFormat = jSpec.getBoolean("format_wide");
             }
 
-            TokenizerPre tokenizerPre;
-            TokenizerPost tokenizerPost;
+            boolean applyPadding = false;  // no padding is default
+            if (jSpec.has("apply_padding")) {
+                applyPadding = jSpec.getBoolean("apply_padding");
+            }
 
-            // Note that internal representation should be independent from output representation
+            TokenizerBuilder tokenizerBuilder;
+            TokenizerApplier tokenizerApplier;
+
+            // Note that internal representation should be independent of output representation
 
             // Algorithm to transform tokens into internal token representation
             switch (algo) {
                 case "split":
-                    tokenizerPre = new TokenizerPreWhitespaceSplit(idCols, tokenizeCol, algoParams);
+                    tokenizerBuilder = new TokenizerBuilderWhitespaceSplit(idCols, tokenizeCol, algoParams);
                     break;
                 case "ngram":
-                    tokenizerPre = new TokenizerPreNgram(idCols, tokenizeCol, algoParams);
+                    tokenizerBuilder = new TokenizerBuilderNgram(idCols, tokenizeCol, algoParams);
                     break;
                 default:
                     throw new IllegalArgumentException("Algorithm {algo=" + algo + "} is not supported.");
@@ -87,19 +99,19 @@ public class TokenizerFactory {
             // Transform tokens to output representation
             switch (out) {
                 case "count":
-                    tokenizerPost = new TokenizerPostCount(outParams, numIdCols, maxTokens, wideFormat);
+                    tokenizerApplier = new TokenizerApplierCount(numIdCols, maxTokens, wideFormat, applyPadding, outParams);
                     break;
                 case "position":
-                    tokenizerPost = new TokenizerPostPosition(outParams, numIdCols, maxTokens, wideFormat);
+                    tokenizerApplier = new TokenizerApplierPosition(numIdCols, maxTokens, wideFormat, applyPadding);
                     break;
                 case "hash":
-                    tokenizerPost = new TokenizerPostHash(outParams, numIdCols, maxTokens, wideFormat);
+                    tokenizerApplier = new TokenizerApplierHash(numIdCols, maxTokens, wideFormat, applyPadding, outParams);
                     break;
                 default:
                     throw new IllegalArgumentException("Output representation {out=" + out + "} is not supported.");
             }
 
-            tokenizer = new Tokenizer(tokenizerPre, tokenizerPost);
+            tokenizer = new Tokenizer(tokenizerBuilder, tokenizerApplier);
         }
         catch(Exception ex) {
             throw new DMLRuntimeException(ex);

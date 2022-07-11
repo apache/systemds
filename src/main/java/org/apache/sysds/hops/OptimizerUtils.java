@@ -1118,7 +1118,26 @@ public class OptimizerUtils
 			
 		return ret;
 	}
-	
+
+	public static int getTokenizeNumThreads()
+	{
+		//by default max local parallelism (vcores)
+		int ret = InfrastructureAnalyzer.getLocalParallelism();
+		int maxNumThreads = ConfigurationManager.getNumThreads();
+
+		//apply external max constraint (e.g., set by parfor or other rewrites)
+		if( maxNumThreads > 0 ) {
+			ret = Math.min(ret, maxNumThreads);
+		}
+
+		//check if enabled in config.xml
+		if( !ConfigurationManager.isParallelTokenize() ) {
+			ret = 1;
+		}
+
+		return ret;
+	}
+
 	public static Level getDefaultLogLevel() {
 		Level log = Logger.getRootLogger().getLevel();
 		return (log != null) ? log : Level.INFO;

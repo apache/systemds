@@ -268,7 +268,10 @@ public class ParamservUtils {
 			String[] parts = DMLProgram.splitFunctionKey(e.getKey());
 			FunctionProgramBlock fpb = ProgramConverter
 				.createDeepCopyFunctionProgramBlock(e.getValue(), new HashSet<>(), new HashSet<>());
+			fpb._namespace = parts[0];
+			fpb._functionName = parts[1];
 			newProg.addFunctionProgramBlock(parts[0], parts[1], fpb, opt);
+			newProg.addProgramBlock(fpb);
 		}
 		return newProg;
 	}

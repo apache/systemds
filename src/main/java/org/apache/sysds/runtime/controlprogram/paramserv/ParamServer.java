@@ -118,6 +118,8 @@ public abstract class ParamServer
 
 	protected void setupAggFunc(ExecutionContext ec, String aggFunc) {
 		String[] cfn = DMLProgram.splitFunctionKey(aggFunc);
+		if(cfn.length == 1)
+			cfn = new String[] {null, cfn[0]};
 		String ns = cfn[0];
 		String fname = cfn[1];
 		boolean opt = !ec.getProgram().containsFunctionProgramBlock(ns, fname, false);

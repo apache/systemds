@@ -29,7 +29,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
 @net.jcip.annotations.NotThreadSafe
-@Ignore
 public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME1 = "paramserv-test";
@@ -77,12 +76,16 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testParamservWorkerFailed() {
+		// FIXME: `aggregation` function can't be found (optimized away?)
 		runDMLTest(TEST_NAME2, true, DMLRuntimeException.class, "Invalid indexing by name in unnamed list: worker_err.");
 	}
 
 	@Test
+	@Ignore
 	public void testParamservAggServiceFailed() {
+		// FIXME: `aggregation` function can't be found (optimized away?)
 		runDMLTest(TEST_NAME3, true, DMLRuntimeException.class, "Invalid indexing by name in unnamed list: agg_service_err.");
 	}
 

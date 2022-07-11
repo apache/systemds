@@ -78,7 +78,8 @@ public abstract class ParamServer
 
 	private int _numWorkers;
 	private int _numBackupWorkers;
-	private boolean[] _discardWorkerRes;
+	// number of updates the respective worker is straggling behind
+	private int[] _numUpdatesStraggling;
 	private boolean _modelAvg;
 	private ListObject _accModels = null;
 
@@ -109,7 +110,7 @@ public abstract class ParamServer
 		_numBatchesPerEpoch = numBatchesPerEpoch;
 		_numWorkers = workerNum;
 		_numBackupWorkers = numBackupWorkers;
-		_discardWorkerRes = new boolean[workerNum];
+		_numUpdatesStraggling = new int[workerNum];
 		_modelAvg = modelAvg;
 
 		// broadcast initial model
@@ -118,6 +119,8 @@ public abstract class ParamServer
 
 	protected void setupAggFunc(ExecutionContext ec, String aggFunc) {
 		String[] cfn = DMLProgram.splitFunctionKey(aggFunc);
+		if(cfn.length == 1)
+			cfn = new String[] {null, cfn[0]};
 		String ns = cfn[0];
 		String fname = cfn[1];
 		boolean opt = !ec.getProgram().containsFunctionProgramBlock(ns, fname, false);
@@ -240,10 +243,10 @@ public abstract class ParamServer
 					break;
 				}
 				case SBP: {
-					if(_discardWorkerRes[workerID]) {
+					if(_numUpdatesStraggling[workerID] > 0) {
 						LOG.info("[+] PRAMSERV: discarding result of backup-worker/straggler " + workerID);
 						broadcastModel(workerID);
-						_discardWorkerRes[workerID] = false;
+						_numUpdatesStraggling[workerID]--;
 						break;
 					}
 					setFinishedState(workerID);
@@ -255,7 +258,6 @@ public abstract class ParamServer
 						updateGlobalModel(gradients);
 
 					if(enoughFinished()) {
-						// set flags to throwaway backup worker results
 						tagStragglers();
 						performGlobalGradientUpdate();
 					}
@@ -300,7 +302,7 @@ public abstract class ParamServer
 	private void tagStragglers() {
 		for(int i = 0; i < _finishedStates.length; ++i) {
 			if(!_finishedStates[i])
-				_discardWorkerRes[i] = true;
+				_numUpdatesStraggling[i]++;
 		}
 	}
 
@@ -371,10 +373,10 @@ public abstract class ParamServer
 				case SBP: {
 					// first weight the models based on number of workers
 					ListObject weightParams = weightModels(model, _numWorkers - _numBackupWorkers);
-					if(_discardWorkerRes[workerID]) {
+					if(_numUpdatesStraggling[workerID] > 0) {
 						LOG.info("[+] PRAMSERV: discarding result of backup-worker/straggler " + workerID);
 						broadcastModel(workerID);
-						_discardWorkerRes[workerID] = false;
+						_numUpdatesStraggling[workerID]--;
 						break;
 					}
 					setFinishedState(workerID);

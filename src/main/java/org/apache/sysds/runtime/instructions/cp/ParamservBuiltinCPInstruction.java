@@ -661,10 +661,10 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	private int getNumBackupWorkers() {
 		if(!getParameterMap().containsKey(PS_NUM_BACKUP_WORKERS)) {
-			if (!getUpdateType().isSBP())
-				LOG.warn("Specifying number of backup-workers without SBP mode has no effect");
 			return DEFAULT_NUM_BACKUP_WORKERS;
 		}
+		if (!getUpdateType().isSBP())
+			LOG.warn("Specifying number of backup-workers without SBP mode has no effect");
 		return Integer.parseInt(getParam(PS_NUM_BACKUP_WORKERS));
 	}
 

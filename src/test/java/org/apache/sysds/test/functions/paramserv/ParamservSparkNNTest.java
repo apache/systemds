@@ -56,7 +56,6 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void testParamservSBPBatchDisjointContiguous() {
 		// FIXME: Synchronous with backup workers fails in spark mode with batch frequency
 		runDMLTest(2, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);

@@ -30,6 +30,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Utility class for federated planners.
+ */
 public class FederatedPlannerUtils {
 
 	/**

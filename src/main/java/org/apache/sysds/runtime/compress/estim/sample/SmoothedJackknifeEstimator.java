@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.estim.sample;
 
-public class SmoothedJackknifeEstimator {
+public interface SmoothedJackknifeEstimator {
 
 	/**
 	 * Peter J. Haas, Jeffrey F. Naughton, S. Seshadri, and Lynne Stokes. Sampling-Based Estimation of the Number of
@@ -32,10 +32,6 @@ public class SmoothedJackknifeEstimator {
 	 * @return Estimate of the number of distinct values
 	 */
 	public static int distinctCount(int numVals, int[] freqCounts, int nRows, int sampleSize) {
-		// all values in the sample are zeros
-		if(freqCounts.length == 0)
-			return 0;
-		// nRows is N and sampleSize is n
 
 		int d = numVals;
 		double f1 = freqCounts[0];
@@ -82,8 +78,7 @@ public class SmoothedJackknifeEstimator {
 		for(; A >= B || C >= D; A--, C--) {
 			if(A >= B)
 				h *= A;
-			if(C >= D)
-				h /= C;
+			h /= C;
 		}
 		// end of h computation
 

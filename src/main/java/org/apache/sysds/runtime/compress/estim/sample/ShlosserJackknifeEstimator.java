@@ -21,9 +21,9 @@ package org.apache.sysds.runtime.compress.estim.sample;
 
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
 
-public class ShlosserJackknifeEstimator {
+public interface ShlosserJackknifeEstimator {
 
-	private final static double SHLOSSER_JACKKNIFE_ALPHA = 0.975;
+	final static double SHLOSSER_JACKKNIFE_ALPHA = 0.975;
 
 	/**
 	 * Peter J. Haas, Jeffrey F. Naughton, S. Seshadri, and Lynne Stokes. 1995. Sampling-Based Estimation of the Number
@@ -36,20 +36,19 @@ public class ShlosserJackknifeEstimator {
 	 * @param sampleSize The number of rows in the sample
 	 * @return an estimation of number of distinct values.
 	 */
-	protected static int distinctCount(int numVals, int[] frequencies, int[] freqCounts, int nRows, int sampleSize) {
+	public static int distinctCount(int numVals, int[] frequencies, int[] freqCounts, int nRows, int sampleSize) {
 
-		CriticalValue cv = computeCriticalValue(sampleSize);
+		final CriticalValue cv = computeCriticalValue(sampleSize);
 
 		// uniformity chi-square test
 		double nBar = ((double) sampleSize) / numVals;
 		// test-statistic
 		double u = 0;
-		for(int i = 0; i < numVals; i++) {
+		for(int i = 0; i < numVals; i++)
 			u += Math.pow(frequencies[i] - nBar, 2);
-		}
+		
 		u /= nBar;
-		if(sampleSize != cv.usedSampleSize)
-			computeCriticalValue(sampleSize);
+
 		if(u < cv.uniformityCriticalValue) // uniform
 			return SmoothedJackknifeEstimator.distinctCount(numVals, freqCounts, nRows, sampleSize);
 		else
@@ -66,7 +65,7 @@ public class ShlosserJackknifeEstimator {
 	 * critical value each time the estimator is used (given that alpha is the same). We cache the critical value to
 	 * avoid recomputing it in each call.
 	 */
-	private static class CriticalValue {
+	public static class CriticalValue {
 		public final double uniformityCriticalValue;
 		public final int usedSampleSize;
 

@@ -24,8 +24,8 @@ import java.util.HashMap;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
 
-public class HassAndStokes {
-	// protected static final Log LOG = LogFactory.getLog(HassAndStokes.class.getName());
+public interface HassAndStokes {
+	// static final Log LOG = LogFactory.getLog(HassAndStokes.class.getName());
 
 	public static final double HAAS_AND_STOKES_ALPHA1 = 0.9; // 0.9 recommended in paper
 	public static final double HAAS_AND_STOKES_ALPHA2 = 30; // 30 recommended in paper;
@@ -47,7 +47,7 @@ public class HassAndStokes {
 	 * @param solveCache A Hashmap containing information for getDuj2aEstimate
 	 * @return An estimation of distinct elements in the population.
 	 */
-	protected static int distinctCount(int numVals, int[] freqCounts, int nRows, int sampleSize,
+	public static int distinctCount(int numVals, int[] freqCounts, int nRows, int sampleSize,
 		HashMap<Integer, Double> solveCache) {
 
 		double q = ((double) sampleSize) / nRows;
@@ -100,8 +100,9 @@ public class HassAndStokes {
 			}
 
 		// fallback to Duj2 over full sample if only high frequency columns
-		if(n - nB == 0)
-			return getDuj2Estimate(q, f[0], n, dn, gammaDuj1);
+		// This fallback is never hit therefore commented out.
+		// if(n - nB == 0)
+			// return getDuj2Estimate(q, f[0], n, dn, gammaDuj1);
 
 		// compute reduced population size via numeric solve
 		int updatedN = N;
@@ -182,7 +183,7 @@ public class HassAndStokes {
 		return UnivariateSolverUtils.solve(new MethodOfMomentsFunction(nj, q), min, max, 1e-9);
 	}
 
-	private static class MethodOfMomentsFunction implements UnivariateFunction {
+	public static class MethodOfMomentsFunction implements UnivariateFunction {
 		private final int _nj;
 		private final double _q;
 

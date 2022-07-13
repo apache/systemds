@@ -19,19 +19,18 @@
 
 package org.apache.sysds.runtime.compress.estim.sample;
 
-import java.util.Arrays;
 import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 public interface SampleEstimatorFactory {
 
 	static final Log LOG = LogFactory.getLog(SampleEstimatorFactory.class.getName());
 
 	public enum EstimationType {
-		HassAndStokes, ShlosserEstimator, ShlosserJackknifeEstimator, SmoothedJackknifeEstimator,
+		HassAndStokes, ShlosserEstimator, //
+		ShlosserJackknifeEstimator, SmoothedJackknifeEstimator
 	}
 
 	/**
@@ -51,7 +50,7 @@ public interface SampleEstimatorFactory {
 	/**
 	 * Estimate a distinct number of values based on frequencies.
 	 * 
-	 * @param frequencies A list of frequencies of unique values, NOTE all values contained should be larger than zero
+	 * @param frequencies A list of frequencies of unique values, NOTE all values contained should be larger than zero!
 	 * @param nRows       The total number of rows to consider, NOTE should always be larger or equal to sum(frequencies)
 	 * @param sampleSize  The size of the sample, NOTE this should ideally be scaled to match the sum(frequencies) and
 	 *                    should always be lower or equal to nRows
@@ -64,25 +63,18 @@ public interface SampleEstimatorFactory {
 		if(frequencies == null || frequencies.length == 0)
 			// Frequencies for some reason is allocated as null or all values in the sample are zeros.
 			return 0;
-		try {
-			// Invert histogram
-			int[] invHist = getInvertedFrequencyHistogram(frequencies);
-			// estimate distinct
-			int est = distinctCountWithHistogram(frequencies.length, invHist, frequencies, nRows, sampleSize, type,
-				solveCache);
-			// Number of unique is trivially bounded by
-			// lower: The number of observed uniques in the sample
-			final int low = Math.max(frequencies.length, est);
-			// upper: The number of rows minus the observed uniques total count, plus the observed number of uniques.
-			final int high = Math.min(low, nRows - sampleSize + frequencies.length);
-			return high;
-		}
-		catch(Exception e) {
-			throw new DMLCompressionException(
-				"Error while estimating distinct count with arguments:\n\tfrequencies:" + Arrays.toString(frequencies)
-					+ " nrows: " + nRows + " sampleSize: " + sampleSize + " type: " + type + " solveCache: " + solveCache,
-				e);
-		}
+
+		// Invert histogram
+		final int[] invHist = getInvertedFrequencyHistogram(frequencies);
+		// estimate distinct
+		final int est = distinctCountWithHistogram(frequencies.length, invHist, frequencies, nRows, sampleSize, type,
+			solveCache);
+		// Number of unique is trivially bounded by:
+		// lower: The number of observed uniques in the sample
+		final int low = Math.max(frequencies.length, est);
+		// upper: The number of rows minus the observed uniques total count, plus the observed number of uniques.
+		final int high = Math.min(low, nRows - sampleSize + frequencies.length);
+		return high;
 	}
 
 	private static int distinctCountWithHistogram(int numVals, int[] invHist, int[] frequencies, int nRows,
@@ -113,8 +105,7 @@ public interface SampleEstimatorFactory {
 		// create frequency histogram
 		int[] freqCounts = new int[maxCount];
 		for(int i = 0; i < numVals; i++)
-			if(frequencies[i] != 0)
-				freqCounts[frequencies[i] - 1]++;
+			freqCounts[frequencies[i] - 1]++;
 
 		return freqCounts;
 	}

@@ -47,7 +47,7 @@ public class SampleDistinctTest {
 		this.type = type;
 		this.solveCache = solveCache;
 		int t = 0;
-		if(frequencies!= null)
+		if(frequencies != null)
 			for(int f : frequencies)
 				t += f;
 		total = t;
@@ -60,7 +60,7 @@ public class SampleDistinctTest {
 
 		for(EstimationType type : EstimationType.values()) {
 			tests.add(new Object[] {null, type, solveCache});
-			tests.add(new Object[] {new int[]{}, type, solveCache});
+			tests.add(new Object[] {new int[] {}, type, solveCache});
 			tests.add(new Object[] {new int[] {97, 6, 56, 4, 242, 123, 2}, type, solveCache});
 			tests.add(new Object[] {new int[] {6, 5}, type, solveCache});
 			tests.add(new Object[] {new int[] {2, 1, 1, 1, 1, 1}, type, solveCache});
@@ -86,7 +86,35 @@ public class SampleDistinctTest {
 				new int[] {1500, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
 					9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1, 1, 1, 1, 1, 1, 1, 1},
 				type, solveCache});
+
+			for(int i = 1; i < 10; i++) {
+				tests.add(new Object[] {new int[] {i, i, i, i, i}, type, solveCache});
+				tests.add(new Object[] {new int[] {i, i + 1, i + 2, i + 3, i + 4}, type, solveCache});
+				tests.add(new Object[] {new int[] {i, 1}, type, solveCache});
+				tests.add(new Object[] {new int[] {i, 1, 1, 1}, type, solveCache});
+				tests.add(new Object[] {new int[] {i, 2, 1, 1}, type, solveCache});
+				tests.add(new Object[] {new int[] {i, 2, 2, 2, 2, 1, 1, 1, 1}, type, solveCache});
+				tests.add(new Object[] {new int[] {i, 2, 2, 1, 1, 1, 1}, type, solveCache});
+				tests.add(new Object[] {new int[] {i, 2, 2, 1, 1, 1, 1}, type, solveCache});
+				tests.add(new Object[] {new int[] {i, 2, 1, 1, 1, 1, 1}, type, solveCache});
+			}
+			tests.add(new Object[] {new int[] {8, 5, 3, 2, 2, 2, 2}, type, solveCache});
+			tests.add(new Object[] {new int[] {8, 5, 3, 2, 2, 2, 2}, type, solveCache});
+
 		}
+
+		// Fuzzing test.
+		// Random r = new Random();
+		// for(int i = 0; i < 10000; i++) {
+		// tests.add(new Object[] {new int[] {r.nextInt(10) + 1, r.nextInt(10) + 1, r.nextInt(10) + 1, r.nextInt(10) + 1,
+		// r.nextInt(10) + 1, r.nextInt(10) + 1}, EstimationType.HassAndStokes, solveCache});
+		// tests.add(new Object[] {new int[] {r.nextInt(100) + 1, r.nextInt(100) + 1, r.nextInt(100) + 1,
+		// r.nextInt(100) + 1, r.nextInt(100) + 1, r.nextInt(100) + 1}, EstimationType.HassAndStokes, solveCache});
+		// tests.add(new Object[] {new int[] {r.nextInt(10) + 1, r.nextInt(10) + 1, r.nextInt(10) + 1, r.nextInt(10) + 1,
+		// r.nextInt(10) + 1, r.nextInt(10) + 1, 1}, EstimationType.HassAndStokes, solveCache});
+		// tests.add(new Object[] {new int[] {r.nextInt(100) + 1, r.nextInt(100) + 1, r.nextInt(100) + 1,
+		// r.nextInt(100) + 1, r.nextInt(100) + 1, r.nextInt(100) + 1, 1}, EstimationType.HassAndStokes, solveCache});
+		// }
 
 		return tests;
 	}
@@ -145,7 +173,7 @@ public class SampleDistinctTest {
 		verify(c, 0.00001);
 	}
 
-	private void verify(int c, double p){
+	private void verify(int c, double p) {
 		if(frequencies == null)
 			assertEquals(0, c);
 		else if(p == 1.0 && frequencies.length != c) {
@@ -155,7 +183,8 @@ public class SampleDistinctTest {
 		}
 		else if(c < frequencies.length)
 			fail("estimate is lower than observed elements");
-		else if(c > Math.ceil((double)total / p) - frequencies.length + total)
-			fail("estimate "+c+" is larger than theoretical max uniques " + (Math.ceil((double)total / p) - frequencies.length + total));
+		else if(c > Math.ceil((double) total / p) - frequencies.length + total)
+			fail("estimate " + c + " is larger than theoretical max uniques "
+				+ (Math.ceil((double) total / p) - frequencies.length + total) + " using: " + type);
 	}
 }

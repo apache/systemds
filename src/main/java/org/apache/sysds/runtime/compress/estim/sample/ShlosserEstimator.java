@@ -35,12 +35,18 @@ public class ShlosserEstimator {
 		double q = ((double) sampleSize) / nRows;
 		double oneMinusQ = 1 - q;
 
-		double numerSum = 0, denomSum = 0;
+		double numerSum = 0, denomSum = 0, p1 = 0;
 		int iPlusOne = 1;
 		for(int i = 0; i < freqCounts.length; i++, iPlusOne++) {
-			numerSum += Math.pow(oneMinusQ, iPlusOne) * freqCounts[i];
-			denomSum += iPlusOne * q * Math.pow(oneMinusQ, i) * freqCounts[i];
+			p1 = Math.pow(oneMinusQ, i) * freqCounts[i];
+			denomSum += iPlusOne * q * p1;
+			numerSum += p1 * oneMinusQ;
 		}
+		
+		if (denimSum == 0 || denimSum == Double.POSITIVE_INFINITY || denimSum == Double.NaN) {
+			return numVals;
+		}
+		
 		return (int) Math.round(numVals + freqCounts[0] * numerSum / denomSum);
 		
 	}

@@ -40,10 +40,14 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.*;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 /**
@@ -62,6 +66,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
  */
 public class ReaderWriterFederated {
 	private static final Log LOG = LogFactory.getLog(ReaderWriterFederated.class.getName());
+	private static final IDSequence siteUniqueCounter = new IDSequence(true);
 
 	/**
 	 * Read a federated map from disk, It is not initialized before it is used in:
@@ -103,6 +108,19 @@ public class ReaderWriterFederated {
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 			Path path = new Path(file);
 			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+			
+			fedMap.forEachParallel((range, data) -> {
+				String siteFilename = Long.toString(siteUniqueCounter.getNextID()) + '_' + path.getName();
+				try {
+					FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
+						data.getVarID(), new WriteAtSiteUDF(data.getVarID(), siteFilename))).get();
+					data.setFilepath((String) response.getData()[0]);
+				} catch (Exception e) {
+					throw new DMLRuntimeException(e);
+				}
+				return null;
+			});
+			
 			DataOutputStream out = fs.create(path, true);
 			ObjectMapper mapper = new ObjectMapper();
 			FederatedDataAddress[] outObjects = parseMap(fedMap.getMap());
@@ -205,6 +223,31 @@ public class ReaderWriterFederated {
 			sb.append(" ");
 			sb.append(Arrays.toString(_end));
 			return sb.toString();
+		}
+	}
+
+	private static class WriteAtSiteUDF extends FederatedUDF {
+		private static final long serialVersionUID = -6645546954618784216L;
+
+		private final String _filename;
+
+		public WriteAtSiteUDF(long input, String filename) {
+			super(new long[] {input});
+			_filename = filename;
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			MatrixObject mo = (MatrixObject) data[0];
+			String tmpDir = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.LOCAL_TMP_DIR);
+			Path p = new Path(tmpDir + '/' + _filename);
+			mo.exportData(p.toString(), null);
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, p.toString());
+		}
+
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			return null;
 		}
 	}
 }

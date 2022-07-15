@@ -78,10 +78,6 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 
 	private void processWriteInstruction(ExecutionContext ec) {
 		LOG.warn("Processing write command federated");
-		// TODO Add write command to the federated site if the matrix has been modified
-		// this has to be done while appending some string to the federated output file.
-		// furthermore the outputted file on the federated sites path should be returned
-		// the controller.
 		_in.processInstruction(ec);
 	}
 

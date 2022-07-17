@@ -34,10 +34,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
-import org.apache.sysds.runtime.io.FileFormatProperties;
-import org.apache.sysds.runtime.io.FrameReaderFactory;
-import org.apache.sysds.runtime.io.FrameWriter;
-import org.apache.sysds.runtime.io.FrameWriterFactory;
+import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -287,9 +284,14 @@ public class FrameObject extends CacheableData<FrameBlock>
 	{
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
-		
-		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
-		writer.writeFrameToHDFS(_data, fname, getNumRows(), getNumColumns());
+
+		if(this.isFederated() && FileFormat.safeValueOf(ofmt) == FileFormat.FEDERATED) {
+			ReaderWriterFederated.write(fname, this._fedMapping);
+		}
+		else {
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
+			writer.writeFrameToHDFS(_data, fname, getNumRows(), getNumColumns());
+		}
 	}
 
 	@Override

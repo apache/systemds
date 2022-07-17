@@ -19,8 +19,12 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
@@ -29,6 +33,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -38,6 +43,8 @@ import org.junit.runners.Parameterized;
 public class FederatedWriteTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/federated/";
 	private final static String TEST_NAME = "FederatedWriteTest";
+	private final static String TEST_NAME_MATRIX = "FederatedWriteMatrixTest";
+	private final static String TEST_NAME_FRAME = "FederatedWriteFrameTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWriteTest.class.getSimpleName() + "/";
 
 	private static final int blocksize = 1024;
@@ -78,10 +85,37 @@ public class FederatedWriteTest extends AutomatedTestBase {
 		federatedWrite(execMode, null);
 	}
 
-	// TODO: frame write testcase
+	@Test
+	public void federatedFrameWriteCP() throws IOException {
+		federatedFrameWrite(Types.ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	@Ignore
+	public void federatedFrameWriteSP() throws IOException {
+		federatedFrameWrite(Types.ExecMode.SPARK);
+	}
+
+	public void federatedFrameWrite(Types.ExecMode execMode) throws IOException {
+		getAndLoadTestConfiguration(TEST_NAME);
+		// write input matrix
+		double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, 1234);
+
+		List<Types.ValueType> schemaList = new ArrayList<>(Collections.nCopies(cols / 4, Types.ValueType.STRING));
+		schemaList.addAll(Collections.nCopies(cols / 4, Types.ValueType.FP64));
+		schemaList.addAll(Collections.nCopies(cols / 4, Types.ValueType.INT64));
+		schemaList.addAll(Collections.nCopies(cols / 4, Types.ValueType.BOOLEAN));
+
+		Types.ValueType[] schema = new Types.ValueType[cols];
+		schemaList.toArray(schema);
+		writeInputFrameWithMTD("A", A, false, schema, Types.FileFormat.BINARY);
+		federatedWrite(execMode, schema);
+	}
+
 	public void federatedWrite(Types.ExecMode execMode, Types.ValueType[] schema) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
+		String testName = schema == null ? TEST_NAME_MATRIX : TEST_NAME_FRAME;
 
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
@@ -94,7 +128,7 @@ public class FederatedWriteTest extends AutomatedTestBase {
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
 		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+		fullDMLScriptName = HOME + testName + "Reference.dml";
 		programArgs = new String[] {"-nvargs", "in=" + input("A"), "out=" + expected("B")};
 		runTest(true, false, null, -1);
 
@@ -103,7 +137,7 @@ public class FederatedWriteTest extends AutomatedTestBase {
 		if(rtplatform == Types.ExecMode.SPARK) {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		fullDMLScriptName = HOME + testName + ".dml";
 		programArgs = new String[] {"-explain", "-nvargs", "in=" + TestUtils.federatedAddress(port, input("A")),
 			"rows=" + rows, "cols=" + cols, "tmp=" + output("T")};
 		runTest(true, false, null, -1);

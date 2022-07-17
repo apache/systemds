@@ -42,6 +42,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.*;
@@ -238,10 +239,10 @@ public class ReaderWriterFederated {
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			MatrixObject mo = (MatrixObject) data[0];
+			CacheableData<?> cd = (CacheableData<?>) data[0];
 			String tmpDir = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.LOCAL_TMP_DIR);
 			Path p = new Path(tmpDir + '/' + _filename);
-			mo.exportData(p.toString(), null);
+			cd.exportData(p.toString(), null);
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, p.toString());
 		}
 

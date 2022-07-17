@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.hops.ipa.FunctionCallGraph;
@@ -45,6 +46,7 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Baseline federated planner that compiles all hops
@@ -89,14 +91,14 @@ public class FederatedPlannerFedAll extends AFederatedPlanner {
 		else if (sb instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			rRewriteHop(wsb.getPredicateHops(), new HashMap<>(), Collections.emptyMap());
+			rRewriteHop(wsb.getPredicateHops(), new HashMap<>(), new HashMap<>(), sb.getDMLProg());
 			for (StatementBlock csb : wstmt.getBody())
 				rRewriteStatementBlock(csb, fedVars);
 		}
 		else if (sb instanceof IfStatementBlock) {
 			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			rRewriteHop(isb.getPredicateHops(), new HashMap<>(), Collections.emptyMap());
+			rRewriteHop(isb.getPredicateHops(), new HashMap<>(), new HashMap<>(), sb.getDMLProg());
 			for (StatementBlock csb : istmt.getIfBody())
 				rRewriteStatementBlock(csb, fedVars);
 			for (StatementBlock csb : istmt.getElseBody())
@@ -105,9 +107,9 @@ public class FederatedPlannerFedAll extends AFederatedPlanner {
 		else if (sb instanceof ForStatementBlock) { //incl parfor
 			ForStatementBlock fsb = (ForStatementBlock) sb;
 			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			rRewriteHop(fsb.getFromHops(), new HashMap<>(), Collections.emptyMap());
-			rRewriteHop(fsb.getToHops(), new HashMap<>(), Collections.emptyMap());
-			rRewriteHop(fsb.getIncrementHops(), new HashMap<>(), Collections.emptyMap());
+			rRewriteHop(fsb.getFromHops(), new HashMap<>(), new HashMap<>(), sb.getDMLProg());
+			rRewriteHop(fsb.getToHops(), new HashMap<>(), new HashMap<>(), sb.getDMLProg());
+			rRewriteHop(fsb.getIncrementHops(), new HashMap<>(), new HashMap<>(), sb.getDMLProg());
 			for (StatementBlock csb : fstmt.getBody())
 				rRewriteStatementBlock(csb, fedVars);
 		}
@@ -117,7 +119,7 @@ public class FederatedPlannerFedAll extends AFederatedPlanner {
 			Map<Long, FType> fedHops = new HashMap<>();
 			if( sb.getHops() != null )
 				for( Hop c : sb.getHops() )
-					rRewriteHop(c, fedHops, fedVars);
+					rRewriteHop(c, fedHops, fedVars, sb.getDMLProg());
 			
 			//TODO handle function calls
 			
@@ -129,19 +131,31 @@ public class FederatedPlannerFedAll extends AFederatedPlanner {
 		}
 	}
 	
-	private void rRewriteHop(Hop hop, Map<Long, FType> memo, Map<String, FType> fedVars) {
+	private void rRewriteHop(Hop hop, Map<Long, FType> memo, Map<String, FType> fedVars, DMLProgram program) {
 		if( memo.containsKey(hop.getHopID()) )
 			return; //already processed
 		
 		//process children first
 		for( Hop c : hop.getInput() )
-			rRewriteHop(c, memo, fedVars);
+			rRewriteHop(c, memo, fedVars, program);
 		
 		//handle specific operators (except transient writes)
-		if( HopRewriteUtils.isData(hop, OpOpData.FEDERATED) )
+		if(hop instanceof FunctionOp) {
+			String funcName = ((FunctionOp) hop).getFunctionName();
+			String funcNamespace = ((FunctionOp) hop).getFunctionNamespace();
+			FunctionStatementBlock sbFuncBlock = program.getFunctionDictionary(funcNamespace).getFunction(funcName);
+			FunctionStatement funcStatement = (FunctionStatement) sbFuncBlock.getStatement(0);
+
+			Map<String, FType> funcFedVars = createFunctionFedVarTable((FunctionOp) hop, memo);
+			rRewriteStatementBlock(sbFuncBlock, funcFedVars);
+			mapFunctionOutputs((FunctionOp) hop, funcStatement, funcFedVars, fedVars);
+		}
+		else if( HopRewriteUtils.isData(hop, OpOpData.FEDERATED) )
 			memo.put(hop.getHopID(), deriveFType((DataOp)hop));
 		else if( HopRewriteUtils.isData(hop, OpOpData.TRANSIENTREAD) )
 			memo.put(hop.getHopID(), fedVars.get(hop.getName()));
+		else if( HopRewriteUtils.isData(hop, OpOpData.TRANSIENTWRITE) )
+			fedVars.put(hop.getName(), memo.get(hop.getHopID()));
 		else if( allowsFederated(hop, memo) ) {
 			hop.setForcedExecType(ExecType.FED);
 			memo.put(hop.getHopID(), getFederatedOut(hop, memo));
@@ -150,5 +164,24 @@ public class FederatedPlannerFedAll extends AFederatedPlanner {
 		}
 		else // memoization as processed, but not federated
 			memo.put(hop.getHopID(), null);
+	}
+
+	@NotNull
+	static private Map<String, FType> createFunctionFedVarTable(FunctionOp hop, Map<Long, FType> memo) {
+		Map<String, Hop> funcParamMap = FederatedPlannerUtils.getParamMap(hop);
+		Map<String, FType> funcFedVars = new HashMap<>();
+		funcParamMap.forEach((key, value) -> {
+			funcFedVars.put(key, memo.get(value.getHopID()));
+		});
+		return funcFedVars;
+	}
+
+	// TODO: Reduce code duplication. The general structure of the federated planners is similar, but memo tables are different.
+	private void mapFunctionOutputs(FunctionOp sbHop, FunctionStatement funcStatement,
+		Map<String, FType> funcFedVars, Map<String, FType> callFedVars) {
+		for(int i = 0; i < sbHop.getOutputVariableNames().length; ++i) {
+			FType outputFType = funcFedVars.get(funcStatement.getOutputParams().get(i).getName());
+			callFedVars.put(sbHop.getOutputVariableNames()[i], outputFType);
+		}
 	}
 }

@@ -194,20 +194,24 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 				if(sbHop instanceof FunctionOp) {
 					String funcName = ((FunctionOp) sbHop).getFunctionName();
 					String funcNamespace = ((FunctionOp) sbHop).getFunctionNamespace();
-					Map<String, Hop> funcParamMap = FederatedPlannerUtils.getParamMap((FunctionOp) sbHop);
-					if ( paramMap != null && funcParamMap != null)
-						funcParamMap.putAll(paramMap);
-					paramMap = funcParamMap;
-					FunctionStatementBlock sbFuncBlock = prog.getFunctionDictionary(funcNamespace)
-						.getFunction(funcName);
-					rewriteStatementBlock(prog, sbFuncBlock, paramMap);
-
+					FunctionStatementBlock sbFuncBlock = prog.getFunctionDictionary(funcNamespace).getFunction(funcName);
 					FunctionStatement funcStatement = (FunctionStatement) sbFuncBlock.getStatement(0);
-					FederatedPlannerUtils.mapFunctionOutputs((FunctionOp) sbHop, funcStatement, transientWrites);
+
+					paramMap = createFunctionFedVarTable(paramMap, (FunctionOp) sbHop);
+					rewriteStatementBlock(prog, sbFuncBlock, paramMap);
+					FederatedPlannerUtils.mapFunctionOutputs((FunctionOp) sbHop, funcStatement);
 				}
 			}
 		}
 		return new ArrayList<>(Collections.singletonList(sb));
+	}
+
+	private Map<String, Hop> createFunctionFedVarTable(Map<String, Hop> paramMap, FunctionOp sbHop) {
+		Map<String, Hop> funcParamMap = FederatedPlannerUtils.getParamMap(sbHop);
+		if ( paramMap != null && funcParamMap != null)
+			funcParamMap.putAll(paramMap);
+		paramMap = funcParamMap;
+		return paramMap;
 	}
 
 	/**

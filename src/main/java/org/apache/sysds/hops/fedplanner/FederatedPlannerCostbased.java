@@ -197,21 +197,13 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 					FunctionStatementBlock sbFuncBlock = prog.getFunctionDictionary(funcNamespace).getFunction(funcName);
 					FunctionStatement funcStatement = (FunctionStatement) sbFuncBlock.getStatement(0);
 
-					paramMap = createFunctionFedVarTable(paramMap, (FunctionOp) sbHop);
+					paramMap = FederatedPlannerUtils.createFunctionFedVarTable(paramMap, (FunctionOp) sbHop);
 					rewriteStatementBlock(prog, sbFuncBlock, paramMap);
-					FederatedPlannerUtils.mapFunctionOutputs((FunctionOp) sbHop, funcStatement);
+					FederatedPlannerUtils.mapFunctionOutputs((FunctionOp) sbHop, funcStatement, transientWrites);
 				}
 			}
 		}
 		return new ArrayList<>(Collections.singletonList(sb));
-	}
-
-	private Map<String, Hop> createFunctionFedVarTable(Map<String, Hop> paramMap, FunctionOp sbHop) {
-		Map<String, Hop> funcParamMap = FederatedPlannerUtils.getParamMap(sbHop);
-		if ( paramMap != null && funcParamMap != null)
-			funcParamMap.putAll(paramMap);
-		paramMap = funcParamMap;
-		return paramMap;
 	}
 
 	/**

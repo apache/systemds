@@ -19,7 +19,6 @@
 
 package org.apache.sysds.hops.fedplanner;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +45,6 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Baseline federated planner that compiles all hops
@@ -166,7 +164,8 @@ public class FederatedPlannerFedAll extends AFederatedPlanner {
 			memo.put(hop.getHopID(), null);
 	}
 
-	@NotNull
+	// TODO: Reduce code duplication. See `createFunctionFedVarTable` and `mapFunctionOutputs` in
+	//  `FederationPlannerUtils.java`
 	static private Map<String, FType> createFunctionFedVarTable(FunctionOp hop, Map<Long, FType> memo) {
 		Map<String, Hop> funcParamMap = FederatedPlannerUtils.getParamMap(hop);
 		Map<String, FType> funcFedVars = new HashMap<>();
@@ -176,7 +175,6 @@ public class FederatedPlannerFedAll extends AFederatedPlanner {
 		return funcFedVars;
 	}
 
-	// TODO: Reduce code duplication. The general structure of the federated planners is similar, but memo tables are different.
 	private void mapFunctionOutputs(FunctionOp sbHop, FunctionStatement funcStatement,
 		Map<String, FType> funcFedVars, Map<String, FType> callFedVars) {
 		for(int i = 0; i < sbHop.getOutputVariableNames().length; ++i) {

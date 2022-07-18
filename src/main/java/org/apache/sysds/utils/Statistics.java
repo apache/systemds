@@ -392,12 +392,11 @@ public class Statistics
 	 */
 	@SuppressWarnings("unchecked")
 	public static String getHeavyHitters(int num) {
-		int len = _instStats.size();
-		if (num <= 0 || len <= 0)
+		if (num <= 0 || _instStats.size() <= 0)
 			return "-";
 
 		// get top k via sort
-		Entry<String, InstStats>[] tmp = _instStats.entrySet().toArray(new Entry[len]);
+		Entry<String, InstStats>[] tmp = _instStats.entrySet().toArray(Entry[]::new);
 		Arrays.sort(tmp, new Comparator<Entry<String, InstStats>>() {
 			@Override
 			public int compare(Entry<String, InstStats> e1, Entry<String, InstStats> e2) {
@@ -410,6 +409,7 @@ public class Statistics
 		final String timeSCol = "Time(s)";
 		final String countCol = "Count";
 		StringBuilder sb = new StringBuilder();
+		int len = tmp.length;
 		int numHittersToDisplay = Math.min(num, len);
 		int maxNumLen = String.valueOf(numHittersToDisplay).length();
 		int maxInstLen = instCol.length();
@@ -466,11 +466,10 @@ public class Statistics
 
 	@SuppressWarnings("unchecked")
 	public static String getCPHeavyHittersMem(int num) {
-		int n = _cpMemObjs.size();
-		if ((n <= 0) || (num <= 0))
+		if ((_cpMemObjs.size() <= 0) || (num <= 0))
 			return "-";
 
-		Entry<String,Double>[] entries = _cpMemObjs.entrySet().toArray(new Entry[_cpMemObjs.size()]);
+		Entry<String,Double>[] entries = _cpMemObjs.entrySet().toArray(Entry[]::new);
 		Arrays.sort(entries, new Comparator<Entry<String, Double>>() {
 			@Override
 			public int compare(Entry<String, Double> a, Entry<String, Double> b) {
@@ -478,6 +477,7 @@ public class Statistics
 			}
 		});
 
+		int n = entries.length;
 		int numHittersToDisplay = Math.min(num, n);
 		int numPadLen = String.format("%d", numHittersToDisplay).length();
 		int maxNameLength = 0;

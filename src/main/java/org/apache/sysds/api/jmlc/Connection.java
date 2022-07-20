@@ -112,8 +112,7 @@ public class Connection implements Closeable
 		this(new DMLConfig()); //with default dml configuration
 		
 		//set optional compiler configurations in current config
-		for( ConfigType configType : cconfigs )
-			_cconf.set(configType, true);
+		setConfigTypes(true, cconfigs);
 		setLocalConfigs();
 	}
 	
@@ -130,8 +129,7 @@ public class Connection implements Closeable
 		this(dmlconfig); 
 		
 		//set optional compiler configurations in current config
-		for( ConfigType configType : cconfigs )
-			_cconf.set(configType, true);
+		setConfigTypes(true, cconfigs);
 		setLocalConfigs();
 	}
 	
@@ -151,9 +149,7 @@ public class Connection implements Closeable
 		_cconf.set(ConfigType.IGNORE_READ_WRITE_METADATA, true);
 		_cconf.set(ConfigType.IGNORE_TEMPORARY_FILENAMES, true);
 		_cconf.set(ConfigType.REJECT_READ_WRITE_UNKNOWNS, false);
-		_cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
 		_cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
-		_cconf.set(ConfigType.CODEGEN_ENABLED, false);
 
 		//disable caching globally 
 		CacheableData.disableCaching();
@@ -162,6 +158,16 @@ public class Connection implements Closeable
 		_dmlconf = dmlconfig;
 		
 		setLocalConfigs();
+	}
+
+	/**
+	 * Sets compiler configs.
+	 * @param activate activate or disable
+	 * @param cconfigs the configs to set
+	 */
+	public void setConfigTypes(boolean activate, CompilerConfig.ConfigType... cconfigs) {
+		for( ConfigType configType : cconfigs )
+			_cconf.set(configType, activate);
 	}
 
 	/**

@@ -55,14 +55,7 @@ public class PythonDMLScript {
 		// we enable multi-threaded I/O and operations for a single JMLC
 		// connection because the calling Python process is unlikely to run
 		// multi-threaded streams of operations on the same shared context
-		_connection = new Connection(
-			CompilerConfig.ConfigType.PARALLEL_CP_READ_TEXTFORMATS,
-			CompilerConfig.ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS,
-			CompilerConfig.ConfigType.PARALLEL_CP_READ_BINARYFORMATS,
-			CompilerConfig.ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS,
-			CompilerConfig.ConfigType.PARALLEL_CP_MATRIX_OPERATIONS,
-			CompilerConfig.ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR,
-			CompilerConfig.ConfigType.ALLOW_DYN_RECOMPILATION);
+		_connection = new Connection();
 	}
 
 	public Connection getConnection() {

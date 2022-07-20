@@ -48,8 +48,8 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 
 	private static void runJMLCParFor2ForTest(boolean par) {
 		try {
-			Connection conn = !par ? new Connection() :
-				new Connection(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR);
+			Connection conn = new Connection();
+			conn.setConfigTypes(par, ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR);
 			String script =
 				"  X = rand(rows=10, cols=10);"
 				+ "R = matrix(0, rows=10, cols=1)"

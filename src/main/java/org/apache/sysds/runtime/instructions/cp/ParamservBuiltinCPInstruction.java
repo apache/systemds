@@ -87,6 +87,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		// check if the input is federated
+		// FIXME: does not work if features are federated, but labels are not
 		if(ec.getMatrixObject(getParam(PS_FEATURES)).isFederated() ||
 			ec.getMatrixObject(getParam(PS_LABELS)).isFederated()) {
 			runFederated(ec);

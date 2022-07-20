@@ -31,6 +31,7 @@ from subprocess import PIPE, Popen
 from threading import Thread
 from time import sleep
 from typing import Dict, Iterable, Sequence, Tuple, Union
+from contextlib import contextmanager
 
 import numpy as np
 import pandas as pd
@@ -51,8 +52,10 @@ class SystemDSContext(object):
     """
 
     java_gateway: JavaGateway
+    _capture_statistics: bool
+    _statistics: str
 
-    def __init__(self, port: int = -1):
+    def __init__(self, port: int = -1, capture_statistics: bool = False):
         """Starts a new instance of SystemDSContext, in which the connection to a JVM systemds instance is handled
         Any new instance of this SystemDS Context, would start a separate new JVM.
 
@@ -61,6 +64,8 @@ class SystemDSContext(object):
         """
         actual_port = self.__start(port)
         process = self.__process
+        self._statistics = ""
+        self._capture_statistics = capture_statistics
         if process.poll() is None:
             self.__start_gateway(actual_port)
         else:
@@ -305,6 +310,71 @@ class SystemDSContext(object):
         port = s.getsockname()[1]
         s.close()
         return port
+
+    def _execution_completed(self, script: 'DMLScript'):
+        """
+        Should/will be called after execution of a script.
+        Used to update statistics.
+        :param script: The script that got executed
+        """
+        if self._capture_statistics:
+            self._statistics += script.prepared_script.statistics()
+
+    def capture_stats(self, enable: bool = True):
+        """
+        Enable (or disable) capturing of execution statistics.
+        :param enable: if `True` enable capturing, else disable it
+        """
+        self._capture_statistics = enable
+        self.java_gateway.entry_point.getConnection().setStatistics(enable)
+
+    @contextmanager
+    def capture_stats_context(self):
+        """
+        Context for capturing statistics. Should be used in a `with` statement.
+        Afterwards capturing will be reset to the state it was before.
+
+        Example:
+        ```Python
+        with sds.capture_stats_context():
+            a = some_computation.compute()
+            b = another_computation.compute()
+        print(sds.take_stats())
+        ```
+        :return: a context object to be used in a `with` statement
+        """
+        was_enabled = self._capture_statistics
+        try:
+            self.capture_stats(True)
+            yield None
+        finally:
+            self.capture_stats(was_enabled)
+
+    def get_stats(self):
+        """
+        Get the captured statistics. Will not clear the captured statistics.
+
+        See `take_stats()` for an option that also clears the captured statistics.
+        :return: The captured statistics
+        """
+        return self._statistics
+
+    def take_stats(self):
+        """
+        Get the captured statistics and clear the captured statistics.
+
+        See `get_stats()` for an option that does not clear the captured statistics.
+        :return: The captured statistics
+        """
+        stats = self.get_stats()
+        self.clear_stats()
+        return stats
+
+    def clear_stats(self):
+        """
+        Clears the captured statistics.
+        """
+        self._statistics = ""
 
     def full(self, shape: Tuple[int, int], value: Union[float, int]) -> 'Matrix':
         """Generates a matrix completely filled with a value

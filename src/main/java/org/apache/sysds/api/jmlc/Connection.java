@@ -31,6 +31,7 @@ import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
@@ -111,8 +112,7 @@ public class Connection implements Closeable
 		this(new DMLConfig()); //with default dml configuration
 		
 		//set optional compiler configurations in current config
-		for( ConfigType configType : cconfigs )
-			_cconf.set(configType, true);
+		setConfigTypes(true, cconfigs);
 		setLocalConfigs();
 	}
 	
@@ -129,8 +129,7 @@ public class Connection implements Closeable
 		this(dmlconfig); 
 		
 		//set optional compiler configurations in current config
-		for( ConfigType configType : cconfigs )
-			_cconf.set(configType, true);
+		setConfigTypes(true, cconfigs);
 		setLocalConfigs();
 	}
 	
@@ -145,23 +144,13 @@ public class Connection implements Closeable
 		
 		//setup basic parameters for embedded execution
 		//(parser, compiler, and runtime parameters)
-		CompilerConfig cconf = new CompilerConfig();
-		cconf.set(ConfigType.IGNORE_UNSPECIFIED_ARGS, true);
-		cconf.set(ConfigType.IGNORE_READ_WRITE_METADATA, true);
-		cconf.set(ConfigType.IGNORE_TEMPORARY_FILENAMES, true);
-		cconf.set(ConfigType.REJECT_READ_WRITE_UNKNOWNS, false);
-		cconf.set(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, false);
-		cconf.set(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, false);
-		cconf.set(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, false);
-		cconf.set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
-		cconf.set(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS, false);
-		cconf.set(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR, false);
-		cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, false);
-		cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
-		cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
-		cconf.set(ConfigType.CODEGEN_ENABLED, false);
-		_cconf = cconf;
-		
+		_cconf = OptimizerUtils.constructCompilerConfig(dmlconfig);
+		_cconf.set(ConfigType.IGNORE_UNSPECIFIED_ARGS, true);
+		_cconf.set(ConfigType.IGNORE_READ_WRITE_METADATA, true);
+		_cconf.set(ConfigType.IGNORE_TEMPORARY_FILENAMES, true);
+		_cconf.set(ConfigType.REJECT_READ_WRITE_UNKNOWNS, false);
+		_cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
+
 		//disable caching globally 
 		CacheableData.disableCaching();
 		
@@ -169,6 +158,16 @@ public class Connection implements Closeable
 		_dmlconf = dmlconfig;
 		
 		setLocalConfigs();
+	}
+
+	/**
+	 * Sets compiler configs.
+	 * @param activate activate or disable
+	 * @param cconfigs the configs to set
+	 */
+	public void setConfigTypes(boolean activate, CompilerConfig.ConfigType... cconfigs) {
+		for( ConfigType configType : cconfigs )
+			_cconf.set(configType, activate);
 	}
 
 	/**

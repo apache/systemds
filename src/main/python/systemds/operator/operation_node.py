@@ -100,6 +100,8 @@ class OperationNode(DAGNode):
             else:
                 result_variables = self._script.execute()
 
+            self.sds_context._execution_completed(self._script)
+
             if result_variables is not None:
                 self._result_var = self._parse_output_result_variables(
                     result_variables)

@@ -451,6 +451,10 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 			LOG.debug("Fed map Inited:" + output.getFedMapping());
 	}
 
+	public static void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers) {
+		federateFrame(output, workers, null);
+	}
+
 	public static void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers, CacheBlock[] blocks) {
 		List<Pair<FederatedRange, FederatedData>> fedMapping = new ArrayList<>();
 		for(Pair<FederatedRange, FederatedData> e : workers)

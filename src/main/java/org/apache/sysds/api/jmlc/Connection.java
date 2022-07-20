@@ -150,6 +150,7 @@ public class Connection implements Closeable
 		_cconf.set(ConfigType.IGNORE_TEMPORARY_FILENAMES, true);
 		_cconf.set(ConfigType.REJECT_READ_WRITE_UNKNOWNS, false);
 		_cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
+		_cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
 
 		//disable caching globally 
 		CacheableData.disableCaching();

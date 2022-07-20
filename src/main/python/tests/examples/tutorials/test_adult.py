@@ -58,7 +58,7 @@ class TestAdultStandardML(unittest.TestCase):
 
     def test_train_labels(self):
         y = self.d.get_train_labels_pandas()
-        self.assertEqual((32561,), y.shape)
+        self.assertEqual((32561, 1), y.shape)
 
     def test_test_data(self):
         x_l = self.d.get_test_data_pandas()
@@ -66,7 +66,7 @@ class TestAdultStandardML(unittest.TestCase):
 
     def test_test_labels(self):
         y_l = self.d.get_test_labels_pandas()
-        self.assertEqual((16281,), y_l.shape)
+        self.assertEqual((16281, 1), y_l.shape)
 
     def test_train_data_pandas_vs_systemds(self):
         pandas = self.d.get_train_data_pandas()

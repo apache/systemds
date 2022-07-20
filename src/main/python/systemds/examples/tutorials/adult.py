@@ -63,7 +63,7 @@ class DataManager:
 
     def get_train_labels_pandas(self) -> pd.DataFrame:
         self._get_data(self._train_data_loc)
-        return self._parse_data(self._train_data_loc)["income"]
+        return self._parse_data(self._train_data_loc)[["income"]]
 
     def get_train_labels(self, sds: SystemDSContext) -> 'Frame':
         self._get_data(self._train_data_loc)
@@ -80,7 +80,7 @@ class DataManager:
 
     def get_test_labels_pandas(self) -> pd.DataFrame:
         self._get_data(self._test_data_loc)
-        return self._parse_data(self._test_data_loc)["income"]
+        return self._parse_data(self._test_data_loc)[["income"]]
 
     def get_test_labels(self, sds: SystemDSContext) -> 'Frame':
         self._get_data(self._test_data_loc)

@@ -31,8 +31,8 @@ from systemds.examples.tutorials.mnist import DataManager
 from systemds.operator.algorithm import kmeans, multiLogReg, multiLogRegPredict
 
 
-def convert_to_row_federated_dataset(name, dataset, num_parts=2,
-                                     federated_workers=None):
+def create_row_federated_dataset(name, dataset, num_parts=2,
+                                 federated_workers=None):
     if federated_workers is None:
         federated_workers = ["localhost:8001", "localhost:8002"]
     tempdir = "./tests/federated/tmp/test_federated_mnist/"
@@ -73,7 +73,7 @@ def convert_to_row_federated_dataset(name, dataset, num_parts=2,
     return federated_file
 
 
-class Test_DMLScript(unittest.TestCase):
+class TestFederatedMnist(unittest.TestCase):
     """
     Test class for mnist dml script tutorial code.
     """
@@ -97,14 +97,14 @@ class Test_DMLScript(unittest.TestCase):
         test_count = 5000
         # Train data
         np_train_data = self.d.get_train_data().reshape(60000, 28 * 28)[0:train_count]
-        data_path_train = convert_to_row_federated_dataset("train_data", np_train_data)
+        data_path_train = create_row_federated_dataset("train_data", np_train_data)
         X = self.sds.read(data_path_train)
         Y = self.sds.from_numpy(self.d.get_train_labels()[:train_count])
         Y = Y + 1.0
 
         # Test data
         np_test_data = self.d.get_test_data().reshape(10000, 28 * 28)[0:test_count]
-        data_path_test = convert_to_row_federated_dataset("test_data", np_test_data)
+        data_path_test = create_row_federated_dataset("test_data", np_test_data)
         Xt = self.sds.read(data_path_test)
         Yt = self.sds.from_numpy(self.d.get_test_labels()[:test_count])
         Yt = Yt + 1.0

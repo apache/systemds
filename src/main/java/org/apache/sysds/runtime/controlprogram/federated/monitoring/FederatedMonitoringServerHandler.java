@@ -29,6 +29,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.CharsetUtil;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.IController;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.CoordinatorController;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.StatisticsController;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.WorkerController;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 
@@ -44,6 +45,7 @@ public class FederatedMonitoringServerHandler extends SimpleChannelInboundHandle
 	{
 		_allControllers.put("/coordinators", new CoordinatorController());
 		_allControllers.put("/workers", new WorkerController());
+		_allControllers.put("/statistics", new StatisticsController());
 	}
 
 	private final static ThreadLocal<Request> _currentRequest = new ThreadLocal<>();

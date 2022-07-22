@@ -33,6 +33,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -53,6 +54,9 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.Fed
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.GCStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.LineageCacheStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.MultiTenantStatsCollection;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -96,9 +100,8 @@ public class FederatedStatistics {
 	private static final LongAdder fedPutLineageItems = new LongAdder();
 	private static final LongAdder fedSerializationReuseCount = new LongAdder();
 	private static final LongAdder fedSerializationReuseBytes = new LongAdder();
-	// Traffic between federated worker and a coordinator site
-	// in the form of [{ datetime, coordinatorAddress, transferredBytes }, { ... }] }
-	private static List<Triple<LocalDateTime, String, Long>> coordinatorsTrafficBytes = new ArrayList<>();
+	private static final List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
+	private static final List<JobModel> workerJobs = new ArrayList<>();
 
 	public static void logServerTraffic(long read, long written) {
 		bytesReceived.add(read);
@@ -109,7 +112,6 @@ public class FederatedStatistics {
 		fedBytesReceived.add(read);
 		fedBytesSent.add(written);
 	}
-
 
 	public static synchronized void incFederated(RequestType rqt, List<Object> data){
 		switch (rqt) {
@@ -164,7 +166,7 @@ public class FederatedStatistics {
 			transferredMatCharCount.increment();
 
 		if (host != null && byteAmount > 0) {
-			coordinatorsTrafficBytes.add(new ImmutableTriple<>(LocalDateTime.now(), host, byteAmount));
+			coordinatorsTrafficBytes.add(new TrafficModel(LocalDateTime.now(), host, byteAmount));
 		}
 	}
 
@@ -207,6 +209,7 @@ public class FederatedStatistics {
 		fedBytesReceived.reset();
 		//TODO merge with existing
 		coordinatorsTrafficBytes.clear();
+		workerJobs.clear();
 	}
 
 	public static String displayFedIOExecStatistics() {
@@ -346,8 +349,7 @@ public class FederatedStatistics {
 		sb.append("Transferred bytes (Host/Datetime/ByteAmount):\n");
 
 		for (var entry: coordinatorsTrafficBytes) {
-			sb.append(String.format("%s/%s/%d.\n",
-					entry.getLeft().format(DateTimeFormatter.ISO_DATE_TIME), entry.getMiddle(), entry.getRight()));
+			sb.append(String.format("%s/%s/%d.\n", entry.coordinatorAddress, entry.timestamp, entry.byteAmount));
 		}
 
 		return sb.toString();
@@ -475,8 +477,16 @@ public class FederatedStatistics {
 		return fedLookupTableGetCount.longValue();
 	}
 
-	public static List<Triple<LocalDateTime, String, Long>> getCoordinatorsTrafficBytes() {
+	public static List<TrafficModel> getCoordinatorsTrafficBytes() {
 		return coordinatorsTrafficBytes;
+	}
+
+	public static List<JobModel> getWorkerJobs() {
+		return workerJobs;
+	}
+
+	public static void addJob(JobModel job) {
+		workerJobs.add(job);
 	}
 
 	public static double getCPUUsage() {
@@ -657,6 +667,7 @@ public class FederatedStatistics {
 			mtStats.collectStats();
 			heavyHitters = Statistics.getHeavyHittersHashMap();
 			coordinatorsTrafficBytes = getCoordinatorsTrafficBytes();
+			workerJobs = getWorkerJobs();
 		}
 		
 		public void aggregate(FedStatsCollection that) {
@@ -671,7 +682,8 @@ public class FederatedStatistics {
 				(key, value) -> heavyHitters.merge(key, value, (v1, v2) ->
 					new ImmutablePair<>(v1.getLeft() + v2.getLeft(), v1.getRight() + v2.getRight()))
 			);
-			that.coordinatorsTrafficBytes.addAll(coordinatorsTrafficBytes);
+			coordinatorsTrafficBytes.addAll(that.coordinatorsTrafficBytes);
+			workerJobs.addAll(that.workerJobs);
 		}
 
 		protected static class CacheStatsCollection implements Serializable {
@@ -825,6 +837,7 @@ public class FederatedStatistics {
 		private LineageCacheStatsCollection linCacheStats = new LineageCacheStatsCollection();
 		private MultiTenantStatsCollection mtStats = new MultiTenantStatsCollection();
 		public HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
-		public List<Triple<LocalDateTime, String, Long>> coordinatorsTrafficBytes = new ArrayList<>();
+		public List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
+		public List<JobModel> workerJobs = new ArrayList<>();
 	}
 }

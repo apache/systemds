@@ -17,23 +17,32 @@
  * under the License.
  */
 
+package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories;
+public class CoordinatorModel extends BaseModel {
+	public String name;
+	public String address;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel;
+	public CoordinatorModel(final Long id) {
+		this.id = id;
+	}
 
-import java.util.List;
+	public CoordinatorModel() {
+		this(-1L);
+	}
 
-public interface IRepository {
-	<T extends BaseModel> Long createEntity(T model);
+	public CoordinatorModel(final Long id, final String name, final String address) {
+		this.id = id;
+		this.name = name;
+		this.address = address;
+	}
 
-	<T extends BaseModel> T getEntity(Long id, Class<T> type);
-
-	<T extends BaseModel> List<T> getAllEntities(Class<T> type);
-	<T extends BaseModel> List<T> getAllEntitiesByField(String fieldName, Object value, Class<T> type);
-
-	<T extends BaseModel> List<T> getAllEntitiesByField(String fieldName, Object value, Class<T> type, int rowCount);
-	<T extends BaseModel> void updateEntity(T model);
-
-	<T extends BaseModel> void removeEntity(Long id, Class<T> type);
+	@Override
+	public String toString() {
+		return String.format("{" +
+				"\"id\": %d," +
+				"\"name\": \"%s\"," +
+				"\"address\": \"%s\"" +
+				"}", super.id, this.name, this.address);
+	}
 }

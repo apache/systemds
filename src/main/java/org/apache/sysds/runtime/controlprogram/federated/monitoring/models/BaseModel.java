@@ -17,10 +17,8 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories;
+package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-public enum EntityEnum {
-	WORKER,
-	WORKER_STATS,
-	COORDINATOR
+public abstract class BaseModel {
+	public Long id;
 }

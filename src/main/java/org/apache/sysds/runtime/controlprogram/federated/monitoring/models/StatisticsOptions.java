@@ -19,4 +19,11 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-public abstract class BaseEntityModel { }
+public class StatisticsOptions extends BaseModel {
+	public StatisticsOptions() { }
+
+	public int rowCount = 20;
+	public boolean utilization = true;
+	public boolean traffic = true;
+	public boolean jobs = true;
+}

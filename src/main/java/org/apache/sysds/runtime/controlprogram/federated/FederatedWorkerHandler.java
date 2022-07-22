@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
@@ -49,6 +50,8 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobStageModel;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -188,6 +191,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			
 		FederatedResponse response = null; // last response
 		boolean containsCLEAR = false;
+
+		var job = new JobModel();
+		job.setCoordinatorAddress(remoteHost);
+
 		for(int i = 0; i < requests.length; i++) {
 			final FederatedRequest request = requests[i];
 			final RequestType t = request.getType();
@@ -197,13 +204,17 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
 			PrivacyMonitor.clearCheckedConstraints();
 
+			var jobStage = new JobStageModel();
 			// execute command and handle privacy constraints
-			final FederatedResponse tmp = executeCommand(request, ecm);
+			final FederatedResponse tmp = executeCommand(request, ecm, jobStage);
 			conditionalAddCheckedConstraints(request, tmp);
+
+			job.stages.add(jobStage);
 
 			// select the response
 			if(!tmp.isSuccessful()) {
 				LOG.error("Command " + t + " resulted in error:\n" + tmp.getErrorMessage());
+				FederatedStatistics.addJob(job);
 				return tmp; // Return first error without executing anything further
 			}
 			else if(t == RequestType.GET_VAR) {
@@ -211,6 +222,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				if(response != null) {
 					String message = "Multiple GET_VAR are not supported in single batch of requests.";
 					LOG.error(message);
+					FederatedStatistics.addJob(job);
 					throw new FederatedWorkerHandlerException(message);
 				}
 				response = tmp;
@@ -242,6 +254,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			printStatistics();
 		}
 
+		FederatedStatistics.addJob(job);
+
 		return response;
 	}
 
@@ -265,28 +279,44 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			response.setCheckedConstraints(PrivacyMonitor.getCheckedConstraints());
 	}
 
-	private FederatedResponse executeCommand(FederatedRequest request, ExecutionContextMap ecm)
+	private FederatedResponse executeCommand(FederatedRequest request, ExecutionContextMap ecm, JobStageModel jobStage)
 		throws DMLPrivacyException, FederatedWorkerHandlerException, Exception {
 		final RequestType method = request.getType();
+		FederatedResponse result = null;
+
+		jobStage.stageType = method.name();
+		jobStage.startTime = LocalDateTime.now();
+
 		switch(method) {
 			case READ_VAR:
-				return readData(request, ecm); // matrix/frame
+				result = readData(request, ecm); // matrix/frame
+				break;
 			case PUT_VAR:
-				return putVariable(request, ecm);
+				result = putVariable(request, ecm);
+				break;
 			case GET_VAR:
-				return getVariable(request, ecm);
+				result = getVariable(request, ecm);
+				break;
 			case EXEC_INST:
-				return execInstruction(request, ecm);
+				result = execInstruction(request, ecm, jobStage);
+				break;
 			case EXEC_UDF:
-				return execUDF(request, ecm);
+				result = execUDF(request, ecm);
+				break;
 			case CLEAR:
-				return execClear(ecm);
+				result = execClear(ecm);
+				break;
 			case NOOP:
-				return execNoop();
+				result = execNoop();
+				break;
 			default:
 				String message = String.format("Method %s is not supported.", method);
 				throw new FederatedWorkerHandlerException(message);
 		}
+
+		jobStage.endTime = LocalDateTime.now();
+
+		return result;
 	}
 
 	private FederatedResponse readData(FederatedRequest request, ExecutionContextMap ecm) {
@@ -497,8 +527,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private FederatedResponse execInstruction(FederatedRequest request, ExecutionContextMap ecm) throws Exception {
+	private FederatedResponse execInstruction(FederatedRequest request, ExecutionContextMap ecm, JobStageModel jobStage) throws Exception {
 		final Instruction ins = InstructionParser.parseSingleInstruction((String) request.getParam(0));
+
+		jobStage.addInstructionToStage(ins.getInstructionString(), LocalDateTime.now());
+
 		final long tid = request.getTID();
 		final ExecutionContext ec = getContextForInstruction(tid, ins, ecm);
 		setThreads(ins);

@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
 import io.netty.handler.codec.http.FullHttpResponse;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
@@ -32,7 +33,7 @@ public class WorkerController implements IController {
 	@Override
 	public FullHttpResponse create(Request request) {
 
-		var model = MapperService.getModelFromBody(request);
+		var model = MapperService.getModelFromBody(request, WorkerModel.class);
 
 		_workerService.create(model);
 
@@ -41,7 +42,7 @@ public class WorkerController implements IController {
 
 	@Override
 	public FullHttpResponse update(Request request, Long objectId) {
-		var model = MapperService.getModelFromBody(request);
+		var model = MapperService.getModelFromBody(request, WorkerModel.class);
 
 		_workerService.update(model);
 

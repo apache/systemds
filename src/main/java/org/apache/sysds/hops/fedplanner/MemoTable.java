@@ -161,10 +161,14 @@ public class MemoTable {
 			.orElseThrow(() -> new DMLRuntimeException("FType not found in memo"));
 	}
 
+	public int getSize(){
+		return hopRelMemo.size();
+	}
+
 	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
-		sb.append("Federated MemoTable has ").append(hopRelMemo.size()).append(" entries with the following values:");
+		sb.append("Federated MemoTable has ").append(getSize()).append(" entries with the following values:");
 		sb.append("\n").append("{").append("\n");
 		for (Map.Entry<Long,List<HopRel>> hopEntry : hopRelMemo.entrySet()){
 			sb.append("  ").append(hopEntry.getKey()).append(":").append("\n");

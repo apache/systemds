@@ -19,35 +19,40 @@
 #
 #-------------------------------------------------------------
 
-# This function is a Prediction function for a Gaussian Mixture Model (gmm).
-#
-# compute posterior probabilities for new instances given the variance and mean of fitted data
+# Prediction function for a Gaussian Mixture Model (gmm).
+# Compute posterior probabilities for new instances given the variance and mean of fitted dat.
 #
 # INPUT:
 # ------------------------------------------------------------------------------------------
-# X                     Matrix X (instances to be clustered)
-# weight                Weight of learned model
-# mu                    fitted clusters mean
-# precisions_cholesky   fitted precision matrix for each mixture
-# model                 fitted model
+# X                     Dataset input to predict the labels from
+# weight                Weight of learned model:
+#                       A matrix whose [i,k]th entry is the probability
+#                       that observation i in the test data belongs to the kth class
+# mu                    Fitted clusters mean
+# precisions_cholesky   Fitted precision matrix for each mixture
+# model                 "VVV": unequal variance (full),each component has its own general covariance matrix
+#                       "EEE": equal variance (tied), all components share the same general covariance matrix
+#                       "VVI": spherical, unequal volume (diag), each component has its own diagonal
+#                       covariance matrix
+#                       "VII": spherical, equal volume (spherical), each component has its own single variance
 # ------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ---------------------------------------------------------------------------------------------------
-# predict         predicted cluster labels
-# posterior_prob  probabilities of belongingness
+# labels         The predictions made by the gaussian model on the X input dataset
+# predict_prob   Probability of the predictions given the X input dataset
 # ---------------------------------------------------------------------------------------------------
 
 m_gmmPredict = function(Matrix[Double] X, Matrix[Double] weight,
   Matrix[Double] mu, Matrix[Double] precisions_cholesky, String model = "VVV")
-  return(Matrix[Double] predict, Matrix[Double] posterior_prob)
+  return(Matrix[Double] labels, Matrix[Double] predict_prob)
 {
   # compute the posterior probabilities for new instances
   weighted_log_prob =  compute_log_gaussian_prob(X, mu, precisions_cholesky, model) + log(weight)
   log_prob_norm = logSumExp(weighted_log_prob, "rows")
   log_resp = weighted_log_prob - log_prob_norm
-  posterior_prob = exp(log_resp)
-  predict =  rowIndexMax(weighted_log_prob)
+  predict_prob = exp(log_resp)
+  labels =  rowIndexMax(weighted_log_prob)
 }
 
 compute_log_gaussian_prob = function(Matrix[Double] X, Matrix[Double] mu,

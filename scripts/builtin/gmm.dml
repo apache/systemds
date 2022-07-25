@@ -19,33 +19,38 @@
 #
 #-------------------------------------------------------------
 
-# The gmm-function implements builtin Gaussian Mixture Model with four different types of covariance matrices
+# Gaussian Mixture Model training algorithm.
+# There are four different types of covariance matrices
 # i.e., VVV, EEE, VVI, VII and two initialization methods namely "kmeans" and "random".
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# X             Matrix X
-# n_components  Number of n_components in the Gaussian mixture model
+# X             Dataset input to fit the GMM model
+# n_components  Number of components to use in the Gaussian mixture model
 # model         "VVV": unequal variance (full),each component has its own general covariance matrix
 #               "EEE": equal variance (tied), all components share the same general covariance matrix
 #               "VVI": spherical, unequal volume (diag), each component has its own diagonal
 #               covariance matrix
 #               "VII": spherical, equal volume (spherical), each component has its own single variance
-# init_param    initialize weights with "kmeans" or "random"
+# init_param    Initialization algorithm to use to initialize the gaussian weights, valid inputs are:
+#               "kmeans" or "random"
 # iterations    Number of iterations
-# reg_covar     regularization parameter for covariance matrix
-# tol           tolerance value for convergence
+# reg_covar     Regularization parameter for covariance matrix
+# tol           Tolerance value for convergence
+# seed          The seed value to initialize the values for fitting the GMM.
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------------------------
-# labels        Prediction matrix
-# predict_prob  Probability of the predictions
+# labels        The predictions made by the gaussian model on the X input dataset
+# predict_prob  Probability of the predictions given the X input dataset
 # df            Number of estimated parameters
 # bic           Bayesian information criterion for best iteration
-# mu            fitted clusters mean
-# weight        A matrix whose [i,k]th entry is the probability that observation i in the test data
-#               belongs to the kth class
+# mu            Fitted clusters mean
+# prec_chol     Fitted precision matrix for each mixture
+# weight        The weight matrix:
+#               A matrix whose [i,k]th entry is the probability
+#               that observation i in the test data belongs to the kth class
 # -----------------------------------------------------------------------------------------------
 
 m_gmm = function(Matrix[Double] X, Integer n_components = 3, String model = "VVV", String init_params = "kmeans", 

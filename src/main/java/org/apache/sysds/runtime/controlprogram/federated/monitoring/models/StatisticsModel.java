@@ -25,22 +25,22 @@ import java.util.stream.Collectors;
 public class StatisticsModel extends BaseModel {
 	public List<UtilizationModel> utilization;
 	public List<TrafficModel> traffic;
-	public List<JobModel> jobs;
+	public List<EventModel> events;
 
 	public StatisticsModel() { }
 
 	public StatisticsModel(List<UtilizationModel> utilization,
 						   List<TrafficModel> traffic,
-						   List<JobModel> jobs) {
+						   List<EventModel> jobs) {
 		this.utilization = utilization;
 		this.traffic = traffic;
-		this.jobs = jobs;
+		this.events = jobs;
 	}
 
 
 	@Override
 	public String toString() {
-		String utilizationStr = null, trafficStr = null, jobsStr = null;
+		String utilizationStr = null, trafficStr = null, eventsStr = null;
 
 		if (utilization != null) {
 			utilizationStr = utilization.stream()
@@ -54,16 +54,16 @@ public class StatisticsModel extends BaseModel {
 					.collect(Collectors.joining(","));
 		}
 
-		if (jobs != null) {
-			jobsStr = jobs.stream()
-					.map(JobModel::toString)
+		if (events != null) {
+			eventsStr = events.stream()
+					.map(EventModel::toString)
 					.collect(Collectors.joining(","));
 		}
 
 		return String.format("{" +
 			"\"utilization\": [%s]," +
 			"\"traffic\": [%s]," +
-			"\"jobs\": [%s]" +
-			"}", utilizationStr, trafficStr, jobsStr);
+			"\"events\": [%s]" +
+			"}", utilizationStr, trafficStr, eventsStr);
 	}
 }

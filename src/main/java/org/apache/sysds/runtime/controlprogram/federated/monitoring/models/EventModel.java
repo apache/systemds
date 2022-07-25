@@ -24,27 +24,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class JobModel extends BaseModel implements Serializable {
+public class EventModel extends BaseModel implements Serializable {
 
 	public Long workerId;
 	public Long coordinatorId;
 	private String coordinatorAddress;
-	public List<JobStageModel> stages;
+	public List<EventStageModel> stages;
 
-	public JobModel() {
+	public EventModel() {
 		this(-1L);
 	}
 
-	private JobModel(final Long id) {
+	private EventModel(final Long id) {
 		this.id = id;
 		this.stages = new ArrayList<>();
 	}
 
-	public JobModel(final Long workerId, final Long coordinatorId) {
+	public EventModel(final Long workerId, final Long coordinatorId) {
 		this(-1L, workerId, coordinatorId);
 	}
 
-	public JobModel(final Long id, final Long workerId, final Long coordinatorId) {
+	public EventModel(final Long id, final Long workerId, final Long coordinatorId) {
 		this.id = id;
 		this.workerId = workerId;
 		this.coordinatorId = coordinatorId;
@@ -62,7 +62,7 @@ public class JobModel extends BaseModel implements Serializable {
 	@Override
 	public String toString() {
 		String stagesStr = this.stages.stream()
-				.map(JobStageModel::toString)
+				.map(EventStageModel::toString)
 				.collect(Collectors.joining(","));
 
 		return String.format("{" +

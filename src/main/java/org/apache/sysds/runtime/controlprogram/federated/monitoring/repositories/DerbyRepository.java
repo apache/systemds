@@ -21,8 +21,8 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositorie
 
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
@@ -47,8 +47,8 @@ public class DerbyRepository implements IRepository {
 			new CoordinatorModel(),
 			new UtilizationModel(),
 			new TrafficModel(),
-			new JobModel(),
-			new JobStageModel()
+			new EventModel(),
+			new EventStageModel()
 	));
 	private static final String ENTITY_SCHEMA_CREATE_STMT = "CREATE TABLE %s " +
 			"(id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)";

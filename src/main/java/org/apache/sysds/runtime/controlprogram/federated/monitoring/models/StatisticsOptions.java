@@ -25,5 +25,5 @@ public class StatisticsOptions extends BaseModel {
 	public int rowCount = 20;
 	public boolean utilization = true;
 	public boolean traffic = true;
-	public boolean jobs = true;
+	public boolean events = true;
 }

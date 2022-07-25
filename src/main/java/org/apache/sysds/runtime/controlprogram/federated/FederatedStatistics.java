@@ -26,23 +26,19 @@ import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -54,8 +50,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.Fed
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.GCStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.LineageCacheStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.MultiTenantStatsCollection;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -101,7 +96,7 @@ public class FederatedStatistics {
 	private static final LongAdder fedSerializationReuseCount = new LongAdder();
 	private static final LongAdder fedSerializationReuseBytes = new LongAdder();
 	private static final List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
-	private static final List<JobModel> workerJobs = new ArrayList<>();
+	private static final List<EventModel> workerJobs = new ArrayList<>();
 
 	public static void logServerTraffic(long read, long written) {
 		bytesReceived.add(read);
@@ -481,11 +476,11 @@ public class FederatedStatistics {
 		return coordinatorsTrafficBytes;
 	}
 
-	public static List<JobModel> getWorkerJobs() {
+	public static List<EventModel> getWorkerJobs() {
 		return workerJobs;
 	}
 
-	public static void addJob(JobModel job) {
+	public static void addJob(EventModel job) {
 		workerJobs.add(job);
 	}
 
@@ -838,6 +833,6 @@ public class FederatedStatistics {
 		private MultiTenantStatsCollection mtStats = new MultiTenantStatsCollection();
 		public HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
 		public List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
-		public List<JobModel> workerJobs = new ArrayList<>();
+		public List<EventModel> workerJobs = new ArrayList<>();
 	}
 }

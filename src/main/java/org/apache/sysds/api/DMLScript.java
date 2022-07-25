@@ -140,6 +140,7 @@ public class DMLScript
 
 	// Global seed 
 	public static int               SEED                 = -1;
+	public static int               PORT                 = -1;
 
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -260,7 +261,8 @@ public class DMLScript
 			LINEAGE_ESTIMATE      = dmlOptions.lineage_estimate;
 			CHECK_PRIVACY         = dmlOptions.checkPrivacy;
 			LINEAGE_DEBUGGER      = dmlOptions.lineage_debugger;
-			SEED                  = dmlOptions.seed; 
+			SEED                  = dmlOptions.seed;
+			PORT                  = dmlOptions.addressPort;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;

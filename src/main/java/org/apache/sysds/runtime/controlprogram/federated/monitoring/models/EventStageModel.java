@@ -28,31 +28,31 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class JobStageModel extends BaseModel implements Serializable {
+public class EventStageModel extends BaseModel implements Serializable {
 
-	public Long jobId;
+	public Long eventId;
 	public String stageType;
 	public LocalDateTime startTime;
 	public LocalDateTime endTime;
 	public String data;
 	private final List<Pair<String, LocalDateTime>> instructions;
 
-	public JobStageModel() {
+	public EventStageModel() {
 		this(-1L);
 	}
 
-	private JobStageModel(final Long id) {
+	private EventStageModel(final Long id) {
 		this.id = id;
 		this.instructions = new ArrayList<>();
 	}
 
-	public JobStageModel(final Long jobId, final String stageType, final String data) {
+	public EventStageModel(final Long jobId, final String stageType, final String data) {
 		this(-1L, jobId, stageType, data);
 	}
 
-	public JobStageModel(final Long id, final Long jobId, final String stageType, final String data) {
+	public EventStageModel(final Long id, final Long eventId, final String stageType, final String data) {
 		this.id = id;
-		this.jobId = jobId;
+		this.eventId = eventId;
 		this.stageType = stageType;
 		this.data = data;
 		this.instructions = new ArrayList<>();

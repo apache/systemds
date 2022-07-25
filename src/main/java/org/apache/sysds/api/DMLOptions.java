@@ -75,6 +75,7 @@ public class DMLOptions {
 	public int                  fedWorkerPort = -1;
 	public boolean              fedMonitoring = false;
 	public int                  fedMonitoringPort = -1;
+	public int					addressPort = -1;
 	public int                  pythonPort    = -1;
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
 	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
@@ -98,6 +99,7 @@ public class DMLOptions {
 			", fedStats=" + fedStats +
 			", fedStatsCount=" + fedStatsCount +
 			", fedMonitor=" + fedMonitoring +
+			", port=" + addressPort +
 			", memStats=" + memStats +
 			", explainType=" + explainType +
 			", execMode=" + execMode +
@@ -247,6 +249,10 @@ public class DMLOptions {
 			dmlOptions.script = line.getOptionValue("s");
 		}
 
+		if (line.hasOption("port")){
+			dmlOptions.addressPort = Integer.parseInt(line.getOptionValue("port"));
+		}
+
 		// Positional arguments map is created as ("$1", "a"), ("$2", 123), etc
 		if (line.hasOption("args")){
 			String[] argValues = line.getOptionValues("args");
@@ -348,6 +354,9 @@ public class DMLOptions {
 		Option pythonOpt = OptionBuilder
 			.withDescription("Python Context start with port argument for communication to python")
 			.isRequired().hasArg().create("python");
+		Option addressOpt = OptionBuilder
+				.withDescription("Coordinator Context start with port argument for communication to workers")
+				.isRequired().hasArg().create("port");
 		Option fileOpt = OptionBuilder.withArgName("filename")
 			.withDescription("specifies dml/pydml file to execute; path can be local/hdfs/gpfs (prefixed with appropriate URI)")
 			.isRequired().hasArg().create("f");
@@ -406,7 +415,8 @@ public class DMLOptions {
 			.addOption(helpOpt)
 			.addOption(fedOpt)
 			.addOption(monitorOpt)
-			.addOption(pythonOpt);
+			.addOption(pythonOpt)
+			.addOption(addressOpt);
 		fileOrScriptOpt.setRequired(true);
 		options.addOptionGroup(fileOrScriptOpt);
 		

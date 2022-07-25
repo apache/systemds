@@ -24,10 +24,9 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
@@ -55,11 +54,11 @@ public class StatisticsService {
 			stats.traffic = _entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, TrafficModel.class, options.rowCount);
 		}
 
-		if (options.jobs) {
-			stats.jobs = _entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, JobModel.class, options.rowCount);
+		if (options.events) {
+			stats.events = _entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, EventModel.class, options.rowCount);
 
-			for (var job: stats.jobs) {
-				job.stages = _entityRepository.getAllEntitiesByField(Constants.ENTITY_JOB_ID_COL, job.id, JobStageModel.class);
+			for (var event: stats.events) {
+				event.stages = _entityRepository.getAllEntitiesByField(Constants.ENTITY_JOB_ID_COL, event.id, EventStageModel.class);
 			}
 		}
 

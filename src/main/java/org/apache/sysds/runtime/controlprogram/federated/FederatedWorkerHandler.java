@@ -50,8 +50,8 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -192,7 +192,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		FederatedResponse response = null; // last response
 		boolean containsCLEAR = false;
 
-		var job = new JobModel();
+		var job = new EventModel();
 		job.setCoordinatorAddress(remoteHost);
 
 		for(int i = 0; i < requests.length; i++) {
@@ -204,7 +204,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
 			PrivacyMonitor.clearCheckedConstraints();
 
-			var jobStage = new JobStageModel();
+			var jobStage = new EventStageModel();
 			// execute command and handle privacy constraints
 			final FederatedResponse tmp = executeCommand(request, ecm, jobStage);
 			conditionalAddCheckedConstraints(request, tmp);
@@ -279,7 +279,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			response.setCheckedConstraints(PrivacyMonitor.getCheckedConstraints());
 	}
 
-	private FederatedResponse executeCommand(FederatedRequest request, ExecutionContextMap ecm, JobStageModel jobStage)
+	private FederatedResponse executeCommand(FederatedRequest request, ExecutionContextMap ecm, EventStageModel jobStage)
 		throws DMLPrivacyException, FederatedWorkerHandlerException, Exception {
 		final RequestType method = request.getType();
 		FederatedResponse result = null;
@@ -527,7 +527,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private FederatedResponse execInstruction(FederatedRequest request, ExecutionContextMap ecm, JobStageModel jobStage) throws Exception {
+	private FederatedResponse execInstruction(FederatedRequest request, ExecutionContextMap ecm, EventStageModel jobStage) throws Exception {
 		final Instruction ins = InstructionParser.parseSingleInstruction((String) request.getParam(0));
 
 		jobStage.addInstructionToStage(ins.getInstructionString(), LocalDateTime.now());

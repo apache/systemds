@@ -104,13 +104,12 @@ public class WorkerService {
 						_entityRepository.createEntity(trafficEntity);
 					}
 				}
-				if (stats.jobs != null) {
-					for (var jobEntity: stats.jobs) {
-						var jobId = _entityRepository.createEntity(jobEntity);
+				if (stats.events != null) {
+					for (var eventEntity: stats.events) {
+						var jobId = _entityRepository.createEntity(eventEntity);
 
-						for (var stageEntity: jobEntity.stages) {
-							stageEntity.jobId = jobId;
-							System.out.println(stageEntity);
+						for (var stageEntity: eventEntity.stages) {
+							stageEntity.eventId = jobId;
 
 							_entityRepository.createEntity(stageEntity);
 						}

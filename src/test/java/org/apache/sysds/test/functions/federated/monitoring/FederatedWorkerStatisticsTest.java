@@ -19,11 +19,10 @@
 
 package org.apache.sysds.test.functions.federated.monitoring;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.JobStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.StatisticsService;
@@ -70,7 +69,7 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 
 	@Test
 	public void testNonExistentWorkerStatistics() {
-		var bla = new JobModel(1L, -1L);
+		var bla = new EventModel(1L, -1L);
 		var derby = new DerbyRepository();
 
 		var in1 = derby.createEntity(bla);
@@ -78,9 +77,9 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 		var in3 = derby.createEntity(bla);
 		var in4 = derby.createEntity(bla);
 
-		var shit = derby.getEntity(in3, JobModel.class);
+		var shit = derby.getEntity(in3, EventModel.class);
 
-		var stage = new JobStageModel();
+		var stage = new EventStageModel();
 
 
 		workerMonitoringService.create(new WorkerModel(1L, "Worker", "localhost:8001"));

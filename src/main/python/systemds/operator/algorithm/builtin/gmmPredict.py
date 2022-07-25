@@ -35,19 +35,24 @@ def gmmPredict(X: Matrix,
                precisions_cholesky: Matrix,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-     This function is a Prediction function for a Gaussian Mixture Model (gmm).
-    
-     compute posterior probabilities for new instances given the variance and mean of fitted data
-    
+     Prediction function for a Gaussian Mixture Model (gmm).
+     Compute posterior probabilities for new instances given the variance and mean of fitted dat.
     
     
-    :param X: Matrix X (instances to be clustered)
-    :param weight: Weight of learned model
-    :param mu: fitted clusters mean
-    :param precisions_cholesky: fitted precision matrix for each mixture
-    :param model: fitted model
-    :return: predicted cluster labels
-    :return: probabilities of belongingness
+    
+    :param X: Dataset input to predict the labels from
+    :param weight: Weight of learned model:
+        A matrix whose [i,k]th entry is the probability
+        that observation i in the test data belongs to the kth class
+    :param mu: Fitted clusters mean
+    :param precisions_cholesky: Fitted precision matrix for each mixture
+    :param model: "VVV": unequal variance (full),each component has its own general covariance matrix
+        "EEE": equal variance (tied), all components share the same general covariance matrix
+        "VVI": spherical, unequal volume (diag), each component has its own diagonal
+        covariance matrix
+        "VII": spherical, equal volume (spherical), each component has its own single variance
+    :return: The predictions made by the gaussian model on the X input dataset
+    :return: Probability of the predictions given the X input dataset
     """
 
     params_dict = {'X': X, 'weight': weight, 'mu': mu, 'precisions_cholesky': precisions_cholesky}

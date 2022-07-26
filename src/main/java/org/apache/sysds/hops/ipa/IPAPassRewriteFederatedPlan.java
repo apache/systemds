@@ -24,6 +24,7 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FederatedPlanner;
 import org.apache.sysds.hops.fedplanner.PrivacyConstraintLoader;
+import org.apache.sysds.hops.fedplanner.PrivacyConstraintLoaderMock;
 import org.apache.sysds.parser.DMLProgram;
 
 /**
@@ -67,8 +68,18 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	}
 
 	private void loadPrivacyConstraints(DMLProgram prog, String splanner){
-		if (FederatedPlanner.isCompiled(splanner))
-			new PrivacyConstraintLoader().loadConstraints(prog);
+		if (FederatedPlanner.isCompiled(splanner)){
+			String privMock = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.PRIVACY_CONSTRAINT_MOCK);
+			if ( privMock == null )
+				new PrivacyConstraintLoader().loadConstraints(prog);
+			else if ( privMock.equals("mock_all") )
+				LOG.trace("Privacy Constraint retrieval mocked. " +
+					"Ignoring retrieval and propagation of constraints during compilation.");
+			else {
+				LOG.trace("Mocking privacy constraints with privacy level " + privMock);
+				new PrivacyConstraintLoaderMock(privMock).loadConstraints(prog);
+			}
+		}
 	}
 
 	private void generatePlan(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes, String splanner){

@@ -193,9 +193,9 @@ public class PrivacyConstraintLoader {
 
 	/**
 	 * Get privacy constraints from federated workers for DataOps.
-	 * @hop hop for which privacy constraints are loaded
+	 * @param hop for which privacy constraints are loaded
 	 */
-	private static void loadFederatedPrivacyConstraints(Hop hop){
+	public void loadFederatedPrivacyConstraints(Hop hop){
 		try {
 			PrivacyConstraint.PrivacyLevel constraintLevel = hop.getInput(0).getInput().stream().parallel()
 				.map( in -> ((LiteralOp)in).getStringValue() )

@@ -25,6 +25,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FederatedPlanner;
 import org.apache.sysds.hops.fedplanner.PrivacyConstraintLoader;
 import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 /**
  * This rewrite generates a federated execution plan by estimating and setting costs and the FederatedOutput values of
@@ -67,8 +68,15 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	}
 
 	private void loadPrivacyConstraints(DMLProgram prog, String splanner){
-		if (FederatedPlanner.isCompiled(splanner))
-			new PrivacyConstraintLoader().loadConstraints(prog);
+		if (FederatedPlanner.isCompiled(splanner)){
+			String privMock = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.PRIVACY_CONSTRAINT_MOCK);
+			if ( privMock == null )
+				new PrivacyConstraintLoader().loadConstraints(prog);
+			else if (privMock.equals(PrivacyConstraint.PrivacyLevel.None.name()))
+				LOG.trace("Privacy Constraint Mocked as None value");
+			else
+				LOG.trace("Privacy Constraint mock with config " + privMock + " not supported yet");
+		}
 	}
 
 	private void generatePlan(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes, String splanner){

@@ -211,7 +211,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	public DataCharacteristics getDataCharacteristics() {
 		return new MatrixCharacteristics(getNumRows(), getNumColumns(), -1);
 	}
-	
+
 	/**
 	 * Returns the schema of the frame block.
 	 *
@@ -640,6 +640,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			case INT64:   return ((LongArray)_coldata[c])._data;
 			case INT32:   return ((IntegerArray)_coldata[c])._data;
 			case FP64:    return ((DoubleArray)_coldata[c])._data;
+			case FP32:    return ((FloatArray)_coldata[c])._data;
 			default:      return null;
 	 	}
 	}
@@ -651,6 +652,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			case INT64:   return "Long";
 			case INT32:   return "Int";
 			case FP64:    return "Double";
+			case FP32:    return "Float";
 			default:      return null;
 	 	}
 	}
@@ -659,8 +661,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	 * Get a specific index as bytes, this method is used to parse the strings into Python.
 	 * It should only be used in columns where the datatype is String.
 	 * Since in other cases it might be faster to return other types.
-	 * 
-	 * Note that P 
+	 *
+	 * Note that P
 	 *
 	 * @param c The column index.
 	 * @param r The row index.
@@ -708,7 +710,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				ByteBuffer floatBuffer = ByteBuffer.allocate(8 * nRow);
 				floatBuffer.order(ByteOrder.nativeOrder());
 				for(int i = 0; i < nRow; i++)
-					floatBuffer.putDouble(colFloat[i]);
+					floatBuffer.putFloat(colFloat[i]);
 				return floatBuffer.array();
 			case BOOLEAN:
 				boolean[] colBool = ((BooleanArray)_coldata[c])._data;
@@ -987,6 +989,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				case BOOLEAN: size += _numRows; break;
 				case INT64:
 				case FP64: size += 8*_numRows; break;
+				case INT32:
+				case FP32: size += 4*_numRows; break;
 				case STRING:
 					StringArray arr = (StringArray)_coldata[j];
 					for( int i=0; i<_numRows; i++ )
@@ -1018,6 +1022,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				case BOOLEAN: size += _numRows; break;
 				case INT64:
 				case FP64: size += 8*_numRows; break;
+				case INT32:
+				case FP32: size += 4 * _numRows; break;
 				case STRING:
 					StringArray arr = (StringArray)_coldata[j];
 					for( int i=0; i<_numRows; i++ )
@@ -1213,7 +1219,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	public FrameBlock slice(int rl, int ru, int cl, int cu, CacheBlock retCache) {
 		return slice(rl, ru, cl, cu, false, retCache);
 	}
-	
+
 	/**
 	 * Right indexing operations to slice a subframe out of this frame block.
 	 * Note that the existing column value types are preserved.
@@ -2317,7 +2323,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		mergedFrame.appendRow(rowTemp1);
 		return mergedFrame;
 	}
-	
+
 	public void mapInplace(Function<String, String> fun) {
 		for(int j=0; j<getNumColumns(); j++)
 			for(int i=0; i<getNumRows(); i++) {
@@ -2518,7 +2524,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			return (FrameMapFunction) CodegenUtils.compileClass(cname, sb.toString())
 					.getDeclaredConstructor().newInstance();
 		}
-		catch(InstantiationException | IllegalAccessException 
+		catch(InstantiationException | IllegalAccessException
 			| IllegalArgumentException | InvocationTargetException
 			| NoSuchMethodException | SecurityException e) {
 			throw new DMLRuntimeException("Failed to compile FrameMapFunction.", e);
@@ -2592,7 +2598,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				return this;
 
 			int[] indices = DataConverter.convertVectorToIndexList(select);
-			
+
 			Object[] row = new Object[getNumColumns()];
 			for(int i : indices) {
 				for(int j = 0; j < getNumColumns(); j++)

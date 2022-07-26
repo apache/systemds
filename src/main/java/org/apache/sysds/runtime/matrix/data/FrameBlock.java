@@ -708,7 +708,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				ByteBuffer floatBuffer = ByteBuffer.allocate(8 * nRow);
 				floatBuffer.order(ByteOrder.nativeOrder());
 				for(int i = 0; i < nRow; i++)
-					floatBuffer.putDouble(colFloat[i]);
+					floatBuffer.putFloat(colFloat[i]);
 				return floatBuffer.array();
 			case BOOLEAN:
 				boolean[] colBool = ((BooleanArray)_coldata[c])._data;

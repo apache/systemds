@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.iogen;
 
 import com.google.gson.Gson;
-import org.apache.sysds.runtime.instructions.spark.AppendRSPInstruction;
 import org.apache.sysds.runtime.matrix.data.Pair;
 
 import java.util.ArrayList;

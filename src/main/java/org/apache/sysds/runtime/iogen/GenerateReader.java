@@ -61,6 +61,9 @@ public abstract class GenerateReader {
 		return "GIOReader_" + result;
 	}
 
+	public CustomProperties getProperties() {
+		return properties;
+	}
 
 	// Generate Reader for Matrix
 	public static class GenerateReaderMatrix extends GenerateReader {

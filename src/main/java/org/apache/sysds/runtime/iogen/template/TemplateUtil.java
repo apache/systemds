@@ -152,6 +152,7 @@ public class TemplateUtil {
 			while(true);
 			ri++;
 		}
+		result.add(new Pair<>(ri, 0));
 		return result;
 	}
 
@@ -188,8 +189,6 @@ public class TemplateUtil {
 		else
 			return null;
 	}
-
-
 	protected int getColIndex(HashMap<String, Integer> colKeyPatternMap, String key){
 		return colKeyPatternMap.getOrDefault(key, -1);
 	}

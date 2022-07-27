@@ -20,15 +20,7 @@
 package org.apache.sysds.test.functions.iogen;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.Lop;
-import org.apache.sysds.runtime.io.FrameReader;
-import org.apache.sysds.runtime.iogen.EXP.Util;
-import org.apache.sysds.runtime.iogen.GenerateReader;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.wink.json4j.JSONObject;
 import org.junit.Test;
-
-import java.io.IOException;
 
 public class FrameSingleRowNestedTest extends GenerateReaderFrameTest {
 
@@ -49,7 +41,7 @@ public class FrameSingleRowNestedTest extends GenerateReaderFrameTest {
 
 		data = new String[][] {{"1", "2"}, {"6", "7"}, {"11", "12"}};
 		schema = new Types.ValueType[] {Types.ValueType.INT32, Types.ValueType.INT32};
-		runGenerateReaderTest();
+		runGenerateReaderTest(false);
 	}
 
 	//2. flat object, out-of-order values, contain different value types
@@ -61,7 +53,7 @@ public class FrameSingleRowNestedTest extends GenerateReaderFrameTest {
 
 		data = new String[][] {{"1", "string"}, {"6", "string2"}, {"11", "string3"}};
 		schema = new Types.ValueType[] {Types.ValueType.INT32, Types.ValueType.STRING};
-		runGenerateReaderTest();
+		runGenerateReaderTest(false);
 	}
 	//3. nested object with unique attribute names
 	@Test
@@ -71,7 +63,7 @@ public class FrameSingleRowNestedTest extends GenerateReaderFrameTest {
 					"{\"a\":11,\"b\":{\"c\":12,\"d\":13,\"e\":14},\"f\":15}\n";
 		data = new String[][] {{"1", "2", "5"}, {"6", "7", "10"}, {"11", "12", "15"}};
 		schema = new Types.ValueType[] {Types.ValueType.INT32, Types.ValueType.STRING, Types.ValueType.FP64};
-		runGenerateReaderTest();
+		runGenerateReaderTest(false);
 	}
 
 	//5. nested object with repeated attribute names, out-of-order
@@ -83,82 +75,6 @@ public class FrameSingleRowNestedTest extends GenerateReaderFrameTest {
 		schema = new Types.ValueType[] {Types.ValueType.INT32, Types.ValueType.STRING, Types.ValueType.FP64,
 			Types.ValueType.FP32, Types.ValueType.INT64};
 		data = new String[][] {{"1", "2", "3", "4", "5"}, {"6", "7", "8", "9", "10"}, {"11", "12", "13", "14", "15"}};
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void test6() {
-		sampleRaw = "{\"index\":207,\"name\":\"Nuno Guimarães\",\"affiliations\":[\"ISCTEUniversity Institute of Lisbon, Lisbon, Portugal\"],\"paperCount\":1,\"citationNumber\":0,\"hIndex\":0.0,\"researchInterests\":[\"mental state\",\"mental workload\",\"higher mental workload\",\"mental load\",\"mental workload evaluation\",\"mental workload pattern\",\"ecological reading situation\",\"reading condition\",\"visual user interface\",\"EEG signal\"]}\n"+
-		"{\"index\":208,\"name\":\" Nguyen Minh Nhut\",\"affiliations\":[\"Data Mining Department, Institute for Infocomm Research (I2R), 1 Fusionopolis Way, Connexis (South Tower), Singapore 138632\"],\"paperCount\":1,\"citationNumber\":0,\"hIndex\":0.0,\"researchInterests\":[\"system health monitoring\",\"sensor node\",\"adaptive classification system architecture\",\"effective health monitoring system\",\"proposed system\",\"real-time adaptive classification system\",\"adaptive sampling frequency\",\"different sampling\",\"different sampling rate\",\"individual sensor\"]}\n\n"+
-		"{\"index\":209,\"name\":\"Louis Janus\",\"affiliations\":[\"\"],\"paperCount\":1,\"citationNumber\":0,\"hIndex\":0.0,\"researchInterests\":[\"language instruction\"]}";
-		schema = new Types.ValueType[] {Types.ValueType.INT32, Types.ValueType.STRING, Types.ValueType.FP64,
-			Types.ValueType.FP32, Types.ValueType.INT64};
-		data = new String[][] {{"1", "2", "3", "4", "5"}, {"6", "7", "8", "9", "10"}, {"11", "12", "13", "14", "15"}};
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void test7() {
-		String key = "\\aaa\"";
-		key = key.replace("\\\"", Lop.OPERAND_DELIMITOR);
-		key = key.replace("\\", "\\\\");
-		key = key.replace(Lop.OPERAND_DELIMITOR,"\\\"");
-		//System.out.println(key.length());
-
-		StringBuilder src = new StringBuilder();
-		src.append("index = str.indexOf(\"" +
-			key.replace("\\\"", "\"").replace("\"", "\\\"")
-
-			+ "\"); \n");
-
-		System.out.println(src);
-//		sampleRaw = "{\n\"a\":1,\n\"b\":2,\n\"c\":3,\n\"d\":4,\n\"e\":5\n}\n" +
-//			"{\"a\":6,\n\"b\":7,\"c\":8,\"d\":9,\"e\":10\n}\n" +
-//			"{\"a\":11,\"b\":12,\n\"c\":13,\"d\":14,\"e\":15\n}";
-//
-//		data = new String[][] {{"1", "2"}, {"6", "7"}, {"11", "12"}};
-//		schema = new Types.ValueType[] {Types.ValueType.INT32, Types.ValueType.INT32};
-//		runGenerateReaderTest();
-	}
-
-	@Test
-	public void test8() throws Exception {
-		//java -Xms15g -Xmx15g  -Dparallel=true -cp ./lib/*:./SystemDS.jar org.apache.sysds.runtime.iogen.EXP.GIOFrame
-		String dpath = "/home/sfathollahzadeh/Documents/GitHub/papers/2022-vldb-GIO/Experiments/";
-		String sampleRawFileName = dpath+"data/message-hl7/F173/sample-message-hl7200.raw";
-		String sampleFrameFileName = dpath+"data/message-hl7/F173/sample-message-hl7200.frame";
-		String sampleRawDelimiter = "\t";
-		String schemaFileName = dpath+"data/message-hl7/F173/message-hl7.schema";
-		String dataFileName = dpath+"data/message-hl7.dat";
-		boolean parallel = true;
-		long rows = -1;
-		Util util = new Util();
-
-		// read and parse mtd file
-		String mtdFileName = dataFileName + ".mtd";
-		try {
-			String mtd = util.readEntireTextFile(mtdFileName);
-			mtd = mtd.replace("\n", "").replace("\r", "");
-			mtd = mtd.toLowerCase().trim();
-			JSONObject jsonObject = new JSONObject(mtd);
-			if (jsonObject.containsKey("rows")) rows = jsonObject.getLong("rows");
-		} catch (Exception exception) {}
-
-		Types.ValueType[] sampleSchema = util.getSchema(schemaFileName);
-		int ncols = sampleSchema.length;
-
-		String[][] sampleFrameStrings = util.loadFrameData(sampleFrameFileName, sampleRawDelimiter, ncols);
-		FrameBlock sampleFrame = new FrameBlock(sampleSchema, sampleFrameStrings);
-		String sampleRaw = util.readEntireTextFile(sampleRawFileName);
-		GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, parallel);
-		FrameReader fr = gr.getReader();
-		FrameBlock frameBlock = fr.readFrameFromHDFS(dataFileName, sampleSchema, rows, sampleSchema.length);
-		for(int r=0; r< 10; r++) {
-			for(int c = 0; c < frameBlock.getNumColumns(); c++)
-				System.out.print(c+":"+frameBlock.get(r,c)+"   ");
-			System.out.println();
-		}
-
-		int a = 100;
+		runGenerateReaderTest(false);
 	}
 }

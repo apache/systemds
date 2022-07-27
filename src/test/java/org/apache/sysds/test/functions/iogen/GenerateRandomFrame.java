@@ -57,7 +57,6 @@ public class GenerateRandomFrame extends AutomatedTestBase {
 	}
 
 	protected String getRandomString(int length) {
-		//String alphabet1 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
 		String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 		StringBuilder salt = new StringBuilder();
 		Random rnd = new Random();

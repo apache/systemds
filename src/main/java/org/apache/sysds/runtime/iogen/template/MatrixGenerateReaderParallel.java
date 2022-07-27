@@ -119,6 +119,24 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 				}
 				pool.shutdown();
 			}
+			else if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.CellWiseExist ||
+				_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.RowWiseExist) {
+				ArrayList<IOUtilFunctions.CountRowsTask> tasks = new ArrayList<>();
+				for(InputSplit split : splits)
+					tasks.add(new IOUtilFunctions.CountRowsTask(split, informat, job, false));
+
+				// collect row counts for offset computation
+				// early error notify in case not all tasks successful
+				_offsets = new TemplateUtil.SplitOffsetInfos(tasks.size());
+				int i = 0;
+				for(Future<Long> rc : pool.invokeAll(tasks)) {
+					int lnrow = (int) rc.get().longValue(); // incl error handling
+					_offsets.setOffsetPerSplit(i, _rLen);
+					_offsets.setLenghtPerSplit(i, lnrow);
+					i++;
+				}
+				pool.shutdown();
+			}
 			else if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.SeqScatter) {
 				ArrayList<CountSeqScatteredRowsTask> tasks = new ArrayList<>();
 				for(InputSplit split : splits)
@@ -157,14 +175,6 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 				_cLen = (int) clen;
 			}
 		}
-
-		// allocate target matrix block based on given size;
-		// need to allocate sparse as well since lock-free insert into target
-		if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.RowWiseExist ||
-			_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.CellWiseExist ){
-			_rLen++;
-			_cLen++;
-		}
 		long estnnz2 = (estnnz < 0) ? (long) _rLen * _cLen : estnnz;
 		return createOutputMatrixBlock(_rLen, _cLen, blen, estnnz2, !_props.isSparse(), _props.isSparse());
 	}
@@ -191,8 +201,7 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 			for (InputSplit split : splits) {
 				tasks.add( new ReadTask(split, informat, dest, splitCount++) );
 			}
-			pool.invokeAll(tasks);
-			pool.shutdown();
+			CommonThreadPool.invokeAndShutdown(pool, tasks);
 
 			// check return codes and aggregate nnz
 			long lnnz = 0;
@@ -258,15 +267,18 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 			ArrayList<Pair<Integer, Integer>> beginIndexes = TemplateUtil.getTokenIndexOnMultiLineRecords(_split, _inputFormat, _jobConf, _beginString);
 			ArrayList<Pair<Integer, Integer>> endIndexes;
 			int tokenLength = 0;
+			boolean diffBeginEndToken = false;
 			if(!_beginString.equals(_endString)) {
 				endIndexes = TemplateUtil.getTokenIndexOnMultiLineRecords(_split, _inputFormat, _jobConf, _endString);
 				tokenLength = _endString.length();
+				diffBeginEndToken = true;
 			}
 			else {
 				endIndexes = new ArrayList<>();
 				for(int i = 1; i < beginIndexes.size(); i++)
 					endIndexes.add(beginIndexes.get(i));
 			}
+			beginIndexes.remove(beginIndexes.size()-1);
 
 			int i = 0;
 			int j = 0;
@@ -287,7 +299,7 @@ public abstract class MatrixGenerateReaderParallel extends MatrixReader {
 				j++;
 				nrows++;
 			}
-			if(i == beginIndexes.size() && j < endIndexes.size())
+			if(!diffBeginEndToken && i == beginIndexes.size() && j < endIndexes.size())
 				nrows++;
 			if(beginIndexes.get(0).getKey() == 0 && beginIndexes.get(0).getValue() == 0)
 				splitInfo.setRemainString("");

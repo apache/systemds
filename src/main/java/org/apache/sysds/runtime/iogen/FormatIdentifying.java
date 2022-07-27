@@ -119,16 +119,14 @@ public class FormatIdentifying {
 		// ref to Table 1:
 		if(mappingProperties.getRecordProperties() == MappingProperties.RecordProperties.SINGLELINE) {
 			// #1
-			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.Identity &&
-				colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.Identity) {
+			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.Identity && colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.Identity) {
 				KeyTrie[] colKeyPatterns;
 				colKeyPatterns = buildColsKeyPatternSingleRow();
 				properties.setColKeyPatterns(colKeyPatterns);
 			}
 
 			// #2
-			else if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.Identity &&
-				colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
+			else if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.Identity && colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
 				// find cell-index and value separators
 				RawIndex raw = null;
 				for(int c = 0; c < ncols; c++) {
@@ -171,8 +169,7 @@ public class FormatIdentifying {
 		}
 		else {
 			// # 4, 6, 7, 8, 9
-			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist &&
-				colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
+			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist && colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
 
 				if(mappingProperties.getDataProperties() != MappingProperties.DataProperties.NOTEXIST) {
 					KeyTrie valueKeyPattern = buildValueKeyPattern();
@@ -182,6 +179,8 @@ public class FormatIdentifying {
 				// build key pattern for row index
 				int numberOfSelectedCols = (int) (ncols * 0.1);
 				int numberOfSelectedRows = (int) (nrows * 0.1);
+				numberOfSelectedRows = numberOfSelectedRows == 0 ? nrows - 1 : numberOfSelectedRows;
+				numberOfSelectedCols = numberOfSelectedCols == 0 ? ncols - 1 : numberOfSelectedCols;
 				int begin = rowIndexStructure.getRowIndexBegin();
 				boolean check, flagReconstruct;
 				int[] selectedRowIndex = new int[numberOfSelectedRows];
@@ -189,7 +188,7 @@ public class FormatIdentifying {
 
 				// Select two none zero row as a row index candidate
 				int index = 0;
-				for(int r = 1; r<nrows; r++) {
+				for(int r = 1; r < nrows; r++) {
 					for(int c = 0; c < ncols; c++)
 						if(mapRow[r][c] != -1) {
 							selectedRowIndex[index++] = r;
@@ -199,7 +198,7 @@ public class FormatIdentifying {
 						break;
 				}
 
-				for(int c = ncols -1; c >= Math.max(ncols - numberOfSelectedCols, 0); c--) {
+				for(int c = ncols - 1; c >= Math.max(ncols - numberOfSelectedCols, 0); c--) {
 					Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
 					ArrayList<String> prefixStrings = colPrefixString.getKey();
 					ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
@@ -232,7 +231,7 @@ public class FormatIdentifying {
 						MappingTrie rowTrie = new MappingTrie();
 						rowKeyPattern = new KeyTrie();
 						for(int si : selectedRowIndex) {
-							for(int ci = ncols - 1; ci >=0; ci--) {
+							for(int ci = ncols - 1; ci >= 0; ci--) {
 								int cri = mapRow[si][ci];
 								if(cri != -1) {
 									String str = sampleRawIndexes.get(cri).getSubString(0, mapCol[si][ci]);
@@ -289,7 +288,7 @@ public class FormatIdentifying {
 
 				// Select two none zero row as a row index candidate
 				index = 0;
-				for(int c = ncols - 1; c>=0; c--) {
+				for(int c = ncols - 1; c >= 0; c--) {
 					for(int r = 1; r < nrows; r++)
 						if(mapRow[r][c] != -1) {
 							selectedColIndex[index++] = c;
@@ -299,7 +298,7 @@ public class FormatIdentifying {
 						break;
 				}
 
-				for(int c = ncols -1; c >= Math.max(ncols - numberOfSelectedCols, 0); c--) {
+				for(int c = ncols - 1; c >= Math.max(ncols - numberOfSelectedCols, 0); c--) {
 					Pair<ArrayList<String>, ArrayList<Integer>> colPrefixString = extractAllPrefixStringsOfAColSingleLine(c, false);
 					ArrayList<String> prefixStrings = colPrefixString.getKey();
 					ArrayList<Integer> prefixStringRowIndexes = colPrefixString.getValue();
@@ -383,7 +382,7 @@ public class FormatIdentifying {
 				colIndexStructure.setKeyPattern(colKeyPattern);
 			}
 			// #10 sequential scattered
-			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.SeqScatter){
+			if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.SeqScatter) {
 				ArrayList<Pair<String, String>> prefixSuffixBeginEndCells = extractPrefixSuffixBeginEndCells(false);
 
 				ArrayList<Pair<String, Set<Integer>>> keys;
@@ -392,18 +391,18 @@ public class FormatIdentifying {
 				char startChar = prefixSuffixBeginEndCells.get(0).getKey().charAt(0);
 
 				int minSubStringLength = Math.min(80, prefixSuffixBeginEndCells.get(0).getKey().length());
-				for(int i=1; i< prefixSuffixBeginEndCells.size(); i++){
+				for(int i = 1; i < prefixSuffixBeginEndCells.size(); i++) {
 					String prefix = prefixSuffixBeginEndCells.get(i).getKey();
-					for(int j=0; j< prefix.length(); j++){
+					for(int j = 0; j < prefix.length(); j++) {
 						if(startChar == prefix.charAt(j))
-							textTrie.insert(prefix.substring(j, j+Math.min(minSubStringLength, prefix.length() - j)),i);
+							textTrie.insert(prefix.substring(j, j + Math.min(minSubStringLength, prefix.length() - j)), i);
 					}
 				}
 				// scoring the prefix tree
 				keys = textTrie.getAllKeys();
 				String beginString = null;
 				String endString = null;
-				if(keys.get(0).getValue().size() == nrows){
+				if(keys.get(0).getValue().size() == nrows) {
 					int index = keys.get(0).getKey().indexOf("\n");
 					if(index == -1)
 						beginString = keys.get(0).getKey();
@@ -411,42 +410,46 @@ public class FormatIdentifying {
 						beginString = keys.get(0).getKey().substring(0, index);
 
 					// recompute suffix strings to find end of string
+					int minSuffixStringLength = prefixSuffixBeginEndCells.get(0).getValue().length();
+					String reverseBeginString = new StringBuilder(beginString).reverse().toString();
 					ArrayList<String> suffixes = new ArrayList<>();
-					for(int i=0; i<prefixSuffixBeginEndCells.size(); i++){
-						String str = prefixSuffixBeginEndCells.get(i).getValue();
-						int indexBeginString = str.indexOf(beginString);
-						if(indexBeginString != -1)
-							suffixes.add(str.substring(0, indexBeginString+beginString.length()));
+					for(int i = 0; i < prefixSuffixBeginEndCells.size() - 1; i++) {
+						String str = new StringBuilder(prefixSuffixBeginEndCells.get(i).getValue()).reverse().toString();
+						int indexBeginString = str.indexOf(reverseBeginString);
+						if(indexBeginString != -1) {
+							for(int j = indexBeginString + reverseBeginString.length(); j < str.length(); j++) {
+								if(str.charAt(j) == '\n')
+									indexBeginString++;
+								else
+									break;
+							}
+							minSuffixStringLength = Math.min(minSuffixStringLength, indexBeginString);
+							suffixes.add(str.substring(indexBeginString + reverseBeginString.length()));
+						}
 						else
 							suffixes.add(str);
 					}
-
-					String str = new StringBuilder(suffixes.get(0).replace("\n", "")).reverse().toString();
-					minSubStringLength = Math.min(80, str.length());
-					TextTrie textTrieEnd = new TextTrie();
-					textTrieEnd.insert(str, 0);
-					startChar = str.charAt(0);
-					for(int i=1; i< suffixes.size(); i++){
-						StringBuilder sb = new StringBuilder(suffixes.get(i).replace("\n", Lop.OPERAND_DELIMITOR)).reverse();
-						str = sb.toString();
-						for(int j=0; j< str.length(); j++){
-							if(startChar == str.charAt(j))
-								textTrieEnd.insert(str.substring(j, j+Math.min(minSubStringLength, str.length() - j)),i);
+					StringBuilder sbEndString = new StringBuilder();
+					for(int i = 0; i < minSuffixStringLength; i++) {
+						char intersectChar = suffixes.get(0).charAt(i);
+						if(intersectChar == '\n')
+							break;
+						boolean flag = true;
+						for(String ss : suffixes) {
+							if(ss.charAt(i) != intersectChar) {
+								flag = false;
+								break;
+							}
 						}
-					}
-					keys = textTrieEnd.getAllKeys();
-
-					if(keys.get(0).getValue().size() == nrows){
-						index = keys.get(0).getKey().indexOf(Lop.OPERAND_DELIMITOR);
-						if(index == -1)
-							endString = new StringBuilder(keys.get(0).getKey()).reverse().toString();
+						if(flag)
+							sbEndString.append(intersectChar);
 						else
-							endString = new StringBuilder(keys.get(0).getKey().substring(0, index)).reverse().toString();
-
+							break;
 					}
-					else
+					if(sbEndString.length() == 0)
 						endString = beginString;
-
+					else
+						endString = sbEndString.reverse().toString();
 					updateMapsAndExtractAllSuffixStringsOfColsMultiLine(beginString, endString);
 					rowIndexStructure.setSeqBeginString(beginString);
 					rowIndexStructure.setSeqEndString(endString);
@@ -460,8 +463,7 @@ public class FormatIdentifying {
 			}
 		}
 
-		if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist||
-		colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist){
+		if(rowIndexStructure.getProperties() == RowIndexStructure.IndexProperties.CellWiseExist || colIndexStructure.getProperties() == ColIndexStructure.IndexProperties.CellWiseExist) {
 			properties.setSparse(true);
 		}
 	}
@@ -479,7 +481,7 @@ public class FormatIdentifying {
 
 		RowIndexStructure rowIndexStructure = new RowIndexStructure();
 
-		if(mappingProperties.getDataProperties() == MappingProperties.DataProperties.NOTEXIST){
+		if(mappingProperties.getDataProperties() == MappingProperties.DataProperties.NOTEXIST) {
 			if(nlines >= this.actualValueCount) {
 				rowIndexStructure.setProperties(RowIndexStructure.IndexProperties.CellWiseExist);
 				rowIndexStructure.setRowIndexBegin(0);
@@ -531,8 +533,8 @@ public class FormatIdentifying {
 			ArrayList<Integer> list = new ArrayList<>();
 			for(int i = bitSet.nextSetBit(0); i != -1; i = bitSet.nextSetBit(i + 1))
 				list.add(i);
-			for(int i=0; i<list.size()-1 && isSeqScatter; i++)
-				isSeqScatter = list.get(i) <= list.get(i+1);
+			for(int i = 0; i < list.size() - 1 && isSeqScatter; i++)
+				isSeqScatter = list.get(i) <= list.get(i + 1);
 		}
 
 		// check for Cell Wise
@@ -587,7 +589,7 @@ public class FormatIdentifying {
 		int begin = 0;
 		boolean colIndexExist = true;
 
-		if(mappingProperties.getDataProperties() == MappingProperties.DataProperties.NOTEXIST){
+		if(mappingProperties.getDataProperties() == MappingProperties.DataProperties.NOTEXIST) {
 			if(nlines >= this.actualValueCount) {
 				colIndexStructure.setProperties(ColIndexStructure.IndexProperties.CellWiseExist);
 				colIndexStructure.setColIndexBegin(0);
@@ -785,29 +787,10 @@ public class FormatIdentifying {
 		}
 
 		// set suffix
-		for(int r = 0; r<nrows-1; r++){
-			result.get(r).setValue(result.get(r+1).getKey());
+		for(int r = 0; r < nrows - 1; r++) {
+			result.get(r).setValue(result.get(r + 1).getKey());
 		}
-		int beginLine = 0;
-		int endPos = 0;
-		for(int c= 0; c<ncols; c++){
-			beginLine = Math.max(mapRow[nrows-1][c], beginLine);
-		}
-		for(int c= 0; c<ncols; c++)
-			if(beginLine == mapRow[nrows -1][c])
-				endPos = Math.max(mapCol[nrows - 1][c]+mapLen[nrows-1][c], endPos);
-
-		StringBuilder sbLastSuffix = new StringBuilder();
-		if(beginLine == sampleRawIndexes.size() -1)
-			sbLastSuffix.append(sampleRawIndexes.get(beginLine).getRaw().substring(endPos)).append("\n");
-		for(int i=beginLine+1; i<sampleRawIndexes.size(); i++){
-			sbLastSuffix.append(sampleRawIndexes.get(i).getRaw()).append("\n");
-		}
-		sbLastSuffix.deleteCharAt(sbLastSuffix.length()-1);
-		sbLastSuffix.append(result.get(0).getKey());
-
-		result.get(nrows-1).setValue(sbLastSuffix.toString());
-
+		result.get(nrows - 1).setValue(null);
 		return result;
 	}
 
@@ -1107,7 +1090,7 @@ public class FormatIdentifying {
 	//                    Methods For Multi Lines Mapping                     //
 	////////////////////////////////////////////////////////////////////////////
 
-	private void updateMapsAndExtractAllSuffixStringsOfColsMultiLine(String beginString, String endString){
+	private void updateMapsAndExtractAllSuffixStringsOfColsMultiLine(String beginString, String endString) {
 		ArrayList<RawIndex> upRawIndexes = new ArrayList<>();
 		ArrayList<Pair<Integer, Integer>> beginIndexes = getTokenIndexOnMultiLineRecords(beginString);
 		ArrayList<Pair<Integer, Integer>> endIndexes;
@@ -1127,7 +1110,7 @@ public class FormatIdentifying {
 		int i = 0;
 		int j = 0;
 		StringBuilder sb = new StringBuilder();
-		while(i < beginIndexes.size() && j < endIndexes.size() && r<nrows) {
+		while(i < beginIndexes.size() && j < endIndexes.size() && r < nrows) {
 			Pair<Integer, Integer> p1 = beginIndexes.get(i);
 			Pair<Integer, Integer> p2 = endIndexes.get(j);
 			int n = 0;
@@ -1169,22 +1152,69 @@ public class FormatIdentifying {
 		this.sampleRawIndexes = upRawIndexes;
 	}
 
-	private ArrayList<Pair<Integer, Integer>> getTokenIndexOnMultiLineRecords(String token){
+	private ArrayList<Pair<Integer, Integer>> getTokenIndexOnMultiLineRecords(String token) {
 		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
 
-		for(int ri=0; ri< this.sampleRawIndexes.size(); ri++){
+		for(int ri = 0; ri < this.sampleRawIndexes.size(); ri++) {
 			String raw = this.sampleRawIndexes.get(ri).getRaw();
 			int index;
 			int fromIndex = 0;
 			do {
 				index = raw.indexOf(token, fromIndex);
-				if(index !=-1){
+				if(index != -1) {
 					result.add(new Pair<>(ri, index));
-					fromIndex = index+token.length();
+					fromIndex = index + token.length();
 				}
 				else
 					break;
-			}while(true);
+			}
+			while(true);
+		}
+		return result;
+	}
+
+	private ArrayList<Pair<Integer, Integer>> getTokenIndexOnMultiLineRecords(String beginToken, String endToken) {
+		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
+
+		for(int ri = 0; ri < this.sampleRawIndexes.size(); ) {
+			String raw = this.sampleRawIndexes.get(ri).getRaw();
+			int index;
+			int fromIndex = 0;
+			do {
+				index = raw.indexOf(endToken, fromIndex);
+				if(index != -1) {
+					if(index + endToken.length() + beginToken.length() <= raw.length()) {
+						boolean flag = true;
+						for(int i = index + endToken.length(), j = 0; i < index + endToken.length() + beginToken.length() && flag; i++, j++) {
+							flag = raw.charAt(i) == beginToken.charAt(j);
+						}
+						if(flag) {
+							result.add(new Pair<>(ri, index));
+							fromIndex = index + beginToken.length() + endToken.length();
+						}
+						else
+							fromIndex++;
+					}
+					else {
+						if(ri+1 == this.sampleRawIndexes.size())
+							break;
+						// skip empty rows
+						do {
+							raw = this.sampleRawIndexes.get(++ri).getRaw();
+						}
+						while(raw.length() == 0);
+
+						if(raw.startsWith(beginToken)) {
+							result.add(new Pair<>(ri, 0));
+							fromIndex = 1;
+						}
+					}
+				}
+				else
+					break;
+			}
+			while(true);
+			ri++;
 		}
 		return result;
 	}

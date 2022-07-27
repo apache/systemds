@@ -94,7 +94,7 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 			src.append("int beginIndex = splitInfo.getRecordIndexBegin(0); \n");
 			src.append("int endIndex = splitInfo.getRecordIndexEnd(0); \n");
 			src.append("boolean flag = true; \n");
-			src.append("while(flag) { \n");
+			src.append("while(flag || sb.length() > 0) { \n");
 			src.append("flag = reader.next(key, value); \n");
 			src.append("if(flag) { \n");
 			src.append("ri++; \n");
@@ -114,8 +114,10 @@ public class MatrixCodeGen extends TemplateCodeGenBase {
 			src.append("endIndex = splitInfo.getRecordIndexEnd(row+1); \n");
 			src.append("} \n");
 			src.append("} \n");
-			src.append("else \n");
+			src.append("else {\n");
 			src.append("str = sb.toString(); \n");
+			src.append("sb = new StringBuilder();\n");
+			src.append("}");
 		}
 		else {
 			src.append("while(reader.next(key, value)) { \n");

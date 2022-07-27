@@ -30,17 +30,12 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 		return TEST_NAME;
 	}
 
-	// JSON Dataset
+	// XML Dataset
 	//1. flat object, in-order values
 	@Test
 	public void test1() {
 		sampleRaw = "<a>\n" +
 					"<b>1</b>\n" +
-					"<a>\n" +
-					"<b>70</b>\n" +
-					"<c>85</c>\n" +
-					"<d>90</d>\n" +
-					"</a>"+
 					"<c>2</c>\n" +
 					"<d>3</d>\n" +
 					"</a>\n" +
@@ -55,7 +50,7 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 					"<d>9</d>\n" +
 					"</a>";
 		sampleMatrix = new double[][] {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
-		runGenerateReaderTest();
+		runGenerateReaderTest(false);
 	}
 
 	//2. flat object, out-of-order values
@@ -65,7 +60,7 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 					"{\"d\":9,\"b\":7,\"c\":8,\"a\":6,\"e\":10}\n" +
 					"{\"d\":14,\"a\":11,\"e\":15,\"b\":12,\"c\":13}";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
-		runGenerateReaderTest();
+		runGenerateReaderTest(false);
 	}
 	//3. nested object with unique attribute names
 	@Test
@@ -74,7 +69,7 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 					"{\"a\":6,\"b\":{\"c\":7,\"d\":8,\"e\":9},\"f\":10}\n" +
 					"{\"a\":11,\"b\":{\"c\":12,\"d\":13,\"e\":14},\"f\":15}\n";
 		sampleMatrix = new double[][] {{1, 2, 5}, {6, 7, 10}, {11, 12, 15}};
-		runGenerateReaderTest();
+		runGenerateReaderTest(false);
 	}
 
 	//4. nested object with unique attribute names, out-of-order
@@ -84,7 +79,7 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 					"{\"a\":6,\"f\":10,\"b\":{\"e\":9,\"c\":7,\"d\":8}}\n" +
 					"{\"b\":{\"d\":13,\"c\":12,\"e\":14},\"a\":11,\"f\":15}\n";
 		sampleMatrix = new double[][] {{1, 2, 5}, {6, 7, 10}, {11, 12, 15}};
-		runGenerateReaderTest();
+		runGenerateReaderTest(false);
 	}
 
 	//5. nested object with repeated attribute names, out-of-order
@@ -94,7 +89,7 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 					"{\"a\":6,\"b\":{\"a\":7,\"b\":8,\"f\":9},\"f\":10}\n" +
 					"{\"a\":11,\"b\":{\"a\":12,\"b\":13,\"f\":14},\"f\":15}";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
-		runGenerateReaderTest();
+		runGenerateReaderTest(false);
 	}
 
 	// XML
@@ -106,7 +101,7 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 					"<article><a>6</a><b>7</b><c>8</c><d>9</e><f>10</f></article>\n" +
 					"<article><a>11</a><b>12</b><c>13</c><d>14</e><f>15</f></article>";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
-		runGenerateReaderTest();
+		runGenerateReaderTest(false);
 	}
 
 	//6. nested object with unique attribute names, in-order
@@ -117,7 +112,7 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 					"<book><a>6</a><b>7</b><c>8</c><d>9</e><f>10</f></book>\n" +
 					"<homepage><a>11</a><b>12</b><c>13</c><d>14</e><f>15</f></homepage>";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
-		runGenerateReaderTest();
+		runGenerateReaderTest(false);
 	}
 
 	//7. nested object with unique attribute names, in-order
@@ -128,7 +123,7 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 					"<book><a>6</a><b>7</b><c><year>1980</year><title>DB</title></c><d>9</e><f>10</f></book>\n" +
 					"<homepage><a>11</a><b>12</b><c><year>2012</year><title>CEP</title></c><d>14</e><f>15</f></homepage>\n";
 		sampleMatrix = new double[][] {{1, 2022}, {6, 1980}, {11, 2012}};
-		runGenerateReaderTest();
+		runGenerateReaderTest(false);
 	}
 
 	@Test
@@ -159,8 +154,18 @@ public class MatrixMultiRowNestedTest extends GenerateReaderMatrixTest {
 			"#t 39\n" +
 			"#c 310\n" +
 			"#% 311\n" +
-			"#% 500";
-		sampleMatrix = new double[][] {{1,12,13,14,15},{2,22,23,24,25},{3,32,33,34,35}};
-		runGenerateReaderTest();
+			"#% 500\n"+
+			"\n" +
+			"#index 4\n" +
+			"#* 42\n" +
+			"#@ 43;44;45\n" +
+			"#o 46;47;48\n" +
+			"#t 49\n" +
+			"#c 410\n" +
+			"#% 411\n" +
+			"#% 600";
+
+		sampleMatrix = new double[][] {{1,12,13,14,15},{2,22,23,24,25},{3,32,33,34,35}, {4,42,43,44,45}};
+		runGenerateReaderTest(false);
 	}
 }

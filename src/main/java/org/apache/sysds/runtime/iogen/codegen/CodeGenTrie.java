@@ -109,11 +109,7 @@ public class CodeGenTrie {
 	public String getJavaCode() {
 		StringBuilder src = new StringBuilder();
 		int ncols = properties.getNcols();
-
-		MappingProperties.RepresentationProperties representation = properties.getMappingProperties().getRepresentationProperties();
 		MappingProperties.DataProperties data = properties.getMappingProperties().getDataProperties();
-		MappingProperties.RecordProperties record = properties.getMappingProperties().getRecordProperties();
-
 		RowIndexStructure.IndexProperties rowIndex = properties.getRowIndexStructure().getProperties();
 		ColIndexStructure.IndexProperties colIndex = properties.getColIndexStructure().getProperties();
 
@@ -149,6 +145,7 @@ public class CodeGenTrie {
 			if(this.isMatrix){
 				src.append("try{ \n");
 				src.append(destination).append("(row, col, Double.parseDouble(strIndexValue[1])); \n");
+				src.append("lnnz++;\n");
 				src.append("} catch(Exception e){"+destination+"(row, col, 0d);} \n");
 			}
 			else {

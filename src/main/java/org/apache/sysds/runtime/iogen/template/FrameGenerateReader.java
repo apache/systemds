@@ -115,16 +115,18 @@ public abstract class FrameGenerateReader extends FrameReader {
 
 					ArrayList<Pair<Integer, Integer>> endIndexes;
 					int tokenLength = 0;
+					boolean diffBeginEndToken = false;
 					if(!_props.getRowIndexStructure().getSeqBeginString().equals(_props.getRowIndexStructure().getSeqEndString())) {
 						endIndexes = TemplateUtil.getTokenIndexOnMultiLineRecords(inputSplit, informat, job, _props.getRowIndexStructure().getSeqEndString());
 						tokenLength = _props.getRowIndexStructure().getSeqEndString().length();
+						diffBeginEndToken = true;
 					}
 					else {
 						endIndexes = new ArrayList<>();
 						for(int i = 1; i < beginIndexes.size(); i++)
 							endIndexes.add(beginIndexes.get(i));
 					}
-
+					beginIndexes.remove(beginIndexes.size()-1);
 					int i = 0;
 					int j = 0;
 					while(i < beginIndexes.size() && j < endIndexes.size()) {
@@ -144,7 +146,7 @@ public abstract class FrameGenerateReader extends FrameReader {
 						j++;
 						nrows++;
 					}
-					if(i == beginIndexes.size() && j < endIndexes.size())
+					if(!diffBeginEndToken && i == beginIndexes.size() && j < endIndexes.size())
 						nrows++;
 					if(beginIndexes.get(0).getKey() == 0 && beginIndexes.get(0).getValue() == 0)
 						splitInfo.setRemainString("");
@@ -214,7 +216,4 @@ public abstract class FrameGenerateReader extends FrameReader {
 
 	protected abstract int readFrameFromHDFS(RecordReader<LongWritable, Text> reader, LongWritable key, Text value, FrameBlock dest,
 		int rowPos, TemplateUtil.SplitInfo splitInfo) throws IOException;
-
-
-
 }

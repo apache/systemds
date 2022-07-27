@@ -25,6 +25,7 @@ import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -49,8 +50,7 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 		Types.ValueType.INT32,
 		Types.ValueType.INT64,
 		Types.ValueType.FP32,
-		Types.ValueType.FP64//,
-	//	Types.ValueType.BOOLEAN
+		Types.ValueType.FP64
 	};
 
 	protected abstract String getTestName();
@@ -151,7 +151,7 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			}
 	}
 	@SuppressWarnings("unused")
-	protected void runGenerateReaderTest() {
+	protected void runGenerateReaderTest(boolean parallel) {
 
 		Types.ExecMode oldPlatform = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -175,12 +175,16 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			String dataPath = HOME + "frame_data.raw";
 			int clen = data[0].length;
 			writeRawString(sampleRaw, dataPath);
-			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, true);
+			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, parallel);
 
 			FrameReader fr = gr.getReader();
 			FrameBlock frameBlock = fr.readFrameFromHDFS(dataPath, schema, data.length, clen);
 
-			int a = 100;
+			String[][] expected = DataConverter.convertToStringFrame(sampleFrame);
+			String[][] actual = DataConverter.convertToStringFrame(frameBlock);
+
+			TestUtils.compareFrames(expected, actual, sampleFrame.getNumRows(), sampleFrame.getNumColumns());
+
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

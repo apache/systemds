@@ -71,11 +71,11 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 
 		MatrixBlock ret;
 		if(rlen >= 0 && clen >= 0 && _props.getRowIndexStructure().getProperties() != RowIndexStructure.IndexProperties.SeqScatter) {
-			if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.RowWiseExist ||
-				_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.CellWiseExist ){
-				clen++;
-				rlen ++;
-			}
+//			if(_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.RowWiseExist ||
+//				_props.getRowIndexStructure().getProperties() == RowIndexStructure.IndexProperties.CellWiseExist ){
+//				//clen++;
+//				//rlen ++;
+//			}
 			ret = createOutputMatrixBlock(rlen, clen, (int) rlen, estnnz, !_props.isSparse(), _props.isSparse());
 		}
 		else
@@ -131,16 +131,18 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 
 					ArrayList<Pair<Integer, Integer>> endIndexes;
 					int tokenLength = 0;
+					boolean diffBeginEndToken = false;
 					if(!_props.getRowIndexStructure().getSeqBeginString().equals(_props.getRowIndexStructure().getSeqEndString())) {
 						endIndexes = TemplateUtil.getTokenIndexOnMultiLineRecords(inputSplit, informat, job, _props.getRowIndexStructure().getSeqEndString());
 						tokenLength = _props.getRowIndexStructure().getSeqEndString().length();
+						diffBeginEndToken = true;
 					}
 					else {
 						endIndexes = new ArrayList<>();
 						for(int i = 1; i < beginIndexes.size(); i++)
 							endIndexes.add(beginIndexes.get(i));
 					}
-
+					beginIndexes.remove(beginIndexes.size()-1);
 					int i = 0;
 					int j = 0;
 					while(i < beginIndexes.size() && j < endIndexes.size()) {
@@ -160,7 +162,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 						j++;
 						nrows++;
 					}
-					if(i == beginIndexes.size() && j < endIndexes.size())
+					if(!diffBeginEndToken && i == beginIndexes.size() && j < endIndexes.size())
 						nrows++;
 					if(beginIndexes.get(0).getKey() == 0 && beginIndexes.get(0).getValue() == 0)
 						splitInfo.setRemainString("");

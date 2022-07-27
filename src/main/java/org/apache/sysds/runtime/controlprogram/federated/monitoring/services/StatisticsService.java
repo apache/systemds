@@ -58,7 +58,7 @@ public class StatisticsService {
 			stats.events = _entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, EventModel.class, options.rowCount);
 
 			for (var event: stats.events) {
-				event.stages = _entityRepository.getAllEntitiesByField(Constants.ENTITY_JOB_ID_COL, event.id, EventStageModel.class);
+				event.stages = _entityRepository.getAllEntitiesByField(Constants.ENTITY_EVENT_ID_COL, event.id, EventStageModel.class);
 			}
 		}
 

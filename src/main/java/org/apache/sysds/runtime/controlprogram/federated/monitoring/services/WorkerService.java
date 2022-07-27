@@ -106,10 +106,10 @@ public class WorkerService {
 				}
 				if (stats.events != null) {
 					for (var eventEntity: stats.events) {
-						var jobId = _entityRepository.createEntity(eventEntity);
+						var eventId = _entityRepository.createEntity(eventEntity);
 
 						for (var stageEntity: eventEntity.stages) {
-							stageEntity.eventId = jobId;
+							stageEntity.eventId = eventId;
 
 							_entityRepository.createEntity(stageEntity);
 						}

@@ -33,5 +33,5 @@ public class Constants {
 	public static final String ENTITY_HEAVY_HITTERS_COL = "heavyHitters";
 	public static final String ENTITY_ID_COL = "id";
 	public static final String ENTITY_WORKER_ID_COL = "workerId";
-	public static final String ENTITY_JOB_ID_COL = "jobId";
+	public static final String ENTITY_EVENT_ID_COL = "eventId";
 }

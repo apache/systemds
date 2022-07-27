@@ -184,8 +184,6 @@ public class DerbyRepository implements IRepository {
 				}
 			}
 
-			System.out.println(st.toString());
-
 			st.executeUpdate();
 
 			ResultSet rs = st.getGeneratedKeys();

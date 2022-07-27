@@ -46,8 +46,8 @@ public class EventStageModel extends BaseModel implements Serializable {
 		this.instructions = new ArrayList<>();
 	}
 
-	public EventStageModel(final Long jobId, final String stageType, final String data) {
-		this(-1L, jobId, stageType, data);
+	public EventStageModel(final Long eventId, final String stageType, final String data) {
+		this(-1L, eventId, stageType, data);
 	}
 
 	public EventStageModel(final Long id, final Long eventId, final String stageType, final String data) {

@@ -19,117 +19,110 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatProperties;
-
 import java.io.Serializable;
 import java.util.HashSet;
 
 public class CustomProperties extends FileFormatProperties implements Serializable {
-	protected static final Log LOG = LogFactory.getLog(CustomProperties.class.getName());
-	private static final long serialVersionUID = -4447926749068752721L;
 
-	private String delim;
-	private String indexDelim;
-	private HashSet<String> naStrings;
-	private int firstColIndex;
-	private int firstRowIndex;
+	private MappingProperties mappingProperties;
+	private RowIndexStructure rowIndexStructure;
+	private ColIndexStructure colIndexStructure;
+	private KeyTrie[] colKeyPatterns;
+	private KeyTrie valueKeyPattern;
+	private Types.ValueType[] schema;
+	private int ncols;
+	private boolean sparse;
+	private boolean parallel;
 
-	protected enum GRPattern {
-		Regular, Irregular;
+	public CustomProperties(MappingProperties mappingProperties, RowIndexStructure rowIndexStructure, ColIndexStructure colIndexStructure) {
+		this.mappingProperties = mappingProperties;
+		this.rowIndexStructure = rowIndexStructure;
+		this.colIndexStructure = colIndexStructure;
+	}
 
-		@Override
-		public String toString() {
-			return this.name().toLowerCase();
+	public MappingProperties getMappingProperties() {
+		return mappingProperties;
+	}
+
+	public void setMappingProperties(MappingProperties mappingProperties) {
+		this.mappingProperties = mappingProperties;
+	}
+
+	public RowIndexStructure getRowIndexStructure() {
+		return rowIndexStructure;
+	}
+
+	public void setRowIndexStructure(RowIndexStructure rowIndexStructure) {
+		this.rowIndexStructure = rowIndexStructure;
+	}
+
+	public ColIndexStructure getColIndexStructure() {
+		return colIndexStructure;
+	}
+
+	public void setColIndexStructure(ColIndexStructure colIndexStructure) {
+		this.colIndexStructure = colIndexStructure;
+	}
+
+	public KeyTrie[] getColKeyPatterns() {
+		return colKeyPatterns;
+	}
+
+	public void setColKeyPatterns(KeyTrie[] colKeyPatterns) {
+		this.colKeyPatterns = colKeyPatterns;
+	}
+
+	public Types.ValueType[] getSchema() {
+		return schema;
+	}
+
+	public void setSchema(Types.ValueType[] schema) {
+		this.schema = schema;
+	}
+
+	public HashSet<String>[] endWithValueStrings() {
+		if(colKeyPatterns !=null) {
+			HashSet<String>[] endWithValueString = new HashSet[colKeyPatterns.length];
+			for(int i = 0; i < colKeyPatterns.length; i++)
+				if(colKeyPatterns[i] != null)
+					endWithValueString[i] = colKeyPatterns[i].getFirstSuffixKeyPatterns();
+			return endWithValueString;
 		}
+		else
+			return null;
 	}
 
-	protected enum GRSymmetry {
-		GENERAL, SYMMETRIC, SKEW_SYMMETRIC;
-
-		@Override
-		public String toString() {
-			return this.name().toLowerCase().replaceAll("_", "-");
-		}
+	public KeyTrie getValueKeyPattern() {
+		return valueKeyPattern;
 	}
 
-	private GRPattern rowPattern;
-	private GRPattern colPattern;
-	private GRSymmetry grSymmetry;
-
-	public CustomProperties() {
+	public void setValueKeyPattern(KeyTrie valueKeyPattern) {
+		this.valueKeyPattern = valueKeyPattern;
 	}
 
-	// Row & Col Regular Format
-	public CustomProperties(GRPattern rowPattern, String delim, HashSet<String> naStrings) {
-		this.delim = delim;
-		this.naStrings = naStrings;
-		this.rowPattern = rowPattern;
-		this.colPattern = GRPattern.Regular;
-		this.grSymmetry = GRSymmetry.GENERAL;
-		this.firstRowIndex = 0;
-		this.firstColIndex = 0;
+	public int getNcols() {
+		return ncols;
 	}
 
-	// Row Regular & Col Irregular Format
-	public CustomProperties(GRPattern rowPattern, String delim, String indexDelim, int firstColIndex) {
-		this.delim = delim;
-		this.indexDelim = indexDelim;
-		this.rowPattern = rowPattern;
-		this.colPattern = GRPattern.Irregular;
-		this.grSymmetry = GRSymmetry.GENERAL;
-		this.firstColIndex = firstColIndex;
-		this.firstRowIndex = 0;
+	public void setNcols(int ncols) {
+		this.ncols = ncols;
 	}
 
-	// Row Irregular format
-	public CustomProperties(GRSymmetry grSymmetry, String delim, int firstRowIndex, int firstColIndex) {
-		this.delim = delim;
-		this.grSymmetry = grSymmetry;
-		this.colPattern = GRPattern.Regular;
-		this.rowPattern = GRPattern.Irregular;
-		this.firstColIndex = firstColIndex;
-		this.firstRowIndex = firstRowIndex;
+	public boolean isSparse() {
+		return sparse;
 	}
 
-	public String getDelim() {
-		return delim;
+	public void setSparse(boolean sparse) {
+		this.sparse = sparse;
 	}
 
-	public String getIndexDelim() {
-		return indexDelim;
+	public boolean isParallel() {
+		return parallel;
 	}
 
-	public HashSet<String> getNaStrings() {
-		return naStrings;
-	}
-
-	public GRPattern getRowPattern() {
-		return rowPattern;
-	}
-
-	public GRPattern getColPattern() {
-		return colPattern;
-	}
-
-	public GRSymmetry getGrSymmetry() {
-		return grSymmetry;
-	}
-
-	public int getFirstColIndex() {
-		return firstColIndex;
-	}
-
-	public void setFirstColIndex(int firstColIndex) {
-		this.firstColIndex = firstColIndex;
-	}
-
-	public int getFirstRowIndex() {
-		return firstRowIndex;
-	}
-
-	public void setFirstRowIndex(int firstRowIndex) {
-		this.firstRowIndex = firstRowIndex;
+	public void setParallel(boolean parallel) {
+		this.parallel = parallel;
 	}
 }

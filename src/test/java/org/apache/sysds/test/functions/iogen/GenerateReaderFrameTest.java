@@ -25,6 +25,7 @@ import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -49,10 +50,8 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 		Types.ValueType.INT32,
 		Types.ValueType.INT64,
 		Types.ValueType.FP32,
-		Types.ValueType.FP64,
-		Types.ValueType.BOOLEAN};
-
-	protected Types.ValueType[] types1= { Types.ValueType.BOOLEAN};
+		Types.ValueType.FP64
+	};
 
 	protected abstract String getTestName();
 
@@ -62,7 +61,6 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 	}
 
 	protected String getRandomString(int length) {
-		//String alphabet1 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
 		String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 		StringBuilder salt = new StringBuilder();
 		Random rnd = new Random();
@@ -153,7 +151,7 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			}
 	}
 	@SuppressWarnings("unused")
-	protected void runGenerateReaderTest() {
+	protected void runGenerateReaderTest(boolean parallel) {
 
 		Types.ExecMode oldPlatform = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -167,20 +165,26 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			TestConfiguration config = getTestConfiguration(getTestName());
 			loadTestConfiguration(config);
 
-			FrameBlock sampleFrame = new FrameBlock(schema, names, data);
+			FrameBlock sampleFrame = new FrameBlock(schema, data);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			File directory = new File(HOME);
-			if (! directory.exists()){
+			if(!directory.exists()) {
 				directory.mkdir();
 			}
 			String dataPath = HOME + "frame_data.raw";
 			int clen = data[0].length;
 			writeRawString(sampleRaw, dataPath);
-			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame);
+			GenerateReader.GenerateReaderFrame gr = new GenerateReader.GenerateReaderFrame(sampleRaw, sampleFrame, parallel);
 
-			FrameReader fr= gr.getReader();
-			FrameBlock grFrame = fr.readFrameFromHDFS(dataPath,schema,names,data.length, clen);
+			FrameReader fr = gr.getReader();
+			FrameBlock frameBlock = fr.readFrameFromHDFS(dataPath, schema, data.length, clen);
+
+			String[][] expected = DataConverter.convertToStringFrame(sampleFrame);
+			String[][] actual = DataConverter.convertToStringFrame(frameBlock);
+
+			TestUtils.compareFrames(expected, actual, sampleFrame.getNumRows(), sampleFrame.getNumColumns());
+
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

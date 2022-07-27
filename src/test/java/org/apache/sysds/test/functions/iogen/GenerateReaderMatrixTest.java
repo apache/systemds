@@ -65,7 +65,7 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 	}
 
 	@SuppressWarnings("unused")
-	protected void runGenerateReaderTest() {
+	protected void runGenerateReaderTest(boolean parallel) {
 
 		Types.ExecMode oldPlatform = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -83,16 +83,17 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			File directory = new File(HOME);
-			if (! directory.exists()){
+			if(!directory.exists()) {
 				directory.mkdir();
 			}
 			String dataPath = HOME + "matrix_data.raw";
 			int clen = sampleMatrix[0].length;
 			writeRawString(sampleRaw, dataPath);
-			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
 
-			MatrixReader mr= gr.getReader();
-			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, -1, clen, -1, -1);
+			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB, parallel);
+			MatrixReader mr = gr.getReader();
+			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, sampleMB.getNumRows(), clen, -1, -1);
+			TestUtils.compareMatrices(sampleMB, matrixBlock, 0);
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

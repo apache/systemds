@@ -19,8 +19,10 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +33,7 @@ import javax.net.ssl.SSLException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
@@ -185,6 +188,10 @@ public class FederatedData {
 			b.channel(NioSocketChannel.class);
 			final DataRequestHandler handler = new DataRequestHandler();
 			// Client Netty
+
+			if (DMLScript.PORT > 0) {
+				b.localAddress(DMLScript.PORT);
+			}
 
 			b.handler(createChannel(address, handler));
 

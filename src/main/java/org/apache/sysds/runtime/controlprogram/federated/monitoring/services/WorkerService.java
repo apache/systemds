@@ -19,14 +19,12 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatsEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,95 +43,81 @@ public class WorkerService {
 		executor.scheduleAtFixedRate(syncWorkerStatisticsWithDB(), 0, 3, TimeUnit.SECONDS);
 	}
 
-	public Long create(BaseEntityModel model) {
-		long id = _entityRepository.createEntity(EntityEnum.WORKER, model);
+	public Long create(WorkerModel model) {
+		long id = _entityRepository.createEntity(model);
 
-		var modelEntity = (NodeEntityModel) model;
-
-		_cachedWorkers.putIfAbsent(id, modelEntity.getAddress());
+		_cachedWorkers.putIfAbsent(id, model.address);
 
 		return id;
 	}
 
-	public void update(BaseEntityModel model) {
-		_entityRepository.updateEntity(EntityEnum.WORKER, model);
-
-		NodeEntityModel editModel = (NodeEntityModel) model;
-
-		_cachedWorkers.replace(editModel.getId(), editModel.getAddress());
+	public void update(BaseModel model) {
+		_entityRepository.updateEntity(model);
 	}
 
 	public void remove(Long id) {
-		_entityRepository.removeEntity(EntityEnum.WORKER, id);
+		_entityRepository.removeEntity(id, WorkerModel.class);
 
 		_cachedWorkers.remove(id);
 	}
 
-	public BaseEntityModel get(Long id) {
-		var model = (NodeEntityModel) _entityRepository.getEntity(EntityEnum.WORKER, id);
+	public WorkerModel get(Long id) {
+		var model = _entityRepository.getEntity(id, WorkerModel.class);
 
 		updateCachedWorkers(null);
-
-		updateWorkersStats(model);
 
 		return model;
 	}
 
-	public List<BaseEntityModel> getAll() {
-		var workersRaw = _entityRepository.getAllEntities(EntityEnum.WORKER);
-		var workersResult = new ArrayList<BaseEntityModel>();
+	public List<WorkerModel> getAll() {
+		var workers = _entityRepository.getAllEntities(WorkerModel.class);
 
-		updateCachedWorkers(workersRaw);
+		updateCachedWorkers(workers);
 
-		for (var worker: workersRaw) {
-			var workerModel = (NodeEntityModel) worker;
-
-			updateWorkersStats(workerModel);
-
-			workersResult.add(workerModel);
-		}
-
-		return workersResult;
+		return workers;
 	}
 
-	private void updateWorkersStats(NodeEntityModel model) {
-		var savedStats = (List<BaseEntityModel>) _entityRepository.getAllEntitiesByField(EntityEnum.WORKER_STATS, model.getId());
-		var recentStats = (StatsEntityModel) StatsService.getWorkerStatistics(model.getId(), model.getAddress());
+	private void updateCachedWorkers(List<WorkerModel> workersRaw) {
+		List<WorkerModel> workersTmp = workersRaw;
 
-		model.setOnlineStatus(recentStats != null);
-
-		if (recentStats != null) {
-			model.setJitCompileTime(recentStats.getJitCompileTime());
-			model.setRequestTypeCount(recentStats.getRequestTypeCount());
+		if (workersTmp == null) {
+			workersTmp = getAll();
 		}
 
-		model.setStats(savedStats);
-	}
-
-	private void updateCachedWorkers(List<BaseEntityModel> workersRaw) {
-		List<BaseEntityModel> workersBaseModel = workersRaw;
-
-		if (workersBaseModel == null) {
-			workersBaseModel = getAll();
-		}
-
-		for(var workerBaseModel : workersBaseModel) {
-			var worker = (NodeEntityModel) workerBaseModel;
-
-			_cachedWorkers.putIfAbsent(worker.getId(), worker.getAddress());
+		for(var worker : workersTmp) {
+			_cachedWorkers.putIfAbsent(worker.id, worker.address);
 		}
 	}
 
 	private static Runnable syncWorkerStatisticsWithDB() {
 		return () -> {
+
 			for(Map.Entry<Long, String> entry : _cachedWorkers.entrySet()) {
 				Long id = entry.getKey();
 				String address = entry.getValue();
 
-				var stats = (StatsEntityModel) StatsService.getWorkerStatistics(id, address);
+				var stats = StatisticsService.getWorkerStatistics(id, address);
 
 				if (stats != null) {
-					_entityRepository.createEntity(EntityEnum.WORKER_STATS, stats);
+					if (stats.utilization != null) {
+						_entityRepository.createEntity(stats.utilization.get(0));
+					}
+					if (stats.traffic != null) {
+						for (var trafficEntity: stats.traffic) {
+							_entityRepository.createEntity(trafficEntity);
+						}
+					}
+					if (stats.events != null) {
+						for (var eventEntity: stats.events) {
+							var eventId = _entityRepository.createEntity(eventEntity);
+
+							for (var stageEntity: eventEntity.stages) {
+								stageEntity.eventId = eventId;
+
+								_entityRepository.createEntity(stageEntity);
+							}
+						}
+					}
 				}
 			}
 		};

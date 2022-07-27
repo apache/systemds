@@ -45,6 +45,8 @@ import { ListWorkersComponent } from './modules/workers/list/list.component';
 import { ViewWorkerComponent } from './modules/workers/view/view.component';
 import { CreateEditCoordinatorsComponent } from "./modules/coordinators/create-edit/create-edit.component";
 import { CreateEditWorkersComponent } from "./modules/workers/create-edit/create-edit.component";
+import { ListWorkersEventsComponent } from "./modules/events/list/list.component";
+import { ViewWorkerEventsComponent } from "./modules/events/view/view.component";
 
 @NgModule({
 	declarations: [
@@ -61,7 +63,9 @@ import { CreateEditWorkersComponent } from "./modules/workers/create-edit/create
 		ListWorkersComponent,
 		ViewWorkerComponent,
 		CreateEditCoordinatorsComponent,
-		CreateEditWorkersComponent
+		CreateEditWorkersComponent,
+		ListWorkersEventsComponent,
+		ViewWorkerEventsComponent
 	],
 	imports: [
 		BrowserModule,

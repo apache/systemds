@@ -17,10 +17,9 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories;
-
-public enum EntityEnum {
-	WORKER,
-	WORKER_STATS,
-	COORDINATOR
+export class Utilization {
+	constructor(public timestamp: string,
+				public cpuUsage: number,
+				public memoryUsage: number) {
+	}
 }

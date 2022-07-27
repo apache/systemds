@@ -23,6 +23,7 @@ import { MatSort } from '@angular/material/sort';
 import { ActivatedRoute } from '@angular/router';
 import { Worker } from 'src/app/models/worker.model';
 import { FederatedSiteService } from 'src/app/services/federatedSiteService.service';
+import { Statistics } from "../../../models/statistics.model";
 
 @Component({
 	selector: 'app-view-worker',
@@ -39,7 +40,7 @@ export class ViewWorkerComponent {
 	public updateOptionsMemory: any;
 	public updateOptionsRequests: any;
 	public model: Worker;
-	public resultsLength = 0;
+	public statistics: Statistics;
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	@ViewChild(MatSort) sort: MatSort;
 	private dataCPU!: any[];
@@ -55,8 +56,10 @@ export class ViewWorkerComponent {
 		const id = Number(this.router.snapshot.paramMap.get('id'));
 		this.fedSiteService.getWorker(id).subscribe(worker => {
 			this.model = worker;
+		});
 
-			this.resultsLength = this.model.stats!.length;
+		this.fedSiteService.getStatistics(id).subscribe(stats => {
+			this.statistics = stats;
 
 			this.updateMetrics();
 		});
@@ -177,8 +180,8 @@ export class ViewWorkerComponent {
 		}
 
 		this.timer = setInterval(() => {
-			this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
-				this.model = worker;
+			this.fedSiteService.getStatistics(this.model.id).subscribe(stats => {
+				this.statistics = stats;
 
 				this.updateMetrics();
 			})
@@ -191,7 +194,7 @@ export class ViewWorkerComponent {
 	}
 
 	private updateMetrics(): void {
-		this.dataCPU = this.model.stats.map(s => {
+		this.dataCPU = this.statistics.utilization.map(s => {
 			return {
 				name: s.timestamp,
 				value: [
@@ -201,7 +204,7 @@ export class ViewWorkerComponent {
 			}
 		});
 
-		this.dataMemory = this.model.stats.map(s => {
+		this.dataMemory = this.statistics.utilization.map(s => {
 			return {
 				name: s.timestamp,
 				value: [
@@ -214,12 +217,6 @@ export class ViewWorkerComponent {
 		this.updateOptionsCPU = {
 			series: [{
 				data: this.dataCPU
-			}]
-		};
-
-		this.updateOptionsRequests = {
-			series: [{
-				data: this.model.requestTypeCounts.map(e => e['count'])
 			}]
 		};
 

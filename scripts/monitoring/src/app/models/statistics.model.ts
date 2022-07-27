@@ -17,11 +17,13 @@
  * under the License.
  */
 
+import { Utilization } from "./utilization.model";
+import { Traffic } from "./traffic.model";
+import { Event } from "./event.model";
+
 export class Statistics {
-	constructor(public timestamp: any,
-				public cpuUsage: number,
-				public memoryUsage: number,
-				public coordinatorTraffic: [],
-				public heavyHitters: []) {
+	constructor(public utilization: Utilization[],
+				public traffic: Traffic[],
+				public events: Event[]) {
 	}
 }

@@ -19,32 +19,32 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-public class Constants {
-	public static final String REQUEST_TYPE_COUNT_JSON_STR = "{ \"type\": \"%s\", \"count\": %d }";
-	public static final String NODE_ENTITY_JSON_STR = "{" +
+public class CoordinatorModel extends BaseModel {
+	public String name;
+	public String address;
+
+	private static final String JsonFormat = "{" +
 			"\"id\": %d," +
 			"\"name\": \"%s\"," +
-			"\"address\": \"%s\"," +
-			"\"isOnline\": %b," +
-			"\"jitCompileTime\": %.2f," +
-			"\"requestTypeCounts\": [%s]," +
-			"\"stats\": %s" +
-		"}";
-	public static final String STATS_ENTITY_JSON_STR = "{" +
-			"\"timestamp\": \"%s\"," +
-			"\"cpuUsage\": %.2f," +
-			"\"memoryUsage\": %.2f," +
-			"\"coordinatorTraffic\": [%s]," +
-			"\"heavyHitters\": [%s]" +
-		"}";
-	public static final String TRANSFERRED_BYTES_JSON_STR = "{" +
-			"\"datetime\": \"%s\"," +
-			"\"coordinatorAddress\": \"%s\"," +
-			"\"byteAmount\": %d" +
-		"}";
-	public static final String HEAVY_HITTER_INSTRUCTIONS_JSON_STR = "{" +
-			"\"instruction\": \"%s\"," +
-			"\"count\": %d," +
-			"\"duration\": %.2f" +
-		"}";
+			"\"address\": \"%s\"" +
+			"}";
+
+	public CoordinatorModel(final Long id) {
+		this.id = id;
+	}
+
+	public CoordinatorModel() {
+		this(-1L);
+	}
+
+	public CoordinatorModel(final Long id, final String name, final String address) {
+		this.id = id;
+		this.name = name;
+		this.address = address;
+	}
+
+	@Override
+	public String toString() {
+		return String.format(JsonFormat, super.id, this.name, this.address);
+	}
 }

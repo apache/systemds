@@ -25,6 +25,8 @@ import { DashboardComponent } from "./modules/dashboard/main/dashboard.component
 import { LayoutComponent } from "./modules/layout/layout.component";
 import { ListWorkersComponent } from "./modules/workers/list/list.component";
 import { ViewWorkerComponent } from "./modules/workers/view/view.component";
+import { ListWorkersEventsComponent } from "./modules/events/list/list.component";
+import { ViewWorkerEventsComponent } from "./modules/events/view/view.component";
 
 const routes: Routes = [
 	{
@@ -50,6 +52,14 @@ const routes: Routes = [
 			{
 				path: 'workers/:id',
 				component: ViewWorkerComponent
+			},
+			{
+				path: 'events',
+				component: ListWorkersEventsComponent,
+			},
+			{
+				path: 'events/:id',
+				component: ViewWorkerEventsComponent
 			},
 			{path: '', redirectTo: 'dashboard', pathMatch: 'full'}
 		]

@@ -50,7 +50,6 @@ export class ViewCoordinatorComponent {
 		this.fedSiteService.getCoordinator(id).subscribe(coordinator => {
 			this.model = coordinator;
 			this.isLoadingResults = false;
-
 		});
 	}
 

@@ -47,9 +47,6 @@ export class ListWorkersComponent {
 	}
 
 	ngOnInit(): void {
-		this.fedSiteService.loadWorkers().subscribe(workers =>
-			workers.forEach(worker => this.fedSiteService.addCachedWorker(worker)));
-
 		this.fedSiteService.getAllWorkers().subscribe(workers => this.dataSource.data = workers);
 	}
 
@@ -65,7 +62,9 @@ export class ListWorkersComponent {
 	}
 
 	deleteWorker(id: number) {
-		this.fedSiteService.deleteWorker(id).subscribe(() => this.fedSiteService.removeCachedWorker(id));
+		this.fedSiteService.deleteWorker(id).subscribe(() => {
+			this.dataSource.data = this.dataSource.data.filter(w => w.id !== id)
+		});
 	}
 
 }

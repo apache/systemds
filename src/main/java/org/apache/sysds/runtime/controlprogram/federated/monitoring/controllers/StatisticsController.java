@@ -20,56 +20,43 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
 import io.netty.handler.codec.http.FullHttpResponse;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.WorkerService;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.StatisticsService;
 
-public class WorkerController implements IController {
-	private final WorkerService _workerService = new WorkerService();
+public class StatisticsController implements IController {
+	private final StatisticsService _statisticsService = new StatisticsService();
 
 	@Override
 	public FullHttpResponse create(Request request) {
-
-		var model = MapperService.getModelFromBody(request, WorkerModel.class);
-
-		model.id = _workerService.create(model);
-
-		return Response.ok(model.toString());
+		return Response.forbidden("");
 	}
 
 	@Override
 	public FullHttpResponse update(Request request, Long objectId) {
-		var model = MapperService.getModelFromBody(request, WorkerModel.class);
-
-		_workerService.update(model);
-
-		return Response.ok(model.toString());
+		return Response.forbidden("");
 	}
 
 	@Override
 	public FullHttpResponse delete(Request request, Long objectId) {
-		_workerService.remove(objectId);
-
-		return Response.ok(Constants.GENERIC_SUCCESS_MSG);
+		return Response.forbidden("");
 	}
 
 	@Override
 	public FullHttpResponse get(Request request, Long objectId) {
-		var result = _workerService.get(objectId);
 
-		if (result == null) {
-			return Response.notFound(Constants.NOT_FOUND_MSG);
-		}
+		// Creates options with the default values
+		var options = new StatisticsOptions();
+
+		var result = _statisticsService.getAll(objectId, options);
 
 		return Response.ok(result.toString());
 	}
 
 	@Override
 	public FullHttpResponse getAll(Request request) {
-		var workers = _workerService.getAll();
-
-		return Response.ok(workers.toString());
+		return Response.forbidden("");
 	}
 }

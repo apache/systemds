@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
 import io.netty.handler.codec.http.FullHttpResponse;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.CoordinatorService;
@@ -31,20 +32,20 @@ public class CoordinatorController implements IController {
 	@Override
 	public FullHttpResponse create(Request request) {
 
-		var model = MapperService.getModelFromBody(request);
+		var model = MapperService.getModelFromBody(request, CoordinatorModel.class);
 
-		long id = _coordinatorService.create(model);
+		model.id = _coordinatorService.create(model);
 
-		return Response.ok(String.format(Constants.ID_JSON_MSG, id));
+		return Response.ok(model.toString());
 	}
 
 	@Override
 	public FullHttpResponse update(Request request, Long objectId) {
-		var model = MapperService.getModelFromBody(request);
+		var model = MapperService.getModelFromBody(request, CoordinatorModel.class);
 
 		_coordinatorService.update(model);
 
-		return Response.ok(Constants.GENERIC_SUCCESS_MSG);
+		return Response.ok(model.toString());
 	}
 
 	@Override

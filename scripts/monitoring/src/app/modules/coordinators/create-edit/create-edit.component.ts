@@ -48,14 +48,9 @@ export class CreateEditCoordinatorsComponent {
 	onSaveClick() {
 
 		if (this.id !== null) {
-			this.fedSiteService.editCoordinator(this.model).subscribe(() => {
-				this.fedSiteService.addCachedCoordinator(this.model)
-			});
+			this.fedSiteService.editCoordinator(this.model).subscribe(coordinator => this.model = coordinator);
 		} else {
-			this.fedSiteService.createCoordinator(this.model).subscribe(coordinator => {
-				this.model.id = coordinator.id;
-				this.fedSiteService.addCachedCoordinator(this.model)
-			});
+			this.fedSiteService.createCoordinator(this.model).subscribe(coordinator => this.model = coordinator);
 		}
 
 		this.dialogRef.close()

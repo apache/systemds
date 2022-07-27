@@ -59,11 +59,6 @@ export class DashboardComponent implements OnInit {
 
 	openConfigDialog(): void {
 
-		this.fedSiteService.loadCoordinators().subscribe(coordinators =>
-			coordinators.forEach(coordinator => this.fedSiteService.addCachedCoordinator(coordinator)));
-		this.fedSiteService.loadWorkers().subscribe(workers =>
-			workers.forEach(worker => this.fedSiteService.addCachedWorker(worker)));
-
 		this.fedSiteService.getAllCoordinators().subscribe(coordinators => this.fedSiteData.coordinators = coordinators);
 		this.fedSiteService.getAllWorkers().subscribe(workers => this.fedSiteData.workers = workers);
 

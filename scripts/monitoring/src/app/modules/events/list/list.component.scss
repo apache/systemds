@@ -17,21 +17,30 @@
  * under the License.
  */
 
-const BASE_URI = 'http://localhost:8080';
-
-let uriParts = {
-	dashboard: '/dashboard',
-	coordinators: BASE_URI + '/coordinators',
-	workers: BASE_URI + '/workers',
-	statistics: BASE_URI + '/statistics'
+table {
+	width: 100%;
 }
 
-let prefixes = {
-	coordinator: 'coordinator-',
-	worker: 'worker-'
+th.mat-sort-header-sorted {
+	color: black;
 }
 
-export const constants = {
-	uriParts: uriParts,
-	prefixes: prefixes
+.container {
+	margin: 2em;
+}
+
+.demo-table {
+	width: 100%;
+}
+
+button {
+	margin: 0.5em 0.5em 0.5em 0;
+}
+
+.online-worker {
+	color: green;
+}
+
+.offline-worker {
+	color: darkred;
 }

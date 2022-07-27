@@ -17,21 +17,10 @@
  * under the License.
  */
 
-const BASE_URI = 'http://localhost:8080';
-
-let uriParts = {
-	dashboard: '/dashboard',
-	coordinators: BASE_URI + '/coordinators',
-	workers: BASE_URI + '/workers',
-	statistics: BASE_URI + '/statistics'
-}
-
-let prefixes = {
-	coordinator: 'coordinator-',
-	worker: 'worker-'
-}
-
-export const constants = {
-	uriParts: uriParts,
-	prefixes: prefixes
+export class EventStage {
+	constructor(public stageType: string,
+				public startTime: string,
+				public endTime: string,
+				public data: string) {
+	}
 }

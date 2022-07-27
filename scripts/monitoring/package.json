@@ -21,6 +21,7 @@
     "@angular/platform-browser-dynamic": "~13.2.0",
     "@angular/router": "~13.2.0",
     "echarts": "~5.3.1",
+  	"chart.js": "~3.8.2",
     "jsplumb": "~2.15.6",
     "ngx-echarts": "~8.0.1",
     "rxjs": "~7.5.0",

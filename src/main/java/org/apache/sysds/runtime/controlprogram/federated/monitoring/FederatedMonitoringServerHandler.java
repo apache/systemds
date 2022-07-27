@@ -30,6 +30,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.CharsetUtil;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.IController;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.CoordinatorController;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.StatisticsController;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.WorkerController;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 
@@ -45,10 +46,11 @@ public class FederatedMonitoringServerHandler extends SimpleChannelInboundHandle
 	{
 		_allControllers.put("/coordinators", new CoordinatorController());
 		_allControllers.put("/workers", new WorkerController());
+		_allControllers.put("/statistics", new StatisticsController());
 	}
 
-	private static Request _currentRequest = new Request();
-	private static final StringBuilder _requestData = new StringBuilder();
+	private static Request currentRequest = new Request();
+	private static final StringBuilder requestData = new StringBuilder();
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) {
@@ -59,21 +61,23 @@ public class FederatedMonitoringServerHandler extends SimpleChannelInboundHandle
 			Request request = new Request();
 			request.setContext(httpRequest);
 
-			_currentRequest = request;
+			currentRequest = request;
 		}
 
 		if (msg instanceof HttpContent) {
 			ByteBuf jsonBuf = ((HttpContent) msg).content();
-			_requestData.append(jsonBuf.toString(CharsetUtil.UTF_8));
+			requestData.append(jsonBuf.toString(CharsetUtil.UTF_8));
 
 			if (msg instanceof LastHttpContent) {
-				Request request = _currentRequest;
+				Request request = currentRequest;
 
-				request.setBody(_requestData.toString());
-				_requestData.setLength(0);
+				request.setBody(requestData.toString());
+				requestData.setLength(0);
 
-				final FullHttpResponse response = processRequest(request);
-				ctx.write(response);
+				if (request.getContext() != null) {
+					final FullHttpResponse response = processRequest(request);
+					ctx.write(response);
+				}
 			}
 		}
 	}

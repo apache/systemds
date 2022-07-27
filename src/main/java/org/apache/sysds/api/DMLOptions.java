@@ -75,6 +75,7 @@ public class DMLOptions {
 	public int                  fedWorkerPort = -1;
 	public boolean              fedMonitoring = false;
 	public int                  fedMonitoringPort = -1;
+	public int					addressPort = -1;
 	public int                  pythonPort    = -1;
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
 	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
@@ -98,6 +99,7 @@ public class DMLOptions {
 			", fedStats=" + fedStats +
 			", fedStatsCount=" + fedStatsCount +
 			", fedMonitor=" + fedMonitoring +
+			", port=" + addressPort +
 			", memStats=" + memStats +
 			", explainType=" + explainType +
 			", execMode=" + execMode +
@@ -198,6 +200,15 @@ public class DMLOptions {
 				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -hops option, must be one of [hops, runtime, recompile_hops, recompile_runtime]");
 			}
 		}
+
+		if (line.hasOption("port")){
+			try {
+				dmlOptions.addressPort = Integer.parseInt(line.getOptionValue("port"));
+			} catch (NumberFormatException e) {
+				throw new org.apache.commons.cli.ParseException("Invalid argument specified for -port option, must be a valid integer");
+			}
+		}
+
 		dmlOptions.stats = line.hasOption("stats");
 		if (dmlOptions.stats){
 			String statsCount = line.getOptionValue("stats");
@@ -348,6 +359,9 @@ public class DMLOptions {
 		Option pythonOpt = OptionBuilder
 			.withDescription("Python Context start with port argument for communication to python")
 			.isRequired().hasArg().create("python");
+		Option addressOpt = OptionBuilder
+				.withDescription("Coordinator Context start with port argument for communication to workers")
+				.hasOptionalArg().create("port");
 		Option fileOpt = OptionBuilder.withArgName("filename")
 			.withDescription("specifies dml/pydml file to execute; path can be local/hdfs/gpfs (prefixed with appropriate URI)")
 			.isRequired().hasArg().create("f");
@@ -393,6 +407,7 @@ public class DMLOptions {
 		options.addOption(lineageOpt);
 		options.addOption(fedOpt);
 		options.addOption(monitorOpt);
+		options.addOption(addressOpt);
 		options.addOption(checkPrivacy);
 		options.addOption(federatedCompilation);
 		options.addOption(noFedRuntimeConversion);

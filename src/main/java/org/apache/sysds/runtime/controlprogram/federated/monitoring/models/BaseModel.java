@@ -17,21 +17,8 @@
  * under the License.
  */
 
-const BASE_URI = 'http://localhost:8080';
+package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-let uriParts = {
-	dashboard: '/dashboard',
-	coordinators: BASE_URI + '/coordinators',
-	workers: BASE_URI + '/workers',
-	statistics: BASE_URI + '/statistics'
-}
-
-let prefixes = {
-	coordinator: 'coordinator-',
-	worker: 'worker-'
-}
-
-export const constants = {
-	uriParts: uriParts,
-	prefixes: prefixes
+public abstract class BaseModel {
+	public Long id;
 }

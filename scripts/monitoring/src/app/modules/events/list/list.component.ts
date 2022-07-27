@@ -21,21 +21,20 @@ import { Component, ViewChild } from '@angular/core';
 import { MatSort } from '@angular/material/sort';
 import { Router } from '@angular/router';
 
-import { Coordinator } from 'src/app/models/coordinator.model';
+import { Worker } from 'src/app/models/worker.model';
 import { FederatedSiteService } from 'src/app/services/federatedSiteService.service';
 import { MatTableDataSource } from "@angular/material/table";
 import { MatDialog } from "@angular/material/dialog";
-import { CreateEditCoordinatorsComponent } from "../create-edit/create-edit.component";
 
 @Component({
-	selector: 'app-list-coordinators',
+	selector: 'app-list-workers-events',
 	templateUrl: './list.component.html',
 	styleUrls: ['./list.component.scss']
 })
-export class ListCoordinatorsComponent {
+export class ListWorkersEventsComponent {
 
-	public displayedColumns: string[] = ['name', 'address', 'actions'];
-	public dataSource: MatTableDataSource<Coordinator> = new MatTableDataSource<Coordinator>([]);
+	public displayedColumns: string[] = ['name', 'address', 'status', 'actions'];
+	public dataSource: MatTableDataSource<Worker> = new MatTableDataSource<Worker>([]);
 
 	@ViewChild(MatSort, {static: true})
 	sort: MatSort = new MatSort;
@@ -47,24 +46,11 @@ export class ListCoordinatorsComponent {
 	}
 
 	ngOnInit(): void {
-		this.fedSiteService.getAllCoordinators().subscribe(coordinators => this.dataSource.data = coordinators);
+		this.fedSiteService.getAllWorkers().subscribe(workers => this.dataSource.data = workers);
 	}
 
-	viewCoordinator(id: number) {
-		this.router.navigate(['/coordinators/' + id])
-	}
-
-	editCoordinator(id: number) {
-		this.dialog.open(CreateEditCoordinatorsComponent, {
-			width: '500px',
-			data: id
-		});
-	}
-
-	deleteCoordinator(id: number) {
-		this.fedSiteService.deleteCoordinator(id).subscribe(() => {
-			this.dataSource.data = this.dataSource.data.filter(c => c.id !== id)
-		});
+	viewEvent(workerId: number) {
+		this.router.navigate(['/events/' + workerId])
 	}
 
 }

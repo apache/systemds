@@ -23,73 +23,78 @@ import { constants } from '../constants';
 import { Coordinator } from '../models/coordinator.model';
 import { Worker } from '../models/worker.model';
 import { HttpClient } from "@angular/common/http";
+import { Statistics } from "../models/statistics.model";
 
 @Injectable({
 	providedIn: 'root'
 })
 export class FederatedSiteService {
 
-	private coordinators: BehaviorSubject<Coordinator[]> = new BehaviorSubject<Coordinator[]>([]);
-	private workers: BehaviorSubject<Worker[]> = new BehaviorSubject<Worker[]>([]);
+	// private coordinators: BehaviorSubject<Coordinator[]> = new BehaviorSubject<Coordinator[]>([]);
+	// private workers: BehaviorSubject<Worker[]> = new BehaviorSubject<Worker[]>([]);
 
 	constructor(private http: HttpClient) {
 	}
 
 	public getAllCoordinators(): Observable<Coordinator[]> {
-		return this.coordinators.asObservable();
-	}
+		// return this.coordinators.asObservable();
 
-	public getAllWorkers(): Observable<Worker[]> {
-		return this.workers.asObservable();
-	}
-
-	public addCachedCoordinator(coordinator: Coordinator): void {
-		let allCoordinators = this.coordinators.getValue();
-		if (!allCoordinators.some(c => c.id === coordinator.id)) {
-			allCoordinators.push(coordinator);
-		} else {
-			allCoordinators = allCoordinators.map(item => {
-				item = item.id === coordinator.id ? coordinator : item
-				return item;
-			});
-		}
-
-		this.coordinators.next(allCoordinators);
-	}
-
-	public addCachedWorker(worker: Worker): void {
-		let allWorkers = this.workers.getValue();
-		if (!allWorkers.some(w => w.id === worker.id)) {
-			allWorkers.push(worker);
-		} else {
-			allWorkers = allWorkers.map(item => {
-				item = item.id === worker.id ? worker : item
-				return item;
-			});
-		}
-
-		this.workers.next(allWorkers);
-	}
-
-	public removeCachedCoordinator(id: number): void {
-		let allCoordinators = this.coordinators.getValue().filter(c => c.id !== id);
-
-		this.coordinators.next(allCoordinators);
-	}
-
-	public removeCachedWorker(id: number): void {
-		let allWorkers = this.workers.getValue().filter(w => w.id !== id);
-
-		this.workers.next(allWorkers);
-	}
-
-	public loadCoordinators(): Observable<Coordinator[]> {
 		return this.http.get<Coordinator[]>(constants.uriParts.coordinators);
 	}
 
-	public loadWorkers(): Observable<Worker[]> {
+	public getAllWorkers(): Observable<Worker[]> {
+		// return this.workers.asObservable();
+
 		return this.http.get<Worker[]>(constants.uriParts.workers);
 	}
+
+	// public addCachedCoordinator(coordinator: Coordinator): void {
+	// 	let allCoordinators = this.coordinators.getValue();
+	// 	if (!allCoordinators.some(c => c.id === coordinator.id)) {
+	// 		allCoordinators.push(coordinator);
+	// 	} else {
+	// 		allCoordinators = allCoordinators.map(item => {
+	// 			item = item.id === coordinator.id ? coordinator : item
+	// 			return item;
+	// 		});
+	// 	}
+	//
+	// 	this.coordinators.next(allCoordinators);
+	// }
+
+	// public addCachedWorker(worker: Worker): void {
+	// 	let allWorkers = this.workers.getValue();
+	// 	if (!allWorkers.some(w => w.id === worker.id)) {
+	// 		allWorkers.push(worker);
+	// 	} else {
+	// 		allWorkers = allWorkers.map(item => {
+	// 			item = item.id === worker.id ? worker : item
+	// 			return item;
+	// 		});
+	// 	}
+	//
+	// 	this.workers.next(allWorkers);
+	// }
+	//
+	// public removeCachedCoordinator(id: number): void {
+	// 	let allCoordinators = this.coordinators.getValue().filter(c => c.id !== id);
+	//
+	// 	this.coordinators.next(allCoordinators);
+	// }
+	//
+	// public removeCachedWorker(id: number): void {
+	// 	let allWorkers = this.workers.getValue().filter(w => w.id !== id);
+	//
+	// 	this.workers.next(allWorkers);
+	// }
+
+	// public loadCoordinators(): Observable<Coordinator[]> {
+	// 	return this.http.get<Coordinator[]>(constants.uriParts.coordinators);
+	// }
+	//
+	// public loadWorkers(): Observable<Worker[]> {
+	// 	return this.http.get<Worker[]>(constants.uriParts.workers);
+	// }
 
 	public getCoordinator(id: number): Observable<Coordinator> {
 		return this.http.get<Coordinator>(constants.uriParts.coordinators + "/" + id.toString());
@@ -111,16 +116,16 @@ export class FederatedSiteService {
 		return this.http.post<Worker>(constants.uriParts.workers, workerModel);
 	}
 
-	public editCoordinator(coordinator: Coordinator): Observable<Object> {
+	public editCoordinator(coordinator: Coordinator): Observable<Coordinator> {
 		let coordinatorModel = (({id, name, address}) => ({id, name, address}))(coordinator);
 
-		return this.http.put(constants.uriParts.coordinators + "/" + coordinator.id.toString(), coordinatorModel);
+		return this.http.put<Coordinator>(constants.uriParts.coordinators + "/" + coordinator.id.toString(), coordinatorModel);
 	}
 
-	public editWorker(worker: Worker): Observable<Object> {
+	public editWorker(worker: Worker): Observable<Worker> {
 		let workerModel = (({id, name, address}) => ({id, name, address}))(worker);
 
-		return this.http.put(constants.uriParts.workers + "/" + worker.id.toString(), workerModel);
+		return this.http.put<Worker>(constants.uriParts.workers + "/" + worker.id.toString(), workerModel);
 	}
 
 	public deleteCoordinator(id: number): Observable<Object> {
@@ -129,5 +134,9 @@ export class FederatedSiteService {
 
 	public deleteWorker(id: number): Observable<Object> {
 		return this.http.delete(constants.uriParts.workers + "/" + id.toString());
+	}
+
+	public getStatistics(workerId: number): Observable<Statistics> {
+		return this.http.get<Statistics>(constants.uriParts.statistics + "/" + workerId.toString());
 	}
 }

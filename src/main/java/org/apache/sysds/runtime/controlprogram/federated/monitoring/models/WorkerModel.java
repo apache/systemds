@@ -17,21 +17,38 @@
  * under the License.
  */
 
-const BASE_URI = 'http://localhost:8080';
+package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-let uriParts = {
-	dashboard: '/dashboard',
-	coordinators: BASE_URI + '/coordinators',
-	workers: BASE_URI + '/workers',
-	statistics: BASE_URI + '/statistics'
-}
+import java.util.List;
 
-let prefixes = {
-	coordinator: 'coordinator-',
-	worker: 'worker-'
-}
+public class WorkerModel extends BaseModel {
+	public String name;
+	public String address;
 
-export const constants = {
-	uriParts: uriParts,
-	prefixes: prefixes
+	public List<BaseModel> stats;
+
+	private static final String JsonFormat = "{" +
+			"\"id\": %d," +
+			"\"name\": \"%s\"," +
+			"\"address\": \"%s\"" +
+			"}";
+
+	public WorkerModel(final Long id) {
+		this.id = id;
+	}
+
+	public WorkerModel() {
+		this(-1L);
+	}
+
+	public WorkerModel(final Long id, final String name, final String address) {
+		this.id = id;
+		this.name = name;
+		this.address = address;
+	}
+
+	@Override
+	public String toString() {
+		return String.format(JsonFormat, super.id, this.name, this.address);
+	}
 }

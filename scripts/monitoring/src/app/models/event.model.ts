@@ -17,6 +17,10 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
+import { EventStage } from "./eventStage.model";
 
-public abstract class BaseEntityModel { }
+export class Event {
+	constructor(public coordinatorId: number,
+				public stages: EventStage[]) {
+	}
+}

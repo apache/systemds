@@ -38,7 +38,7 @@ export class CreateEditWorkersComponent {
 	}
 
 	ngOnInit(): void {
-		this.model = new Worker(-1, '', '', false, 0, [], []);
+		this.model = new Worker(-1, '', '', false, 0);
 
 		if (this.id !== null) {
 			this.fedSiteService.getWorker(this.id).subscribe(worker => this.model = worker);
@@ -48,12 +48,12 @@ export class CreateEditWorkersComponent {
 	onSaveClick() {
 
 		if (this.id !== null) {
-			this.fedSiteService.editWorker(this.model).subscribe(() => {
-				this.updateWorkerList(this.model.id);
+			this.fedSiteService.editWorker(this.model).subscribe(worker => {
+				this.model = worker;
 			});
 		} else {
 			this.fedSiteService.createWorker(this.model).subscribe(worker => {
-				this.updateWorkerList(worker.id)
+				this.model = worker;
 			});
 		}
 
@@ -62,9 +62,5 @@ export class CreateEditWorkersComponent {
 
 	onCancelClick() {
 		this.dialogRef.close()
-	}
-
-	private updateWorkerList(id: number): void {
-		this.fedSiteService.getWorker(id).subscribe(worker => this.fedSiteService.addCachedWorker(worker))
 	}
 }

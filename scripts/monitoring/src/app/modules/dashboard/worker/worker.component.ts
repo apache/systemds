@@ -21,6 +21,7 @@ import { Component } from '@angular/core';
 import { Worker } from 'src/app/models/worker.model';
 import { FederatedSiteService } from "../../../services/federatedSiteService.service";
 import { ActivatedRoute } from "@angular/router";
+import { Statistics } from "../../../models/statistics.model";
 
 @Component({
 	selector: 'app-worker',
@@ -30,6 +31,7 @@ import { ActivatedRoute } from "@angular/router";
 export class WorkerComponent {
 
 	public model: Worker;
+	public statistics: Statistics;
 
 	public optionsMemory: any;
 	public updateOptionsMemory: any;
@@ -45,7 +47,7 @@ export class WorkerComponent {
 	constructor(private fedSiteService: FederatedSiteService) {	}
 
 	ngOnInit(): void {
-		this.model = this.model ? this.model : new Worker(-1, '', '', false, 0, [], []);
+		this.model = this.model ? this.model : new Worker(-1, '', '', false, 0);
 
 		this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
 			this.model = worker;
@@ -95,8 +97,8 @@ export class WorkerComponent {
 		};
 
 		this.timer = setInterval(() => {
-			this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
-				this.model = worker;
+			this.fedSiteService.getStatistics(this.model.id).subscribe(stats => {
+				this.statistics = stats;
 
 				this.updateMetrics();
 			})
@@ -109,9 +111,8 @@ export class WorkerComponent {
 
 	private updateMetrics(): void {
 
-		console.log(this.model.stats);
 
-		this.dataMemory = this.model.stats.map(s => {
+		this.dataMemory = this.statistics.utilization.map(s => {
 			return {
 				name: s.timestamp,
 				value: [

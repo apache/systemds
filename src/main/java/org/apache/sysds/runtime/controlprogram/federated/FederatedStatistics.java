@@ -26,7 +26,6 @@ import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -39,9 +38,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -53,6 +50,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.Fed
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.GCStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.LineageCacheStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.MultiTenantStatsCollection;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -96,9 +95,8 @@ public class FederatedStatistics {
 	private static final LongAdder fedPutLineageItems = new LongAdder();
 	private static final LongAdder fedSerializationReuseCount = new LongAdder();
 	private static final LongAdder fedSerializationReuseBytes = new LongAdder();
-	// Traffic between federated worker and a coordinator site
-	// in the form of [{ datetime, coordinatorAddress, transferredBytes }, { ... }] }
-	private static List<Triple<LocalDateTime, String, Long>> coordinatorsTrafficBytes = new ArrayList<>();
+	private static final List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
+	private static final List<EventModel> workerEvents = new ArrayList<>();
 
 	public static void logServerTraffic(long read, long written) {
 		bytesReceived.add(read);
@@ -109,7 +107,6 @@ public class FederatedStatistics {
 		fedBytesReceived.add(read);
 		fedBytesSent.add(written);
 	}
-
 
 	public static synchronized void incFederated(RequestType rqt, List<Object> data){
 		switch (rqt) {
@@ -164,7 +161,7 @@ public class FederatedStatistics {
 			transferredMatCharCount.increment();
 
 		if (host != null && byteAmount > 0) {
-			coordinatorsTrafficBytes.add(new ImmutableTriple<>(LocalDateTime.now(), host, byteAmount));
+			coordinatorsTrafficBytes.add(new TrafficModel(LocalDateTime.now(), host, byteAmount));
 		}
 	}
 
@@ -207,6 +204,7 @@ public class FederatedStatistics {
 		fedBytesReceived.reset();
 		//TODO merge with existing
 		coordinatorsTrafficBytes.clear();
+		workerEvents.clear();
 	}
 
 	public static String displayFedIOExecStatistics() {
@@ -346,8 +344,7 @@ public class FederatedStatistics {
 		sb.append("Transferred bytes (Host/Datetime/ByteAmount):\n");
 
 		for (var entry: coordinatorsTrafficBytes) {
-			sb.append(String.format("%s/%s/%d.\n",
-					entry.getLeft().format(DateTimeFormatter.ISO_DATE_TIME), entry.getMiddle(), entry.getRight()));
+			sb.append(String.format("%s/%s/%d.\n", entry.coordinatorAddress, entry.timestamp, entry.byteAmount));
 		}
 
 		return sb.toString();
@@ -475,20 +472,16 @@ public class FederatedStatistics {
 		return fedLookupTableGetCount.longValue();
 	}
 
-	public static List<Triple<LocalDateTime, String, Long>> getCoordinatorsTrafficBytes() {
+	public static List<TrafficModel> getCoordinatorsTrafficBytes() {
 		return coordinatorsTrafficBytes;
 	}
 
-	public static List<Pair<RequestType, Long>> getRequestTypeCount() {
-		var requestTypeCount = new ArrayList<Pair<RequestType, Long>>();
+	public static List<EventModel> getWorkerEvents() {
+		return workerEvents;
+	}
 
-		requestTypeCount.add(new ImmutablePair<RequestType, Long>(RequestType.GET_VAR, getCount.longValue()));
-		requestTypeCount.add(new ImmutablePair<RequestType, Long>(RequestType.PUT_VAR, putCount.longValue()));
-		requestTypeCount.add(new ImmutablePair<RequestType, Long>(RequestType.READ_VAR, readCount.longValue()));
-		requestTypeCount.add(new ImmutablePair<RequestType, Long>(RequestType.EXEC_UDF, executeUDFCount.longValue()));
-		requestTypeCount.add(new ImmutablePair<RequestType, Long>(RequestType.EXEC_INST, executeInstructionCount.longValue()));
-
-		return requestTypeCount;
+	public static void addEvent(EventModel event) {
+		workerEvents.add(event);
 	}
 
 	public static double getCPUUsage() {
@@ -669,7 +662,7 @@ public class FederatedStatistics {
 			mtStats.collectStats();
 			heavyHitters = Statistics.getHeavyHittersHashMap();
 			coordinatorsTrafficBytes = getCoordinatorsTrafficBytes();
-			requestTypeCount = getRequestTypeCount();
+			workerEvents = getWorkerEvents();
 		}
 		
 		public void aggregate(FedStatsCollection that) {
@@ -685,7 +678,7 @@ public class FederatedStatistics {
 					new ImmutablePair<>(v1.getLeft() + v2.getLeft(), v1.getRight() + v2.getRight()))
 			);
 			coordinatorsTrafficBytes.addAll(that.coordinatorsTrafficBytes);
-			requestTypeCount.addAll(that.requestTypeCount);
+			workerEvents.addAll(that.workerEvents);
 		}
 
 		protected static class CacheStatsCollection implements Serializable {
@@ -839,7 +832,7 @@ public class FederatedStatistics {
 		private LineageCacheStatsCollection linCacheStats = new LineageCacheStatsCollection();
 		private MultiTenantStatsCollection mtStats = new MultiTenantStatsCollection();
 		public HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
-		public List<Triple<LocalDateTime, String, Long>> coordinatorsTrafficBytes = new ArrayList<>();
-		public List<Pair<RequestType, Long>> requestTypeCount = new ArrayList<>();
+		public List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
+		public List<EventModel> workerEvents = new ArrayList<>();
 	}
 }

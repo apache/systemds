@@ -17,15 +17,12 @@
  * under the License.
  */
 
-import { Statistics } from "./statistics.model";
 
 export class Worker {
 	constructor(public id: number,
 				public name: string,
 				public address: string,
 				public isOnline: boolean,
-				public jitCompileTime: number,
-				public requestTypeCounts: [],
-				public stats: Statistics[]) {
+				public jitCompileTime: number) {
 	}
 }

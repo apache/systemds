@@ -90,10 +90,8 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 			int clen = sampleMatrix[0].length;
 			writeRawString(sampleRaw, dataPath);
 
-			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB, true);
+			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB, parallel);
 			MatrixReader mr = gr.getReader();
-			//mmm m3 = new mmm(gr.getProperties());
-			//MatrixBlock matrixBlock = m3.readMatrixFromHDFS(dataPath, sampleMB.getNumRows(), clen, -1, -1);
 			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, sampleMB.getNumRows(), clen, -1, -1);
 			TestUtils.compareMatrices(sampleMB, matrixBlock, 0);
 		}

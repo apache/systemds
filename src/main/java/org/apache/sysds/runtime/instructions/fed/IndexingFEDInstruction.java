@@ -331,7 +331,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 			FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1.getID());
 
 			if(fr2.length == 1)
-				fedMap.execute(getTID(), true, fr2, fr1, fr3);
+				fedMap.execute(getTID(), true, fr1, fr2[0], fr3);
 			else
 				fedMap.execute(getTID(), true, ranges, fr2[cpVarInstIx], fr2[from], fr1, fr3);
 		}

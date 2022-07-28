@@ -188,6 +188,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			
 		FederatedResponse response = null; // last response
 		boolean containsCLEAR = false;
+		long clearReqPid = -1;
 		for(int i = 0; i < requests.length; i++) {
 			final FederatedRequest request = requests[i];
 			final RequestType t = request.getType();
@@ -233,12 +234,14 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				}
 			}
 
-			if(t == RequestType.CLEAR)
+			if(t == RequestType.CLEAR) {
 				containsCLEAR = true;
+				clearReqPid = request.getPID();
+			}
 		}
 
 		if(containsCLEAR) {
-			_flt.clear();
+			_flt.removeECM(remoteHost, clearReqPid);
 			printStatistics();
 		}
 

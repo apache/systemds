@@ -30,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -98,7 +99,7 @@ public class FederatedStatistics {
 	private static final LongAdder fedSerializationReuseBytes = new LongAdder();
 	// Traffic between federated worker and a coordinator site
 	// in the form of [{ datetime, coordinatorAddress, transferredBytes }, { ... }] }
-	private static List<Triple<LocalDateTime, String, Long>> coordinatorsTrafficBytes = new ArrayList<>();
+	private static CopyOnWriteArrayList<Triple<LocalDateTime, String, Long>> coordinatorsTrafficBytes = new CopyOnWriteArrayList<>();
 
 	public static void logServerTraffic(long read, long written) {
 		bytesReceived.add(read);

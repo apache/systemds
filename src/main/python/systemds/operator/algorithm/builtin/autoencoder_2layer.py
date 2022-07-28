@@ -35,18 +35,42 @@ def autoencoder_2layer(X: Matrix,
                        max_epochs: int,
                        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     Trains a 2-layer autoencoder with minibatch SGD and step-size decay.
+     If invoked with H1 > H2 then it becomes a 'bowtie' structured autoencoder
+     Weights are initialized using Glorot & Bengio (2010) AISTATS initialization.
+     The script standardizes the input before training (can be turned off).
+     Also, it randomly reshuffles rows before training.
+     Currently, tanh is set to be the activation function. 
+     By re-implementing 'func' DML-bodied function, one can change the activation.
+    
+    
+    
+    :param X: Filename where the input is stored
     :param num_hidden1: Number of neurons in the 1st hidden layer
     :param num_hidden2: Number of neurons in the 2nd hidden layer
     :param max_epochs: Number of epochs to train for
     :param full_obj: If TRUE, Computes objective function value (squared-loss)
-    :param at: of each epoch. Note that, computing the full 
-    :param objective: a lot of time. 
+        at the end of each epoch. Note that, computing the full
+        objective can take a lot of time.
     :param batch_size: Mini-batch size (training parameter)
     :param step: Initial step size (training parameter)
     :param decay: Decays step size after each epoch (training parameter)
     :param mu: Momentum parameter (training parameter)
-    :return: 'OperationNode' containing  
+    :param W1_rand: Weights might be initialized via input matrices
+    :param W2_rand: ---
+    :param W3_rand: ---
+    :param W4_rand: ---
+    :return: Matrix storing weights between input layer and 1st hidden layer
+    :return: Matrix storing bias between input layer and 1st hidden layer
+    :return: Matrix storing weights between 1st hidden layer and 2nd hidden layer
+    :return: Matrix storing bias between 1st hidden layer and 2nd hidden layer
+    :return: Matrix storing weights between 2nd hidden layer and 3rd hidden layer
+    :return: Matrix storing bias between 2nd hidden layer and 3rd hidden layer
+    :return: Matrix storing weights between 3rd hidden layer and output layer
+    :return: Matrix storing bias between 3rd hidden layer and output layer
+    :return: Matrix storing the hidden (2nd) layer representation if needed
     """
+
     params_dict = {'X': X, 'num_hidden1': num_hidden1, 'num_hidden2': num_hidden2, 'max_epochs': max_epochs}
     params_dict.update(kwargs)
     

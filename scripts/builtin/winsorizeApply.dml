@@ -19,25 +19,20 @@
 #
 #-------------------------------------------------------------
 
-# winsorizeApply takes the upper and lower quantile values per colunm, and
+# winsorizeApply takes the upper and lower quantile values per column, and
 # remove outliers by replacing them with these upper and lower bound values.
 #
-# INPUT PARAMETERS:
-# ------------------------------------------------------------------------------
-# NAME     TYPE             DEFAULT   MEANING
-# ------------------------------------------------------------------------------
-# X        Matrix[Double]   ---       Input feature matrix
-# qLower   Matrix[Double]   ---       row vector of upper bounds per column
-# qUpper   Matrix[Double]   ---       row vector of lower bounds per column 
-#
-# ------------------------------------------------------------------------------
+# INPUT:
+# --------------------------------------------------
+# X       Input feature matrix
+# qLower  row vector of upper bounds per column
+# qUpper  row vector of lower bounds per column 
+# --------------------------------------------------
 #
 # OUTPUT:
-# ------------------------------------------------------------------------------
-# NAME     TYPE                       MEANING
-# ------------------------------------------------------------------------------
-# Y        Matrix[Double]             Matrix without outlier values
-# ------------------------------------------------------------------------------
+# ------------------------------------------------
+# Y     Matrix without outlier values
+# ------------------------------------------------
 
 
 m_winsorizeApply = function(Matrix[Double] X,  Matrix[Double] qLower, Matrix[Double] qUpper)

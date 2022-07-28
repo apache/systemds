@@ -32,7 +32,17 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def frameSort(F: Frame,
               mask: Matrix,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
+    """
+     Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
+     Built-in for sorting frames
     
+    
+    
+    :param F: Data frame of string values
+    :param mask: matrix for identifying string columns
+    :return: sorted dataset by column 1 in decreasing order
+    """
+
     params_dict = {'F': F, 'mask': mask}
     params_dict.update(kwargs)
     return Matrix(F.sds_context,

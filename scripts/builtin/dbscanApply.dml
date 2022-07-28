@@ -18,23 +18,20 @@
 # under the License.
 #
 #-------------------------------------------------------------
-#
+
 # Implements the outlier detection/prediction algorithm using a DBScan model
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
-# NAME              TYPE             DEFAULT    MEANING
-# ----------------------------------------------------------------------------
-# X             Matrix[Double]   ---        The input Matrix to do outlier detection on.
-# clusterModel      Matrix[Double]   ---        Model of clusters to predict outliers against.
-# eps               Double           0.5        Maximum distance between two points for one to be considered reachable for the other.
-
-# OUTPUT PARAMETERS:
-# ----------------------------------------------------------------------------
-# NAME              TYPE             DEFAULT    MEANING
-# ----------------------------------------------------------------------------
-# outlierPoints     Matrix[Double]   ---        Predicted outliers
-
+# INPUT:
+# ---------------------------------------------
+# X              The input Matrix to do outlier detection on.
+# clusterModel   Model of clusters to predict outliers against.
+# eps            Maximum distance between two points for one to be considered reachable for the other.
+# ---------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------
+# outlierPoints   Predicted outliers
+# ----------------------------------------------
 
 m_dbscanApply = function (Matrix[Double] X, Matrix[Double] clusterModel, Double eps)
   return (Matrix[Double] cluster, Matrix[Double] outlierPoints)

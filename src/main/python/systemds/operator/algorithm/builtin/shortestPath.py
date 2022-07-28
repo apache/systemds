@@ -33,15 +33,30 @@ def shortestPath(G: Matrix,
                  sourceNode: int,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param The: G can be 0/1 (just specifying whether the nodes
-    :param are: not) or integer values (representing the weight
-    :param of: or the distances between nodes, 0 if not connected).
+     Computes the minimum distances (shortest-path) between a single source vertex and every other vertex in the graph.
+     
+     Grzegorz Malewicz, Matthew H. Austern, Aart J. C. Bilk, 
+     James C. Dehnert, Ikkan Horn, Naty Leiser and Grzegorz Czajkowski:
+     Pregel: A System for Large-Scale Graph Processing, SIGMOD 2010
+    
+    
+    
+    :param G: adjacency matrix of the labeled graph: Such graph can be directed
+        (G is symmetric) or undirected (G is not symmetric).
+        The values of G can be 0/1 (just specifying whether the nodes
+        are connected or not) or integer values (representing the weight
+        of the edges or the distances between nodes, 0 if not connected).
     :param maxi: Integer max number of iterations accepted (0 for FALSE, i.e.
-    :param max: iterations not defined)
-    :param sourceNode: index to calculate the shortest paths to all other nodes.
+        max number of iterations not defined)
+    :param sourceNode: node index to calculate the shortest paths to all other nodes.
     :param verbose: flag for verbose debug output
-    :return: 'OperationNode' containing minimum distance shortest-path from vertex i to vertex j. & of the minimum distance is infinity, the two nodes are 
+    :return: Output matrix (double) of minimum distances (shortest-path) between
+        vertices: The value of the ith row and the jth column of the output
+        matrix is the minimum distance shortest-path from vertex i to vertex j.
+        When the value of the minimum distance is infinity, the two nodes are
+        not connected.
     """
+
     params_dict = {'G': G, 'sourceNode': sourceNode}
     params_dict.update(kwargs)
     return Matrix(G.sds_context,

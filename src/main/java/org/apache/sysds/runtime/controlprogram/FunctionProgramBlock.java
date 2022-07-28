@@ -29,11 +29,18 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FunctionBlock;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.fedplanner.AFederatedPlanner;
+import org.apache.sysds.hops.fedplanner.FTypes;
+import org.apache.sysds.hops.fedplanner.FederatedPlannerCostbased;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.recompile.Recompiler.ResetType;
 import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.parser.FunctionStatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.util.ProgramConverter;
@@ -50,6 +57,7 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 	
 	private boolean _recompileOnce = false;
 	private boolean _nondeterministic = false;
+	private boolean _isFedPlan = false;
 	
 	public FunctionProgramBlock( Program prog, List<DataIdentifier> inputParams, List<DataIdentifier> outputParams) {
 		super(prog);
@@ -121,7 +129,14 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 				boolean codegen = ConfigurationManager.isCodegenEnabled();
 				boolean singlenode = DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE;
 				ResetType reset = (codegen || singlenode) ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
+
 				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
+				if (shouldRunFedPlanner(ec)) {
+					recompileFederatedPlan((LocalVariableMap) ec.getVariables().clone());
+					// recreate instructions/LOPs for new updated HOPs
+					Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, false, reset);
+				}
+
 
 				if( DMLScript.STATISTICS ){
 					long t1 = System.nanoTime();
@@ -151,6 +166,45 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 		checkOutputParameters(ec.getVariables());
 	}
 
+	private boolean shouldRunFedPlanner(ExecutionContext ec) {
+		String planner = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.FEDERATED_PLANNER);
+		if (!OptimizerUtils.FEDERATED_COMPILATION && !FTypes.FederatedPlanner.isCompiled(planner))
+			return false;
+		for (String varName : ec.getVariables().keySet()) {
+			Data variable = ec.getVariable(varName);
+			if (variable instanceof CacheableData<?> && ((CacheableData<?>) variable).isFederated()) {
+				_isFedPlan = true;
+				return true;
+			}
+		}
+		if (_isFedPlan) {
+			_isFedPlan = false;
+			// current function uses HOPs with FED execution type. Remove the forced FED execution type by running
+			// planner again
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
+	/**
+	 * Recompile the HOPs of the function, keeping federation in mind.
+	 * @param variableMap The variable map for the function arguments
+	 */
+	private void recompileFederatedPlan(LocalVariableMap variableMap) {
+		String splanner = ConfigurationManager.getDMLConfig()
+				.getTextValue(DMLConfig.FEDERATED_PLANNER);
+		AFederatedPlanner planner = FTypes.FederatedPlanner.isCompiled(splanner) ?
+				FTypes.FederatedPlanner.valueOf(splanner.toUpperCase()).getPlanner() :
+				new FederatedPlannerCostbased();
+		if (planner == null)
+			// unreachable, if planner does not support compilation cost based would be chosen
+			throw new DMLRuntimeException(
+				"Recompilation chose to apply federation planner, but configured planner does not support compilation.");
+		planner.rewriteFunctionDynamic((FunctionStatementBlock) _sb, variableMap);
+	}
+	
 	protected void checkOutputParameters( LocalVariableMap vars )
 	{
 		for( DataIdentifier diOut : _outputParams ) {

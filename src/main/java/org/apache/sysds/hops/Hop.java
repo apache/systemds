@@ -94,6 +94,7 @@ public abstract class Hop implements ParseInfo {
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
 	protected FederatedCost _federatedCost = new FederatedCost();
 	protected double repetitions = 1;
+	protected boolean repetitionsUpdated = false;
 
 	/**
 	 * Field defining if prefetch should be activated for operation.
@@ -1556,8 +1557,10 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	public void updateRepetitionEstimates(double repetitions){
-		if ( !federatedCostInitialized() ){
+		LOG.trace("Updating repetition estimates of " + this.getName() + " to " + repetitions);
+		if ( !federatedCostInitialized() && !repetitionsUpdated ){
 			this.repetitions = repetitions;
+			this.repetitionsUpdated = true;
 			for ( Hop input : getInput() )
 				input.updateRepetitionEstimates(repetitions);
 		}
@@ -1594,6 +1597,8 @@ public abstract class Hop implements ParseInfo {
 		
 		_etype = that._etype;
 		_etypeForced = that._etypeForced;
+		_federatedOutput = that._federatedOutput;
+		_federatedCost = that._federatedCost;
 		_outputMemEstimate = that._outputMemEstimate;
 		_memEstimate = that._memEstimate;
 		_processingMemEstimate = that._processingMemEstimate;

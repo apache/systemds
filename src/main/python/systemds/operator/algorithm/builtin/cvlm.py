@@ -34,11 +34,22 @@ def cvlm(X: Matrix,
          k: int,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     The cvlm-function is used for cross-validation of the provided data model. This function follows a non-exhaustive cross
+     validation method. It uses lm and lmPredict functions to solve the linear regression and to predict the class of a
+     feature vector with no intercept, shifting, and rescaling.
+    
+    
+    
+    :param X: Recorded Data set into matrix
+    :param y: 1-column matrix of response values.
     :param k: Number of subsets needed, It should always be more than 1 and less than nrow(X)
     :param icpt: Intercept presence, shifting and rescaling the columns of X
     :param reg: Regularization constant (lambda) for L2-regularization. set to nonzero for
-    :return: 'OperationNode' containing  
+        highly dependant/sparse/numerous features
+    :return: Response values
+    :return: Validated data set
     """
+
     params_dict = {'X': X, 'y': y, 'k': k}
     params_dict.update(kwargs)
     

@@ -76,6 +76,9 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		_nEpochs = aEpochs;
 		_nbatches = nbatches;
 		_modelAvg = modelAvg;
+		
+		// make SparkPSWorker serializable
+		_tpool = null;
 	}
 
 	@Override

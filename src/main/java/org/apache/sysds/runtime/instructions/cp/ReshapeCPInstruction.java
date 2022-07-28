@@ -103,8 +103,8 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 			LibMatrixReorg.reshape(in, out, rows, cols, byRow.getBooleanValue());
 
 			//set output and release inputs
-			ec.setMatrixOutput(output.getName(), out);
 			ec.releaseMatrixInput(input1.getName());
+			ec.setMatrixOutput(output.getName(), out);
 		}
 	}
 	

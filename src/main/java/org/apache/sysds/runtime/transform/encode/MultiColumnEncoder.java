@@ -421,7 +421,6 @@ public class MultiColumnEncoder implements Encoder {
 		// Else, derive the optimum number of partitions
 		int nRow = in.getNumRows();
 		int nThread = OptimizerUtils.getTransformNumThreads(); //VCores
-		nThread = 32;
 		int minNumRows = 16000; //min rows per partition
 		List<ColumnEncoderComposite> recodeEncoders = new ArrayList<>();
 		// Count #Builds and #Applies (= #Col)

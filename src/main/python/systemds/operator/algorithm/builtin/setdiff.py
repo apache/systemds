@@ -31,7 +31,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def setdiff(X: Matrix,
             Y: Matrix):
+    """
+     Builtin function that implements difference operation on vectors
     
+    
+    
+    :param X: input vector
+    :param Y: input vector
+    :return: vector with all elements that are present in X but not in Y
+    """
+
     params_dict = {'X': X, 'Y': Y}
     return Matrix(X.sds_context,
         'setdiff',

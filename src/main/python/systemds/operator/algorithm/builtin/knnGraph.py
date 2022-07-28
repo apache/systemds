@@ -31,7 +31,16 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def knnGraph(X: Matrix,
              k: int):
+    """
+     Builtin for k nearest neighbor graph construction
     
+    
+    
+    :param X: ---
+    :param k: ---
+    :return: ---
+    """
+
     params_dict = {'X': X, 'k': k}
     return Matrix(X.sds_context,
         'knnGraph',

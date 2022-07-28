@@ -30,7 +30,15 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def unique(X: Matrix):
+    """
+     Builtin function that implements unique operation on vectors
     
+    
+    
+    :param X: input vector
+    :return: matrix with only unique rows
+    """
+
     params_dict = {'X': X}
     return Matrix(X.sds_context,
         'unique',

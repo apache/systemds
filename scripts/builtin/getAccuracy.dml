@@ -21,21 +21,17 @@
 
 # This builtin function compute the weighted and simple accuracy for given predictions
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE              DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# y               Matrix[Double]    ---       Ground truth (Actual Labels)
-# yhat            Matrix[Double]    ---       Predictions (Predicted labels)
-# isWeighted      Boolean           FALSE     Flag for weighted or non-weighted accuracy calculation
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# --------------------------------------------------------------------------------------
+# y           Ground truth (Actual Labels)
+# yhat        Predictions (Predicted labels)
+# isWeighted  Flag for weighted or non-weighted accuracy calculation
+# --------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE                MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# accuracy        Double              accuracy of the predicted labels
-# ----------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------
+# accuracy  accuracy of the predicted labels
+# --------------------------------------------------------------------------------------------
 
 m_getAccuracy = function(Matrix[Double] y, Matrix[Double] yhat, Boolean isWeighted = FALSE)
 return (Double accuracy)

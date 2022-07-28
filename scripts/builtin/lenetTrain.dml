@@ -22,34 +22,30 @@
 # This builtin function trains LeNet CNN. The architecture of the
 # networks is:conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 ->
 # affine3 -> relu3 -> affine4 -> softmax
-
-# INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
-# NAME              TYPE              DEFAULT   MEANING
-# --------------------------------------------------------------------------------------------
-# X                 Matrix[Double]    ---       Input data matrix, of shape (N, C*Hin*Win)
-# Y                 Matrix[Double]    ---       Target matrix, of shape (N, K)
-# X_val             Matrix[Double]    ---       Validation data matrix, of shape (N, C*Hin*Win)
-# Y_val             Matrix[Double]    ---       Validation target matrix, of shape (N, K)
-# C                 Integer           ---       Number of input channels (dimensionality of input depth)
-# Hin               Integer           ---       Input width
-# Win               Integer           ---       Input height
-# batch_size        Integer           64        Batch size
-# epochs            Integer           20        Number of epochs
-# lr                Double            0.01      Learning rate
-# mu                Double            0.9       Momentum value
-# decay             Double            0.95      Learning rate decay
-# reg               Double            5e-04     Regularization strength
-# seed              Integer           -1        Seed for model initialization
-# verbose           Boolean           FALSE     Flag indicates if function should print to stdout
-# ----------------------------------------------------------------------------------------------------------------------
+#
+# INPUT:
+# ----------------------------------------------------------
+# X           Input data matrix, of shape (N, C*Hin*Win)
+# Y           Target matrix, of shape (N, K)
+# X_val       Validation data matrix, of shape (N, C*Hin*Win)
+# Y_val       Validation target matrix, of shape (N, K)
+# C           Number of input channels (dimensionality of input depth)
+# Hin         Input width
+# Win         Input height
+# batch_size  Batch size
+# epochs      Number of epochs
+# lr          Learning rate
+# mu          Momentum value
+# decay       Learning rate decay
+# reg         Regularization strength
+# seed        Seed for model initialization
+# verbose     Flag indicates if function should print to stdout
+# ------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME              TYPE                        MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# model             List[unknown]               Trained model which can be used in lenetPredict
-# ----------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+# model  Trained model which can be used in lenetPredict
+# -------------------------------------------------------------------------------
 
 source("nn/layers/affine.dml") as affine
 source("nn/layers/conv2d_builtin.dml") as conv2d

@@ -42,9 +42,9 @@ REQUIRED_PACKAGES = [
     'pandas >= 1.2.2' 
 ]
 
-LONG_DESCRIPTION= '''"""This package provides a Pythonic interface for working with SystemDS.
+LONG_DESCRIPTION= '''This package provides a Pythonic interface for working with Apache SystemDS.
 
-SystemDS is a versatile system for the end-to-end data science lifecycle from data integration,
+Apache SystemDS is an open source ML system for the end-to-end data science lifecycle from data integration,
 cleaning, and feature engineering, over efficient, local and distributed ML model training,
 to deployment and serving.
 To facilitate this, bindings from different languages and different system abstractions provide help for:
@@ -56,7 +56,7 @@ These high-level scripts are compiled into hybrid execution plans of local, in-m
 as well as distributed operations on Apache Spark. In contrast to existing systems - that either
 provide homogeneous tensors or 2D Datasets - and in order to serve the entire
 data science lifecycle, the underlying data model are DataTensors, i.e.,
-tensors (multi-dimensional arrays) whose first dimension may have a heterogeneous and nested schema."""'''
+tensors (multi-dimensional arrays) whose first dimension may have a heterogeneous and nested schema.'''
 
 setup(
     name=ARTIFACT_NAME,

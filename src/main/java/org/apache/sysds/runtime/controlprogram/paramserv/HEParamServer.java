@@ -50,18 +50,19 @@ public class HEParamServer extends LocalParamServer {
 
 	public static HEParamServer create(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
 		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc, int numBatchesPerEpoch,
-		MatrixObject valFeatures, MatrixObject valLabels, int nbatches)
+		MatrixObject valFeatures, MatrixObject valLabels, int nbatches, int numBackupWorkers)
 	{
 		NativeHEHelper.initialize();
 		return new HEParamServer(model, aggFunc, updateType, freq, ec,
-				workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches);
+				workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches, numBackupWorkers);
 	}
 
 	private HEParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
 		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc,
-		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches)
+		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches, int numBackupWorkers)
 	{
-		super(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches, true);
+		super(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels,
+			nbatches, true, numBackupWorkers);
 
 		_seal_server = new SEALServer();
 

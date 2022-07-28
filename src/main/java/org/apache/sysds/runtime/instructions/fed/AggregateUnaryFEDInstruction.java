@@ -151,9 +151,9 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	 */
 	private void deriveNewOutputFedMapping(MatrixObject in, MatrixObject out, FederatedRequest fr1){
 		//Get agg type
-		if ( !(instOpcode.equals("uack+") || instOpcode.equals("uark+")) )
-			throw new DMLRuntimeException("Operation " + instOpcode + " is unknown to FOUT processing");
-		boolean isColAgg = instOpcode.equals("uack+");
+		//if ( !(instOpcode.equals("uack+") || instOpcode.equals("uark+")) )
+		//	throw new DMLRuntimeException("Operation " + instOpcode + " is unknown to FOUT processing");
+		boolean isColAgg = ((AggregateUnaryOperator) _optr).isColAggregate();
 		//Get partition type
 		FType inFtype = in.getFedMapping().getType();
 		//Get fedmap from in

@@ -43,7 +43,32 @@ def bandit(X_train: Matrix,
            baseLineScore: float,
            cv: bool,
            **kwargs: Dict[str, VALID_INPUT_TYPES]):
+    """
+     In The bandit function the objective is to find an arm that optimizes
+     a known functional of the unknown arm-reward distributions.
     
+    
+    
+    :param X_train: ---
+    :param Y_train: ---
+    :param X_test: ---
+    :param Y_test: ---
+    :param metaList: ---
+    :param evaluationFunc: ---
+    :param evalFunHp: ---
+    :param lp: ---
+    :param primitives: ---
+    :param params: ---
+    :param K: ---
+    :param R: ---
+    :param baseLineScore: ---
+    :param cv: ---
+    :param cvk: ---
+    :param verbose: ---
+    :param output: ---
+    :return: ---
+    """
+
     params_dict = {'X_train': X_train, 'Y_train': Y_train, 'X_test': X_test, 'Y_test': Y_test, 'metaList': metaList, 'evaluationFunc': evaluationFunc, 'evalFunHp': evalFunHp, 'lp': lp, 'lpHp': lpHp, 'primitives': primitives, 'param': param, 'baseLineScore': baseLineScore, 'cv': cv}
     params_dict.update(kwargs)
     

@@ -71,6 +71,9 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 				{"TwoNN",	2, 4, 1, 1, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"false",	"IMBALANCED",	200},
 				{"CNN", 	2, 4, 1, 1, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER",  "BASELINE",		"false",	"IMBALANCED", 	200},
 				//{"TwoNN", 	5, 1000, 100, 1, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE",			"true",	"BALANCED",		200},
+				{"TwoNN",	2, 4, 1, 4, 0.01, 		"SBP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"false",	"IMBALANCED",	200},
+				{"TwoNN",	2, 4, 1, 4, 0.01, 		"SBP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"false",	"BALANCED",		200},
+				{"CNN",		2, 4, 1, 4, 0.01, 		"SBP", "EPOCH", "SHUFFLE",			 	"BASELINE",		"false",	"BALANCED",		200},
 
 				/*
                     // runtime balancing

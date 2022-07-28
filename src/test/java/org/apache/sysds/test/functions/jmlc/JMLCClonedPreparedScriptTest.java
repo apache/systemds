@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.sysds.conf.CompilerConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLException;
@@ -94,6 +95,7 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 		
 		boolean failed = false;
 		try( Connection conn = new Connection() ) {
+			conn.setConfigTypes(false, CompilerConfig.ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR);
 			DMLScript.STATISTICS = true;
 			Statistics.reset();
 			PreparedScript pscript = conn.prepareScript(

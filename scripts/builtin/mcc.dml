@@ -21,21 +21,17 @@
 
 # Built-in function mcc: Matthews' Correlation Coefficient for binary classification evaluation
 #
-# INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE               DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# predictions     Matrix[Integer]      ---     Vector of predicted 0/1 values. 
-#                                                 (requires setting 'labels' parameter)
-# labels          Matrix[Integer]      ---     Vector of 0/1 labels.
-# ---------------------------------------------------------------------------------------------
- 
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# mattCC          Double    ---       Matthews' Correlation Coefficient
-# ---------------------------------------------------------------------------------------------
+# INPUT:
+# -------------------------------------------------------------
+# predictions  Vector of predicted 0/1 values. 
+#                 (requires setting 'labels' parameter)
+# labels       Vector of 0/1 labels.
+# -------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------
+# mattCC  Matthews' Correlation Coefficient
+# -----------------------------------------------------------------
 
 m_mcc = function(Matrix[Double] predictions, Matrix[Double] labels)
 return (Double mattCC)

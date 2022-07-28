@@ -48,13 +48,12 @@ public class TSMMTest {
 		MatrixBlock mb;
 		final double[] spar = new double[] {0.3, 0.1, 0.01};
 		final int[] cols = new int[] {10, 6, 4, 3, 2, 1};
-		final int[] threads = new int[] {1, 10};
+		final int[] threads = new int[] {1, 3, 10, 11, 16, 32, 44};
 		final int[] rows = new int[] {10};
 		for(int i = 0; i < 3; i++) { // seeds
 			for(int s = 0; s < spar.length; s++) {
 				for(int c = 0; c < cols.length; c++) {
 					for(int r = 0; r < rows.length; r++) {
-
 						mb = TestUtils.round(TestUtils.generateTestMatrixBlock(rows[r], cols[c], 1, 10, spar[s], i));
 						for(int t = 0; t < threads.length; t++)
 							tests.add(new Object[] {mb, threads[t]});
@@ -63,39 +62,62 @@ public class TSMMTest {
 
 			}
 		}
+		MatrixBlock mb1 = new MatrixBlock(100, 100, true); // dense cols sparse block
+		for(int j : new int[] {1, 4, 44, 87})
+			for(int i = 0; i < 100; i++)
+				mb1.quickSetValue(i, j, 100);
+		for(int t = 0; t < threads.length; t++)
+			tests.add(new Object[] {mb1, threads[t]});
+
+		MatrixBlock mb2 = new MatrixBlock(100, 100, true); // sparse but specific
+		for(int j : new int[] {44, 87})
+			for(int i : new int[] {56, 92})
+				mb2.quickSetValue(i, j, 100);
+		for(int t = 0; t < threads.length; t++)
+			tests.add(new Object[] {mb2, threads[t]});
+
+		MatrixBlock mb3 = new MatrixBlock(100, 100, true); // dense rows sparse block
+		for(int j : new int[] {1, 4, 44, 87})
+			for(int i = 0; i < 100; i++)
+				mb3.quickSetValue(j, i, 100);
+		for(int t = 0; t < threads.length; t++)
+			tests.add(new Object[] {mb3, threads[t]});
 		return tests;
 	}
 
 	@Test
 	public void testTSMMLeftSparseVSDense() {
 		final MMTSJType mType = MMTSJType.LEFT;
-		final MatrixBlock expected = in.transposeSelfMatrixMultOperations(null, mType, k);
+		final MatrixBlock expected = in.transposeSelfMatrixMultOperations(null, mType, 1);
+
+		if(k > 1) // test multithread
+			testCompare(expected, in, "Compare single vs multithread");
+
 		final boolean isSparse = in.isInSparseFormat();
 
 		if(isSparse) {
 			MatrixBlock m2 = new MatrixBlock();
 			m2.copy(in);
 			m2.sparseToDense();
-			testCompare(expected, m2);
+			testCompare(expected, m2, "Compare sparse vs dense");
 		}
 		else {
 			MatrixBlock m2 = new MatrixBlock();
 			m2.copy(in);
 			m2.denseToSparse(true);
-			testCompare(expected, m2);
+			testCompare(expected, m2, "Compare dense vs CSR Sparse");
 
 			MatrixBlock m3 = new MatrixBlock();
 			m3.copy(in);
-			m3.copy(in);
 			m3.denseToSparse(false);
-			testCompare(expected, m3);
+			testCompare(expected, m3, "Compare dense vs MCSR Sparse");
 		}
 	}
 
-	private void testCompare(MatrixBlock expected, MatrixBlock m2) {
+	private void testCompare(MatrixBlock expected, MatrixBlock m2, String message) {
 		final MMTSJType mType = MMTSJType.LEFT;
 		final MatrixBlock actual = m2.transposeSelfMatrixMultOperations(null, mType, k);
-		final String inString = m2.toString();
-		TestUtils.compareMatricesBitAvgDistance(expected, actual, 10L, 256L, inString);
+		// final String inString = m2.toString();
+		TestUtils.compareMatricesBitAvgDistance(expected, actual, 10L, 256L, message);
 	}
 }

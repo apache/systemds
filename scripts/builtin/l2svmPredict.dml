@@ -20,24 +20,20 @@
 #-------------------------------------------------------------
 
 # Builtin function Implements binary-class SVM with squared slack variables.
-
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE            DEFAULT     MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X               Matrix[Double]  ---         matrix X of feature vectors to classify
-# W               Matrix[Double]  ---         matrix of the trained variables
-# verbose         Boolean         FALSE       Set to true if one wants print statements.
-# ----------------------------------------------------------------------------------------------------------------------
+#
+# INPUT:
+# -----------------------------------------------------------------------------------
+# X        matrix X of feature vectors to classify
+# W        matrix of the trained variables
+# verbose  Set to true if one wants print statements.
+# -----------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE                MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# YRaw            Matrix[Double]      Classification Labels Raw, meaning not modified to clean
-#                                     Labeles of 1's and -1's
-# Y               Matrix[Double]      Classification Labels Maxed to ones and zeros.
-# ----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
+# YRaw  Classification Labels Raw, meaning not modified to clean
+#       labels of 1's and -1's
+# Y     Classification Labels Maxed to ones and zeros.
+# ----------------------------------------------------------------------------------------
 
 m_l2svmPredict = function(Matrix[Double] X, Matrix[Double] W, Boolean verbose = FALSE)
   return(Matrix[Double] YRaw, Matrix[Double] Y)

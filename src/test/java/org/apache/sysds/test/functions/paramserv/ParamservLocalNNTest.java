@@ -53,6 +53,11 @@ public class ParamservLocalNNTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void testParamservSBPEpoch() {
+		runDMLTest(3, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+	}
+
+	@Test
 	public void testParamservASPEpoch() {
 		runDMLTest(3, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
@@ -65,6 +70,21 @@ public class ParamservLocalNNTest extends AutomatedTestBase {
 	@Test
 	public void testParamservBSPBatchDisjointRandom() {
 		runDMLTest(3, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM);
+	}
+
+	@Test
+	public void testParamservSBPBatch() {
+		runDMLTest(3, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+	}
+
+	@Test
+	public void testParamservSBPBatchDisjointRoundRobin() {
+		runDMLTest(3, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN);
+	}
+
+	@Test
+	public void testParamservSBPBatchDisjointRandom() {
+		runDMLTest(3, 3, Statement.PSUpdateType.SBP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM);
 	}
 
 	@Test

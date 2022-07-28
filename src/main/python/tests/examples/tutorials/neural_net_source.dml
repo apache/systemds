@@ -21,9 +21,10 @@
 
 # Imports
 source("nn/layers/affine.dml") as affine
-source("nn/layers/logcosh_loss.dml") as logcosh
-source("nn/layers/elu.dml") as elu
+source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("nn/layers/relu.dml") as relu
 source("nn/layers/sigmoid.dml") as sigmoid
+source("nn/layers/softmax.dml") as softmax
 source("nn/optim/sgd.dml") as sgd
 
 init_model = function(Integer inputDimension, Integer outputDimension, int seed = -1)
@@ -36,26 +37,23 @@ init_model = function(Integer inputDimension, Integer outputDimension, int seed 
   model = list(W1, W2, W3, b1, b2, b3)
 }
 
-
 predict = function(matrix[double] X,
                    list[unknown] model)
     return (matrix[double] probs) {
 
-  W1 = as.matrix(model[1])
-  W2 = as.matrix(model[2])
-  W3 = as.matrix(model[3])
-  b1 = as.matrix(model[4])
-  b2 = as.matrix(model[5])
-  b3 = as.matrix(model[6])
+  W1 = as.matrix(model[1]);  b1 = as.matrix(model[4])
+  W2 = as.matrix(model[2]);  b2 = as.matrix(model[5])
+  W3 = as.matrix(model[3]);  b3 = as.matrix(model[6])
 
-  out1elu = elu::forward(affine::forward(X, W1, b1),1)
-  out2elu = elu::forward(affine::forward(out1elu, W2, b2),1)
-  probs = elu::forward(affine::forward(out2elu, W3, b3),1)
+  out1a = sigmoid::forward(affine::forward(X, W1, b1))
+  out2a = relu::forward(affine::forward(out1a, W2, b2))
+  probs = softmax::forward(affine::forward(out2a, W3, b3))
 }
 
 eval = function(matrix[double] probs, matrix[double] y)
-    return (double loss) {
-  loss = logcosh::forward(probs, y)
+    return (double accuracy) {
+  correct_pred = rowIndexMax(probs) == rowIndexMax(y)
+  accuracy = mean(correct_pred)
 }
 
 gradients = function(list[unknown] model,
@@ -64,33 +62,31 @@ gradients = function(list[unknown] model,
                      matrix[double] labels)
     return (list[unknown] gradients) {
 
-  W1 = as.matrix(model[1])
-  W2 = as.matrix(model[2])
-  W3 = as.matrix(model[3])
-  b1 = as.matrix(model[4])
-  b2 = as.matrix(model[5])
-  b3 = as.matrix(model[6])
-
+  W1 = as.matrix(model[1]); b1 = as.matrix(model[4])
+  W2 = as.matrix(model[2]); b2 = as.matrix(model[5])
+  W3 = as.matrix(model[3]); b3 = as.matrix(model[6])
+  
   # Compute forward pass
   out1 = affine::forward(features, W1, b1)
-  out1elu = elu::forward(out1, 1)
-  out2 = affine::forward(out1elu, W2, b2)
-  out2elu = elu::forward(out2, 1)
-  out3 = affine::forward(out2elu, W3, b3)
-  probs = elu::forward(out3,1)
+  out1a = sigmoid::forward(out1)
+  out2 = affine::forward(out1a, W2, b2)
+  out2a = relu::forward(out2)
+  out3 = affine::forward(out2a, W3, b3)
+  probs = softmax::forward(out3)
 
   # Compute loss & accuracy for training data
-  loss = logcosh::forward(probs, labels)
+  loss = cross_entropy_loss::forward(probs, labels)
   print("Batch loss: " + loss)
 
   # Compute data backward pass
-  dprobs = logcosh::backward(probs, labels)
-  dout3 = elu::backward(dprobs, out3, 1)
-  [dout2elu, dW3, db3] = affine::backward(dout3, out2elu, W3, b3)
-  dout2 = elu::backward(dout2elu, out2, 1)
-  [dout1elu, dW2, db2] = affine::backward(dout2, out1elu, W2, b2)
-  dout1 = elu::backward(dout1elu, out1, 1)
-  [dfeatures, dW1, db1] = affine::backward(dout1, features, W1, b1)
+  # Note it is same arguments as forward with one extra argument in front
+  dloss = cross_entropy_loss::backward(probs, labels)
+  dout3 = softmax::backward(dloss, out3)
+  [dout2a, dW3, db3] = affine::backward(dout3, out2a, W3, b3)
+  dout2 = relu::backward(dout2a, out2)
+  [dout1a, dW2, db2] = affine::backward(dout2, out1a, W2, b2)
+  dout1 = sigmoid::backward(dout1a, out1)
+  [a, dW1, db1] = affine::backward(dout1, features, W1, b1)
 
   gradients = list(dW1, dW2, dW3, db1, db2, db3)
 }
@@ -100,18 +96,13 @@ aggregation = function(list[unknown] model,
                        list[unknown] gradients)
     return (list[unknown] model_result) {
 
-  W1 = as.matrix(model[1])
-  W2 = as.matrix(model[2])
-  W3 = as.matrix(model[3])
-  b1 = as.matrix(model[4])
-  b2 = as.matrix(model[5])
-  b3 = as.matrix(model[6])
-  dW1 = as.matrix(gradients[1])
-  dW2 = as.matrix(gradients[2])
-  dW3 = as.matrix(gradients[3])
-  db1 = as.matrix(gradients[4])
-  db2 = as.matrix(gradients[5])
-  db3 = as.matrix(gradients[6])
+  W1 = as.matrix(model[1]); dW1 = as.matrix(gradients[1])
+  W2 = as.matrix(model[2]); dW2 = as.matrix(gradients[2])
+  W3 = as.matrix(model[3]); dW3 = as.matrix(gradients[3])
+  b1 = as.matrix(model[4]); db1 = as.matrix(gradients[4])
+  b2 = as.matrix(model[5]); db2 = as.matrix(gradients[5])
+  b3 = as.matrix(model[6]); db3 = as.matrix(gradients[6])
+  
   learning_rate = as.double(as.scalar(hyperparams["learning_rate"]))
 
   # Optimize with SGD
@@ -125,7 +116,6 @@ aggregation = function(list[unknown] model,
   model_result = list(W1, W2, W3, b1, b2, b3)
 }
 
-
 train = function(matrix[double] X, matrix[double] y,
                  int epochs, int batch_size, double learning_rate, 
                  int seed = -1)
@@ -136,12 +126,9 @@ train = function(matrix[double] X, matrix[double] y,
   K = ncol(y)  # num classes
 
   model = init_model(D, K, seed)
-  W1 = as.matrix(model[1])
-  W2 = as.matrix(model[2])
-  W3 = as.matrix(model[3])
-  b1 = as.matrix(model[4])
-  b2 = as.matrix(model[5])
-  b3 = as.matrix(model[6])
+  W1 = as.matrix(model[1]); b1 = as.matrix(model[4])
+  W2 = as.matrix(model[2]); b2 = as.matrix(model[5])
+  W3 = as.matrix(model[3]); b3 = as.matrix(model[6])
   
   # Create the hyper parameter list
   hyperparams = list(learning_rate=learning_rate)
@@ -163,13 +150,10 @@ train = function(matrix[double] X, matrix[double] y,
       gradients_list = gradients(model_list, hyperparams, X_batch, y_batch)
       model_updated = aggregation(model_list, hyperparams, gradients_list)
 
-      W1 = as.matrix(model_updated[1])
-      W2 = as.matrix(model_updated[2])
-      W3 = as.matrix(model_updated[3])
-      b1 = as.matrix(model_updated[4])
-      b2 = as.matrix(model_updated[5])
-      b3 = as.matrix(model_updated[6])
-
+      W1 = as.matrix(model_updated[1]); b1 = as.matrix(model_updated[4])
+      W2 = as.matrix(model_updated[2]); b2 = as.matrix(model_updated[5])
+      W3 = as.matrix(model_updated[3]); b3 = as.matrix(model_updated[6])
+      
     }
   }
 
@@ -178,8 +162,12 @@ train = function(matrix[double] X, matrix[double] y,
 
 train_paramserv = function(matrix[Double] X, matrix[Double] y,
     Integer epochs, Integer batch_size, Double learning_rate, Integer workers,
-    String utype, String freq, String mode, Integer seed)
+    Integer seed)
     return (list[unknown] model_trained) {
+
+  utype = "BSP"
+  freq = "BATCH"
+  mode = "LOCAL"
 
   N = nrow(X)  # num examples
   D = ncol(X)  # num features
@@ -194,24 +182,9 @@ train_paramserv = function(matrix[Double] X, matrix[Double] y,
   # Use paramserv function
   model_trained = paramserv(model=model_list, features=X, labels=y, 
     val_features=matrix(0, rows=0, cols=0), val_labels=matrix(0, rows=0, cols=0), 
-    upd="./network/TwoNN.dml::gradients", agg="./network/TwoNN.dml::aggregation",
+    upd="./tests/examples/tutorials/neural_net_source.dml::gradients",
+    agg="./tests/examples/tutorials/neural_net_source.dml::aggregation",
     mode=mode, utype=utype, freq=freq, epochs=epochs, batchsize=batch_size,
     k=workers, hyperparams=params, checkpointing="NONE")
 
-}
-
-save_model = function (list[unknown] model, String baseFolder){
-  W1  = as.matrix(model[1])
-  W2  = as.matrix(model[2])
-  W3  = as.matrix(model[3])
-  b1  = as.matrix(model[4])
-  b2  = as.matrix(model[5])
-  b3  = as.matrix(model[6])
-
-  write(W1, (baseFolder + "/W1.data"), format="binary")
-  write(W2, (baseFolder + "/W2.data"), format="binary")
-  write(W3, (baseFolder + "/W3.data"), format="binary")
-  write(b1, (baseFolder + "/b1.data"), format="binary")
-  write(b2, (baseFolder + "/b2.data") , format="binary")
-  write(b3, (baseFolder + "/b3.data") , format="binary")
 }

@@ -22,31 +22,25 @@
 # This script will read the dirty and clean data, then it will apply the best pipeline on dirty data
 # and then will classify both cleaned dataset and check if the cleaned dataset is performing same as original dataset
 # in terms of classification accuracy
-
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME              TYPE               DEFAULT            MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# trainData         Frame[Unknown]      ---
-# testData          Frame[Unknown]      ---
-# metaData          Frame[Unknown]      as.frame("NULL")
-# lp                Frame[Unknown]      ---
-# pip               Frame[Unknown]      ---
-# hp                Frame[Unknown]      ---
-# evaluationFunc    String              ---
-# evalFunHp         Matrix[Double]      ---
-# isLastLabel       Boolean             TRUE
-# correctTypos      Boolean             FALSE
 #
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# --------------------------------------------------------------------------------
+# trainData         ---
+# testData          ---
+# metaData          ---
+# lp                ---
+# pip               ---
+# hp                ---
+# evaluationFunc    ---
+# evalFunHp         ---
+# isLastLabel       ---
+# correctTypos      ---
+# --------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME           TYPE             MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# scores         Matrix[Double]   ---
-# ----------------------------------------------------------------------------------------------------------------------
-
+# -----------------------------------------------------------------------------------------------
+# scores   ---
+# -----------------------------------------------------------------------------------------------
 
 source("scripts/builtin/topk_cleaning.dml") as topk;
 
@@ -79,9 +73,14 @@ s_apply_pipeline = function(Frame[Unknown] testData, Frame[Unknown] metaData = a
   
   # # # if mask has 1s then there are categorical features
   M = as.frame(exState[2])
-  index = vectorToCsv(mask)
-  jspecR = "{ids:true, recode:["+index+"]}"
-  eXtest = transformapply(target=Xtest, spec=jspecR, meta=M);
+  if(sum(mask) > 0)
+  {
+    index = vectorToCsv(mask)
+    jspecR = "{ids:true, recode:["+index+"]}"
+    eXtest = transformapply(target=Xtest, spec=jspecR, meta=M);
+  }
+  else 
+    eXtest = as.matrix(Xtest)
   metaList["applyFunc"] = applyFunc
 
   no_of_param = as.scalar(hp[1, 1]) + 1

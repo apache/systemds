@@ -21,29 +21,25 @@
 
 # This function split input data X and Y into contiguous or samples train/test sets
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME   TYPE              DEFAULT  MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X       Matrix[Double]   ---      Input feature matrix
-# Y       Matrix[Double]   ---      Input Labels
-# f       Double           0.7      Train set fraction [0,1]
-# cont    Boolean          TRUE     contiuous splits, otherwise sampled
-# seed    Integer          -1       The seed to reandomly select rows in sampled mode
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# ------------------------------------------------------------------------------------------
+# X     Input feature matrix
+# Y     Input Labels
+# f     Train set fraction [0,1]
+# cont  contiguous splits, otherwise sampled
+# seed  The seed to randomly select rows in sampled mode
+# ------------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME    TYPE                      MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# Xtrain  Matrix[Double]            Train split of feature matrix
-# Xtest   Matrix[Double]            Test split of feature matrix
-# ytrain  Matrix[Double]            Train split of label matrix
-# ytest   Matrix[Double]            Test split of label matrix
-# ----------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------
+# X_Train  Train split of feature matrix
+# X_Test   Test split of feature matrix
+# y_Train  Train split of label matrix
+# y_Test   Test split of label matrix
+# --------------------------------------------------------------------------------------------
 
 m_split = function(Matrix[Double] X, Matrix[Double] Y, Double f=0.7, Boolean cont=TRUE, Integer seed=-1)
-  return (Matrix[Double] Xtrain, Matrix[Double] Xtest, Matrix[Double] Ytrain, Matrix[Double] Ytest) 
+  return (Matrix[Double] X_Train, Matrix[Double] X_Test, Matrix[Double] Y_Train, Matrix[Double] Y_Test) 
 {
   # basic sanity checks
   if( f <= 0 | f >= 1 )
@@ -53,10 +49,10 @@ m_split = function(Matrix[Double] X, Matrix[Double] Y, Double f=0.7, Boolean con
 
   # contiguous train/test splits
   if( cont ) {
-    Xtrain = X[1:f*nrow(X),];
-    Ytrain = Y[1:f*nrow(X),];
-    Xtest = X[(nrow(Xtrain)+1):nrow(X),];
-    Ytest = Y[(nrow(Xtrain)+1):nrow(X),];
+    X_Train = X[1:f*nrow(X),];
+    Y_Train = Y[1:f*nrow(X),];
+    X_Test = X[(nrow(X_Train)+1):nrow(X),];
+    Y_Test = Y[(nrow(X_Train)+1):nrow(X),];
   }
   # sampled train/test splits
   else {
@@ -64,9 +60,9 @@ m_split = function(Matrix[Double] X, Matrix[Double] Y, Double f=0.7, Boolean con
     # extract tuples via permutation (selection) matrix multiply
     # or directly via removeEmpty by selection vector
     I = rand(rows=nrow(X), cols=1, seed=seed) <= f;
-    Xtrain = removeEmpty(target=X, margin="rows", select=I);
-    Ytrain = removeEmpty(target=Y, margin="rows", select=I);
-    Xtest = removeEmpty(target=X, margin="rows", select=(I==0));
-    Ytest = removeEmpty(target=Y, margin="rows", select=(I==0));
+    X_Train = removeEmpty(target=X, margin="rows", select=I);
+    Y_Train = removeEmpty(target=Y, margin="rows", select=I);
+    X_Test = removeEmpty(target=X, margin="rows", select=(I==0));
+    Y_Test = removeEmpty(target=Y, margin="rows", select=(I==0));
   }
 }

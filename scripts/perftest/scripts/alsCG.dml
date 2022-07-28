@@ -20,8 +20,8 @@
 #-------------------------------------------------------------
 
 rank = ifdef($rank, 10);
-reg = ifdef($reg, "L2");
-lambda = ifdef($lambda, 0.000001);
+regType = ifdef($reg, "L2");
+reg = ifdef($lambda, 0.000001);
 maxiter = ifdef($maxiter, 50);
 thr = ifdef($thr, 0.0001);
 verbose = ifdef($verbose, TRUE);
@@ -32,7 +32,7 @@ check = ifdef($check, TRUE);
 
 X = read($X);
 
-[U, V] = alsCG(X=X, rank=rank, reg=reg, lambda=lambda, maxi=maxiter, check=check, thr=thr, verbose=verbose);
+[U, V] = alsCG(X=X, rank=rank, regType=regType, reg=reg, maxi=maxiter, check=check, thr=thr, verbose=verbose);
 
 write(U, $modelU, format=fmt);
 write(V, $modelV, format=fmt);

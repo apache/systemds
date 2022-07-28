@@ -33,11 +33,25 @@ def gnmf(X: Matrix,
          rnk: int,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     The gnmf-function does Gaussian Non-Negative Matrix Factorization. In this, a matrix X is factorized into two
+     matrices W and H, such that all three matrices have no negative elements. This non-negativity makes the resulting
+     matrices easier to inspect.
+    
+     References:
+     [Chao Liu, Hung-chih Yang, Jinliang Fan, Li-Wei He, Yi-Min Wang:
+     Distributed nonnegative matrix factorization for web-scale dyadic
+     data analysis on mapreduce. WWW 2010: 681-690]
+    
+    
+    
+    :param X: Matrix of feature vectors.
     :param rnk: Number of components into which matrix X is to be factored
     :param eps: Tolerance
     :param maxi: Maximum number of conjugate gradient iterations
-    :return: 'OperationNode' containing  
+    :return: List of pattern matrices, one for each repetition
+    :return: List of amplitude matrices, one for each repetition
     """
+
     params_dict = {'X': X, 'rnk': rnk}
     params_dict.update(kwargs)
     

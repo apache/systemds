@@ -37,10 +37,30 @@ def hyperband(X_train: Matrix,
               paramRanges: Matrix,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-    :param One: hyper parameter, first column specifies min, second column max value.
+     The hyperband-function is used for hyper parameter optimization and is based on multi-armed bandits and early
+     elimination. Through multiple parallel brackets and consecutive trials it will return the hyper parameter combination
+     which performed best on a validation dataset. A set of hyper parameter combinations is drawn from uniform distributions
+     with given ranges; Those make up the candidates for hyperband. Notes:
+     hyperband is hard-coded for lmCG, and uses lmPredict for validation
+     hyperband is hard-coded to use the number of iterations as a resource
+     hyperband can only optimize continuous hyperparameters
+    
+    
+    
+    :param X_train: Input Matrix of training vectors
+    :param y_train: Labels for training vectors
+    :param X_val: Input Matrix of validation vectors
+    :param y_val: Labels for validation vectors
+    :param params: List of parameters to optimize
+    :param paramRanges: The min and max values for the uniform distributions to draw from.
+        One row per hyper parameter, first column specifies min, second column max value.
+    :param R: Controls number of candidates evaluated
+    :param eta: Determines fraction of candidates to keep after each trial
     :param verbose: If TRUE print messages are activated
-    :return: 'OperationNode' containing  
+    :return: 1-column matrix of weights of best performing candidate
+    :return: hyper parameters of best performing candidate
     """
+
     params_dict = {'X_train': X_train, 'y_train': y_train, 'X_val': X_val, 'y_val': y_val, 'params': params, 'paramRanges': paramRanges}
     params_dict.update(kwargs)
     

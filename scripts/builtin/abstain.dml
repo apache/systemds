@@ -19,41 +19,36 @@
 #
 #-------------------------------------------------------------
 
-# This function calls the multiLogReg-function in which solves Multinomial Logistic Regression using Trust Region method
+# This function calls the multiLogReg-function in which solves Multinomial
+# Logistic Regression using Trust Region method
 #
-# INPUT PARAMETERS:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME            TYPE                DEFAULT   MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# X               Matrix[Double]      ---       Location to read the matrix of feature vectors
-# Y               Matrix[Double]      ---       Location to read the matrix with category labels
-# threshold       Double              0.0       ---
-# verbose         Boolean             FALSE     flag specifying if logging information should be printed
-# ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+# -------------------------------------------------------------------------------------
+# X            matrix of feature vectors
+# Y            matrix with category labels
+# threshold    threshold to clear otherwise return X and Y unmodified
+# verbose      flag specifying if logging information should be printed
+# -------------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ----------------------------------------------------------------------------------------------------------------------
-# NAME      TYPE             MEANING
-# ----------------------------------------------------------------------------------------------------------------------
-# Xout   Matrix[Double]   ---
-# Yout   Matrix[Double]   ---
-# ----------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------
+# Xout     abstained output X
+# Yout     abstained output Y
+# -------------------------------------------------------------------------------------
 
 m_abstain = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Boolean verbose = FALSE)
 return (Matrix[Double] Xout, Matrix[Double] Yout)
 {
   Xout = X
   Yout = Y
-  # for(i in 1:100) {
   if(min(Y) != max(Y))
   {
-    betas = multiLogReg(X=X, Y=Y, icpt=1, reg=1e-4, maxi=100, maxii=0, verbose=FALSE)
+    betas = multiLogReg(X=X, Y=Y, icpt=1, reg=1e-4, maxi=100, maxii=0, verbose=verbose)
     [prob, yhat, accuracy] = multiLogRegPredict(X, betas, Y, FALSE)
-    # abstain = cbind(X, Y)
+    
     inc = ((yhat != Y) & (rowMaxs(prob) > threshold))
     if(sum(inc) > 0)
     {
-      # print("inc vector "+toString(inc))
       Xout = removeEmpty(target = X, margin = "rows", select = (inc == 0) )
       Yout = removeEmpty(target = Y, margin = "rows", select = (inc == 0) )
     }

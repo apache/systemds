@@ -37,20 +37,35 @@ def gridSearch(X: Matrix,
                paramValues: List,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     The gridSearch-function is used to find the optimal hyper-parameters of a model which results in the most
+     accurate predictions. This function takes train and eval functions by name.
+    
+    
+    
+    :param X: Input feature matrix
+    :param y: Input Matrix of vectors.
     :param train: Name ft of the train function to call via ft(trainArgs)
     :param predict: Name fp of the loss function to call via fp((predictArgs,B))
     :param numB: Maximum number of parameters in model B (pass the max because the size
-    :param may: parameters like icpt or multi-class classification)
-    :param columnvectors: hyper-parameters in 'params'
-    :param gridSearch: hyper-parameter by name, if
-    :param not: an empty list, the lm parameters are used
-    :param gridSearch: trained models at the end, if
-    :param not: an empty list, list(X, y) is used instead
+        may vary with parameters like icpt or multi-class classification)
+    :param params: List of varied hyper-parameter names
+    :param dataArgs: List of data parameters (to identify data parameters by name i.e. list("X", "Y"))
+    :param paramValues: List of matrices providing the parameter values as
+        columnvectors for position-aligned hyper-parameters in 'params'
+    :param trainArgs: named List of arguments to pass to the 'train' function, where
+        gridSearch replaces enumerated hyper-parameter by name, if
+        not provided or an empty list, the lm parameters are used
+    :param predictArgs: List of arguments to pass to the 'predict' function, where
+        gridSearch appends the trained models at the end, if
+        not provided or an empty list, list(X, y) is used instead
     :param cv: flag enabling k-fold cross validation, otherwise training loss
     :param cvk: if cv=TRUE, specifies the the number of folds, otherwise ignored
     :param verbose: flag for verbose debug output
-    :return: 'OperationNode' containing returned as a column-major linearized column vector 
+    :return: Matrix[Double]the trained model with minimal loss (by the 'predict' function)
+        Multi-column models are returned as a column-major linearized column vector
+    :return: one-row frame w/ optimal hyper-parameters (by 'params' position)
     """
+
     params_dict = {'X': X, 'y': y, 'train': train, 'predict': predict, 'params': params, 'paramValues': paramValues}
     params_dict.update(kwargs)
     

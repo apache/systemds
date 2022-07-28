@@ -102,6 +102,9 @@ perf stat -d -d -d -r $repeatScript \
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "Matrix transpose 15000000x30 matrix and sparsity 0.8: " $ttrain >> results/times.txt
 
+
+echo -e "\n\n" >>results/times.txt
+
 cat $LogName | grep -E '  r. |Total elapsed time|-----------| instructions |  cycles | CPUs utilized ' >> $LogName.log
 
 

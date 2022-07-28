@@ -33,9 +33,18 @@ def l2svmPredict(X: Matrix,
                  W: Matrix,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
+     Builtin function Implements binary-class SVM with squared slack variables.
+    
+    
+    
+    :param X: matrix X of feature vectors to classify
+    :param W: matrix of the trained variables
     :param verbose: Set to true if one wants print statements.
-    :return: 'OperationNode' containing  
+    :return: Classification Labels Raw, meaning not modified to clean
+        labels of 1's and -1's
+    :return: Classification Labels Maxed to ones and zeros.
     """
+
     params_dict = {'X': X, 'W': W}
     params_dict.update(kwargs)
     

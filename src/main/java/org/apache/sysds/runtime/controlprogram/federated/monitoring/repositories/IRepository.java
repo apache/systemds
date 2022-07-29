@@ -26,14 +26,11 @@ import java.util.List;
 
 public interface IRepository {
 	<T extends BaseModel> Long createEntity(T model);
-
 	<T extends BaseModel> T getEntity(Long id, Class<T> type);
-
 	<T extends BaseModel> List<T> getAllEntities(Class<T> type);
 	<T extends BaseModel> List<T> getAllEntitiesByField(String fieldName, Object value, Class<T> type);
-
 	<T extends BaseModel> List<T> getAllEntitiesByField(String fieldName, Object value, Class<T> type, int rowCount);
+	<T extends BaseModel> void removeAllEntitiesByField(String fieldName, Object value, Class<T> type);
 	<T extends BaseModel> void updateEntity(T model);
-
 	<T extends BaseModel> void removeEntity(Long id, Class<T> type);
 }

@@ -17,37 +17,10 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
-
-public class CoordinatorModel extends BaseModel {
-	public String name;
-	public String host;
-	public Long monitoringId;
-	public String monitoringHostIdKey;
-
-	private static final String keyFormat = "%s-%d";
-
-	private static final String JsonFormat = "{" +
-			"\"id\": %d," +
-			"\"name\": \"%s\"," +
-			"\"host\": \"%s\"," +
-			"\"monitoringId\": %d" +
-			"}";
-
-	public CoordinatorModel(final Long id) {
-		this.id = id;
-	}
-
-	public CoordinatorModel() {
-		this(-1L);
-	}
-
-	public void generateMonitoringKey() {
-		this.monitoringHostIdKey = String.format(keyFormat, host, monitoringId);
-	}
-
-	@Override
-	public String toString() {
-		return String.format(JsonFormat, super.id, this.name, this.host, this.monitoringId);
+export class DataObject {
+	constructor(public varName: string,
+				public dataType: string,
+				public valueType: string,
+				public size: number) {
 	}
 }

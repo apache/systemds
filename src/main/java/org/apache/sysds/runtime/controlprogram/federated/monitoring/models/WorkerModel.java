@@ -25,16 +25,21 @@ public class WorkerModel extends BaseModel {
 	public String name;
 	public String address;
 
-	public List<BaseModel> stats;
+	private boolean isOnline;
 
 	private static final String JsonFormat = "{" +
 			"\"id\": %d," +
 			"\"name\": \"%s\"," +
-			"\"address\": \"%s\"" +
+			"\"address\": \"%s\"," +
+			"\"isOnline\": %b" +
 			"}";
 
 	public WorkerModel(final Long id) {
 		this.id = id;
+	}
+
+	public void setOnlineStatus(boolean status) {
+		this.isOnline = status;
 	}
 
 	public WorkerModel() {
@@ -49,6 +54,6 @@ public class WorkerModel extends BaseModel {
 
 	@Override
 	public String toString() {
-		return String.format(JsonFormat, super.id, this.name, this.address);
+		return String.format(JsonFormat, super.id, this.name, this.address, this.isOnline);
 	}
 }

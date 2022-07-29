@@ -27,7 +27,7 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.Map
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.StatisticsService;
 
 public class StatisticsController implements IController {
-	private final StatisticsService _statisticsService = new StatisticsService();
+	private final StatisticsService statisticsService = new StatisticsService();
 
 	@Override
 	public FullHttpResponse create(Request request) {
@@ -50,7 +50,7 @@ public class StatisticsController implements IController {
 		// Creates options with the default values
 		var options = new StatisticsOptions();
 
-		var result = _statisticsService.getAll(objectId, options);
+		var result = statisticsService.getAll(objectId, options);
 
 		return Response.ok(result.toString());
 	}

@@ -19,13 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.*;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
 
 import java.lang.reflect.Field;
@@ -49,7 +43,8 @@ public class DerbyRepository implements IRepository {
 			new UtilizationModel(),
 			new TrafficModel(),
 			new EventModel(),
-			new EventStageModel()
+			new EventStageModel(),
+			new DataObjectModel()
 	));
 	private static final String ENTITY_SCHEMA_CREATE_STMT = "CREATE TABLE %s " +
 			"(id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)";
@@ -274,6 +269,26 @@ public class DerbyRepository implements IRepository {
 		}
 
 		return resultModels;
+	}
+
+	public <T extends BaseModel> void removeAllEntitiesByField(String fieldName, Object value, Class<T> type) {
+
+		try {
+			var entityName = type.getSimpleName().replace(Constants.ENTITY_CLASS_SUFFIX, "");
+
+			PreparedStatement st = _db.prepareStatement(
+					String.format(DELETE_ENTITY_WITH_COL_STMT, entityName, fieldName));
+
+			if (value.getClass().isAssignableFrom(String.class)) {
+				st.setString(1, String.valueOf(value));
+			} else if (value.getClass().isAssignableFrom(Long.class)) {
+				st.setLong(1, Long.parseLong(String.valueOf(value)));
+			}
+
+			st.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override

@@ -26,8 +26,13 @@
 	</mat-form-field>
 
 	<mat-form-field appearance="fill">
-		<mat-label>Address</mat-label>
-		<input *ngIf="model" [(ngModel)]="model.address" matInput>
+		<mat-label>Host</mat-label>
+		<input *ngIf="model" [(ngModel)]="model.host" matInput>
+	</mat-form-field>
+
+	<mat-form-field appearance="fill">
+		<mat-label>Monitoring Id</mat-label>
+		<input *ngIf="model" [(ngModel)]="model.monitoringId" matInput>
 	</mat-form-field>
 
 

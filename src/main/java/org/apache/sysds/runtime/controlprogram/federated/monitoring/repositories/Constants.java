@@ -27,6 +27,7 @@ public class Constants {
 	public static final String ENTITY_TIMESTAMP_COL = "TIMESTAMP";
 	public static final String ENTITY_NAME_COL = "name";
 	public static final String ENTITY_ADDRESS_COL = "address";
+	public static final String ENTITY_MONITORING_KEY_COL = "monitoringHostIdKey";
 	public static final String ENTITY_ID_COL = "id";
 	public static final String ENTITY_WORKER_ID_COL = "workerId";
 	public static final String ENTITY_EVENT_ID_COL = "eventId";

@@ -20,10 +20,12 @@
 import { Utilization } from "./utilization.model";
 import { Traffic } from "./traffic.model";
 import { Event } from "./event.model";
+import { DataObject } from "./dataObject.model";
 
 export class Statistics {
 	constructor(public utilization: Utilization[],
 				public traffic: Traffic[],
-				public events: Event[]) {
+				public events: Event[],
+				public dataObjects: DataObject[]) {
 	}
 }

@@ -24,6 +24,8 @@ import { ActivatedRoute } from '@angular/router';
 import { Worker } from 'src/app/models/worker.model';
 import { FederatedSiteService } from 'src/app/services/federatedSiteService.service';
 import { Statistics } from "../../../models/statistics.model";
+import { MatTableDataSource } from "@angular/material/table";
+import { DataObject } from "../../../models/dataObject.model";
 
 @Component({
 	selector: 'app-view-worker',
@@ -31,6 +33,10 @@ import { Statistics } from "../../../models/statistics.model";
 	styleUrls: ['./view.component.scss']
 })
 export class ViewWorkerComponent {
+
+
+	public displayedColumns: string[] = ['varName', 'dataType', 'valueType', 'size'];
+	public dataSource: MatTableDataSource<DataObject> = new MatTableDataSource<DataObject>([]);
 
 	public optionsCPU: any;
 	public optionsMemory: any;
@@ -226,6 +232,8 @@ export class ViewWorkerComponent {
 				data: this.dataMemory
 			}]
 		};
+
+		this.dataSource.data = this.statistics.dataObjects;
 	}
 
 }

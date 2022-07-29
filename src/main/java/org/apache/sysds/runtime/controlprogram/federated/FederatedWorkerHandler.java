@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
@@ -131,7 +132,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	protected FederatedResponse createResponse(Object msg) {
-		return createResponse(msg, FederatedLookupTable.NOHOST);
+		var event = new EventModel();
+		event.setCoordinatorAddress(FederatedLookupTable.NOHOST);
+
+		return createResponse(msg, FederatedLookupTable.NOHOST, event);
 	}
 
 	private FederatedResponse createResponse(Object msg, SocketAddress remoteAddress) {
@@ -157,20 +161,23 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			host = FederatedLookupTable.NOHOST;
 		}
 
-		FederatedResponse res = createResponse(msg, host);
+		var event = new EventModel();
+		event.setCoordinatorAddress(_remoteAddress);
+
+		FederatedResponse res = createResponse(msg, host, event);
 		if (_timing != null) {
 			_timing.start();
 		}
 		return res;
 	}
 
-	private FederatedResponse createResponse(Object msg, String remoteHost) {
+	private FederatedResponse createResponse(Object msg, String remoteHost, EventModel event) {
 		if(!(msg instanceof FederatedRequest[]))
 			return new FederatedResponse(ResponseType.ERROR,
 				new FederatedWorkerHandlerException("Received object of wrong instance 'FederatedRequest[]'."));
 		final FederatedRequest[] requests = (FederatedRequest[]) msg;
 		try {
-			return createResponse(requests, remoteHost);
+			return createResponse(requests, remoteHost, event);
 		}
 		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
 			// Here we control the error message, therefore it is allowed to send the stack trace with the response
@@ -186,14 +193,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private FederatedResponse createResponse(FederatedRequest[] requests, String remoteHost)
+	private FederatedResponse createResponse(FederatedRequest[] requests, String remoteHost, EventModel event)
 		throws DMLPrivacyException, FederatedWorkerHandlerException, Exception {
 			
 		FederatedResponse response = null; // last response
 		boolean containsCLEAR = false;
-
-		var event = new EventModel();
-		event.setCoordinatorAddress(remoteHost);
 
 		for(int i = 0; i < requests.length; i++) {
 			final FederatedRequest request = requests[i];
@@ -214,7 +218,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			// select the response
 			if(!tmp.isSuccessful()) {
 				LOG.error("Command " + t + " resulted in error:\n" + tmp.getErrorMessage());
-				FederatedStatistics.addEvent(event);
+				if (DMLScript.STATISTICS)
+					FederatedStatistics.addEvent(event);
 				return tmp; // Return first error without executing anything further
 			}
 			else if(t == RequestType.GET_VAR) {
@@ -222,7 +227,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				if(response != null) {
 					String message = "Multiple GET_VAR are not supported in single batch of requests.";
 					LOG.error(message);
-					FederatedStatistics.addEvent(event);
+					if (DMLScript.STATISTICS)
+						FederatedStatistics.addEvent(event);
 					throw new FederatedWorkerHandlerException(message);
 				}
 				response = tmp;
@@ -231,19 +237,21 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				response = tmp; // return last
 			}
 
+			if (DMLScript.STATISTICS) {
+				if(t == RequestType.PUT_VAR || t == RequestType.EXEC_UDF) {
+					for (int paramIndex = 0; paramIndex < request.getNumParams(); paramIndex++) {
+						FederatedStatistics.incFedTransfer(request.getParam(paramIndex), _remoteAddress);
+					}
+				}
 
-			if(t == RequestType.PUT_VAR || t == RequestType.EXEC_UDF) {
-				for (int paramIndex = 0; paramIndex < request.getNumParams(); paramIndex++) {
-					FederatedStatistics.incFedTransfer(request.getParam(paramIndex), _remoteAddress);
+				if(t == RequestType.GET_VAR) {
+					var data = response.getData();
+					for (int dataObjIndex = 0; dataObjIndex < Arrays.stream(data).count(); dataObjIndex++) {
+						FederatedStatistics.incFedTransfer(data[dataObjIndex], _remoteAddress);
+					}
 				}
 			}
 
-			if(t == RequestType.GET_VAR) {
-				var data = response.getData();
-				for (int dataObjIndex = 0; dataObjIndex < Arrays.stream(data).count(); dataObjIndex++) {
-					FederatedStatistics.incFedTransfer(data[dataObjIndex], _remoteAddress);
-				}
-			}
 
 			if(t == RequestType.CLEAR)
 				containsCLEAR = true;
@@ -254,7 +262,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			printStatistics();
 		}
 
-		FederatedStatistics.addEvent(event);
+		if (DMLScript.STATISTICS)
+			FederatedStatistics.addEvent(event);
 
 		return response;
 	}
@@ -459,18 +468,32 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		final Object v = request.getParam(0);
 		// wrap transferred cache block into cacheable data
 		Data data;
-		if(v instanceof CacheBlock)
-			data = ExecutionContext.createCacheableData((CacheBlock) v);
-		else if(v instanceof ScalarObject)
+		long size = 0;
+		if(v instanceof CacheBlock) {
+			var block = ExecutionContext.createCacheableData((CacheBlock) v);
+			size = block.getDataSize();
+			data = block;
+		}
+		else if(v instanceof ScalarObject) {
 			data = (ScalarObject) v;
-		else if(v instanceof ListObject)
+			size = ((ScalarObject) v).getSize();
+		}
+		else if(v instanceof ListObject) {
 			data = (ListObject) v;
+			size = ((ListObject) v).getDataSize();
+		}
 		else if(request.getNumParams() == 2){
 			final Object v1= request.getParam(1);
-			if(v1 == DataType.MATRIX)
-				data = ExecutionContext.createMatrixObject((MatrixCharacteristics) v);
-			else
-				data = ExecutionContext.createFrameObject((MatrixCharacteristics) v);
+			if(v1 == DataType.MATRIX) {
+				var mtrx = ExecutionContext.createMatrixObject((MatrixCharacteristics) v);
+				size = mtrx.getDataSize();
+				data = mtrx;
+			}
+			else {
+				var frm = ExecutionContext.createFrameObject((MatrixCharacteristics) v);
+				size = frm.getDataSize();
+				data = frm;
+			}
 		}
 		else
 			throw new FederatedWorkerHandlerException(
@@ -479,6 +502,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				
 		// set variable and construct empty response
 		ec.setVariable(varName, data);
+
+		if (DMLScript.STATISTICS){
+			FederatedStatistics.addDataObject(new DataObjectModel(varName, data.getDataType().name(), data.getValueType().name(), size));
+		}
 
 		if(shouldTryAsyncCompress())
 			CompressedMatrixBlockFactory.compressAsync(ec, varName);
@@ -631,6 +658,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private FederatedResponse execClear(ExecutionContextMap ecm) {
 		try {
 			ecm.clear();
+			FederatedStatistics.removeDataObjects();
 		}
 		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
 			throw ex;

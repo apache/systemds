@@ -25,6 +25,14 @@ th.mat-sort-header-sorted {
 	color: black;
 }
 
+mat-card-header {
+	display: flex;
+
+	button {
+		margin-left: auto;
+	}
+}
+
 .container {
 	margin: 2em;
 }

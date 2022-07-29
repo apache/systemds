@@ -21,8 +21,14 @@
 	<div fxFlex="95%">
 
 		<mat-card>
+
+			<mat-card-header>
+				<h2>Choose for which worker to show events</h2>
+				<button (click)="refreshData()" color="warn" mat-mini-fab>
+					<mat-icon aria-hidden="false" aria-label="refresh">refresh</mat-icon>
+				</button>
+			</mat-card-header>
 			<mat-card-content>
-				<h2>Workers</h2>
 
 				<table [dataSource]="dataSource" mat-table matSort>
 
@@ -51,7 +57,7 @@
 					<ng-container matColumnDef="actions">
 						<th *matHeaderCellDef mat-header-cell> Actions</th>
 						<td *matCellDef="let element" mat-cell>
-							<button (click)="viewEvent(element.id)" color="primary" mat-mini-fab>
+							<button (click)="viewEvent(element.id)" color="primary" mat-raised-button>
 								View event timeline
 							</button>
 						</td>

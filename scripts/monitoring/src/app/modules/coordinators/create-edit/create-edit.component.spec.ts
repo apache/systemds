@@ -62,6 +62,7 @@ describe('CreateEditCoordinatorsComponent', () => {
 	it('should contain name and address fields', () => {
 		let html = de.query(By.css('#register-coordinator-content')).nativeElement.innerText;
 		expect(html).toContain('Name');
-		expect(html).toContain('Address');
+		expect(html).toContain('Host');
+		expect(html).toContain('Monitoring Id');
 	});
 });

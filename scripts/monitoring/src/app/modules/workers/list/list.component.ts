@@ -47,7 +47,7 @@ export class ListWorkersComponent {
 	}
 
 	ngOnInit(): void {
-		this.fedSiteService.getAllWorkers().subscribe(workers => this.dataSource.data = workers);
+		this.refreshData();
 	}
 
 	viewWorker(id: number) {
@@ -65,6 +65,10 @@ export class ListWorkersComponent {
 		this.fedSiteService.deleteWorker(id).subscribe(() => {
 			this.dataSource.data = this.dataSource.data.filter(w => w.id !== id)
 		});
+	}
+
+	refreshData() {
+		this.fedSiteService.getAllWorkers().subscribe(workers => this.dataSource.data = workers);
 	}
 
 }

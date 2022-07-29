@@ -20,8 +20,10 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.Constants;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
 
@@ -33,8 +35,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class WorkerService {
-	private static final IRepository _entityRepository = new DerbyRepository();
-	private static final Map<Long, String> _cachedWorkers = new HashMap<>();
+	private static final IRepository entityRepository = new DerbyRepository();
+	private static final Map<Long, String> cachedWorkers = new HashMap<>();
 
 	public WorkerService() {
 		updateCachedWorkers(null);
@@ -44,25 +46,25 @@ public class WorkerService {
 	}
 
 	public Long create(WorkerModel model) {
-		long id = _entityRepository.createEntity(model);
+		long id = entityRepository.createEntity(model);
 
-		_cachedWorkers.putIfAbsent(id, model.address);
+		cachedWorkers.putIfAbsent(id, model.address);
 
 		return id;
 	}
 
 	public void update(BaseModel model) {
-		_entityRepository.updateEntity(model);
+		entityRepository.updateEntity(model);
 	}
 
 	public void remove(Long id) {
-		_entityRepository.removeEntity(id, WorkerModel.class);
+		entityRepository.removeEntity(id, WorkerModel.class);
 
-		_cachedWorkers.remove(id);
+		cachedWorkers.remove(id);
 	}
 
 	public WorkerModel get(Long id) {
-		var model = _entityRepository.getEntity(id, WorkerModel.class);
+		var model = entityRepository.getEntity(id, WorkerModel.class);
 
 		updateCachedWorkers(null);
 
@@ -70,7 +72,7 @@ public class WorkerService {
 	}
 
 	public List<WorkerModel> getAll() {
-		var workers = _entityRepository.getAllEntities(WorkerModel.class);
+		var workers = entityRepository.getAllEntities(WorkerModel.class);
 
 		updateCachedWorkers(workers);
 
@@ -85,14 +87,14 @@ public class WorkerService {
 		}
 
 		for(var worker : workersTmp) {
-			_cachedWorkers.putIfAbsent(worker.id, worker.address);
+			cachedWorkers.putIfAbsent(worker.id, worker.address);
 		}
 	}
 
 	private static Runnable syncWorkerStatisticsWithDB() {
 		return () -> {
 
-			for(Map.Entry<Long, String> entry : _cachedWorkers.entrySet()) {
+			for(Map.Entry<Long, String> entry : cachedWorkers.entrySet()) {
 				Long id = entry.getKey();
 				String address = entry.getValue();
 
@@ -100,22 +102,31 @@ public class WorkerService {
 
 				if (stats != null) {
 					if (stats.utilization != null) {
-						_entityRepository.createEntity(stats.utilization.get(0));
+						entityRepository.createEntity(stats.utilization.get(0));
 					}
 					if (stats.traffic != null) {
 						for (var trafficEntity: stats.traffic) {
-							_entityRepository.createEntity(trafficEntity);
+							entityRepository.createEntity(trafficEntity);
 						}
 					}
 					if (stats.events != null) {
 						for (var eventEntity: stats.events) {
-							var eventId = _entityRepository.createEntity(eventEntity);
+							if (eventEntity.coordinatorId > 0) {
+								var eventId = entityRepository.createEntity(eventEntity);
 
-							for (var stageEntity: eventEntity.stages) {
-								stageEntity.eventId = eventId;
+								for (var stageEntity: eventEntity.stages) {
+									stageEntity.eventId = eventId;
 
-								_entityRepository.createEntity(stageEntity);
+									entityRepository.createEntity(stageEntity);
+								}
 							}
+						}
+					}
+					if (stats.dataObjects != null) {
+						entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, stats.dataObjects.get(0).workerId, DataObjectModel.class);
+
+						for (var dataObjectEntity: stats.dataObjects) {
+							entityRepository.createEntity(dataObjectEntity);
 						}
 					}
 				}

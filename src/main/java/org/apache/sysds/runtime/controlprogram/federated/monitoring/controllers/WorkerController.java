@@ -24,17 +24,19 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Worke
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.StatisticsService;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.WorkerService;
 
 public class WorkerController implements IController {
-	private final WorkerService _workerService = new WorkerService();
+	private final WorkerService workerService = new WorkerService();
 
 	@Override
 	public FullHttpResponse create(Request request) {
 
 		var model = MapperService.getModelFromBody(request, WorkerModel.class);
 
-		model.id = _workerService.create(model);
+		model.id = workerService.create(model);
+		model.setOnlineStatus(this.getWorkerOnlineStatus(model.id, model.address));
 
 		return Response.ok(model.toString());
 	}
@@ -43,33 +45,46 @@ public class WorkerController implements IController {
 	public FullHttpResponse update(Request request, Long objectId) {
 		var model = MapperService.getModelFromBody(request, WorkerModel.class);
 
-		_workerService.update(model);
+		workerService.update(model);
+		model.setOnlineStatus(this.getWorkerOnlineStatus(model.id, model.address));
 
 		return Response.ok(model.toString());
 	}
 
 	@Override
 	public FullHttpResponse delete(Request request, Long objectId) {
-		_workerService.remove(objectId);
+		workerService.remove(objectId);
 
 		return Response.ok(Constants.GENERIC_SUCCESS_MSG);
 	}
 
 	@Override
 	public FullHttpResponse get(Request request, Long objectId) {
-		var result = _workerService.get(objectId);
+		var result = workerService.get(objectId);
 
 		if (result == null) {
 			return Response.notFound(Constants.NOT_FOUND_MSG);
 		}
+
+		result.setOnlineStatus(this.getWorkerOnlineStatus(result.id, result.address));
 
 		return Response.ok(result.toString());
 	}
 
 	@Override
 	public FullHttpResponse getAll(Request request) {
-		var workers = _workerService.getAll();
+		var workers = workerService.getAll();
+
+		for (var worker: workers) {
+			worker.setOnlineStatus(this.getWorkerOnlineStatus(worker.id, worker.address));
+		}
 
 		return Response.ok(workers.toString());
+	}
+
+	private boolean getWorkerOnlineStatus(Long workerId, String workerAddress) {
+		var stats = StatisticsService.getWorkerStatistics(workerId, workerAddress);
+
+		return stats != null;
 	}
 }

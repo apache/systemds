@@ -35,6 +35,8 @@ public class EventModel extends BaseModel implements Serializable {
 			"\"coordinatorId\": %d," +
 			"\"stages\": [%s]" +
 			"}";
+	private static final String localhostIp = "/127.0.0.1";
+	private static final String localhostString = "localhost";
 
 	public EventModel() {
 		this(-1L);
@@ -61,6 +63,10 @@ public class EventModel extends BaseModel implements Serializable {
 	}
 
 	public String getCoordinatorAddress() {
+		if (this.coordinatorAddress.contains(localhostIp)) {
+			this.coordinatorAddress = this.coordinatorAddress.replace(localhostIp, localhostString);
+		}
+
 		return this.coordinatorAddress;
 	}
 

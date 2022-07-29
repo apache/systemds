@@ -19,35 +19,46 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-public class CoordinatorModel extends BaseModel {
-	public String name;
-	public String host;
-	public Long monitoringId;
-	public String monitoringHostIdKey;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
-	private static final String keyFormat = "%s-%d";
+public class DataObjectModel extends BaseModel implements Serializable {
+
+	public Long workerId;
+	public String varName;
+	public String dataType;
+	public String valueType;
+	public Long size;
 
 	private static final String JsonFormat = "{" +
-			"\"id\": %d," +
-			"\"name\": \"%s\"," +
-			"\"host\": \"%s\"," +
-			"\"monitoringId\": %d" +
+			"\"varName\": \"%s\"," +
+			"\"dataType\": \"%s\"," +
+			"\"valueType\": \"%s\"," +
+			"\"size\": %d" +
 			"}";
 
-	public CoordinatorModel(final Long id) {
-		this.id = id;
-	}
-
-	public CoordinatorModel() {
+	public DataObjectModel() {
 		this(-1L);
 	}
 
-	public void generateMonitoringKey() {
-		this.monitoringHostIdKey = String.format(keyFormat, host, monitoringId);
+	private DataObjectModel(final Long id) {
+		this.id = id;
+	}
+
+	public DataObjectModel(final String varName, final String dataType, final String valueType, final Long size) {
+		this(-1L, varName, dataType, valueType, size);
+	}
+
+	public DataObjectModel(final Long id, final String varName, final String dataType, final String valueType, final Long size) {
+		this.id = id;
+		this.varName = varName;
+		this.dataType = dataType;
+		this.valueType = valueType;
+		this.size = size;
 	}
 
 	@Override
 	public String toString() {
-		return String.format(JsonFormat, super.id, this.name, this.host, this.monitoringId);
+		return String.format(JsonFormat, this.varName, this.dataType, this.valueType, this.size);
 	}
 }

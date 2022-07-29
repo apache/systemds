@@ -26,27 +26,31 @@ public class StatisticsModel extends BaseModel {
 	public List<UtilizationModel> utilization;
 	public List<TrafficModel> traffic;
 	public List<EventModel> events;
+	public List<DataObjectModel> dataObjects;
 
 	private static final String JsonFormat = "{" +
 			"\"utilization\": [%s]," +
 			"\"traffic\": [%s]," +
-			"\"events\": [%s]" +
+			"\"events\": [%s]," +
+			"\"dataObjects\": [%s]" +
 			"}";
 
 	public StatisticsModel() { }
 
 	public StatisticsModel(List<UtilizationModel> utilization,
 						   List<TrafficModel> traffic,
-						   List<EventModel> jobs) {
+						   List<EventModel> events,
+						   List<DataObjectModel> dataObjects) {
 		this.utilization = utilization;
 		this.traffic = traffic;
-		this.events = jobs;
+		this.events = events;
+		this.dataObjects = dataObjects;
 	}
 
 
 	@Override
 	public String toString() {
-		String utilizationStr = null, trafficStr = null, eventsStr = null;
+		String utilizationStr = null, trafficStr = null, eventsStr = null, dataObjectsStr = null;
 
 		if (utilization != null) {
 			utilizationStr = utilization.stream()
@@ -66,6 +70,12 @@ public class StatisticsModel extends BaseModel {
 					.collect(Collectors.joining(","));
 		}
 
-		return String.format(JsonFormat, utilizationStr, trafficStr, eventsStr);
+		if (dataObjects != null) {
+			dataObjectsStr = dataObjects.stream()
+					.map(DataObjectModel::toString)
+					.collect(Collectors.joining(","));
+		}
+
+		return String.format(JsonFormat, utilizationStr, trafficStr, eventsStr, dataObjectsStr);
 	}
 }

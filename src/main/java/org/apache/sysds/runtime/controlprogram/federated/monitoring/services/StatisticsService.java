@@ -19,29 +19,27 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.*;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.Constants;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
 public class StatisticsService {
 
 	private static final IRepository _entityRepository = new DerbyRepository();
+	private static final Long endOfDynamicPorts = 65535L;
+	private static final int maxMonitorHostCoordinators = DMLScript.MAX_MONITOR_HOST_COORDINATORS;
 
 	public StatisticsModel getAll(Long workerId, StatisticsOptions options) {
 		var stats = new StatisticsModel();
@@ -60,6 +58,10 @@ public class StatisticsService {
 			for (var event: stats.events) {
 				event.stages = _entityRepository.getAllEntitiesByField(Constants.ENTITY_EVENT_ID_COL, event.id, EventStageModel.class);
 			}
+		}
+
+		if (options.dataObjects) {
+			stats.dataObjects = _entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, DataObjectModel.class);
 		}
 
 		return stats;
@@ -93,6 +95,7 @@ public class StatisticsService {
 		var utilization = new UtilizationModel(workerId, aggFedStats.cpuUsage, aggFedStats.memoryUsage);
 		var traffic = aggFedStats.coordinatorsTrafficBytes;
 		var events = aggFedStats.workerEvents;
+		var dataObjects = aggFedStats.workerDataObjects;
 
 		for (var entry: traffic) {
 			entry.workerId = workerId;
@@ -101,8 +104,12 @@ public class StatisticsService {
 		for (var event: events) {
 			event.workerId = workerId;
 
-			var coordinators =
-					_entityRepository.getAllEntitiesByField(Constants.ENTITY_ADDRESS_COL, event.getCoordinatorAddress(), CoordinatorModel.class);
+			List<CoordinatorModel> coordinators = new ArrayList<>();
+			var monitoringKey = getCoordinatorMonitoringKey(event.getCoordinatorAddress());
+
+			if (monitoringKey != null) {
+				coordinators = _entityRepository.getAllEntitiesByField(Constants.ENTITY_MONITORING_KEY_COL, monitoringKey, CoordinatorModel.class);
+			}
 
 			if (!coordinators.isEmpty()) {
 				event.coordinatorId = coordinators.get(0).id;
@@ -111,7 +118,31 @@ public class StatisticsService {
 			}
 		}
 
-		return new StatisticsModel(List.of(utilization), traffic, events);
+		for (var entry: dataObjects) {
+			entry.workerId = workerId;
+		}
+
+		return new StatisticsModel(List.of(utilization), traffic, events, dataObjects);
+	}
+
+	private static String getCoordinatorMonitoringKey(String address) {
+		String result = null;
+		if (address != null && !address.isEmpty() && !address.isBlank()) {
+			var aggAddress = address.split(":");
+
+			var host = aggAddress[0];
+			var port = Integer.parseInt(aggAddress[1]);
+
+			var model = new CoordinatorModel();
+			model.host = host;
+			model.monitoringId = (endOfDynamicPorts - port) % maxMonitorHostCoordinators;
+
+			model.generateMonitoringKey();
+
+			result = model.monitoringHostIdKey;
+		}
+
+		return result;
 	}
 
 	private static Future<FederatedResponse> sendStatisticsRequest(String address) {

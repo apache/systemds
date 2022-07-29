@@ -140,7 +140,8 @@ public class DMLScript
 
 	// Global seed 
 	public static int               SEED                 = -1;
-	public static int               PORT                 = -1;
+	public static int               MONITOR_ID           = -1;
+	public static int     MAX_MONITOR_HOST_COORDINATORS = -1;
 
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -262,7 +263,8 @@ public class DMLScript
 			CHECK_PRIVACY         = dmlOptions.checkPrivacy;
 			LINEAGE_DEBUGGER      = dmlOptions.lineage_debugger;
 			SEED                  = dmlOptions.seed;
-			PORT                  = dmlOptions.addressPort;
+			MONITOR_ID            = dmlOptions.monitorId;
+			MAX_MONITOR_HOST_COORDINATORS = dmlOptions.maxMonitoringHostCoordinators;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;

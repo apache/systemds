@@ -46,11 +46,15 @@ export class ListWorkersEventsComponent {
 	}
 
 	ngOnInit(): void {
-		this.fedSiteService.getAllWorkers().subscribe(workers => this.dataSource.data = workers);
+		this.refreshData();
 	}
 
 	viewEvent(workerId: number) {
 		this.router.navigate(['/events/' + workerId])
+	}
+
+	refreshData() {
+		this.fedSiteService.getAllWorkers().subscribe(workers => this.dataSource.data = workers);
 	}
 
 }

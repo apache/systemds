@@ -26,14 +26,8 @@ import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -50,6 +44,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.Fed
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.GCStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.LineageCacheStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.MultiTenantStatsCollection;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -97,6 +92,7 @@ public class FederatedStatistics {
 	private static final LongAdder fedSerializationReuseBytes = new LongAdder();
 	private static final List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
 	private static final List<EventModel> workerEvents = new ArrayList<>();
+	private static final Map<String, DataObjectModel> workerDataObjects = new HashMap<>();
 
 	public static void logServerTraffic(long read, long written) {
 		bytesReceived.add(read);
@@ -205,6 +201,7 @@ public class FederatedStatistics {
 		//TODO merge with existing
 		coordinatorsTrafficBytes.clear();
 		workerEvents.clear();
+		workerDataObjects.clear();
 	}
 
 	public static String displayFedIOExecStatistics() {
@@ -480,8 +477,18 @@ public class FederatedStatistics {
 		return workerEvents;
 	}
 
+	public static List<DataObjectModel> getWorkerDataObjects() {
+		return new ArrayList<>(workerDataObjects.values());
+	}
+
 	public static void addEvent(EventModel event) {
 		workerEvents.add(event);
+	}
+	public static void addDataObject(DataObjectModel dataObject) {
+		workerDataObjects.put(dataObject.varName, dataObject);
+	}
+	public static void removeDataObjects() {
+		workerDataObjects.clear();
 	}
 
 	public static double getCPUUsage() {
@@ -663,6 +670,7 @@ public class FederatedStatistics {
 			heavyHitters = Statistics.getHeavyHittersHashMap();
 			coordinatorsTrafficBytes = getCoordinatorsTrafficBytes();
 			workerEvents = getWorkerEvents();
+			workerDataObjects = getWorkerDataObjects();
 		}
 		
 		public void aggregate(FedStatsCollection that) {
@@ -679,6 +687,7 @@ public class FederatedStatistics {
 			);
 			coordinatorsTrafficBytes.addAll(that.coordinatorsTrafficBytes);
 			workerEvents.addAll(that.workerEvents);
+			workerDataObjects.addAll(that.workerDataObjects);
 		}
 
 		protected static class CacheStatsCollection implements Serializable {
@@ -834,5 +843,7 @@ public class FederatedStatistics {
 		public HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
 		public List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
 		public List<EventModel> workerEvents = new ArrayList<>();
+		public List<DataObjectModel> workerDataObjects = new ArrayList<>();
+
 	}
 }

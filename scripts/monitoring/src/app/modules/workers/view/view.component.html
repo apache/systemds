@@ -32,7 +32,33 @@
           </span>
 			</h3>
 			<mat-divider inset></mat-divider>
-			<h3>JIT Compile time: <span *ngIf="model">{{model.jitCompileTime}} s</span></h3>
+
+			<table [dataSource]="dataSource" mat-table matSort>
+
+				<ng-container matColumnDef="varName">
+					<th *matHeaderCellDef mat-header-cell mat-sort-header> Variable name</th>
+					<td *matCellDef="let element" mat-cell> {{element.varName}} </td>
+				</ng-container>
+
+				<ng-container matColumnDef="dataType">
+					<th *matHeaderCellDef mat-header-cell mat-sort-header> Data type</th>
+					<td *matCellDef="let element" mat-cell> {{element.dataType}} </td>
+				</ng-container>
+
+				<ng-container matColumnDef="valueType">
+					<th *matHeaderCellDef mat-header-cell mat-sort-header> Value type</th>
+					<td *matCellDef="let element" mat-cell> {{element['valueType']}} </td>
+				</ng-container>
+
+				<ng-container matColumnDef="size">
+					<th *matHeaderCellDef mat-header-cell mat-sort-header> Byte size</th>
+					<td *matCellDef="let element" mat-cell> {{element.size}} </td>
+				</ng-container>
+
+				<tr *matHeaderRowDef="displayedColumns" mat-header-row></tr>
+				<tr *matRowDef="let row; columns: displayedColumns;" mat-row></tr>
+
+			</table>
 		</mat-card-content>
 	</mat-card>
 	<mat-card class="worker-metrics-card" id="requests-metric-card">

@@ -27,14 +27,15 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.Coo
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
 
 public class CoordinatorController implements IController {
-	private final CoordinatorService _coordinatorService = new CoordinatorService();
+	private final CoordinatorService coordinatorService = new CoordinatorService();
 
 	@Override
 	public FullHttpResponse create(Request request) {
 
 		var model = MapperService.getModelFromBody(request, CoordinatorModel.class);
+		model.generateMonitoringKey();
 
-		model.id = _coordinatorService.create(model);
+		model.id = coordinatorService.create(model);
 
 		return Response.ok(model.toString());
 	}
@@ -42,22 +43,23 @@ public class CoordinatorController implements IController {
 	@Override
 	public FullHttpResponse update(Request request, Long objectId) {
 		var model = MapperService.getModelFromBody(request, CoordinatorModel.class);
+		model.generateMonitoringKey();
 
-		_coordinatorService.update(model);
+		coordinatorService.update(model);
 
 		return Response.ok(model.toString());
 	}
 
 	@Override
 	public FullHttpResponse delete(Request request, Long objectId) {
-		_coordinatorService.remove(objectId);
+		coordinatorService.remove(objectId);
 
 		return Response.ok(Constants.GENERIC_SUCCESS_MSG);
 	}
 
 	@Override
 	public FullHttpResponse get(Request request, Long objectId) {
-		var result = _coordinatorService.get(objectId);
+		var result = coordinatorService.get(objectId);
 
 		if (result == null) {
 			return Response.notFound(Constants.NOT_FOUND_MSG);
@@ -68,7 +70,7 @@ public class CoordinatorController implements IController {
 
 	@Override
 	public FullHttpResponse getAll(Request request) {
-		var coordinators = _coordinatorService.getAll();
+		var coordinators = coordinatorService.getAll();
 
 		return Response.ok(coordinators.toString());
 	}

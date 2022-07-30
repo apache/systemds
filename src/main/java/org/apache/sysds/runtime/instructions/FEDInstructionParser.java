@@ -73,6 +73,7 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "/" ,  FEDType.Binary );
 		String2FEDInstructionType.put( "1-*", FEDType.Binary); //special * case
 		String2FEDInstructionType.put( "^2" , FEDType.Binary); //special ^ case
+		String2FEDInstructionType.put( "*2" , FEDType.Binary); //special * case
 		String2FEDInstructionType.put( "max", FEDType.Binary );
 		String2FEDInstructionType.put( "==",  FEDType.Binary);
 		String2FEDInstructionType.put( "!=",  FEDType.Binary);

@@ -125,6 +125,7 @@ public class Explain
 		return "# EXPLAIN ("+type.name()+"):\n"
 				+ Explain.explainMemoryBudget(counts)+"\n"
 				+ Explain.explainDegreeOfParallelism(counts)
+				+ Explain.explainMemoTableSize()
 				+ Explain.explain(prog, rtprog, type, counts);
 	}
 
@@ -183,6 +184,12 @@ public class Explain
 		}
 
 		return sb.toString();
+	}
+
+	private static String explainMemoTableSize(){
+		if ( MEMO_TABLE != null )
+			return "\n# Number of HOPs in Memo = " + MEMO_TABLE.getSize();
+		else return "";
 	}
 
 	public static String explain(DMLProgram prog, Program rtprog, ExplainType type) {

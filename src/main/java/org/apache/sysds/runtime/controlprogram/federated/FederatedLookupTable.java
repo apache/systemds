@@ -47,10 +47,6 @@ public class FederatedLookupTable {
 		_lookup_table = new ConcurrentHashMap<>();
 	}
 
-	public void clear() {
-		_lookup_table.clear();
-	}
-	
 	/**
 	 * Get the ExecutionContextMap corresponding to the given host and pid of the
 	 * requesting coordinator from the lookup table. Create a new
@@ -61,9 +57,9 @@ public class FederatedLookupTable {
 	 * @return ExecutionContextMap the ECM corresponding to the requesting coordinator
 	 */
 	public ExecutionContextMap getECM(String host, long pid) {
-		LOG.trace("Getting the ExecutionContextMap for coordinator " + pid + "@" + host);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		FedUniqueCoordID funCID = new FedUniqueCoordID(host, pid);
+		LOG.trace("Getting the ExecutionContextMap for coordinator " + funCID.toString());
 		ExecutionContextMap ecm = _lookup_table.computeIfAbsent(funCID,
 			k -> createNewECM());
 		if(ecm == null) {
@@ -77,6 +73,22 @@ public class FederatedLookupTable {
 			FederatedStatistics.incFedLookupTableGetTime(System.nanoTime() - t0);
 		}
 		return ecm;
+	}
+
+	/**
+	 * Remove the ExecutionContextMap corresponding to the given host and pid of the
+	 * requesting coordinator from the lookup table. Do nothing if no entry
+	 * is associated to the host and pid.
+	 *
+	 * @param host the host string of the requesting coordinator (usually IP address)
+	 * @param pid the process id of the requesting coordinator
+	 */
+	public void removeECM(String host, long pid) {
+		FedUniqueCoordID funCID = new FedUniqueCoordID(host, pid);
+		LOG.trace("Removing the ExecutionContextMap of coordinator " + funCID.toString());
+		if(_lookup_table.remove(funCID) == null)
+			LOG.warn("Removing federated execution context map failed. "
+				+ "No valid resolution for " + funCID.toString() + " found.");
 	}
 
 	/**

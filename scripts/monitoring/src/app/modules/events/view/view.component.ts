@@ -41,6 +41,8 @@ export class ViewWorkerEventsComponent {
 
 	private timer: any;
 
+	private eventTimelineChart: Chart;
+
 	constructor(
 		private fedSiteService: FederatedSiteService,
 		private router: ActivatedRoute) {
@@ -54,40 +56,48 @@ export class ViewWorkerEventsComponent {
 
 		const eventCanvasEle: any = document.getElementById('event-timeline');
 
-		const eventTimelineChart = new Chart(eventCanvasEle.getContext('2d'), {
-			type: 'bar',
-			data: {
-				labels: [],
-				datasets: []
-			},
-			options: {
-				indexAxis: 'y',
-				responsive: true,
-				plugins: {
-					legend: {
-						position: 'top',
-					},
-					title: {
-						display: true,
-						text: 'Event timeline of worker with respect to coordinators'
-					}
-				},
-				scales: {
-					x: {
-						type: 'time',
-						time: {
-							unit: 'millisecond'
-						}
-					}
-				}
-			}
-		})
-
 		this.timer = setInterval(() => {
 			this.fedSiteService.getStatistics(id).subscribe(stats => {
 				this.statistics = stats;
 
-				this.updateEventTimeline(eventTimelineChart);
+				const timeframe = this.getTimeframe();
+
+				if (!this.eventTimelineChart) {
+					this.eventTimelineChart = new Chart(eventCanvasEle.getContext('2d'), {
+						type: 'bar',
+						data: {
+							labels: [],
+							datasets: []
+						},
+						options: {
+							indexAxis: 'y',
+							responsive: true,
+							plugins: {
+								legend: {
+									position: 'top',
+								},
+								title: {
+									display: true,
+									text: 'Event timeline of worker with respect to coordinators'
+								}
+							},
+							scales: {
+								x: {
+									min: this.getLastSeconds(timeframe[1], 3),
+									max: timeframe[1],
+									ticks: {
+										// Include a dollar sign in the ticks
+										callback: function(value, index, ticks) {
+											return new Date(value).toLocaleTimeString();
+										}
+									}
+								}
+							}
+						}
+					})
+				}
+
+				this.updateEventTimeline();
 			})
 		}, 3000);
 
@@ -95,6 +105,40 @@ export class ViewWorkerEventsComponent {
 
 	ngOnDestroy() {
 		clearInterval(this.timer);
+	}
+
+	private getLastSeconds(time: number, seconds: number): number {
+		const benchmark = new Date(time);
+
+		const back = new Date(time);
+		back.setSeconds(benchmark.getSeconds() - seconds)
+
+		return back.getTime();
+	}
+
+	private getTimeframe() {
+		const coordinatorNames = this.getCoordinatorNames();
+		let minTime = 0;
+		let maxTime = 0;
+
+		coordinatorNames.forEach(c => {
+			const eventsData = this.getEventsData(c);
+
+			for (const entry in eventsData) {
+				let startTime = new Date(eventsData[entry]['startTime']).getTime();
+				let endTime = new Date(eventsData[entry]['endTime']).getTime();
+
+				if (startTime < minTime) {
+					minTime = startTime;
+				}
+
+				if (endTime > maxTime) {
+					maxTime = endTime;
+				}
+			}
+		})
+
+		return [minTime, maxTime];
 	}
 
 	private getCoordinatorNames() {
@@ -109,24 +153,27 @@ export class ViewWorkerEventsComponent {
 		return names;
 	}
 
-	private updateEventTimeline(chart: Chart) {
+	private updateEventTimeline() {
 		const coordinatorNames = this.getCoordinatorNames();
 		coordinatorNames.forEach(c => {
 			const eventsData = this.getEventsData(c);
 
-			chart.data.datasets = [];
-			chart.data.labels = coordinatorNames;
+			this.eventTimelineChart.data.datasets = [];
+			this.eventTimelineChart.data.labels = coordinatorNames;
 
 			for (const entry in eventsData) {
-				chart.data.datasets.push({
+				let startTime = new Date(eventsData[entry]['startTime']).getTime();
+				let endTime = new Date(eventsData[entry]['endTime']).getTime();
+
+				this.eventTimelineChart.data.datasets.push({
 					label: entry,
 					backgroundColor: constants.chartColors.green,
 					// @ts-ignore
-					data: [[new Date(eventsData[entry]['startTime']).getTime(), new Date(eventsData[entry]['endTime']).getTime()]]
+					data: [[startTime, endTime]]
 				})
 			}
 
-			chart.update('none');
+			this.eventTimelineChart.update('none');
 		})
 	}
 

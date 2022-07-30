@@ -86,7 +86,6 @@ export class ViewWorkerEventsComponent {
 									min: this.getLastSeconds(timeframe[1], 3),
 									max: timeframe[1],
 									ticks: {
-										// Include a dollar sign in the ticks
 										callback: function(value, index, ticks) {
 											return new Date(value).toLocaleTimeString();
 										}

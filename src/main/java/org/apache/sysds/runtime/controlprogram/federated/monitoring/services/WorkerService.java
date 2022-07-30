@@ -43,7 +43,7 @@ public class WorkerService {
 	public Long create(WorkerModel model) {
 		long id = entityRepository.createEntity(model);
 
-		cachedWorkers.putIfAbsent(id, model.address);
+		updateCachedWorkers(List.of(model), false);
 
 		return id;
 	}
@@ -51,21 +51,46 @@ public class WorkerService {
 	public void update(WorkerModel model) {
 		entityRepository.updateEntity(model);
 
-		cachedWorkers.replace(model.id, model.address);
+		updateCachedWorkers(List.of(model), false);
 	}
 
 	public void remove(Long id) {
 		entityRepository.removeEntity(id, WorkerModel.class);
 
-		cachedWorkers.remove(id);
+		updateCachedWorkers(List.of(new WorkerModel(id)), true);
 	}
 
 	public WorkerModel get(Long id) {
-		return entityRepository.getEntity(id, WorkerModel.class);
+		var worker = entityRepository.getEntity(id, WorkerModel.class);
+
+		updateCachedWorkers(List.of(worker), false);
+
+		return worker;
 	}
 
 	public List<WorkerModel> getAll() {
-		return entityRepository.getAllEntities(WorkerModel.class);
+		var workers = entityRepository.getAllEntities(WorkerModel.class);
+
+		updateCachedWorkers(workers, false);
+
+		return workers;
+	}
+
+	private static synchronized void updateCachedWorkers(List<WorkerModel> workers, boolean removeList) {
+
+		if (removeList) {
+			for (var worker: workers) {
+				cachedWorkers.remove(worker.id);
+			}
+		} else {
+			for (var worker: workers) {
+				if (!cachedWorkers.containsKey(worker.id)) {
+					cachedWorkers.put(worker.id, worker.address);
+				} else {
+					cachedWorkers.replace(worker.id, worker.address);
+				}
+			}
+		}
 	}
 
 	private static Runnable syncWorkerStatisticsWithDB() {

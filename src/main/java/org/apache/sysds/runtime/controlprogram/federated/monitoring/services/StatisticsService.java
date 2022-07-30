@@ -80,8 +80,9 @@ public class StatisticsService {
 			FederatedResponse statisticsResponse = null;
 			var statisticsResponseFuture = sendStatisticsRequest(address);
 
-			if (statisticsResponseFuture != null)
+			if (statisticsResponseFuture != null) {
 				statisticsResponse = statisticsResponseFuture.get();
+			}
 
 			if (statisticsResponse != null && statisticsResponse.isSuccessful()) {
 				FederatedStatistics.FedStatsCollection aggFedStats = new FederatedStatistics.FedStatsCollection();

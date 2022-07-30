@@ -25,12 +25,12 @@ import java.time.LocalDateTime;
 public class EventStageModel extends BaseModel implements Serializable {
 
 	public Long eventId;
-	public String stageOperation;
+	public String operation;
 	public LocalDateTime startTime;
 	public LocalDateTime endTime;
 
 	private static final String JsonFormat = "{" +
-			"\"stageOperation\": \"%s\"," +
+			"\"operation\": \"%s\"," +
 			"\"startTime\": \"%s\"," +
 			"\"endTime\": \"%s\"" +
 			"}";
@@ -47,14 +47,14 @@ public class EventStageModel extends BaseModel implements Serializable {
 		this(-1L, eventId, stageOperation);
 	}
 
-	public EventStageModel(final Long id, final Long eventId, final String stageOperation) {
+	public EventStageModel(final Long id, final Long eventId, final String operation) {
 		this.id = id;
 		this.eventId = eventId;
-		this.stageOperation = stageOperation;
+		this.operation = operation;
 	}
 
 	@Override
 	public String toString() {
-		return String.format(JsonFormat, this.stageOperation, this.startTime, this.endTime);
+		return String.format(JsonFormat, this.operation, this.startTime, this.endTime);
 	}
 }

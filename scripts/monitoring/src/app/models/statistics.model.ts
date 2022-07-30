@@ -21,11 +21,12 @@ import { Utilization } from "./utilization.model";
 import { Traffic } from "./traffic.model";
 import { Event } from "./event.model";
 import { DataObject } from "./dataObject.model";
+import { FedRequest } from "./fedRequest.model";
 
 export class Statistics {
-	constructor(public utilization: Utilization[],
-				public traffic: Traffic[],
-				public events: Event[],
-				public dataObjects: DataObject[]) {
-	}
+	constructor(public utilization: Utilization[] = [],
+				public traffic: Traffic[] = [],
+				public events: Event[] = [],
+				public dataObjects: DataObject[] = [],
+				public requests: FedRequest[] = []) { }
 }

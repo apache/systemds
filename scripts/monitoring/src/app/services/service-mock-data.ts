@@ -61,13 +61,13 @@ let workers = [
 		],
 		"stats": [{
 			"timestamp": "2022-06-25 13:18:19.578",
-			"cpuUsage": 1.96,
+			"x": 1.96,
 			"memoryUsage": 1.46,
 			"coordinatorTraffic": [],
 			"heavyHitters": []
 		}, {
 			"timestamp": "2022-06-25 13:18:22.522",
-			"cpuUsage": 1.95,
+			"x": 1.95,
 			"memoryUsage": 1.46,
 			"coordinatorTraffic": [],
 			"heavyHitters": []
@@ -88,13 +88,13 @@ let workers = [
 		],
 		"stats": [{
 			"timestamp": "2022-06-25 13:18:19.578",
-			"cpuUsage": 1.96,
+			"x": 1.96,
 			"memoryUsage": 1.46,
 			"coordinatorTraffic": [],
 			"heavyHitters": []
 		}, {
 			"timestamp": "2022-06-25 13:18:22.522",
-			"cpuUsage": 1.95,
+			"x": 1.95,
 			"memoryUsage": 1.46,
 			"coordinatorTraffic": [],
 			"heavyHitters": []

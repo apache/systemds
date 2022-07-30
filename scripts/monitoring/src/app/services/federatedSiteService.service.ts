@@ -18,7 +18,7 @@
  */
 
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { constants } from '../constants';
 import { Coordinator } from '../models/coordinator.model';
 import { Worker } from '../models/worker.model';

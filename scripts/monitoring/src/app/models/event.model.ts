@@ -20,7 +20,6 @@
 import { EventStage } from "./eventStage.model";
 
 export class Event {
-	constructor(public coordinatorId: number,
-				public stages: EventStage[]) {
-	}
+	constructor(public coordinatorName: string = '',
+				public stages: EventStage[] = []) { }
 }

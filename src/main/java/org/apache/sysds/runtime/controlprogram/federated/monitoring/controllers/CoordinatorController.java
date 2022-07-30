@@ -21,8 +21,8 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers
 
 import io.netty.handler.codec.http.FullHttpResponse;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.Request;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.Response;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.CoordinatorService;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
 

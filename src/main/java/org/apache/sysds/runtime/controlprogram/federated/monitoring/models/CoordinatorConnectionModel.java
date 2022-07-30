@@ -17,8 +17,28 @@
  * under the License.
  */
 
-export class EventStage {
-	constructor(public operation: string = '',
-				public startTime: string = '',
-				public endTime: string = '') { }
+package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+public abstract class CoordinatorConnectionModel extends BaseModel implements Serializable {
+	public Long coordinatorId;
+	private String coordinatorAddress;
+	private static final String localhostIp = "/127.0.0.1";
+	private static final String localhostString = "localhost";
+
+	public CoordinatorConnectionModel() { }
+
+	public void setCoordinatorAddress(String address) {
+		this.coordinatorAddress = address;
+	}
+
+	public String getCoordinatorAddress() {
+		if (this.coordinatorAddress.contains(localhostIp)) {
+			this.coordinatorAddress = this.coordinatorAddress.replace(localhostIp, localhostString);
+		}
+
+		return this.coordinatorAddress;
+	}
 }

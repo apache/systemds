@@ -45,6 +45,6 @@ public class CoordinatorService {
 	}
 
 	public List<CoordinatorModel> getAll() {
-		return  entityRepository.getAllEntities(CoordinatorModel.class);
+		return entityRepository.getAllEntities(CoordinatorModel.class);
 	}
 }

@@ -61,20 +61,20 @@
 			</table>
 		</mat-card-content>
 	</mat-card>
+
 	<mat-card class="worker-metrics-card" id="requests-metric-card">
-		<div [initOpts]="optionsRequests" [merge]="updateOptionsRequests" [options]="optionsRequests" class="demo-chart"
-			 echarts></div>
+		<canvas id="requests-metric"></canvas>
 	</mat-card>
 
 </div>
 
 <div class="metrics-cards">
 	<mat-card class="worker-metrics-card" id="cpu-metric-card">
-		<div [merge]="updateOptionsCPU" [options]="optionsCPU" class="demo-chart" echarts></div>
+		<canvas id="cpu-metric"></canvas>
 	</mat-card>
 
 	<mat-card class="worker-metrics-card" id="memory-metric-card">
-		<div [merge]="updateOptionsMemory" [options]="optionsMemory" class="demo-chart" echarts></div>
+		<canvas id="memory-metric"></canvas>
 	</mat-card>
 </div>
 

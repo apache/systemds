@@ -38,7 +38,7 @@ export class CreateEditCoordinatorsComponent {
 	}
 
 	ngOnInit(): void {
-		this.model = new Coordinator(-1, '', '', -1);
+		this.model = new Coordinator();
 
 		if (this.id !== null) {
 			this.fedSiteService.getCoordinator(this.id).subscribe(coordinator => this.model = coordinator);

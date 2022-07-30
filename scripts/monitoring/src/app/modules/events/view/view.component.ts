@@ -24,6 +24,8 @@ import { ActivatedRoute } from '@angular/router';
 import { FederatedSiteService } from 'src/app/services/federatedSiteService.service';
 import { Statistics } from "../../../models/statistics.model";
 import { Chart, registerables } from "chart.js";
+import { constants } from "../../../constants";
+import 'chartjs-adapter-moment';
 
 @Component({
 	selector: 'app-view-worker-events',
@@ -32,13 +34,11 @@ import { Chart, registerables } from "chart.js";
 })
 export class ViewWorkerEventsComponent {
 
-	public optionsEvents: any;
-
-	public updateOptionsEvents: any;
 	public statistics: Statistics;
+
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	@ViewChild(MatSort) sort: MatSort;
-	private dataEvents!: any[];
+
 	private timer: any;
 
 	constructor(
@@ -50,49 +50,16 @@ export class ViewWorkerEventsComponent {
 	ngOnInit(): void {
 		const id = Number(this.router.snapshot.paramMap.get('id'));
 
-		this.fedSiteService.getStatistics(id).subscribe(stats => {
-			this.statistics = stats;
-
-			this.updateMetrics();
-		});
-
-		const DATA_COUNT = 7;
-		const NUMBER_CFG = {count: DATA_COUNT, min: -100, max: 100};
-
-		const labels = [
-			'coordinator 1',
-		];
-		const data = {
-			labels: labels,
-			datasets: [
-				{
-					label: 'Dataset 1',
-					data: [[3, 7]],
-					backgroundColor: 'rgb(255, 99, 132)',
-				},
-				{
-					label: 'Dataset 2',
-					data: labels.map(() => {
-						return [Math.random() * (100 + 100) - 100, Math.random() * (100 + 100) - 100];
-					}),
-					backgroundColor: 'rgb(54, 162, 235)',
-				},
-
-				{
-					label: 'Dataset 3',
-					data: labels.map(() => {
-						return [Math.random() * (100 + 100) - 100, Math.random() * (100 + 100) - 100];
-					}),
-					backgroundColor: 'rgb(3,86,11)',
-				},
-			]
-		};
+		this.statistics = new Statistics();
 
 		const eventCanvasEle: any = document.getElementById('event-timeline');
 
-		new Chart(eventCanvasEle.getContext('2d'), {
+		const eventTimelineChart = new Chart(eventCanvasEle.getContext('2d'), {
 			type: 'bar',
-			data: data,
+			data: {
+				labels: [],
+				datasets: []
+			},
 			options: {
 				indexAxis: 'y',
 				responsive: true,
@@ -102,27 +69,27 @@ export class ViewWorkerEventsComponent {
 					},
 					title: {
 						display: true,
-						text: 'Chart.js Floating Bar Chart'
+						text: 'Event timeline of worker with respect to coordinators'
 					}
 				},
 				scales: {
 					x: {
-						stacked: true
-					},
-					y: {
-						stacked: true
+						type: 'time',
+						time: {
+							unit: 'millisecond'
+						}
 					}
 				}
 			}
-		});
+		})
 
-		// this.timer = setInterval(() => {
-		// 	this.fedSiteService.getStatistics(this.model.id).subscribe(stats => {
-		// 		this.statistics = stats;
-		//
-		// 		this.updateMetrics();
-		// 	})
-		// }, 3000);
+		this.timer = setInterval(() => {
+			this.fedSiteService.getStatistics(id).subscribe(stats => {
+				this.statistics = stats;
+
+				this.updateEventTimeline(eventTimelineChart);
+			})
+		}, 3000);
 
 	}
 
@@ -130,28 +97,60 @@ export class ViewWorkerEventsComponent {
 		clearInterval(this.timer);
 	}
 
-	private getDatasets() {
-		this.statistics.events.map(e => {
+	private getCoordinatorNames() {
+		let names: string[] = [];
 
+		this.statistics.events.forEach(e => {
+			if (!names.find(n => n === e.coordinatorName)) {
+				names.push(e.coordinatorName);
+			}
+		})
+
+		return names;
+	}
+
+	private updateEventTimeline(chart: Chart) {
+		const coordinatorNames = this.getCoordinatorNames();
+		coordinatorNames.forEach(c => {
+			const eventsData = this.getEventsData(c);
+
+			chart.data.datasets = [];
+			chart.data.labels = coordinatorNames;
+
+			for (const entry in eventsData) {
+				chart.data.datasets.push({
+					label: entry,
+					backgroundColor: constants.chartColors.green,
+					// @ts-ignore
+					data: [[new Date(eventsData[entry]['startTime']).getTime(), new Date(eventsData[entry]['endTime']).getTime()]]
+				})
+			}
+
+			chart.update('none');
 		})
 	}
 
-	private updateMetrics(): void {
-		this.dataEvents = this.statistics.utilization.map(s => {
-			return {
-				name: s.timestamp,
-				value: [
-					s.timestamp,
-					s.cpuUsage
-				]
-			}
-		});
+	private getEventsData(coordinatorName: string) {
 
-		this.updateOptionsEvents = {
-			series: [{
-				data: this.dataEvents
-			}]
-		};
+		let result: any = {};
+
+		for (let i = 0; i < this.statistics.events.length; i++) {
+			const event = this.statistics.events[i];
+
+			if (event.coordinatorName === coordinatorName) {
+				for (let j = 0; j < event.stages.length; j++) {
+					const stage = event.stages[j];
+
+					if (result[stage.operation] && stage.startTime < result[stage.operation]['startTime']) {
+						continue;
+					}
+
+					result[stage.operation] = stage;
+				}
+			}
+		}
+
+		return result;
 	}
 
 }

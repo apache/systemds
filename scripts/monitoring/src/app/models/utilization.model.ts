@@ -18,8 +18,7 @@
  */
 
 export class Utilization {
-	constructor(public timestamp: string,
-				public cpuUsage: number,
-				public memoryUsage: number) {
-	}
+	constructor(public timestamp: string = '',
+				public cpuUsage: number = 0,
+				public memoryUsage: number = 0) { }
 }

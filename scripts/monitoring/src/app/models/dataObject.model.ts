@@ -18,9 +18,8 @@
  */
 
 export class DataObject {
-	constructor(public varName: string,
-				public dataType: string,
-				public valueType: string,
-				public size: number) {
-	}
+	constructor(public varName: string = '',
+				public dataType: string = '',
+				public valueType: string = '',
+				public size: number = 0) { }
 }

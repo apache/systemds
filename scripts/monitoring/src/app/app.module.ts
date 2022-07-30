@@ -31,8 +31,6 @@ import { HttpClientModule } from '@angular/common/http';
 
 import { MaterialModule } from './material.module'
 
-import { NgxEchartsModule } from 'ngx-echarts';
-
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { CoordinatorComponent } from './modules/dashboard/coordinator/coordinator.component';
 import { ConnectionComponent } from './modules/dashboard/connection/connection.component';
@@ -76,9 +74,6 @@ import { ViewWorkerEventsComponent } from "./modules/events/view/view.component"
 		DragDropModule,
 		FormsModule,
 		ReactiveFormsModule,
-		NgxEchartsModule.forRoot({
-			echarts: () => import('echarts')
-		})
 	],
 	providers: [],
 	bootstrap: [AppComponent]

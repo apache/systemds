@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.Fed
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.MultiTenantStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -93,6 +94,7 @@ public class FederatedStatistics {
 	private static final List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
 	private static final List<EventModel> workerEvents = new ArrayList<>();
 	private static final Map<String, DataObjectModel> workerDataObjects = new HashMap<>();
+	private static final Map<String, RequestModel> workerFederatedRequests = new HashMap<>();
 
 	public static void logServerTraffic(long read, long written) {
 		bytesReceived.add(read);
@@ -341,7 +343,7 @@ public class FederatedStatistics {
 		sb.append("Transferred bytes (Host/Datetime/ByteAmount):\n");
 
 		for (var entry: coordinatorsTrafficBytes) {
-			sb.append(String.format("%s/%s/%d.\n", entry.coordinatorAddress, entry.timestamp, entry.byteAmount));
+			sb.append(String.format("%s/%s/%d.\n", entry.getCoordinatorAddress(), entry.timestamp, entry.byteAmount));
 		}
 
 		return sb.toString();
@@ -476,6 +478,9 @@ public class FederatedStatistics {
 	public static List<EventModel> getWorkerEvents() {
 		return workerEvents;
 	}
+	public static List<RequestModel> getWorkerRequests() {
+		return new ArrayList<>(workerFederatedRequests.values());
+	}
 
 	public static List<DataObjectModel> getWorkerDataObjects() {
 		return new ArrayList<>(workerDataObjects.values());
@@ -483,6 +488,13 @@ public class FederatedStatistics {
 
 	public static void addEvent(EventModel event) {
 		workerEvents.add(event);
+	}
+	public static void addWorkerRequest(RequestModel request) {
+		if (!workerFederatedRequests.containsKey(request.type)) {
+			workerFederatedRequests.put(request.type, request);
+		};
+
+		workerFederatedRequests.get(request.type).count++;
 	}
 	public static void addDataObject(DataObjectModel dataObject) {
 		workerDataObjects.put(dataObject.varName, dataObject);
@@ -671,6 +683,7 @@ public class FederatedStatistics {
 			coordinatorsTrafficBytes = getCoordinatorsTrafficBytes();
 			workerEvents = getWorkerEvents();
 			workerDataObjects = getWorkerDataObjects();
+			workerRequests = getWorkerRequests();
 		}
 		
 		public void aggregate(FedStatsCollection that) {
@@ -688,6 +701,7 @@ public class FederatedStatistics {
 			coordinatorsTrafficBytes.addAll(that.coordinatorsTrafficBytes);
 			workerEvents.addAll(that.workerEvents);
 			workerDataObjects.addAll(that.workerDataObjects);
+			workerRequests.addAll(that.workerRequests);
 		}
 
 		protected static class CacheStatsCollection implements Serializable {
@@ -845,5 +859,6 @@ public class FederatedStatistics {
 		public List<EventModel> workerEvents = new ArrayList<>();
 		public List<DataObjectModel> workerDataObjects = new ArrayList<>();
 
+		public List<RequestModel> workerRequests = new ArrayList<>();
 	}
 }

@@ -26,6 +26,9 @@ import { FederatedSiteService } from 'src/app/services/federatedSiteService.serv
 import { Statistics } from "../../../models/statistics.model";
 import { MatTableDataSource } from "@angular/material/table";
 import { DataObject } from "../../../models/dataObject.model";
+import { Chart, registerables } from "chart.js";
+import { constants } from "../../../constants";
+import 'chartjs-adapter-moment';
 
 @Component({
 	selector: 'app-view-worker',
@@ -34,28 +37,21 @@ import { DataObject } from "../../../models/dataObject.model";
 })
 export class ViewWorkerComponent {
 
-
 	public displayedColumns: string[] = ['varName', 'dataType', 'valueType', 'size'];
 	public dataSource: MatTableDataSource<DataObject> = new MatTableDataSource<DataObject>([]);
 
-	public optionsCPU: any;
-	public optionsMemory: any;
-	public optionsRequests: any;
-
-	public updateOptionsCPU: any;
-	public updateOptionsMemory: any;
-	public updateOptionsRequests: any;
 	public model: Worker;
 	public statistics: Statistics;
+
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	@ViewChild(MatSort) sort: MatSort;
-	private dataCPU!: any[];
-	private dataMemory!: any[];
+
 	private timer: any;
 
 	constructor(
 		private fedSiteService: FederatedSiteService,
 		private router: ActivatedRoute) {
+		Chart.register(...registerables);
 	}
 
 	ngOnInit(): void {
@@ -64,132 +60,130 @@ export class ViewWorkerComponent {
 			this.model = worker;
 		});
 
-		this.fedSiteService.getStatistics(id).subscribe(stats => {
-			this.statistics = stats;
+		this.statistics = new Statistics();
 
-			this.updateMetrics();
-		});
+		const cpuMetricEle: any = document.getElementById('cpu-metric');
+		const memoryMetricEle: any = document.getElementById('memory-metric');
+		const requestsMetricEle: any = document.getElementById('requests-metric');
 
-		this.dataCPU = [];
-		this.dataMemory = [];
-
-		// initialize chart options:
-		this.optionsCPU = {
-			title: {
-				text: 'CPU (%)'
+		let cpuChart = new Chart(cpuMetricEle.getContext('2d'), {
+			type: 'line',
+			data: {
+				datasets: [{
+					data: this.statistics.utilization.map(s => {
+						return {x: s.timestamp, y: s.cpuUsage}
+					}),
+					borderColor: constants.chartColors.blue
+				}]
 			},
-			tooltip: {
-				trigger: 'axis',
-				formatter: (params: any) => {
-					params = params[0];
-					const date = new Date(params.name);
-					return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
+			options: {
+				responsive: true,
+				plugins: {
+					legend: {
+						display: false
+					},
+					title: {
+						display: true,
+						text: 'CPU usage %'
+					}
 				},
-				axisPointer: {
-					animation: false
-				}
-			},
-			xAxis: {
-				type: 'time',
-				splitLine: {
-					show: false
-				},
-				show: false
-			},
-			yAxis: {
-				type: 'value',
-				boundaryGap: [0, '100%'],
-				splitLine: {
-					show: false
-				}
-			},
-			series: [{
-				name: 'Mocking Data',
-				type: 'line',
-				showSymbol: false,
-				hoverAnimation: false,
-				areaStyle: {},
-				data: this.dataCPU
-			}]
-		};
-
-		this.optionsMemory = {
-			title: {
-				text: 'Memory (%)'
-			},
-			tooltip: {
-				trigger: 'axis',
-				formatter: (params: any) => {
-					params = params[0];
-					const date = new Date(params.name);
-					return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
-				},
-				axisPointer: {
-					animation: false
-				}
-			},
-			xAxis: {
-				type: 'time',
-				splitLine: {
-					show: false
-				},
-				show: false
-			},
-			yAxis: {
-				type: 'value',
-				boundaryGap: [0, '100%'],
-				splitLine: {
-					show: false
-				}
-			},
-			series: [{
-				name: 'Mocking Data',
-				type: 'line',
-				showSymbol: false,
-				hoverAnimation: false,
-				areaStyle: {},
-				data: this.dataMemory
-			}]
-		};
-
-		this.optionsRequests = {
-			tooltip: {
-				trigger: 'axis',
-				axisPointer: {
-					type: 'shadow'
-				}
-			},
-			grid: {
-				left: '3%',
-				right: '4%',
-				bottom: '3%',
-				containLabel: true
-			},
-			xAxis: [
-				{
-					type: 'category',
-					data: ["GET_VAR", "PUT_VAR", "READ_VAR", "EXEC_UDF", "EXEC_INST"],
-					axisTick: {
-						alignWithLabel: true
+				scales: {
+					x: {
+						type: 'time',
+						time: {
+							unit: 'second',
+						}
 					}
 				}
-			],
-			yAxis: [{
-				type: 'value'
-			}],
-			series: [{
-				name: 'Count',
-				type: 'bar',
-				barWidth: '60%',
-				data: []
-			}]
-		}
+			},
+		});
+
+		let memoryChart = new Chart(memoryMetricEle.getContext('2d'), {
+			type: 'line',
+			data: {
+				datasets: [{
+					data: this.statistics.utilization.map(s => {
+						return {x: s.timestamp, y: s.cpuUsage}
+					}),
+					borderColor: constants.chartColors.red
+				}]
+			},
+			options: {
+				responsive: true,
+				plugins: {
+					legend: {
+						display: false
+					},
+					title: {
+						display: true,
+						text: 'Memory usage %'
+					}
+				},
+				scales: {
+					x: {
+						type: 'time',
+						time: {
+							unit: 'second'
+						}
+					}
+				}
+			},
+		});
+
+		let requestsChart = new Chart(requestsMetricEle.getContext('2d'), {
+			type: 'bar',
+			data: {
+				labels: this.statistics.requests.map(r => r.type),
+				datasets: [{
+					label: 'My First Dataset',
+					data: this.statistics.requests.map(r => r.count),
+					backgroundColor: constants.chartColors.purple,
+				}]
+			},
+			options: {
+				responsive: true,
+				plugins: {
+					legend: {
+						display: false
+					},
+					title: {
+						display: true,
+						text: 'Request type count'
+					}
+				},
+				scales: {
+					y: {
+						beginAtZero: true
+					}
+				}
+			},
+		});
 
 		this.timer = setInterval(() => {
 			this.fedSiteService.getStatistics(this.model.id).subscribe(stats => {
 				this.statistics = stats;
 
-				this.updateMetrics();
+				cpuChart.data.datasets.forEach((dataset) => {
+					dataset.data = [];
+					this.statistics.utilization.map(s => dataset.data.push({ x: s.timestamp, y: s.cpuUsage }));
+				});
+
+				memoryChart.data.datasets.forEach((dataset) => {
+					dataset.data = [];
+					this.statistics.utilization.map(s => dataset.data.push({ x: s.timestamp, y: s.memoryUsage }));
+				});
+
+				requestsChart.data.labels = this.statistics.requests.map(r => r.type);
+				requestsChart.data.datasets.forEach((dataset) => {
+					dataset.data = [];
+					this.statistics.requests.map(s => dataset.data.push(s.count));
+				});
+
+				cpuChart.update();
+				memoryChart.update();
+				requestsChart.update();
+
+				this.dataSource.data = this.statistics.dataObjects;
 			})
 		}, 3000);
 
@@ -197,43 +191,6 @@ export class ViewWorkerComponent {
 
 	ngOnDestroy() {
 		clearInterval(this.timer);
-	}
-
-	private updateMetrics(): void {
-		this.dataCPU = this.statistics.utilization.map(s => {
-			return {
-				name: s.timestamp,
-				value: [
-					s.timestamp,
-					s.cpuUsage
-				]
-			}
-		});
-
-		this.dataMemory = this.statistics.utilization.map(s => {
-			return {
-				name: s.timestamp,
-				value: [
-					s.timestamp,
-					s.memoryUsage
-				]
-			}
-		})
-
-		this.updateOptionsCPU = {
-			series: [{
-				data: this.dataCPU
-			}]
-		};
-
-		// update series data:
-		this.updateOptionsMemory = {
-			series: [{
-				data: this.dataMemory
-			}]
-		};
-
-		this.dataSource.data = this.statistics.dataObjects;
 	}
 
 }

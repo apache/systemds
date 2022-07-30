@@ -47,7 +47,7 @@ export class WorkerComponent {
 	constructor(private fedSiteService: FederatedSiteService) {	}
 
 	ngOnInit(): void {
-		this.model = this.model ? this.model : new Worker(-1, '', '', false, 0);
+		this.model = this.model ? this.model : new Worker();
 
 		this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
 			this.model = worker;

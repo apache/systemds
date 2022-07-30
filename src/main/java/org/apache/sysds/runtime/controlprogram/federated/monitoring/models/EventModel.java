@@ -24,19 +24,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class EventModel extends BaseModel implements Serializable {
+public class EventModel extends CoordinatorConnectionModel {
 
 	public Long workerId;
-	public Long coordinatorId;
-	private String coordinatorAddress;
+	private String coordinatorName;
 	public List<EventStageModel> stages;
 
 	private static final String JsonFormat = "{" +
-			"\"coordinatorId\": %d," +
+			"\"coordinatorName\": \"%s\"," +
 			"\"stages\": [%s]" +
 			"}";
-	private static final String localhostIp = "/127.0.0.1";
-	private static final String localhostString = "localhost";
 
 	public EventModel() {
 		this(-1L);
@@ -58,16 +55,8 @@ public class EventModel extends BaseModel implements Serializable {
 		this.stages = new ArrayList<>();
 	}
 
-	public void setCoordinatorAddress(String address) {
-		this.coordinatorAddress = address;
-	}
-
-	public String getCoordinatorAddress() {
-		if (this.coordinatorAddress.contains(localhostIp)) {
-			this.coordinatorAddress = this.coordinatorAddress.replace(localhostIp, localhostString);
-		}
-
-		return this.coordinatorAddress;
+	public void setCoordinatorName(String name) {
+		this.coordinatorName = name;
 	}
 
 	@Override
@@ -76,6 +65,6 @@ public class EventModel extends BaseModel implements Serializable {
 				.map(EventStageModel::toString)
 				.collect(Collectors.joining(","));
 
-		return String.format(JsonFormat, this.coordinatorId, stagesStr);
+		return String.format(JsonFormat, this.coordinatorName, stagesStr);
 	}
 }

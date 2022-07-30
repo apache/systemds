@@ -18,8 +18,7 @@
  */
 
 export class Traffic {
-	constructor(public timestamp: string,
-				public coordinatorAddress: string,
-				public byteAmount: number) {
-	}
+	constructor(public timestamp: string = '',
+				public coordinatorId: number = -1,
+				public byteAmount: number = 0) { }
 }

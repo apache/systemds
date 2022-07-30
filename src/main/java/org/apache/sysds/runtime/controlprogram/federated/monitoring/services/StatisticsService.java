@@ -37,7 +37,7 @@ import java.util.concurrent.Future;
 
 public class StatisticsService {
 
-	private static final IRepository _entityRepository = new DerbyRepository();
+	private static final IRepository entityRepository = new DerbyRepository();
 	private static final Long endOfDynamicPorts = 65535L;
 	private static final int maxMonitorHostCoordinators = DMLScript.MAX_MONITOR_HOST_COORDINATORS;
 
@@ -45,23 +45,29 @@ public class StatisticsService {
 		var stats = new StatisticsModel();
 
 		if (options.utilization) {
-			stats.utilization = _entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, UtilizationModel.class, options.rowCount);
+			stats.utilization = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, UtilizationModel.class, options.rowCount);
 		}
 
 		if (options.traffic) {
-			stats.traffic = _entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, TrafficModel.class, options.rowCount);
+			stats.traffic = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, TrafficModel.class, options.rowCount);
 		}
 
 		if (options.events) {
-			stats.events = _entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, EventModel.class, options.rowCount);
+			stats.events = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, EventModel.class, options.rowCount);
 
 			for (var event: stats.events) {
-				event.stages = _entityRepository.getAllEntitiesByField(Constants.ENTITY_EVENT_ID_COL, event.id, EventStageModel.class);
+				event.setCoordinatorName(entityRepository.getEntity(event.coordinatorId, CoordinatorModel.class).name);
+
+				event.stages = entityRepository.getAllEntitiesByField(Constants.ENTITY_EVENT_ID_COL, event.id, EventStageModel.class);
 			}
 		}
 
 		if (options.dataObjects) {
-			stats.dataObjects = _entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, DataObjectModel.class);
+			stats.dataObjects = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, DataObjectModel.class);
+		}
+
+		if (options.requests) {
+			stats.requests = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, RequestModel.class);
 		}
 
 		return stats;
@@ -71,9 +77,13 @@ public class StatisticsService {
 		StatisticsModel parsedStats = null;
 
 		try {
-			var statisticsResponse = sendStatisticsRequest(address).get();
+			FederatedResponse statisticsResponse = null;
+			var statisticsResponseFuture = sendStatisticsRequest(address);
 
-			if (statisticsResponse.isSuccessful()) {
+			if (statisticsResponseFuture != null)
+				statisticsResponse = statisticsResponseFuture.get();
+
+			if (statisticsResponse != null && statisticsResponse.isSuccessful()) {
 				FederatedStatistics.FedStatsCollection aggFedStats = new FederatedStatistics.FedStatsCollection();
 
 				Object[] tmp = statisticsResponse.getData();
@@ -96,33 +106,40 @@ public class StatisticsService {
 		var traffic = aggFedStats.coordinatorsTrafficBytes;
 		var events = aggFedStats.workerEvents;
 		var dataObjects = aggFedStats.workerDataObjects;
+		var requests = aggFedStats.workerRequests;
 
-		for (var entry: traffic) {
-			entry.workerId = workerId;
-		}
+		traffic.forEach(t -> t.workerId = workerId);
+		dataObjects.forEach(o -> o.workerId = workerId);
+		requests.forEach(r -> r.workerId = workerId);
 
 		for (var event: events) {
 			event.workerId = workerId;
 
-			List<CoordinatorModel> coordinators = new ArrayList<>();
-			var monitoringKey = getCoordinatorMonitoringKey(event.getCoordinatorAddress());
-
-			if (monitoringKey != null) {
-				coordinators = _entityRepository.getAllEntitiesByField(Constants.ENTITY_MONITORING_KEY_COL, monitoringKey, CoordinatorModel.class);
-			}
-
-			if (!coordinators.isEmpty()) {
-				event.coordinatorId = coordinators.get(0).id;
-			} else {
-				event.coordinatorId = -1L;
-			}
+			setCoordinatorId(event);
 		}
 
-		for (var entry: dataObjects) {
-			entry.workerId = workerId;
+		for (var trafficEntry: traffic) {
+			trafficEntry.workerId = workerId;
+
+			setCoordinatorId(trafficEntry);
 		}
 
-		return new StatisticsModel(List.of(utilization), traffic, events, dataObjects);
+		return new StatisticsModel(List.of(utilization), traffic, events, dataObjects, requests);
+	}
+
+	private static void setCoordinatorId(CoordinatorConnectionModel entity) {
+		List<CoordinatorModel> coordinators = new ArrayList<>();
+		var monitoringKey = getCoordinatorMonitoringKey(entity.getCoordinatorAddress());
+
+		if (monitoringKey != null) {
+			coordinators = entityRepository.getAllEntitiesByField(Constants.ENTITY_MONITORING_KEY_COL, monitoringKey, CoordinatorModel.class);
+		}
+
+		if (!coordinators.isEmpty()) {
+			entity.coordinatorId = coordinators.get(0).id;
+		} else {
+			entity.coordinatorId = -1L;
+		}
 	}
 
 	private static String getCoordinatorMonitoringKey(String address) {
@@ -153,6 +170,7 @@ public class StatisticsService {
 		InetSocketAddress isa = new InetSocketAddress(host, port);
 		FederatedRequest frUDF = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
 			new FederatedStatistics.FedStatsCollectFunction());
+
 		try {
 			result = FederatedData.executeFederatedOperation(isa, frUDF);
 		} catch(DMLRuntimeException dre) {

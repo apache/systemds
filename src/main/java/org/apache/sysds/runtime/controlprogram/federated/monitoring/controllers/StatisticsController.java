@@ -20,10 +20,9 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
 import io.netty.handler.codec.http.FullHttpResponse;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.Request;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.Response;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.StatisticsService;
 
 public class StatisticsController implements IController {

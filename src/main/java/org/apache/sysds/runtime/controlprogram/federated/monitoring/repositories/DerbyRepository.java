@@ -44,7 +44,8 @@ public class DerbyRepository implements IRepository {
 			new TrafficModel(),
 			new EventModel(),
 			new EventStageModel(),
-			new DataObjectModel()
+			new DataObjectModel(),
+			new RequestModel()
 	));
 	private static final String ENTITY_SCHEMA_CREATE_STMT = "CREATE TABLE %s " +
 			"(id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)";
@@ -274,6 +275,7 @@ public class DerbyRepository implements IRepository {
 	public <T extends BaseModel> void removeAllEntitiesByField(String fieldName, Object value, Class<T> type) {
 
 		try {
+
 			var entityName = type.getSimpleName().replace(Constants.ENTITY_CLASS_SUFFIX, "");
 
 			PreparedStatement st = _db.prepareStatement(

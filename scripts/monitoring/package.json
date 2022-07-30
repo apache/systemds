@@ -20,10 +20,10 @@
     "@angular/platform-browser": "~13.2.0",
     "@angular/platform-browser-dynamic": "~13.2.0",
     "@angular/router": "~13.2.0",
-    "echarts": "~5.3.1",
-  	"chart.js": "~3.8.2",
+    "chart.js": "~3.8.2",
+    "chartjs-adapter-moment": "^1.0.0",
     "jsplumb": "~2.15.6",
-    "ngx-echarts": "~8.0.1",
+    "moment": "^2.29.4",
     "rxjs": "~7.5.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.11.4"
@@ -38,8 +38,8 @@
     "jasmine-core": "~4.0.0",
     "karma": "~6.3.0",
     "karma-chrome-launcher": "~3.1.0",
-  	"karma-firefox-launcher": "~2.1.2",
     "karma-coverage": "~2.1.0",
+    "karma-firefox-launcher": "~2.1.2",
     "karma-jasmine": "~4.0.0",
     "karma-jasmine-html-reporter": "~1.7.0",
     "typescript": "~4.5.2"

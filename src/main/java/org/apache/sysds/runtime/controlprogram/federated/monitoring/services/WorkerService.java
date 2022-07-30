@@ -19,10 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.*;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.Constants;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
@@ -39,8 +36,6 @@ public class WorkerService {
 	private static final Map<Long, String> cachedWorkers = new HashMap<>();
 
 	public WorkerService() {
-		updateCachedWorkers(null);
-
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 		executor.scheduleAtFixedRate(syncWorkerStatisticsWithDB(), 0, 3, TimeUnit.SECONDS);
 	}
@@ -53,8 +48,10 @@ public class WorkerService {
 		return id;
 	}
 
-	public void update(BaseModel model) {
+	public void update(WorkerModel model) {
 		entityRepository.updateEntity(model);
+
+		cachedWorkers.replace(model.id, model.address);
 	}
 
 	public void remove(Long id) {
@@ -64,31 +61,11 @@ public class WorkerService {
 	}
 
 	public WorkerModel get(Long id) {
-		var model = entityRepository.getEntity(id, WorkerModel.class);
-
-		updateCachedWorkers(null);
-
-		return model;
+		return entityRepository.getEntity(id, WorkerModel.class);
 	}
 
 	public List<WorkerModel> getAll() {
-		var workers = entityRepository.getAllEntities(WorkerModel.class);
-
-		updateCachedWorkers(workers);
-
-		return workers;
-	}
-
-	private void updateCachedWorkers(List<WorkerModel> workersRaw) {
-		List<WorkerModel> workersTmp = workersRaw;
-
-		if (workersTmp == null) {
-			workersTmp = getAll();
-		}
-
-		for(var worker : workersTmp) {
-			cachedWorkers.putIfAbsent(worker.id, worker.address);
-		}
+		return entityRepository.getAllEntities(WorkerModel.class);
 	}
 
 	private static Runnable syncWorkerStatisticsWithDB() {
@@ -123,10 +100,17 @@ public class WorkerService {
 						}
 					}
 					if (stats.dataObjects != null) {
-						entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, stats.dataObjects.get(0).workerId, DataObjectModel.class);
+						entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, DataObjectModel.class);
 
 						for (var dataObjectEntity: stats.dataObjects) {
 							entityRepository.createEntity(dataObjectEntity);
+						}
+					}
+					if (stats.requests != null) {
+						entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, RequestModel.class);
+
+						for (var requestEntity: stats.requests) {
+							entityRepository.createEntity(requestEntity);
 						}
 					}
 				}

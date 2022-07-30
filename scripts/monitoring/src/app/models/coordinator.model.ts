@@ -18,8 +18,8 @@
  */
 
 export class Coordinator {
-	constructor(public id: number,
-				public name: string,
-				public host: string,
-				public monitoringId: number) {}
-	}
+	constructor(public id: number = -1,
+				public name: string = '',
+				public host: string = '',
+				public monitoringId: number = -1) {}
+}

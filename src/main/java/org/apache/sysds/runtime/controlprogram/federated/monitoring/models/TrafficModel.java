@@ -22,16 +22,15 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class TrafficModel extends BaseModel implements Serializable {
+public class TrafficModel extends CoordinatorConnectionModel {
 
 	public Long workerId;
 	public LocalDateTime timestamp;
-	public String coordinatorAddress;
 	public Long byteAmount;
 
 	private static final String JsonFormat = "{" +
 			"\"timestamp\": \"%s\"," +
-			"\"coordinatorAddress\": \"%s\"," +
+			"\"coordinatorId\": %d," +
 			"\"byteAmount\": %d" +
 			"}";
 
@@ -39,8 +38,9 @@ public class TrafficModel extends BaseModel implements Serializable {
 
 	public TrafficModel(final LocalDateTime timestamp, final String coordinatorAddress, final Long byteAmount) {
 		this.timestamp = timestamp;
-		this.coordinatorAddress = coordinatorAddress;
 		this.byteAmount = byteAmount;
+
+		super.setCoordinatorAddress(coordinatorAddress);
 	}
 
 	private TrafficModel(final Long id) {
@@ -55,12 +55,13 @@ public class TrafficModel extends BaseModel implements Serializable {
 		this.id = id;
 		this.workerId = workerId;
 		this.timestamp = timestamp;
-		this.coordinatorAddress = coordinatorAddress;
 		this.byteAmount = byteAmount;
+
+		super.setCoordinatorAddress(coordinatorAddress);
 	}
 
 	@Override
 	public String toString() {
-		return String.format(JsonFormat, this.timestamp, this.coordinatorAddress, this.byteAmount);
+		return String.format(JsonFormat, this.timestamp, this.coordinatorId, this.byteAmount);
 	}
 }

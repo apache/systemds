@@ -17,27 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
-
-import io.netty.handler.codec.http.HttpRequest;
-
-public class Request {
-	private HttpRequest _context;
-	private String _body;
-
-	public HttpRequest getContext() {
-		return _context;
-	}
-
-	public void setContext(final HttpRequest requestContext) {
-		this._context = requestContext;
-	}
-
-	public String getBody() {
-		return _body;
-	}
-
-	public void setBody(final String content) {
-		this._body = content;
-	}
+export class FedRequest {
+	constructor(public type: string = '',
+				public count: number = 0) { }
 }

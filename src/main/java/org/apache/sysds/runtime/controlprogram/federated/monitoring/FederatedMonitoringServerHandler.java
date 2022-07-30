@@ -32,7 +32,6 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.CoordinatorController;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.StatisticsController;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers.WorkerController;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -71,13 +70,15 @@ public class FederatedMonitoringServerHandler extends SimpleChannelInboundHandle
 			if (msg instanceof LastHttpContent) {
 				Request request = currentRequest;
 
-				request.setBody(requestData.toString());
-				requestData.setLength(0);
+				if (request != null && request.getContext() != null) {
+					request.setBody(requestData.toString());
 
-				if (request.getContext() != null) {
 					final FullHttpResponse response = processRequest(request);
 					ctx.write(response);
 				}
+
+				requestData.setLength(0);
+				currentRequest = null;
 			}
 		}
 	}

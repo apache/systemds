@@ -53,6 +53,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.Respo
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -300,11 +301,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				result = readData(request, ecm); // matrix/frame
 				break;
 			case PUT_VAR:
-				eventStage.stageOperation = method.name();
+				eventStage.operation = method.name();
 				result = putVariable(request, ecm);
 				break;
 			case GET_VAR:
-				eventStage.stageOperation = method.name();
+				eventStage.operation = method.name();
 				result = getVariable(request, ecm);
 				break;
 			case EXEC_INST:
@@ -325,6 +326,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 
 		eventStage.endTime = LocalDateTime.now();
+
+		if (DMLScript.STATISTICS)
+			FederatedStatistics.addWorkerRequest(new RequestModel(method.name(), 1L));
 
 		return result;
 	}
@@ -558,7 +562,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private FederatedResponse execInstruction(FederatedRequest request, ExecutionContextMap ecm, EventStageModel eventStage) throws Exception {
 		final Instruction ins = InstructionParser.parseSingleInstruction((String) request.getParam(0));
 
-		eventStage.stageOperation = ins.getInstructionString();
+		eventStage.operation = ins.getExtendedOpcode();
 
 		final long tid = request.getTID();
 		final ExecutionContext ec = getContextForInstruction(tid, ins, ecm);

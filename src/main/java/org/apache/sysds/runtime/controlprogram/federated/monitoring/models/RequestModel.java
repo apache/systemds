@@ -17,8 +17,41 @@
  * under the License.
  */
 
-export class EventStage {
-	constructor(public operation: string = '',
-				public startTime: string = '',
-				public endTime: string = '') { }
+package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
+
+import java.io.Serializable;
+
+public class RequestModel extends BaseModel implements Serializable {
+
+	public Long workerId;
+	public String type;
+	public Long count;
+
+	private static final String JsonFormat = "{" +
+			"\"type\": \"%s\"," +
+			"\"count\": %d" +
+			"}";
+
+	public RequestModel() {
+		this(-1L);
+	}
+
+	private RequestModel(final Long id) {
+		this.id = id;
+	}
+
+	public RequestModel(final String type, final Long count) {
+		this(-1L, type, count);
+	}
+
+	public RequestModel(final Long id, final String type, final Long count) {
+		this.id = id;
+		this.type = type;
+		this.count = count;
+	}
+
+	@Override
+	public String toString() {
+		return String.format(JsonFormat, this.type, this.count);
+	}
 }

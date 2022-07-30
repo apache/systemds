@@ -19,10 +19,8 @@
 
 
 export class Worker {
-	constructor(public id: number,
-				public name: string,
-				public address: string,
-				public isOnline: boolean,
-				public jitCompileTime: number) {
-	}
+	constructor(public id: number = -1,
+				public name: string = '',
+				public address: string = '',
+				public isOnline: boolean = false) { }
 }

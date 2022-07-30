@@ -694,7 +694,7 @@ public class FederationMap {
 		}
 	}
 
-    public void toJson(JSONObject mtd) throws JSONException {
+    public JSONObject toJson() throws JSONException {
 		JSONArray addressesJson = new JSONArray();
 		JSONArray rangesJson = new JSONArray();
 
@@ -717,7 +717,7 @@ public class FederationMap {
 		JSONObject federatedJson = new JSONObject();
 		federatedJson.put(DataExpression.FED_ADDRESSES, addressesJson);
 		federatedJson.put(DataExpression.FED_RANGES, rangesJson);
-		mtd.put(DataExpression.FEDERATED, federatedJson);
+		return federatedJson;
     }
 
 	public static FederationMap fromJson(JSONObject federatedJson, DataType dataType) throws JSONException {

@@ -332,12 +332,13 @@ public class TestUtils
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
 			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
-			Map<CellIndex, Object> readExpected = readJIVFile(compareFile, fs, schema);
+			Map<CellIndex, Object> readExpected = tryReadFederatedJIVFile(compareFile, schema);
+			if (readExpected == null)
+				readExpected = readJIVFile(compareFile, fs, schema);
 			expectedValues.putAll(readExpected);
 			Map<CellIndex, Object> readActual = readJIVActualFile(outDirectory, schema);
 			actualValues.putAll(readActual);
-		}
-		catch(IOException e) {
+		} catch (IOException e) {
 			fail("unable to read file: " + e.getMessage());
 		}
 	}
@@ -345,7 +346,7 @@ public class TestUtils
 	private static Map<CellIndex, Object> readJIVActualFile(Path actualPath, ValueType[] schema) {
 		try {
 			FileSystem fs = IOUtilFunctions.getFileSystem(actualPath, conf);
-			Map<CellIndex, Object> values = tryReadFederatedJIVActualFile(actualPath, schema);
+			Map<CellIndex, Object> values = tryReadFederatedJIVFile(actualPath, schema);
 			if (values == null) {
 				values = new HashMap<>();
 				FileStatus[] outFiles = fs.listStatus(actualPath);
@@ -362,7 +363,7 @@ public class TestUtils
 		}
 	}
 
-	private static Map<CellIndex, Object> tryReadFederatedJIVActualFile(Path actualPath, ValueType[] schema) {
+	private static Map<CellIndex, Object> tryReadFederatedJIVFile(Path actualPath, ValueType[] schema) {
 		Map<CellIndex, Object> values = new HashMap<>();
 		try {
 			MetaDataAll mtd = new MetaDataAll(actualPath + ".mtd", false, true);
@@ -531,8 +532,7 @@ public class TestUtils
 	{
 		HashMap<CellIndex, Double> expectedValues = new HashMap<>();
 
-		try
-		{
+		try {
 			Path outDirectory = new Path(filePath);
 			if (tryReadFederatedMatrix(filePath, expectedValues))
 				return expectedValues;
@@ -545,8 +545,7 @@ public class TestUtils
 					readValuesFromFileStream(outIn, expectedValues);
 				}
 			}
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			fail("could not read from file " + filePath + ": " + e.getMessage());
 		}
 
@@ -575,8 +574,7 @@ public class TestUtils
 				}
 				return null;
 			});
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			values.clear();
 			return false;
 		}
@@ -3503,7 +3501,7 @@ public class TestUtils
 				return true;
 		return false;
 	}
-	
+
 	public static int isGPUAvailable() {
 		// returns cudaSuccess if at least one gpu is available
 		//final int[] deviceCount = new int[1];

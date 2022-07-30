@@ -889,11 +889,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 					throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
 				}
 			}
-			//get object from cache
-			if(federatedWrite) {
+
+			if (federatedWrite) {
+				// b) write the matrix
 				WriterFederated.write(fName, this, outputFormat, formatProperties);
-			}
-			else {
+			} else {
+				//get object from cache
 				if (_data == null)
 					getCache();
 				acquire(false, _data == null); //incl. read matrix if evicted

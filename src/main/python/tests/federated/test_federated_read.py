@@ -66,14 +66,14 @@ class TestFederatedAggFn(unittest.TestCase):
     def setUpClass(cls):
         cls.sds = SystemDSContext()
         cls.sds.federated([fed1], [
-            ([0, 0], [dim, dim])]).write(fed1_file, format="federated").compute()
+            ([0, 0], [dim, dim])]).write(fed1_file).compute()
         cls.sds.federated([fed1, fed2], [
             ([0, 0], [dim, dim]),
-            ([0, dim], [dim, dim*2])]).write(fed2_file, format="federated").compute()
+            ([0, dim], [dim, dim*2])]).write(fed2_file).compute()
         cls.sds.federated([fed1, fed2, fed3],  [
             ([0, 0], [dim, dim]),
             ([0, dim], [dim, dim*2]),
-            ([0, dim*2], [dim, dim*3])]).write(fed3_file, format="federated").compute()
+            ([0, dim*2], [dim, dim*3])]).write(fed3_file).compute()
 
     @classmethod
     def tearDownClass(cls):

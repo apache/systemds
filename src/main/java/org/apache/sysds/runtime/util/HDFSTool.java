@@ -543,7 +543,7 @@ public class HDFSTool
 		}
 
 		if ( federationMap != null ){
-			federationMap.toJson(mtd);
+			mtd.put(DataExpression.FEDERATED, federationMap.toJson());
 		}
 
 		return mtd.toString(4); // indent with 4 spaces	

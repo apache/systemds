@@ -38,7 +38,6 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
-import org.apache.sysds.runtime.io.ReaderWriterFederated;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -289,12 +288,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
 
-		if(this.isFederated() && FileFormat.safeValueOf(ofmt) == FileFormat.FEDERATED)
-			ReaderWriterFederated.write(fname, this._fedMapping);
-		else {
-			FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
-			writer.writeFrameToHDFS(_data, fname, getNumRows(), getNumColumns());
-		}
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
+		writer.writeFrameToHDFS(_data, fname, getNumRows(), getNumColumns());
 	}
 
 	@Override

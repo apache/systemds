@@ -80,8 +80,8 @@ public class FederatedReaderCSV extends AutomatedTestBase {
 
             // Thread.sleep(10000);
             MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(dim, dim, blocksize, host, begins,
-                ends, new int[] {port1}, new String[] {input("X1")}, input("X.json"));
-            writeInputFederatedWithMTD("X.json", fed, null);
+                ends, new int[] {port1}, new String[] {input("X1")}, input("X"));
+            writeInputFederated("X", fed, null);
 
             // Run reference dml script with normal matrix
 
@@ -94,7 +94,7 @@ public class FederatedReaderCSV extends AutomatedTestBase {
 
             // Run federated
             fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + ".dml";
-            programArgs = new String[] {"-stats", "-args", input("X.json")};
+            programArgs = new String[] {"-stats", "-args", input("X")};
             String out = runTest(null).toString();
 
             Assert.assertTrue(heavyHittersContainsString("fed_uak+"));

@@ -20,6 +20,8 @@
 package org.apache.sysds.test.functions.federated.primitives;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,15 +30,22 @@ import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import static org.apache.sysds.runtime.instructions.fed.InitFEDInstruction.parseURL;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -138,15 +147,18 @@ public class FederatedWriteTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
 		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[] {"-explain", "-nvargs", "in=" + TestUtils.federatedAddress(port, input("A")),
+		programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(port, input("A")),
 			"rows=" + rows, "cols=" + cols, "tmp=" + output("T")};
 		runTest(true, false, null, -1);
 
-		Assert.assertSame(getMetaData("T").getFileFormat(), Types.FileFormat.FEDERATED);
+		Assert.assertTrue(Files.notExists(Path.of(output("T"))));
+		Assert.assertTrue(Files.exists(Path.of(output("T.mtd"))));
+		Assert.assertNotNull(getMetaData("T").getFederatedString());
 
 		fullDMLScriptName = HOME + TEST_NAME + "Read.dml";
-		programArgs = new String[] {"-explain", "-nvargs", "tmp=" + output("T"), "out=" + output("B")};
+		programArgs = new String[]{"-stats", "-nvargs", "tmp=" + output("T"), "out=" + output("B")};
 		runTest(true, false, null, -1);
+		Assert.assertTrue(heavyHittersContainsString("fed_fedinit", "fed_uack+"));
 		// compare via files
 		if(schema != null)
 			compareResults(schema);

@@ -109,8 +109,8 @@ public class FederatedTimeoutTest extends AutomatedTestBase {
 				ends,
 				new int[] {port1, port2},
 				new String[] {input("X1"), input("X2")},
-				input("X.json"));
-			writeInputFederatedWithMTD("X.json", fed, null);
+				input("X"));
+			writeInputFederated("X", fed, null);
 
 		}
 		catch(DMLRuntimeException e) {

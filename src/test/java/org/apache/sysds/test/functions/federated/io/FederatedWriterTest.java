@@ -91,12 +91,12 @@ public class FederatedWriterTest extends AutomatedTestBase {
 			// Run reader and write a federated json to enable the rest of the test
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/FederatedReaderTestCreate.dml";
 			programArgs = new String[] {"-stats", "-explain", "-args", input("X1"), input("X2"), port1 + "", port2 + "",
-				input("X.json")};
+				input("X")};
 			runTest(null);
 
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/FederatedReaderTest.dml";
-			programArgs = new String[] {"-stats", "-args", input("X.json")};
+			programArgs = new String[] {"-stats", "-args", input("X")};
 			String out = runTest(null).toString();
 
 			Assert.assertTrue(heavyHittersContainsString("fed_uak+"));

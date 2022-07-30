@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
@@ -88,8 +89,14 @@ import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 public class DMLTranslator 
 {
@@ -1059,9 +1066,6 @@ public class DMLTranslator
 						case BINARY:
 							// write output in binary block format
 							ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ae.getBlocksize());
-							break;
-						case FEDERATED:
-							ae.setOutputParams(ae.getDim1(), ae.getDim2(), -1, ae.getUpdateType(), -1);
 							break;
 						case HDF5:
 							// write output in HDF5 format
@@ -2102,9 +2106,16 @@ public class DMLTranslator
 		if (target == null) {
 			target = createTarget(source);
 		}
-		
+
+		Expression.DataOp opCode = source.getOpCode();
+		if (source.isRead() && paramHops.containsKey("federated")) {
+			// federated read
+			paramHops = createFederatedParamHopsFromFederatedReadParamHops(paramHops);
+			opCode = Expression.DataOp.FEDERATED;
+		}
+
 		// construct hop based on opcode
-		switch(source.getOpCode()) {
+		switch(opCode) {
 		case READ:
 			currBuiltinOp = new DataOp(target.getName(), target.getDataType(), target.getValueType(), OpOpData.PERSISTENTREAD, paramHops);
 			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(DataExpression.IO_FILENAME)).getValue());
@@ -2155,20 +2166,65 @@ public class DMLTranslator
 			throw new ParseException(source.printErrorLocation() + 
 				"processDataExpression():: Unknown operation:  " + source.getOpCode());
 		}
-		
+
 		//set identifier meta data (incl dimensions and blocksizes)
 		setIdentifierParams(currBuiltinOp, source.getOutput());
-		if( source.getOpCode()==DataExpression.DataOp.READ )
-			((DataOp)currBuiltinOp).setInputBlocksize(target.getBlocksize());
-		else if ( source.getOpCode() == DataExpression.DataOp.WRITE ) {
-			((DataOp)currBuiltinOp).setPrivacy(hops.get(target.getName()).getPrivacy());
-			if( source.getVarParam(DataExpression.ROWBLOCKCOUNTPARAM) != null )
+		if (opCode == DataExpression.DataOp.READ)
+			((DataOp) currBuiltinOp).setInputBlocksize(target.getBlocksize());
+		else if (opCode == DataExpression.DataOp.WRITE) {
+			((DataOp) currBuiltinOp).setPrivacy(hops.get(target.getName()).getPrivacy());
+			if (source.getVarParam(DataExpression.ROWBLOCKCOUNTPARAM) != null)
 				currBuiltinOp.setBlocksize(Integer.parseInt(
 					source.getVarParam(DataExpression.ROWBLOCKCOUNTPARAM).toString()));
 		}
 		currBuiltinOp.setParseInfo(source);
 		
 		return currBuiltinOp;
+	}
+
+	private HashMap<String, Hop> createFederatedParamHopsFromFederatedReadParamHops(HashMap<String, Hop> paramHops) {
+		Hop dataType = paramHops.get("data_type");
+		Hop federatedString = paramHops.get("federated");
+		if (!(federatedString instanceof LiteralOp) || federatedString.getValueType() != ValueType.STRING) {
+			throw new DMLRuntimeException("`federated` argument of read has to be a string literal");
+		}
+		paramHops = convertFederatedStringToParamHops(((LiteralOp) federatedString).getStringValue());
+		paramHops.put(DataExpression.FED_TYPE, dataType);
+		return paramHops;
+	}
+
+	private HashMap<String, Hop> convertFederatedStringToParamHops(String federated) {
+		HashMap<String, Hop> paramHops = new HashMap<>();
+		try {
+			JSONObject federatedJson = new JSONObject(federated);
+			// temporary `FederationMap` -> DataType does not matter
+			FederationMap federationMap = FederationMap.fromJson(federatedJson, DataType.MATRIX);
+			List<Pair<FederatedRange, FederatedData>> mapList = federationMap.getMap();
+
+			Hop[] federatedAddressesList = new Hop[mapList.size()];
+			Hop[] federatedRangesList = new Hop[mapList.size() * 2];
+			for (int i = 0 ; i < federatedAddressesList.length; ++i) {
+				Pair<FederatedRange, FederatedData> fedPair = mapList.get(i);
+				FederatedRange range = fedPair.getLeft();
+				FederatedData data = fedPair.getRight();
+				long[] beginDims = range.getBeginDims();
+				long[] endDims = range.getEndDims();
+
+				federatedAddressesList[i] = new LiteralOp(data.getCompleteAddressPath());
+				federatedRangesList[i * 2] = new NaryOp(Expression.getTempName(), DataType.LIST, ValueType.INT64, OpOpN.LIST,
+						new LiteralOp(beginDims[0]), new LiteralOp(beginDims[1]));
+				federatedRangesList[i * 2 + 1] = new NaryOp(Expression.getTempName(), DataType.LIST, ValueType.INT64, OpOpN.LIST,
+						new LiteralOp(endDims[0]), new LiteralOp(endDims[1]));
+			}
+
+			paramHops.put(DataExpression.FED_ADDRESSES, new NaryOp(Expression.getTempName(), DataType.LIST,
+					ValueType.STRING, OpOpN.LIST, federatedAddressesList));
+			paramHops.put(DataExpression.FED_RANGES, new NaryOp(Expression.getTempName(), DataType.LIST,
+					ValueType.UNKNOWN, OpOpN.LIST, federatedRangesList));
+		} catch (JSONException e) {
+			throw new RuntimeException(e);
+		}
+		return paramHops;
 	}
 
 	/**

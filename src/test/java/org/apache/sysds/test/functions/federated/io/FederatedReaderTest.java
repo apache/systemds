@@ -107,7 +107,7 @@ public class FederatedReaderTest extends AutomatedTestBase {
 				workerCount == 2 ? new int[] {port1, port2} : new int[] {port1},
 				workerCount == 2 ? new String[] {input("X1"), input("X2")} : new String[] {input("X1")},
 				input("X.json"));
-			writeInputFederatedWithMTD("X.json", fed, null);
+			writeInputFederated("X", fed, null);
 			// Run reference dml script with normal matrix
 
 			if(workerCount == 1) {
@@ -126,7 +126,7 @@ public class FederatedReaderTest extends AutomatedTestBase {
 			
 			// Run federated
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "-args", input("X.json")};
+			programArgs = new String[] {"-stats", "-args", input("X")};
 			String out = runTest(null).toString();
 
 			Assert.assertTrue(heavyHittersContainsString("fed_uak+"));

@@ -232,7 +232,12 @@ public class FEDInstructionUtils {
 			}
 			else if(inst instanceof VariableCPInstruction ){
 				VariableCPInstruction ins = (VariableCPInstruction) inst;
-				if(ins.getVariableOpcode() == VariableOperationCode.CastAsFrameVariable
+				if(ins.getVariableOpcode() == VariableOperationCode.Write
+					&& (ins.getInput1().isMatrix() || ins.getInput1().isFrame())
+					&& ec.getCacheableData(ins.getInput1()).isFederated()){
+					fedinst = VariableFEDInstruction.parseInstruction(ins);
+				}
+				else if(ins.getVariableOpcode() == VariableOperationCode.CastAsFrameVariable
 					&& ins.getInput1().isMatrix()
 					&& ec.getCacheableData(ins.getInput1()).isFederatedExcept(FType.BROADCAST)){
 					fedinst = VariableFEDInstruction.parseInstruction(ins);

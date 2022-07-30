@@ -76,7 +76,7 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
-import org.apache.sysds.runtime.io.ReaderWriterFederated;
+import org.apache.sysds.runtime.io.WriterFederated;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -608,21 +608,7 @@ public abstract class AutomatedTestBase {
 		return matrix;
 	}
 
-	protected void writeInputFederatedWithMTD(String name, MatrixObject fm, PrivacyConstraint privacyConstraint){
-		writeFederatedInputMatrix(name, fm.getFedMapping());
-		MatrixCharacteristics mc = (MatrixCharacteristics)fm.getDataCharacteristics();
-		try {
-			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.FEDERATED, privacyConstraint);
-		}
-		catch(IOException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
-
-	}
-
-	protected void writeFederatedInputMatrix(String name, FederationMap fedMap){
+	protected void writeInputFederated(String name, MatrixObject fm, PrivacyConstraint privacyConstraint){
 		String completePath = baseDirectory + INPUT_DIR + name;
 		try {
 			cleanupExistingData(baseDirectory + INPUT_DIR + name, false);
@@ -632,7 +618,12 @@ public abstract class AutomatedTestBase {
 			throw new RuntimeException(e);
 		}
 
-		ReaderWriterFederated.write(completePath, fedMap);
+		// privacy constraint are read automatically by write from federated object -> temporarily replace
+		PrivacyConstraint tmp = fm.getPrivacyConstraint();
+		fm.setPrivacyConstraints(privacyConstraint);
+		WriterFederated.write(completePath, fm, FileFormat.defaultFormatString(), null);
+		fm.setPrivacyConstraints(tmp);
+
 		inputDirectories.add(baseDirectory + INPUT_DIR + name);
 	}
 
@@ -694,7 +685,7 @@ public abstract class AutomatedTestBase {
 		federatedMatrixObject.setFedMapping(new FederationMap(FederationUtils.getNextFedDataID(), fedHashMap));
 		federatedMatrixObject.getFedMapping().setType(FType.ROW);
 
-		writeInputFederatedWithMTD(name, federatedMatrixObject, privacyConstraint);
+		writeInputFederated(name, federatedMatrixObject, privacyConstraint);
 	}
 
 	protected double[][] generateBalancedFederatedRowRanges(int numFederatedWorkers, int dataSetSize) {

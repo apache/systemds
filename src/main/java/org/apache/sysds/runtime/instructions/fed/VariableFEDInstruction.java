@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -41,6 +42,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.VariableOperationCode;
+import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.io.WriterFederated;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 
@@ -62,6 +65,9 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 	public void processInstruction(ExecutionContext ec) {
 		VariableOperationCode opcode = _in.getVariableOpcode();
 		switch(opcode) {
+			case Write:
+				processWriteInstruction(ec);
+				break;
 			case CastAsMatrixVariable:
 				processCastAsMatrixVariableInstruction(ec);
 				break;
@@ -71,6 +77,23 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 			default:
 				throw new DMLRuntimeException("Unsupported Opcode for federated Variable Instruction : " + opcode);
 		}
+	}
+
+	private void processWriteInstruction(ExecutionContext ec) {
+		CacheableData<?> cd = ec.getCacheableData(_in.getInput1());
+		if(!cd.isFederated())
+			throw new DMLRuntimeException(
+					"Federated Write: " + "Federated input expected, but invoked w/ non-federated input");
+
+		String fname = ec.getScalarInput(_in.getInput2().getName(), ValueType.STRING, _in.getInput2().isLiteral()).getStringValue();
+		String fmtStr = _in.getInput3().getName();
+		Types.FileFormat fmt = Types.FileFormat.safeValueOf(fmtStr);
+		FileFormatProperties formatProperties = _in.getFormatProperties();
+		if( fmt != Types.FileFormat.LIBSVM  && fmt != Types.FileFormat.HDF5) {
+			String desc = ec.getScalarInput(_in.getInput4().getName(), ValueType.STRING, _in.getInput4().isLiteral()).getStringValue();
+			formatProperties.setDescription(desc);
+		}
+		WriterFederated.write(fname, cd, fmtStr, formatProperties);
 	}
 
 	private void processCastAsMatrixVariableInstruction(ExecutionContext ec) {

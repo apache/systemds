@@ -315,6 +315,12 @@ public class FederatedData {
 		return sb.toString();
 	}
 
+	public String getCompleteAddressPath() {
+		String hostAddress = _address.getAddress().getHostAddress();
+		int port = _address.getPort();
+		return hostAddress + ':' + port + '/' + _filepath;
+	}
+
 	public static class FederatedRequestEncoder extends ObjectEncoder {
 		@Override
 		protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, Serializable msg,

@@ -22,4 +22,4 @@
 A = federated(addresses=list($in, $in),
   ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)))
 B = A * 42.0
-write(B, $tmp, format="federated")
+write(B, $tmp)

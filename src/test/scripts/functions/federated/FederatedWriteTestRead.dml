@@ -19,5 +19,6 @@
 #
 #-------------------------------------------------------------
 
-A = read($tmp)
+# Combine federated objects
+A = colSums(read($tmp))
 write(A, $out)

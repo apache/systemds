@@ -41,10 +41,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
-import org.apache.sysds.runtime.io.ReaderWriterFederated;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -434,11 +432,6 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 			begin = System.currentTimeMillis();
 		}
 
-		// If the file format is Federated use the federated reader.
-		if(iimd.getFileFormat() == FileFormat.FEDERATED) {
-			InitFEDInstruction.federateMatrix(this, ReaderWriterFederated.read(fname, mc));
-		}
-
 		// Read matrix and maintain meta data,
 		// if the MatrixObject is federated there is nothing extra to read, and therefore only acquire read and release
 		int blen = mc.getBlocksize() <= 0 ? ConfigurationManager.getBlocksize() : mc.getBlocksize();
@@ -547,10 +540,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 			begin = System.currentTimeMillis();
 		}
 
-		if(this.isFederated() && FileFormat.safeValueOf(ofmt) == FileFormat.FEDERATED) {
-			ReaderWriterFederated.write(fname, this._fedMapping);
-		}
-		else if(_data != null) {
+		if(_data != null) {
 			MetaDataFormat iimd = (MetaDataFormat) _metaData;
 			// Get the dimension information from the metadata stored within MatrixObject
 			DataCharacteristics mc = iimd.getDataCharacteristics();

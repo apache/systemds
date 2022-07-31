@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -3215,100 +3216,77 @@ public class LibMatrixMult
 	////////////////////////////////////////////
 	// performance-relevant utility functions //
 	////////////////////////////////////////////
-	
+
 	/**
-	 * Computes the dot-product of two vectors. Experiments (on long vectors of
-	 * 10^7 values) showed that this generic function provides equivalent performance
-	 * even for the specific case of dotProduct(a,a,len) as used for TSMM.  
-	 * 
-	 * @param a first vector
-	 * @param b second vector
+	 * @param a   first vector
+	 * @param b   second vector
 	 * @param len length
 	 * @return dot product of the two input vectors
 	 */
-	private static double dotProduct( double[] a, double[] b, final int len )
-	{
+	private static double dotProduct(double[] a, double[] b, final int len) {
 		double val = 0;
-		final int bn = len%8;
-				
-		//compute rest
-		for( int i = 0; i < bn; i++ )
-			val += a[ i ] * b[ i ];
-		
-		//unrolled 8-block  (for better instruction-level parallelism)
-		for( int i = bn; i < len; i+=8 )
-		{
+
+		int i;
+		for (i = 0; i < SPECIES.loopBound(len); i += SPECIES.length()) {
 			//read 64B cachelines of a and b
 			//compute cval' = sum(a * b) + cval
-			val += a[ i+0 ] * b[ i+0 ]
-			     + a[ i+1 ] * b[ i+1 ]
-			     + a[ i+2 ] * b[ i+2 ]
-			     + a[ i+3 ] * b[ i+3 ]
-			     + a[ i+4 ] * b[ i+4 ]
-			     + a[ i+5 ] * b[ i+5 ]
-			     + a[ i+6 ] * b[ i+6 ]
-			     + a[ i+7 ] * b[ i+7 ];
+			var aVec = DoubleVector.fromArray(SPECIES, a, i);
+			var bVec = DoubleVector.fromArray(SPECIES, b, i);
+			val += aVec.mul(bVec).reduceLanes(VectorOperators.ADD);
 		}
-		
+
+		//compute rest
+		for (; i < len; i++)
+			val += a[i] * b[i];
+
 		//scalar result
-		return val; 
+		return val;
 	}
 
 	//note: public for use by codegen for consistency
-	public static double dotProduct( double[] a, double[] b, int ai, int bi, final int len )
-	{
+	public static double dotProduct(double[] a, double[] b, int ai, int bi, final int len) {
 		double val = 0;
-		final int bn = len%8;
-		
-		//compute rest
-		for( int i = 0; i < bn; i++, ai++, bi++ )
-			val += a[ ai ] * b[ bi ];
-		
-		//unrolled 8-block (for better instruction-level parallelism)
-		for( int i = bn; i < len; i+=8, ai+=8, bi+=8 )
-		{
+
+		int i;
+		for (i = 0; i < SPECIES.loopBound(len); ai += SPECIES.length(), bi += SPECIES.length(), i += SPECIES.length()) {
 			//read 64B cachelines of a and b
 			//compute cval' = sum(a * b) + cval
-			val += a[ ai+0 ] * b[ bi+0 ]
-			     + a[ ai+1 ] * b[ bi+1 ]
-			     + a[ ai+2 ] * b[ bi+2 ]
-			     + a[ ai+3 ] * b[ bi+3 ]
-			     + a[ ai+4 ] * b[ bi+4 ]
-			     + a[ ai+5 ] * b[ bi+5 ]
-			     + a[ ai+6 ] * b[ bi+6 ]
-			     + a[ ai+7 ] * b[ bi+7 ];
+			var aVec = DoubleVector.fromArray(SPECIES, a, ai);
+			var bVec = DoubleVector.fromArray(SPECIES, b, bi);
+			val += aVec.mul(bVec).reduceLanes(VectorOperators.ADD);
 		}
-		
-		//scalar result
-		return val; 
-	}
-	
-	//note: public for use by codegen for consistency
-	public static double dotProduct( double[] a, double[] b, int[] aix, int ai, final int bi, final int len )
-	{
-		double val = 0;
-		final int bn = len%8;
-				
+
 		//compute rest
-		for( int i = ai; i < ai+bn; i++ )
-			val += a[ i ] * b[ bi+aix[i] ];
-		
-		//unrolled 8-block (for better instruction-level parallelism)
-		for( int i = ai+bn; i < ai+len; i+=8 )
-		{
+		for (; i < len; ai++, bi++, i++)
+			val += a[ai] * b[bi];
+
+		//scalar result
+		return val;
+	}
+
+	//note: public for use by codegen for consistency
+	public static double dotProduct(double[] a, double[] b, int[] aix, int ai, final int bi, final int len) {
+		double val = 0;
+		final int bn = len % 8;
+
+		//compute rest
+		for (int i = ai; i < ai + bn; i++)
+			val += a[i] * b[bi + aix[i]];
+
+		int i;
+		for (i = ai; i < SPECIES.loopBound(len); i += SPECIES.length()) {
 			//read 64B cacheline of a
 			//read 64B of b via 'gather'
 			//compute cval' = sum(a * b) + cval
-			val += a[ i+0 ] * b[ bi+aix[i+0] ]
-			     + a[ i+1 ] * b[ bi+aix[i+1] ]
-			     + a[ i+2 ] * b[ bi+aix[i+2] ]
-			     + a[ i+3 ] * b[ bi+aix[i+3] ]
-			     + a[ i+4 ] * b[ bi+aix[i+4] ]
-			     + a[ i+5 ] * b[ bi+aix[i+5] ]
-			     + a[ i+6 ] * b[ bi+aix[i+6] ]
-			     + a[ i+7 ] * b[ bi+aix[i+7] ];
+			var aVec = DoubleVector.fromArray(SPECIES, a, i);
+			var bVec = DoubleVector.fromArray(SPECIES, b, bi, aix, i);
+			val += aVec.mul(bVec).reduceLanes(VectorOperators.ADD);
 		}
-		
+
+		//compute rest
+		for (; i < len; i++)
+			val += a[i] * b[bi + aix[i]];
+
 		//scalar result
 		return val; 
 	}

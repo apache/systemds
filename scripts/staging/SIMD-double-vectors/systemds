@@ -463,6 +463,7 @@ elif [ $SYSDS_DISTRIBUTED == 0 ]; then
   java $SYSTEMDS_STANDALONE_OPTS \
   -cp $CLASSPATH \
   $LOG4JPROP \
+  --add-modules=jdk.incubator.vector \
   org.apache.sysds.api.DMLScript \
   -f $SCRIPT_FILE \
   -exec $SYSDS_EXEC_MODE \

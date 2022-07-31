@@ -53,7 +53,7 @@
 		<slf4j.version>1.7.36</slf4j.version>
 		<log4j.version>2.17.2</log4j.version>
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
-		<java.level>11</java.level>
+		<java.level>17</java.level>
 		<!-->Testing settings<!-->
 		<maven.test.skip>true</maven.test.skip>
 		<test-parallel>classes</test-parallel>
@@ -245,6 +245,9 @@
 				<configuration>
 					<source>${java.level}</source>
 					<target>${java.level}</target>
+					<compilerArgs>
+						<arg>--add-modules=jdk.incubator.vector</arg>
+					</compilerArgs>
 				</configuration>
 			</plugin>
 
@@ -307,6 +310,7 @@
 					<reportFormat>brief</reportFormat>
 					<trimStackTrace>true</trimStackTrace>
 					<rerunFailingTestsCount>${rerun.failing.tests.count}</rerunFailingTestsCount>
+					<argLine>--add-modules=jdk.incubator.vector</argLine>
 				</configuration>
 			</plugin>
 
@@ -670,9 +674,6 @@
 										<include>src/main/resources/protobuf</include>
 									</inputDirectories>
 									<outputDirectory>src/main/java</outputDirectory>
-									<outputDirectories>
-										<include>src/main/java</include>
-									</outputDirectories>
 								</configuration>
 							</execution>
 						</executions>

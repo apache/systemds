@@ -3211,12 +3211,12 @@ public class LibMatrixMult
 	////////////////////////////////////////////
 	// performance-relevant utility functions //
 	////////////////////////////////////////////
-
+	
 	/**
 	 * Computes the dot-product of two vectors. Experiments (on long vectors of
 	 * 10^7 values) showed that this generic function provides equivalent performance
-	 * even for the specific case of dotProduct(a,a,len) as used for TSMM.
-	 *
+	 * even for the specific case of dotProduct(a,a,len) as used for TSMM.  
+	 * 
 	 * @param a first vector
 	 * @param b second vector
 	 * @param len length
@@ -3226,11 +3226,11 @@ public class LibMatrixMult
 	{
 		double val = 0;
 		final int bn = len%8;
-
+				
 		//compute rest
 		for( int i = 0; i < bn; i++ )
 			val += a[ i ] * b[ i ];
-
+		
 		//unrolled 8-block  (for better instruction-level parallelism)
 		for( int i = bn; i < len; i+=8 )
 		{
@@ -3245,9 +3245,9 @@ public class LibMatrixMult
 			     + a[ i+6 ] * b[ i+6 ]
 			     + a[ i+7 ] * b[ i+7 ];
 		}
-
+		
 		//scalar result
-		return val;
+		return val; 
 	}
 
 	//note: public for use by codegen for consistency
@@ -3255,11 +3255,11 @@ public class LibMatrixMult
 	{
 		double val = 0;
 		final int bn = len%8;
-
+		
 		//compute rest
 		for( int i = 0; i < bn; i++, ai++, bi++ )
 			val += a[ ai ] * b[ bi ];
-
+		
 		//unrolled 8-block (for better instruction-level parallelism)
 		for( int i = bn; i < len; i+=8, ai+=8, bi+=8 )
 		{
@@ -3274,21 +3274,21 @@ public class LibMatrixMult
 			     + a[ ai+6 ] * b[ bi+6 ]
 			     + a[ ai+7 ] * b[ bi+7 ];
 		}
-
+		
 		//scalar result
-		return val;
+		return val; 
 	}
-
+	
 	//note: public for use by codegen for consistency
 	public static double dotProduct( double[] a, double[] b, int[] aix, int ai, final int bi, final int len )
 	{
 		double val = 0;
 		final int bn = len%8;
-
+				
 		//compute rest
 		for( int i = ai; i < ai+bn; i++ )
 			val += a[ i ] * b[ bi+aix[i] ];
-
+		
 		//unrolled 8-block (for better instruction-level parallelism)
 		for( int i = ai+bn; i < ai+len; i+=8 )
 		{
@@ -3304,7 +3304,7 @@ public class LibMatrixMult
 			     + a[ i+6 ] * b[ bi+aix[i+6] ]
 			     + a[ i+7 ] * b[ bi+aix[i+7] ];
 		}
-
+		
 		//scalar result
 		return val; 
 	}
@@ -3313,13 +3313,13 @@ public class LibMatrixMult
 	public static void vectMultiplyAdd( final double aval, double[] b, double[] c, int bi, int ci, final int len )
 	{
 		final int bn = len%8;
-
+		
 		//rest, not aligned to 8-blocks
 		for( int j = 0; j < bn; j++, bi++, ci++)
 			c[ ci ] += aval * b[ bi ];
-
+		
 		//unrolled 8-block  (for better instruction-level parallelism)
-		for( int j = bn; j < len; j+=8, bi+=8, ci+=8)
+		for( int j = bn; j < len; j+=8, bi+=8, ci+=8) 
 		{
 			//read 64B cachelines of b and c
 			//compute c' = aval * b + c
@@ -3337,14 +3337,14 @@ public class LibMatrixMult
 
     private static void vectMultiplyAdd2( final double aval1, final double aval2, double[] b, double[] c, int bi1, int bi2, int ci, final int len )
 	{
-		final int bn = len%8;
-
+		final int bn = len%8;	
+		
 		//rest, not aligned to 8-blocks
 		for( int j = 0; j < bn; j++, bi1++, bi2++, ci++ )
 			c[ ci ] += aval1 * b[ bi1 ] + aval2 * b[ bi2 ];
-
+		
 		//unrolled 8-block  (for better instruction-level parallelism)
-		for( int j = bn; j < len; j+=8, bi1+=8, bi2+=8, ci+=8 )
+		for( int j = bn; j < len; j+=8, bi1+=8, bi2+=8, ci+=8 ) 
 		{
 			//read 64B cachelines of b (2x) and c
 			//compute c' = aval_1 * b_1 + aval_2 * b_2 + c
@@ -3356,20 +3356,20 @@ public class LibMatrixMult
 			c[ ci+4 ] += aval1 * b[ bi1+4 ] + aval2 * b[ bi2+4 ];
 			c[ ci+5 ] += aval1 * b[ bi1+5 ] + aval2 * b[ bi2+5 ];
 			c[ ci+6 ] += aval1 * b[ bi1+6 ] + aval2 * b[ bi2+6 ];
-			c[ ci+7 ] += aval1 * b[ bi1+7 ] + aval2 * b[ bi2+7 ];
+			c[ ci+7 ] += aval1 * b[ bi1+7 ] + aval2 * b[ bi2+7 ];	
 		}
 	}
 
 	private static void vectMultiplyAdd3( final double aval1, final double aval2, final double aval3, double[] b, double[] c, int bi1, int bi2, int bi3, int ci, final int len )
 	{
-		final int bn = len%8;
-
+		final int bn = len%8;	
+		
 		//rest, not aligned to 8-blocks
 		for( int j = 0; j < bn; j++, bi1++, bi2++, bi3++, ci++ )
 			c[ ci ] += aval1 * b[ bi1 ] + aval2 * b[ bi2 ] + aval3 * b[ bi3 ];
-
+		
 		//unrolled 8-block (for better instruction-level parallelism)
-		for( int j = bn; j < len; j+=8, bi1+=8, bi2+=8, bi3+=8, ci+=8 )
+		for( int j = bn; j < len; j+=8, bi1+=8, bi2+=8, bi3+=8, ci+=8 ) 
 		{
 			//read 64B cachelines of b (3x) and c
 			//compute c' = aval_1 * b_1 + aval_2 * b_2 + c
@@ -3381,22 +3381,22 @@ public class LibMatrixMult
 			c[ ci+4 ] += aval1 * b[ bi1+4 ] + aval2 * b[ bi2+4 ] + aval3 * b[ bi3+4 ];
 			c[ ci+5 ] += aval1 * b[ bi1+5 ] + aval2 * b[ bi2+5 ] + aval3 * b[ bi3+5 ];
 			c[ ci+6 ] += aval1 * b[ bi1+6 ] + aval2 * b[ bi2+6 ] + aval3 * b[ bi3+6 ];
-			c[ ci+7 ] += aval1 * b[ bi1+7 ] + aval2 * b[ bi2+7 ] + aval3 * b[ bi3+7 ];
+			c[ ci+7 ] += aval1 * b[ bi1+7 ] + aval2 * b[ bi2+7 ] + aval3 * b[ bi3+7 ];	
 		}
 	}
 
 	private static void vectMultiplyAdd4( final double aval1, final double aval2, final double aval3, final double aval4, double[] b, double[] c, int bi1, int bi2, int bi3, int bi4, int ci, final int len )
 	{
-		final int bn = len%8;
-
+		final int bn = len%8;	
+		
 		//rest, not aligned to 8-blocks
 		for( int j = 0; j < bn; j++, bi1++, bi2++, bi3++, bi4++, ci++ )
 			c[ ci ] += aval1 * b[ bi1 ] + aval2 * b[ bi2 ] + aval3 * b[ bi3 ] + aval4 * b[ bi4 ];
-
+		
 		//unrolled 8-block  (for better instruction-level parallelism)
-		for( int j = bn; j < len; j+=8, bi1+=8, bi2+=8, bi3+=8, bi4+=8, ci+=8)
+		for( int j = bn; j < len; j+=8, bi1+=8, bi2+=8, bi3+=8, bi4+=8, ci+=8) 
 		{
-			//read 64B cachelines of b (4x) and c
+			//read 64B cachelines of b (4x) and c 
 			//compute c' = aval_1 * b_1 + aval_2 * b_2 + c
 			//write back 64B cacheline of c = c'
 			c[ ci+0 ] += aval1 * b[ bi1+0 ] + aval2 * b[ bi2+0 ] + aval3 * b[ bi3+0 ] + aval4 * b[ bi4+0 ];
@@ -3406,7 +3406,7 @@ public class LibMatrixMult
 			c[ ci+4 ] += aval1 * b[ bi1+4 ] + aval2 * b[ bi2+4 ] + aval3 * b[ bi3+4 ] + aval4 * b[ bi4+4 ];
 			c[ ci+5 ] += aval1 * b[ bi1+5 ] + aval2 * b[ bi2+5 ] + aval3 * b[ bi3+5 ] + aval4 * b[ bi4+5 ];
 			c[ ci+6 ] += aval1 * b[ bi1+6 ] + aval2 * b[ bi2+6 ] + aval3 * b[ bi3+6 ] + aval4 * b[ bi4+6 ];
-			c[ ci+7 ] += aval1 * b[ bi1+7 ] + aval2 * b[ bi2+7 ] + aval3 * b[ bi3+7 ] + aval4 * b[ bi4+7 ];
+			c[ ci+7 ] += aval1 * b[ bi1+7 ] + aval2 * b[ bi2+7 ] + aval3 * b[ bi3+7 ] + aval4 * b[ bi4+7 ];	
 		}
 	}
 	

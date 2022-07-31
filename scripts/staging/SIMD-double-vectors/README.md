@@ -24,10 +24,9 @@ limitations under the License.
 This patch explored potential speedup for matrix multiplication of two dense matrices. Additionally, dot product
 is also implemented with `DoubleVector` for the case where common dimension is `1`.
 
-Initial experiments showed ~2x speedup for many cases. There are some cases where we stayed similar to the baseline.
-MKL is faster by about ~2x.
-
-For more discussion (and plots) see PR #1643.
+Initial experiments showed varying results, usually the vectorized implementation performs somewhere between
+`MKL` and our reference. There are also cases where we are slower than the reference, or faster than `MKL`.
+For detailed discussion (and plots) see PR #1643.
 
 ## Further Work
 

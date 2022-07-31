@@ -69,8 +69,9 @@ public class WriterFederated {
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 			Path path = new Path(file);
 
-			FederationMap newFedMap = cd.getFedMapping().mapParallel(cd.getFedMapping().getID(), (range, data) -> {
-				String siteFilename = Long.toString(siteUniqueCounter.getNextID()) + '_' + path.getName();
+			long id = cd.getFedMapping().getID();
+			FederationMap newFedMap = cd.getFedMapping().mapParallel(id, (range, data) -> {
+				String siteFilename = Long.toString(id) + '_' + siteUniqueCounter.getNextID() + '_' + path.getName();
 				try {
 					FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
 						data.getVarID(), new WriteAtSiteUDF(data.getVarID(), siteFilename, outputFormat, fileFormatProperties))).get();

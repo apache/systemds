@@ -52,12 +52,12 @@ public class KMVSketch extends CountDistinctApproxSketch {
 	}
 
 	@Override
-	public MatrixBlock getValue(MatrixBlock in) {
+	public MatrixBlock getValue(MatrixBlock blkIn) {
 
 		if (this.op.getDirection().isRowCol()) {
 			// D is the number of possible distinct values in the MatrixBlock.
 			// plus 1 to take account of 0 input.
-			long D = in.getNonZeros() + 1;
+			long D = blkIn.getNonZeros() + 1;
 
 			/**
 			 * To ensure that the likelihood to hash to the same value we need O(D^2) positions to hash to assign. If the
@@ -71,7 +71,7 @@ public class KMVSketch extends CountDistinctApproxSketch {
 			 */
 			int k = D > 64 ? 64 : (int) D;
 
-			SmallestPriorityQueue spq = getKSmallestHashes(in, k, M);
+			SmallestPriorityQueue spq = getKSmallestHashes(blkIn, k, M);
 
 			if(LOG.isDebugEnabled()) {
 				LOG.debug("M not forced to int size: " + tmp);
@@ -91,20 +91,18 @@ public class KMVSketch extends CountDistinctApproxSketch {
 			return new MatrixBlock(res);
 
 		} else if (this.op.getDirection().isRow()) {
-			long D = (long) Math.floor(in.getNonZeros() / (double) in.getNumRows()) + 1;
+			long D = (long) Math.floor(blkIn.getNonZeros() / (double) blkIn.getNumRows()) + 1;
 			long tmp = D * D;
 			int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
 			int k = D > 64 ? 64 : (int) D;
 
-			// Result is a Mx1 matrix block.
-			// TODO We are reusing memory allocated for input matrix block here - explore whether it would be better to
-			//  allocate new
-			MatrixBlock resultMatrix = in.slice(0, in.getNumRows() - 1, 0, 0);
+			MatrixBlock resultMatrix = new MatrixBlock(blkIn.getNumRows(), 1, false, blkIn.getNumRows());
+			resultMatrix.allocateBlock();
 
 			SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
-			for (int i=0; i<in.getNumRows(); ++i) {
-				for (int j=0; j<in.getNumColumns(); ++j) {
-					spq.add(in.getValue(i, j));
+			for (int i=0; i<blkIn.getNumRows(); ++i) {
+				for (int j=0; j<blkIn.getNumColumns(); ++j) {
+					spq.add(blkIn.getValue(i, j));
 				}
 
 				long res = countDistinctValuesKMV(spq, k, M, D);
@@ -116,20 +114,18 @@ public class KMVSketch extends CountDistinctApproxSketch {
 			return resultMatrix;
 
 		} else {  // Col
-			long D = (long) Math.floor(in.getNonZeros() / (double) in.getNumColumns()) + 1;
+			long D = (long) Math.floor(blkIn.getNonZeros() / (double) blkIn.getNumColumns()) + 1;
 			long tmp = D * D;
 			int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
 			int k = D > 64 ? 64 : (int) D;
 
-			// Result is a 1xN matrix block.
-			// TODO We are reusing memory allocated for input matrix block here - explore whether it would be better to
-			//  allocate new
-			MatrixBlock resultMatrix = in.slice(0, 0, 0, in.getNumColumns() - 1);
+			MatrixBlock resultMatrix = new MatrixBlock(1, blkIn.getNumColumns(), false, blkIn.getNumColumns());
+			resultMatrix.allocateBlock();
 
 			SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
-			for (int j=0; j<in.getNumColumns(); ++j) {
-				for (int i=0; i<in.getNumRows(); ++i) {
-					spq.add(in.getValue(i, j));
+			for (int j=0; j<blkIn.getNumColumns(); ++j) {
+				for (int i=0; i<blkIn.getNumRows(); ++i) {
+					spq.add(blkIn.getValue(i, j));
 				}
 
 				long res = countDistinctValuesKMV(spq, k, M, D);
@@ -216,8 +212,9 @@ public class KMVSketch extends CountDistinctApproxSketch {
 	public MatrixBlock getValueFromSketch(CorrMatrixBlock arg0) {
 		MatrixBlock blkIn = arg0.getValue();
 		if(op.getDirection().isRow()) {
-			// 1000 x 1 blkOut -> slice out the first column of the matrix
-			MatrixBlock blkOut = blkIn.slice(0, blkIn.getNumRows() - 1, 0, 0);
+			// 1000 x 1 blkOut
+			MatrixBlock blkOut = new MatrixBlock(blkIn.getNumRows(), 1, false, blkIn.getNumRows());
+			blkOut.allocateBlock();
 			for(int i = 0; i < blkIn.getNumRows(); ++i) {
 				getDistinctCountFromSketchByIndex(arg0, i, blkOut);
 			}
@@ -225,8 +222,9 @@ public class KMVSketch extends CountDistinctApproxSketch {
 			return blkOut;
 		}
 		else if(op.getDirection().isCol()) {
-			// 1 x 1000 blkOut -> slice out the first row of the matrix
-			MatrixBlock blkOut = blkIn.slice(0, 0, 0, blkIn.getNumColumns() - 1);
+			// 1 x 1000 blkOut
+			MatrixBlock blkOut = new MatrixBlock(1, blkIn.getNumColumns(), false, blkIn.getNumColumns());
+			blkOut.allocateBlock();
 			for(int j = 0; j < blkIn.getNumColumns(); ++j) {
 				getDistinctCountFromSketchByIndex(arg0, j, blkOut);
 			}
@@ -234,9 +232,9 @@ public class KMVSketch extends CountDistinctApproxSketch {
 			return blkOut;
 		}
 		else { // op.getDirection().isRowCol()
-
-			// 1 x 1 blkOut -> slice out the first row and column of the matrix
-			MatrixBlock blkOut = blkIn.slice(0, 0, 0, 0);
+			// 1 x 1 blkOut
+			MatrixBlock blkOut = new MatrixBlock(1, 1, false, 1);
+			blkOut.allocateBlock();
 			getDistinctCountFromSketchByIndex(arg0, 0, blkOut);
 
 			return blkOut;

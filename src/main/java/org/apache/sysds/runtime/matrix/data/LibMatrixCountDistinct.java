@@ -167,7 +167,8 @@ public interface LibMatrixCountDistinct {
 
 			blkOut.setValue(0, 0, distinctCount);
 		} else if (op.getDirection().isRow()) {
-			blkOut = blkIn.slice(0, blkIn.getNumRows() - 1, 0, 0);
+			blkOut = new MatrixBlock(blkIn.getNumRows(), 1, false, blkIn.getNumRows());
+			blkOut.allocateBlock();
 
 			if (blkIn.getDenseBlock() != null) {
 				// The naive approach would be to iterate through every (i, j) in the input. However, can do better
@@ -250,7 +251,8 @@ public interface LibMatrixCountDistinct {
 				}
 			}
 		} else {  // Col aggregation
-			blkOut = blkIn.slice(0, 0, 0, blkIn.getNumColumns() - 1);
+			blkOut = new MatrixBlock(1, blkIn.getNumColumns(), false, blkIn.getNumColumns());
+			blkOut.allocateBlock();
 
 			// All dense and sparse formats (COO, CSR, MCSR) are row-major formats, so there is no obvious way to iterate
 			// in column-major order besides iterating through every (i, j) pair. getValue() skips over empty cells in CSR

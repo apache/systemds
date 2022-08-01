@@ -18,6 +18,13 @@
  */
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Chart } from "chart.js";
+import { FederatedSiteService } from "../../../services/federatedSiteService.service";
+import { Worker } from "../../../models/worker.model";
+import { Coordinator } from "../../../models/coordinator.model";
+import { Statistics } from "../../../models/statistics.model";
+import { constants } from "../../../constants";
+import 'chartjs-adapter-moment';
 
 @Component({
 	selector: 'app-connection',
@@ -25,96 +32,73 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 	styleUrls: ['./connection.component.scss']
 })
 export class ConnectionComponent implements OnInit, OnDestroy {
-	public options: any;
-	public updateOptions: any;
 
-	private oneDay = 24 * 3600 * 1000;
-	private now!: Date;
-	private value!: number;
-	private data!: any[];
 	private timer: any;
 
-	constructor() {
-	}
+	public worker: Worker;
+	public coordinator: Coordinator;
+	public statistics: Statistics;
+
+	constructor(private fedSiteService: FederatedSiteService) { }
 
 	ngOnInit(): void {
-		// generate some random testing data:
-		this.data = [];
-		this.now = new Date();
-		this.value = Math.random() * 10;
+		this.statistics = new Statistics();
 
-		for (let i = 0; i < 20; i++) {
-			this.data.push(this.randomData());
-		}
+		const id = `traffic-${constants.prefixes.coordinator + this.coordinator.id + constants.prefixes.worker + this.worker.id}`;
 
-		// initialize chart options:
-		this.options = {
-			title: {
-				text: 'I/O (Byte amount)'
+		const trafficMetricEle: any = document.getElementById(id);
+
+		let trafficChart = new Chart(trafficMetricEle.getContext('2d'), {
+			type: 'line',
+			data: {
+				datasets: [{
+					data: this.statistics.utilization.map(s => {
+						return { x: s.timestamp, y: s.memoryUsage }
+					}),
+					borderColor: constants.chartColors.green
+				}]
 			},
-			tooltip: {
-				trigger: 'axis',
-				formatter: (params: any) => {
-					params = params[0];
-					const date = new Date(params.name);
-					return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
+			options: {
+				responsive: true,
+				plugins: {
+					legend: {
+						display: false
+					},
+					title: {
+						display: true,
+						text: 'I/O Bytes'
+					}
 				},
-				axisPointer: {
-					animation: false
+				scales: {
+					x: {
+						type: 'time',
+						time: {
+							unit: 'second',
+						},
+						ticks: {
+							display: false
+						}
+					}
 				}
 			},
-			xAxis: {
-				type: 'time',
-				splitLine: {
-					show: false
-				},
-				show: false
-			},
-			yAxis: {
-				type: 'value',
-				boundaryGap: [0, '100%'],
-				splitLine: {
-					show: false
-				}
-			},
-			series: [{
-				name: 'Mocking Data',
-				type: 'line',
-				showSymbol: false,
-				hoverAnimation: false,
-				areaStyle: {},
-				data: this.data
-			}]
-		};
+		});
 
-		// Mock dynamic data:
 		this.timer = setInterval(() => {
 
-			this.data.shift();
-			this.data.push(this.randomData());
+			this.fedSiteService.getStatistics(this.worker.id).subscribe(stats => {
+				this.statistics = stats;
 
-			// update series data:
-			this.updateOptions = {
-				series: [{
-					data: this.data
-				}]
-			};
-		}, 1000);
+				trafficChart.data.datasets.forEach((dataset) => {
+					dataset.data = [];
+					this.statistics.traffic.map(s => dataset.data.push({ x: s.timestamp, y: s.byteAmount }));
+				});
+
+				trafficChart.update();
+			})
+		}, 3000);
 	}
 
 	ngOnDestroy() {
 		clearInterval(this.timer);
-	}
-
-	randomData() {
-		this.now = new Date(this.now.getTime() + this.oneDay);
-		this.value = Math.random() * 10;
-		return {
-			name: this.now.toString(),
-			value: [
-				[this.now.getFullYear(), this.now.getMonth() + 1, this.now.getDate()].join('/'),
-				Math.round(this.value)
-			]
-		};
 	}
 }

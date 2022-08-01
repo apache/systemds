@@ -20,8 +20,11 @@
 import { Component } from '@angular/core';
 import { Worker } from 'src/app/models/worker.model';
 import { FederatedSiteService } from "../../../services/federatedSiteService.service";
-import { ActivatedRoute } from "@angular/router";
 import { Statistics } from "../../../models/statistics.model";
+import { MatTableDataSource } from "@angular/material/table";
+import { Chart, registerables } from "chart.js";
+import { constants } from "../../../constants";
+import 'chartjs-adapter-moment';
 
 @Component({
 	selector: 'app-worker',
@@ -33,74 +36,71 @@ export class WorkerComponent {
 	public model: Worker;
 	public statistics: Statistics;
 
-	public optionsMemory: any;
-	public updateOptionsMemory: any;
-	public displayedColumns: string[] = ['type', 'time', 'frequency'];
-	dataSource = [
-		{type: 'fed_-', time: '0.417', frequency: 3},
-		{type: 'fed_uamin', time: '0.156', frequency: 2},
-		{type: 'JVM GC', time: '0.062', frequency: 1},
-	];
-	private dataMemory!: any[];
+	public displayedColumns: string[] = ['instruction', 'time', 'frequency'];
+	public dataSource: MatTableDataSource<any> = new MatTableDataSource<any>([]);
+
 	private timer: any;
 
-	constructor(private fedSiteService: FederatedSiteService) {	}
+	constructor(private fedSiteService: FederatedSiteService) {
+		Chart.register(...registerables);
+	}
 
 	ngOnInit(): void {
-		this.model = this.model ? this.model : new Worker();
+		this.statistics = new Statistics();
 
-		this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
-			this.model = worker;
+		const memoryMetricEle: any = document.getElementById('memory-metric-dashboard');
 
-			this.updateMetrics();
+		let memoryChart = new Chart(memoryMetricEle.getContext('2d'), {
+			type: 'line',
+			data: {
+				datasets: [{
+					data: this.statistics.utilization.map(s => {
+						return { x: s.timestamp, y: s.memoryUsage }
+					}),
+					borderColor: constants.chartColors.red
+				}]
+			},
+			options: {
+				responsive: true,
+				plugins: {
+					legend: {
+						display: false
+					},
+					title: {
+						display: true,
+						text: 'Memory usage %'
+					}
+				},
+				scales: {
+					x: {
+						type: 'time',
+						time: {
+							unit: 'second',
+						},
+						ticks: {
+							display: false
+						}
+					}
+				}
+			},
 		});
 
-		this.dataMemory = [];
-
-		this.optionsMemory = {
-			title: {
-				text: 'Memory (%)'
-			},
-			tooltip: {
-				trigger: 'axis',
-				formatter: (params: any) => {
-					params = params[0];
-					const date = new Date(params.name);
-					return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
-				},
-				axisPointer: {
-					animation: false
-				}
-			},
-			xAxis: {
-				type: 'time',
-				splitLine: {
-					show: false
-				},
-				show: false
-			},
-			yAxis: {
-				type: 'value',
-				boundaryGap: [0, '100%'],
-				splitLine: {
-					show: false
-				}
-			},
-			series: [{
-				name: 'Mocking Data',
-				type: 'line',
-				showSymbol: false,
-				hoverAnimation: false,
-				areaStyle: {},
-				data: this.dataMemory
-			}]
-		};
-
 		this.timer = setInterval(() => {
+			this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
+				this.model = worker;
+			});
+
 			this.fedSiteService.getStatistics(this.model.id).subscribe(stats => {
 				this.statistics = stats;
 
-				this.updateMetrics();
+				memoryChart.data.datasets.forEach((dataset) => {
+					dataset.data = [];
+					this.statistics.utilization.map(s => dataset.data.push({ x: s.timestamp, y: s.memoryUsage }));
+				});
+
+				memoryChart.update();
+
+				this.dataSource = this.parseInstructions();
 			})
 		}, 3000);
 	}
@@ -109,24 +109,33 @@ export class WorkerComponent {
 		clearInterval(this.timer);
 	}
 
-	private updateMetrics(): void {
+	private parseInstructions(): any {
+		let tmp = {};
+		let result: any[] = [];
+		this.statistics.events.forEach(e => {
+			e.stages.forEach(s => {
+				if (!tmp[s.operation]) {
+					tmp[s.operation] = {
+						frequency: 0,
+						time: 0
+					}
+				}
 
+				tmp[s.operation]['frequency'] += 1;
+				tmp[s.operation]['time'] += (new Date(s.endTime).getTime() - new Date(s.startTime).getTime());
+			})
+		});
 
-		this.dataMemory = this.statistics.utilization.map(s => {
-			return {
-				name: s.timestamp,
-				value: [
-					s.timestamp,
-					s.memoryUsage
-				]
-			}
-		})
+		for (const [key, value] of Object.entries(tmp)) {
+			result.push({
+				instruction: key,
+				// @ts-ignore
+				time: value['time'],
+				// @ts-ignore
+				frequency: value['frequency']
+			})
+		}
 
-		// update series data:
-		this.updateOptionsMemory = {
-			series: [{
-				data: this.dataMemory
-			}]
-		};
+		return result.sort((a,b) => b['time']-a['time']).slice(0,3);
 	}
 }

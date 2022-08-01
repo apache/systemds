@@ -20,7 +20,6 @@
 import { NgModule } from "@angular/core";
 import { RouterModule, Routes } from "@angular/router";
 import { ListCoordinatorsComponent } from "./modules/coordinators/list/list.component";
-import { ViewCoordinatorComponent } from "./modules/coordinators/view/view.component";
 import { DashboardComponent } from "./modules/dashboard/main/dashboard.component";
 import { LayoutComponent } from "./modules/layout/layout.component";
 import { ListWorkersComponent } from "./modules/workers/list/list.component";
@@ -40,10 +39,6 @@ const routes: Routes = [
 			{
 				path: 'coordinators',
 				component: ListCoordinatorsComponent,
-			},
-			{
-				path: 'coordinators/:id',
-				component: ViewCoordinatorComponent
 			},
 			{
 				path: 'workers',

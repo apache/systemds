@@ -30,6 +30,7 @@ import { DashboardDirective } from './dashboard.directive';
 import { FedSiteData } from "../../../models/fedSiteData.model";
 import { Coordinator } from "../../../models/coordinator.model";
 import { Worker } from "../../../models/worker.model";
+import { ConnectionComponent } from "../connection/connection.component";
 
 @Component({
 	selector: 'app-dashboard',
@@ -39,7 +40,9 @@ import { Worker } from "../../../models/worker.model";
 export class DashboardComponent implements OnInit {
 
 	public fedSiteData: FedSiteData;
+
 	@ViewChild(DashboardDirective, {static: true}) fedSiteHost!: DashboardDirective;
+
 	private jsPlumbInstance: jsPlumbInstance;
 
 	constructor(public dialog: MatDialog,
@@ -89,6 +92,34 @@ export class DashboardComponent implements OnInit {
 			workerComponentRef.location.nativeElement.style = 'position: absolute;';
 
 			this.jsPlumbInstance.draggable(constants.prefixes.worker + worker.id);
+
+			this.fedSiteService.getStatistics(worker.id).subscribe(stats => {
+
+				let coordinators = selectedCoordinators.filter(c => stats.traffic.find(ts => ts.coordinatorId === c.id))
+
+				coordinators.forEach(c => {
+					const connectionComponentRef = this.fedSiteHost.viewContainerRef.createComponent(ConnectionComponent);
+					const id = constants.prefixes.coordinator + c.id + constants.prefixes.worker + worker.id;
+					connectionComponentRef.instance.worker = worker;
+					connectionComponentRef.instance.coordinator = c;
+					connectionComponentRef.location.nativeElement.id = id;
+					connectionComponentRef.location.nativeElement.firstChild.firstChild.id = `traffic-${id}`;
+
+					this.jsPlumbInstance.connect({
+						source: constants.prefixes.coordinator + c.id,
+						target: constants.prefixes.worker + worker.id,
+						anchor: ['AutoDefault'],
+						overlays: [
+							['Custom', {
+								create: function(component: any) {
+									return constants.prefixes.coordinator + c.id + constants.prefixes.worker + worker.id;
+								},
+								location: 0.5,
+							}]
+						]
+					});
+				});
+			})
 		}
 
 		for (const coordinator of selectedCoordinators) {
@@ -98,30 +129,6 @@ export class DashboardComponent implements OnInit {
 			coordinatorComponentRef.location.nativeElement.style = 'position: absolute;';
 
 			this.jsPlumbInstance.draggable(constants.prefixes.coordinator + coordinator.id);
-
-			// for (const childWorker of coordinator.workers) {
-			//   if (!selectedWorkers.some(w => w.id == childWorker.id)) {
-			//     continue;
-			//   }
-			//
-			//   const connectionComponentRef = this.fedSiteHost.viewContainerRef.createComponent(ConnectionComponent);
-			//   connectionComponentRef.location.nativeElement.id =
-			//     constants.prefixes.coordinator + coordinator.id + constants.prefixes.worker + childWorker.id
-			//
-			//   this.jsPlumbInstance.connect({
-			//     source: constants.prefixes.coordinator + coordinator.id,
-			//     target: constants.prefixes.worker + childWorker.id,
-			//     anchor: ['AutoDefault'],
-			//     overlays: [
-			//       ['Custom', {
-			//         create: function(component: any) {
-			//           return constants.prefixes.coordinator + coordinator.id + constants.prefixes.worker + childWorker.id;
-			//         },
-			//         location: 0.5,
-			//       }]
-			//     ]
-			//   });
-			// }
 		}
 	}
 }

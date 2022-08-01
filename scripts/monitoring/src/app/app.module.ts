@@ -38,7 +38,6 @@ import { WorkerComponent } from './modules/dashboard/worker/worker.component';
 import { DialogDashboardComponent } from './modules/dashboard/dialog-dashboard/dialog-dashboard.component';
 import { DashboardDirective } from './modules/dashboard/main/dashboard.directive';
 import { ListCoordinatorsComponent } from './modules/coordinators/list/list.component';
-import { ViewCoordinatorComponent } from './modules/coordinators/view/view.component';
 import { ListWorkersComponent } from './modules/workers/list/list.component';
 import { ViewWorkerComponent } from './modules/workers/view/view.component';
 import { CreateEditCoordinatorsComponent } from "./modules/coordinators/create-edit/create-edit.component";
@@ -57,7 +56,6 @@ import { ViewWorkerEventsComponent } from "./modules/events/view/view.component"
 		DialogDashboardComponent,
 		DashboardDirective,
 		ListCoordinatorsComponent,
-		ViewCoordinatorComponent,
 		ListWorkersComponent,
 		ViewWorkerComponent,
 		CreateEditCoordinatorsComponent,

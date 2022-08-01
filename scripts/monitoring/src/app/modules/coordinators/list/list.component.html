@@ -50,9 +50,6 @@
 					<ng-container matColumnDef="actions">
 						<th *matHeaderCellDef mat-header-cell> Actions</th>
 						<td *matCellDef="let element" mat-cell>
-							<button (click)="viewCoordinator(element.id)" color="primary" mat-mini-fab>
-								<mat-icon aria-hidden="false" aria-label="visibility">visibility</mat-icon>
-							</button>
 							<button (click)="editCoordinator(element.id)" color="accent" mat-mini-fab>
 								<mat-icon aria-hidden="false" aria-label="edit">edit</mat-icon>
 							</button>

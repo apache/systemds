@@ -35,36 +35,33 @@
 
 	<mat-divider inset></mat-divider>
 	<mat-card-content>
+		<canvas id="memory-metric-dashboard"></canvas>
 	</mat-card-content>
 
 	<mat-divider inset></mat-divider>
+
 	<mat-card-content>
-		<table [dataSource]="dataSource" class="table-info" mat-table>
-			<!--- Note that these columns can be defined in any order.
-				  The actual rendered columns are set as a property on the row definition" -->
+		<table [dataSource]="dataSource" mat-table matSort>
 
-			<!-- Type Column -->
-			<ng-container matColumnDef="type">
-				<th *matHeaderCellDef mat-header-cell> Type </th>
-				<td *matCellDef="let element" mat-cell> {{element.type}} </td>
+			<ng-container matColumnDef="instruction">
+				<th *matHeaderCellDef mat-header-cell mat-sort-header> Top 3 Inst.</th>
+				<td *matCellDef="let element" mat-cell> {{element['instruction']}} </td>
 			</ng-container>
 
-			<!-- Time Column -->
 			<ng-container matColumnDef="time">
-				<th *matHeaderCellDef mat-header-cell> Time(s) </th>
-				<td *matCellDef="let element" mat-cell> {{element.time}} </td>
+				<th *matHeaderCellDef mat-header-cell mat-sort-header> Time(ms)</th>
+				<td *matCellDef="let element" mat-cell> {{element['time']}} </td>
 			</ng-container>
 
-			<!-- Frequency Column -->
 			<ng-container matColumnDef="frequency">
-				<th *matHeaderCellDef mat-header-cell> Freq. </th>
-				<td *matCellDef="let element" mat-cell> {{element.frequency}} </td>
+				<th *matHeaderCellDef mat-header-cell mat-sort-header> Freq.</th>
+				<td *matCellDef="let element" mat-cell> {{element['frequency']}} </td>
 			</ng-container>
 
 			<tr *matHeaderRowDef="displayedColumns" mat-header-row></tr>
 			<tr *matRowDef="let row; columns: displayedColumns;" mat-row></tr>
-		</table>
 
+		</table>
 
 	</mat-card-content>
 </mat-card>

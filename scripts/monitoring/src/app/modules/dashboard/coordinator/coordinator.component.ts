@@ -30,10 +30,8 @@ export class CoordinatorComponent {
 
 	public model: Coordinator;
 
-	constructor() {
-	}
+	constructor() { }
 
-	ngOnInit(): void {
-	}
+	ngOnInit(): void { }
 
 }

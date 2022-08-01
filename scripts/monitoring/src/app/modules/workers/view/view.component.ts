@@ -103,7 +103,7 @@ export class ViewWorkerComponent {
 			data: {
 				datasets: [{
 					data: this.statistics.utilization.map(s => {
-						return {x: s.timestamp, y: s.cpuUsage}
+						return {x: s.timestamp, y: s.memoryUsage}
 					}),
 					borderColor: constants.chartColors.red
 				}]
@@ -161,9 +161,9 @@ export class ViewWorkerComponent {
 
 		this.timer = setInterval(() => {
 
-			this.fedSiteService.getWorker(this.model.id).subscribe(worker => this.model = worker);
+			this.fedSiteService.getWorker(id).subscribe(worker => this.model = worker);
 
-			this.fedSiteService.getStatistics(this.model.id).subscribe(stats => {
+			this.fedSiteService.getStatistics(id).subscribe(stats => {
 				this.statistics = stats;
 
 				cpuChart.data.datasets.forEach((dataset) => {

@@ -24,6 +24,12 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
+/**
+ * This class is a mockup of the PrivacyConstraintLoader which replaces the call to loadFederatedPrivacyConstraints.
+ * This means that instead of loading the privacy constraints from the federated workers,
+ * the constraint returned for each federated DataOp will have the privacy level specified in the constructor,
+ * without sending any federated requests.
+ */
 public class PrivacyConstraintLoaderMock extends PrivacyConstraintLoader {
 
 	private final PrivacyLevel privacyLevel;

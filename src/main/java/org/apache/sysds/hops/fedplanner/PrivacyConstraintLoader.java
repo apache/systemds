@@ -193,7 +193,7 @@ public class PrivacyConstraintLoader {
 
 	/**
 	 * Get privacy constraints from federated workers for DataOps.
-	 * @hop hop for which privacy constraints are loaded
+	 * @param hop for which privacy constraints are loaded
 	 */
 	public void loadFederatedPrivacyConstraints(Hop hop){
 		try {

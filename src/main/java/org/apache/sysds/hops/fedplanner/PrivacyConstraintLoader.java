@@ -28,6 +28,7 @@ import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.hops.fedplanner.FederatedCompilationTimer.TimeEntry;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
@@ -78,7 +79,9 @@ public class PrivacyConstraintLoader {
 	private LocalVariableMap localVariableMap = new LocalVariableMap();
 
 	public void loadConstraints(DMLProgram prog){
+		FederatedCompilationTimer.startPrivProcessTimer();
 		rewriteStatementBlocks(prog, prog.getStatementBlocks(), null);
+		FederatedCompilationTimer.stopPrivProcessTimer();
 	}
 
 	private void rewriteStatementBlocks(DMLProgram prog, List<StatementBlock> sbs, Map<String, Hop> paramMap) {
@@ -196,6 +199,7 @@ public class PrivacyConstraintLoader {
 	 * @param hop for which privacy constraints are loaded
 	 */
 	public void loadFederatedPrivacyConstraints(Hop hop){
+		TimeEntry fetchTime = FederatedCompilationTimer.startPrivFetchTimer(hop.getHopID());
 		try {
 			PrivacyConstraint.PrivacyLevel constraintLevel = hop.getInput(0).getInput().stream().parallel()
 				.map( in -> ((LiteralOp)in).getStringValue() )
@@ -217,6 +221,8 @@ public class PrivacyConstraintLoader {
 		}
 		catch(Exception ex) {
 			throw new DMLException(ex);
+		} finally {
+			fetchTime.stopTime();
 		}
 	}
 

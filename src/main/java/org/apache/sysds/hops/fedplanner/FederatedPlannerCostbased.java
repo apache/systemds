@@ -84,10 +84,23 @@ public class FederatedPlannerCostbased extends AFederatedPlanner {
 
 	@Override
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
+		enumeratePlans(prog);
+		selectPlan();
+		updateExplain();
+		FederatedCompilationTimer.activate();
+	}
+
+	private void enumeratePlans(DMLProgram prog){
+		FederatedCompilationTimer.startEnumerationTimer();
 		prog.updateRepetitionEstimates();
 		rewriteStatementBlocks(prog, prog.getStatementBlocks(), null);
+		FederatedCompilationTimer.stopEnumerationTimer();
+	}
+
+	private void selectPlan(){
+		FederatedCompilationTimer.startSelectPlanTimer();
 		setFinalFedouts();
-		updateExplain();
+		FederatedCompilationTimer.stopSelectPlanTimer();
 	}
 
 	@Override

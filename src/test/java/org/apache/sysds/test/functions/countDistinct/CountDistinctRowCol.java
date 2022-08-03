@@ -24,7 +24,7 @@ import org.junit.Test;
 
 public class CountDistinctRowCol extends CountDistinctRowColBase {
 
-	public String TEST_NAME = "countDistinct";
+	public String TEST_NAME = "countDistinctRowCol";
 	public String TEST_DIR = "functions/countDistinct/";
 	public String TEST_CLASS_DIR = TEST_DIR + CountDistinctRowCol.class.getSimpleName() + "/";
 

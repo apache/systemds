@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.StringTokenizer;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
@@ -420,7 +421,11 @@ public class InstructionUtils
 			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("min"));
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
-		
+		else if ( opcode.equalsIgnoreCase("uacd") || opcode.equalsIgnoreCase("uacdr")
+				|| opcode.equalsIgnoreCase("uacdc") ) {
+			throw new NotImplementedException("countDistinct() is not supported in Spark execution mode");
+		}
+
 		return aggun;
 	}
 

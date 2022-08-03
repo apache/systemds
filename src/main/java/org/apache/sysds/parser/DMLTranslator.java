@@ -2041,10 +2041,10 @@ public class DMLTranslator
 					target.getValueType(), ParamBuiltinOp.LIST, paramHops);
 				break;
 
+			case COUNT_DISTINCT:
 			case COUNT_DISTINCT_APPROX:
-				// Default direction and data type
-				Direction dir = Direction.RowCol;
-				DataType dataType = DataType.SCALAR;
+				Direction dir = Direction.RowCol;  // Default direction
+				DataType dataType = DataType.SCALAR;  // Default output data type
 
 				LiteralOp dirOp = (LiteralOp) paramHops.get("dir");
 				if (dirOp != null) {
@@ -2064,6 +2064,7 @@ public class DMLTranslator
 				currBuiltinOp = new AggUnaryOp(target.getName(), dataType, target.getValueType(),
 						AggOp.valueOf(source.getOpCode().name()), dir, paramHops.get("data"));
 				break;
+
 			default:
 				throw new ParseException(source.printErrorLocation() + 
 					"processParameterizedBuiltinFunctionExpression() -- Unknown operation: " + source.getOpCode());
@@ -2363,10 +2364,6 @@ public class DMLTranslator
 		case SUM:
 		case PROD:
 		case VAR:
-		case COUNT_DISTINCT:
-			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.SCALAR, target.getValueType(),
-					AggOp.valueOf(source.getOpCode().name()), Direction.RowCol, expr);
-			break;
 		case MEAN:
 			if ( expr2 == null ) {
 				// example: x = mean(Y);

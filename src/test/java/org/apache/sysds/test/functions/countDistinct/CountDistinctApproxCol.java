@@ -20,6 +20,8 @@
 package org.apache.sysds.test.functions.countDistinct;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.junit.Test;
 
 public class CountDistinctApproxCol extends CountDistinctRowOrColBase {
 
@@ -50,5 +52,51 @@ public class CountDistinctApproxCol extends CountDistinctRowOrColBase {
 	@Override
 	public void setUp() {
 		super.addTestConfiguration();
+	}
+
+	@Test
+	public void testCPSparseLargeDefaultMCSR() {
+		Types.ExecType ex = Types.ExecType.CP;
+
+		int actualDistinctCount = 10;
+		int rows = 1000, cols = 10000;
+		double sparsity = 0.1;
+		double tolerance = actualDistinctCount * this.percentTolerance;
+
+		countDistinctMatrixTest(getDirection(), actualDistinctCount, cols, rows, sparsity, ex, tolerance);
+	}
+
+	@Test
+	public void testCPSparseLargeCSR() {
+		int actualDistinctCount = 10;
+		int rows = 1000, cols = 10000;
+		double sparsity = 0.1;
+		double tolerance = actualDistinctCount * this.percentTolerance;
+
+		super.testCPSparseLarge(SparseBlock.Type.CSR, Types.Direction.Col, rows, cols, actualDistinctCount, sparsity,
+				tolerance);
+	}
+
+	@Test
+	public void testCPSparseLargeCOO() {
+		int actualDistinctCount = 10;
+		int rows = 1000, cols = 10000;
+		double sparsity = 0.1;
+		double tolerance = actualDistinctCount * this.percentTolerance;
+
+		super.testCPSparseLarge(SparseBlock.Type.COO, Types.Direction.Col, rows, cols, actualDistinctCount, sparsity,
+				tolerance);
+	}
+
+	@Test
+	public void testCPDenseLarge() {
+		Types.ExecType ex = Types.ExecType.CP;
+
+		int actualDistinctCount = 100;
+		int rows = 1000, cols = 10000;
+		double sparsity = 0.9;
+		double tolerance = actualDistinctCount * this.percentTolerance;
+
+		countDistinctMatrixTest(getDirection(), actualDistinctCount, cols, rows, sparsity, ex, tolerance);
 	}
 }

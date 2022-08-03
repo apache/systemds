@@ -82,8 +82,12 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				in1, out, AUType.valueOf(opcode.toUpperCase()), opcode, str);
 		} 
 		else if(opcode.equalsIgnoreCase("uacd")){
-			return new AggregateUnaryCPInstruction(new SimpleOperator(null),
-			in1, out, AUType.COUNT_DISTINCT, opcode, str);
+			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT)
+					.setDirection(Types.Direction.RowCol)
+					.setIndexFunction(ReduceAll.getReduceAllFnObject());
+
+			return new AggregateUnaryCPInstruction(op, in1, out, AUType.COUNT_DISTINCT,
+					opcode, str);
 		}
 		else if(opcode.equalsIgnoreCase("uacdap")){
 			CountDistinctOperator op = new CountDistinctOperator(AUType.COUNT_DISTINCT_APPROX)
@@ -199,9 +203,15 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				if( !ec.getVariables().keySet().contains(input1.getName()) )
 					throw new DMLRuntimeException("Variable '" + input1.getName() + "' does not exist.");
 				MatrixBlock input = ec.getMatrixInput(input1.getName());
-				CountDistinctOperator op = new CountDistinctOperator(_type);
+
+				// Operator type: test and cast
+				if (!(_optr instanceof CountDistinctOperator)) {
+					throw new DMLRuntimeException("Operator should be instance of " + CountDistinctOperator.class.getSimpleName());
+				}
+				CountDistinctOperator op = (CountDistinctOperator) (_optr);
+
 				//TODO add support for row or col count distinct.
-				int res = LibMatrixCountDistinct.estimateDistinctValues(input, op);
+				int res = (int) LibMatrixCountDistinct.estimateDistinctValues(input, op).getValue(0, 0);
 				ec.releaseMatrixInput(input1.getName());
 				ec.setScalarOutput(output_name, new IntObject(res));
 				break;
@@ -219,27 +229,16 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				CountDistinctOperator op = (CountDistinctOperator) _optr;  // It is safe to cast at this point
 
 				if (op.getDirection().isRowCol()) {
-					int res = LibMatrixCountDistinct.estimateDistinctValues(input, op);
+					long res = (long) LibMatrixCountDistinct.estimateDistinctValues(input, op).getValue(0, 0);
 					ec.releaseMatrixInput(input1.getName());
 					ec.setScalarOutput(output_name, new IntObject(res));
-				} else if (op.getDirection().isRow()) {
-					//TODO Do not slice out the matrix but directly process on the input
-					MatrixBlock res = input.slice(0, input.getNumRows() - 1, 0, 0);
-					for (int i = 0; i < input.getNumRows(); ++i) {
-						res.setValue(i, 0, LibMatrixCountDistinct.estimateDistinctValues(input.slice(i, i), op));
-					}
+				} else {  // Row/Col
+					// Note that for each row, the max number of distinct values < NNZ < max number of columns = 1000:
+					// Since count distinct approximate estimates are unreliable for values < 1024,
+					// we will force a naive count.
+					MatrixBlock res = LibMatrixCountDistinct.estimateDistinctValues(input, op);
 					ec.releaseMatrixInput(input1.getName());
 					ec.setMatrixOutput(output_name, res);
-				} else if (op.getDirection().isCol()) {
-					//TODO Do not slice out the matrix but directly process on the input
-					MatrixBlock res = input.slice(0, 0, 0, input.getNumColumns() - 1);
-					for (int j = 0; j < input.getNumColumns(); ++j) {
-						res.setValue(0, j, LibMatrixCountDistinct.estimateDistinctValues(input.slice(0, input.getNumRows() - 1, j, j), op));
-					}
-					ec.releaseMatrixInput(input1.getName());
-					ec.setMatrixOutput(output_name, res);
-				} else {
-					throw new DMLRuntimeException("Direction for CountDistinctOperator not recognized");
 				}
 
 				break;

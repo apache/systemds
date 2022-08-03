@@ -22,15 +22,15 @@ package org.apache.sysds.runtime.matrix.data.sketch;
 import org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public interface MatrixSketch<T> {
+public interface MatrixSketch {
 
 	/**
-	 * Get scalar distinct count from a input matrix block.
+	 * Get scalar distinct count from an input matrix block.
 	 * 
-	 * @param blkIn A input block to estimate the number of distinct values in
-	 * @return The distinct count estimate
+	 * @param blkIn An input block to estimate the number of distinct values in
+	 * @return The result matrix block containing the distinct count estimate
 	 */
-	T getScalarValue(MatrixBlock blkIn);
+	MatrixBlock getValue(MatrixBlock blkIn);
 
 	/**
 	 * Obtain matrix distinct count value from estimation Used for estimating distinct in rows or columns.
@@ -38,31 +38,31 @@ public interface MatrixSketch<T> {
 	 * @param blkIn The sketch block to extract the count from
 	 * @return The result matrix block
 	 */
-	public MatrixBlock getMatrixValue(CorrMatrixBlock blkIn);
+	MatrixBlock getValueFromSketch(CorrMatrixBlock blkIn);
 
 	/**
-	 * Create a initial sketch of a given block.
+	 * Create an initial sketch of a given block.
 	 * 
 	 * @param blkIn A block to process
 	 * @return A sketch
 	 */
-	public CorrMatrixBlock create(MatrixBlock blkIn);
+	CorrMatrixBlock create(MatrixBlock blkIn);
 
 	/**
 	 * Union two sketches together to from a combined sketch.
 	 * 
 	 * @param arg0 Sketch one
 	 * @param arg1 Sketch two
-	 * @return The combined sketch
+	 * @return The sketch union is a sketch
 	 */
-	public CorrMatrixBlock union(CorrMatrixBlock arg0, CorrMatrixBlock arg1);
+	CorrMatrixBlock union(CorrMatrixBlock arg0, CorrMatrixBlock arg1);
 
 	/**
 	 * Intersect two sketches
 	 * 
 	 * @param arg0 Sketch one
 	 * @param arg1 Sketch two
-	 * @return The intersected sketch
+	 * @return The sketch intersection is a sketch
 	 */
-	public CorrMatrixBlock intersection(CorrMatrixBlock arg0, CorrMatrixBlock arg1);
+	CorrMatrixBlock intersection(CorrMatrixBlock arg0, CorrMatrixBlock arg1);
 }

@@ -20,6 +20,12 @@
 package org.apache.sysds.test.functions.countDistinct;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.functionobjects.ReduceCol;
+import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
+import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
@@ -44,24 +50,15 @@ public abstract class CountDistinctRowOrColBase extends CountDistinctBase {
 		this.percentTolerance = 0.2;
 	}
 
+	/**
+	 * This is a contrived example where size of row/col > 1024, which forces the calculation of a sketch.
+	 */
 	@Test
-	public void testCPSparseLarge() {
+	public void testCPDenseXLarge() {
 		Types.ExecType ex = Types.ExecType.CP;
 
-		int actualDistinctCount = 10;
-		int rows = 10000, cols = 1000;
-		double sparsity = 0.1;
-		double tolerance = actualDistinctCount * this.percentTolerance;
-
-		countDistinctMatrixTest(getDirection(), actualDistinctCount, cols, rows, sparsity, ex, tolerance);
-	}
-
-	@Test
-	public void testCPDenseLarge() {
-		Types.ExecType ex = Types.ExecType.CP;
-
-		int actualDistinctCount = 100;
-		int rows = 10000, cols = 1000;
+		int actualDistinctCount = 10000;
+		int rows = 10000, cols = 10000;
 		double sparsity = 0.9;
 		double tolerance = actualDistinctCount * this.percentTolerance;
 
@@ -138,5 +135,23 @@ public abstract class CountDistinctRowOrColBase extends CountDistinctBase {
 		double tolerance = actualDistinctCount * this.percentTolerance;
 
 		countDistinctMatrixTest(getDirection(), actualDistinctCount, cols, rows, sparsity, execType, tolerance);
+	}
+
+	protected void testCPSparseLarge(SparseBlock.Type sparseBlockType, Types.Direction direction, int rows, int cols,
+									 int actualDistinctCount, double sparsity, double tolerance) {
+		MatrixBlock blkIn = TestUtils.round(TestUtils.generateTestMatrixBlock(rows, cols, 0, actualDistinctCount, sparsity, 7));
+		if (!blkIn.isInSparseFormat()) {
+			blkIn.denseToSparse(false);
+		}
+		blkIn = new MatrixBlock(blkIn, sparseBlockType, true);
+
+		CountDistinctOperator op = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT_APPROX)
+				.setDirection(direction)
+				.setIndexFunction(ReduceCol.getReduceColFnObject());
+
+		MatrixBlock blkOut = LibMatrixCountDistinct.estimateDistinctValues(blkIn, op);
+		double[][] expectedMatrix = getExpectedMatrixRowOrCol(direction, cols, rows, actualDistinctCount);
+
+		TestUtils.compareMatrices(expectedMatrix, blkOut, tolerance, "");
 	}
 }

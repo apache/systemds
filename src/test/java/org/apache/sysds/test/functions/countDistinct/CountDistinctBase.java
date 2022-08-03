@@ -19,12 +19,12 @@
 
 package org.apache.sysds.test.functions.countDistinct;
 
-import static org.junit.Assert.assertTrue;
-
 import org.apache.sysds.common.Types;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+
+import static org.junit.Assert.assertTrue;
 
 public abstract class CountDistinctBase extends AutomatedTestBase {
 	protected double percentTolerance = 0.0;
@@ -88,7 +88,7 @@ public abstract class CountDistinctBase extends AutomatedTestBase {
 		}
 	}
 
-	private double[][] getExpectedMatrixRowOrCol(Types.Direction dir, int cols, int rows, long expectedValue) {
+	protected double[][] getExpectedMatrixRowOrCol(Types.Direction dir, int cols, int rows, long expectedValue) {
 		double[][] expectedResult;
 		if(dir.isRow()) {
 			expectedResult = new double[rows][1];

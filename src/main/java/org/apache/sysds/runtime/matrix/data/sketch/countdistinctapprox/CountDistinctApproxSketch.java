@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 // Package private
-abstract class CountDistinctApproxSketch implements MatrixSketch<Integer> {
+abstract class CountDistinctApproxSketch implements MatrixSketch {
 	CountDistinctOperator op;
 
 	CountDistinctApproxSketch(Operator op) {

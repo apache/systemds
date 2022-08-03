@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -52,49 +51,89 @@ public class KMVSketch extends CountDistinctApproxSketch {
 	}
 
 	@Override
-	public Integer getScalarValue(MatrixBlock in) {
+	public MatrixBlock getValue(MatrixBlock blkIn) {
 
-		// D is the number of possible distinct values in the MatrixBlock.
-		// plus 1 to take account of 0 input.
-		long D = in.getNonZeros() + 1;
+		if (this.op.getDirection().isRowCol()) {
+			// D is the number of possible distinct values in the MatrixBlock.
+			// plus 1 to take account of 0 input.
+			long D = blkIn.getNonZeros() + 1;
 
-		/**
-		 * To ensure that the likelihood to hash to the same value we need O(D^2) positions to hash to assign. If the
-		 * value is higher than int (which is the area we hash to) then use Integer Max value as largest hashing space.
-		 */
-		long tmp = D * D;
-		int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
-		/**
-		 * The estimator is asymptotically unbiased as k becomes large, but memory usage also scales with k. Furthermore k
-		 * value must be within range: D >> k >> 0
-		 */
-		int k = D > 64 ? 64 : (int) D;
+			/**
+			 * To ensure that the likelihood to hash to the same value we need O(D^2) positions to hash to assign. If the
+			 * value is higher than int (which is the area we hash to) then use Integer Max value as largest hashing space.
+			 */
+			long tmp = D * D;
+			int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
+			/**
+			 * The estimator is asymptotically unbiased as k becomes large, but memory usage also scales with k. Furthermore k
+			 * value must be within range: D >> k >> 0
+			 */
+			int k = D > 64 ? 64 : (int) D;
 
-		SmallestPriorityQueue spq = getKSmallestHashes(in, k, M);
-
-		if(LOG.isDebugEnabled()) {
-			LOG.debug("M not forced to int size: " + tmp);
-			LOG.debug("M: " + M);
-			LOG.debug("M: " + M);
-			LOG.debug("kth smallest hash:" + spq.peek());
-			LOG.debug("spq: " + spq.toString());
-		}
-
-		if(spq.size() < k) {
-			return spq.size();
-		}
-		else {
-			double kthSmallestHash = spq.poll();
-			double U_k = kthSmallestHash / (double) M;
-			double estimate = (double) (k - 1) / U_k;
-			double ceilEstimate = Math.min(estimate, (double) D);
+			SmallestPriorityQueue spq = getKSmallestHashes(blkIn, k, M);
 
 			if(LOG.isDebugEnabled()) {
-				LOG.debug("U_k : " + U_k);
-				LOG.debug("Estimate: " + estimate);
-				LOG.debug("Ceil worst case: " + D);
+				LOG.debug("M not forced to int size: " + tmp);
+				LOG.debug("M: " + M);
+				LOG.debug("M: " + M);
+				LOG.debug("kth smallest hash:" + spq.peek());
+				LOG.debug("spq: " + spq);
 			}
-			return (int) ceilEstimate;
+
+
+			long res = countDistinctValuesKMV(spq, k, M, D);
+			if(res <= 0) {
+				throw new DMLRuntimeException("Impossible estimate of distinct values");
+			}
+
+			// Result is a 1x1 matrix block
+			return new MatrixBlock(res);
+
+		} else if (this.op.getDirection().isRow()) {
+			long D = (long) Math.floor(blkIn.getNonZeros() / (double) blkIn.getNumRows()) + 1;
+			long tmp = D * D;
+			int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
+			int k = D > 64 ? 64 : (int) D;
+
+			MatrixBlock resultMatrix = new MatrixBlock(blkIn.getNumRows(), 1, false, blkIn.getNumRows());
+			resultMatrix.allocateBlock();
+
+			SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
+			for (int i=0; i<blkIn.getNumRows(); ++i) {
+				for (int j=0; j<blkIn.getNumColumns(); ++j) {
+					spq.add(blkIn.getValue(i, j));
+				}
+
+				long res = countDistinctValuesKMV(spq, k, M, D);
+				resultMatrix.setValue(i, 0, res);
+
+				spq.clear();
+			}
+
+			return resultMatrix;
+
+		} else {  // Col
+			long D = (long) Math.floor(blkIn.getNonZeros() / (double) blkIn.getNumColumns()) + 1;
+			long tmp = D * D;
+			int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
+			int k = D > 64 ? 64 : (int) D;
+
+			MatrixBlock resultMatrix = new MatrixBlock(1, blkIn.getNumColumns(), false, blkIn.getNumColumns());
+			resultMatrix.allocateBlock();
+
+			SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
+			for (int j=0; j<blkIn.getNumColumns(); ++j) {
+				for (int i=0; i<blkIn.getNumRows(); ++i) {
+					spq.add(blkIn.getValue(i, j));
+				}
+
+				long res = countDistinctValuesKMV(spq, k, M, D);
+				resultMatrix.setValue(0, j, res);
+
+				spq.clear();
+			}
+
+			return resultMatrix;
 		}
 	}
 
@@ -146,21 +185,45 @@ public class KMVSketch extends CountDistinctApproxSketch {
 		}
 	}
 
+	private long countDistinctValuesKMV(SmallestPriorityQueue spq, int k, int M, long D) {
+		long res;
+		if(spq.size() < k) {
+			res = spq.size();
+		}
+		else {
+			double kthSmallestHash = spq.poll();
+			double U_k = kthSmallestHash / (double) M;
+			double estimate = (double) (k - 1) / U_k;
+			double ceilEstimate = Math.min(estimate, (double) D);
+
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("U_k : " + U_k);
+				LOG.debug("Estimate: " + estimate);
+				LOG.debug("Ceil worst case: " + D);
+			}
+			res = Math.round(ceilEstimate);
+		}
+
+		return res;
+	}
+
 	@Override
-	public MatrixBlock getMatrixValue(CorrMatrixBlock arg0) {
+	public MatrixBlock getValueFromSketch(CorrMatrixBlock arg0) {
 		MatrixBlock blkIn = arg0.getValue();
-		if(op.getDirection() == Types.Direction.Row) {
-			// 1000 x 1 blkOut -> slice out the first column of the matrix
-			MatrixBlock blkOut = blkIn.slice(0, blkIn.getNumRows() - 1, 0, 0);
+		if(op.getDirection().isRow()) {
+			// 1000 x 1 blkOut
+			MatrixBlock blkOut = new MatrixBlock(blkIn.getNumRows(), 1, false, blkIn.getNumRows());
+			blkOut.allocateBlock();
 			for(int i = 0; i < blkIn.getNumRows(); ++i) {
 				getDistinctCountFromSketchByIndex(arg0, i, blkOut);
 			}
 
 			return blkOut;
 		}
-		else if(op.getDirection() == Types.Direction.Col) {
-			// 1 x 1000 blkOut -> slice out the first row of the matrix
-			MatrixBlock blkOut = blkIn.slice(0, 0, 0, blkIn.getNumColumns() - 1);
+		else if(op.getDirection().isCol()) {
+			// 1 x 1000 blkOut
+			MatrixBlock blkOut = new MatrixBlock(1, blkIn.getNumColumns(), false, blkIn.getNumColumns());
+			blkOut.allocateBlock();
 			for(int j = 0; j < blkIn.getNumColumns(); ++j) {
 				getDistinctCountFromSketchByIndex(arg0, j, blkOut);
 			}
@@ -169,8 +232,9 @@ public class KMVSketch extends CountDistinctApproxSketch {
 		}
 		else { // op.getDirection().isRowCol()
 
-			// 1 x 1 blkOut -> slice out the first row and column of the matrix
-			MatrixBlock blkOut = blkIn.slice(0, 0, 0, 0);
+			// 1 x 1 blkOut
+			MatrixBlock blkOut = new MatrixBlock(1, 1, false, 1);
+			blkOut.allocateBlock();
 			getDistinctCountFromSketchByIndex(arg0, 0, blkOut);
 
 			return blkOut;
@@ -181,41 +245,43 @@ public class KMVSketch extends CountDistinctApproxSketch {
 		MatrixBlock blkIn = arg0.getValue();
 		MatrixBlock blkInCorr = arg0.getCorrection();
 
-		if(op.getOperatorType() == CountDistinctOperatorTypes.KMV) {
-			double kthSmallestHash;
-			if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
-				kthSmallestHash = blkIn.getValue(idx, 0);
-			}
-			else { // op.getDirection().isCol()
-				kthSmallestHash = blkIn.getValue(0, idx);
-			}
+		if(op.getOperatorType() != CountDistinctOperatorTypes.KMV) {
+			throw new IllegalArgumentException(this.getClass().getSimpleName() + " cannot use " + op.getOperatorType());
+		}
 
-			double nHashes = blkInCorr.getValue(idx, 0);
-			double k = blkInCorr.getValue(idx, 1);
-			double D = blkInCorr.getValue(idx, 2);
+		double kthSmallestHash;
+		if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
+			kthSmallestHash = blkIn.getValue(idx, 0);
+		}
+		else { // op.getDirection().isCol()
+			kthSmallestHash = blkIn.getValue(0, idx);
+		}
 
-			double D2 = D * D;
-			double M = (D2 > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : D2;
+		double nHashes = blkInCorr.getValue(idx, 0);
+		double k = blkInCorr.getValue(idx, 1);
+		double D = blkInCorr.getValue(idx, 2);
 
-			double ceilEstimate;
-			if(nHashes != 0 && nHashes < k) {
-				ceilEstimate = nHashes;
-			}
-			else if(nHashes == 0) {
-				ceilEstimate = 1;
-			}
-			else {
-				double U_k = kthSmallestHash / M;
-				double estimate = (k - 1) / U_k;
-				ceilEstimate = Math.min(estimate, D);
-			}
+		double D2 = D * D;
+		double M = (D2 > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : D2;
 
-			if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
-				blkOut.setValue(idx, 0, ceilEstimate);
-			}
-			else { // op.getDirection().isCol()
-				blkOut.setValue(0, idx, ceilEstimate);
-			}
+		double ceilEstimate;
+		if(nHashes != 0 && nHashes < k) {
+			ceilEstimate = nHashes;
+		}
+		else if(nHashes == 0) {
+			ceilEstimate = 1;
+		}
+		else {
+			double U_k = kthSmallestHash / M;
+			double estimate = (k - 1) / U_k;
+			ceilEstimate = Math.min(estimate, D);
+		}
+
+		if(op.getDirection().isRow() || op.getDirection().isRowCol()) {
+			blkOut.setValue(idx, 0, ceilEstimate);
+		}
+		else { // op.getDirection().isCol()
+			blkOut.setValue(0, idx, ceilEstimate);
 		}
 	}
 

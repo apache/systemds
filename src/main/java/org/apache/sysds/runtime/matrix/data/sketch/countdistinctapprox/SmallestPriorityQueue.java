@@ -77,6 +77,11 @@ public class SmallestPriorityQueue {
 		return this.size() == 0;
 	}
 
+	public void clear() {
+		this.containedSet.clear();
+		this.smallestHashes.clear();
+	}
+
 	@Override
 	public String toString() {
 		return smallestHashes.toString();

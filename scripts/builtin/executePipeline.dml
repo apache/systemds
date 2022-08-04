@@ -386,13 +386,13 @@ return (Matrix[Double] X, Matrix[Double] Y)
       synthesized = matrix(0,0,0) # initialize variable
       start_class = 1
       end_class = 0
-      k = table(XY[, 1], 1)
-      getMax = max(k)
-      maxKIndex = as.scalar(rowIndexMax(t(k)))
+      kmat = table(XY[, 1], 1)
+      getMax = max(kmat)
+      maxKIndex = as.scalar(rowIndexMax(t(kmat)))
       outSet = matrix(0, 0, ncol(XY))
       remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
       remainingRatio-(remainingRatio%%100))
-      for(i in 1: nrow(k), check=0) {
+      for(i in 1: nrow(kmat), check=0) {
         end_class = end_class + as.scalar(classes[i])
         class_t = XY[start_class:end_class, ]
         if((i != maxKIndex) & (nrow(class_t) > 1)) {

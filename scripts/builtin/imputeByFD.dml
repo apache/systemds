@@ -42,10 +42,10 @@ m_imputeByFD = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Bo
   if( threshold < 0 | threshold > 1 )
     stop("Stopping due to invalid input, threshold required in interval [0, 1] found "+threshold)
 
-  if(min(X) < 1 | min(Y) < 1)
-  {
+  if(min(X) < 1 | min(Y) < 1) {
     print("imputeByFD: source or target contain values less than 1")
-    
+    Y = matrix(0, 1, 1);
+    Y_imp = matrix(0, 1, 1);
   }
   else {
     # impute missing values and fix errors

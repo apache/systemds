@@ -19,9 +19,15 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import com.google.gson.Gson;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.matrix.data.Pair;
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashSet;
 
 public class CustomProperties extends FileFormatProperties implements Serializable {
@@ -35,6 +41,11 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private int ncols;
 	private boolean sparse;
 	private boolean parallel;
+	private String format;
+
+	public CustomProperties(String format) {
+		this.format = format;
+	}
 
 	public CustomProperties(MappingProperties mappingProperties, RowIndexStructure rowIndexStructure, ColIndexStructure colIndexStructure) {
 		this.mappingProperties = mappingProperties;
@@ -83,7 +94,7 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	}
 
 	public HashSet<String>[] endWithValueStrings() {
-		if(colKeyPatterns !=null) {
+		if(colKeyPatterns != null) {
 			HashSet<String>[] endWithValueString = new HashSet[colKeyPatterns.length];
 			for(int i = 0; i < colKeyPatterns.length; i++)
 				if(colKeyPatterns[i] != null)
@@ -124,5 +135,33 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public void setParallel(boolean parallel) {
 		this.parallel = parallel;
+	}
+
+	public String getFormat() {
+		return format;
+	}
+
+	public void setFormat(String format) {
+		this.format = format;
+	}
+
+	public Pair<String, CustomProperties> loadSrcReaderAndProperties() {
+		String textProp = readEntireTextFile(format + ".prop").trim();
+		String textSrc = readEntireTextFile(format).trim();
+
+		Gson gson = new Gson();
+		CustomProperties customProperties = gson.fromJson(textProp, CustomProperties.class);
+		return new Pair<>(textSrc, customProperties);
+	}
+
+	private String readEntireTextFile(String fileName) {
+		String text;
+		try {
+			text = Files.readString(Paths.get(fileName));
+		}
+		catch(IOException e) {
+			throw new DMLRuntimeException(e);
+		}
+		return text;
 	}
 }

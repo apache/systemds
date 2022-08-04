@@ -32,6 +32,7 @@ import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Data;
+import org.apache.sysds.lops.DataIOGen;
 import org.apache.sysds.lops.Federated;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ExecType;
@@ -54,10 +55,14 @@ public class DataOp extends Hop {
 	
 	//read dataop properties
 	private FileFormat _inFormat = FileFormat.TEXT;
+	private String _inIOGenFormat;
 	private long _inBlocksize = -1;
 	private boolean _hasOnlyRDD = false;
 	
 	private boolean _recompileRead = true;
+
+	private boolean _ioGenRead = false;
+	private GenerateReaderOp _generateReaderOp;
 
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -247,6 +252,26 @@ public class DataOp extends Hop {
 		_fileName = fn;
 	}
 
+	public void setIOGenRead(boolean isIOGenRead) {
+		_ioGenRead = isIOGenRead;
+	}
+
+	public boolean isIOGenRead(){
+		return _ioGenRead;
+	}
+
+	public String getIOGenFormat() {
+		return _inIOGenFormat;
+	}
+
+	public void setIOGenFormat(String ioGenFormat) {
+		this._inIOGenFormat = ioGenFormat;
+	}
+
+	public void setGenerateReaderOp(GenerateReaderOp op){
+		_generateReaderOp = op;
+	}
+
 	public String getFileName() {
 		return _fileName;
 	}
@@ -283,20 +308,28 @@ public class DataOp extends Hop {
 		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
 			inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
 		}
+		if(_ioGenRead)
+			inputLops.put("iogenformat", _generateReaderOp.constructLops());
 
 		// Create the lop
 		switch(_op) 
 		{
 			case TRANSIENTREAD:
-				l = new Data(_op, null, inputLops, getName(), null, 
-						getDataType(), getValueType(), getFileFormat());
+				if(!_ioGenRead)
+					l = new Data(_op, null, inputLops, getName(), null, getDataType(), getValueType(), getFileFormat());
+				else
+					l = new DataIOGen(_op, null, inputLops, getName(), null, getDataType(), getValueType(), getIOGenFormat());
 				setOutputDimensions(l);
 				break;
 				
 			case PERSISTENTREAD:
-				l = new Data(_op, null, inputLops, getName(), null, 
-						getDataType(), getValueType(), getFileFormat());
-				l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inBlocksize, getNnz(), getUpdateType());
+				if(!_ioGenRead){
+					l = new Data(_op, null, inputLops, getName(), null, getDataType(), getValueType(), getFileFormat());
+					l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inBlocksize, getNnz(), getUpdateType());
+				}
+				else
+					l = new DataIOGen(_op, null, inputLops, getName(), null, getDataType(), getValueType(), getIOGenFormat());
+
 				break;
 				
 			case PERSISTENTWRITE:

@@ -64,7 +64,8 @@ public abstract class Lop
 		PlusMult, MinusMult,                                //CP
 		SpoofFused,                                         //CP/SP generated fused operator
 		Sql,                                                //CP sql read
-		Federated                                           //FED federated read
+		Federated,                                          //FED federated read
+		ReaderGen                                           // IO Gen
 	}
 	
 
@@ -200,6 +201,14 @@ public abstract class Lop
 	
 	public boolean isDataExecLocation() {
 		return this instanceof Data;
+	}
+
+	public boolean isDataIOGenExecLocation(){
+		return this instanceof DataIOGen;
+	}
+
+	public boolean isReaderGenExecLocation(){
+		return this instanceof ReaderGen;
 	}
 
 	protected void setupLopProperties(ExecType et) {

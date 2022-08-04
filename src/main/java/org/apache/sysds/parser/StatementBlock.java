@@ -915,8 +915,19 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				dmlProg, ids.getVariables(),currConstVars, conditional);
 		}
 		else { //all builtin functions and expressions
-			if( target == null  )
-				raiseValidateError("Missing variable assignment.", false);
+			if( target == null  ) {
+				// check if IOGEN
+				if (source instanceof DataExpression && ((DataExpression)source).getOpCode() == Expression.DataOp.READ){
+					if(!(((DataExpression)source).getVarParam(DataExpression.SAMPLE_RAW) != null &&
+						((DataExpression)source).getVarParam(DataExpression.SAMPLE) != null &&
+						((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE) != null &&
+						((DataExpression)source).getVarParam(DataExpression.DATATYPEPARAM) != null)){
+							raiseValidateError("Missing variable assignment.", false);
+					}
+				}
+				else
+					raiseValidateError("Missing variable assignment.", false);
+			}
 			
 			if( MLContextProxy.isActive() )
 				MLContextProxy.setAppropriateVarsForRead(source, target._name);

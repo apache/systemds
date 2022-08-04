@@ -54,6 +54,9 @@ import org.apache.sysds.runtime.io.ListWriter;
 import org.apache.sysds.runtime.io.WriterMatrixMarket;
 import org.apache.sysds.runtime.io.WriterTextCSV;
 import org.apache.sysds.runtime.io.WriterHDF5;
+import org.apache.sysds.runtime.iogen.CustomProperties;
+import org.apache.sysds.runtime.iogen.GenerateReader;
+import org.apache.sysds.runtime.iogen.SampleProperties;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -105,6 +108,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		Write,
 		Read,
 		SetFileName,
+		ReaderGen
 	}
 
 	private static final IDSequence _uniqueVarID = new IDSequence(true);
@@ -201,6 +205,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 		else if ( str.equalsIgnoreCase("setfilename") )
 			return VariableOperationCode.SetFileName;
+
+		else if ( str.equalsIgnoreCase("readergen") )
+			return VariableOperationCode.ReaderGen;
 
 		else
 			throw new DMLRuntimeException("Invalid function: " + str);
@@ -325,6 +332,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			if ( parts.length != 6 && parts.length != 7 && parts.length != 9 )
 				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
+		else if( voc == VariableOperationCode.ReaderGen){
+			if(parts.length < 4)
+				throw new DMLRuntimeException("Invalid number of operands in readergen instruction: " + str);
+		}
 		else {
 			if( voc != VariableOperationCode.RemoveVariable )
 				InstructionUtils.checkNumFields ( parts, getArity(voc) ); // no output
@@ -348,6 +359,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 			// format
 			String fmt = parts[5];
+			boolean isIOGen = false;
 			if ( fmt.equalsIgnoreCase("csv") ) {
 				// Cretevar instructions for CSV format either has 13 or 14 inputs.
 				// 13 inputs: createvar corresponding to WRITE -- includes properties hasHeader, delim, and sparse
@@ -367,6 +379,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if(parts.length < 11 + extSchema)
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
+			else if(fmt.equalsIgnoreCase("iogen")) {
+				// 11 inputs: createvar corresponding to WRITE/READ -- includes properties dataset name
+				if(parts.length < 11 + extSchema)
+					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+				isIOGen = true;
+			}
 			else {
 				if ( parts.length != 6 && parts.length != 11+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
@@ -375,17 +393,19 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			MetaDataFormat iimd = null;
 			if (dt == DataType.MATRIX || dt == DataType.FRAME || dt == DataType.LIST) {
 				DataCharacteristics mc = new MatrixCharacteristics();
-				if (parts.length == 6) {
-					// do nothing
-				}
-				else if (parts.length >= 10) {
-					// matrix characteristics
-					mc.setDimension(Long.parseLong(parts[6]), Long.parseLong(parts[7]));
-					mc.setBlocksize(Integer.parseInt(parts[8]));
-					mc.setNonZeros(Long.parseLong(parts[9]));
-				}
-				else {
-					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+				if(!isIOGen) {
+					if(parts.length == 6) {
+						// do nothing
+					}
+					else if(parts.length >= 10) {
+						// matrix characteristics
+						mc.setDimension(Long.parseLong(parts[6]), Long.parseLong(parts[7]));
+						mc.setBlocksize(Integer.parseInt(parts[8]));
+						mc.setNonZeros(Long.parseLong(parts[9]));
+					}
+					else {
+						throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+					}
 				}
 				iimd = new MetaDataFormat(mc, FileFormat.safeValueOf(fmt));
 			}
@@ -406,8 +426,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				iimd = new MetaDataFormat(tc, FileFormat.safeValueOf(fmt));
 			}
 			UpdateType updateType = UpdateType.COPY;
-			if ( parts.length >= 11 )
-				updateType = UpdateType.valueOf(parts[10].toUpperCase());
+			if(!isIOGen) {
+				if(parts.length >= 11)
+					updateType = UpdateType.valueOf(parts[10].toUpperCase());
+			}
+			else
+				updateType = UpdateType.valueOf(parts[11].toUpperCase());
 
 			//handle frame schema
 			String schema = (dt==DataType.FRAME && parts.length>=12) ? parts[parts.length-1] : null;
@@ -465,6 +489,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				String datasetName = parts[curPos];
 				FileFormatProperties fmtProperties = new FileFormatPropertiesHDF5(datasetName);
 
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
+					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
+			}
+			else if(fmt.equalsIgnoreCase("iogen")) {
+				FileFormatProperties fmtProperties = new CustomProperties(parts[6]);
+				((CustomProperties)fmtProperties).setParallel(ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS));
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
 					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
 			}
@@ -561,6 +591,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			in3 = new CPOperand(parts[3], ValueType.UNKNOWN, DataType.UNKNOWN); // option: remote or local
 			break;
 
+		case ReaderGen:
+			in1 = new CPOperand(parts[1]);
+			fprops = new SampleProperties(parts[2], parts[3]);
+			VariableCPInstruction instGen = new VariableCPInstruction(
+				getVariableOperationCode(opcode), in1, null, null, null, null, fprops, null, null, opcode, str);
+			return instGen;
 		}
 		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, opcode, str);
 	}
@@ -643,6 +679,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			processSetFileNameInstruction(ec);
 			break;
 
+		case ReaderGen:
+			processReaderGenInstruction(ec);
+			break;
 		default:
 			throw new DMLRuntimeException("Unknown opcode: " + opcode );
 		}
@@ -1196,6 +1235,38 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			}
 		}
 	}
+
+	/**
+	 * Handler for generate reader instructions.
+	 * @param ec execution context
+	 */
+	private void processReaderGenInstruction(ExecutionContext ec) {
+		if( getInput1().getDataType() == DataType.MATRIX ) {
+			MatrixBlock mBlock = ec.getMatrixInput(getInput1().getName());
+			SampleProperties sampleProperties = ((SampleProperties)_formatProperties);
+			sampleProperties.setParallel(ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS));
+			sampleProperties.setSampleMatrix(mBlock);
+			try {
+				GenerateReader.GenerateReaderMatrix grm = new GenerateReader.GenerateReaderMatrix(sampleProperties);
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
+		else {
+			FrameBlock fBlock = ec.getFrameInput(getInput1().getName());
+			SampleProperties sampleProperties = ((SampleProperties)_formatProperties);
+			sampleProperties.setParallel(ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS));
+			sampleProperties.setSampleFrame(fBlock);
+			try {
+				GenerateReader.GenerateReaderFrame grf = new GenerateReader.GenerateReaderFrame(sampleProperties);
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
+	}
+
 
 	private static void cleanDataOnHDFS(MatrixObject mo) {
 		try {

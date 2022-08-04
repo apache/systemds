@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
@@ -26,44 +27,61 @@ import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.iogen.codegen.FrameCodeGen;
 import org.apache.sysds.runtime.iogen.codegen.MatrixCodeGen;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-import java.util.Random;
+import java.io.File;
+import java.io.FileWriter;
 
 public abstract class GenerateReader {
 
 	protected static final Log LOG = LogFactory.getLog(GenerateReader.class.getName());
 
 	protected CustomProperties properties;
+	protected String src;
+	protected String className;
 
 	public GenerateReader(SampleProperties sampleProperties) throws Exception {
-
 		FormatIdentifying formatIdentifying = sampleProperties.getDataType().isMatrix() ? new FormatIdentifying(sampleProperties.getSampleRaw(),
-			sampleProperties.getSampleMatrix()) : new FormatIdentifying(sampleProperties.getSampleRaw(),
-			sampleProperties.getSampleFrame());
+			sampleProperties.getSampleMatrix()) : new FormatIdentifying(sampleProperties.getSampleRaw(), sampleProperties.getSampleFrame());
 
 		properties = formatIdentifying.getFormatProperties();
 		if(properties == null) {
 			throw new Exception("The file format couldn't recognize!!");
 		}
-		if(sampleProperties.getDataType().isFrame()){
+		if(sampleProperties.getDataType().isFrame()) {
 			properties.setSchema(sampleProperties.getSampleFrame().getSchema());
 		}
+		properties.setParallel(sampleProperties.isParallel());
+
+		String[] path = sampleProperties.getFormat().split("/");
+		String fileName = path[path.length - 1];
+		if(path.length > 1) {
+			String dirPath = sampleProperties.getFormat().substring(0, sampleProperties.getFormat().length() - fileName.length());
+			File outDir = new File(dirPath);
+			outDir.getParentFile().mkdirs();
+		}
+		className = fileName.split("\\.")[0];
+		String srcJava = getReaderString();
+		FileWriter srcWriter = new FileWriter(sampleProperties.getFormat());
+		srcWriter.write(srcJava);
+		srcWriter.close();
+
+		Gson gson = new Gson();
+		FileWriter propWriter = new FileWriter(sampleProperties.getFormat() + ".prop");
+		propWriter.write(gson.toJson(properties));
+		propWriter.close();
 	}
 
-	public String getRandomClassName() {
-		Random r = new Random();
-		int low = 0;
-		int high = 100000000;
-		int result = r.nextInt(high - low) + low;
-
-		return "GIOReader_" + result;
+	public GenerateReader(CustomProperties properties, String src, String className) {
+		this.properties = properties;
+		this.src = src;
+		this.className = className;
 	}
 
 	public CustomProperties getProperties() {
 		return properties;
 	}
+
+	public abstract String getReaderString();
 
 	// Generate Reader for Matrix
 	public static class GenerateReaderMatrix extends GenerateReader {
@@ -74,20 +92,24 @@ public abstract class GenerateReader {
 			super(sampleProperties);
 		}
 
-		public GenerateReaderMatrix(String sampleRaw, MatrixBlock sampleMatrix, boolean parallel) throws Exception {
-			super(new SampleProperties(sampleRaw, sampleMatrix));
-			properties.setParallel(parallel);
+		public GenerateReaderMatrix(CustomProperties properties, String src, String className) {
+			super(properties, src, className);
 		}
 
 		public MatrixReader getReader() throws Exception {
-			String className = getRandomClassName();
+			Class[] cArg = new Class[1];
+			cArg[0] = CustomProperties.class;
+			matrixReader = (MatrixReader) CodegenUtils.compileClass(className, src).getDeclaredConstructor(cArg).newInstance(properties);
+			return matrixReader;
+		}
+
+		@Override public String getReaderString() {
 			MatrixCodeGen src = new MatrixCodeGen(properties, className);
 			// constructor with arguments as CustomProperties
 			Class[] cArg = new Class[1];
 			cArg[0] = CustomProperties.class;
-			String srcJava =  src.generateCodeJava();
-			matrixReader = (MatrixReader) CodegenUtils.compileClass(className, srcJava).getDeclaredConstructor(cArg).newInstance(properties);
-			return matrixReader;
+			String srcJava = src.generateCodeJava();
+			return srcJava;
 		}
 	}
 
@@ -100,20 +122,24 @@ public abstract class GenerateReader {
 			super(sampleProperties);
 		}
 
-		public GenerateReaderFrame(String sampleRaw, FrameBlock sampleFrame, boolean parallel) throws Exception {
-			super(new SampleProperties(sampleRaw, sampleFrame));
-			properties.setParallel(parallel);
+		public GenerateReaderFrame(CustomProperties properties, String src, String className) {
+			super(properties, src, className);
 		}
 
 		public FrameReader getReader() throws Exception {
-			String className = getRandomClassName();
+			Class[] cArg = new Class[1];
+			cArg[0] = CustomProperties.class;
+			frameReader = (FrameReader) CodegenUtils.compileClass(className, src).getDeclaredConstructor(cArg).newInstance(properties);
+			return frameReader;
+		}
+
+		@Override public String getReaderString() {
 			FrameCodeGen src = new FrameCodeGen(properties, className);
 			// constructor with arguments as CustomProperties
 			Class[] cArg = new Class[1];
 			cArg[0] = CustomProperties.class;
 			String srcJava = src.generateCodeJava();
-			frameReader = (FrameReader) CodegenUtils.compileClass(className, srcJava).getDeclaredConstructor(cArg).newInstance(properties);
-			return frameReader;
+			return srcJava;
 		}
 	}
 }

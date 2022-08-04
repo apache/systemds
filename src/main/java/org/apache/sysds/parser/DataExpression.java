@@ -118,7 +118,13 @@ public class DataExpression extends DataIdentifier
 	public static final String HDF5_DATASET_NAME = "dataset";
 	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
-	
+
+	// Parameter names relevant to IOGEN reader
+	public static final String SAMPLE_RAW = "sample_raw";
+	public static final String SAMPLE = "sample";
+	public static final String IS_IOGEN_FORMAT = "isiogenformat";
+	public static final Set<String> IOGEN_SUBMITTED_FORMATS = new HashSet<>();
+
 	public static final Set<String> RAND_VALID_PARAM_NAMES = new HashSet<>(
 		Arrays.asList(RAND_ROWS, RAND_COLS, RAND_DIMS,
 			RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA));
@@ -147,7 +153,10 @@ public class DataExpression extends DataIdentifier
 			//Parameters related to dataset name/HDF4 files.
 			HDF5_DATASET_NAME,
 			// Parameters related to privacy
-			PRIVACY, FINE_GRAINED_PRIVACY));
+			PRIVACY, FINE_GRAINED_PRIVACY,
+			// Parameters related to IOGEN
+			SAMPLE_RAW, SAMPLE
+			));
 
 	/** Valid parameter names in arguments to read instruction */
 	public static final Set<String> READ_VALID_PARAM_NAMES = new HashSet<>(
@@ -158,7 +167,9 @@ public class DataExpression extends DataIdentifier
 			// Parameters related to delimited/libsvm files.
 			LIBSVM_INDEX_DELIM,
 			//Parameters related to dataset name/HDF4 files.
-			HDF5_DATASET_NAME));
+			HDF5_DATASET_NAME,
+			// Parameters related to IOGEN
+			SAMPLE_RAW, SAMPLE));
 	
 	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
@@ -244,12 +255,34 @@ public class DataExpression extends DataIdentifier
 		}
 		
 		ParameterExpression pexpr = (passedParamExprs.size() == 0) ? null : passedParamExprs.get(0);
-		
-		if ( (pexpr != null) &&  (!(pexpr.getName() == null) || (pexpr.getName() != null && pexpr.getName().equalsIgnoreCase(DataExpression.IO_FILENAME)))){
-			errorListener.validationError(parseInfo, "first parameter to read statement must be filename");
-			return null;
-		} else if( pexpr != null ){
-			dataExpr.addVarParam(DataExpression.IO_FILENAME, pexpr.getExpr());
+
+		// checks for IOGEN
+		boolean isIOGEN = false;
+		if(pexpr !=null && pexpr.getName()!=null && passedParamExprs.size() == 4){
+			HashSet<String> names = new HashSet<>();
+			for(int i = 0; i < 4; i++){
+				ParameterExpression pexprtmp = passedParamExprs.get(i);
+				String pexprName = pexprtmp.getName();
+				names.add(pexprName);
+			}
+			if(names.size() == 4 && names.contains(SAMPLE_RAW) && names.contains(SAMPLE) &&
+				names.contains(FORMAT_TYPE) && names.contains(DATATYPEPARAM)){
+				isIOGEN = true;
+			}
+		}
+
+		if(!isIOGEN) {
+			if((pexpr != null) && (!(pexpr.getName() == null) || (pexpr.getName() != null && pexpr.getName()
+				.equalsIgnoreCase(DataExpression.IO_FILENAME)))) {
+				errorListener.validationError(parseInfo, "first parameter to read statement must be filename");
+				return null;
+			}
+			else if(pexpr != null) {
+				dataExpr.addVarParam(DataExpression.IO_FILENAME, pexpr.getExpr());
+			}
+		}
+		else {
+			dataExpr.addVarParam(pexpr.getName(), pexpr.getExpr());
 		}
 		
 		// validate all parameters are added only once and valid name
@@ -950,6 +983,8 @@ public class DataExpression extends DataIdentifier
 						|| getVarParam(DELIM_FILL) != null
 						|| getVarParam(DELIM_FILL_VALUE) != null
 						|| getVarParam(DELIM_NA_STRINGS) != null
+						|| getVarParam(SAMPLE_RAW) != null
+						|| getVarParam(SAMPLE) != null
 						)
 				{
 					raiseValidateError("Invalid parameters in read statement of a scalar: " +
@@ -965,6 +1000,11 @@ public class DataExpression extends DataIdentifier
 			// Obtain and validate metadata filename
 			String mtdFileName = getMTDFileName(inputFileName);
 
+			// get sample strings
+			String sampleRawString = (getVarParam(SAMPLE_RAW) == null) ? null : getVarParam(SAMPLE_RAW).toString();
+			String sampleString = (getVarParam(SAMPLE) == null) ? null : getVarParam(SAMPLE).toString();
+			boolean isIOGEN = sampleRawString !=null && sampleString != null;
+
 			// track whether should attempt to read MTD file or not
 			boolean shouldReadMTD = _checkMetadata
 				&& (!ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA)
@@ -972,7 +1012,7 @@ public class DataExpression extends DataIdentifier
 
 			// Check for file existence (before metadata parsing for meaningful error messages)
 			if( shouldReadMTD //skip check for jmlc/mlcontext
-				&& !HDFSTool.existsFileOnHDFS(inputFileName)) 
+				&& !HDFSTool.existsFileOnHDFS(inputFileName) && !isIOGEN)
 			{
 				String fsext = InfrastructureAnalyzer.isLocalMode() ? "FS (local mode)" : "HDFS";
 				raiseValidateError("Read input file does not exist on "+fsext+": " + 
@@ -1005,6 +1045,20 @@ public class DataExpression extends DataIdentifier
 					configObj.setFormatTypeString(formatTypeString);
 					inferredFormatType = true;
 				}
+			}
+
+			boolean isIOGENFormat = false;
+			if(isIOGEN){
+				if(getVarParam(FORMAT_TYPE) == null)
+					raiseValidateError("Invalid parameter \"format\" in generate reader statement !");
+				else {
+					IOGEN_SUBMITTED_FORMATS.add(((StringIdentifier)getVarParam(DataExpression.FORMAT_TYPE)).getValue());
+				}
+			}
+			else if(getVarParam(FORMAT_TYPE) != null &&
+				IOGEN_SUBMITTED_FORMATS.contains(((StringIdentifier)getVarParam(DataExpression.FORMAT_TYPE)).getValue())){
+				addVarParam(IS_IOGEN_FORMAT, new BooleanIdentifier(true, this));
+				isIOGENFormat = true;
 			}
 			
 			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.MM.toString())){
@@ -1251,7 +1305,7 @@ public class DataExpression extends DataIdentifier
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
-				if (!isCSV && !isLIBSVM && !isHDF5 && ConfigurationManager.getCompilerConfig()
+				if (!isCSV && !isLIBSVM && !isHDF5 && !isIOGEN && !isIOGENFormat && ConfigurationManager.getCompilerConfig()
 						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv/libsvm format / jmlc api
 					&& (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null) ) {
 						raiseValidateError("Missing or incomplete dimension information in read statement: "
@@ -1307,7 +1361,7 @@ public class DataExpression extends DataIdentifier
 				// block dimensions must be -1x-1 when format="text"
 				// NOTE MB: disabled validate of default blocksize for inputs w/ format="binary"
 				// because we automatically introduce reblocks if blocksizes don't match
-				if ( (getOutput().getFileFormat().isTextFormat() || !isMatrix)  && getOutput().getBlocksize() != -1 ){
+				if ( !isIOGEN && !isIOGENFormat && (getOutput().getFileFormat().isTextFormat() || !isMatrix)  && getOutput().getBlocksize() != -1 ){
 					raiseValidateError("Invalid block dimensions (" + getOutput().getBlocksize() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".", conditional);
 				}
 			

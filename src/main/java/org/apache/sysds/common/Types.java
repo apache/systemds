@@ -535,6 +535,16 @@ public class Types
 		}
 	}
 
+	public enum OpOpGenerateReader {
+		GENERATEREADER;
+		public boolean isGenerateReader(){return  this == GENERATEREADER;}
+
+		@Override
+		public String toString() {
+			return "GRead";
+		}
+	}
+
 	public enum FileFormat {
 		TEXT,   // text cell IJV representation (mm w/o header)
 		MM,     // text matrix market IJV representation
@@ -544,7 +554,8 @@ public class Types
 		BINARY, // binary block representation (dense/sparse/ultra-sparse)
 		FEDERATED, // A federated matrix
 		PROTO,  // protocol buffer representation
-		HDF5; // Hierarchical Data Format (HDF)
+		HDF5,  // Hierarchical Data Format (HDF)
+		IOGEN; // Generated Reader
 		
 		public boolean isIJV() {
 			return this == TEXT || this == MM;

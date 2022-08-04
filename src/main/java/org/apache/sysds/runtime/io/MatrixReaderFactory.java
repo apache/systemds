@@ -26,7 +26,11 @@ import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.iogen.CustomProperties;
+import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
+
 
 public class MatrixReaderFactory {
 	private static final Log LOG = LogFactory.getLog(MatrixReaderFactory.class.getName());
@@ -116,6 +120,27 @@ public class MatrixReaderFactory {
 				FileFormatPropertiesHDF5 fileFormatPropertiesHDF5 = props.formatProperties != null ? (FileFormatPropertiesHDF5) props.formatProperties : new FileFormatPropertiesHDF5();
 				reader = (par & mcsr) ? new ReaderHDF5Parallel(fileFormatPropertiesHDF5) : new ReaderHDF5(
 					fileFormatPropertiesHDF5);
+				break;
+			case IOGEN:
+				CustomProperties customProperties;
+				if(props.formatProperties != null) {
+					customProperties = (CustomProperties) props.formatProperties;
+				}
+				else {
+					throw new DMLRuntimeException("Failed to create matrix reader with NULL CustomProperties");
+				}
+				String[] path = customProperties.getFormat().split("/");
+				String className = path[path.length -1].split("\\.")[0];
+				Pair<String, CustomProperties> loadSrcReaderAndProperties = customProperties.loadSrcReaderAndProperties();
+
+				GenerateReader.GenerateReaderMatrix grm = new GenerateReader.GenerateReaderMatrix(loadSrcReaderAndProperties.getValue(),
+					loadSrcReaderAndProperties.getKey(), className);
+				try {
+					reader = grm.getReader();
+				}
+				catch(Exception e) {
+					throw new DMLRuntimeException("IOGEN Matrix Reader Error: " + e);
+				}
 				break;
 
 			default:

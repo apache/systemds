@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
@@ -65,6 +66,7 @@ import org.apache.sysds.hops.MemoTable;
 import org.apache.sysds.hops.NaryOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.ParameterizedBuiltinOp;
+import org.apache.sysds.hops.GenerateReaderOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
@@ -95,6 +97,7 @@ public class DMLTranslator
 {
 	private static final Log LOG = LogFactory.getLog(DMLTranslator.class.getName());
 	private DMLProgram _dmlProg;
+	private HashMap<String, GenerateReaderOp> _ioGenHops = new HashMap<>();
 	
 	public DMLTranslator(DMLProgram dmlp) {
 		_dmlProg = dmlp;
@@ -1151,8 +1154,10 @@ public class DMLTranslator
 							ae = HopRewriteUtils.createBinary(ids.get(target.getName()), ae, OpOp2.PLUS);
 							target.setProperties(accum.getOutput());
 						}
-						else
-							target.setProperties(source.getOutput());
+						else {
+							if(target != null)
+								target.setProperties(source.getOutput());
+						}
 
 						if (source instanceof BuiltinFunctionExpression){
 							BuiltinFunctionExpression BuiltinSource = (BuiltinFunctionExpression)source;
@@ -1160,16 +1165,18 @@ public class DMLTranslator
 								sb.setSplitDag(true);
 						}
 
-						ids.put(target.getName(), ae);
-						
-						//add transient write if needed
-						Integer statementId = liveOutToTemp.get(target.getName());
-						if ((statementId != null) && (statementId.intValue() == i)) {
-							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, OpOpData.TRANSIENTWRITE, null);
-							transientwrite.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ae.getBlocksize());
-							transientwrite.setParseInfo(target);
-							updatedLiveOut.addVariable(target.getName(), target);
-							output.add(transientwrite);
+						if(target != null) {
+							ids.put(target.getName(), ae);
+
+							//add transient write if needed
+							Integer statementId = liveOutToTemp.get(target.getName());
+							if((statementId != null) && (statementId.intValue() == i)) {
+								DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, OpOpData.TRANSIENTWRITE, null);
+								transientwrite.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ae.getBlocksize());
+								transientwrite.setParseInfo(target);
+								updatedLiveOut.addVariable(target.getName(), target);
+								output.add(transientwrite);
+							}
 						}
 					} 
 					// CASE: target is indexed identifier (left-hand side indexed expression)
@@ -1561,8 +1568,13 @@ public class DMLTranslator
 				Hop ae = processDataExpression((DataExpression)source, target, hops);
 				if (ae instanceof DataOp && ((DataOp) ae).getOp() != OpOpData.SQLREAD &&
 						((DataOp) ae).getOp() != OpOpData.FEDERATED) {
-					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
-					((DataOp)ae).setFileFormat(Expression.convertFormatType(formatName));
+					String formatName = ((DataExpression) source).getVarParam(DataExpression.FORMAT_TYPE).toString();
+					if( !((DataOp)ae).isIOGenRead())
+						((DataOp) ae).setFileFormat(Expression.convertFormatType(formatName));
+					else {
+						((DataOp) ae).setIOGenFormat(formatName);
+					}
+
 				}
 				return ae;
 			}
@@ -2102,12 +2114,30 @@ public class DMLTranslator
 		if (target == null) {
 			target = createTarget(source);
 		}
-		
+
+		boolean isIOGEN = false;
 		// construct hop based on opcode
 		switch(source.getOpCode()) {
 		case READ:
-			currBuiltinOp = new DataOp(target.getName(), target.getDataType(), target.getValueType(), OpOpData.PERSISTENTREAD, paramHops);
-			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(DataExpression.IO_FILENAME)).getValue());
+			if(source.getVarParam(DataExpression.SAMPLE_RAW) !=null && source.getVarParam(DataExpression.SAMPLE)!=null
+				&& source.getVarParam(DataExpression.FORMAT_TYPE) !=null && source.getVarParam(DataExpression.DATATYPEPARAM) != null)
+				isIOGEN = true;
+
+			if(!isIOGEN) {
+				currBuiltinOp = new DataOp(target.getName(), target.getDataType(), target.getValueType(), OpOpData.PERSISTENTREAD, paramHops);
+				((DataOp) currBuiltinOp).setFileName(((StringIdentifier) source.getVarParam(DataExpression.IO_FILENAME)).getValue());
+				if(source.getVarParam(DataExpression.IS_IOGEN_FORMAT) != null &&
+					((BooleanIdentifier) source.getVarParam(DataExpression.IS_IOGEN_FORMAT)).getValue()){
+					((DataOp) currBuiltinOp).setIOGenRead(true);
+					((DataOp) currBuiltinOp).setGenerateReaderOp(_ioGenHops.get(((StringIdentifier)source.getVarParam(DataExpression.FORMAT_TYPE)).getValue()));
+
+				}
+			}
+			else {
+				currBuiltinOp = new GenerateReaderOp(((StringIdentifier)source.getVarParam(DataExpression.FORMAT_TYPE)).getValue(),source.getDataType(),
+					Types.OpOpGenerateReader.GENERATEREADER, hops.get(hops.keySet().iterator().next()), paramHops);
+				_ioGenHops.put(((StringIdentifier)source.getVarParam(DataExpression.FORMAT_TYPE)).getValue(), (GenerateReaderOp)currBuiltinOp);
+			}
 			break;
 			
 		case WRITE:
@@ -2158,7 +2188,7 @@ public class DMLTranslator
 		
 		//set identifier meta data (incl dimensions and blocksizes)
 		setIdentifierParams(currBuiltinOp, source.getOutput());
-		if( source.getOpCode()==DataExpression.DataOp.READ )
+		if( source.getOpCode()==DataExpression.DataOp.READ && !isIOGEN)
 			((DataOp)currBuiltinOp).setInputBlocksize(target.getBlocksize());
 		else if ( source.getOpCode() == DataExpression.DataOp.WRITE ) {
 			((DataOp)currBuiltinOp).setPrivacy(hops.get(target.getName()).getPrivacy());
@@ -2931,6 +2961,11 @@ public class DMLTranslator
 				{
 					DataExpression dexpr = (DataExpression) ((AssignmentStatement)s).getSource();
 					if (dexpr.isRead()) {
+						// checks for IOGEN
+						if(dexpr.getVarParam(DataExpression.SAMPLE_RAW) !=null && dexpr.getVarParam(DataExpression.SAMPLE)!=null
+							&& dexpr.getVarParam(DataExpression.FORMAT_TYPE) !=null && dexpr.getVarParam(DataExpression.DATATYPEPARAM) != null)
+							return true;
+
 						String pfname = dexpr.getVarParam(DataExpression.IO_FILENAME).toString();
 						// found read-after-write
 						if (pWrites.containsKey(pfname) && !pfname.trim().isEmpty()) {

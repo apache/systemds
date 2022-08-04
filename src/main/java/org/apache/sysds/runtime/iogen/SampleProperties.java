@@ -22,9 +22,16 @@ package org.apache.sysds.runtime.iogen;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
 
 public class SampleProperties extends FileFormatProperties {
 
@@ -34,21 +41,30 @@ public class SampleProperties extends FileFormatProperties {
 	private MatrixBlock sampleMatrix;
 	private FrameBlock sampleFrame;
 	private Types.DataType dataType;
+	private String format;
+	private boolean parallel;
 
 	public SampleProperties(String sampleRaw) {
-		this.sampleRaw = sampleRaw;
+		this.sampleRaw = checkAndExtractSampleRaw(sampleRaw);
 	}
 
-	public SampleProperties(String sampleRaw, MatrixBlock sampleMatrix) {
-		this.sampleRaw = sampleRaw;
+	public SampleProperties(String sampleRaw, MatrixBlock sampleMatrix, boolean parallel) {
+		this.sampleRaw = checkAndExtractSampleRaw(sampleRaw);
 		this.sampleMatrix = sampleMatrix;
 		this.dataType = Types.DataType.MATRIX;
+		this.parallel = parallel;
 	}
 
-	public SampleProperties(String sampleRaw, FrameBlock sampleFrame) {
-		this.sampleRaw = sampleRaw;
+	public SampleProperties(String sampleRaw, FrameBlock sampleFrame, boolean parallel) {
+		this.sampleRaw = checkAndExtractSampleRaw(sampleRaw);
 		this.sampleFrame = sampleFrame;
 		this.dataType = Types.DataType.FRAME;
+		this.parallel = parallel;
+	}
+
+	public SampleProperties(String sampleRaw, String format) {
+		this.sampleRaw = checkAndExtractSampleRaw(sampleRaw);
+		this.format = format;
 	}
 
 	public String getSampleRaw() {
@@ -75,5 +91,49 @@ public class SampleProperties extends FileFormatProperties {
 	public void setSampleFrame(FrameBlock sampleFrame) {
 		this.sampleFrame = sampleFrame;
 		dataType = Types.DataType.FRAME;
+	}
+
+	private boolean checkPath(String path) {
+		try {
+			File filePath = new File(path);
+			if(filePath.exists())
+				return true;
+			else
+				return false;
+		}
+		catch(InvalidPathException | NullPointerException ex) {
+			return false;
+		}
+	}
+
+	private String checkAndExtractSampleRaw(String sampleRaw) {
+		if(checkPath(sampleRaw))
+			return readEntireTextFile(sampleRaw);
+		else
+			return sampleRaw;
+
+	}
+
+	private String readEntireTextFile(String fileName) {
+		String text;
+		try {
+			text = Files.readString(Paths.get(fileName));
+		}
+		catch(IOException e) {
+			throw new DMLRuntimeException(e);
+		}
+		return text;
+	}
+
+	public boolean isParallel() {
+		return parallel;
+	}
+
+	public void setParallel(boolean parallel) {
+		this.parallel = parallel;
+	}
+
+	public String getFormat() {
+		return format;
 	}
 }

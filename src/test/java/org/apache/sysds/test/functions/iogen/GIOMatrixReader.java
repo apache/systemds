@@ -22,50 +22,49 @@ package org.apache.sysds.test.functions.iogen;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.CompilerConfig;
-import org.apache.sysds.runtime.io.MatrixReader;
-import org.apache.sysds.runtime.iogen.GenerateReader;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 
-public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
+public abstract class GIOMatrixReader extends AutomatedTestBase {
 
 	protected final static String TEST_DIR = "functions/iogen/";
-	protected final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderMatrixTest.class.getSimpleName() + "/";
-	protected String sampleRaw;
-	protected double[][] sampleMatrix;
+	protected final static String TEST_CLASS_DIR = TEST_DIR + GIOMatrixReader.class.getSimpleName() + "/";
+
+	protected abstract int getId();
+
+	protected String getInputDatasetFileName() {
+		return "dataset_" + getId() + ".dat";
+	}
+
+	protected String getInputSampleMatrixFileName() {
+		return "sampleMatrix_" + getId() + ".mtx";
+	}
+
+	protected String getInputSampleRawFileName() {
+		return "sampleMatrix_" + getId() + ".raw";
+	}
+
+	protected String getOutputGIO() {
+		return "GIO" + getTestName()+"_"+ getId()+".java";
+	}
+
+	@Test
+	public void testSequential_CP1() {
+		runGIOTest(getId(), false);
+	}
 
 	protected abstract String getTestName();
 
-	@Override
-	public void setUp() {
+	@Override public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(getTestName(), new TestConfiguration(TEST_DIR, getTestName(), new String[] {"Y"}));
 	}
 
-	protected void generateRandomSymmetric(int size, double min, double max, double sparsity, boolean isSkew) {
-		sampleMatrix = getRandomMatrix(size, size, min, max, sparsity, 714);
-		int conf = isSkew ? -1 : 1;
-		for(int i = 0; i < size; i++) {
-			for(int j = 0; j <= i; j++) {
-
-				if(i != j)
-					sampleMatrix[i][j] = sampleMatrix[j][i] * conf;
-				else
-					sampleMatrix[i][j] = 0;
-			}
-		}
-	}
-
-	@SuppressWarnings("unused")
-	protected void runGenerateReaderTest(boolean parallel) {
+	@SuppressWarnings("unused") protected void runGIOTest(int testNumber, boolean parallel) {
 
 		Types.ExecMode oldPlatform = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -74,26 +73,35 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 
 		try {
+			CompilerConfig.FLAG_DYN_RECOMPILE = false;
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = false;
 
 			TestConfiguration config = getTestConfiguration(getTestName());
 			loadTestConfiguration(config);
-
-			MatrixBlock sampleMB = DataConverter.convertToMatrixBlock(sampleMatrix);
+			setOutputBuffering(true);
+			setOutAndExpectedDeletionDisabled(true);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			File directory = new File(HOME);
-			if(!directory.exists()) {
-				directory.mkdir();
-			}
-			String dataPath = HOME + "matrix_data.raw";
-			int clen = sampleMatrix[0].length;
-			writeRawString(sampleRaw, dataPath);
+			String inputDataset = HOME + INPUT_DIR + getInputDatasetFileName();
+			String inputSampleMatrix = HOME + INPUT_DIR + getInputSampleMatrixFileName();
+			String inputSampleRaw = HOME + INPUT_DIR + getInputSampleRawFileName();
+			String outputSrc = HOME +"iogensrc/" + getOutputGIO();
+			String outputMatrix = output(getInputDatasetFileName());
 
-			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB, parallel);
-			MatrixReader mr = gr.getReader();
-			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, sampleMB.getNumRows(), clen, -1, -1);
-			TestUtils.compareMatrices(sampleMB, matrixBlock, 0);
+			File outDir = new File(HOME + OUTPUT_DIR);
+			if(!outDir.exists())
+				outDir.mkdirs();
+
+			outDir = new File(HOME +"iogensrc/");
+			if(!outDir.exists())
+				outDir.mkdirs();
+
+
+			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
+			programArgs = new String[] {"-args", inputDataset, inputSampleMatrix, inputSampleRaw, outputSrc, outputMatrix };
+
+			runTest(true, false, null, -1);
+
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();
@@ -103,11 +111,5 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-	}
-
-	private static void writeRawString(String raw, String fileName) throws IOException {
-		BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
-		writer.write(raw);
-		writer.close();
 	}
 }

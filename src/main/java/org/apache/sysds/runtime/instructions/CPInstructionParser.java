@@ -254,6 +254,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "read"        , CPType.Variable);
 		String2CPInstructionType.put( "write"       , CPType.Variable);
 		String2CPInstructionType.put( "createvar"   , CPType.Variable);
+		String2CPInstructionType.put( "readergen"   , CPType.Variable);
 
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2CPInstructionType.put( "r'"          , CPType.Reorg);

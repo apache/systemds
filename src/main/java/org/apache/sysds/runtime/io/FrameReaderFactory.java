@@ -25,6 +25,9 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.iogen.CustomProperties;
+import org.apache.sysds.runtime.iogen.GenerateReader;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 public class FrameReaderFactory {
 	protected static final Log LOG = LogFactory.getLog(FrameReaderFactory.class.getName());
@@ -67,6 +70,22 @@ public class FrameReaderFactory {
 			case PROTO:
 				// TODO performance improvement: add parallel reader
 				reader = new FrameReaderProto();
+				break;
+
+			case IOGEN:
+				CustomProperties customProperties = (CustomProperties) props;
+				String[] path = customProperties.getFormat().split("/");
+				String className = path[path.length -1].split("\\.")[0];
+				Pair<String, CustomProperties> loadSrcReaderAndProperties = customProperties.loadSrcReaderAndProperties();
+
+				GenerateReader.GenerateReaderFrame frm = new GenerateReader.GenerateReaderFrame(loadSrcReaderAndProperties.getValue(),
+					loadSrcReaderAndProperties.getKey(), className);
+				try {
+					reader = frm.getReader();
+				}
+				catch(Exception e) {
+					throw new DMLRuntimeException("IOGEN Matrix Reader Error: " + e);
+				}
 				break;
 
 			default:

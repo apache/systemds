@@ -43,6 +43,7 @@ import org.apache.sysds.lops.CentralMoment;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.Data;
+import org.apache.sysds.lops.DataIOGen;
 import org.apache.sysds.lops.FunctionCallCP;
 import org.apache.sysds.lops.GroupedAggregate;
 import org.apache.sysds.lops.GroupedAggregateM;
@@ -56,6 +57,7 @@ import org.apache.sysds.lops.OutputParameters;
 import org.apache.sysds.lops.ParameterizedBuiltin;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.lops.ReBlock;
+import org.apache.sysds.lops.ReaderGen;
 import org.apache.sysds.lops.SpoofFused;
 import org.apache.sysds.lops.UAggOuterChain;
 import org.apache.sysds.lops.UnaryCP;
@@ -304,9 +306,9 @@ public class Dag<N extends Lop>
 		
 		// filter out non-executable nodes
 		List<Lop> execNodes = nodes.stream()
-			.filter(l -> (!l.isDataExecLocation() 
+			.filter(l -> (!l.isDataIOGenExecLocation() && !l.isReaderGenExecLocation() && (!l.isDataExecLocation()
 				|| (((Data)l).getOperationType().isWrite() && !isTransientWriteRead((Data)l))
-				|| (((Data)l).isPersistentRead() && l.getDataType().isScalar())))
+				|| (((Data)l).isPersistentRead() && l.getDataType().isScalar()))))
 			.collect(Collectors.toList());
 		
 		// generate executable instruction
@@ -380,10 +382,11 @@ public class Dag<N extends Lop>
 		
 		// first capture all transient read variables
 		for ( Lop node : nodeV ) {
-			if (node.isDataExecLocation()
+			if ((node.isDataIOGenExecLocation() && node.getDataType() == DataType.MATRIX)
+				|| (node.isDataExecLocation()
 					&& ((Data) node).getOperationType().isTransient()
 					&& ((Data) node).getOperationType().isRead()
-					&& ((Data) node).getDataType() == DataType.MATRIX) {
+					&& ((Data) node).getDataType() == DataType.MATRIX)) {
 				// "node" is considered as updated ONLY IF the old value is not used any more
 				// So, make sure that this READ node does not feed into any (transient/persistent) WRITE
 				boolean hasWriteParent=false;
@@ -466,13 +469,13 @@ public class Dag<N extends Lop>
 	private static ArrayList<Instruction> generateInstructionsForInputVariables(List<Lop> nodes_v) {
 		ArrayList<Instruction> insts = new ArrayList<>();
 		for(Lop n : nodes_v) {
-			if (n.isDataExecLocation() 
+			if (n.isReaderGenExecLocation() || n.isDataIOGenExecLocation() || ( n.isDataExecLocation()
 				&& !((Data) n).getOperationType().isTransient()
 				&& ((Data) n).getOperationType().isRead()
 				&& (n.getDataType() == DataType.MATRIX || n.getDataType() == DataType.FRAME 
-				   || n.getDataType() == DataType.LIST) )
+				   || n.getDataType() == DataType.LIST)))
 			{
-				if ( !((Data)n).isLiteral() ) {
+				if ( n.isDataIOGenExecLocation() || n.isReaderGenExecLocation() || (n.isDataExecLocation() && !((Data)n).isLiteral()) ) {
 					try {
 						String inst_string = n.getInstructions();
 						CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
@@ -605,7 +608,7 @@ public class Dag<N extends Lop>
 						}
 					}
 					
-					if ( !hasTransientWriteParent ) {
+					if ( !hasTransientWriteParent) {
 						deleteInst.addAll(out.getLastInstructions());
 					} 
 					else {
@@ -646,6 +649,13 @@ public class Dag<N extends Lop>
 					inst_string = node.getInstructions(inputs, 
 						node.getOutputParameters().getLabel());
 				}
+				else if(node instanceof ReaderGen)
+					inst_string = node.getInstructions();
+
+				else if(node instanceof DataIOGen){
+					inst_string = node.getInstructions();
+				}
+
 				else {
 					if ( node.getInputs().isEmpty() ) {
 						// currently, such a case exists only for Rand lop
@@ -745,8 +755,12 @@ public class Dag<N extends Lop>
 							+ inst_string, e);
 				}
 
-				markedNodes.add(node);
-				doRmVar = true;
+				if(node instanceof DataIOGen || node instanceof ReaderGen)
+					doRmVar = false;
+				else {
+					markedNodes.add(node);
+					doRmVar = true;
+				}
 			}
 			else if (node.isDataExecLocation() ) {
 				Data dnode = (Data)node;

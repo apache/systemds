@@ -157,15 +157,16 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 		//counter for non-zero elements
 		long nnz = 0;
 		
-		//outer loop for buffered read
-		for( int i=0; i<len; i+=_bufflen/8 ) 
-		{
-			//read next 8KB block from input 
-			//note: cast to long to prevent overflows w/ len*8
+		// outer loop for buffered read
+		// note: if len is close to INT_MAX, i+=_bufflen/8 might 
+		// create an integer overflow and hence we use long
+		for( long i=0; i<len; i+=_bufflen/8 ) {
+			// read next 8KB block from input 
+			// note: cast to long to prevent overflows w/ len*8
 			int maxNB = (int)Math.min(_bufflen, ((long)len-i)*8);
 			readFully(_buff, 0, maxNB);
 			
-			for( int j=0, ix=i; j<maxNB; j+=8, ix++ ) 
+			for( int j=0, ix=(int)i; j<maxNB; j+=8, ix++ ) 
 			{
 				//core deserialization
 				long tmp = baToLong(_buff, j);

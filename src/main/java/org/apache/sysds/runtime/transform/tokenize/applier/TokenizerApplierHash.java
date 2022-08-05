@@ -19,19 +19,14 @@
 
 package org.apache.sysds.runtime.transform.tokenize.applier;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation;
-import org.apache.sysds.runtime.transform.tokenize.Token;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
-import scala.Array;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -168,5 +163,4 @@ public class TokenizerApplierHash extends TokenizerApplier {
 		schema[numIdCols+1] = Types.ValueType.INT64;
 		return schema;
 	}
-
 }

@@ -22,7 +22,6 @@ package org.apache.sysds.api;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.jmlc.Connection;
-import org.apache.sysds.conf.CompilerConfig;
 
 import py4j.GatewayServer;
 import py4j.GatewayServerListener;

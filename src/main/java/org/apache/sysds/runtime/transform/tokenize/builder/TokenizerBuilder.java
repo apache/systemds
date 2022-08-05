@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.transform.tokenize.builder;
 
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation;
-import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 
@@ -34,55 +33,52 @@ import static org.apache.sysds.runtime.transform.tokenize.Tokenizer.TOKENIZE_NUM
 import static org.apache.sysds.runtime.util.UtilFunctions.getBlockSizes;
 
 public abstract class TokenizerBuilder implements Serializable {
+	private static final long serialVersionUID = -4999630313246644464L;
+
+	public void createInternalRepresentation(FrameBlock in, DocumentRepresentation[] internalRepresentation) {
+		createInternalRepresentation(in, internalRepresentation, 0, -1);
+	}
+
+	public abstract void createInternalRepresentation(FrameBlock in, DocumentRepresentation[] internalRepresentation, int rowStart, int blk);
+
+	public List<DependencyTask<?>> getTasks(FrameBlock in, DocumentRepresentation[] internalRepresentation) {
+		int nRows = in.getNumRows();
+		List<Callable<Object>> tasks = new ArrayList<>();
+		int[] blockSizes = getBlockSizes(nRows, TOKENIZE_NUM_BLOCKS);
+		if(blockSizes.length == 1){
+			tasks.add(new TokenizerBuildTask<>(this, in, internalRepresentation, 0, -1));
+		}
+		else {
+			for(int startRow = 0, i = 0; i < blockSizes.length; startRow+=blockSizes[i], i++){
+			   tasks.add(new TokenizerBuildTask<>(this, in, internalRepresentation, startRow, blockSizes[i]));
+			}
+		}
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	}
 
 
-    public void createInternalRepresentation(FrameBlock in, DocumentRepresentation[] internalRepresentation) {
-        createInternalRepresentation(in, internalRepresentation, 0, -1);
-    }
+	protected static class TokenizerBuildTask<T extends TokenizerBuilder> implements Callable<Object>{
 
-    public abstract void createInternalRepresentation(FrameBlock in, DocumentRepresentation[] internalRepresentation, int rowStart, int blk);
+		protected final T _tokenizerBuilder;
+		protected final FrameBlock _input;
+		protected final DocumentRepresentation[] _internalRepresentation;
+		protected final int _rowStart;
+		protected final int _blk;
 
-    public List<DependencyTask<?>> getTasks(FrameBlock in, DocumentRepresentation[] internalRepresentation) {
-        int nRows = in.getNumRows();
-        List<Callable<Object>> tasks = new ArrayList<>();
-        int[] blockSizes = getBlockSizes(nRows, TOKENIZE_NUM_BLOCKS);
-        if(blockSizes.length == 1){
-            tasks.add(new TokenizerBuildTask<>(this, in, internalRepresentation, 0, -1));
-        }
-        else {
-            for(int startRow = 0, i = 0; i < blockSizes.length; startRow+=blockSizes[i], i++){
-               tasks.add(new TokenizerBuildTask<>(this, in, internalRepresentation, startRow, blockSizes[i]));
-            }
-        }
-        return DependencyThreadPool.createDependencyTasks(tasks, null);
-    }
+		protected TokenizerBuildTask(T tokenizerBuilder, FrameBlock input,
+									 DocumentRepresentation[] internalRepresentation,
+									 int rowStart, int blk){
+			this._tokenizerBuilder = tokenizerBuilder;
+			this._input = input;
+			this._internalRepresentation = internalRepresentation;
+			this._rowStart = rowStart;
+			this._blk = blk;
+		}
 
-
-    protected static class TokenizerBuildTask<T extends TokenizerBuilder> implements Callable<Object>{
-
-        protected final T _tokenizerBuilder;
-        protected final FrameBlock _input;
-        protected final DocumentRepresentation[] _internalRepresentation;
-        protected final int _rowStart;
-        protected final int _blk;
-
-        protected TokenizerBuildTask(T tokenizerBuilder, FrameBlock input,
-                                     DocumentRepresentation[] internalRepresentation,
-                                     int rowStart, int blk){
-            this._tokenizerBuilder = tokenizerBuilder;
-            this._input = input;
-            this._internalRepresentation = internalRepresentation;
-            this._rowStart = rowStart;
-            this._blk = blk;
-        }
-
-        @Override
-        public Object call() throws Exception {
-            this._tokenizerBuilder.createInternalRepresentation(this._input, this._internalRepresentation, this._rowStart, this._blk);
-            return null;
-        }
-    }
-
-
-
+		@Override
+		public Object call() throws Exception {
+			this._tokenizerBuilder.createInternalRepresentation(this._input, this._internalRepresentation, this._rowStart, this._blk);
+			return null;
+		}
+	}
 }

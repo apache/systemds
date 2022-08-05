@@ -19,7 +19,10 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -32,8 +35,6 @@ import org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox.KMVSketch
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperatorTypes;
 import org.apache.sysds.utils.Hash.HashType;
-
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
 /**
  * This class contains various methods for counting the number of distinct values inside a MatrixBlock

@@ -140,7 +140,8 @@ public class DataIOGen extends Lop {
 		return formatType;
 	}
 
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return getID() + ":" + "File_Name: " + getOutputParameters().getFile_name() + " " + "Label: " + getOutputParameters().getLabel() + " " + "Operation: = " + _op + " " + "Format: " + outParams.getFormat() + " Datatype: " + getDataType() + " Valuetype: " + getValueType() + " num_rows = " + getOutputParameters().getNumRows() + " num_cols = " + getOutputParameters().getNumCols() + " UpdateInPlace: " + getOutputParameters().getUpdateType();
 	}
 
@@ -236,7 +237,8 @@ public class DataIOGen extends Lop {
 	 * Method to get CP instructions for reading/writing scalars and matrices from/to HDFS.
 	 * This method generates CP read/write instructions.
 	 */
-	@Override public String getInstructions(String input1, String input2) {
+	@Override
+	public String getInstructions(String input1, String input2) {
 		if(getOutputParameters().getFile_name() == null && _op.isRead())
 			throw new LopsException(
 				this.printErrorLocation() + "Data.getInstructions(): Exepecting a SCALAR data type, encountered " + getDataType());
@@ -293,11 +295,13 @@ public class DataIOGen extends Lop {
 	/**
 	 * Method to generate createvar instruction that updates symbol table with metadata, hdfsfile name, etc.
 	 */
-	@Override public String getInstructions() {
+	@Override
+	public String getInstructions() {
 		return getCreateVarInstructions(getOutputParameters().getFile_name(), getOutputParameters().getLabel());
 	}
 
-	@Override public String getInstructions(String outputFileName) {
+	@Override
+	public String getInstructions(String outputFileName) {
 		return getCreateVarInstructions(outputFileName, getOutputParameters().getLabel());
 	}
 

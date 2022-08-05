@@ -49,19 +49,23 @@ public class GenerateReaderOp extends Hop {
 		//default constructor for clone
 	}
 
-	@Override public void checkArity() {
+	@Override
+	public void checkArity() {
 
 	}
 
-	@Override public boolean allowsAllExecTypes() {
+	@Override
+	public boolean allowsAllExecTypes() {
 		return false;
 	}
 
-	@Override protected DataCharacteristics inferOutputCharacteristics(MemoTable memo) {
+	@Override
+	protected DataCharacteristics inferOutputCharacteristics(MemoTable memo) {
 		return null;
 	}
 
-	@Override public Lop constructLops() {
+	@Override
+	public Lop constructLops() {
 		//return already created lops
 		if( getLops() != null )
 			return getLops();
@@ -87,45 +91,53 @@ public class GenerateReaderOp extends Hop {
 		return getLops();
 	}
 
-	@Override protected Types.ExecType optFindExecType(boolean transitive) {
+	@Override
+	protected Types.ExecType optFindExecType(boolean transitive) {
 		return null;
 	}
 
-	@Override public String getOpString() {
+	@Override
+	public String getOpString() {
 		String s = new String("");
 		s += _op.toString();
 		s += " "+getName();
 		return s;
 	}
 
-	@Override public boolean isGPUEnabled() {
+	@Override
+	public boolean isGPUEnabled() {
 		return false;
 	}
 
-	@Override protected double computeOutputMemEstimate(long dim1, long dim2, long nnz) {
+	@Override
+	protected double computeOutputMemEstimate(long dim1, long dim2, long nnz) {
 		return 0;
 	}
 
-	@Override protected double computeIntermediateMemEstimate(long dim1, long dim2, long nnz) {
+	@Override
+	protected double computeIntermediateMemEstimate(long dim1, long dim2, long nnz) {
 		return 0;
 	}
 
-	@Override public void refreshSizeInformation() {
+	@Override
+	public void refreshSizeInformation() {
 
 	}
 
-	@Override public Object clone() throws CloneNotSupportedException {
+	@Override
+	public Object clone() throws CloneNotSupportedException {
 		return null;
 	}
 
-	@Override public boolean compare(Hop that) {
+	@Override
+	public boolean compare(Hop that) {
 		return false;
 	}
 
 	/**
 	 * Generate Reader operation for Matrix
 	 * This constructor supports expression in parameters
-	 *
+	 * @param l ?
 	 * @param dt              data type
 	 * @param dop             data operator type
 	 * @param in              high-level operator

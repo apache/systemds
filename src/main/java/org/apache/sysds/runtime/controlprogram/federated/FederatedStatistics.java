@@ -272,9 +272,12 @@ public class FederatedStatistics {
 		sb.append(displayFedReuseReadStats());
 		sb.append(displayFedPutLineageStats());
 		sb.append(displayFedSerializationReuseStats());
-		sb.append(displayFedTransfer());
-		sb.append(displayCPUUsage());
-		sb.append(displayMemoryUsage());
+		//FIXME: the following statistics need guards to only show
+		// results if federated operations where executed, also the CPU
+		// and mem usage only probe once at the time of stats printing
+		//sb.append(displayFedTransfer());
+		//sb.append(displayCPUUsage());
+		//sb.append(displayMemoryUsage());
 		return sb.toString();
 	}
 

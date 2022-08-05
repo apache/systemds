@@ -45,7 +45,7 @@ public abstract class GIOMatrixReader extends AutomatedTestBase {
 	}
 
 	protected String getInputSampleRawFileName() {
-		return "sampleMatrix_" + getId() + ".raw";
+		return "sampleMatrix_" + getId() + ".dat";
 	}
 
 	protected String getOutputGIO() {

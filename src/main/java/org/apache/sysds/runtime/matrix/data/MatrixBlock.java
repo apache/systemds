@@ -5275,7 +5275,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			DenseBlock a = getDenseBlock();
 			DenseBlock c = ret.allocateDenseBlock().getDenseBlock();
 			for( int bi=0; bi<a.numBlocks(); bi++ ) {
-				int len = a.blockSize(bi);
+				int len = a.size(bi);
 				double[] avals = a.valuesAt(bi);
 				double[] cvals = c.valuesAt(bi);
 				for( int i=0; i<len; i++ ) {

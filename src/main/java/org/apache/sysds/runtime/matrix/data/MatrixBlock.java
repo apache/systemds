@@ -5249,40 +5249,45 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				ret.sparse = false;
 				ret.allocateDenseBlock();
 				SparseBlock a = sparseBlock;
-				double[] c = ret.getDenseBlockValues();
+				DenseBlock c = ret.getDenseBlock();
 				
 				//initialize with replacement (since all 0 values, see SPARSITY_TURN_POINT)
-				Arrays.fill(c, replacement);
+				c.reset(rlen, clen, replacement);
 				
 				//overwrite with existing values (via scatter)
 				if( a != null  ) //check for empty matrix
-					for( int i=0, cix=0; i<rlen; i++, cix+=clen ) {
+					for( int i=0; i<rlen; i++ ) {
 						if( !a.isEmpty(i) ) {
 							int apos = a.pos(i);
+							int cpos = c.pos(i);
 							int alen = a.size(i);
 							int[] aix = a.indexes(i);
 							double[] avals = a.values(i);
+							double[] cvals = c.values(i);
 							for( int j=apos; j<apos+alen; j++ )
 								if( avals[ j ] != 0 )
-									c[ cix+aix[j] ] = avals[ j ];
+									cvals[ cpos+aix[j] ] = avals[ j ];
 						}
 					}
 			}
 		}
 		else { //DENSE <- DENSE
-			int mn = ret.rlen * ret.clen;
-			ret.allocateDenseBlock();
-			double[] a = getDenseBlockValues();
-			double[] c = ret.getDenseBlockValues();
-			for( int i=0; i<mn; i++ ) {
-				c[i] = ( a[i]== pattern || (NaNpattern && Double.isNaN(a[i])) ) ?
-					replacement : a[i];
+			DenseBlock a = getDenseBlock();
+			DenseBlock c = ret.allocateDenseBlock().getDenseBlock();
+			for( int bi=0; bi<a.numBlocks(); bi++ ) {
+				int len = a.blockSize(bi);
+				double[] avals = a.valuesAt(bi);
+				double[] cvals = c.valuesAt(bi);
+				for( int i=0; i<len; i++ ) {
+					cvals[i] = (avals[i]== pattern 
+						|| (NaNpattern && Double.isNaN(avals[i]))) ?
+						replacement : avals[i];
+				}
 			}
 		}
 		
 		ret.recomputeNonZeros();
 		ret.examSparsity();
-		
 		return ret;
 	}
 	

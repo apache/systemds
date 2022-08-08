@@ -103,6 +103,8 @@ public class DataExpression extends DataIdentifier
 	public static final String PRIVACY = "privacy";
 	public static final String FINE_GRAINED_PRIVACY = "fine_grained_privacy";
 
+	public static final String FEDERATED = "federated";
+
 	// Parameter names relevant to reading/writing delimited/csv files
 	public static final String DELIM_DELIMITER = "sep";
 	public static final String DELIM_HAS_HEADER_ROW = "header";
@@ -147,7 +149,9 @@ public class DataExpression extends DataIdentifier
 			//Parameters related to dataset name/HDF4 files.
 			HDF5_DATASET_NAME,
 			// Parameters related to privacy
-			PRIVACY, FINE_GRAINED_PRIVACY));
+			PRIVACY, FINE_GRAINED_PRIVACY,
+			// Parameter for federated data
+			FEDERATED));
 
 	/** Valid parameter names in arguments to read instruction */
 	public static final Set<String> READ_VALID_PARAM_NAMES = new HashSet<>(
@@ -972,6 +976,7 @@ public class DataExpression extends DataIdentifier
 
 			// Check for file existence (before metadata parsing for meaningful error messages)
 			if( shouldReadMTD //skip check for jmlc/mlcontext
+				&& !HDFSTool.existsFileOnHDFS(mtdFileName)
 				&& !HDFSTool.existsFileOnHDFS(inputFileName)) 
 			{
 				String fsext = InfrastructureAnalyzer.isLocalMode() ? "FS (local mode)" : "HDFS";

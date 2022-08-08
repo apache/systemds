@@ -52,7 +52,7 @@ import org.apache.sysds.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.io.ReaderWriterFederated;
+import org.apache.sysds.runtime.io.WriterFederated;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -389,14 +389,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @return true if federated else false
 	 */
 	public boolean isFederated() {
-		if(_fedMapping == null && _metaData instanceof MetaDataFormat){
-			MetaDataFormat mdf = (MetaDataFormat) _metaData;
-			if(mdf.getFileFormat() == FileFormat.FEDERATED){
-				InitFEDInstruction.federateMatrix(
-					this, ReaderWriterFederated.read(_hdfsFileName, mdf.getDataCharacteristics()));
-				return true;
-			}
-		}
 		return _fedMapping != null;
 	}
 	
@@ -877,7 +869,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		{
 			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)
 			// a) get the matrix
-			boolean federatedWrite = (outputFormat != null ) &&  outputFormat.contains("federated");
+			boolean federatedWrite = _fedMapping != null;
 
 			if( isEmpty(true) && !federatedWrite)
 			{
@@ -897,26 +889,27 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 					throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
 				}
 			}
-			//get object from cache
-			if(!federatedWrite) {
-				if( _data == null )
-					getCache();
-				acquire( false, _data==null ); //incl. read matrix if evicted
-			}
 
-			// b) write the matrix 
-			try {
-				writeMetaData( fName, outputFormat, formatProperties );
-				writeBlobToHDFS( fName, outputFormat, replication, formatProperties );
-				if ( !pWrite )
-					setDirty(false);
-			}
-			catch (Exception e) {
-				throw new DMLRuntimeException("Export to " + fName + " failed.", e);
-			}
-			finally {
-				if(!federatedWrite)
+			if (federatedWrite) {
+				// b) write the matrix
+				WriterFederated.write(fName, this, outputFormat, formatProperties);
+			} else {
+				//get object from cache
+				if (_data == null)
+					getCache();
+				acquire(false, _data == null); //incl. read matrix if evicted
+
+				// b) write the matrix
+				try {
+					writeMetaData(fName, outputFormat, formatProperties);
+					writeBlobToHDFS(fName, outputFormat, replication, formatProperties);
+					if (!pWrite)
+						setDirty(false);
+				} catch (Exception e) {
+					throw new DMLRuntimeException("Export to " + fName + " failed.", e);
+				} finally {
 					release();
+				}
 			}
 		}
 		else if( pWrite ) // pwrite with same output format
@@ -1131,7 +1124,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			
 			//write the actual meta data file
 			HDFSTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, 
-				getSchema(), dataType, dc, fmt, formatProperties, _privacyConstraint);
+				getSchema(), dataType, dc, fmt, formatProperties, _privacyConstraint, _fedMapping);
 		}
 	}
 

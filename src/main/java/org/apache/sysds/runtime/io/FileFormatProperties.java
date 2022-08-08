@@ -19,7 +19,9 @@
 
 package org.apache.sysds.runtime.io;
 
-public class FileFormatProperties 
+import java.io.Serializable;
+
+public class FileFormatProperties implements Serializable
 {
 	private String description;
 	private final int _blen;

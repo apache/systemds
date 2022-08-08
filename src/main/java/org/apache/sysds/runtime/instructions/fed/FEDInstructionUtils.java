@@ -233,8 +233,8 @@ public class FEDInstructionUtils {
 			else if(inst instanceof VariableCPInstruction ){
 				VariableCPInstruction ins = (VariableCPInstruction) inst;
 				if(ins.getVariableOpcode() == VariableOperationCode.Write
-					&& ins.getInput1().isMatrix()
-					&& ins.getInput3().getName().contains("federated")){
+					&& (ins.getInput1().isMatrix() || ins.getInput1().isFrame())
+					&& ec.getCacheableData(ins.getInput1()).isFederated()){
 					fedinst = VariableFEDInstruction.parseInstruction(ins);
 				}
 				else if(ins.getVariableOpcode() == VariableOperationCode.CastAsFrameVariable

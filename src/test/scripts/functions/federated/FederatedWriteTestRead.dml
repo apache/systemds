@@ -19,8 +19,6 @@
 #
 #-------------------------------------------------------------
 
-X1 = read($1)
-X2 = read($2)
-X = federated(addresses=list("LocalHost:" +$3 + "/" +$1, "LocalHost:" +$4+ "/" +$2),
-    ranges=list(list(0, 0), list(nrow(X1), ncol(X1)), list(nrow(X1), 0), list(nrow(X1) + nrow(X2), ncol(X1))))
-write(X, $5)
+# Combine federated objects
+A = colSums(read($tmp))
+write(A, $out)

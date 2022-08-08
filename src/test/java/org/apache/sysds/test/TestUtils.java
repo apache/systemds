@@ -62,9 +62,11 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -79,8 +81,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONObject;
 import org.junit.Assert;
 
 //import jcuda.runtime.JCuda;
@@ -328,40 +332,92 @@ public class TestUtils
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
 			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
-			FSDataInputStream fsin = fs.open(compareFile);
-
-			try(BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin))) {
-				String line;
-				while((line = compareIn.readLine()) != null) {
-					StringTokenizer st = new StringTokenizer(line, " ");
-					int i = Integer.parseInt(st.nextToken());
-					int j = Integer.parseInt(st.nextToken());
-					ValueType vt = (schema != null) ? schema[j - 1] : ValueType.FP64;
-					Object obj = UtilFunctions.stringToObject(vt, st.nextToken());
-					expectedValues.put(new CellIndex(i, j), obj);
-				}
-			}
-
-			FileStatus[] outFiles = fs.listStatus(outDirectory);
-
-			for(FileStatus file : outFiles) {
-				FSDataInputStream fsout = fs.open(file.getPath());
-				try(BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout))) {
-					String line;
-					while((line = outIn.readLine()) != null) {
-						StringTokenizer st = new StringTokenizer(line, " ");
-						int i = Integer.parseInt(st.nextToken());
-						int j = Integer.parseInt(st.nextToken());
-						ValueType vt = (schema != null) ? schema[j - 1] : ValueType.FP64;
-						Object obj = UtilFunctions.stringToObject(vt, st.nextToken());
-						actualValues.put(new CellIndex(i, j), obj);
-					}
-				}
-			}
-		}
-		catch(IOException e) {
+			Map<CellIndex, Object> readExpected = tryReadFederatedJIVFile(compareFile, schema);
+			if (readExpected == null)
+				readExpected = readJIVFile(compareFile, fs, schema);
+			expectedValues.putAll(readExpected);
+			Map<CellIndex, Object> readActual = readJIVActualFile(outDirectory, schema);
+			actualValues.putAll(readActual);
+		} catch (IOException e) {
 			fail("unable to read file: " + e.getMessage());
 		}
+	}
+
+	private static Map<CellIndex, Object> readJIVActualFile(Path actualPath, ValueType[] schema) {
+		try {
+			FileSystem fs = IOUtilFunctions.getFileSystem(actualPath, conf);
+			Map<CellIndex, Object> values = tryReadFederatedJIVFile(actualPath, schema);
+			if (values == null) {
+				values = new HashMap<>();
+				FileStatus[] outFiles = fs.listStatus(actualPath);
+
+				for (FileStatus file : outFiles) {
+					Map<CellIndex, Object> partValues = readJIVFile(file.getPath(), fs, schema);
+					values.putAll(partValues);
+				}
+			}
+			return values;
+		} catch (IOException e) {
+			fail("unable to read file: " + e.getMessage());
+			return null;
+		}
+	}
+
+	private static Map<CellIndex, Object> tryReadFederatedJIVFile(Path actualPath, ValueType[] schema) {
+		Map<CellIndex, Object> values = new HashMap<>();
+		try {
+			MetaDataAll mtd = new MetaDataAll(actualPath + ".mtd", false, true);
+			if (mtd.getFederatedString() == null)
+				return null;
+
+			JSONObject json = new JSONObject(mtd.getFederatedString());
+			FederationMap map = FederationMap.fromJson(json, Types.DataType.MATRIX);
+
+			FileSystem fs = IOUtilFunctions.getFileSystem(actualPath, conf);
+			map.forEachParallel((range, data) -> {
+				int[] beginDims = range.getBeginDimsInt();
+				int beginRow = beginDims[0];
+				int beginCol = beginDims[1];
+				int endCol = range.getEndDimsInt()[1];
+
+				try {
+					ValueType[] partSchema = schema == null ? null : Arrays.copyOfRange(schema, beginCol, endCol);
+					Map<CellIndex, Object> partMap = readJIVFile(new Path(data.getFilepath()), fs, partSchema);
+
+					// speed is not relevant
+					synchronized (values) {
+						for (Map.Entry<CellIndex, Object> entry : partMap.entrySet()) {
+							CellIndex key = entry.getKey();
+							Object value = entry.getValue();
+							values.put(new CellIndex(key.row + beginRow, key.column + beginCol), value);
+						}
+					}
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+				return null;
+			});
+		} catch (Exception ex) {
+			return null;
+		}
+		return values;
+	}
+
+	private static Map<CellIndex, Object> readJIVFile(Path filename, FileSystem fs, ValueType[] schema) throws IOException {
+		HashMap<CellIndex, Object> values = new HashMap<>();
+		FSDataInputStream fsin = fs.open(filename);
+		try (BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin))) {
+			String line;
+			while ((line = compareIn.readLine()) != null) {
+				StringTokenizer st = new StringTokenizer(line, " ");
+				int i = Integer.parseInt(st.nextToken());
+				int j = Integer.parseInt(st.nextToken());
+				ValueType vt = (schema != null) ? schema[j - 1] : ValueType.FP64;
+				Object obj = UtilFunctions.stringToObject(vt, st.nextToken());
+				values.put(new CellIndex(i, j), obj);
+			}
+		}
+		return values;
 	}
 
 	/**
@@ -476,22 +532,53 @@ public class TestUtils
 	{
 		HashMap<CellIndex, Double> expectedValues = new HashMap<>();
 
-		try
-		{
+		try {
 			Path outDirectory = new Path(filePath);
-			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
+			if (tryReadFederatedMatrix(filePath, expectedValues))
+				return expectedValues;
+			else {
+				FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 
-			FileStatus[] outFiles = fs.listStatus(outDirectory);
-			for (FileStatus file : outFiles) {
-				FSDataInputStream outIn = fs.open(file.getPath());
-				readValuesFromFileStream(outIn, expectedValues);
+				FileStatus[] outFiles = fs.listStatus(outDirectory);
+				for (FileStatus file : outFiles) {
+					FSDataInputStream outIn = fs.open(file.getPath());
+					readValuesFromFileStream(outIn, expectedValues);
+				}
 			}
-		}
-		catch (IOException e) {
-			assertTrue("could not read from file " + filePath+": "+e.getMessage(), false);
+		} catch (IOException e) {
+			fail("could not read from file " + filePath + ": " + e.getMessage());
 		}
 
 		return expectedValues;
+	}
+
+	private static boolean tryReadFederatedMatrix(String filePath, HashMap<CellIndex, Double> values) {
+		try {
+			MetaDataAll mtd = new MetaDataAll(filePath + ".mtd", false, true);
+			if (mtd.getFederatedString() == null)
+				return false;
+			JSONObject json = new JSONObject(mtd.getFederatedString());
+			FederationMap map = FederationMap.fromJson(json, Types.DataType.MATRIX);
+			map.forEachParallel((range, data) -> {
+				HashMap<CellIndex, Double> partMap = readDMLMatrixFromHDFS(data.getFilepath());
+				int[] beginDims = range.getBeginDimsInt();
+				int beginRow = beginDims[0];
+				int beginCol = beginDims[1];
+				// speed is not relevant
+				synchronized (values) {
+					for (Map.Entry<CellIndex, Double> entry : partMap.entrySet()) {
+						CellIndex key = entry.getKey();
+						double value = entry.getValue();
+						values.put(new CellIndex(key.row + beginRow, key.column + beginCol), value);
+					}
+				}
+				return null;
+			});
+		} catch (Exception ex) {
+			values.clear();
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -3414,7 +3501,7 @@ public class TestUtils
 				return true;
 		return false;
 	}
-	
+
 	public static int isGPUAvailable() {
 		// returns cudaSuccess if at least one gpu is available
 		//final int[] deviceCount = new int[1];

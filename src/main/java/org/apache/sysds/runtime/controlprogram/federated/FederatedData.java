@@ -71,7 +71,7 @@ public class FederatedData {
 
 	private final Types.DataType _dataType;
 	private final InetSocketAddress _address;
-	private final String _filepath;
+	private String _filepath;
 
 	/**
 	 * The ID of default matrix/tensor on which operations get executed if no other ID is given.
@@ -103,6 +103,10 @@ public class FederatedData {
 
 	public long getVarID() {
 		return _varID;
+	}
+
+	public void setFilepath(String filepath) {
+		_filepath = filepath;
 	}
 
 	public String getFilepath() {
@@ -309,6 +313,12 @@ public class FederatedData {
 		sb.append(" " + _address.toString());
 		sb.append(":" + _filepath);
 		return sb.toString();
+	}
+
+	public String getCompleteAddressPath() {
+		String hostAddress = _address.getAddress().getHostAddress();
+		int port = _address.getPort();
+		return hostAddress + ':' + port + '/' + _filepath;
 	}
 
 	public static class FederatedRequestEncoder extends ObjectEncoder {

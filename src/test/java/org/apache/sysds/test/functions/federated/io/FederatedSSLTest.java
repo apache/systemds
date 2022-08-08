@@ -104,12 +104,12 @@ public class FederatedSSLTest extends AutomatedTestBase {
 		try {
 			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(
 				rows, cols, blocksize, host, begins, ends, new int[] {port1, port2},
-				new String[] {input("X1"), input("X2")}, input("X.json"));
+				new String[] {input("X1"), input("X2")}, input("X"));
 			//FIXME: reset avoids deadlock on reference script 
 			//(because federated matrix creation added to federated sites - blocks on clear)
 			//However, there seems to be a regression regarding the SSL handling in general
 			FederatedData.resetFederatedSites();
-			writeInputFederatedWithMTD("X.json", fed, null);
+			writeInputFederated("X", fed, null);
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + (rowPartitioned ? "Row" : "Col")
 				+ "2Reference.dml";
@@ -118,7 +118,7 @@ public class FederatedSSLTest extends AutomatedTestBase {
 			
 			// Run federated
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "-args", input("X.json")};
+			programArgs = new String[] {"-stats", "-args", input("X")};
 			String out = runTest(null).toString();
 
 			Assert.assertTrue(heavyHittersContainsString("fed_uak+"));

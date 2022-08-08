@@ -61,6 +61,8 @@ public class MetaDataAll extends DataIdentifier {
 	protected String _delim = DataExpression.DEFAULT_DELIM_DELIMITER;
 	protected boolean _hasHeader = false;
 	protected boolean _sparseDelim = DataExpression.DEFAULT_DELIM_SPARSE;
+	// Federation map for when federated object is read from disk
+	protected String _federatedString = null;
 
 	public MetaDataAll() {
 		// do nothing
@@ -184,7 +186,8 @@ public class MetaDataAll extends DataIdentifier {
 				}
 				else
 					setHasHeader(false);
-			case DataExpression.DELIM_SPARSE: setSparseDelim((boolean) val);
+			case DataExpression.DELIM_SPARSE: setSparseDelim((boolean) val); break;
+			case DataExpression.FEDERATED: setFederatedString(val.toString()); break;
 		}
 	}
 
@@ -222,6 +225,14 @@ public class MetaDataAll extends DataIdentifier {
 
 	public void setSparseDelim(boolean sparseDelim) {
 		_sparseDelim = sparseDelim;
+	}
+
+	public void setFederatedString(String federatedString) {
+		_federatedString = federatedString;
+	}
+
+	public String getFederatedString() {
+		return _federatedString;
 	}
 
 	public void setHasHeader(boolean hasHeader) {

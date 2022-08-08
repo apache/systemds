@@ -71,21 +71,21 @@ class TestFederatedAggFn(unittest.TestCase):
     def setUpClass(cls):
         cls.sds = SystemDSContext()
         cls.sds.federated([fed1], [([0, 0], [dim, dim])]
-                          ).write(fed1_file, format="federated").compute()
+                          ).write(fed1_file).compute()
         cls.sds.federated([fed1, fed2], [
             ([0, 0], [dim, dim]),
-            ([0, dim], [dim, dim*2])]).write(fed_c2_file, format="federated").compute()
+            ([0, dim], [dim, dim*2])]).write(fed_c2_file).compute()
         cls.sds.federated([fed1, fed2, fed3],  [
             ([0, 0], [dim, dim]),
             ([0, dim], [dim, dim*2]),
-            ([0, dim*2], [dim, dim*3])]).write(fed_c3_file, format="federated").compute()
+            ([0, dim*2], [dim, dim*3])]).write(fed_c3_file).compute()
         cls.sds.federated([fed1, fed2], [
             ([0, 0], [dim, dim]),
-            ([dim, 0], [dim*2, dim])]).write(fed_r2_file, format="federated").compute()
+            ([dim, 0], [dim*2, dim])]).write(fed_r2_file).compute()
         cls.sds.federated([fed1, fed2, fed3],  [
             ([0, 0], [dim, dim]),
             ([dim, 0], [dim*2, dim]),
-            ([dim*2, 0], [dim*3, dim])]).write(fed_r3_file, format="federated").compute()
+            ([dim*2, 0], [dim*3, dim])]).write(fed_r3_file).compute()
 
     @classmethod
     def tearDownClass(cls):

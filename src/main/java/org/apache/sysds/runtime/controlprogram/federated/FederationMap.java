@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -37,6 +38,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -49,6 +51,11 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
+
+import static org.apache.sysds.runtime.instructions.fed.InitFEDInstruction.parseURL;
 
 public class FederationMap {
 
@@ -687,7 +694,57 @@ public class FederationMap {
 		}
 	}
 
-	private static class MappingTask implements Callable<Void> {
+    public JSONObject toJson() throws JSONException {
+		JSONArray addressesJson = new JSONArray();
+		JSONArray rangesJson = new JSONArray();
+
+		for (Pair<FederatedRange, FederatedData> entry : _fedMap) {
+			FederatedRange range = entry.getLeft();
+			FederatedData data = entry.getRight();
+
+			addressesJson.add(data.getCompleteAddressPath());
+
+			JSONArray jsonBegin = new JSONArray();
+			for (long dim : range.getBeginDims())
+				jsonBegin.add(dim);
+			rangesJson.add(jsonBegin);
+
+			JSONArray jsonEnd = new JSONArray();
+			for (long dim : range.getEndDims())
+				jsonEnd.add(dim);
+			rangesJson.add(jsonEnd);
+		}
+		JSONObject federatedJson = new JSONObject();
+		federatedJson.put(DataExpression.FED_ADDRESSES, addressesJson);
+		federatedJson.put(DataExpression.FED_RANGES, rangesJson);
+		return federatedJson;
+    }
+
+	public static FederationMap fromJson(JSONObject federatedJson, DataType dataType) throws JSONException {
+		JSONArray addressesJson = federatedJson.getJSONArray(DataExpression.FED_ADDRESSES);
+		JSONArray rangesJson = federatedJson.getJSONArray(DataExpression.FED_RANGES);
+
+		List<Pair<FederatedRange, FederatedData>> fedMap = new ArrayList<>();
+		for (int i = 0 ; i < addressesJson.size(); ++i) {
+			String[] parsedValues = parseURL(addressesJson.getString(i));
+			FederatedData federatedData = new FederatedData(dataType, new InetSocketAddress(parsedValues[0], Integer.parseInt(parsedValues[1])), parsedValues[2]);
+
+			JSONArray beginJson = rangesJson.getJSONArray(i * 2);
+			long[] begin = new long[beginJson.size()];
+			for (int j = 0; j < begin.length; ++j)
+				begin[j] = beginJson.getLong(j);
+
+			JSONArray endJson = rangesJson.getJSONArray(i * 2 + 1);
+			long[] end = new long[endJson.size()];
+			for (int j = 0; j < end.length; ++j)
+				end[j] = endJson.getLong(j);
+			FederatedRange federatedRange = new FederatedRange(begin, end);
+			fedMap.add(Pair.of(federatedRange, federatedData));
+		}
+		return new FederationMap(fedMap);
+	}
+
+    private static class MappingTask implements Callable<Void> {
 		private final FederatedRange _range;
 		private final FederatedData _data;
 		private final BiFunction<FederatedRange, FederatedData, Void> _mappingFunction;

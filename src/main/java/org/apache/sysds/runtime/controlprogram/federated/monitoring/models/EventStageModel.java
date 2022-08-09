@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class EventStageModel extends BaseModel implements Serializable {
+public class EventStageModel extends BaseModel {
 
 	public Long eventId;
 	public String operation;

@@ -19,7 +19,11 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.*;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.Constants;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
@@ -33,7 +37,8 @@ import java.util.concurrent.TimeUnit;
 
 public class WorkerService {
 	private static final IRepository entityRepository = new DerbyRepository();
-	private static final Map<Long, String> cachedWorkers = new HashMap<>();
+	// { workerId, { workerAddress, workerStatus } }
+	private static final Map<Long, Pair<String, Boolean>> cachedWorkers = new HashMap<>();
 
 	public WorkerService() {
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -41,7 +46,9 @@ public class WorkerService {
 	}
 
 	public Long create(WorkerModel model) {
+
 		long id = entityRepository.createEntity(model);
+		model.id = id;
 
 		updateCachedWorkers(List.of(model), false);
 
@@ -76,6 +83,10 @@ public class WorkerService {
 		return workers;
 	}
 
+	public Boolean getWorkerOnlineStatus(Long workerId) {
+		return cachedWorkers.get(workerId).getRight();
+	}
+
 	private static synchronized void updateCachedWorkers(List<WorkerModel> workers, boolean removeList) {
 
 		if (removeList) {
@@ -85,9 +96,10 @@ public class WorkerService {
 		} else {
 			for (var worker: workers) {
 				if (!cachedWorkers.containsKey(worker.id)) {
-					cachedWorkers.put(worker.id, worker.address);
+					cachedWorkers.put(worker.id, new MutablePair<>(worker.address, false));
 				} else {
-					cachedWorkers.replace(worker.id, worker.address);
+					var oldPair = cachedWorkers.get(worker.id);
+					cachedWorkers.replace(worker.id, new MutablePair<>(worker.address, oldPair.getRight()));
 				}
 			}
 		}
@@ -96,19 +108,20 @@ public class WorkerService {
 	private static Runnable syncWorkerStatisticsWithDB() {
 		return () -> {
 
-			for(Map.Entry<Long, String> entry : cachedWorkers.entrySet()) {
+			for(Map.Entry<Long, Pair<String, Boolean>> entry : cachedWorkers.entrySet()) {
 				Long id = entry.getKey();
-				String address = entry.getValue();
+				String address = entry.getValue().getLeft();
 
 				var stats = StatisticsService.getWorkerStatistics(id, address);
 
 				if (stats != null) {
+
+					cachedWorkers.get(id).setValue(true);
+
 					if (stats.utilization != null) {
 						entityRepository.createEntity(stats.utilization.get(0));
 					}
 					if (stats.traffic != null) {
-						entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, TrafficModel.class);
-
 						for (var trafficEntity: stats.traffic) {
 							if (trafficEntity.coordinatorId > 0) {
 								entityRepository.createEntity(trafficEntity);
@@ -144,6 +157,8 @@ public class WorkerService {
 							}
 						}
 					}
+				} else {
+					cachedWorkers.get(id).setValue(false);
 				}
 			}
 		};

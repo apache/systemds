@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class UtilizationModel extends BaseModel implements Serializable {
+public class UtilizationModel extends BaseModel {
 
 	public Long workerId;
 	public LocalDateTime timestamp;

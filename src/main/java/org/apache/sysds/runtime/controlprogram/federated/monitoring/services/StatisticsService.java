@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class StatisticsService {
 
@@ -113,6 +114,7 @@ public class StatisticsService {
 		utilization.workerId = workerId;
 		traffic.forEach(t -> t.workerId = workerId);
 		dataObjects.forEach(o -> o.workerId = workerId);
+
 
 		for (var event: events) {
 			event.workerId = workerId;

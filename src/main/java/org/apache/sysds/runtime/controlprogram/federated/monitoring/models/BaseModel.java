@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-public abstract class BaseModel {
+import java.io.Serializable;
+
+public abstract class BaseModel implements Serializable {
 	public Long id;
 }

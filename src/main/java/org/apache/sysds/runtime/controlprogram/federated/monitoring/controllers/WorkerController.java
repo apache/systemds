@@ -36,7 +36,6 @@ public class WorkerController implements IController {
 		var model = MapperService.getModelFromBody(request, WorkerModel.class);
 
 		model.id = workerService.create(model);
-		model.setOnlineStatus(this.getWorkerOnlineStatus(model.id, model.address));
 
 		return Response.ok(model.toString());
 	}
@@ -46,7 +45,7 @@ public class WorkerController implements IController {
 		var model = MapperService.getModelFromBody(request, WorkerModel.class);
 
 		workerService.update(model);
-		model.setOnlineStatus(this.getWorkerOnlineStatus(model.id, model.address));
+		model.setOnlineStatus(workerService.getWorkerOnlineStatus(model.id));
 
 		return Response.ok(model.toString());
 	}
@@ -66,7 +65,7 @@ public class WorkerController implements IController {
 			return Response.notFound(Constants.NOT_FOUND_MSG);
 		}
 
-		result.setOnlineStatus(this.getWorkerOnlineStatus(result.id, result.address));
+		result.setOnlineStatus(workerService.getWorkerOnlineStatus(result.id));
 
 		return Response.ok(result.toString());
 	}
@@ -76,15 +75,9 @@ public class WorkerController implements IController {
 		var workers = workerService.getAll();
 
 		for (var worker: workers) {
-			worker.setOnlineStatus(this.getWorkerOnlineStatus(worker.id, worker.address));
+			worker.setOnlineStatus(workerService.getWorkerOnlineStatus(worker.id));
 		}
 
 		return Response.ok(workers.toString());
-	}
-
-	private boolean getWorkerOnlineStatus(Long workerId, String workerAddress) {
-		var stats = StatisticsService.getWorkerStatistics(workerId, workerAddress);
-
-		return stats != null;
 	}
 }

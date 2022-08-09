@@ -294,7 +294,6 @@ public class FederatedStatistics {
 		sb.append(displayFedPutLineageStats());
 		sb.append(displayFedSerializationReuseStats());
 		sb.append(displayFedTransfer());
-		sb.append(displayUtilization());
 		return sb.toString();
 	}
 
@@ -311,7 +310,6 @@ public class FederatedStatistics {
 		sb.append(displayGCStats(fedStats.gcStats));
 		sb.append(displayLinCacheStats(fedStats.linCacheStats));
 		sb.append(displayMultiTenantStats(fedStats.mtStats));
-		sb.append(displayUtilization());
 		sb.append(displayFedTransfer());
 		sb.append(displayHeavyHitters(fedStats.heavyHitters, numHeavyHitters));
 		sb.append(displayNetworkTrafficStatistics());
@@ -368,17 +366,6 @@ public class FederatedStatistics {
 		for (var entry: coordinatorsTrafficBytes) {
 			sb.append(String.format("%s/%s/%d.\n", entry.getCoordinatorHostId(), entry.timestamp, entry.byteAmount));
 		}
-
-		return sb.toString();
-	}
-
-	private static String displayUtilization() {
-		StringBuilder sb = new StringBuilder();
-
-		var utilization = getUtilization();
-
-		sb.append(String.format("CPU usage %%: %.2f\n", utilization.cpuUsage));
-		sb.append(String.format("Memory usage %%: %.2f\n", utilization.memoryUsage));
 
 		return sb.toString();
 	}
@@ -486,11 +473,19 @@ public class FederatedStatistics {
 	}
 
 	public static List<TrafficModel> getCoordinatorsTrafficBytes() {
-		return coordinatorsTrafficBytes;
+		var result = new ArrayList<>(coordinatorsTrafficBytes);
+
+		coordinatorsTrafficBytes.clear();
+
+		return result;
 	}
 
 	public static List<EventModel> getWorkerEvents() {
-		return workerEvents;
+		var result = new ArrayList<>(workerEvents);
+
+		workerEvents.clear();
+
+		return result;
 	}
 	public static List<RequestModel> getWorkerRequests() {
 		return new ArrayList<>(workerFederatedRequests.values());
@@ -522,7 +517,7 @@ public class FederatedStatistics {
 		var memoryMXBean = ManagementFactory.getMemoryMXBean();
 
 		double cpuUsage = osMXBean.getSystemLoadAverage();
-		double memoryUsage = 0.0f;
+		double memoryUsage = 0.0;
 
 		double maxMemory = (double)memoryMXBean.getHeapMemoryUsage().getMax() / 1073741824;
 		double usedMemory = (double)memoryMXBean.getHeapMemoryUsage().getUsed() / 1073741824;
@@ -854,7 +849,7 @@ public class FederatedStatistics {
 
 		private CacheStatsCollection cacheStats = new CacheStatsCollection();
 		public double jitCompileTime = 0;
-		public UtilizationModel utilization;
+		public UtilizationModel utilization = new UtilizationModel(0.0, 0.0);
 		private GCStatsCollection gcStats = new GCStatsCollection();
 		private LineageCacheStatsCollection linCacheStats = new LineageCacheStatsCollection();
 		private MultiTenantStatsCollection mtStats = new MultiTenantStatsCollection();

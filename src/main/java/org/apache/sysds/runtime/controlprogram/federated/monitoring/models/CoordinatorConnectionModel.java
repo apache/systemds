@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public abstract class CoordinatorConnectionModel extends BaseModel implements Serializable {
+public abstract class CoordinatorConnectionModel extends BaseModel {
 	public Long coordinatorId;
 	private String coordinatorHostId;
 	private static final String localhostIp = "127.0.0.1";

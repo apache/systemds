@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-import java.io.Serializable;
-
 public class RequestModel extends CoordinatorConnectionModel {
 
 	public Long workerId;

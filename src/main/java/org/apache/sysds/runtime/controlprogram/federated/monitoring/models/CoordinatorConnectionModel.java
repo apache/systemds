@@ -24,21 +24,25 @@ import java.time.LocalDateTime;
 
 public abstract class CoordinatorConnectionModel extends BaseModel implements Serializable {
 	public Long coordinatorId;
-	private String coordinatorAddress;
-	private static final String localhostIp = "/127.0.0.1";
+	private String coordinatorHostId;
+	private static final String localhostIp = "127.0.0.1";
 	private static final String localhostString = "localhost";
 
 	public CoordinatorConnectionModel() { }
 
-	public void setCoordinatorAddress(String address) {
-		this.coordinatorAddress = address;
+	public void setCoordinatorHostId(String hostId) {
+		this.coordinatorHostId = hostId;
 	}
 
-	public String getCoordinatorAddress() {
-		if (this.coordinatorAddress.contains(localhostIp)) {
-			this.coordinatorAddress = this.coordinatorAddress.replace(localhostIp, localhostString);
+	public String getCoordinatorHostId() {
+		this.coordinatorHostId = this.coordinatorHostId.replaceFirst("/", "");
+
+		if (this.coordinatorHostId.contains(localhostIp)) {
+			this.coordinatorHostId = this.coordinatorHostId.replace(localhostIp, localhostString);
 		}
 
-		return this.coordinatorAddress;
+		this.coordinatorHostId = this.coordinatorHostId.replaceFirst(":\\d+", "");
+
+		return this.coordinatorHostId;
 	}
 }

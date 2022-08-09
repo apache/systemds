@@ -58,6 +58,8 @@ export class DashboardComponent implements OnInit {
 
 		this.jsPlumbInstance = jsPlumb.getInstance();
 		this.jsPlumbInstance.setContainer('dashboard-content');
+
+		this.openConfigDialog();
 	}
 
 	openConfigDialog(): void {
@@ -87,7 +89,7 @@ export class DashboardComponent implements OnInit {
 
 		for (const worker of selectedWorkers) {
 			const workerComponentRef = this.fedSiteHost.viewContainerRef.createComponent(WorkerComponent);
-			workerComponentRef.instance.model = worker;
+			workerComponentRef.instance.workerId = worker.id;
 			workerComponentRef.location.nativeElement.id = constants.prefixes.worker + worker.id;
 			workerComponentRef.location.nativeElement.style = 'position: absolute;';
 
@@ -100,23 +102,27 @@ export class DashboardComponent implements OnInit {
 				coordinators.forEach(c => {
 					const connectionComponentRef = this.fedSiteHost.viewContainerRef.createComponent(ConnectionComponent);
 					const id = constants.prefixes.coordinator + c.id + constants.prefixes.worker + worker.id;
+					connectionComponentRef.instance.workerId = worker.id;
 					connectionComponentRef.instance.worker = worker;
 					connectionComponentRef.instance.coordinator = c;
 					connectionComponentRef.location.nativeElement.id = id;
 					connectionComponentRef.location.nativeElement.firstChild.firstChild.id = `traffic-${id}`;
+					connectionComponentRef.location.nativeElement.style = 'position: absolute;';
+
+					this.jsPlumbInstance.draggable(id);
 
 					this.jsPlumbInstance.connect({
 						source: constants.prefixes.coordinator + c.id,
+						target: id,
+						anchor: ['AutoDefault'],
+						endpoint: "Blank"
+					});
+
+					this.jsPlumbInstance.connect({
+						source: id,
 						target: constants.prefixes.worker + worker.id,
 						anchor: ['AutoDefault'],
-						overlays: [
-							['Custom', {
-								create: function(component: any) {
-									return constants.prefixes.coordinator + c.id + constants.prefixes.worker + worker.id;
-								},
-								location: 0.5,
-							}]
-						]
+						endpoint: "Blank"
 					});
 				});
 			})

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Chart } from "chart.js";
 import { FederatedSiteService } from "../../../services/federatedSiteService.service";
 import { Worker } from "../../../models/worker.model";
@@ -25,19 +25,23 @@ import { Coordinator } from "../../../models/coordinator.model";
 import { Statistics } from "../../../models/statistics.model";
 import { constants } from "../../../constants";
 import 'chartjs-adapter-moment';
+import { Subject } from "rxjs";
+import { Utils } from "../../../utils";
 
 @Component({
 	selector: 'app-connection',
 	templateUrl: './connection.component.html',
 	styleUrls: ['./connection.component.scss']
 })
-export class ConnectionComponent implements OnInit, OnDestroy {
+export class ConnectionComponent implements OnInit {
 
-	private timer: any;
+	public workerId: number;
 
 	public worker: Worker;
 	public coordinator: Coordinator;
 	public statistics: Statistics;
+
+	private stopPollingStatistics = new Subject<any>();
 
 	constructor(private fedSiteService: FederatedSiteService) { }
 
@@ -71,34 +75,35 @@ export class ConnectionComponent implements OnInit, OnDestroy {
 				},
 				scales: {
 					x: {
-						type: 'time',
-						time: {
-							unit: 'second',
-						},
-						ticks: {
+						grid: {
 							display: false
+						},
+						type: 'timeseries',
+						ticks: {
+							display: false,
 						}
+					},
+					y: {
+						beginAtZero: true,
 					}
 				}
 			},
 		});
 
-		this.timer = setInterval(() => {
+		this.fedSiteService.getStatisticsPolling(this.workerId, this.stopPollingStatistics).subscribe(stats => {
+			this.statistics = stats;
 
-			this.fedSiteService.getStatistics(this.worker.id).subscribe(stats => {
-				this.statistics = stats;
+			trafficChart.data.datasets.forEach((dataset) => {
+				dataset.data = [];
+				this.statistics.traffic.map(s => dataset.data.push({ x: s.timestamp, y: s.byteAmount }));
+				dataset.data.sort(Utils.sortTimestamp);
+			});
 
-				trafficChart.data.datasets.forEach((dataset) => {
-					dataset.data = [];
-					this.statistics.traffic.map(s => dataset.data.push({ x: s.timestamp, y: s.byteAmount }));
-				});
-
-				trafficChart.update();
-			})
-		}, 3000);
+			trafficChart.update();
+		});
 	}
 
 	ngOnDestroy() {
-		clearInterval(this.timer);
+		this.stopPollingStatistics.next(null);
 	}
 }

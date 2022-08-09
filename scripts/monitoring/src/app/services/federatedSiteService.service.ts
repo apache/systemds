@@ -18,7 +18,7 @@
  */
 
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, retry, share, Subject, switchMap, takeUntil, timer } from 'rxjs';
 import { constants } from '../constants';
 import { Coordinator } from '../models/coordinator.model';
 import { Worker } from '../models/worker.model';
@@ -48,8 +48,17 @@ export class FederatedSiteService {
 		return this.http.get<Worker>(constants.uriParts.workers + "/" + id.toString());
 	}
 
+	public getWorkerPolling(id: number, stopPolling: Subject<any>): Observable<Worker> {
+		return timer(1, 3000).pipe(
+			switchMap(() => this.getWorker(id)),
+			retry(),
+			share(),
+			takeUntil(stopPolling)
+		);
+	}
+
 	public createCoordinator(coordinator: Coordinator): Observable<Coordinator> {
-		let coordinatorModel = (({name, host, monitoringId}) => ({name, host, monitoringId}))(coordinator);
+		let coordinatorModel = (({name, host, processId}) => ({name, host, processId}))(coordinator);
 
 		return this.http.post<Coordinator>(constants.uriParts.coordinators, coordinatorModel);
 	}
@@ -61,7 +70,7 @@ export class FederatedSiteService {
 	}
 
 	public editCoordinator(coordinator: Coordinator): Observable<Coordinator> {
-		let coordinatorModel = (({id, name, host, monitoringId}) => ({id, name, host, monitoringId}))(coordinator);
+		let coordinatorModel = (({id, name, host, processId}) => ({id, name, host, processId}))(coordinator);
 
 		return this.http.put<Coordinator>(constants.uriParts.coordinators + "/" + coordinator.id.toString(), coordinatorModel);
 	}
@@ -82,5 +91,14 @@ export class FederatedSiteService {
 
 	public getStatistics(workerId: number): Observable<Statistics> {
 		return this.http.get<Statistics>(constants.uriParts.statistics + "/" + workerId.toString());
+	}
+
+	public getStatisticsPolling(workerId: number, stopPolling: Subject<any>): Observable<Statistics> {
+		return timer(1, 3000).pipe(
+			switchMap(() => this.getStatistics(workerId)),
+		retry(),
+		share(),
+		takeUntil(stopPolling)
+		);
 	}
 }

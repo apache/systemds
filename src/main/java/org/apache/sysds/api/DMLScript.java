@@ -140,8 +140,6 @@ public class DMLScript
 
 	// Global seed 
 	public static int               SEED                 = -1;
-	public static int               MONITOR_ID           = -1;
-	public static int     MAX_MONITOR_HOST_COORDINATORS = -1;
 
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -263,8 +261,6 @@ public class DMLScript
 			CHECK_PRIVACY         = dmlOptions.checkPrivacy;
 			LINEAGE_DEBUGGER      = dmlOptions.lineage_debugger;
 			SEED                  = dmlOptions.seed;
-			MONITOR_ID            = dmlOptions.monitorId;
-			MAX_MONITOR_HOST_COORDINATORS = dmlOptions.maxMonitoringHostCoordinators;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
@@ -412,7 +408,7 @@ public class DMLScript
 	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs)
 		throws IOException
 	{
-		//print basic time and environment info
+		//print basic time environment info and process id
 		printStartExecInfo( dmlScriptStr );
 		
 		//Step 1: parse configuration files & write any configuration specific global variables
@@ -582,6 +578,7 @@ public class DMLScript
 	private static void printStartExecInfo(String dmlScriptString) {
 		LOG.info("BEGIN DML run " + getDateTime());
 		LOG.debug("DML script: \n" + dmlScriptString);
+		LOG.info("Process id:  " + IDHandler.obtainProcessID());
 	}
 	
 	private static String getDateTime() {

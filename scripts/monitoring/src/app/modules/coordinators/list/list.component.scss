@@ -45,3 +45,15 @@ button {
 	margin: 0.5em 0.5em 0.5em 0;
 }
 
+.loading {
+	animation: rotation 2s infinite linear;
+	filter: brightness(1.5);
+}
+@keyframes rotation {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(359deg);
+	}
+}

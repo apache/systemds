@@ -33,30 +33,14 @@
 	mat-card {
 		width: 100%;
 	}
-}
 
-.worker-table-container {
-	position: relative;
-	min-height: 200px;
-	max-height: 400px;
-	overflow: auto;
+	div {
+		width: 100%;
+	}
 }
 
 table {
 	width: 100%;
-}
-
-.worker-loading-shade {
-	position: absolute;
-	top: 0;
-	left: 0;
-	bottom: 56px;
-	right: 0;
-	background: rgba(0, 0, 0, 0.15);
-	z-index: 1;
-	display: flex;
-	align-items: center;
-	justify-content: center;
 }
 
 .worker-rate-limit-reached {
@@ -101,9 +85,26 @@ table {
 #data-metric-card {
 	margin-bottom: 0.5em;
 	margin-right: 0.5em;
+	margin-top: 1em;
+	max-height: 20em;
+	overflow: auto;
+}
+
+#status-metric-card {
+	margin-bottom: 0.5em;
+	margin-right: 0.5em;
+	max-height: 7.5em;
+}
+
+#overview {
+	max-width: 57.4em;
+	float: left;
+	margin-right: 4.7em;
 }
 
 #requests-metric-card {
 	margin-bottom: 0.5em;
 	margin-left: 0.5em;
+	max-width: 57.4em;
 }
+

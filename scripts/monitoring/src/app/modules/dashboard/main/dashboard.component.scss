@@ -18,7 +18,14 @@
  */
 
 #dashboard-content {
-	position: absolute;
+	display: inline-block;
+	width: 82%;
+	min-height: 100%;
+	box-sizing: border-box;
+	float: left;
+	position:relative;
+	margin: 0;
+	padding: 3px;
 }
 
 .md-btn-right {

@@ -42,10 +42,13 @@ import java.util.concurrent.atomic.LongAdder;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.CacheStatsCollection;
@@ -56,6 +59,7 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataO
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -144,10 +148,10 @@ public class FederatedStatistics {
 	}
 
 	private static void incFedTransfer(Object dataObj) {
-		incFedTransfer(dataObj, null);
+		incFedTransfer(dataObj, null, null);
 	}
 
-	public static void incFedTransfer(Object dataObj, String host) {
+	public static void incFedTransfer(Object dataObj, String host, Long pid) {
 		long byteAmount = 0;
 		if(dataObj instanceof MatrixBlock) {
 			transferredMatrixCount.increment();
@@ -159,15 +163,28 @@ public class FederatedStatistics {
 			byteAmount = ((FrameBlock)dataObj).getInMemorySize();
 			transferredFrameBytes.add(byteAmount);
 		}
-		else if(dataObj instanceof ScalarObject)
+		else if(dataObj instanceof ScalarObject) {
 			transferredScalarCount.increment();
-		else if(dataObj instanceof ListObject)
+		}
+		else if(dataObj instanceof ListObject) {
 			transferredListCount.increment();
-		else if(dataObj instanceof MatrixCharacteristics)
+			var listData = ((ListObject)dataObj).getData();
+			for (var entry: listData) {
+				if (entry.getDataType().isMatrix()) {
+					byteAmount += ((MatrixObject)entry).getDataSize();
+				} else if (entry.getDataType().isFrame()) {
+					byteAmount += ((FrameObject)entry).getDataSize();
+				}
+			}
+		}
+		else if(dataObj instanceof MatrixCharacteristics) {
 			transferredMatCharCount.increment();
+		}
 
-		if (host != null && byteAmount > 0) {
-			coordinatorsTrafficBytes.add(new TrafficModel(LocalDateTime.now(), host, byteAmount));
+		if (host != null && pid != null) {
+			var coordinatorHostId = String.format("%s-%d", host, pid);
+
+			coordinatorsTrafficBytes.add(new TrafficModel(LocalDateTime.now(), coordinatorHostId, byteAmount));
 		}
 	}
 
@@ -277,8 +294,7 @@ public class FederatedStatistics {
 		sb.append(displayFedPutLineageStats());
 		sb.append(displayFedSerializationReuseStats());
 		sb.append(displayFedTransfer());
-		sb.append(displayCPUUsage());
-		sb.append(displayMemoryUsage());
+		sb.append(displayUtilization());
 		return sb.toString();
 	}
 
@@ -295,8 +311,7 @@ public class FederatedStatistics {
 		sb.append(displayGCStats(fedStats.gcStats));
 		sb.append(displayLinCacheStats(fedStats.linCacheStats));
 		sb.append(displayMultiTenantStats(fedStats.mtStats));
-		sb.append(displayCPUUsage());
-		sb.append(displayMemoryUsage());
+		sb.append(displayUtilization());
 		sb.append(displayFedTransfer());
 		sb.append(displayHeavyHitters(fedStats.heavyHitters, numHeavyHitters));
 		sb.append(displayNetworkTrafficStatistics());
@@ -351,28 +366,19 @@ public class FederatedStatistics {
 		sb.append("Transferred bytes (Host/Datetime/ByteAmount):\n");
 
 		for (var entry: coordinatorsTrafficBytes) {
-			sb.append(String.format("%s/%s/%d.\n", entry.getCoordinatorAddress(), entry.timestamp, entry.byteAmount));
+			sb.append(String.format("%s/%s/%d.\n", entry.getCoordinatorHostId(), entry.timestamp, entry.byteAmount));
 		}
 
 		return sb.toString();
 	}
 
-	private static String displayCPUUsage() {
+	private static String displayUtilization() {
 		StringBuilder sb = new StringBuilder();
 
-		double cpuUsage = getCPUUsage();
+		var utilization = getUtilization();
 
-		sb.append(String.format("CPU usage %%: %.2f\n", cpuUsage));
-
-		return sb.toString();
-	}
-
-	private static String displayMemoryUsage() {
-		StringBuilder sb = new StringBuilder();
-
-		double memoryUsage = getMemoryUsage();
-
-		sb.append(String.format("Memory usage %%: %.2f\n", memoryUsage));
+		sb.append(String.format("CPU usage %%: %.2f\n", utilization.cpuUsage));
+		sb.append(String.format("Memory usage %%: %.2f\n", utilization.memoryUsage));
 
 		return sb.toString();
 	}
@@ -511,26 +517,19 @@ public class FederatedStatistics {
 		workerDataObjects.clear();
 	}
 
-	public static double getCPUUsage() {
-		ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-		double cpuUsage = 0.0f;
+	public static UtilizationModel getUtilization() {
+		var osMXBean = ManagementFactory.getOperatingSystemMXBean();
+		var memoryMXBean = ManagementFactory.getMemoryMXBean();
 
-		for(Long threadID : threadMXBean.getAllThreadIds()) {
-			cpuUsage += threadMXBean.getThreadCpuTime(threadID);
-		}
-
-		cpuUsage /= 1000000000; // nanoseconds to seconds
-
-		return cpuUsage;
-	}
-
-	public static double getMemoryUsage() {
-		MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+		double cpuUsage = osMXBean.getSystemLoadAverage();
+		double memoryUsage = 0.0f;
 
 		double maxMemory = (double)memoryMXBean.getHeapMemoryUsage().getMax() / 1073741824;
 		double usedMemory = (double)memoryMXBean.getHeapMemoryUsage().getUsed() / 1073741824;
 
-		return (usedMemory / maxMemory) * 100;
+		memoryUsage = (usedMemory / maxMemory) * 100;
+
+		return new UtilizationModel(cpuUsage, memoryUsage);
 	}
 
 	public static long getFedLookupTableGetTime() {
@@ -682,8 +681,7 @@ public class FederatedStatistics {
 		private void collectStats() {
 			cacheStats.collectStats();
 			jitCompileTime = ((double)Statistics.getJITCompileTime()) / 1000; // in sec
-			cpuUsage = getCPUUsage();
-			memoryUsage = getMemoryUsage();
+			utilization = getUtilization();
 			gcStats.collectStats();
 			linCacheStats.collectStats();
 			mtStats.collectStats();
@@ -697,8 +695,7 @@ public class FederatedStatistics {
 		public void aggregate(FedStatsCollection that) {
 			cacheStats.aggregate(that.cacheStats);
 			jitCompileTime += that.jitCompileTime;
-			cpuUsage += that.cpuUsage;
-			memoryUsage += that.memoryUsage;
+			utilization = that.utilization;
 			gcStats.aggregate(that.gcStats);
 			linCacheStats.aggregate(that.linCacheStats);
 			mtStats.aggregate(that.mtStats);
@@ -857,8 +854,7 @@ public class FederatedStatistics {
 
 		private CacheStatsCollection cacheStats = new CacheStatsCollection();
 		public double jitCompileTime = 0;
-		public double cpuUsage = 0;
-		public double memoryUsage = 0;
+		public UtilizationModel utilization;
 		private GCStatsCollection gcStats = new GCStatsCollection();
 		private LineageCacheStatsCollection linCacheStats = new LineageCacheStatsCollection();
 		private MultiTenantStatsCollection mtStats = new MultiTenantStatsCollection();

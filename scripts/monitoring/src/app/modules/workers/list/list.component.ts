@@ -37,6 +37,8 @@ export class ListWorkersComponent {
 	public displayedColumns: string[] = ['name', 'address', 'status', 'actions'];
 	public dataSource: MatTableDataSource<Worker> = new MatTableDataSource<Worker>([]);
 
+	public loadingData: boolean = false;
+
 	@ViewChild(MatSort, {static: true})
 	sort: MatSort = new MatSort;
 
@@ -68,7 +70,11 @@ export class ListWorkersComponent {
 	}
 
 	refreshData() {
-		this.fedSiteService.getAllWorkers().subscribe(workers => this.dataSource.data = workers);
+		this.loadingData = true;
+		this.fedSiteService.getAllWorkers().subscribe(workers => {
+			this.dataSource.data = workers
+			this.loadingData = false;
+		});
 	}
 
 }

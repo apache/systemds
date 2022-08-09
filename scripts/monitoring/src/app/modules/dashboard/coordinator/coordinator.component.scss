@@ -19,5 +19,18 @@
 
 .coordinator-card {
 	width: 200px;
-	height: 80px;
+	height: 100px;
+}
+
+.bold {
+	font-weight: bold;
+}
+
+.info-row {
+	display: inline;
+	margin: auto;
+	padding: 0.2em;
+	> * {
+		float: left;
+	}
 }

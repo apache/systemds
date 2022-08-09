@@ -133,10 +133,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	protected FederatedResponse createResponse(Object msg) {
-		var event = new EventModel();
-		event.setCoordinatorAddress(FederatedLookupTable.NOHOST);
-
-		return createResponse(msg, FederatedLookupTable.NOHOST, event);
+		return createResponse(msg, FederatedLookupTable.NOHOST);
 	}
 
 	private FederatedResponse createResponse(Object msg, SocketAddress remoteAddress) {
@@ -162,23 +159,20 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			host = FederatedLookupTable.NOHOST;
 		}
 
-		var event = new EventModel();
-		event.setCoordinatorAddress(_remoteAddress);
-
-		FederatedResponse res = createResponse(msg, host, event);
+		FederatedResponse res = createResponse(msg, host);
 		if (_timing != null) {
 			_timing.start();
 		}
 		return res;
 	}
 
-	private FederatedResponse createResponse(Object msg, String remoteHost, EventModel event) {
+	private FederatedResponse createResponse(Object msg, String remoteHost) {
 		if(!(msg instanceof FederatedRequest[]))
 			return new FederatedResponse(ResponseType.ERROR,
 				new FederatedWorkerHandlerException("Received object of wrong instance 'FederatedRequest[]'."));
 		final FederatedRequest[] requests = (FederatedRequest[]) msg;
 		try {
-			return createResponse(requests, remoteHost, event);
+			return createResponse(requests, remoteHost);
 		}
 		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
 			// Here we control the error message, therefore it is allowed to send the stack trace with the response
@@ -194,12 +188,15 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private FederatedResponse createResponse(FederatedRequest[] requests, String remoteHost, EventModel event)
+	private FederatedResponse createResponse(FederatedRequest[] requests, String remoteHost)
 		throws DMLPrivacyException, FederatedWorkerHandlerException, Exception {
 			
 		FederatedResponse response = null; // last response
 		boolean containsCLEAR = false;
 		long clearReqPid = -1;
+		var event = new EventModel();
+		final String coordinatorHostIdFormat = "%s-%d";
+		event.setCoordinatorHostId(String.format(coordinatorHostIdFormat, remoteHost, requests[0].getPID()));
 		for(int i = 0; i < requests.length; i++) {
 			final FederatedRequest request = requests[i];
 			final RequestType t = request.getType();
@@ -212,9 +209,16 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			var eventStage = new EventStageModel();
 			// execute command and handle privacy constraints
 			final FederatedResponse tmp = executeCommand(request, ecm, eventStage);
-			conditionalAddCheckedConstraints(request, tmp);
 
-			event.stages.add(eventStage);
+			if (DMLScript.STATISTICS) {
+				var requestStat = new RequestModel(request.getType().name(), 1L);
+				requestStat.setCoordinatorHostId(String.format(coordinatorHostIdFormat, remoteHost, request.getPID()));
+				FederatedStatistics.addWorkerRequest(requestStat);
+
+				event.stages.add(eventStage);
+			}
+
+			conditionalAddCheckedConstraints(request, tmp);
 
 			// select the response
 			if(!tmp.isSuccessful()) {
@@ -241,14 +245,14 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			if (DMLScript.STATISTICS) {
 				if(t == RequestType.PUT_VAR || t == RequestType.EXEC_UDF) {
 					for (int paramIndex = 0; paramIndex < request.getNumParams(); paramIndex++) {
-						FederatedStatistics.incFedTransfer(request.getParam(paramIndex), _remoteAddress);
+						FederatedStatistics.incFedTransfer(request.getParam(paramIndex), _remoteAddress, request.getPID());
 					}
 				}
 
 				if(t == RequestType.GET_VAR) {
 					var data = response.getData();
 					for (int dataObjIndex = 0; dataObjIndex < Arrays.stream(data).count(); dataObjIndex++) {
-						FederatedStatistics.incFedTransfer(data[dataObjIndex], _remoteAddress);
+						FederatedStatistics.incFedTransfer(data[dataObjIndex], _remoteAddress, request.getPID());
 					}
 				}
 			}
@@ -327,9 +331,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 
 		eventStage.endTime = LocalDateTime.now();
-
-		if (DMLScript.STATISTICS)
-			FederatedStatistics.addWorkerRequest(new RequestModel(method.name(), 1L));
 
 		return result;
 	}

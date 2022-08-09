@@ -55,6 +55,7 @@ export class DialogDashboardComponent {
 	}
 
 	onSaveClick(): void {
+
 		this.dialogRef.close({
 			selectedWorkerIds: this.selectedWorkerIds,
 			selectedCoordinatorIds: this.selectedCoordinatorIds

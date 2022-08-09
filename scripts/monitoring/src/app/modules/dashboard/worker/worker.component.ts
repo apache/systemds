@@ -25,6 +25,8 @@ import { MatTableDataSource } from "@angular/material/table";
 import { Chart, registerables } from "chart.js";
 import { constants } from "../../../constants";
 import 'chartjs-adapter-moment';
+import { Subject } from "rxjs";
+import { Utils } from "../../../utils";
 
 @Component({
 	selector: 'app-worker',
@@ -33,13 +35,16 @@ import 'chartjs-adapter-moment';
 })
 export class WorkerComponent {
 
+	public workerId: number;
+
 	public model: Worker;
 	public statistics: Statistics;
 
 	public displayedColumns: string[] = ['instruction', 'time', 'frequency'];
 	public dataSource: MatTableDataSource<any> = new MatTableDataSource<any>([]);
 
-	private timer: any;
+	private stopPollingWorker = new Subject<any>();
+	private stopPollingStatistics = new Subject<any>();
 
 	constructor(private fedSiteService: FederatedSiteService) {
 		Chart.register(...registerables);
@@ -48,7 +53,7 @@ export class WorkerComponent {
 	ngOnInit(): void {
 		this.statistics = new Statistics();
 
-		const memoryMetricEle: any = document.getElementById('memory-metric-dashboard');
+		const memoryMetricEle: any = document.querySelector(`#${constants.prefixes.worker + this.workerId} canvas`);
 
 		let memoryChart = new Chart(memoryMetricEle.getContext('2d'), {
 			type: 'line',
@@ -73,40 +78,36 @@ export class WorkerComponent {
 				},
 				scales: {
 					x: {
-						type: 'time',
-						time: {
-							unit: 'second',
+						grid: {
+							display: false
 						},
+						type: 'timeseries',
 						ticks: {
 							display: false
 						}
+					},
+					y: {
+						beginAtZero: true
 					}
 				}
 			},
 		});
 
-		this.timer = setInterval(() => {
-			this.fedSiteService.getWorker(this.model.id).subscribe(worker => {
-				this.model = worker;
+		this.fedSiteService.getWorkerPolling(this.workerId, this.stopPollingWorker).subscribe(worker => this.model = worker);
+
+		this.fedSiteService.getStatisticsPolling(this.workerId, this.stopPollingStatistics).subscribe(stats => {
+			this.statistics = stats;
+
+			memoryChart.data.datasets.forEach((dataset) => {
+				dataset.data = [];
+				this.statistics.utilization.map(s => dataset.data.push({ x: s.timestamp, y: s.memoryUsage }));
+				dataset.data.sort(Utils.sortTimestamp);
 			});
 
-			this.fedSiteService.getStatistics(this.model.id).subscribe(stats => {
-				this.statistics = stats;
+			memoryChart.update();
 
-				memoryChart.data.datasets.forEach((dataset) => {
-					dataset.data = [];
-					this.statistics.utilization.map(s => dataset.data.push({ x: s.timestamp, y: s.memoryUsage }));
-				});
-
-				memoryChart.update();
-
-				this.dataSource = this.parseInstructions();
-			})
-		}, 3000);
-	}
-
-	ngOnDestroy() {
-		clearInterval(this.timer);
+			this.dataSource = this.parseInstructions();
+		});
 	}
 
 	private parseInstructions(): any {
@@ -137,5 +138,10 @@ export class WorkerComponent {
 		}
 
 		return result.sort((a,b) => b['time']-a['time']).slice(0,3);
+	}
+
+	ngOnDestroy() {
+		this.stopPollingWorker.next(null);
+		this.stopPollingStatistics.next(null);
 	}
 }

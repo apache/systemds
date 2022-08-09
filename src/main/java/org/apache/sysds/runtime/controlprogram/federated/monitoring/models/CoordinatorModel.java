@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 public class CoordinatorModel extends BaseModel {
 	public String name;
 	public String host;
-	public Long monitoringId;
+	public Long processId;
 	public String monitoringHostIdKey;
 
 	private static final String keyFormat = "%s-%d";
@@ -31,7 +31,7 @@ public class CoordinatorModel extends BaseModel {
 			"\"id\": %d," +
 			"\"name\": \"%s\"," +
 			"\"host\": \"%s\"," +
-			"\"monitoringId\": %d" +
+			"\"processId\": %d" +
 			"}";
 
 	public CoordinatorModel(final Long id) {
@@ -43,11 +43,11 @@ public class CoordinatorModel extends BaseModel {
 	}
 
 	public void generateMonitoringKey() {
-		this.monitoringHostIdKey = String.format(keyFormat, host, monitoringId);
+		this.monitoringHostIdKey = String.format(keyFormat, host, processId);
 	}
 
 	@Override
 	public String toString() {
-		return String.format(JsonFormat, super.id, this.name, this.host, this.monitoringId);
+		return String.format(JsonFormat, super.id, this.name, this.host, this.processId);
 	}
 }

@@ -55,14 +55,12 @@ public class FederatedMonitoringServerHandler extends SimpleChannelInboundHandle
 	protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) {
 
 		if (msg instanceof HttpRequest) {
-
 			HttpRequest httpRequest = (HttpRequest) msg;
 			Request request = new Request();
 			request.setContext(httpRequest);
 
 			currentRequest = request;
 		}
-
 		if (msg instanceof HttpContent) {
 			ByteBuf jsonBuf = ((HttpContent) msg).content();
 			requestData.append(jsonBuf.toString(CharsetUtil.UTF_8));

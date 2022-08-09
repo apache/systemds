@@ -107,8 +107,12 @@ public class WorkerService {
 						entityRepository.createEntity(stats.utilization.get(0));
 					}
 					if (stats.traffic != null) {
+						entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, TrafficModel.class);
+
 						for (var trafficEntity: stats.traffic) {
-							entityRepository.createEntity(trafficEntity);
+							if (trafficEntity.coordinatorId > 0) {
+								entityRepository.createEntity(trafficEntity);
+							}
 						}
 					}
 					if (stats.events != null) {
@@ -135,7 +139,9 @@ public class WorkerService {
 						entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, RequestModel.class);
 
 						for (var requestEntity: stats.requests) {
-							entityRepository.createEntity(requestEntity);
+							if (requestEntity.coordinatorId > 0) {
+								entityRepository.createEntity(requestEntity);
+							}
 						}
 					}
 				}

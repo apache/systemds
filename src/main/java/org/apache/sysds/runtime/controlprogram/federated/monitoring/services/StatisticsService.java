@@ -34,12 +34,12 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class StatisticsService {
 
 	private static final IRepository entityRepository = new DerbyRepository();
-	private static final Long endOfDynamicPorts = 65535L;
-	private static final int maxMonitorHostCoordinators = DMLScript.MAX_MONITOR_HOST_COORDINATORS;
 
 	public StatisticsModel getAll(Long workerId, StatisticsOptions options) {
 		var stats = new StatisticsModel();
@@ -78,6 +78,7 @@ public class StatisticsService {
 
 		try {
 			FederatedResponse statisticsResponse = null;
+
 			var statisticsResponseFuture = sendStatisticsRequest(address);
 
 			if (statisticsResponseFuture != null) {
@@ -103,15 +104,15 @@ public class StatisticsService {
 	}
 
 	private static StatisticsModel parseStatistics(Long workerId, FederatedStatistics.FedStatsCollection aggFedStats) {
-		var utilization = new UtilizationModel(workerId, aggFedStats.cpuUsage, aggFedStats.memoryUsage);
+		var utilization = aggFedStats.utilization;
 		var traffic = aggFedStats.coordinatorsTrafficBytes;
 		var events = aggFedStats.workerEvents;
 		var dataObjects = aggFedStats.workerDataObjects;
 		var requests = aggFedStats.workerRequests;
 
+		utilization.workerId = workerId;
 		traffic.forEach(t -> t.workerId = workerId);
 		dataObjects.forEach(o -> o.workerId = workerId);
-		requests.forEach(r -> r.workerId = workerId);
 
 		for (var event: events) {
 			event.workerId = workerId;
@@ -125,12 +126,18 @@ public class StatisticsService {
 			setCoordinatorId(trafficEntry);
 		}
 
+		for (var request: requests) {
+			request.workerId = workerId;
+
+			setCoordinatorId(request);
+		}
+
 		return new StatisticsModel(List.of(utilization), traffic, events, dataObjects, requests);
 	}
 
 	private static void setCoordinatorId(CoordinatorConnectionModel entity) {
 		List<CoordinatorModel> coordinators = new ArrayList<>();
-		var monitoringKey = getCoordinatorMonitoringKey(entity.getCoordinatorAddress());
+		var monitoringKey = entity.getCoordinatorHostId();
 
 		if (monitoringKey != null) {
 			coordinators = entityRepository.getAllEntitiesByField(Constants.ENTITY_MONITORING_KEY_COL, monitoringKey, CoordinatorModel.class);
@@ -143,41 +150,31 @@ public class StatisticsService {
 		}
 	}
 
-	private static String getCoordinatorMonitoringKey(String address) {
-		String result = null;
-		if (address != null && !address.isEmpty() && !address.isBlank()) {
-			var aggAddress = address.split(":");
-
-			var host = aggAddress[0];
-			var port = Integer.parseInt(aggAddress[1]);
-
-			var model = new CoordinatorModel();
-			model.host = host;
-			model.monitoringId = (endOfDynamicPorts - port) % maxMonitorHostCoordinators;
-
-			model.generateMonitoringKey();
-
-			result = model.monitoringHostIdKey;
-		}
-
-		return result;
-	}
-
 	private static Future<FederatedResponse> sendStatisticsRequest(String address) {
 		Future<FederatedResponse> result = null;
-		String host = address.split(":")[0];
-		int port = Integer.parseInt(address.split(":")[1]);
 
-		InetSocketAddress isa = new InetSocketAddress(host, port);
-		FederatedRequest frUDF = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
-			new FederatedStatistics.FedStatsCollectFunction());
+		final Pattern pattern = Pattern.compile("(.*://)?([A-Za-z0-9\\-\\.]+)(:[0-9]+)?(.*)");
+		final Matcher matcher = pattern.matcher(address);
 
-		try {
-			result = FederatedData.executeFederatedOperation(isa, frUDF);
-		} catch(DMLRuntimeException dre) {
-			throw dre; // caused by offline federated workers
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		if (matcher.find()) {
+			String host = matcher.group(2);
+			String portStr = matcher.group(3);
+			int port = 80;
+
+			if (portStr != null && !portStr.isBlank() && !portStr.isEmpty())
+				port = Integer.parseInt(portStr.replace(":", ""));
+
+			InetSocketAddress isa = new InetSocketAddress(host, port);
+			FederatedRequest frUDF = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+					new FederatedStatistics.FedStatsCollectFunction());
+
+			try {
+				result = FederatedData.executeFederatedOperation(isa, frUDF);
+			} catch(DMLRuntimeException dre) {
+				throw dre; // caused by offline federated workers
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		}
 
 		return result;

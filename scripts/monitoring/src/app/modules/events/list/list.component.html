@@ -24,7 +24,7 @@
 
 			<mat-card-header>
 				<h2>Choose for which worker to show events</h2>
-				<button (click)="refreshData()" color="warn" mat-mini-fab>
+				<button [ngClass]="[ loadingData ? 'loading' : '']" (click)="refreshData()" color="warn" mat-mini-fab>
 					<mat-icon aria-hidden="false" aria-label="refresh">refresh</mat-icon>
 				</button>
 			</mat-card-header>

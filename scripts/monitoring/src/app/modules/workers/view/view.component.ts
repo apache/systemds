@@ -29,6 +29,8 @@ import { DataObject } from "../../../models/dataObject.model";
 import { Chart, registerables } from "chart.js";
 import { constants } from "../../../constants";
 import 'chartjs-adapter-moment';
+import { Subject } from 'rxjs';
+import { Utils } from "../../../utils";
 
 @Component({
 	selector: 'app-view-worker',
@@ -43,10 +45,11 @@ export class ViewWorkerComponent {
 	public model: Worker;
 	public statistics: Statistics;
 
+	private stopPollingWorker = new Subject<any>();
+	private stopPollingStatistics = new Subject<any>();
+
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	@ViewChild(MatSort) sort: MatSort;
-
-	private timer: any;
 
 	constructor(
 		private fedSiteService: FederatedSiteService,
@@ -71,8 +74,9 @@ export class ViewWorkerComponent {
 			data: {
 				datasets: [{
 					data: this.statistics.utilization.map(s => {
-						return {x: s.timestamp, y: s.cpuUsage}
+						return { x: new Date(s.timestamp).getTime(), y: s.cpuUsage }
 					}),
+					tension: 0.4,
 					borderColor: constants.chartColors.blue
 				}]
 			},
@@ -89,10 +93,16 @@ export class ViewWorkerComponent {
 				},
 				scales: {
 					x: {
-						type: 'time',
-						time: {
-							unit: 'second',
+						grid: {
+							display: false
+						},
+						type: 'timeseries',
+						ticks: {
+							display: false
 						}
+					},
+					y: {
+						beginAtZero: true
 					}
 				}
 			},
@@ -103,8 +113,9 @@ export class ViewWorkerComponent {
 			data: {
 				datasets: [{
 					data: this.statistics.utilization.map(s => {
-						return {x: s.timestamp, y: s.memoryUsage}
+						return { x: new Date(s.timestamp).getTime(), y: s.memoryUsage }
 					}),
+					tension: 0.4,
 					borderColor: constants.chartColors.red
 				}]
 			},
@@ -121,10 +132,16 @@ export class ViewWorkerComponent {
 				},
 				scales: {
 					x: {
-						type: 'time',
-						time: {
-							unit: 'second'
+						grid: {
+							display: false
+						},
+						type: 'timeseries',
+						ticks: {
+							display: false
 						}
+					},
+					y: {
+						beginAtZero: true
 					}
 				}
 			},
@@ -135,7 +152,6 @@ export class ViewWorkerComponent {
 			data: {
 				labels: this.statistics.requests.map(r => r.type),
 				datasets: [{
-					label: 'My First Dataset',
 					data: this.statistics.requests.map(r => r.count),
 					backgroundColor: constants.chartColors.purple,
 				}]
@@ -159,41 +175,39 @@ export class ViewWorkerComponent {
 			},
 		});
 
-		this.timer = setInterval(() => {
+		this.fedSiteService.getWorkerPolling(id, this.stopPollingWorker).subscribe(worker => this.model = worker);
 
-			this.fedSiteService.getWorker(id).subscribe(worker => this.model = worker);
+		this.fedSiteService.getStatisticsPolling(id, this.stopPollingStatistics).subscribe(stats => {
+			this.statistics = stats;
 
-			this.fedSiteService.getStatistics(id).subscribe(stats => {
-				this.statistics = stats;
+			cpuChart.data.datasets.forEach((dataset) => {
+				dataset.data = [];
+				this.statistics.utilization.map(s => dataset.data.push({ x: new Date(s.timestamp).getTime(), y: s.cpuUsage }));
+				dataset.data.sort(Utils.sortTimestamp);
+			});
 
-				cpuChart.data.datasets.forEach((dataset) => {
-					dataset.data = [];
-					this.statistics.utilization.map(s => dataset.data.push({ x: s.timestamp, y: s.cpuUsage }));
-				});
+			memoryChart.data.datasets.forEach((dataset) => {
+				dataset.data = [];
+				this.statistics.utilization.map(s => dataset.data.push({ x: new Date(s.timestamp).getTime(), y: s.memoryUsage }));
+				dataset.data.sort(Utils.sortTimestamp);
+			});
 
-				memoryChart.data.datasets.forEach((dataset) => {
-					dataset.data = [];
-					this.statistics.utilization.map(s => dataset.data.push({ x: s.timestamp, y: s.memoryUsage }));
-				});
+			requestsChart.data.labels = this.statistics.requests.map(r => r.type);
+			requestsChart.data.datasets.forEach((dataset) => {
+				dataset.data = [];
+				this.statistics.requests.map(s => dataset.data.push(s.count));
+			});
 
-				requestsChart.data.labels = this.statistics.requests.map(r => r.type);
-				requestsChart.data.datasets.forEach((dataset) => {
-					dataset.data = [];
-					this.statistics.requests.map(s => dataset.data.push(s.count));
-				});
+			cpuChart.update();
+			memoryChart.update();
+			requestsChart.update();
 
-				cpuChart.update();
-				memoryChart.update();
-				requestsChart.update();
-
-				this.dataSource.data = this.statistics.dataObjects;
-			})
-		}, 3000);
-
+			this.dataSource.data = this.statistics.dataObjects;
+		})
 	}
 
 	ngOnDestroy() {
-		clearInterval(this.timer);
+		this.stopPollingWorker.next(null);
+		this.stopPollingStatistics.next(null);
 	}
-
 }

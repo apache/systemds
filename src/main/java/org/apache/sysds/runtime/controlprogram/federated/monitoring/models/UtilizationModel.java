@@ -19,9 +19,10 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class UtilizationModel extends BaseModel {
+public class UtilizationModel extends BaseModel implements Serializable {
 
 	public Long workerId;
 	public LocalDateTime timestamp;
@@ -40,6 +41,10 @@ public class UtilizationModel extends BaseModel {
 
 	private UtilizationModel(final Long id) {
 		this.id = id;
+	}
+
+	public UtilizationModel(final double cpuUsage, final double memoryUsage) {
+		this(-1L, -1L, LocalDateTime.now(), cpuUsage, memoryUsage);
 	}
 
 	public UtilizationModel(final Long workerId, final double cpuUsage, final double memoryUsage) {

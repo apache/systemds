@@ -21,5 +21,5 @@ export class Coordinator {
 	constructor(public id: number = -1,
 				public name: string = '',
 				public host: string = '',
-				public monitoringId: number = -1) {}
+				public processId: number = -1) {}
 }

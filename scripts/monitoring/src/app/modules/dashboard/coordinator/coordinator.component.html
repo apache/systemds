@@ -21,10 +21,20 @@
 	<mat-card-title *ngIf="model">{{ model.name }}</mat-card-title>
 	<mat-divider inset></mat-divider>
 	<mat-card-content *ngIf="model">
-		<p>Host: {{ model.host }}</p>
+		<div class="info-row">
+			<mat-icon mat-list-icon>
+				laptop
+			</mat-icon>
+			<p> <span class="bold">Host:</span> {{ model.host }} </p>
+		</div>
 	</mat-card-content>
 	<mat-divider inset></mat-divider>
-	<mat-card-content>
-		<p>Monitoring id: {{ model.monitoringId }}</p>
+	<mat-card-content *ngIf="model">
+		<div class="info-row">
+			<mat-icon mat-list-icon>
+				memory
+			</mat-icon>
+			<p> <span class="bold">Process id:</span> {{ model.processId }} </p>
+		</div>
 	</mat-card-content>
 </mat-card>

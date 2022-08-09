@@ -18,49 +18,58 @@
 -->
 
 <div class="metrics-cards">
-	<mat-card class="worker-metrics-card" id="data-metric-card">
-		<mat-card-title *ngIf="model">{{model.name}}</mat-card-title>
-		<mat-card-content id="main-worker-information">
-			<h3>Address: <span *ngIf="model">{{model.address}}</span></h3>
-			<mat-divider inset></mat-divider>
-			<h3>Status:
-				<span *ngIf="model && model.isOnline" class="online-worker">
+	<div id="overview">
+		<mat-card class="worker-metrics-card" id="status-metric-card">
+			<mat-card-title *ngIf="model">{{model.name}}</mat-card-title>
+			<mat-card-content id="main-worker-information">
+				<h3>Address: <span *ngIf="model">{{model.address}}</span></h3>
+				<mat-divider inset></mat-divider>
+				<h3>Status:
+					<span *ngIf="model && model.isOnline" class="online-worker">
             Online
           </span>
-				<span *ngIf="model && !model.isOnline" class="offline-worker">
+					<span *ngIf="model && !model.isOnline" class="offline-worker">
             Offline
           </span>
-			</h3>
-			<mat-divider inset></mat-divider>
+				</h3>
+			</mat-card-content>
+		</mat-card>
 
-			<table [dataSource]="dataSource" mat-table matSort>
+		<mat-card class="worker-metrics-card" id="data-metric-card">
 
-				<ng-container matColumnDef="varName">
-					<th *matHeaderCellDef mat-header-cell mat-sort-header> Variable name</th>
-					<td *matCellDef="let element" mat-cell> {{element.varName}} </td>
-				</ng-container>
+			<mat-card-content>
+				<h2>Data objects</h2>
 
-				<ng-container matColumnDef="dataType">
-					<th *matHeaderCellDef mat-header-cell mat-sort-header> Data type</th>
-					<td *matCellDef="let element" mat-cell> {{element.dataType}} </td>
-				</ng-container>
+				<table [dataSource]="dataSource" mat-table matSort>
 
-				<ng-container matColumnDef="valueType">
-					<th *matHeaderCellDef mat-header-cell mat-sort-header> Value type</th>
-					<td *matCellDef="let element" mat-cell> {{element['valueType']}} </td>
-				</ng-container>
+					<ng-container matColumnDef="varName">
+						<th *matHeaderCellDef mat-header-cell mat-sort-header> Variable name</th>
+						<td *matCellDef="let element" mat-cell> {{element.varName}} </td>
+					</ng-container>
 
-				<ng-container matColumnDef="size">
-					<th *matHeaderCellDef mat-header-cell mat-sort-header> Byte size</th>
-					<td *matCellDef="let element" mat-cell> {{element.size}} </td>
-				</ng-container>
+					<ng-container matColumnDef="dataType">
+						<th *matHeaderCellDef mat-header-cell mat-sort-header> Data type</th>
+						<td *matCellDef="let element" mat-cell> {{element.dataType}} </td>
+					</ng-container>
 
-				<tr *matHeaderRowDef="displayedColumns" mat-header-row></tr>
-				<tr *matRowDef="let row; columns: displayedColumns;" mat-row></tr>
+					<ng-container matColumnDef="valueType">
+						<th *matHeaderCellDef mat-header-cell mat-sort-header> Value type</th>
+						<td *matCellDef="let element" mat-cell> {{element['valueType']}} </td>
+					</ng-container>
 
-			</table>
-		</mat-card-content>
-	</mat-card>
+					<ng-container matColumnDef="size">
+						<th *matHeaderCellDef mat-header-cell mat-sort-header> Byte size</th>
+						<td *matCellDef="let element" mat-cell> {{element.size}} </td>
+					</ng-container>
+
+					<tr *matHeaderRowDef="displayedColumns" mat-header-row></tr>
+					<tr *matRowDef="let row; columns: displayedColumns;" mat-row></tr>
+
+				</table>
+			</mat-card-content>
+		</mat-card>
+	</div>
+
 
 	<mat-card class="worker-metrics-card" id="requests-metric-card">
 		<canvas id="requests-metric"></canvas>

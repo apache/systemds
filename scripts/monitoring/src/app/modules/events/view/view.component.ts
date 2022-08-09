@@ -26,6 +26,7 @@ import { Statistics } from "../../../models/statistics.model";
 import { Chart, registerables } from "chart.js";
 import { constants } from "../../../constants";
 import 'chartjs-adapter-moment';
+import { Subject } from "rxjs";
 
 @Component({
 	selector: 'app-view-worker-events',
@@ -39,9 +40,9 @@ export class ViewWorkerEventsComponent {
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	@ViewChild(MatSort) sort: MatSort;
 
-	private timer: any;
-
 	private eventTimelineChart: Chart;
+
+	private stopPollingStatistics = new Subject<any>();
 
 	constructor(
 		private fedSiteService: FederatedSiteService,
@@ -56,54 +57,47 @@ export class ViewWorkerEventsComponent {
 
 		const eventCanvasEle: any = document.getElementById('event-timeline');
 
-		this.timer = setInterval(() => {
-			this.fedSiteService.getStatistics(id).subscribe(stats => {
-				this.statistics = stats;
+		this.fedSiteService.getStatisticsPolling(id, this.stopPollingStatistics).subscribe(stats => {
+			this.statistics = stats;
 
-				const timeframe = this.getTimeframe();
+			const timeframe = this.getTimeframe();
 
-				if (!this.eventTimelineChart) {
-					this.eventTimelineChart = new Chart(eventCanvasEle.getContext('2d'), {
-						type: 'bar',
-						data: {
-							labels: [],
-							datasets: []
-						},
-						options: {
-							indexAxis: 'y',
-							responsive: true,
-							plugins: {
-								legend: {
-									position: 'top',
-								},
-								title: {
-									display: true,
-									text: 'Event timeline of worker with respect to coordinators'
-								}
+			if (!this.eventTimelineChart) {
+				this.eventTimelineChart = new Chart(eventCanvasEle.getContext('2d'), {
+					type: 'bar',
+					data: {
+						labels: [],
+						datasets: []
+					},
+					options: {
+						indexAxis: 'y',
+						responsive: true,
+						plugins: {
+							legend: {
+								position: 'top',
 							},
-							scales: {
-								x: {
-									min: this.getLastSeconds(timeframe[1], 3),
-									max: timeframe[1],
-									ticks: {
-										callback: function(value, index, ticks) {
-											return new Date(value).toLocaleTimeString();
-										}
+							title: {
+								display: true,
+								text: 'Event timeline of worker with respect to coordinators'
+							}
+						},
+						scales: {
+							x: {
+								min: this.getLastSeconds(timeframe[1], 3),
+								max: timeframe[1],
+								ticks: {
+									callback: function(value, index, ticks) {
+										return new Date(value).toLocaleTimeString();
 									}
 								}
 							}
 						}
-					})
-				}
+					}
+				})
+			}
 
-				this.updateEventTimeline();
-			})
-		}, 3000);
-
-	}
-
-	ngOnDestroy() {
-		clearInterval(this.timer);
+			this.updateEventTimeline();
+		});
 	}
 
 	private getLastSeconds(time: number, seconds: number): number {
@@ -197,6 +191,10 @@ export class ViewWorkerEventsComponent {
 		}
 
 		return result;
+	}
+
+	ngOnDestroy() {
+		this.stopPollingStatistics.next(null);
 	}
 
 }

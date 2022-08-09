@@ -23,6 +23,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -77,6 +78,8 @@ public class FederatedMonitoringServer {
 					pipeline.addLast(new FederatedMonitoringServerHandler());
 					}
 				});
+
+			server.childOption(ChannelOption.SO_KEEPALIVE, true);
 
 			log.info("Starting Federated Monitoring Backend server at port: " + _port);
 			ChannelFuture f = server.bind(_port).sync();

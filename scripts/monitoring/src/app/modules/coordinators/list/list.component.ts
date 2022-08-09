@@ -34,24 +34,21 @@ import { CreateEditCoordinatorsComponent } from "../create-edit/create-edit.comp
 })
 export class ListCoordinatorsComponent {
 
-	public displayedColumns: string[] = ['name', 'host', 'monitoringId', 'actions'];
+	public displayedColumns: string[] = ['name', 'host', 'processId', 'actions'];
 	public dataSource: MatTableDataSource<Coordinator> = new MatTableDataSource<Coordinator>([]);
 
 	@ViewChild(MatSort, {static: true})
 	sort: MatSort = new MatSort;
 
+	public loadingData: boolean = false;
+
 	constructor(
 		public dialog: MatDialog,
-		private fedSiteService: FederatedSiteService,
-		private router: Router) {
+		private fedSiteService: FederatedSiteService) {
 	}
 
 	ngOnInit(): void {
 		this.refreshData();
-	}
-
-	viewCoordinator(id: number) {
-		this.router.navigate(['/coordinators/' + id])
 	}
 
 	editCoordinator(id: number) {
@@ -68,7 +65,11 @@ export class ListCoordinatorsComponent {
 	}
 
 	refreshData() {
-		this.fedSiteService.getAllCoordinators().subscribe(coordinators => this.dataSource.data = coordinators);
+		this.loadingData = true;
+		this.fedSiteService.getAllCoordinators().subscribe(coordinators => {
+			this.dataSource.data = coordinators
+			this.loadingData = false;
+		});
 	}
 
 }

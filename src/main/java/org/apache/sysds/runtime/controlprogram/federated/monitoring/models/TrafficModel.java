@@ -36,11 +36,11 @@ public class TrafficModel extends CoordinatorConnectionModel {
 
 	public TrafficModel() { }
 
-	public TrafficModel(final LocalDateTime timestamp, final String coordinatorAddress, final Long byteAmount) {
+	public TrafficModel(final LocalDateTime timestamp, final String coordinatorHostId, final Long byteAmount) {
 		this.timestamp = timestamp;
 		this.byteAmount = byteAmount;
 
-		super.setCoordinatorAddress(coordinatorAddress);
+		super.setCoordinatorHostId(coordinatorHostId);
 	}
 
 	private TrafficModel(final Long id) {
@@ -51,13 +51,13 @@ public class TrafficModel extends CoordinatorConnectionModel {
 		this(-1L, workerId, LocalDateTime.now(), coordinatorAddress, byteAmount);
 	}
 
-	public TrafficModel(final Long id, final Long workerId, final LocalDateTime timestamp, final String coordinatorAddress, final Long byteAmount) {
+	public TrafficModel(final Long id, final Long workerId, final LocalDateTime timestamp, final String coordinatorHostId, final Long byteAmount) {
 		this.id = id;
 		this.workerId = workerId;
 		this.timestamp = timestamp;
 		this.byteAmount = byteAmount;
 
-		super.setCoordinatorAddress(coordinatorAddress);
+		super.setCoordinatorHostId(coordinatorHostId);
 	}
 
 	@Override

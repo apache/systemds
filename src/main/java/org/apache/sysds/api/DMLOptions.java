@@ -75,8 +75,6 @@ public class DMLOptions {
 	public int                  fedWorkerPort = -1;
 	public boolean              fedMonitoring = false;
 	public int                  fedMonitoringPort = -1;
-	public int					monitorId = -1;
-	public int					maxMonitoringHostCoordinators = 300;
 	public int                  pythonPort    = -1;
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
 	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
@@ -100,7 +98,6 @@ public class DMLOptions {
 			", fedStats=" + fedStats +
 			", fedStatsCount=" + fedStatsCount +
 			", fedMonitor=" + fedMonitoring +
-			", monitorId=" + monitorId +
 			", memStats=" + memStats +
 			", explainType=" + explainType +
 			", execMode=" + execMode +
@@ -199,19 +196,6 @@ public class DMLOptions {
 				else if (explainType.equalsIgnoreCase("recompile_hops")) dmlOptions.explainType = ExplainType.RECOMPILE_HOPS;
 				else if (explainType.equalsIgnoreCase("recompile_runtime")) dmlOptions.explainType = ExplainType.RECOMPILE_RUNTIME;
 				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -hops option, must be one of [hops, runtime, recompile_hops, recompile_runtime]");
-			}
-		}
-
-		if (line.hasOption("monitorId")){
-			try {
-				int id = Integer.parseInt(line.getOptionValue("monitorId"));
-				if (id < 1 || id > defaultOptions.maxMonitoringHostCoordinators) {
-					throw new NumberFormatException();
-				}
-
-				dmlOptions.monitorId = id;
-			} catch (NumberFormatException e) {
-				throw new org.apache.commons.cli.ParseException("Invalid argument specified for -monitorId option, must be a valid integer and between 1 and " + dmlOptions.maxMonitoringHostCoordinators);
 			}
 		}
 

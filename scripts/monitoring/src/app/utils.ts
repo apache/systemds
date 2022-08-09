@@ -17,35 +17,8 @@
  * under the License.
  */
 
-.worker-card {
-	width: 300px;
-	height: 465px;
-}
-
-.worker-chart {
-	height: 100px;
-}
-
-table {
-	width: 100%;
-}
-
-.online-worker {
-	color: green;
-}
-
-.offline-worker {
-	color: darkred;
-}
-.bold {
-	font-weight: bold;
-}
-
-.info-row {
-	display: inline;
-	margin: auto;
-	padding: 0.2em;
-	> * {
-		float: left;
+export class Utils {
+	public static sortTimestamp(a, b) {
+		return a.x < b.x ? -1 : (a.x > b.x ? 1 : 0);
 	}
 }

@@ -186,10 +186,6 @@ public class FederatedData {
 			final DataRequestHandler handler = new DataRequestHandler();
 			// Client Netty
 
-			if (DMLScript.MONITOR_ID > 0) {
-				b.localAddress(getAvailablePort(DMLScript.MONITOR_ID, DMLScript.MAX_MONITOR_HOST_COORDINATORS));
-			}
-
 			b.handler(createChannel(address, handler));
 
 			ChannelFuture f = b.connect(address).sync();

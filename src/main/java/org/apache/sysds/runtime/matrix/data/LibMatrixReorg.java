@@ -677,29 +677,29 @@ public class LibMatrixReorg {
 		MatrixIndexes tmpIx = new MatrixIndexes(-1,-1);
 		if( rmRows ) //margin = "rows"
 		{
-			long rlen = len;
+			long rlen = len; //max dimensionality
 			long clen = linData.getNumColumns();
 			
 			for( int i=0; i<linOffset.getNumRows(); i++ ) {
 				long rix = (long)linOffset.quickGetValue(i, 0);
-				if( rix > 0 ) //otherwise empty row
-				{
-					//get single row from source block
-					MatrixBlock src = linData.slice(i, i, 0, (int)(clen-1), new MatrixBlock());
-					long brix = (rix-1)/blen+1;
-					long lbrix = (rix-1)%blen;
-					tmpIx.setIndexes(brix, data.getIndexes().getColumnIndex());
-					 //create target block if necessary
-					if( !out.containsKey(tmpIx) ) {
-						IndexedMatrixValue tmpIMV = new IndexedMatrixValue(new MatrixIndexes(),new MatrixBlock());
-						tmpIMV.getIndexes().setIndexes(tmpIx);
-						((MatrixBlock)tmpIMV.getValue()).reset((int)Math.min(blen, rlen-((brix-1)*blen)), (int)clen);
-						out.put(tmpIMV.getIndexes(), tmpIMV);
-					}
-					//put single row into target block
-					((MatrixBlock)out.get(tmpIx).getValue()).copy(
-							  (int)lbrix, (int)lbrix, 0, (int)clen-1, src, false);
+				if( rix <= 0 || rix > rlen ) //skip empty row / cut-off rows
+					continue;
+				
+				//get single row from source block
+				MatrixBlock src = linData.slice(i, i, 0, (int)(clen-1), new MatrixBlock());
+				long brix = (rix-1)/blen+1;
+				long lbrix = (rix-1)%blen;
+				tmpIx.setIndexes(brix, data.getIndexes().getColumnIndex());
+				 //create target block if necessary
+				if( !out.containsKey(tmpIx) ) {
+					IndexedMatrixValue tmpIMV = new IndexedMatrixValue(new MatrixIndexes(),new MatrixBlock());
+					tmpIMV.getIndexes().setIndexes(tmpIx);
+					((MatrixBlock)tmpIMV.getValue()).reset((int)Math.min(blen, rlen-((brix-1)*blen)), (int)clen);
+					out.put(tmpIMV.getIndexes(), tmpIMV);
 				}
+				//put single row into target block
+				((MatrixBlock)out.get(tmpIx).getValue()).copy(
+					(int)lbrix, (int)lbrix, 0, (int)clen-1, src, false);
 			}
 		}
 		else //margin = "cols"
@@ -709,24 +709,24 @@ public class LibMatrixReorg {
 			
 			for( int i=0; i<linOffset.getNumColumns(); i++ ) {
 				long cix = (long)linOffset.quickGetValue(0, i);
-				if( cix > 0 ) //otherwise empty row
-				{
-					//get single row from source block
-					MatrixBlock src = linData.slice(0, (int)(rlen-1), i, i, new MatrixBlock());
-					long bcix = (cix-1)/blen+1;
-					long lbcix = (cix-1)%blen;
-					tmpIx.setIndexes(data.getIndexes().getRowIndex(), bcix);
-					 //create target block if necessary
-					if( !out.containsKey(tmpIx) ) {
-						IndexedMatrixValue tmpIMV = new IndexedMatrixValue(new MatrixIndexes(),new MatrixBlock());
-						tmpIMV.getIndexes().setIndexes(tmpIx);
-						((MatrixBlock)tmpIMV.getValue()).reset((int)rlen,(int)Math.min(blen, clen-((bcix-1)*blen)));
-						out.put(tmpIMV.getIndexes(), tmpIMV);
-					}
-					//put single row into target block
-					((MatrixBlock)out.get(tmpIx).getValue()).copy(
-							  0, (int)rlen-1, (int)lbcix, (int)lbcix, src, false);
+				if( cix <= 0 || cix > clen ) //skip empty col / cut-off cols
+					continue;
+				
+				//get single row from source block
+				MatrixBlock src = linData.slice(0, (int)(rlen-1), i, i, new MatrixBlock());
+				long bcix = (cix-1)/blen+1;
+				long lbcix = (cix-1)%blen;
+				tmpIx.setIndexes(data.getIndexes().getRowIndex(), bcix);
+				 //create target block if necessary
+				if( !out.containsKey(tmpIx) ) {
+					IndexedMatrixValue tmpIMV = new IndexedMatrixValue(new MatrixIndexes(),new MatrixBlock());
+					tmpIMV.getIndexes().setIndexes(tmpIx);
+					((MatrixBlock)tmpIMV.getValue()).reset((int)rlen,(int)Math.min(blen, clen-((bcix-1)*blen)));
+					out.put(tmpIMV.getIndexes(), tmpIMV);
 				}
+				//put single row into target block
+				((MatrixBlock)out.get(tmpIx).getValue()).copy(
+					0, (int)rlen-1, (int)lbcix, (int)lbcix, src, false);
 			}
 		}
 		

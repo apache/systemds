@@ -21,4 +21,8 @@ export class Utils {
 	public static sortTimestamp(a, b) {
 		return a.x < b.x ? -1 : (a.x > b.x ? 1 : 0);
 	}
+
+	public static sortStartDate(a, b) {
+		return a.startTime < b.startTime ? -1 : (a.startTime > b.startTime ? 1 : 0);
+	}
 }

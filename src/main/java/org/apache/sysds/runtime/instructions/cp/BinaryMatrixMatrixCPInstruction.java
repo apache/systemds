@@ -54,10 +54,7 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 		else {
 			// Perform computation using input matrices, and produce the result matrix
 			BinaryOperator bop = (BinaryOperator) _optr;
-
-			if(compressedLeft && compressedRight)
-				retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
-			else if(compressedRight)
+			if(!compressedLeft && compressedRight)
 				retBlock = ((CompressedMatrixBlock) inBlock2).binaryOperationsLeft(bop, inBlock1, new MatrixBlock());
 			else
 				retBlock = inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());

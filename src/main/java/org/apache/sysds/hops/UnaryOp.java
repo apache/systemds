@@ -295,9 +295,10 @@ public class UnaryOp extends MultiThreadedHop
 		}
 		
 		//in-memory cum sum (of partial aggregates)
+		//marked for update in-place if there was at least one aggregation level
 		if( TEMP.getOutputParameters().getNumRows()!=1 ){
 			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
-			Unary unary1 = new Unary( TEMP, _op, DataType.MATRIX, ValueType.FP64, ExecType.CP, k, true);
+			Unary unary1 = new Unary( TEMP, _op, DataType.MATRIX, ValueType.FP64, ExecType.CP, k, TEMP!=X);
 			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, blen, -1);
 			setLineNumbers(unary1);
 			TEMP = unary1;

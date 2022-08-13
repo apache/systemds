@@ -72,7 +72,6 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
   for(i in 1:ncol(pipeline)) {
     op = as.scalar(pipeline[1,i])
     applyOp = toString(as.scalar(applyFunc[1,i]))
-    # print("op: "+op)
     Xclone = Xtrain
     XtestClone = Xtest
     [hp, dataFlag, yFlag, executeFlag] = matrixToList(Xtrain, Ytrain, mask, FD, hyperParameters[i], flagsCount, op)
@@ -85,10 +84,11 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
         internalStates = append(internalStates, L)
         L = append(L, list(X=Xtest));
         Xtest = eval(applyOp, L);
-        # print("L \n"+toString(L, rows=3))
         Xtest = confirmData(Xtest, XtestClone, mask, dataFlag)
       }
-      else internalStates = append(internalStates, as.frame("NA"))
+      else {
+        internalStates = append(internalStates, as.frame("NA"))
+      }
       Xtrain = confirmData(Xtrain, Xclone, mask, dataFlag)
 
       # dataFlag 0 = only on numeric, 1 = on whole data
@@ -102,7 +102,8 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
     else {
       print("not applying "+op+" executeFlag = 0")
     }
-    if(ncol(Xtest) == d) {
+    
+    if(ncol(Xtest) == d & nrow(Xtest) == nrow(XtestClone)) {
       changesSingle = sum(abs(replace(target=Xtest, pattern=NaN, replacement=0) - replace(target=XtestClone, pattern=NaN, replacement=0))  > 0.001 )
       changesAll  = sum(abs(replace(target=Xtest, pattern=NaN, replacement=0) - replace(target=Xorig, pattern=NaN, replacement=0))  > 0.001 )
     
@@ -112,9 +113,6 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
     }
   }
 
-  # # # do a quick validation check
-  if(nrow(Xtest) != testRow)
-    stop("executePipeline: test rows altered")
   t2 = floor((time() - t1) / 1e+6)
 }
 
@@ -129,33 +127,30 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
   yFlag = as.integer(as.scalar(p[1, ncol(p) - 2]))
   fDFlag = as.integer(as.scalar(p[1, ncol(p)-3]))
   maskFlag = as.integer(as.scalar(p[1, ncol(p)-4]))
-  
 
   ######################################################
   # CHECK FOR DATA FLAG
- 
   [X, executeFlag] = applyDataFlag(X, mask, dataFlag)
   l = list(X)
-    
+
   ######################################################
-  # CHECK FOR Y APPEND FLAG  
- 
+  # CHECK FOR Y APPEND FLAG
   if(yFlag == 1) {
     l = append(l, Y)
   }
+
   ######################################################
   # CHECK FOR FD APPEND FLAG
-  if(fDFlag == 1)
-  {
+  if(fDFlag == 1) {
     l = append(l, FD)
   }
-  
+
   ######################################################
   # CHECK FOR MASK APPEND FLAG
-  if(maskFlag == 1)
-  {
+  if(maskFlag == 1) {
     l = append(l, mask)
   }
+
   #####################################################
   # POPULATE HYPER PARAM
   # get the number of hyper-parameters and loop till that
@@ -164,11 +159,11 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
     for(i in 1:no_of_hyperparam)
       l = append(l, as.scalar(p[1,(i+1)]))
   }
+
   ######################################################
   # CHECK FOR VERBOSE FLAG
   if(hasVerbose == 1)
     l = append(l, FALSE)
-
 }
 
 applyDataFlag = function(Matrix[Double] X, Matrix[Double] mask, Integer dataFlag)

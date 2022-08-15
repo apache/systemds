@@ -63,6 +63,6 @@ describe('CreateEditCoordinatorsComponent', () => {
 		let html = de.query(By.css('#register-coordinator-content')).nativeElement.innerText;
 		expect(html).toContain('Name');
 		expect(html).toContain('Host');
-		expect(html).toContain('Monitoring Id');
+		expect(html).toContain('Process Id');
 	});
 });

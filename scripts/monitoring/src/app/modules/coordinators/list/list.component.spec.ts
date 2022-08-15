@@ -62,7 +62,7 @@ describe('ListCoordinatorsComponent', () => {
 
 	it('should contain name, address and actions table fields', () => {
 		expect(component.displayedColumns).toContain('name');
-		expect(component.displayedColumns).toContain('address');
+		expect(component.displayedColumns).toContain('host');
 		expect(component.displayedColumns).toContain('actions');
 	});
 

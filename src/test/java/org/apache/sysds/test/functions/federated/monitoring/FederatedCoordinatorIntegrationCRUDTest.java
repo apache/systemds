@@ -43,7 +43,7 @@ public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoring
 
 	@Test
 	public void testCoordinatorAddedForMonitoring() {
-		var addedCoordinators = addEntities(1);
+		var addedCoordinators = addEntities(1, EntityType.COORDINATOR);
 		var firstCoordinatorStatus = addedCoordinators.get(0).statusCode();
 
 		Assert.assertEquals("Added coordinator status code", HttpStatus.SC_OK, firstCoordinatorStatus);
@@ -52,10 +52,10 @@ public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoring
 	@Test
 	@Ignore
 	public void testCoordinatorRemovedFromMonitoring() {
-		addEntities(2);
-		var statusCode = removeEntity(1L).statusCode();
+		addEntities(2, EntityType.COORDINATOR);
+		var statusCode = removeEntity(1L, EntityType.COORDINATOR).statusCode();
 
-		var getAllCoordinatorsResponse = getEntities();
+		var getAllCoordinatorsResponse = getEntities(EntityType.COORDINATOR);
 		var numReturnedCoordinators = StringUtils.countMatches(getAllCoordinatorsResponse.body().toString(), "id");
 
 		Assert.assertEquals("Removed coordinator status code", HttpStatus.SC_OK, statusCode);
@@ -65,12 +65,12 @@ public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoring
 	@Test
 	@Ignore
 	public void testCoordinatorDataUpdated() {
-		addEntities(3);
+		addEntities(3, EntityType.COORDINATOR);
 		var newCoordinatorData = new WorkerModel(1L, "NonExistentName", "nonexistent.address");
 
-		var editedCoordinator = updateEntity(newCoordinatorData);
+		var editedCoordinator = updateEntity(newCoordinatorData, EntityType.COORDINATOR);
 
-		var getAllCoordinatorsResponse = getEntities();
+		var getAllCoordinatorsResponse = getEntities(EntityType.COORDINATOR);
 		var numCoordinatorsNewData = StringUtils.countMatches(getAllCoordinatorsResponse.body().toString(), newCoordinatorData.name);
 
 		Assert.assertEquals("Updated coordinator status code", HttpStatus.SC_OK, editedCoordinator.statusCode());
@@ -81,14 +81,14 @@ public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoring
 	@Ignore
 	public void testCorrectAmountAddedCoordinatorsForMonitoring() {
 		int numCoordinators = 3;
-		var addedCoordinators = addEntities(numCoordinators);
+		var addedCoordinators = addEntities(numCoordinators, EntityType.COORDINATOR);
 
 		for (int i = 0; i < numCoordinators; i++) {
 			var coordinatorStatus = addedCoordinators.get(i).statusCode();
 			Assert.assertEquals("Added coordinator status code", HttpStatus.SC_OK, coordinatorStatus);
 		}
 
-		var getAllCoordinatorsResponse = getEntities();
+		var getAllCoordinatorsResponse = getEntities(EntityType.COORDINATOR);
 		var numReturnedCoordinators = StringUtils.countMatches(getAllCoordinatorsResponse.body().toString(), "id");
 
 		Assert.assertEquals("Amount of coordinators to get", numCoordinators, numReturnedCoordinators);

@@ -30,6 +30,22 @@ let coordinators = [
 	}
 ]
 
+let statistics = [
+	{
+		"timestamp": "2022-06-25 13:18:19.578",
+		"x": 1.96,
+		"memoryUsage": 1.46,
+		"coordinatorTraffic": [],
+		"heavyHitters": []
+	}, {
+		"timestamp": "2022-06-25 13:18:22.522",
+		"x": 1.95,
+		"memoryUsage": 1.46,
+		"coordinatorTraffic": [],
+		"heavyHitters": []
+	}
+]
+
 let workers = [
 	{
 		"id": 1,
@@ -104,5 +120,6 @@ let workers = [
 
 export const serviceMockData = {
 	workers: workers,
-	coordinators: coordinators
+	coordinators: coordinators,
+	statistics: statistics
 }

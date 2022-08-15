@@ -49,6 +49,10 @@ export class FederatedSiteServiceStub {
 		return of(serviceMockData.workers.find(w => w.id === id));
 	}
 
+	public getWorkerPolling(id: number) {
+		return of(serviceMockData.workers.find(w => w.id === id));
+	}
+
 	public createCoordinator(coordinator: Coordinator) {
 		return of(coordinator)
 	}
@@ -71,5 +75,9 @@ export class FederatedSiteServiceStub {
 
 	public deleteWorker(id: number) {
 		return of({"id": id});
+	}
+
+	public getStatisticsPolling(id: number) {
+		return of(serviceMockData.statistics);
 	}
 }

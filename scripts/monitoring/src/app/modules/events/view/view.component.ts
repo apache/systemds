@@ -38,9 +38,6 @@ export class ViewWorkerEventsComponent {
 
 	public statistics: Statistics;
 
-	@ViewChild(MatPaginator) paginator: MatPaginator;
-	@ViewChild(MatSort) sort: MatSort;
-
 	private eventTimelineChart: Chart;
 
 	private stopPollingStatistics = new Subject<any>();

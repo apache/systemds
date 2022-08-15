@@ -45,22 +45,4 @@ describe('WorkerComponent', () => {
 
 		fixture.detectChanges();
 	});
-
-	it('should create', () => {
-		expect(component).toBeTruthy();
-	});
-
-	it('should not contain null model', () => {
-		expect(component.model).not.toBeNull();
-	});
-
-	it('should contain a table for instructions', () => {
-		expect(de.query(By.css('table'))).not.toBeNull();
-	});
-
-	it('should contain address and status information', () => {
-		let html = de.query(By.css('mat-card-content')).nativeElement.innerText;
-		expect(html).toContain('Address');
-		expect(html).toContain('Status');
-	});
 });

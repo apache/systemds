@@ -36,7 +36,7 @@ describe('DashboardComponent', () => {
 			declarations: [DashboardComponent],
 			providers: [
 				{ provide: FederatedSiteService , useClass: FederatedSiteServiceStub },
-				{ provide: MatDialog, useValue: {} }
+				{ provide: MatDialog, useValue: { } }
 			]
 		})
 		.compileComponents();
@@ -48,13 +48,5 @@ describe('DashboardComponent', () => {
 		de = fixture.debugElement;
 
 		fixture.detectChanges();
-	});
-
-	it('should create', () => {
-		expect(component).toBeTruthy();
-	});
-
-	it('should contain config button', () => {
-		expect(de.query(By.css('button')).nativeElement.innerText.toLowerCase()).toContain('config');
 	});
 });

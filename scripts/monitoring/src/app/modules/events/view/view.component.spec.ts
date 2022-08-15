@@ -65,18 +65,7 @@ describe('ViewWorkerEventsComponent', () => {
 		expect(component).toBeTruthy();
 	});
 
-	it('should contain address, status and JIT information', () => {
-		let html = de.query(By.css('#main-worker-information')).nativeElement.innerText;
-		expect(html).toContain('Address');
-		expect(html).toContain('Status');
-		expect(html).toContain('JIT');
-	});
-
-	it('should contain CPU metrics diagram', () => {
-		expect(de.query(By.css('#cpu-metric-card'))).not.toBeNull();
-	});
-
-	it('should contain memory metrics diagram', () => {
-		expect(de.query(By.css('#memory-metric-card'))).not.toBeNull();
+	it('should contain canvas with bar chart', () => {
+		expect(de.query(By.css('canvas'))).not.toBeNull();
 	});
 });

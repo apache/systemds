@@ -40,23 +40,7 @@ The following diagram illustrates the current state of the database schema.
 ![Database Schema](./DB-diagram.svg)
 
 **Important to note**
-- There is no foreign key constraint between the worker and statistics tables. 
-- The field for **coordinatorTraffic** is parsed into JSON format upon retrieval and saved as a string in the database. Example:
-```json
-{
-  "datetime": "2022-06-24T17:08:56.897188", 
-  "coordinatorAddress": "localhost:8445", 
-  "byteAmount": 45000
-}
-```
-- The field for **heavyHitters** is parsed into JSON format upon retrieval and saved as a string in the database. Example:
-```json
-{
-  "instruction": "fed_uamin", 
-  "count": 4, 
-  "duration": 0.5
-}
-```
+- There is no foreign key constraint between the worker and statistics tables.
 
 ### Processes
 The following diagram illustrates the processes running in the backend.

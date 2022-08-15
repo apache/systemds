@@ -120,6 +120,7 @@ public class DMLConfig
 	public static final String FEDERATED_PLANNER = "sysds.federated.planner";
 	public static final String FEDERATED_PAR_INST = "sysds.federated.par_inst";
 	public static final String FEDERATED_PAR_CONN = "sysds.federated.par_conn";
+	public static final String PRIVACY_CONSTRAINT_MOCK = "sysds.federated.priv_mock";
 	public static final int DEFAULT_FEDERATED_PORT = 4040; // borrowed default Spark Port
 	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 8;
 	
@@ -189,6 +190,7 @@ public class DMLConfig
 		_defaultVals.put(FEDERATED_PLANNER,      FederatedPlanner.RUNTIME.name());
 		_defaultVals.put(FEDERATED_PAR_CONN,     "-1"); // vcores
 		_defaultVals.put(FEDERATED_PAR_INST,     "-1"); // vcores
+		_defaultVals.put(PRIVACY_CONSTRAINT_MOCK, null);
 	}
 	
 	public DMLConfig() {

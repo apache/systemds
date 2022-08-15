@@ -22,103 +22,97 @@ package org.apache.sysds.runtime.transform.tokenize;
 import org.apache.sysds.runtime.DMLRuntimeException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class Token {
 
-    public static final String EMPTY_TOKEN = "";
+	public static final String EMPTY_TOKEN = "";
 
-    public static class SubToken {
-        private final String text;
-        private final long startIndex;
-        private final long endIndex;
+	public static class SubToken {
+		private final String text;
+		private final long startIndex;
+		private final long endIndex;
 
-        public SubToken(String token, long startIndex) {
-            this.text = token;
-            this.startIndex = startIndex;
-            this.endIndex = startIndex + token.length();
-        }
+		public SubToken(String token, long startIndex) {
+			this.text = token;
+			this.startIndex = startIndex;
+			this.endIndex = startIndex + token.length();
+		}
 
-        @Override
-        public String toString() {
-            return "SubToken{" +
-                    "textToken='" + text + '\'' +
-                    ", startIndex=" + startIndex +
-                    ", endIndex=" + endIndex +
-                    '}';
-        }
-    }
+		@Override
+		public String toString() {
+			return "SubToken{" +
+					"textToken='" + text + '\'' +
+					", startIndex=" + startIndex +
+					", endIndex=" + endIndex +
+					'}';
+		}
+	}
 
-    private List<SubToken> subTokens;
+	private List<SubToken> subTokens;
 
-    private Token(int subListSize){
-        subTokens = new ArrayList<>(subListSize);
-    }
+	private Token(int subListSize){
+		subTokens = new ArrayList<>(subListSize);
+	}
 
-    public Token(String token, long startIndex) {
-        this(1);
-        subTokens.add(new SubToken(token, startIndex));
-    }
+	public Token(String token, long startIndex) {
+		this(1);
+		subTokens.add(new SubToken(token, startIndex));
+	}
 
-    public Token(List<String> tokens, List<Long> startIndex){
-        this(tokens.size());
-        if(tokens.size() != startIndex.size())
-            throw new DMLRuntimeException("Cannot create token from mismatched input sizes");
-        for(int i = 0; i < tokens.size(); i++){
-            subTokens.add(new SubToken(tokens.get(i), startIndex.get(i)));
-        }
-    }
+	public Token(List<String> tokens, List<Long> startIndex){
+		this(tokens.size());
+		if(tokens.size() != startIndex.size())
+			throw new DMLRuntimeException("Cannot create token from mismatched input sizes");
+		for(int i = 0; i < tokens.size(); i++){
+			subTokens.add(new SubToken(tokens.get(i), startIndex.get(i)));
+		}
+	}
 
-    public Token(List<Token> subList) {
-        this(getNumSubTokens(subList));
-        for(Token token: subList){
-            subTokens.addAll(token.subTokens);
-        }
-    }
+	public Token(List<Token> subList) {
+		this(getNumSubTokens(subList));
+		for(Token token: subList){
+			subTokens.addAll(token.subTokens);
+		}
+	}
 
-    private static int getNumSubTokens(List<Token> tokens){
-        int sum = 0;
-        for (Token token : tokens) {
-            sum += token.getNumSubTokens();
-        }
-        return sum;
-    }
+	private static int getNumSubTokens(List<Token> tokens){
+		int sum = 0;
+		for (Token token : tokens) {
+			sum += token.getNumSubTokens();
+		}
+		return sum;
+	}
 
-    public int getNumSubTokens(){
-        return subTokens.size();
-    }
+	public int getNumSubTokens(){
+		return subTokens.size();
+	}
 
-    public long getStartIndex(int subTokenIndex){
-        return subTokens.get(subTokenIndex).startIndex;
-    }
+	public long getStartIndex(int subTokenIndex){
+		return subTokens.get(subTokenIndex).startIndex;
+	}
 
-    @Override
-    public int hashCode() {
-        return toString().hashCode();
-    }
+	@Override
+	public int hashCode() {
+		return toString().hashCode();
+	}
 
-    @Override
-    public String toString() {
-        if(subTokens.size() == 0){
-            return EMPTY_TOKEN;
-        }
-        if(subTokens.size() == 1){
-            return subTokens.get(0).text;
-        }
-        StringBuilder sb = new StringBuilder().append("\"('");
-        for(int i = 0; i < subTokens.size(); i++){
-            sb.append(subTokens.get(i).text);
-            if(i < subTokens.size()-1)
-                sb.append("', '");
-        }
-        sb.append("')\"");
-        //return "\"('" + subTokens.stream().map(subToken -> subToken.text).collect(Collectors.joining("', '")) + "')\"";
-        return sb.toString();
-    }
-
-
+	@Override
+	public String toString() {
+		if(subTokens.size() == 0){
+			return EMPTY_TOKEN;
+		}
+		if(subTokens.size() == 1){
+			return subTokens.get(0).text;
+		}
+		StringBuilder sb = new StringBuilder().append("\"('");
+		for(int i = 0; i < subTokens.size(); i++){
+			sb.append(subTokens.get(i).text);
+			if(i < subTokens.size()-1)
+				sb.append("', '");
+		}
+		sb.append("')\"");
+		//return "\"('" + subTokens.stream().map(subToken -> subToken.text).collect(Collectors.joining("', '")) + "')\"";
+		return sb.toString();
+	}
 }

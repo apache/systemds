@@ -33,69 +33,69 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
 public class TokenizerBuilderNgram extends TokenizerBuilderWhitespaceSplit {
 
-    private static final long serialVersionUID = -6297904316677723802L;
+	private static final long serialVersionUID = -6297904316677723802L;
 
-    private enum NgramType{
-        DOCUMENT,
-        TOKEN
-    }
+	private enum NgramType{
+		DOCUMENT,
+		TOKEN
+	}
 
-    public int minGram = 1;
-    public int maxGram = 2;
-    public NgramType ngramType = NgramType.DOCUMENT;
+	public int minGram = 1;
+	public int maxGram = 2;
+	public NgramType ngramType = NgramType.DOCUMENT;
 
-    public TokenizerBuilderNgram(int[] idCols, int tokenizeCol, JSONObject params) throws JSONException {
-        super(idCols, tokenizeCol, params);
-        if (params != null && params.has("min_gram")) {
-            this.minGram = params.getInt("min_gram");
-        }
-        if (params != null && params.has("max_gram")) {
-            this.maxGram = params.getInt("max_gram");
-        }
-        if (params != null && params.has("ngram_type")){
-            String type = params.getString("ngram_type").toLowerCase();
-            if(type.equals("document")){
-                this.ngramType = NgramType.DOCUMENT;
-            } else if (type.equals("token")) {
-                this.ngramType = NgramType.TOKEN;
-            }else {
-                throw new DMLRuntimeException("Invalid ngram type, choose between 'token' and 'document'");
-            }
-        }
-    }
+	public TokenizerBuilderNgram(int[] idCols, int tokenizeCol, JSONObject params) throws JSONException {
+		super(idCols, tokenizeCol, params);
+		if (params != null && params.has("min_gram")) {
+			this.minGram = params.getInt("min_gram");
+		}
+		if (params != null && params.has("max_gram")) {
+			this.maxGram = params.getInt("max_gram");
+		}
+		if (params != null && params.has("ngram_type")){
+			String type = params.getString("ngram_type").toLowerCase();
+			if(type.equals("document")){
+				this.ngramType = NgramType.DOCUMENT;
+			} else if (type.equals("token")) {
+				this.ngramType = NgramType.TOKEN;
+			}else {
+				throw new DMLRuntimeException("Invalid ngram type, choose between 'token' and 'document'");
+			}
+		}
+	}
 
-    public List<Token> splitIntoNgrams(Token token, int minGram, int maxGram){
-        if(token.getNumSubTokens() == 0)
-            throw new DMLRuntimeException("Cannot create ngram of token where there are no subTokens");
-        if(token.getNumSubTokens() != 1)
-            throw new DMLRuntimeException("Cannot create ngram of token where there are more than 1 subTokens");
-        String tokenText = token.toString();
-        List<Token> newTokens = new ArrayList<>();
-        for(int n = minGram; n <= maxGram; n++){
-            for(int i = 0; i < tokenText.length() - n + 1; i++){
-                String substring = tokenText.substring(i, i+n);
-                newTokens.add(new Token(substring, token.getStartIndex(0) + i));
-            }
-        }
-        return newTokens;
-    }
-    @Override
-    public void createInternalRepresentation(FrameBlock in, DocumentRepresentation[] internalRepresentation, int rowStart, int blk) {
-        super.createInternalRepresentation(in, internalRepresentation, rowStart, blk);
-        int endIndex = getEndIndex(in.getNumRows(), rowStart, blk);
-        for(int row = rowStart; row < endIndex; row++){
-            DocumentRepresentation documentRepresentation = internalRepresentation[row];
+	public List<Token> splitIntoNgrams(Token token, int minGram, int maxGram){
+		if(token.getNumSubTokens() == 0)
+			throw new DMLRuntimeException("Cannot create ngram of token where there are no subTokens");
+		if(token.getNumSubTokens() != 1)
+			throw new DMLRuntimeException("Cannot create ngram of token where there are more than 1 subTokens");
+		String tokenText = token.toString();
+		List<Token> newTokens = new ArrayList<>();
+		for(int n = minGram; n <= maxGram; n++){
+			for(int i = 0; i < tokenText.length() - n + 1; i++){
+				String substring = tokenText.substring(i, i+n);
+				newTokens.add(new Token(substring, token.getStartIndex(0) + i));
+			}
+		}
+		return newTokens;
+	}
+	
+	@Override
+	public void createInternalRepresentation(FrameBlock in, DocumentRepresentation[] internalRepresentation, int rowStart, int blk) {
+		super.createInternalRepresentation(in, internalRepresentation, rowStart, blk);
+		int endIndex = getEndIndex(in.getNumRows(), rowStart, blk);
+		for(int row = rowStart; row < endIndex; row++){
+			DocumentRepresentation documentRepresentation = internalRepresentation[row];
 
-            if(this.ngramType == NgramType.DOCUMENT){
-                documentRepresentation.splitIntoNgrams(this.minGram, this.maxGram);
-            } else if (this.ngramType == NgramType.TOKEN) {
-                List<Token> newTokens = new ArrayList<>();
-                for (Token wordToken: documentRepresentation.getTokens()) {
-                    newTokens.addAll(splitIntoNgrams(wordToken, this.minGram, this.maxGram));
-                }
-                documentRepresentation.tokens = newTokens;
-            }
-        }
-    }
-
+			if(this.ngramType == NgramType.DOCUMENT){
+				documentRepresentation.splitIntoNgrams(this.minGram, this.maxGram);
+			} else if (this.ngramType == NgramType.TOKEN) {
+				List<Token> newTokens = new ArrayList<>();
+				for (Token wordToken: documentRepresentation.getTokens()) {
+					newTokens.addAll(splitIntoNgrams(wordToken, this.minGram, this.maxGram));
+				}
+				documentRepresentation.tokens = newTokens;
+			}
+		}
+	}
 }

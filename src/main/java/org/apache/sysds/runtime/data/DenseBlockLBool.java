@@ -74,7 +74,7 @@ public class DenseBlockLBool extends DenseBlockLDRB
 		// Special implementation to make computeNnz fast if complete block is read
 		boolean bv = v != 0;
 		long dataLength = (long) rlen * odims[0];
-		int newBlockSize = Math.min(rlen, Integer.MAX_VALUE / odims[0]);
+		int newBlockSize = Math.min(rlen, MAX_ALLOC / odims[0]);
 		int numBlocks = UtilFunctions.toInt(Math.ceil((double) rlen / newBlockSize));
 		if (_blen == newBlockSize && dataLength <= capacity()) {
 			for (int i = 0; i < numBlocks; i++) {

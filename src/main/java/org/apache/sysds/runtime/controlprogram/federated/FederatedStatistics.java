@@ -293,7 +293,9 @@ public class FederatedStatistics {
 		sb.append(displayFedReuseReadStats());
 		sb.append(displayFedPutLineageStats());
 		sb.append(displayFedSerializationReuseStats());
-		sb.append(displayFedTransfer());
+		//FIXME: the following statistics need guards to only show
+		// results if federated operations where executed
+		//sb.append(displayFedTransfer());
 		return sb.toString();
 	}
 

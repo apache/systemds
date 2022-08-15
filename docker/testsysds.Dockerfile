@@ -64,10 +64,12 @@ RUN apt-get update -qq \
 http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - \ 
 	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 
-# R
 RUN apt-get install -y --no-install-recommends \
-		r-base \ 
+		libssl-dev \
+		r-base \
 		r-base-dev \
+		r-base-core\
+    
 	&& Rscript installDependencies.R \
 	&& rm -rf installDependencies.R \
 	&& rm -rf /var/lib/apt/lists/*

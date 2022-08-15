@@ -33,6 +33,12 @@ public abstract class DenseBlockLDRB extends DenseBlock
 {
 	private static final long serialVersionUID = -7519435549328146356L;
 
+	// On same platforms, allocating arrays very close to INT_MAX runs into
+	// a "java.lang.OutOfMemoryError: Requested array size exceeds VM limit"
+	// Also, this normally does not happen because we allocate row-aligned
+	// chunks, to be on the safe side, we keep a margin of 8 for padding.
+	public static int MAX_ALLOC = Integer.MAX_VALUE - 8;
+	
 	protected int _blen;
 
 	protected DenseBlockLDRB(int[] dims) {
@@ -49,7 +55,7 @@ public abstract class DenseBlockLDRB extends DenseBlock
 
 	@Override
 	public int blockSize() {
-	    return _blen;
+		return _blen;
 	}
 
 	@Override
@@ -60,7 +66,7 @@ public abstract class DenseBlockLDRB extends DenseBlock
 	@Override
 	public void reset(int rlen, int[] odims, double v) {
 		long dataLength = (long) rlen * odims[0];
-		int newBlockSize = Math.min(rlen, Integer.MAX_VALUE / odims[0]);
+		int newBlockSize = Math.min(rlen, MAX_ALLOC / odims[0]);
 		int numBlocks = UtilFunctions.toInt(Math.ceil((double) rlen / newBlockSize));
 		if (_blen == newBlockSize && dataLength <= capacity()) {
 			IntStream.range(0, numBlocks)

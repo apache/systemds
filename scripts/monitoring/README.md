@@ -121,17 +121,19 @@ To run tests, run the following command:
 ```
 ##### Request body in **JSON** format:
 
-| Body parameter | Type     | Description                       |
-| :-------- | :------- | :-------------------------------- |
-| `name`    | `string` | **Required**. Name of the coordinator to register |
-| `address` | `string` | **Required**. Address of the coordinator to register |
+| Body parameter | Type     | Description                                             |
+|:---------------|:---------|:--------------------------------------------------------|
+| `name`         | `string` | **Required**. Name of the coordinator to register       |
+| `host`         | `string` | **Required**. Host of the coordinator to register       |
+| `processId`    | `int`    | **Required**. Process id of the coordinator to register |
 
 ##### Example:
 
 ```json
 {
   "name": "Coordinator 1",
-  "address": "localhost:8441"
+  "host": "localhost",
+  "processId": 2323
 }
 ```
 #### Edit registered coordinator
@@ -144,17 +146,19 @@ To run tests, run the following command:
 
 ##### Request body in **JSON** format:
 
-| Body parameter | Type     | Description                       |
-| :-------- | :------- | :-------------------------------- |
-| `name`    | `string` | Changed name of the coordinator |
-| `address` | `string` | Changed address of the coordinator |
+| Body parameter | Type     | Description                           |
+|:---------------|:---------|:--------------------------------------|
+| `name`         | `string` | Changed name of the coordinator       |
+| `host`         | `string` | Changed host of the coordinator       |
+| `processId`    | `id`     | Changed process id of the coordinator |
 
 ##### Example:
 
 ```json
 {
   "name": "Coordinator 4",
-  "address": "localhost:8445"
+  "address": "localhost:8445", 
+  "processId": 3434
 }
 ```
 #### Deregister specific coordinator
@@ -166,6 +170,16 @@ To run tests, run the following command:
 | Parameter | Type     | Description                       |
 | :-------- | :------- | :-------------------------------- |
 | `id`      | `int` | **Required**. Id of the coordinator to deregister |
+
+#### Request statistics for given worker
+
+```http
+  GET /statistics/${id}
+```
+
+| Parameter | Type     | Description                                |
+| :-------- | :------- |:-------------------------------------------|
+| `id`      | `int` | **Required**. Id of the worker in question |
 
 ## License
 

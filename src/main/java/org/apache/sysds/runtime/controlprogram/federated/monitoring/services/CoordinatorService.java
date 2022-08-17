@@ -19,33 +19,32 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
 
 import java.util.List;
 
 public class CoordinatorService {
-	private static final IRepository _entityRepository = new DerbyRepository();
+	private static final IRepository entityRepository = new DerbyRepository();
 
-	public void create(BaseEntityModel model) {
-		_entityRepository.createEntity(EntityEnum.COORDINATOR, model);
+	public Long create(CoordinatorModel model) {
+		return entityRepository.createEntity(model);
 	}
 
-	public void update(BaseEntityModel model) {
-		_entityRepository.updateEntity(EntityEnum.COORDINATOR, model);
+	public void update(CoordinatorModel model) {
+		entityRepository.updateEntity(model);
 	}
 
 	public void remove(Long id) {
-		_entityRepository.removeEntity(EntityEnum.COORDINATOR, id);
+		entityRepository.removeEntity(id, CoordinatorModel.class);
 	}
 
-	public BaseEntityModel get(Long id) {
-		return _entityRepository.getEntity(EntityEnum.COORDINATOR, id);
+	public CoordinatorModel get(Long id) {
+		return entityRepository.getEntity(id, CoordinatorModel.class);
 	}
 
-	public List<BaseEntityModel> getAll() {
-		return  _entityRepository.getAllEntities(EntityEnum.COORDINATOR);
+	public List<CoordinatorModel> getAll() {
+		return entityRepository.getAllEntities(CoordinatorModel.class);
 	}
 }

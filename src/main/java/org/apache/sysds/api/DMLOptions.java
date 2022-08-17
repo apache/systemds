@@ -198,6 +198,7 @@ public class DMLOptions {
 				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -hops option, must be one of [hops, runtime, recompile_hops, recompile_runtime]");
 			}
 		}
+
 		dmlOptions.stats = line.hasOption("stats");
 		if (dmlOptions.stats){
 			String statsCount = line.getOptionValue("stats");
@@ -348,6 +349,9 @@ public class DMLOptions {
 		Option pythonOpt = OptionBuilder
 			.withDescription("Python Context start with port argument for communication to python")
 			.isRequired().hasArg().create("python");
+		Option monitorIdOpt = OptionBuilder
+				.withDescription("Coordinator context start with monitorId argument for monitoring registration")
+				.hasOptionalArg().create("monitorId");
 		Option fileOpt = OptionBuilder.withArgName("filename")
 			.withDescription("specifies dml/pydml file to execute; path can be local/hdfs/gpfs (prefixed with appropriate URI)")
 			.isRequired().hasArg().create("f");
@@ -393,6 +397,7 @@ public class DMLOptions {
 		options.addOption(lineageOpt);
 		options.addOption(fedOpt);
 		options.addOption(monitorOpt);
+		options.addOption(monitorIdOpt);
 		options.addOption(checkPrivacy);
 		options.addOption(federatedCompilation);
 		options.addOption(noFedRuntimeConversion);

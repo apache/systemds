@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
 import io.netty.handler.codec.http.FullHttpResponse;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.Request;
 
 public interface IController {
 

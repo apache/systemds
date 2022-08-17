@@ -20,15 +20,15 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories;
 
 public class Constants {
-	public static final String WORKERS_TABLE_NAME= "workers";
-	public static final String COORDINATORS_TABLE_NAME= "coordinators";
-	public static final String STATS_TABLE_NAME= "statistics";
+	public static final String ENTITY_CLASS_SUFFIX = "Model";
+	public static final String ENTITY_STRING_COL = "VARCHAR(5000)";
+	public static final String ENTITY_DOUBLE_COL = "DOUBLE";
+	public static final String ENTITY_NUMBER_COL = "INTEGER";
+	public static final String ENTITY_TIMESTAMP_COL = "TIMESTAMP";
 	public static final String ENTITY_NAME_COL = "name";
-	public static final String ENTITY_ADDR_COL = "address";
-	public static final String ENTITY_CPU_COL = "cpuUsage";
-	public static final String ENTITY_MEM_COL = "memoryUsage";
-	public static final String ENTITY_TRAFFIC_COL = "coordinatorTraffic";
-	public static final String ENTITY_HEAVY_HITTERS_COL = "heavyHitters";
+	public static final String ENTITY_ADDRESS_COL = "address";
+	public static final String ENTITY_MONITORING_KEY_COL = "monitoringHostIdKey";
 	public static final String ENTITY_ID_COL = "id";
 	public static final String ENTITY_WORKER_ID_COL = "workerId";
+	public static final String ENTITY_EVENT_ID_COL = "eventId";
 }

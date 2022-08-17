@@ -17,6 +17,8 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
-
-public abstract class BaseEntityModel { }
+export class EventStage {
+	constructor(public operation: string = '',
+				public startTime: string = '',
+				public endTime: string = '') { }
+}

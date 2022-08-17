@@ -19,9 +19,13 @@
 
 package org.apache.sysds.test.functions.federated.monitoring;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatsEntityModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.StatsService;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.StatisticsService;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.WorkerService;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -36,6 +40,7 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 
 	private static int[] workerPorts;
 	private final WorkerService workerMonitoringService = new WorkerService();
+	private final StatisticsService statisticsMonitoringService = new StatisticsService();
 
 	@Override
 	public void setUp() {
@@ -47,27 +52,42 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 	@Test
 	public void testWorkerStatisticsParsedCorrectly() {
 
-		var model = (StatsEntityModel) StatsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0]);
+		var model = (StatisticsModel) StatisticsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0]);
 
 		Assert.assertNotNull("Stats parsed correctly", model);
-		Assert.assertNotEquals("CPU stats parsed correctly", 0, model.getCPUUsage());
-		Assert.assertNotEquals("Memory Stats parsed correctly", 0, model.getMemoryUsage());
+		Assert.assertNotEquals("Utilization stats parsed correctly", 0, model.utilization.size());
 	}
 
 	@Test
 	public void testWorkerStatisticsReturnedForMonitoring() {
-		workerMonitoringService.create(new NodeEntityModel(1L, "Worker", "localhost:" + workerPorts[0]));
+		workerMonitoringService.create(new WorkerModel(1L, "Worker", "localhost:" + workerPorts[0]));
 
-		var model = (NodeEntityModel) workerMonitoringService.get(1L);
+		var model = workerMonitoringService.get(1L);
 
-		Assert.assertNotNull("Stats field of model contains worker statistics", model.getStats());
+		Assert.assertNotNull("Stats field of model contains worker statistics", model);
 	}
 
 	@Test
 	public void testNonExistentWorkerStatistics() {
-		workerMonitoringService.create(new NodeEntityModel(1L, "Worker", "not-running.address"));
-		var model = (NodeEntityModel) workerMonitoringService.get(1L);
+		var bla = new EventModel(1L, -1L);
+		var derby = new DerbyRepository();
 
-		Assert.assertEquals("Stats field of model contains worker statistics", 0, model.getStats().size());
+		var in1 = derby.createEntity(bla);
+		var in2 = derby.createEntity(bla);
+		var in3 = derby.createEntity(bla);
+		var in4 = derby.createEntity(bla);
+
+		var shit = derby.getEntity(in3, EventModel.class);
+
+		var stage = new EventStageModel();
+
+
+		workerMonitoringService.create(new WorkerModel(1L, "Worker", "localhost:8001"));
+		var options = new StatisticsOptions();
+		options.utilization = true;
+
+		var stats = statisticsMonitoringService.getAll(1L, options);
+
+		Assert.assertEquals("Utilization field of model contains worker statistics", 0, stats.utilization.size());
 	}
 }

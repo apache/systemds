@@ -19,73 +19,64 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatsEntityModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.Constants;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.Request;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
 public class MapperService {
-	public static BaseEntityModel getModelFromBody(Request request) {
+	public static <T extends BaseModel> T getModelFromBody(Request request, Class<T> classType) {
 		ObjectMapper mapper = new ObjectMapper();
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 		try {
-			return mapper.readValue(request.getBody(), NodeEntityModel.class);
+			if (!request.getBody().isEmpty() && !request.getBody().isBlank()) {
+				return mapper.readValue(request.getBody(), classType);
+			}
+
+			return classType.getDeclaredConstructor().newInstance();
 		}
-		catch (IOException e) {
+		catch (IOException | InvocationTargetException | IllegalAccessException | InstantiationException |
+			   NoSuchMethodException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	public static BaseEntityModel mapEntityToModel(ResultSet resultSet, EntityEnum targetModel) {
+	public static <T extends BaseModel> T mapResultToModel(ResultSet resultSet, Class<T> classType) {
 		try {
-			if (targetModel != EntityEnum.WORKER_STATS) {
-				NodeEntityModel tmpModel = new NodeEntityModel();
 
-				for (int column = 1; column <= resultSet.getMetaData().getColumnCount(); column++) {
-					if (resultSet.getMetaData().getColumnType(column) == Types.INTEGER) {
-						tmpModel.setId(resultSet.getLong(column));
-					}
+			var result = classType.getDeclaredConstructor().newInstance();
+			var fields = result.getClass().getFields();
 
-					if (resultSet.getMetaData().getColumnType(column) == Types.VARCHAR) {
-						if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(Constants.ENTITY_NAME_COL)) {
-							tmpModel.setName(resultSet.getString(column));
-						} else if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(Constants.ENTITY_ADDR_COL)) {
-							tmpModel.setAddress(resultSet.getString(column));
+			for (int column = 1; column <= resultSet.getMetaData().getColumnCount(); column++) {
+
+				var colName = resultSet.getMetaData().getColumnName(column);
+
+				for (var field: fields) {
+					var fieldName = field.getName();
+					if (colName.equalsIgnoreCase(fieldName)) {
+						if (resultSet.getMetaData().getColumnType(column) == Types.VARCHAR) {
+							result.getClass().getField(fieldName).set(result, resultSet.getString(column));
+						} else if (resultSet.getMetaData().getColumnType(column) == Types.DOUBLE) {
+							result.getClass().getField(fieldName).set(result, resultSet.getDouble(column));
+						} else if (resultSet.getMetaData().getColumnType(column) == Types.INTEGER) {
+							result.getClass().getField(fieldName).set(result, resultSet.getLong(column));
+						} else if (resultSet.getMetaData().getColumnType(column) == Types.TIMESTAMP) {
+							result.getClass().getField(fieldName).set(result, resultSet.getTimestamp(column).toLocalDateTime());
 						}
 					}
 				}
-				return tmpModel;
-			} else {
-				StatsEntityModel tmpModel = new StatsEntityModel();
-
-				for (int column = 1; column <= resultSet.getMetaData().getColumnCount(); column++) {
-
-					if (resultSet.getMetaData().getColumnType(column) == Types.VARCHAR) {
-						if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(Constants.ENTITY_TRAFFIC_COL)) {
-							tmpModel.setTransferredBytes(resultSet.getString(column));
-						} else if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(Constants.ENTITY_HEAVY_HITTERS_COL)) {
-							tmpModel.setHeavyHitterInstructions(resultSet.getString(column));
-						}
-					} else {
-						if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(Constants.ENTITY_CPU_COL)) {
-							tmpModel.setCPUUsage(resultSet.getDouble(column));
-						} else if (resultSet.getMetaData().getColumnName(column).equalsIgnoreCase(Constants.ENTITY_MEM_COL)) {
-							tmpModel.setMemoryUsage(resultSet.getDouble(column));
-						}
-					}
-				}
-
-				return tmpModel;
 			}
-		} catch (SQLException e) {
+
+			return result;
+		} catch (SQLException | NoSuchMethodException | InvocationTargetException | InstantiationException |
+				 IllegalAccessException | NoSuchFieldException e) {
 			throw new RuntimeException(e);
 		}
 	}

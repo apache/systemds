@@ -260,7 +260,7 @@ public class DMLScript
 			LINEAGE_ESTIMATE      = dmlOptions.lineage_estimate;
 			CHECK_PRIVACY         = dmlOptions.checkPrivacy;
 			LINEAGE_DEBUGGER      = dmlOptions.lineage_debugger;
-			SEED                  = dmlOptions.seed; 
+			SEED                  = dmlOptions.seed;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
@@ -408,7 +408,7 @@ public class DMLScript
 	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs)
 		throws IOException
 	{
-		//print basic time and environment info
+		//print basic time environment info and process id
 		printStartExecInfo( dmlScriptStr );
 		
 		//Step 1: parse configuration files & write any configuration specific global variables
@@ -578,6 +578,7 @@ public class DMLScript
 	private static void printStartExecInfo(String dmlScriptString) {
 		LOG.info("BEGIN DML run " + getDateTime());
 		LOG.debug("DML script: \n" + dmlScriptString);
+		LOG.info("Process id:  " + IDHandler.obtainProcessID());
 	}
 	
 	private static String getDateTime() {

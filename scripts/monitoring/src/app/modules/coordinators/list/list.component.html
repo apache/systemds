@@ -1,0 +1,71 @@
+<!--
+	Licensed to the Apache Software Foundation (ASF) under one
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+
+		http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->
+
+<div class="container" fxLayout="row" fxLayoutAlign="center none">
+	<div fxFlex="95%">
+
+		<mat-card>
+
+			<mat-card-header>
+				<h2>Coordinators</h2>
+				<button [ngClass]="[ loadingData ? 'loading' : '']" (click)="refreshData()" color="warn" mat-mini-fab>
+					<mat-icon aria-hidden="false" aria-label="refresh">refresh</mat-icon>
+				</button>
+			</mat-card-header>
+			<mat-card-content>
+
+				<table [dataSource]="dataSource" mat-table matSort>
+
+					<ng-container matColumnDef="name">
+						<th *matHeaderCellDef mat-header-cell mat-sort-header> Name</th>
+						<td *matCellDef="let element" mat-cell> {{element.name}} </td>
+					</ng-container>
+
+					<ng-container matColumnDef="host">
+						<th *matHeaderCellDef mat-header-cell mat-sort-header> Host</th>
+						<td *matCellDef="let element" mat-cell> {{element.host}} </td>
+					</ng-container>
+
+					<ng-container matColumnDef="processId">
+						<th *matHeaderCellDef mat-header-cell mat-sort-header> Process Id</th>
+						<td *matCellDef="let element" mat-cell> {{element.processId}} </td>
+					</ng-container>
+
+					<ng-container matColumnDef="actions">
+						<th *matHeaderCellDef mat-header-cell> Actions</th>
+						<td *matCellDef="let element" mat-cell>
+							<button (click)="editCoordinator(element.id)" color="accent" mat-mini-fab>
+								<mat-icon aria-hidden="false" aria-label="edit">edit</mat-icon>
+							</button>
+							<button (click)="deleteCoordinator(element.id)" color="warn" mat-mini-fab>
+								<mat-icon aria-hidden="false" aria-label="delete">delete</mat-icon>
+							</button>
+						</td>
+					</ng-container>
+
+					<tr *matHeaderRowDef="displayedColumns" mat-header-row></tr>
+					<tr *matRowDef="let row; columns: displayedColumns;" mat-row></tr>
+
+				</table>
+
+			</mat-card-content>
+		</mat-card>
+
+	</div>
+</div>

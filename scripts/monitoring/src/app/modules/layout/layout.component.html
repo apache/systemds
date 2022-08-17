@@ -1,0 +1,113 @@
+<!--
+	Licensed to the Apache Software Foundation (ASF) under one
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+
+		http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->
+
+<div [class.example-is-mobile]="mobileQuery.matches" class="navbar-container">
+
+	<!-- Top navbar -->
+	<mat-toolbar class="navbar" color="primary">
+
+		<button (click)="snav.toggle()" mat-icon-button>
+			<mat-icon>menu</mat-icon>
+		</button>
+
+		<a [routerLink]="['/']" class="navbar-brand" matTooltip="Home">
+			<h1>
+				Monitoring
+			</h1>
+		</a>
+
+		<span class="navbar-spacer"></span>
+
+		<button id="register-entity" [matMenuTriggerFor]="addItemMenu" color="warn" color="accent" mat-fab>
+			<mat-icon>add</mat-icon>
+		</button>
+
+		<mat-menu #addItemMenu [overlapTrigger]="false" xPosition="before" yPosition="above">
+
+			<a (click)="openNewEntityDialog('coordinator')" mat-menu-item>
+				<span>Add new coordinator</span>
+			</a>
+			<a (click)="openNewEntityDialog('worker')" mat-menu-item>
+				<span>Add new worker</span>
+			</a>
+
+		</mat-menu>
+
+
+	</mat-toolbar>
+
+	<mat-sidenav-container class="navbar-sidenav-container">
+		<!-- Side nav -->
+		<mat-sidenav #snav [fixedInViewport]="mobileQuery.matches" [mode]="mobileQuery.matches ? 'over' : 'side'"
+					 [opened]="!mobileQuery.matches" class="sidenav" fixedTopGap="56">
+
+			<mat-nav-list id="menu-elements">
+				<h3 mat-subheader>Home</h3>
+
+				<a [routerLink]="['/dashboard']" mat-list-item routerLinkActive="active">
+					<mat-icon mat-list-icon>
+						dashboard
+					</mat-icon>
+					<p mat-line> Dashboard </p>
+				</a>
+
+				<a [routerLink]="['/coordinators']" mat-list-item routerLinkActive="active">
+					<mat-icon mat-list-icon>
+						supervisor_account
+					</mat-icon>
+					<p mat-line> Coordinators </p>
+				</a>
+
+				<a [routerLink]="['/workers']" mat-list-item routerLinkActive="active">
+					<mat-icon mat-list-icon>
+						engineering
+					</mat-icon>
+					<p mat-line> Workers </p>
+				</a>
+
+				<a [routerLink]="['/events']" mat-list-item routerLinkActive="active">
+					<mat-icon mat-list-icon>
+						timeline
+					</mat-icon>
+					<p mat-line> Event timeline </p>
+				</a>
+
+				<mat-divider></mat-divider>
+
+				<a href="https://systemds.apache.org/" id="push-bottom" mat-list-item routerLinkActive="active"
+				   target="_blank">
+					<mat-icon mat-list-icon>
+						info_outline
+					</mat-icon>
+					<p mat-line> About </p>
+				</a>
+			</mat-nav-list>
+
+		</mat-sidenav>
+
+		<!-- Main content -->
+		<mat-sidenav-content class="sidenav-content">
+
+
+			<router-outlet></router-outlet>
+
+		</mat-sidenav-content>
+	</mat-sidenav-container>
+
+</div>

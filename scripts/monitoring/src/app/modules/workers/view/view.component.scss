@@ -1,0 +1,110 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+/* Structure */
+.worker-container {
+	position: relative;
+	margin: 2em;
+}
+
+.worker-metrics-card {
+	margin: 2em;
+}
+
+.metrics-cards {
+	display: flex;
+
+	mat-card {
+		width: 100%;
+	}
+
+	div {
+		width: 100%;
+	}
+}
+
+table {
+	width: 100%;
+}
+
+.worker-rate-limit-reached {
+	max-width: 360px;
+	text-align: center;
+}
+
+/* Column Widths */
+.mat-column-number,
+.mat-column-state {
+	max-width: 64px;
+}
+
+.mat-column-created {
+	max-width: 124px;
+}
+
+.requests-table-title {
+	padding: 1em;
+}
+
+.online-worker {
+	color: green;
+}
+
+.offline-worker {
+	color: darkred;
+}
+
+#cpu-metric-card {
+	max-width: 57.4em;
+	margin-top: 0.5em;
+	margin-right: 0.5em;
+}
+
+#memory-metric-card {
+	max-width: 57.4em;
+	margin-top: 0.5em;
+	margin-left: 0.5em;
+}
+
+#data-metric-card {
+	margin-bottom: 0.5em;
+	margin-right: 0.5em;
+	margin-top: 1em;
+	max-height: 20em;
+	overflow: auto;
+}
+
+#status-metric-card {
+	margin-bottom: 0.5em;
+	margin-right: 0.5em;
+	max-height: 7.5em;
+}
+
+#overview {
+	max-width: 57.4em;
+	float: left;
+	margin-right: 4.7em;
+}
+
+#requests-metric-card {
+	margin-bottom: 0.5em;
+	margin-left: 0.5em;
+	max-width: 57.4em;
+}
+

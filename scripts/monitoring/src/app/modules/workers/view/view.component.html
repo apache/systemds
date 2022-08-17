@@ -1,0 +1,89 @@
+<!--
+	Licensed to the Apache Software Foundation (ASF) under one
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+
+		http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->
+
+<div class="metrics-cards">
+	<div id="overview">
+		<mat-card class="worker-metrics-card" id="status-metric-card">
+			<mat-card-title *ngIf="model">{{model.name}}</mat-card-title>
+			<mat-card-content id="main-worker-information">
+				<h3>Address: <span *ngIf="model">{{model.address}}</span></h3>
+				<mat-divider inset></mat-divider>
+				<h3>Status:
+					<span *ngIf="model && model.isOnline" class="online-worker">
+            Online
+          </span>
+					<span *ngIf="model && !model.isOnline" class="offline-worker">
+            Offline
+          </span>
+				</h3>
+			</mat-card-content>
+		</mat-card>
+
+		<mat-card class="worker-metrics-card" id="data-metric-card">
+
+			<mat-card-content>
+				<h2>Data objects</h2>
+
+				<table [dataSource]="dataSource" mat-table matSort>
+
+					<ng-container matColumnDef="varName">
+						<th *matHeaderCellDef mat-header-cell mat-sort-header> Variable name</th>
+						<td *matCellDef="let element" mat-cell> {{element.varName}} </td>
+					</ng-container>
+
+					<ng-container matColumnDef="dataType">
+						<th *matHeaderCellDef mat-header-cell mat-sort-header> Data type</th>
+						<td *matCellDef="let element" mat-cell> {{element.dataType}} </td>
+					</ng-container>
+
+					<ng-container matColumnDef="valueType">
+						<th *matHeaderCellDef mat-header-cell mat-sort-header> Value type</th>
+						<td *matCellDef="let element" mat-cell> {{element['valueType']}} </td>
+					</ng-container>
+
+					<ng-container matColumnDef="size">
+						<th *matHeaderCellDef mat-header-cell mat-sort-header> Byte size</th>
+						<td *matCellDef="let element" mat-cell> {{element.size}} </td>
+					</ng-container>
+
+					<tr *matHeaderRowDef="displayedColumns" mat-header-row></tr>
+					<tr *matRowDef="let row; columns: displayedColumns;" mat-row></tr>
+
+				</table>
+			</mat-card-content>
+		</mat-card>
+	</div>
+
+
+	<mat-card class="worker-metrics-card" id="requests-metric-card">
+		<canvas id="requests-metric"></canvas>
+	</mat-card>
+
+</div>
+
+<div class="metrics-cards">
+	<mat-card class="worker-metrics-card" id="cpu-metric-card">
+		<canvas id="cpu-metric"></canvas>
+	</mat-card>
+
+	<mat-card class="worker-metrics-card" id="memory-metric-card">
+		<canvas id="memory-metric"></canvas>
+	</mat-card>
+</div>
+

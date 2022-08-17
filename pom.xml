@@ -95,6 +95,7 @@
 					<exclude>perftestDeprecated/*</exclude>
 					<exclude>perftestDeprecated</exclude>
 					<exclude>staging/**/*</exclude>
+					<exclude>monitoring/**/*</exclude>
 					<exclude>nn/test/compare_backends/*</exclude>
 					<exclude>nn/test/compare_backends/*</exclude>
 				</excludes>

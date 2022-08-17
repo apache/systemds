@@ -21,60 +21,39 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
 import java.util.List;
 
-public class NodeEntityModel extends BaseEntityModel {
-	private Long _id;
-	private String _name;
-	private String _address;
+public class WorkerModel extends BaseModel {
+	public String name;
+	public String address;
 
-	private List<BaseEntityModel> _stats;
+	private boolean isOnline;
 
-	public NodeEntityModel() { }
+	private static final String JsonFormat = "{" +
+			"\"id\": %d," +
+			"\"name\": \"%s\"," +
+			"\"address\": \"%s\"," +
+			"\"isOnline\": %b" +
+			"}";
 
-	public NodeEntityModel(final Long id, final String name, final String address) {
-		_id = id;
-		_name = name;
-		_address = address;
+	public WorkerModel(final Long id) {
+		this.id = id;
 	}
 
-	public Long getId() {
-		return _id;
+	public void setOnlineStatus(boolean status) {
+		this.isOnline = status;
 	}
 
-	public void setId(final Long id) {
-		_id = id;
+	public WorkerModel() {
+		this(-1L);
 	}
 
-	public String getName() {
-		return _name;
-	}
-
-	public void setName(final String name) {
-		_name = name;
-	}
-
-	public String getAddress() {
-		return _address;
-	}
-
-	public void setAddress(final String address) {
-		_address = address;
-	}
-
-	public List<BaseEntityModel> getStats() {
-		return _stats;
-	}
-
-	public void setStats(final List<BaseEntityModel> stats) {
-		_stats = stats;
+	public WorkerModel(final Long id, final String name, final String address) {
+		this.id = id;
+		this.name = name;
+		this.address = address;
 	}
 
 	@Override
 	public String toString() {
-		return String.format("{" +
-				"\"id\": %d," +
-				"\"name\": \"%s\"," +
-				"\"address\": \"%s\"," +
-				"\"stats\": %s" +
-				"}", _id, _name, _address, _stats);
+		return String.format(JsonFormat, super.id, this.name, this.address, this.isOnline);
 	}
 }

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
+package org.apache.sysds.runtime.controlprogram.federated.monitoring;
 
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -43,6 +43,18 @@ public class Response {
 		FullHttpResponse response = new DefaultFullHttpResponse(
 				HttpVersion.HTTP_1_1,
 				HttpResponseStatus.NOT_FOUND,
+				Unpooled.wrappedBuffer(exception.getBytes()));
+
+		response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
+		response.headers().set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
+
+		return response;
+	}
+
+	public static FullHttpResponse forbidden(final String exception) {
+		FullHttpResponse response = new DefaultFullHttpResponse(
+				HttpVersion.HTTP_1_1,
+				HttpResponseStatus.FORBIDDEN,
 				Unpooled.wrappedBuffer(exception.getBytes()));
 
 		response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain");

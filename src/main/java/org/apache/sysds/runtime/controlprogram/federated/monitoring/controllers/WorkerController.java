@@ -20,58 +20,62 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
 import io.netty.handler.codec.http.FullHttpResponse;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.Request;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.Response;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.StatisticsService;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.WorkerService;
 
 public class WorkerController implements IController {
-
-	private final WorkerService _workerService = new WorkerService();
+	private final WorkerService workerService = new WorkerService();
 
 	@Override
 	public FullHttpResponse create(Request request) {
 
-		var model = MapperService.getModelFromBody(request);
+		var model = MapperService.getModelFromBody(request, WorkerModel.class);
 
-		_workerService.create(model);
+		model.id = workerService.create(model);
 
-		return Response.ok("Success");
+		return Response.ok(model.toString());
 	}
 
 	@Override
 	public FullHttpResponse update(Request request, Long objectId) {
-		var model = MapperService.getModelFromBody(request);
+		var model = MapperService.getModelFromBody(request, WorkerModel.class);
 
-		_workerService.update(model);
+		workerService.update(model);
+		model.setOnlineStatus(workerService.getWorkerOnlineStatus(model.id));
 
-		return Response.ok("Success");
+		return Response.ok(model.toString());
 	}
 
 	@Override
 	public FullHttpResponse delete(Request request, Long objectId) {
-		_workerService.remove(objectId);
+		workerService.remove(objectId);
 
-		return Response.ok("Success");
+		return Response.ok(Constants.GENERIC_SUCCESS_MSG);
 	}
 
 	@Override
 	public FullHttpResponse get(Request request, Long objectId) {
-		var result = _workerService.get(objectId);
+		var result = workerService.get(objectId);
 
 		if (result == null) {
-			return Response.notFound("No such worker can be found");
+			return Response.notFound(Constants.NOT_FOUND_MSG);
 		}
+
+		result.setOnlineStatus(workerService.getWorkerOnlineStatus(result.id));
 
 		return Response.ok(result.toString());
 	}
 
 	@Override
 	public FullHttpResponse getAll(Request request) {
-		var workers = _workerService.getAll();
+		var workers = workerService.getAll();
 
-		if (workers.isEmpty()) {
-			return Response.notFound("No workers can be found");
+		for (var worker: workers) {
+			worker.setOnlineStatus(workerService.getWorkerOnlineStatus(worker.id));
 		}
 
 		return Response.ok(workers.toString());

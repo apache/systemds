@@ -20,8 +20,7 @@
 package org.apache.sysds.test.functions.federated.monitoring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.test.functions.federated.multitenant.MultiTenantTestBase;
 import org.junit.After;
 
@@ -63,14 +62,9 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 		monitoringProcess = startLocalFedMonitoring(monitoringPort, addArgs);
 	}
 
-	protected List<HttpResponse<?>> addEntities(EntityEnum type, int count) {
+	protected List<HttpResponse<?>> addEntities(int count) {
 		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH;
 		String name = "Worker";
-
-		if (type == EntityEnum.COORDINATOR) {
-			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH;
-			name = "Coordinator";
-		}
 
 		List<HttpResponse<?>> responses = new ArrayList<>();
 		try {
@@ -78,7 +72,7 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 			for (int i = 0; i < count; i++) {
 				String requestBody = objectMapper
 					.writerWithDefaultPrettyPrinter()
-					.writeValueAsString(new NodeEntityModel((i + 1L), name, "localhost"));
+					.writeValueAsString(new WorkerModel((i + 1L), name, "localhost"));
 				var client = HttpClient.newHttpClient();
 				var request = HttpRequest.newBuilder(URI.create(uriStr))
 					.header("accept", "application/json")
@@ -94,18 +88,14 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 		}
 	}
 
-	protected HttpResponse<?> updateEntity(EntityEnum type, NodeEntityModel editModel) {
+	protected HttpResponse<?> updateEntity(WorkerModel editModel) {
 		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH;
-
-		if (type == EntityEnum.COORDINATOR) {
-			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH;
-		}
 
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
 			String requestBody = objectMapper
 				.writerWithDefaultPrettyPrinter()
-				.writeValueAsString(new NodeEntityModel(editModel.getId(), editModel.getName(), editModel.getAddress()));
+				.writeValueAsString(new WorkerModel(editModel.id, editModel.name, editModel.address));
 			var client = HttpClient.newHttpClient();
 			var request = HttpRequest.newBuilder(URI.create(uriStr))
 				.header("accept", "application/json")
@@ -119,12 +109,8 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 		}
 	}
 
-	protected HttpResponse<?> removeEntity(EntityEnum type, Long id) {
+	protected HttpResponse<?> removeEntity(Long id) {
 		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH + "/" + id;
-
-		if (type == EntityEnum.COORDINATOR) {
-			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH + "/" + id;
-		}
 
 		try {
 			var client = HttpClient.newHttpClient();
@@ -140,12 +126,8 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 		}
 	}
 
-	protected HttpResponse<?> getEntities(EntityEnum type) {
+	protected HttpResponse<?> getEntities() {
 		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH;
-
-		if (type == EntityEnum.COORDINATOR) {
-			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH;
-		}
 
 		try {
 			var client = HttpClient.newHttpClient();

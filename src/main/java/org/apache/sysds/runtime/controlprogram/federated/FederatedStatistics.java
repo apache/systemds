@@ -26,7 +26,6 @@ import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -34,26 +33,33 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.CacheStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.GCStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.LineageCacheStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.MultiTenantStatsCollection;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -97,9 +103,10 @@ public class FederatedStatistics {
 	private static final LongAdder fedPutLineageItems = new LongAdder();
 	private static final LongAdder fedSerializationReuseCount = new LongAdder();
 	private static final LongAdder fedSerializationReuseBytes = new LongAdder();
-	// Traffic between federated worker and a coordinator site
-	// in the form of [{ datetime, coordinatorAddress, transferredBytes }, { ... }] }
-	private static CopyOnWriteArrayList<Triple<LocalDateTime, String, Long>> coordinatorsTrafficBytes = new CopyOnWriteArrayList<>();
+	private static final List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
+	private static final List<EventModel> workerEvents = new ArrayList<>();
+	private static final Map<String, DataObjectModel> workerDataObjects = new HashMap<>();
+	private static final Map<String, RequestModel> workerFederatedRequests = new HashMap<>();
 
 	public static void logServerTraffic(long read, long written) {
 		bytesReceived.add(read);
@@ -110,7 +117,6 @@ public class FederatedStatistics {
 		fedBytesReceived.add(read);
 		fedBytesSent.add(written);
 	}
-
 
 	public static synchronized void incFederated(RequestType rqt, List<Object> data){
 		switch (rqt) {
@@ -142,10 +148,10 @@ public class FederatedStatistics {
 	}
 
 	private static void incFedTransfer(Object dataObj) {
-		incFedTransfer(dataObj, null);
+		incFedTransfer(dataObj, null, null);
 	}
 
-	public static void incFedTransfer(Object dataObj, String host) {
+	public static void incFedTransfer(Object dataObj, String host, Long pid) {
 		long byteAmount = 0;
 		if(dataObj instanceof MatrixBlock) {
 			transferredMatrixCount.increment();
@@ -157,15 +163,28 @@ public class FederatedStatistics {
 			byteAmount = ((FrameBlock)dataObj).getInMemorySize();
 			transferredFrameBytes.add(byteAmount);
 		}
-		else if(dataObj instanceof ScalarObject)
+		else if(dataObj instanceof ScalarObject) {
 			transferredScalarCount.increment();
-		else if(dataObj instanceof ListObject)
+		}
+		else if(dataObj instanceof ListObject) {
 			transferredListCount.increment();
-		else if(dataObj instanceof MatrixCharacteristics)
+			var listData = ((ListObject)dataObj).getData();
+			for (var entry: listData) {
+				if (entry.getDataType().isMatrix()) {
+					byteAmount += ((MatrixObject)entry).getDataSize();
+				} else if (entry.getDataType().isFrame()) {
+					byteAmount += ((FrameObject)entry).getDataSize();
+				}
+			}
+		}
+		else if(dataObj instanceof MatrixCharacteristics) {
 			transferredMatCharCount.increment();
+		}
 
-		if (host != null && byteAmount > 0) {
-			coordinatorsTrafficBytes.add(new ImmutableTriple<>(LocalDateTime.now(), host, byteAmount));
+		if (host != null && pid != null) {
+			var coordinatorHostId = String.format("%s-%d", host, pid);
+
+			coordinatorsTrafficBytes.add(new TrafficModel(LocalDateTime.now(), coordinatorHostId, byteAmount));
 		}
 	}
 
@@ -208,6 +227,8 @@ public class FederatedStatistics {
 		fedBytesReceived.reset();
 		//TODO merge with existing
 		coordinatorsTrafficBytes.clear();
+		workerEvents.clear();
+		workerDataObjects.clear();
 	}
 
 	public static String displayFedIOExecStatistics() {
@@ -272,12 +293,14 @@ public class FederatedStatistics {
 		sb.append(displayFedReuseReadStats());
 		sb.append(displayFedPutLineageStats());
 		sb.append(displayFedSerializationReuseStats());
+		sb.append(displayFedTransfer());
 		//FIXME: the following statistics need guards to only show
 		// results if federated operations where executed, also the CPU
 		// and mem usage only probe once at the time of stats printing
 		//sb.append(displayFedTransfer());
 		//sb.append(displayCPUUsage());
 		//sb.append(displayMemoryUsage());
+    
 		return sb.toString();
 	}
 
@@ -294,8 +317,6 @@ public class FederatedStatistics {
 		sb.append(displayGCStats(fedStats.gcStats));
 		sb.append(displayLinCacheStats(fedStats.linCacheStats));
 		sb.append(displayMultiTenantStats(fedStats.mtStats));
-		sb.append(displayCPUUsage());
-		sb.append(displayMemoryUsage());
 		sb.append(displayFedTransfer());
 		sb.append(displayHeavyHitters(fedStats.heavyHitters, numHeavyHitters));
 		sb.append(displayNetworkTrafficStatistics());
@@ -350,29 +371,8 @@ public class FederatedStatistics {
 		sb.append("Transferred bytes (Host/Datetime/ByteAmount):\n");
 
 		for (var entry: coordinatorsTrafficBytes) {
-			sb.append(String.format("%s/%s/%d.\n",
-					entry.getLeft().format(DateTimeFormatter.ISO_DATE_TIME), entry.getMiddle(), entry.getRight()));
+			sb.append(String.format("%s/%s/%d.\n", entry.getCoordinatorHostId(), entry.timestamp, entry.byteAmount));
 		}
-
-		return sb.toString();
-	}
-
-	private static String displayCPUUsage() {
-		StringBuilder sb = new StringBuilder();
-
-		double cpuUsage = getCPUUsage();
-
-		sb.append(String.format("CPU usage %%: %.2f\n", cpuUsage));
-
-		return sb.toString();
-	}
-
-	private static String displayMemoryUsage() {
-		StringBuilder sb = new StringBuilder();
-
-		double memoryUsage = getMemoryUsage();
-
-		sb.append(String.format("Memory usage %%: %.2f\n", memoryUsage));
 
 		return sb.toString();
 	}
@@ -479,30 +479,59 @@ public class FederatedStatistics {
 		return fedLookupTableGetCount.longValue();
 	}
 
-	public static List<Triple<LocalDateTime, String, Long>> getCoordinatorsTrafficBytes() {
-		return coordinatorsTrafficBytes;
+	public static List<TrafficModel> getCoordinatorsTrafficBytes() {
+		var result = new ArrayList<>(coordinatorsTrafficBytes);
+
+		coordinatorsTrafficBytes.clear();
+
+		return result;
 	}
 
-	public static double getCPUUsage() {
-		ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-		double cpuUsage = 0.0f;
+	public static List<EventModel> getWorkerEvents() {
+		var result = new ArrayList<>(workerEvents);
 
-		for(Long threadID : threadMXBean.getAllThreadIds()) {
-			cpuUsage += threadMXBean.getThreadCpuTime(threadID);
-		}
+		workerEvents.clear();
 
-		cpuUsage /= 1000000000; // nanoseconds to seconds
-
-		return cpuUsage;
+		return result;
+	}
+	public static List<RequestModel> getWorkerRequests() {
+		return new ArrayList<>(workerFederatedRequests.values());
 	}
 
-	public static double getMemoryUsage() {
-		MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+	public static List<DataObjectModel> getWorkerDataObjects() {
+		return new ArrayList<>(workerDataObjects.values());
+	}
+
+	public static void addEvent(EventModel event) {
+		workerEvents.add(event);
+	}
+	public static void addWorkerRequest(RequestModel request) {
+		if (!workerFederatedRequests.containsKey(request.type)) {
+			workerFederatedRequests.put(request.type, request);
+		};
+
+		workerFederatedRequests.get(request.type).count++;
+	}
+	public static void addDataObject(DataObjectModel dataObject) {
+		workerDataObjects.put(dataObject.varName, dataObject);
+	}
+	public static void removeDataObjects() {
+		workerDataObjects.clear();
+	}
+
+	public static UtilizationModel getUtilization() {
+		var osMXBean = ManagementFactory.getOperatingSystemMXBean();
+		var memoryMXBean = ManagementFactory.getMemoryMXBean();
+
+		double cpuUsage = osMXBean.getSystemLoadAverage();
+		double memoryUsage = 0.0;
 
 		double maxMemory = (double)memoryMXBean.getHeapMemoryUsage().getMax() / 1073741824;
 		double usedMemory = (double)memoryMXBean.getHeapMemoryUsage().getUsed() / 1073741824;
 
-		return (usedMemory / maxMemory) * 100;
+		memoryUsage = (usedMemory / maxMemory) * 100;
+
+		return new UtilizationModel(cpuUsage, memoryUsage);
 	}
 
 	public static long getFedLookupTableGetTime() {
@@ -654,20 +683,21 @@ public class FederatedStatistics {
 		private void collectStats() {
 			cacheStats.collectStats();
 			jitCompileTime = ((double)Statistics.getJITCompileTime()) / 1000; // in sec
-			cpuUsage = getCPUUsage();
-			memoryUsage = getMemoryUsage();
+			utilization = getUtilization();
 			gcStats.collectStats();
 			linCacheStats.collectStats();
 			mtStats.collectStats();
 			heavyHitters = Statistics.getHeavyHittersHashMap();
 			coordinatorsTrafficBytes = getCoordinatorsTrafficBytes();
+			workerEvents = getWorkerEvents();
+			workerDataObjects = getWorkerDataObjects();
+			workerRequests = getWorkerRequests();
 		}
 		
 		public void aggregate(FedStatsCollection that) {
 			cacheStats.aggregate(that.cacheStats);
 			jitCompileTime += that.jitCompileTime;
-			cpuUsage += that.cpuUsage;
-			memoryUsage += that.memoryUsage;
+			utilization = that.utilization;
 			gcStats.aggregate(that.gcStats);
 			linCacheStats.aggregate(that.linCacheStats);
 			mtStats.aggregate(that.mtStats);
@@ -675,7 +705,10 @@ public class FederatedStatistics {
 				(key, value) -> heavyHitters.merge(key, value, (v1, v2) ->
 					new ImmutablePair<>(v1.getLeft() + v2.getLeft(), v1.getRight() + v2.getRight()))
 			);
-			that.coordinatorsTrafficBytes.addAll(coordinatorsTrafficBytes);
+			coordinatorsTrafficBytes.addAll(that.coordinatorsTrafficBytes);
+			workerEvents.addAll(that.workerEvents);
+			workerDataObjects.addAll(that.workerDataObjects);
+			workerRequests.addAll(that.workerRequests);
 		}
 
 		protected static class CacheStatsCollection implements Serializable {
@@ -823,12 +856,15 @@ public class FederatedStatistics {
 
 		private CacheStatsCollection cacheStats = new CacheStatsCollection();
 		public double jitCompileTime = 0;
-		public double cpuUsage = 0;
-		public double memoryUsage = 0;
+		public UtilizationModel utilization = new UtilizationModel(0.0, 0.0);
 		private GCStatsCollection gcStats = new GCStatsCollection();
 		private LineageCacheStatsCollection linCacheStats = new LineageCacheStatsCollection();
 		private MultiTenantStatsCollection mtStats = new MultiTenantStatsCollection();
 		public HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
-		public List<Triple<LocalDateTime, String, Long>> coordinatorsTrafficBytes = new ArrayList<>();
+		public List<TrafficModel> coordinatorsTrafficBytes = new ArrayList<>();
+		public List<EventModel> workerEvents = new ArrayList<>();
+		public List<DataObjectModel> workerDataObjects = new ArrayList<>();
+
+		public List<RequestModel> workerRequests = new ArrayList<>();
 	}
 }

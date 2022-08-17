@@ -19,8 +19,11 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,8 +32,10 @@ import java.util.concurrent.Future;
 
 import javax.net.ssl.SSLException;
 
+import io.netty.channel.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
@@ -42,12 +47,6 @@ import org.apache.sysds.runtime.meta.MetaData;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -72,6 +71,7 @@ public class FederatedData {
 	private final Types.DataType _dataType;
 	private final InetSocketAddress _address;
 	private final String _filepath;
+	private static final int endOfDynamicPorts = 65535;
 
 	/**
 	 * The ID of default matrix/tensor on which operations get executed if no other ID is given.
@@ -198,6 +198,20 @@ public class FederatedData {
 		catch(Exception e) {
 			throw new DMLRuntimeException("Failed sending federated operation", e);
 		}
+	}
+
+	private static int getAvailablePort(int monitorId, int maxMonitorCoordinators) {
+
+		for (int i = 0; i < maxMonitorCoordinators; i++) {
+			int tmpPort = endOfDynamicPorts - monitorId - i * maxMonitorCoordinators;
+			try(ServerSocket availableSocket = new ServerSocket(tmpPort)) {
+				return availableSocket.getLocalPort();
+			}
+			catch(IOException ignored) {
+			}
+		}
+
+		return -1;
 	}
 
 	private static ChannelInitializer<SocketChannel> createChannel(InetSocketAddress address, DataRequestHandler handler){

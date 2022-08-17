@@ -20,19 +20,17 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories;
 
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel;
 
 import java.util.List;
 
 public interface IRepository {
-	Long createEntity(EntityEnum type, BaseEntityModel model);
-
-	BaseEntityModel getEntity(EntityEnum type, Long id);
-
-	List<BaseEntityModel> getAllEntities(EntityEnum type);
-
-	List<BaseEntityModel> getAllEntitiesByField(EntityEnum type, Object fieldValue);
-	void updateEntity(EntityEnum type, BaseEntityModel model);
-
-	void removeEntity(EntityEnum type, Long id);
+	<T extends BaseModel> Long createEntity(T model);
+	<T extends BaseModel> T getEntity(Long id, Class<T> type);
+	<T extends BaseModel> List<T> getAllEntities(Class<T> type);
+	<T extends BaseModel> List<T> getAllEntitiesByField(String fieldName, Object value, Class<T> type);
+	<T extends BaseModel> List<T> getAllEntitiesByField(String fieldName, Object value, Class<T> type, int rowCount);
+	<T extends BaseModel> void removeAllEntitiesByField(String fieldName, Object value, Class<T> type);
+	<T extends BaseModel> void updateEntity(T model);
+	<T extends BaseModel> void removeEntity(Long id, Class<T> type);
 }

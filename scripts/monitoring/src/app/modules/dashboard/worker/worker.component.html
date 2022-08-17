@@ -1,0 +1,78 @@
+<!--
+	Licensed to the Apache Software Foundation (ASF) under one
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+
+		http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->
+
+<mat-card class="worker-card">
+	<mat-card-title *ngIf="model">{{ model.name }}</mat-card-title>
+	<mat-divider inset></mat-divider>
+	<mat-card-content *ngIf="model">
+		<div class="info-row">
+			<mat-icon mat-list-icon>
+				laptop
+			</mat-icon>
+			<p> <span class="bold">Address:</span> {{ model.address }} </p>
+		</div>
+	</mat-card-content>
+	<mat-divider inset></mat-divider>
+	<mat-card-content *ngIf="model">
+		<div class="info-row">
+			<mat-icon mat-list-icon>
+				offline_pin
+			</mat-icon>
+			<p> <span class="bold">Status:</span>
+				<span *ngIf="model && model.isOnline" class="online-worker">
+					Online
+				</span>
+				<span *ngIf="model && !model.isOnline" class="offline-worker">
+					Offline
+				</span>
+			</p>
+		</div>
+	</mat-card-content>
+	<mat-divider inset></mat-divider>
+	<mat-card-content>
+		<canvas></canvas>
+	</mat-card-content>
+
+	<mat-divider inset></mat-divider>
+
+	<mat-card-content>
+		<table [dataSource]="dataSource" mat-table matSort>
+
+			<ng-container matColumnDef="instruction">
+				<th *matHeaderCellDef mat-header-cell mat-sort-header> Top 3 Inst.</th>
+				<td *matCellDef="let element" mat-cell> {{element['instruction']}} </td>
+			</ng-container>
+
+			<ng-container matColumnDef="time">
+				<th *matHeaderCellDef mat-header-cell mat-sort-header> Time(ms)</th>
+				<td *matCellDef="let element" mat-cell> {{element['time']}} </td>
+			</ng-container>
+
+			<ng-container matColumnDef="frequency">
+				<th *matHeaderCellDef mat-header-cell mat-sort-header> Freq.</th>
+				<td *matCellDef="let element" mat-cell> {{element['frequency']}} </td>
+			</ng-container>
+
+			<tr *matHeaderRowDef="displayedColumns" mat-header-row></tr>
+			<tr *matRowDef="let row; columns: displayedColumns;" mat-row></tr>
+
+		</table>
+
+	</mat-card-content>
+</mat-card>

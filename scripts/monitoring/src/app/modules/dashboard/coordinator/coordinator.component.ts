@@ -17,10 +17,21 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories;
+import { Component } from '@angular/core';
 
-public enum EntityEnum {
-	WORKER,
-	WORKER_STATS,
-	COORDINATOR
+import { Coordinator } from 'src/app/models/coordinator.model';
+
+@Component({
+	selector: 'app-coordinator',
+	templateUrl: './coordinator.component.html',
+	styleUrls: ['./coordinator.component.scss']
+})
+export class CoordinatorComponent {
+
+	public model: Coordinator;
+
+	constructor() { }
+
+	ngOnInit(): void { }
+
 }

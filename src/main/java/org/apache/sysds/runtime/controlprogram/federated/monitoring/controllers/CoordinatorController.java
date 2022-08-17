@@ -20,46 +20,49 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
 import io.netty.handler.codec.http.FullHttpResponse;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Response;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.Request;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.Response;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.CoordinatorService;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
 
 public class CoordinatorController implements IController {
-	private final CoordinatorService _coordinatorService = new CoordinatorService();
+	private final CoordinatorService coordinatorService = new CoordinatorService();
 
 	@Override
 	public FullHttpResponse create(Request request) {
 
-		var model = MapperService.getModelFromBody(request);
+		var model = MapperService.getModelFromBody(request, CoordinatorModel.class);
+		model.generateMonitoringKey();
 
-		_coordinatorService.create(model);
+		model.id = coordinatorService.create(model);
 
-		return Response.ok("Success");
+		return Response.ok(model.toString());
 	}
 
 	@Override
 	public FullHttpResponse update(Request request, Long objectId) {
-		var model = MapperService.getModelFromBody(request);
+		var model = MapperService.getModelFromBody(request, CoordinatorModel.class);
+		model.generateMonitoringKey();
 
-		_coordinatorService.update(model);
+		coordinatorService.update(model);
 
-		return Response.ok("Success");
+		return Response.ok(model.toString());
 	}
 
 	@Override
 	public FullHttpResponse delete(Request request, Long objectId) {
-		_coordinatorService.remove(objectId);
+		coordinatorService.remove(objectId);
 
-		return Response.ok("Success");
+		return Response.ok(Constants.GENERIC_SUCCESS_MSG);
 	}
 
 	@Override
 	public FullHttpResponse get(Request request, Long objectId) {
-		var result = _coordinatorService.get(objectId);
+		var result = coordinatorService.get(objectId);
 
 		if (result == null) {
-			return Response.notFound("No such coordinator can be found");
+			return Response.notFound(Constants.NOT_FOUND_MSG);
 		}
 
 		return Response.ok(result.toString());
@@ -67,11 +70,7 @@ public class CoordinatorController implements IController {
 
 	@Override
 	public FullHttpResponse getAll(Request request) {
-		var coordinators = _coordinatorService.getAll();
-
-		if (coordinators.isEmpty()) {
-			return Response.notFound("No coordinators can be found");
-		}
+		var coordinators = coordinatorService.getAll();
 
 		return Response.ok(coordinators.toString());
 	}

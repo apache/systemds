@@ -69,12 +69,32 @@ public class SpoofFEDInstruction extends FEDInstruction
 		_output = out;
 	}
 
-	public static SpoofFEDInstruction parseInstruction(SpoofCPInstruction instr) {
+	public static SpoofFEDInstruction parseInstruction(SpoofCPInstruction inst, ExecutionContext ec){
+		Class<?> scla = inst.getOperatorClass().getSuperclass();
+		if(((scla == SpoofCellwise.class || scla == SpoofMultiAggregate.class || scla == SpoofOuterProduct.class)
+			&& SpoofFEDInstruction.isFederated(ec, inst.getInputs(), scla))
+			|| (scla == SpoofRowwise.class && SpoofFEDInstruction.isFederated(ec, FType.ROW, inst.getInputs(), scla))) {
+			return SpoofFEDInstruction.parseInstruction(inst);
+		}
+		return null;
+	}
+
+	public static SpoofFEDInstruction parseInstruction(SpoofSPInstruction inst, ExecutionContext ec){
+		Class<?> scla = inst.getOperatorClass().getSuperclass();
+		if(((scla == SpoofCellwise.class || scla == SpoofMultiAggregate.class || scla == SpoofOuterProduct.class)
+			&& SpoofFEDInstruction.isFederated(ec, inst.getInputs(), scla))
+			|| (scla == SpoofRowwise.class && SpoofFEDInstruction.isFederated(ec, FType.ROW, inst.getInputs(), scla))) {
+			return SpoofFEDInstruction.parseInstruction(inst);
+		}
+		return null;
+	}
+
+	private static SpoofFEDInstruction parseInstruction(SpoofCPInstruction instr) {
 		return new SpoofFEDInstruction(instr.getSpoofOperator(), instr.getInputs(), instr.getOutput(),
 			instr.getOpcode(), instr.getInstructionString());
 	}
 
-	public static SpoofFEDInstruction parseInstruction(SpoofSPInstruction instr) {
+	private static SpoofFEDInstruction parseInstruction(SpoofSPInstruction instr) {
 		SpoofOperator op = CodegenUtils.createInstance(instr.getOperatorClass());
 		return new SpoofFEDInstruction(op, instr.getInputs(), instr.getOutput(), instr.getOpcode(),
 			instr.getInstructionString());

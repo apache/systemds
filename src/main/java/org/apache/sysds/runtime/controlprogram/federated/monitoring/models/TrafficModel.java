@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 public class TrafficModel extends CoordinatorConnectionModel {
@@ -41,10 +40,6 @@ public class TrafficModel extends CoordinatorConnectionModel {
 		this.byteAmount = byteAmount;
 
 		super.setCoordinatorHostId(coordinatorHostId);
-	}
-
-	private TrafficModel(final Long id) {
-		this.id = id;
 	}
 
 	public TrafficModel(final Long workerId, final String coordinatorAddress, final Long byteAmount) {

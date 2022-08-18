@@ -19,11 +19,6 @@
 
 package org.apache.sysds.test.functions.federated.monitoring;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
-import org.apache.sysds.test.functions.federated.multitenant.MultiTenantTestBase;
-import org.junit.After;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -32,6 +27,12 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
+import org.apache.sysds.test.functions.federated.multitenant.MultiTenantTestBase;
+import org.junit.After;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 	protected Process monitoringProcess;
 	private int monitoringPort;
@@ -39,7 +40,7 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 	private static final String MAIN_URI = "http://localhost";
 
 	private static final String WORKER_MAIN_PATH = "/workers";
-	private static final String COORDINATOR_MAIN_PATH = "/coordinators";
+	// private static final String COORDINATOR_MAIN_PATH = "/coordinators";
 
 	@Override
 	public abstract void setUp();

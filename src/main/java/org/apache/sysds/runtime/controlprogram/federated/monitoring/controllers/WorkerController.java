@@ -19,13 +19,13 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
-import io.netty.handler.codec.http.FullHttpResponse;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.Response;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.StatisticsService;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.WorkerService;
+
+import io.netty.handler.codec.http.FullHttpResponse;
 
 public class WorkerController implements IController {
 	private final WorkerService workerService = new WorkerService();

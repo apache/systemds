@@ -92,7 +92,7 @@ public class EncoderFactory {
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
 				TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfMethod.IMPUTE.toString(), minCol, maxCol)));
 			List<Integer> udfIDs = TfMetaUtils.parseUDFColIDs(jSpec, colnames, minCol, maxCol);
-			
+
 			// create individual encoders
 			if(!rcIDs.isEmpty())
 				for(Integer id : rcIDs)
@@ -103,7 +103,7 @@ public class EncoderFactory {
 			if(!ptIDs.isEmpty())
 				for(Integer id : ptIDs)
 					addEncoderToMap(new ColumnEncoderPassThrough(id), colEncoders);
-			
+
 			if(!binIDs.isEmpty())
 				for(Object o : (JSONArray) jSpec.get(TfMethod.BIN.toString())) {
 					JSONObject colspec = (JSONObject) o;
@@ -130,7 +130,7 @@ public class EncoderFactory {
 				for(Integer id : udfIDs)
 					addEncoderToMap(new ColumnEncoderUDF(id, name), colEncoders);
 			}
-			
+
 			// create composite decoder of all created encoders
 			for(Entry<Integer, List<ColumnEncoder>> listEntry : colEncoders.entrySet()) {
 				if(DMLScript.STATISTICS)
@@ -200,6 +200,8 @@ public class EncoderFactory {
 			return EncoderType.PassThrough.ordinal();
 		else if(columnEncoder instanceof ColumnEncoderRecode)
 			return EncoderType.Recode.ordinal();
+        else if(columnEncoder instanceof ColumnEncoderUDF)
+            return EncoderType.Udf.ordinal();
 		throw new DMLRuntimeException("Unsupported encoder type: " + columnEncoder.getClass().getCanonicalName());
 	}
 
@@ -216,6 +218,8 @@ public class EncoderFactory {
 				return new ColumnEncoderPassThrough();
 			case Recode:
 				return new ColumnEncoderRecode();
+            case Udf:
+                return new ColumnEncoderUDF();
 			default:
 				throw new DMLRuntimeException("Unsupported encoder type: " + etype);
 		}

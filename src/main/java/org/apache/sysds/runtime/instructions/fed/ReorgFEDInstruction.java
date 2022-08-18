@@ -76,37 +76,40 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			rinst.getInstructionString(), FederatedOutput.NONE);
 	}
 
-	public static ReorgFEDInstruction parseInstruction ( String str ) {
+	public static ReorgFEDInstruction parseInstruction(String str) {
 		CPOperand in = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		FederatedOutput fedOut;
-		if ( opcode.equalsIgnoreCase("r'") ) {
+		if(opcode.equalsIgnoreCase("r'")) {
 			InstructionUtils.checkNumFields(str, 2, 3, 4);
 			in.split(parts[1]);
 			out.split(parts[2]);
 			int k = str.startsWith(Types.ExecMode.SPARK.name()) ? 0 : Integer.parseInt(parts[3]);
-			fedOut = str.startsWith(Types.ExecMode.SPARK.name()) ?
-				FederatedOutput.valueOf(parts[3]) : FederatedOutput.valueOf(parts[4]);
-			return new ReorgFEDInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str, fedOut);
+			fedOut = str.startsWith(Types.ExecMode.SPARK.name()) ? FederatedOutput.valueOf(parts[3]) : FederatedOutput
+				.valueOf(parts[4]);
+			return new ReorgFEDInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str,
+				fedOut);
 		}
-		else if ( opcode.equalsIgnoreCase("rdiag") ) {
-			parseUnaryInstruction(str, in, out); //max 2 operands
+		else if(opcode.equalsIgnoreCase("rdiag")) {
+			parseUnaryInstruction(str, in, out); // max 2 operands
 			fedOut = parseFedOutFlag(str, 3);
-			return new ReorgFEDInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str, fedOut);
+			return new ReorgFEDInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str,
+				fedOut);
 		}
-		else if ( opcode.equalsIgnoreCase("rev") ) {
-			parseUnaryInstruction(str, in, out); //max 2 operands
+		else if(opcode.equalsIgnoreCase("rev")) {
+			parseUnaryInstruction(str, in, out); // max 2 operands
 			fedOut = parseFedOutFlag(str, 3);
-			return new ReorgFEDInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str, fedOut);
+			return new ReorgFEDInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str,
+				fedOut);
 		}
 		else {
-			throw new DMLRuntimeException("ReorgFEDInstruction: unsupported opcode: "+opcode);
+			throw new DMLRuntimeException("ReorgFEDInstruction: unsupported opcode: " + opcode);
 		}
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);

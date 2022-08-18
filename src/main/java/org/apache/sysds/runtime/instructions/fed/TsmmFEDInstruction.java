@@ -51,7 +51,15 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 		this(in, out, type, k, opcode, istr, FederatedOutput.NONE);
 	}
 
-	public static TsmmFEDInstruction parseInstruction(MMTSJCPInstruction instr) {
+	public static TsmmFEDInstruction parseInstruction(MMTSJCPInstruction inst, ExecutionContext ec) {
+		MatrixObject mo = ec.getMatrixObject(inst.input1);
+		if( (mo.isFederated(FType.ROW) && mo.isFederatedExcept(FType.BROADCAST) && inst.getMMTSJType().isLeft()) ||
+			(mo.isFederated(FType.COL) && mo.isFederatedExcept(FType.BROADCAST) && inst.getMMTSJType().isRight()))
+			return  parseInstruction(inst);
+		return null;
+	}	
+
+	private static TsmmFEDInstruction parseInstruction(MMTSJCPInstruction instr) {
 		return new TsmmFEDInstruction(instr.input1, instr.getOutput(), instr.getMMTSJType(), instr.getNumThreads(),
 			instr.getOpcode(), instr.getInstructionString());
 	}
@@ -61,7 +69,7 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 		String opcode = parts[0];
 		if(!opcode.equalsIgnoreCase("tsmm"))
 			throw new DMLRuntimeException("TsmmFedInstruction.parseInstruction():: Unknown opcode " + opcode);
-		
+
 		InstructionUtils.checkNumFields(parts, 3, 4, 5);
 		CPOperand in = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
@@ -70,7 +78,7 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 		FederatedOutput fedOut = (parts.length > 5) ? FederatedOutput.valueOf(parts[5]) : FederatedOutput.NONE;
 		return new TsmmFEDInstruction(in, out, type, k, opcode, str, fedOut);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);

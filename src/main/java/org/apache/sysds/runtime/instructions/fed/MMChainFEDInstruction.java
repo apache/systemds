@@ -19,22 +19,23 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.concurrent.Future;
+
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-
-import java.util.concurrent.Future;
 
 public class MMChainFEDInstruction extends UnaryFEDInstruction {
 	
@@ -50,7 +51,15 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 		return _type;
 	}
 
-	public static MMChainFEDInstruction parseInstruction(MMChainCPInstruction instr) {
+	public static MMChainFEDInstruction parseInstruction(MMChainCPInstruction inst, ExecutionContext ec) {
+		MMChainCPInstruction linst = (MMChainCPInstruction) inst;
+		MatrixObject mo = ec.getMatrixObject(linst.input1);
+		if( mo.isFederated(FType.ROW) )
+			return MMChainFEDInstruction.parseInstruction(linst);
+		return null;
+	}
+
+	private static MMChainFEDInstruction parseInstruction(MMChainCPInstruction instr) {
 		return new MMChainFEDInstruction(instr.input1, instr.input2, instr.input3, instr.output, instr.getMMChainType(),
 			instr.getNumThreads(), instr.getOpcode(), instr.getInstructionString());
 	}
@@ -62,7 +71,7 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
-		
+
 		if( parts.length==6 ) {
 			CPOperand out= new CPOperand(parts[3]);
 			ChainType type = ChainType.valueOf(parts[4]);

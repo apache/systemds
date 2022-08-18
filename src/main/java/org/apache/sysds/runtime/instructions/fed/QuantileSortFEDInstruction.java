@@ -127,6 +127,7 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction {
 		inst._fedOut = fedOut;
 		return inst;
 	}
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		if(ec.getMatrixObject(input1).isFederated(FType.COL) || ec.getMatrixObject(input1).isFederated(FType.FULL))

@@ -25,6 +25,7 @@ import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
@@ -34,6 +35,8 @@ import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.TernaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.TernaryFrameScalarCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.TernaryFrameScalarSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.TernarySPInstruction;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -46,12 +49,46 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		super(FEDInstruction.FEDType.Ternary, op, in1, in2, in3, out, opcode, str, fedOut);
 	}
 
-	public static TernaryFEDInstruction parseInstruction(TernaryCPInstruction instr) {
+	public static TernaryFEDInstruction parseInstruction(TernaryCPInstruction inst, ExecutionContext ec) {
+		if(inst.getOpcode().equals("_map") && inst instanceof TernaryFrameScalarCPInstruction &&
+			!inst.getInstructionString().contains("UtilFunctions") && inst.input1.isFrame() &&
+			ec.getFrameObject(inst.input1).isFederated()) {
+			long margin = ec.getScalarInput(inst.input3).getLongValue();
+			FrameObject fo = ec.getFrameObject(inst.input1);
+			if(margin == 0 || (fo.isFederated(FType.ROW) && margin == 1) || (fo.isFederated(FType.COL) && margin == 2))
+				return TernaryFrameScalarFEDInstruction.parseInstruction((TernaryFrameScalarCPInstruction) inst);
+		}
+		else if((inst.input1.isMatrix() && ec.getCacheableData(inst.input1).isFederatedExcept(FType.BROADCAST)) ||
+			(inst.input2.isMatrix() && ec.getCacheableData(inst.input2).isFederatedExcept(FType.BROADCAST)) ||
+			(inst.input3.isMatrix() && ec.getCacheableData(inst.input3).isFederatedExcept(FType.BROADCAST))) {
+			return TernaryFEDInstruction.parseInstruction(inst);
+		}
+		return null;
+	}
+
+	public static TernaryFEDInstruction parseInstruction(TernarySPInstruction inst, ExecutionContext ec) {
+		if(inst.getOpcode().equals("_map") && inst instanceof TernaryFrameScalarSPInstruction &&
+			!inst.getInstructionString().contains("UtilFunctions") && inst.input1.isFrame() &&
+			ec.getFrameObject(inst.input1).isFederated()) {
+			long margin = ec.getScalarInput(inst.input3).getLongValue();
+			FrameObject fo = ec.getFrameObject(inst.input1);
+			if(margin == 0 || (fo.isFederated(FType.ROW) && margin == 1) || (fo.isFederated(FType.COL) && margin == 2))
+				return TernaryFrameScalarFEDInstruction.parseInstruction((TernaryFrameScalarSPInstruction) inst);
+		}
+		else if((inst.input1.isMatrix() && ec.getCacheableData(inst.input1).isFederatedExcept(FType.BROADCAST)) ||
+			(inst.input2.isMatrix() && ec.getCacheableData(inst.input2).isFederatedExcept(FType.BROADCAST)) ||
+			(inst.input3.isMatrix() && ec.getCacheableData(inst.input3).isFederatedExcept(FType.BROADCAST))) {
+			return TernaryFEDInstruction.parseInstruction(inst);
+		}
+		return null;
+	}
+
+	private static TernaryFEDInstruction parseInstruction(TernaryCPInstruction instr) {
 		return new TernaryFEDInstruction((TernaryOperator) instr.getOperator(), instr.input1, instr.input2,
 			instr.input3, instr.output, instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
 	}
 
-	public static TernaryFEDInstruction parseInstruction(TernarySPInstruction instr) {
+	private static TernaryFEDInstruction parseInstruction(TernarySPInstruction instr) {
 		return new TernaryFEDInstruction((TernaryOperator) instr.getOperator(), instr.input1, instr.input2,
 				instr.input3, instr.output, instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
 	}
@@ -63,11 +100,13 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		CPOperand operand2 = new CPOperand(parts[2]);
 		CPOperand operand3 = new CPOperand(parts[3]);
 		CPOperand outOperand = new CPOperand(parts[4]);
-		int numThreads = parts.length>5 & !opcode.contains("map") ? Integer.parseInt(parts[5]) : 1;
-		FederatedOutput fedOut = parts.length>=7 && !opcode.contains("map") ? FederatedOutput.valueOf(parts[6]) : FederatedOutput.NONE;
+		int numThreads = parts.length > 5 & !opcode.contains("map") ? Integer.parseInt(parts[5]) : 1;
+		FederatedOutput fedOut = parts.length >= 7 && !opcode.contains("map") ? FederatedOutput
+			.valueOf(parts[6]) : FederatedOutput.NONE;
 		TernaryOperator op = InstructionUtils.parseTernaryOperator(opcode, numThreads);
-		if( operand1.isFrame() && operand2.isScalar() || operand2.isFrame() && operand1.isScalar() )
-			return new TernaryFrameScalarFEDInstruction(op, operand1, operand2, operand3, outOperand, opcode, InstructionUtils.removeFEDOutputFlag(str), fedOut);
+		if(operand1.isFrame() && operand2.isScalar() || operand2.isFrame() && operand1.isScalar())
+			return new TernaryFrameScalarFEDInstruction(op, operand1, operand2, operand3, outOperand, opcode,
+				InstructionUtils.removeFEDOutputFlag(str), fedOut);
 		return new TernaryFEDInstruction(op, operand1, operand2, operand3, outOperand, opcode, str, fedOut);
 	}
 

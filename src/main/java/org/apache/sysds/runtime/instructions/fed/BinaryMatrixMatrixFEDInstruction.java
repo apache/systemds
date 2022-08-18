@@ -42,12 +42,12 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 		super(FEDType.Binary, op, in1, in2, out, opcode, istr, fedOut);
 	}
 
-	public static BinaryMatrixMatrixFEDInstruction parseInstruction(BinaryMatrixMatrixCPInstruction instr) {
+	protected static BinaryMatrixMatrixFEDInstruction parseInstruction(BinaryMatrixMatrixCPInstruction instr) {
 		return new BinaryMatrixMatrixFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
 			instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
 	}
 
-	public static BinaryMatrixMatrixFEDInstruction parseInstruction(BinaryMatrixMatrixSPInstruction instr) {
+	protected static BinaryMatrixMatrixFEDInstruction parseInstruction(BinaryMatrixMatrixSPInstruction instr) {
 		String instrStr = rewriteSparkInstructionToCP(instr.getInstructionString());
 		String opcode = InstructionUtils.getInstructionPartsWithValueType(instrStr)[0];
 		return new BinaryMatrixMatrixFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,

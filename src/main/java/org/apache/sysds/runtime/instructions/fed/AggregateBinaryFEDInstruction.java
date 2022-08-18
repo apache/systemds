@@ -38,7 +38,6 @@ import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.spark.AggregateBinarySPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
@@ -55,14 +54,23 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 		super(FEDType.AggregateBinary, op, in1, in2, out, opcode, istr, fedOut);
 	}
 
-	public static AggregateBinaryFEDInstruction parseInstruction(AggregateBinaryCPInstruction instr) {
-		return new AggregateBinaryFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
-			instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
+	public static AggregateBinaryFEDInstruction parseInstruction(AggregateBinaryCPInstruction inst,
+		ExecutionContext ec) {
+		if(inst.input1.isMatrix() && inst.input2.isMatrix()) {
+			MatrixObject mo1 = ec.getMatrixObject(inst.input1);
+			MatrixObject mo2 = ec.getMatrixObject(inst.input2);
+			if((mo1.isFederated(FType.ROW) && mo1.isFederatedExcept(FType.BROADCAST)) ||
+				(mo2.isFederated(FType.ROW) && mo2.isFederatedExcept(FType.BROADCAST)) ||
+				(mo1.isFederated(FType.COL) && mo1.isFederatedExcept(FType.BROADCAST))) {
+				return AggregateBinaryFEDInstruction.parseInstruction(inst);
+			}
+		}
+		return null;
 	}
 
-	public static AggregateBinaryFEDInstruction parseInstruction(AggregateBinarySPInstruction instr) {
+	private static AggregateBinaryFEDInstruction parseInstruction(AggregateBinaryCPInstruction instr) {
 		return new AggregateBinaryFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
-				instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
+			instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
 	}
 
 	public static AggregateBinaryFEDInstruction parseInstruction(String str) {
@@ -70,7 +78,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 		String opcode = parts[0];
 		if(!opcode.equalsIgnoreCase("ba+*"))
 			throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
-		
+
 		InstructionUtils.checkNumFields(parts, 5);
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);

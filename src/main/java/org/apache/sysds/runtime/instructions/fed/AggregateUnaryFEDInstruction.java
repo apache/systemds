@@ -78,7 +78,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		return new AggregateUnaryFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.input3,
 			instr.output, instr.getOpcode(), instr.getInstructionString());
 	}
-
+	
 	public static AggregateUnaryFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
@@ -101,7 +101,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			fedOut = FederatedOutput.valueOf(parts[5]);
 		return new AggregateUnaryFEDInstruction(aggun, in1, out, opcode, str, fedOut);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		if (getOpcode().contains("var")) {

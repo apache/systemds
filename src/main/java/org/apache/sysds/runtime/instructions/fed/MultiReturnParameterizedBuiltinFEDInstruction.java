@@ -35,8 +35,10 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.fedplanner.FTypes;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -79,15 +81,35 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 	}
 
 	public static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
+		MultiReturnParameterizedBuiltinCPInstruction inst, ExecutionContext ec) {
+		if(inst.getOpcode().equals("transformencode") && inst.input1.isFrame()) {
+			CacheableData<?> fo = ec.getCacheableData(inst.input1);
+			if(fo.isFederatedExcept(FType.BROADCAST)) 
+				return MultiReturnParameterizedBuiltinFEDInstruction.parseInstruction(inst);
+		}
+		return null;
+	}
+
+	public static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
+		MultiReturnParameterizedBuiltinSPInstruction inst, ExecutionContext ec) {
+		if(inst.getOpcode().equals("transformencode") && inst.input1.isFrame()) {
+			CacheableData<?> fo = ec.getCacheableData(inst.input1);
+			if(fo.isFederatedExcept(FType.BROADCAST))
+				return MultiReturnParameterizedBuiltinFEDInstruction.parseInstruction(inst);
+		}
+		return null;
+	}
+
+	private static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
 		MultiReturnParameterizedBuiltinCPInstruction instr) {
 		return new MultiReturnParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.input1, instr.input2,
 			instr.getOutputs(), instr.getOpcode(), instr.getInstructionString());
 	}
 
-	public static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
-			MultiReturnParameterizedBuiltinSPInstruction instr) {
+	private static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
+		MultiReturnParameterizedBuiltinSPInstruction instr) {
 		return new MultiReturnParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.input1, instr.input2,
-				instr.getOutputs(), instr.getOpcode(), instr.getInstructionString());
+			instr.getOutputs(), instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(String str) {

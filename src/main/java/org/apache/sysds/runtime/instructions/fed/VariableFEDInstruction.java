@@ -29,6 +29,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -55,7 +56,23 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 		_in = in;
 	}
 
-	public static VariableFEDInstruction parseInstruction(VariableCPInstruction cpInstruction) {
+	public static VariableFEDInstruction parseInstruction(VariableCPInstruction inst, ExecutionContext ec) {
+		if(inst.getVariableOpcode() == VariableOperationCode.Write && inst.getInput1().isMatrix() &&
+			inst.getInput3().getName().contains("federated")) {
+			return VariableFEDInstruction.parseInstruction(inst);
+		}
+		else if(inst.getVariableOpcode() == VariableOperationCode.CastAsFrameVariable && inst.getInput1().isMatrix() &&
+			ec.getCacheableData(inst.getInput1()).isFederatedExcept(FType.BROADCAST)) {
+			return VariableFEDInstruction.parseInstruction(inst);
+		}
+		else if(inst.getVariableOpcode() == VariableOperationCode.CastAsMatrixVariable && inst.getInput1().isFrame() &&
+			ec.getCacheableData(inst.getInput1()).isFederatedExcept(FType.BROADCAST)) {
+			return VariableFEDInstruction.parseInstruction(inst);
+		}
+		return null;
+	}
+
+	private static VariableFEDInstruction parseInstruction(VariableCPInstruction cpInstruction) {
 		return new VariableFEDInstruction(cpInstruction);
 	}
 

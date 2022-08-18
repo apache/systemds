@@ -28,6 +28,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -49,12 +50,21 @@ public class CastFEDInstruction extends UnaryFEDInstruction {
 		super(FEDInstruction.FEDType.Cast, op, in, out, opcode, istr);
 	}
 
-	public static CastFEDInstruction parseInstruction(CastSPInstruction spInstruction) {
+	public static CastFEDInstruction parseInstruction(CastSPInstruction inst, ExecutionContext ec) {
+		if((inst.getOpcode().equalsIgnoreCase(OpOp1.CAST_AS_FRAME.toString()) ||
+			inst.getOpcode().equalsIgnoreCase(OpOp1.CAST_AS_MATRIX.toString())) && inst.input1.isMatrix() &&
+			ec.getCacheableData(inst.input1).isFederatedExcept(FType.BROADCAST)) {
+			return CastFEDInstruction.parseInstruction(inst);
+		}
+		return null;
+	}
+
+	private static CastFEDInstruction parseInstruction(CastSPInstruction spInstruction) {
 		return new CastFEDInstruction(spInstruction.getOperator(), spInstruction.input1, spInstruction.output,
 			spInstruction.getOpcode(), spInstruction.getInstructionString());
 	}
 
-	public static CastFEDInstruction parseInstruction ( String str ) {
+	public static CastFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields(parts, 2);
 		String opcode = parts[0];

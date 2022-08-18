@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
@@ -45,8 +48,8 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 
 	//TODO pass execution context through encoder factory for arbitrary functions not just builtin
 	//TODO integration into IPA to ensure existence of unoptimized functions
-	
-	private final String _fName;
+
+	private String _fName;
 	public int _domainSize = 1;
 
 	protected ColumnEncoderUDF(int ptCols, String name) {
@@ -72,7 +75,7 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		return null;
 	}
-	
+
 	@Override
 	public void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -82,7 +85,7 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 		MatrixBlock col = out.slice(0, in.getNumRows()-1, outputCol, outputCol+_domainSize-1, new MatrixBlock());
 		ec.setVariable("I", new ListObject(new Data[] {ParamservUtils.newMatrixObject(col, true)}));
 		ec.setVariable("O", ParamservUtils.newMatrixObject(col, true));
-		
+
 		//call UDF function via eval machinery
 		var fun = new EvalNaryCPInstruction(null, "eval", "",
 			new CPOperand("O", ValueType.FP64, DataType.MATRIX),
@@ -93,9 +96,6 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 
 		//obtain result and in-place write back
 		MatrixBlock ret = ((MatrixObject)ec.getCacheableData("O")).acquireReadAndRelease();
-		//out.leftIndexingOperations(ret, 0, in.getNumRows()-1, _colID-1, _colID-1, ret, UpdateType.INPLACE);
-		//out.leftIndexingOperations(ret, 0, in.getNumRows()-1, outputCol, outputCol+_domainSize-1, ret, UpdateType.INPLACE);
-		//out.copy(0, in.getNumRows()-1, _colID-1, _colID-1, ret, true);
 		out.copy(0, in.getNumRows()-1, outputCol, outputCol+_domainSize-1, ret, true);
 
 		if (DMLScript.STATISTICS)
@@ -124,14 +124,14 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 			}
 		}
 	}
-	
+
 	@Override
 	protected ColumnApplyTask<ColumnEncoderUDF> getSparseTask(CacheBlock in,
 		MatrixBlock out, int outputCol, int startRow, int blk)
 	{
 		throw new DMLRuntimeException("UDF encoders do not support sparse tasks.");
 	}
-	
+
 	@Override
 	public void mergeAt(ColumnEncoder other) {
 		if(other instanceof ColumnEncoderUDF)
@@ -164,5 +164,22 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 	@Override
 	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
 		throw new DMLRuntimeException("UDF encoders only support full column access.");
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		LOG.debug("Writing ColumnEncoderUTF to create");
+		super.writeExternal(out);
+		out.writeInt(_domainSize);
+		out.writeUTF(_fName);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException {
+		LOG.debug("reading ColumnEncoderUTF");
+		super.readExternal(in);
+		_domainSize = in.readInt();
+		_fName = in.readUTF();
+		LOG.debug("set _fName: " + _fName);
 	}
 }

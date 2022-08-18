@@ -166,7 +166,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 			out.quickSetValue(i, outputCol, getCode(in, i));
 		}
 	}*/
-	
+
 	protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		// Apply loop tiling to exploit CPU caches
 		double[] codes = getCodeCol(in, rowStart, blk);
@@ -343,7 +343,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		throw new DMLRuntimeException("Trying to get the Build task of an Encoder which does not require building");
 	}
 
-	public Callable<Object> getPartialBuildTask(CacheBlock in, int startRow, 
+	public Callable<Object> getPartialBuildTask(CacheBlock in, int startRow,
 			int blockSize, HashMap<Integer, Object> ret) {
 		throw new DMLRuntimeException(
 			"Trying to get the PartialBuild task of an Encoder which does not support  partial building");
@@ -409,7 +409,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 	public enum EncoderType {
-		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite
+		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite, Udf
 	}
 
 	/*

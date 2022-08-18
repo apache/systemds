@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-import java.util.List;
-
 public class WorkerModel extends BaseModel {
 	public String name;
 	public String address;

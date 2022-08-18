@@ -54,6 +54,7 @@
 		<log4j.version>2.17.2</log4j.version>
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
 		<java.level>11</java.level>
+		<java.version>{java.level}</java.version>
 		<!-->Testing settings<!-->
 		<maven.test.skip>true</maven.test.skip>
 		<test-parallel>classes</test-parallel>

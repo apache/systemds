@@ -19,9 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
-
 public class DataObjectModel extends BaseModel {
 
 	public Long workerId;

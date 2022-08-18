@@ -408,8 +408,8 @@ public class DMLScript
 	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs)
 		throws IOException
 	{
-		//print basic time environment info and process id
-		printStartExecInfo( dmlScriptStr );
+		// print basic time, environment info, and process id
+		printStartExecInfo(dmlScriptStr);
 		
 		//Step 1: parse configuration files & write any configuration specific global variables
 		loadConfiguration(fnameOptConfig);
@@ -576,9 +576,14 @@ public class DMLScript
 	}
 	
 	private static void printStartExecInfo(String dmlScriptString) {
-		LOG.info("BEGIN DML run " + getDateTime());
-		LOG.debug("DML script: \n" + dmlScriptString);
-		LOG.info("Process id:  " + IDHandler.obtainProcessID());
+		boolean info = LOG.isInfoEnabled();
+		boolean debug = LOG.isDebugEnabled();
+		if(info)
+			LOG.info("BEGIN DML run " + getDateTime());
+		if(debug)
+			LOG.debug("DML script: \n" + dmlScriptString);
+		if(info)
+			LOG.info("Process id:  " + IDHandler.obtainProcessID());
 	}
 	
 	private static String getDateTime() {

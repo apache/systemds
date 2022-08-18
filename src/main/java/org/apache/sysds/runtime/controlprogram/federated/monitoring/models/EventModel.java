@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;

@@ -403,9 +403,6 @@ return (Matrix[Double] X, Matrix[Double] Y)
       Y = XY[, 1]
       X = XY[, 2:ncol(XY)]
     }
-    else {
-      str = "smote not applicable"
-    }
   }
 }
 
@@ -435,7 +432,8 @@ return(Matrix[Double] X){
   X = X + Mask
 }
 
-storeDataForPrunning = function(Frame[Unknown] pipeline, Matrix[Double] hp, Matrix[Double] hpForPruning, Matrix[Double] changesByOp, Integer changes, Integer i)
+storeDataForPrunning = function(Frame[Unknown] pipeline, Matrix[Double] hp, Matrix[Double] hpForPruning, 
+  Matrix[Double] changesByOp, Integer changes, Integer i)
 return(Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
 {
   if(ncol(hpForPruning) > 1) {

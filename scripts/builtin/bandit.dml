@@ -85,7 +85,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
   B = (s_max + 1) * R;
   s_max = s_max - 1
   idx = 1
-  for(s in s_max:0, check = 0) { # TODO convert to parfor
+  for(s in s_max:0) {
     
    # result variables
     bracket_hp = matrix(0, rows=k*(s+1)+k, cols=HYPERPARAM_LENGTH)

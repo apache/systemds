@@ -28,7 +28,10 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.BinaryMatrixMatrixCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.spark.BinaryMatrixMatrixSPInstruction;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
@@ -37,6 +40,18 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 	protected BinaryMatrixMatrixFEDInstruction(Operator op,
 		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, FederatedOutput fedOut) {
 		super(FEDType.Binary, op, in1, in2, out, opcode, istr, fedOut);
+	}
+
+	public static BinaryMatrixMatrixFEDInstruction parseInstruction(BinaryMatrixMatrixCPInstruction instr) {
+		return new BinaryMatrixMatrixFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
+			instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
+	}
+
+	public static BinaryMatrixMatrixFEDInstruction parseInstruction(BinaryMatrixMatrixSPInstruction instr) {
+		String instrStr = rewriteSparkInstructionToCP(instr.getInstructionString());
+		String opcode = InstructionUtils.getInstructionPartsWithValueType(instrStr)[0];
+		return new BinaryMatrixMatrixFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
+			opcode, instrStr, FederatedOutput.NONE);
 	}
 
 	@Override

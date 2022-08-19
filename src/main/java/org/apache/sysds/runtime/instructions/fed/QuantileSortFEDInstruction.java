@@ -35,6 +35,8 @@ import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.QuantileSortCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.QuantileSortSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -49,6 +51,16 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction {
 		String istr, int k) {
 		super(FEDInstruction.FEDType.QSort, null, in1, in2, out, opcode, istr);
 		_numThreads = k;
+	}
+
+	public static QuantileSortFEDInstruction parseInstruction(QuantileSortCPInstruction instr) {
+		return new QuantileSortFEDInstruction(instr.input1, instr.input2, instr.output, instr.getOpcode(),
+			instr.getInstructionString(), instr.getNumThreads());
+	}
+
+	public static QuantileSortFEDInstruction parseInstruction(QuantileSortSPInstruction instr) {
+		return new QuantileSortFEDInstruction(instr.input1, instr.input2, instr.output, instr.getOpcode(),
+				instr.getInstructionString(), 1);
 	}
 
 	private static void parseInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {

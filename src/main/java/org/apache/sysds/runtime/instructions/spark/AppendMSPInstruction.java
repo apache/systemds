@@ -27,15 +27,13 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
-public abstract class AppendMSPInstruction extends BinarySPInstruction {
+public abstract class AppendMSPInstruction extends AppendSPInstruction {
 	protected CPOperand _offset = null;
-	protected boolean _cbind = true;
 
 	protected AppendMSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand offset, CPOperand out,
-			boolean cbind, String opcode, String istr) {
-		super(SPType.MAppend, op, in1, in2, out, opcode, istr);
+		boolean cbind, String opcode, String istr) {
+		super(SPType.MAppend, op, in1, in2, out, cbind, opcode, istr);
 		_offset = offset;
-		_cbind = cbind;
 	}
 
 	public static AppendMSPInstruction parseInstruction( String str ) {

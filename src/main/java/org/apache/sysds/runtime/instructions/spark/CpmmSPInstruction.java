@@ -54,7 +54,7 @@ import scala.Tuple2;
  * this would result in a degree of parallelism of 1.
  * 
  */
-public class CpmmSPInstruction extends BinarySPInstruction {
+public class CpmmSPInstruction extends AggregateBinarySPInstruction {
 	private final boolean _outputEmptyBlocks;
 	private final SparkAggType _aggtype;
 	

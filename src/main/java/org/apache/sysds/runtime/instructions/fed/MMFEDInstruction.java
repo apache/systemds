@@ -24,7 +24,6 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecType;
-import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.MapMult;
@@ -40,6 +39,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.spark.AggregateBinarySPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -47,9 +47,13 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class MMFEDInstruction extends BinaryFEDInstruction
 {
-	private MMFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, MapMult.CacheType type,
-		boolean outputEmpty, AggBinaryOp.SparkAggType aggtype, String opcode, String istr) {
+	private MMFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(FEDType.MAPMM, op, in1, in2, out, opcode, istr);
+	}
+
+	public static MMFEDInstruction parseInstruction(AggregateBinarySPInstruction instr) {
+		return new MMFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output, instr.getOpcode(),
+			instr.getInstructionString());
 	}
 
 	public static MMFEDInstruction parseInstruction( String str ) {
@@ -62,12 +66,9 @@ public class MMFEDInstruction extends BinaryFEDInstruction
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
-		MapMult.CacheType type = MapMult.CacheType.valueOf(parts[4]);
-		boolean outputEmpty = Boolean.parseBoolean(parts[5]);
-		AggBinaryOp.SparkAggType aggtype = AggBinaryOp.SparkAggType.valueOf(parts[6]);
 
 		AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(1);
-		return new MMFEDInstruction(aggbin, in1, in2, out, type, outputEmpty, aggtype, opcode, str);
+		return new MMFEDInstruction(aggbin, in1, in2, out, opcode, str);
 	}
 
 	public void processInstruction(ExecutionContext ec) {

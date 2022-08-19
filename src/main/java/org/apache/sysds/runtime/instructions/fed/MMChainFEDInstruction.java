@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.util.concurrent.Future;
@@ -47,6 +48,11 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 
 	public ChainType getMMChainType() {
 		return _type;
+	}
+
+	public static MMChainFEDInstruction parseInstruction(MMChainCPInstruction instr) {
+		return new MMChainFEDInstruction(instr.input1, instr.input2, instr.input3, instr.output, instr.getMMChainType(),
+			instr.getNumThreads(), instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static MMChainFEDInstruction parseInstruction ( String str ) {

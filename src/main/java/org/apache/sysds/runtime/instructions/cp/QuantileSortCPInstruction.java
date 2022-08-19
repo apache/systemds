@@ -119,4 +119,8 @@ public class QuantileSortCPInstruction extends UnaryCPInstruction {
 		//set and release output
 		ec.setMatrixOutput(output.getName(), resultBlock);
 	}
+
+	public int getNumThreads() {
+		return _numThreads;
+	}
 }

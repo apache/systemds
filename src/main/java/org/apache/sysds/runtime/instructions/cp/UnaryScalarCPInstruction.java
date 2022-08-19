@@ -26,10 +26,10 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
-public class UnaryScalarCPInstruction extends UnaryMatrixCPInstruction {
+public class UnaryScalarCPInstruction extends UnaryCPInstruction {
 
 	protected UnaryScalarCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
-		super(op, in, out, opcode, instr);
+		super(CPType.Unary, op, in, out, opcode, instr);
 	}
 
 	@Override 

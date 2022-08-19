@@ -39,6 +39,8 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 
@@ -54,6 +56,38 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 		CPOperand in3, CPOperand in4, CPOperand out, String opcode, String instruction_str) {
 		super(type, operator, in1, in2, in3, out, opcode, instruction_str);
 		_input4 = in4;
+	}
+
+	public static QuaternaryFEDInstruction parseInstruction(QuaternaryCPInstruction instr) {
+		QuaternaryOperator qop = (QuaternaryOperator) instr.getOperator();
+		if(qop.wtype1 != null)
+			return QuaternaryWSLossFEDInstruction.parseInstruction(instr);
+		else if(qop.wtype2 != null)
+			return QuaternaryWSigmoidFEDInstruction.parseInstruction(instr);
+		else if(qop.wtype3 != null)
+			return QuaternaryWDivMMFEDInstruction.parseInstruction(instr);
+		else if(qop.wtype4 != null)
+			return QuaternaryWCeMMFEDInstruction.parseInstruction(instr);
+		else if(qop.wtype5 != null)
+			return QuaternaryWUMMFEDInstruction.parseInstruction(instr);
+		// unreachable
+		return null;
+	}
+
+	public static QuaternaryFEDInstruction parseInstruction(QuaternarySPInstruction instr) {
+		QuaternaryOperator qop = (QuaternaryOperator) instr.getOperator();
+		if(qop.wtype1 != null)
+			return QuaternaryWSLossFEDInstruction.parseInstruction(instr);
+		else if(qop.wtype2 != null)
+			return QuaternaryWSigmoidFEDInstruction.parseInstruction(instr);
+		else if(qop.wtype3 != null)
+			return QuaternaryWDivMMFEDInstruction.parseInstruction(instr);
+		else if(qop.wtype4 != null)
+			return QuaternaryWCeMMFEDInstruction.parseInstruction(instr);
+		else if(qop.wtype5 != null)
+			return QuaternaryWUMMFEDInstruction.parseInstruction(instr);
+		// unreachable
+		return null;
 	}
 
 	public static QuaternaryFEDInstruction parseInstruction(String str) {
@@ -143,7 +177,9 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 		return false;
 	}
 
-	private static String rewriteSparkInstructionToCP(String inst_str) {
+	protected static String rewriteSparkInstructionToCP(String inst_str) {
+		// TODO: don't perform replacement over the whole instruction string, possibly changing string literals,
+		//  instead only at positions of ExecType and Opcode
 		// rewrite the spark instruction to a cp instruction
 		inst_str = inst_str.replace(ExecType.SPARK.name(), ExecType.CP.name());
 		if(inst_str.contains(WeightedCrossEntropy.OPCODE))

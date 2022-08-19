@@ -547,6 +547,10 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		}
 	}
 
+	public HashMap<String, String> getParameterMap() {
+		return params;
+	}
+
 	public static class RDDReplaceFunction implements Function<MatrixBlock, MatrixBlock> {
 		private static final long serialVersionUID = 6576713401901671659L;
 		private final double _pattern;

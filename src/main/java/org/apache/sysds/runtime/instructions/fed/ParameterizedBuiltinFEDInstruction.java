@@ -62,7 +62,9 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -80,9 +82,9 @@ import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
-	protected final LinkedHashMap<String, String> params;
+	protected final HashMap<String, String> params;
 
-	protected ParameterizedBuiltinFEDInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out,
+	protected ParameterizedBuiltinFEDInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
 		String opcode, String istr) {
 		super(FEDType.ParameterizedBuiltin, op, null, null, out, opcode, istr);
 		params = paramsMap;
@@ -108,6 +110,16 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		}
 
 		return paramMap;
+	}
+
+	public static ParameterizedBuiltinFEDInstruction parseInstruction(ParameterizedBuiltinCPInstruction instr) {
+		return new ParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.getParameterMap(), instr.output,
+			instr.getOpcode(), instr.getInstructionString());
+	}
+
+	public static ParameterizedBuiltinFEDInstruction parseInstruction(ParameterizedBuiltinSPInstruction instr) {
+		return new ParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.getParameterMap(), instr.output,
+			instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static ParameterizedBuiltinFEDInstruction parseInstruction(String str) {

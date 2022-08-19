@@ -45,8 +45,10 @@ import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.spark.CtableSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -57,13 +59,25 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 	//private final boolean _isExpand;
 	//private final boolean _ignoreZeros;
 
-	private CtableFEDInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
-		boolean ignoreZeros, String opcode, String istr) {
+	private CtableFEDInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, CPOperand outDim1,
+		CPOperand outDim2, boolean isExpand, boolean ignoreZeros, String opcode, String istr) {
 		super(FEDType.Ctable, null, in1, in2, in3, out, opcode, istr);
-		_outDim1 = new CPOperand(outputDim1, ValueType.FP64, DataType.SCALAR, dim1Literal);
-		_outDim2 = new CPOperand(outputDim2, ValueType.FP64, DataType.SCALAR, dim2Literal);
-		//_isExpand = isExpand;
-		//_ignoreZeros = ignoreZeros;
+		_outDim1 = outDim1;
+		_outDim2 = outDim2;
+		// _isExpand = isExpand;
+		// _ignoreZeros = ignoreZeros;
+	}
+
+	public static CtableFEDInstruction parseInstruction(CtableCPInstruction instr) {
+		return new CtableFEDInstruction(instr.input1, instr.input2, instr.input3, instr.output, instr.getOutDim1(),
+			instr.getOutDim2(), instr.getIsExpand(), instr.getIgnoreZeros(), instr.getOpcode(),
+			instr.getInstructionString());
+	}
+
+	public static CtableFEDInstruction parseInstruction(CtableSPInstruction instr) {
+		return new CtableFEDInstruction(instr.input1, instr.input2, instr.input3, instr.output, instr.getOutDim1(),
+				instr.getOutDim2(), instr.getIsExpand(), instr.getIgnoreZeros(), instr.getOpcode(),
+				instr.getInstructionString());
 	}
 
 	public static CtableFEDInstruction parseInstruction(String inst) {
@@ -88,11 +102,14 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 
 		CPOperand out = new CPOperand(parts[6]);
 		boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
-
+		
+		boolean dim1Literal = Boolean.parseBoolean(dim1Fields[1]);
+		CPOperand outDim1 = new CPOperand(dim1Fields[0], ValueType.FP64, DataType.SCALAR, dim1Literal);
+		boolean dim2Literal = Boolean.parseBoolean(dim2Fields[1]);
+		CPOperand outDim2 = new CPOperand(dim2Fields[0], ValueType.FP64, DataType.SCALAR, dim2Literal);
 		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
 		return new CtableFEDInstruction(in1,
-			in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]),
-			dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), false, ignoreZeros, opcode, inst);
+			in2, in3, out, outDim1, outDim2, false, ignoreZeros, opcode, inst);
 	}
 
 	@Override

@@ -51,9 +51,8 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
 
   while( max_iterations == 0 | counter < max_iterations )
   {
-    colSD = getColSd(X)
-    colMean = getColMean(X)
-
+    [colMean, colSD] = getColMean_Sd(X)
+    
     upperBound = colMean + k * colSD
     lowerBound = colMean - k * colSD
 
@@ -74,27 +73,19 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
   }
   out = X
   if(verbose) {
-    print("last outlier filter:\n"+ toString(outlierFilter))
-    print("Total executed iterations = "+counter)
     print("Upper-bound of data was calculated using Mean + k * Standard Deviation")
     print("lower-bound of data was calculated using Mean - k * Standard Deviation")
     print("Anything less than the lower-bound and greater than the upper-bound was treated as outlier")
     if(sum(out) == 0)
       print("output is a zero matrix due to iterative evaluation of outliers ")
-    print("output:\n"+ toString(out))
   }
-  bounds = rbind(lowerBound, upperBound)
 }
 
 fix_outliers_sd = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 2)
-  return(Matrix[Double] fixed_X)
+  return(Matrix[Double] X)
 {
-  rows = nrow(X)
-  cols = ncol(X)
-  if(repairMethod == 0) {
-    sel = (rowMaxs(outlierFilter) == 0)
-    X = removeEmpty(target = X, margin = "rows", select = sel)
-  }
+  if(repairMethod == 0) 
+    X = removeEmpty(target = X, margin = "rows", select = (rowMaxs(outlierFilter) == 0))
   else if(repairMethod == 1)
     X = (outlierFilter == 0) * X
   else if (repairMethod == 2) {    
@@ -103,31 +94,19 @@ fix_outliers_sd = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integ
   }
   else
     stop("outlierBySd: invalid argument - repair required 0-1 found: "+repairMethod)
-
-  fixed_X = X
 }
 
-getColSd = function(Matrix[Double] X)
-return(Matrix[Double] colSd)
+getColMean_Sd = function(Matrix[Double] X)
+return(Matrix[Double] colMean, Matrix[Double] colSd)
 {
+  colMean = matrix(0, 1, ncol(X))
   colSd = matrix(0, 1, ncol(X))
   for(i in 1:ncol(X))
   {
-    isNull = is.na(X[, i])
-    Xt = removeEmpty(target=X[, i], margin="rows", select=(isNull == 0))
-    colSd[1, i] = sd(Xt)
-  }
-}
-
-getColMean = function(Matrix[Double] X)
-return(Matrix[Double] colMean)
-{
-  colMean = matrix(0, 1, ncol(X))
-  for(i in 1:ncol(X))
-  {
-    isNull = is.na(X[, i])
-    Xt = removeEmpty(target=X[, i], margin="rows", select=(isNull == 0))
+    Xt = replace(target=X[, i], pattern=NaN, replacement=0)
+    Xt = removeEmpty(target=Xt, margin="rows")
     colMean[1, i] = mean(Xt)
+    colSd[1, i] = sd(Xt)
   }
 }
 

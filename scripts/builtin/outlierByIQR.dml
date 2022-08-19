@@ -114,7 +114,8 @@ compute_quartiles = function(Matrix[Double] X)
   if(nrow(X) > 1) {
     parfor(i in 1:cols) {
       isNull = is.na(X[, i])
-      Xt = removeEmpty(target=X[, i], margin="rows", select=(isNull == 0))
+      sel = (isNull == 0)
+      Xt = removeEmpty(target=X[, i], margin="rows", select=sel)
       colQ1[,i] = quantile(Xt, 0.25)
       colQ3[,i] = quantile(Xt, 0.75)
     }

@@ -47,7 +47,7 @@ public class BuiltinUnderSamplingTest extends AutomatedTestBase {
 	@Test
 	public void test_CP2() {
 
-		runUnderSamplingTest(0.5, Types.ExecType.CP);
+		runUnderSamplingTest(0.4, Types.ExecType.CP);
 
 	}
 

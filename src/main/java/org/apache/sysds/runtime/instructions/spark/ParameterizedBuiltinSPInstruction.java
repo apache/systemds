@@ -686,6 +686,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 					_off.getBlock(1, (int) arg0._1().getColumnIndex()));
 
 			// execute remove empty operations
+			System.out.println("offset: "+offsets.getValue().getNumRows());
+			System.out.println("_rmRows: "+_rmRows);
 			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
 			LibMatrixReorg.rmempty(data, offsets, _rmRows, _len, _blen, out);
 

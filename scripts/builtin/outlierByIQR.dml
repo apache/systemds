@@ -42,7 +42,6 @@
 m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod = 1, 
   Integer max_iterations, Boolean verbose = TRUE) 
   return(Matrix[Double] Y, Matrix[Double] Q1, Matrix[Double] Q3, Matrix[Double] IQR, Double k, Integer repairMethod) 
-  # return(List[Unknown] out)
 {
 
   sumPrevious = as.double(0)
@@ -71,16 +70,12 @@ m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod 
   Y = X
 
   if(verbose) {
-    print("Total executed iterations = "+counter)
     print("Upper-bound of data was calculated using Q3 + k * IQR")
     print("lower-bound of data was calculated using Q3 - k * IQR")
     print("Anything less than the lower-bound and greater than the upper-bound was treated as outlier")
     if(sum(Y) == 0)
       print("output is a zero matrix due to iterative evaluation of outliers ")
-    print("output:\n"+ toString(Y))
   }
-  bounds = rbind(lowerBound, upperBound)
-  out = list(Y, bounds)
 }
   
 fix_outliers_iqr = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 1)

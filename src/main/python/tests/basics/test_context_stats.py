@@ -21,32 +21,43 @@
 
 import unittest
 
+import numpy as np
 from systemds.context import SystemDSContext
+np.random.seed(1412)
 
 
 class TestContextCreation(unittest.TestCase):
 
-    def test_same_port(self):
-        # Same port should graciously change port
-        sds1 = SystemDSContext(port=9415)
-        sds2 = SystemDSContext(port=9415)
-        sds1.close()
-        sds2.close()
+    sds: SystemDSContext = None
 
-    def test_create_10_contexts(self):
-        # Creating multiple contexts and closing them should be no problem.
-        for _ in range(0, 10):
-            SystemDSContext().close()
 
-    def test_create_multiple_context(self):
-        # Creating multiple contexts in sequence but open at the same time is okay.
-        a = SystemDSContext()
-        b = SystemDSContext()
-        c = SystemDSContext()
-        d = SystemDSContext()
+    @classmethod
+    def setUpClass(cls):
+        cls.sds = SystemDSContext()
 
-        a.close()
-        b.close()
-        c.close()
-        d.close()
+    @classmethod
+    def tearDownClass(cls):
+        cls.sds.close()
+
+    def getM(self):
+        m1 = np.array(np.random.randint(10, size=5*5), dtype=np.int)
+        m1.shape = (5, 5)
+        return m1
+
+    def test_stats_v1(self):
+        a = self.sds.from_numpy(self.getM())
+        a = a + 1
+        a = a * 4
+        a = a + 3
+        a = a / 23
+
+        self.sds.capture_stats()
+        a.compute()
+        self.sds.capture_stats(False)
+
+        stats = self.sds.get_stats()
+        self.sds.clear_stats()
+        instructions = "\n".join(stats.split("Heavy hitter instructions:")[1].split("\n")[2:])
+        assert("+" in instructions and "*" in instructions and "/" in instructions)
+
 

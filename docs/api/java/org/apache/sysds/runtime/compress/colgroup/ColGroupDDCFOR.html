@@ -26,8 +26,8 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":9,"i21":10,"i22":10,"i23":10};
+var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -129,6 +129,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li><a href="AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed</a></li>
 <li>
 <ul class="inheritance">
+<li><a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup</a></li>
+<li>
+<ul class="inheritance">
 <li><a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.AColGroupValue</a></li>
 <li>
 <ul class="inheritance">
@@ -136,6 +139,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.compress.colgroup.ColGroupDDCFOR</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -193,7 +198,7 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
@@ -241,30 +246,49 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 </td>
 </tr>
 <tr id="i5" class="rowColor">
+<td class="colFirst"><code>static <a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D,double%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndexes,
+      <a href="dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts,
+      double[]&nbsp;reference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateInMemorySize()">estimateInMemorySize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the upper bound estimate of in memory allocation for the column group.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#extractCommon(double%5B%5D)">extractCommon</a></span>&#8203;(double[]&nbsp;constV)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">extract common value from group and return non morphing group</div>
+</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>org.apache.sysds.runtime.compress.colgroup.AColGroup.ColGroupType</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getColGroupType()">getColGroupType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCommon()">getCommon</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Get common vector, note this should not materialize anything but simply point to things that are already
+ allocated.</div>
+</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCompType()">getCompType</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Obtain the compression type.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCost(org.apache.sysds.runtime.compress.cost.ComputationCostEstimator,int)">getCost</a></span>&#8203;(<a href="../cost/ComputationCostEstimator.html" title="class in org.apache.sysds.runtime.compress.cost">ComputationCostEstimator</a>&nbsp;e,
        int&nbsp;nRows)</code></th>
@@ -272,19 +296,19 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <div class="block">Get the computation cost associated with this column group.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCounts(int%5B%5D)">getCounts</a></span>&#8203;(int[]&nbsp;counts)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExactSizeOnDisk()">getExactSizeOnDisk</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns the exact serialized size of column group.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getIdx(int,int)">getIdx</a></span>&#8203;(int&nbsp;r,
       int&nbsp;colIdx)</code></th>
@@ -292,33 +316,19 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <div class="block">Get the value at a colGroup specific row/column index position.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumberNonZeros(int)">getNumberNonZeros</a></span>&#8203;(int&nbsp;nRows)</code></th>
 <td class="colLast">
 <div class="block">Get the number of nonZeros contained in this column group.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">leftMultByMatrixNoPreAgg</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
-                        <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
-                        int&nbsp;rl,
-                        int&nbsp;ru,
-                        int&nbsp;cl,
-                        int&nbsp;cu)</code></th>
-<td class="colLast">
-<div class="block">Left multiply with this column group.</div>
-</td>
-</tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readFields(java.io.DataInput)">readFields</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
-<td class="colLast">
-<div class="block">Deserialize column group from data input.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replace(double,double)">replace</a></span>&#8203;(double&nbsp;pattern,
        double&nbsp;replace)</code></th>
@@ -326,7 +336,7 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <div class="block">Make a copy of the column group values, and replace all values that match pattern with replacement value.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rexpandCols(int,boolean,boolean,int)">rexpandCols</a></span>&#8203;(int&nbsp;max,
            boolean&nbsp;ignore,
@@ -336,7 +346,7 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <div class="block">Expand the column group to multiple columns.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#scalarOperation(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">scalarOperation</a></span>&#8203;(<a href="../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
@@ -344,22 +354,25 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
  cells if possible.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
+<td class="colFirst"><code>static <a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sparsifyFOR(org.apache.sysds.runtime.compress.colgroup.ColGroupDDC)">sparsifyFOR</a></span>&#8203;(<a href="ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a>&nbsp;g)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#unaryOperation(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">unaryOperation</a></span>&#8203;(<a href="../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
-<td class="colLast">
-<div class="block">Serializes column group to data output.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -367,28 +380,35 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a></h3>
-<code><a href="AMorphingMMColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a>, <a href="AMorphingMMColGroup.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></code></li>
+<code><a href="AMorphingMMColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a>, <a href="AMorphingMMColGroup.html#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">leftMultByMatrixNoPreAgg</a>, <a href="AMorphingMMColGroup.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.AColGroupValue">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></h3>
-<code><a href="AColGroupValue.html#copy()">copy</a>, <a href="AColGroupValue.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int,int,int)">decompressToDenseBlock</a>, <a href="AColGroupValue.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a>, <a href="AColGroupValue.html#forceMatrixBlockDictionary()">forceMatrixBlockDictionary</a>, <a href="AColGroupValue.html#getCachedCounts()">getCachedCounts</a>, <a href="AColGroupValue.html#getCounts()">getCounts</a>, <a href="AColGroupValue.html#getDictionary()">getDictionary</a>, <a href="AColGroupValue.html#getNumValues()">getNumValues</a>, <a href="AColGroupValue.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></code></li>
+<code><a href="AColGroupValue.html#copy()">copy</a>, <a href="AColGroupValue.html#getCounts()">getCounts</a>, <a href="AColGroupValue.html#getNumValues()">getNumValues</a></code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictBasedColGroup</a></h3>
+<code><a href="ADictBasedColGroup.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int,int,int)">decompressToDenseBlock</a>, <a href="ADictBasedColGroup.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a>, <a href="ADictBasedColGroup.html#getDictionary()">getDictionary</a>, <a href="ADictBasedColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a></h3>
-<code><a href="AColGroupCompressed.html#getMax()">getMax</a>, <a href="AColGroupCompressed.html#getMin()">getMin</a>, <a href="AColGroupCompressed.html#preAggRows(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">preAggRows</a>, <a href="AColGroupCompressed.html#tsmm(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">tsmm</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int)">unaryAggregateOperations</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int,double%5B%5D)">unaryAggregateOperations</a></code></li>
+<code><a href="AColGroupCompressed.html#getMax()">getMax</a>, <a href="AColGroupCompressed.html#getMin()">getMin</a>, <a href="AColGroupCompressed.html#isEmpty()">isEmpty</a>, <a href="AColGroupCompressed.html#preAggRows(org.apache.sysds.runtime.functionobjects.ValueFunction)">preAggRows</a>, <a href="AColGroupCompressed.html#tsmm(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">tsmm</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int)">unaryAggregateOperations</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int,double%5B%5D)">unaryAggregateOperations</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.AColGroup">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></h3>
-<code><a href="AColGroup.html#colSum(java.util.List,double%5B%5D,int)">colSum</a>, <a href="AColGroup.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int)">decompressToDenseBlock</a>, <a href="AColGroup.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int)">decompressToSparseBlock</a>, <a href="AColGroup.html#get(int,int)">get</a>, <a href="AColGroup.html#getColIndices()">getColIndices</a>, <a href="AColGroup.html#getNumCols()">getNumCols</a>, <a href="AColGroup.html#shiftColIndices(int)">shiftColIndices</a>, <a href="AColGroup.html#sliceColumn(int)">sliceColumn</a>, <a href="AColGroup.html#sliceColumns(int,int)">sliceColumns</a></code></li>
+<code><a href="AColGroup.html#colSum(java.util.Collection,double%5B%5D,int)">colSum</a>, <a href="AColGroup.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int)">decompressToDenseBlock</a>, <a href="AColGroup.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int)">decompressToSparseBlock</a>, <a href="AColGroup.html#get(int,int)">get</a>, <a href="AColGroup.html#getColIndices()">getColIndices</a>, <a href="AColGroup.html#getNumCols()">getNumCols</a>, <a href="AColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a>, <a href="AColGroup.html#shiftColIndices(int)">shiftColIndices</a>, <a href="AColGroup.html#sliceColumn(int)">sliceColumn</a>, <a href="AColGroup.html#sliceColumns(int,int)">sliceColumns</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -413,6 +433,28 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="create(int[],org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int[],double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>create</h4>
+<pre class="methodSignature">public static&nbsp;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;create&#8203;(int[]&nbsp;colIndexes,
+                               <a href="dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+                               <a href="mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+                               int[]&nbsp;cachedCounts,
+                               double[]&nbsp;reference)</pre>
+</li>
+</ul>
+<a id="sparsifyFOR(org.apache.sysds.runtime.compress.colgroup.ColGroupDDC)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>sparsifyFOR</h4>
+<pre class="methodSignature">public static&nbsp;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;sparsifyFOR&#8203;(<a href="ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a>&nbsp;g)</pre>
+</li>
+</ul>
 <a id="getCompType()">
 <!--   -->
 </a>
@@ -458,38 +500,6 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <li class="blockList">
 <h4>getCounts</h4>
 <pre class="methodSignature">public&nbsp;int[]&nbsp;getCounts&#8203;(int[]&nbsp;counts)</pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="AColGroupValue.html#getCounts(int%5B%5D)">getCounts</a></code>&nbsp;in class&nbsp;<code><a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></code></dd>
-</dl>
-</li>
-</ul>
-<a id="leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>leftMultByMatrixNoPreAgg</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;leftMultByMatrixNoPreAgg&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
-                                     <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
-                                     int&nbsp;rl,
-                                     int&nbsp;ru,
-                                     int&nbsp;cl,
-                                     int&nbsp;cu)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">AColGroup</a></code></span></div>
-<div class="block">Left multiply with this column group.</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="AMorphingMMColGroup.html#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">leftMultByMatrixNoPreAgg</a></code>&nbsp;in class&nbsp;<code><a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>matrix</code> - The matrix to multiply with on the left</dd>
-<dd><code>result</code> - The result to output the values into, always dense for the purpose of the column groups
-               parallelizing</dd>
-<dd><code>rl</code> - The row to begin the multiplication from on the lhs matrix</dd>
-<dd><code>ru</code> - The row to end the multiplication at on the lhs matrix</dd>
-<dd><code>cl</code> - The column to begin the multiplication from on the lhs matrix</dd>
-<dd><code>cu</code> - The column to end the multiplication at on the lhs matrix</dd>
-</dl>
 </li>
 </ul>
 <a id="getColGroupType()">
@@ -605,15 +615,11 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <h4>write</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;write&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)
            throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#write(java.io.DataOutput)">AColGroup</a></code></span></div>
-<div class="block">Serializes column group to data output.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="AColGroupValue.html#write(java.io.DataOutput)">write</a></code>&nbsp;in class&nbsp;<code><a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>out</code> - data output</dd>
+<dd><code><a href="ADictBasedColGroup.html#write(java.io.DataOutput)">write</a></code>&nbsp;in class&nbsp;<code><a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictBasedColGroup</a></code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -625,15 +631,11 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <h4>readFields</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;readFields&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)
                 throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#readFields(java.io.DataInput)">AColGroup</a></code></span></div>
-<div class="block">Deserialize column group from data input.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="AColGroupValue.html#readFields(java.io.DataInput)">readFields</a></code>&nbsp;in class&nbsp;<code><a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>in</code> - data input</dd>
+<dd><code><a href="ADictBasedColGroup.html#readFields(java.io.DataInput)">readFields</a></code>&nbsp;in class&nbsp;<code><a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictBasedColGroup</a></code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -648,7 +650,7 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <div class="block">Returns the exact serialized size of column group. This can be used for example for buffer preallocation.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="AColGroupValue.html#getExactSizeOnDisk()">getExactSizeOnDisk</a></code>&nbsp;in class&nbsp;<code><a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></code></dd>
+<dd><code><a href="ADictBasedColGroup.html#getExactSizeOnDisk()">getExactSizeOnDisk</a></code>&nbsp;in class&nbsp;<code><a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictBasedColGroup</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>exact serialized size for column group</dd>
 </dl>
@@ -725,8 +727,8 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#containsValue(double)">AColGroup</a></code></span></div>
 <div class="block">Detect if the column group contains a specific value.</div>
 <dl>
-<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="AColGroupValue.html#containsValue(double)">containsValue</a></code>&nbsp;in class&nbsp;<code><a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="AColGroup.html#containsValue(double)">containsValue</a></code>&nbsp;in class&nbsp;<code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>pattern</code> - The value to look for.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -761,9 +763,15 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <li class="blockList">
 <h4>extractCommon</h4>
 <pre class="methodSignature">public&nbsp;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;extractCommon&#8203;(double[]&nbsp;constV)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AMorphingMMColGroup.html#extractCommon(double%5B%5D)">AMorphingMMColGroup</a></code></span></div>
+<div class="block">extract common value from group and return non morphing group</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="AMorphingMMColGroup.html#extractCommon(double%5B%5D)">extractCommon</a></code>&nbsp;in class&nbsp;<code><a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>constV</code> - a vector to contain all values, note length = nCols in total matrix.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A non morphing column group with decompression instructions.</dd>
 </dl>
 </li>
 </ul>
@@ -810,6 +818,24 @@ extends <a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runt
 <dd><code>nRows</code> - The number of rows contained in the ColumnGroup.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A Central Moment object.</dd>
+</dl>
+</li>
+</ul>
+<a id="getCommon()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getCommon</h4>
+<pre class="methodSignature">public&nbsp;double[]&nbsp;getCommon()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AMorphingMMColGroup.html#getCommon()">AMorphingMMColGroup</a></code></span></div>
+<div class="block">Get common vector, note this should not materialize anything but simply point to things that are already
+ allocated.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="AMorphingMMColGroup.html#getCommon()">getCommon</a></code>&nbsp;in class&nbsp;<code><a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the common double vector</dd>
 </dl>
 </li>
 </ul>

@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10};
+var data = {"i0":10,"i1":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -130,6 +130,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="description">
 <ul class="blockList">
 <li class="blockList">
+<dl>
+<dt>Direct Known Subclasses:</dt>
+<dd><code><a href="PrivacyConstraintLoaderMock.html" title="class in org.apache.sysds.hops.fedplanner">PrivacyConstraintLoaderMock</a></code></dd>
+</dl>
 <hr>
 <pre>public class <span class="typeNameLabel">PrivacyConstraintLoader</span>
 extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
@@ -204,6 +208,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#loadConstraints(org.apache.sysds.parser.DMLProgram)">loadConstraints</a></span>&#8203;(<a href="../../parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#loadFederatedPrivacyConstraints(org.apache.sysds.hops.Hop)">loadFederatedPrivacyConstraints</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop)</code></th>
+<td class="colLast">
+<div class="block">Get privacy constraints from federated workers for DataOps.</div>
+</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -250,10 +261,24 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <a id="loadConstraints(org.apache.sysds.parser.DMLProgram)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>loadConstraints</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;loadConstraints&#8203;(<a href="../../parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog)</pre>
+</li>
+</ul>
+<a id="loadFederatedPrivacyConstraints(org.apache.sysds.hops.Hop)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>loadFederatedPrivacyConstraints</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;loadFederatedPrivacyConstraints&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop)</pre>
+<div class="block">Get privacy constraints from federated workers for DataOps.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>hop</code> - for which privacy constraints are loaded</dd>
+</dl>
 </li>
 </ul>
 </li>

@@ -324,7 +324,7 @@ the order they are declared.</div>
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="../AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="../AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CompressedSizeInfoColGroup.</span><code><span class="memberNameLink"><a href="../../estim/CompressedSizeInfoColGroup.html#getAllCompressionSizes()">getAllCompressionSizes</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -339,8 +339,37 @@ the order they are declared.</div>
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>long</code></td>
+<td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CompressedSizeInfoColGroup.</span><code><span class="memberNameLink"><a href="../../estim/CompressedSizeInfoColGroup.html#getCompressionSize(org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType)">getCompressionSize</a></span>&#8203;(<a href="../AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;ct)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../../estim/package-summary.html">org.apache.sysds.runtime.compress.estim</a> with parameters of type <a href="../AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../estim/CompressedSizeInfoColGroup.html#%3Cinit%3E(int%5B%5D,int,int,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType)">CompressedSizeInfoColGroup</a></span>&#8203;(int[]&nbsp;cols,
+                          int&nbsp;nVal,
+                          int&nbsp;nRow,
+                          <a href="../AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;bestCompressionType)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../estim/CompressedSizeInfoColGroup.html#%3Cinit%3E(int%5B%5D,org.apache.sysds.runtime.compress.estim.EstimationFactors,long,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType)">CompressedSizeInfoColGroup</a></span>&#8203;(int[]&nbsp;cols,
+                          <a href="../../estim/EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;facts,
+                          long&nbsp;minSize,
+                          <a href="../AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;bestCompressionType)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../estim/CompressedSizeInfoColGroup.html#%3Cinit%3E(int%5B%5D,org.apache.sysds.runtime.compress.estim.EstimationFactors,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType)">CompressedSizeInfoColGroup</a></span>&#8203;(int[]&nbsp;cols,
+                          <a href="../../estim/EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;facts,
+                          <a href="../AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;bestCompressionType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

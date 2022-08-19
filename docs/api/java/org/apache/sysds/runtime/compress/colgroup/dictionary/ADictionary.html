@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":6,"i15":6,"i16":6,"i17":6,"i18":6,"i19":10,"i20":6,"i21":10,"i22":6,"i23":6,"i24":10,"i25":6,"i26":6,"i27":6,"i28":6,"i29":6,"i30":6,"i31":6,"i32":6,"i33":6,"i34":6,"i35":6,"i36":6,"i37":6,"i38":6,"i39":6,"i40":6,"i41":6,"i42":6,"i43":6,"i44":6,"i45":6,"i46":6,"i47":6,"i48":6,"i49":6,"i50":6,"i51":6,"i52":6,"i53":6,"i54":6,"i55":6,"i56":6,"i57":6,"i58":6,"i59":6,"i60":6,"i61":6,"i62":6,"i63":6};
+var data = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6,"i12":6,"i13":6,"i14":6,"i15":6,"i16":6,"i17":6,"i18":6,"i19":6,"i20":6,"i21":6,"i22":6,"i23":10,"i24":6,"i25":10,"i26":6,"i27":10,"i28":6,"i29":6,"i30":6,"i31":6,"i32":6,"i33":6,"i34":6,"i35":6,"i36":6,"i37":6,"i38":6,"i39":6,"i40":6,"i41":6,"i42":6,"i43":6,"i44":6,"i45":6,"i46":6,"i47":6,"i48":6,"i49":6,"i50":6,"i51":6,"i52":6,"i53":6,"i54":6,"i55":6,"i56":6,"i57":6,"i58":6,"i59":6,"i60":6,"i61":6,"i62":6,"i63":6,"i64":6,"i65":6,"i66":6,"i67":6,"i68":6,"i69":6,"i70":6,"i71":6,"i72":6,"i73":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -299,10 +299,20 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">applyScalarOp</a></span>&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
-<div class="block">Allocate a new dictionary and applies the scalar operation on each cell of the to then return the new dictionary.</div>
+<div class="block">Allocate a new dictionary and applies the scalar operation on each cell of to then return the new dictionary.</div>
 </td>
 </tr>
 <tr id="i11" class="rowColor">
+<td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyScalarOpAndAppend(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">applyScalarOpAndAppend</a></span>&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                      double&nbsp;v0,
+                      int&nbsp;nCol)</code></th>
+<td class="colLast">
+<div class="block">Allocate a new dictionary with one extra row and applies the scalar operation on each cell of to then return the
+ new dictionary.</div>
+</td>
+</tr>
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyScalarOpWithReference(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double%5B%5D,double%5B%5D)">applyScalarOpWithReference</a></span>&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
                           double[]&nbsp;reference,
@@ -311,14 +321,23 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyUnaryOp(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">applyUnaryOp</a></span>&#8203;(<a href="../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
 <div class="block">Allocate a new dictionary and apply the unary operator on each cell.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
+<td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyUnaryOpAndAppend(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double,int)">applyUnaryOpAndAppend</a></span>&#8203;(<a href="../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                     double&nbsp;v0,
+                     int&nbsp;nCol)</code></th>
+<td class="colLast">
+<div class="block">Allocate a new dictionary with one extra row and apply the unary operator on each cell.</div>
+</td>
+</tr>
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#applyUnaryOpWithReference(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double%5B%5D,double%5B%5D)">applyUnaryOpWithReference</a></span>&#8203;(<a href="../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
                          double[]&nbsp;reference,
@@ -327,16 +346,25 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Allocate a new dictionary and apply the scalar operation on each cell to then return a new dictionary.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpLeft</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
          double[]&nbsp;v,
          int[]&nbsp;colIndexes)</code></th>
 <td class="colLast">
-<div class="block">Apply binary row operation on the left side in place</div>
+<div class="block">Apply binary row operation on the left side</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i17" class="rowColor">
+<td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpLeftAndAppend</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                  double[]&nbsp;v,
+                  int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">
+<div class="block">Apply binary row operation on the left side with one extra row evaluating with zeros.</div>
+</td>
+</tr>
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                       double[]&nbsp;v,
@@ -347,15 +375,15 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Apply the binary operator such that each value is offset by the reference before application.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v)</code></th>
 <td class="colLast">
-<div class="block">Apply binary row operation on the right side.</div>
+<div class="block">Apply binary row operation on the right side as with no columns to extract from v.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpRight</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v,
@@ -364,7 +392,16 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Apply binary row operation on the right side.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i21" class="rowColor">
+<td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpRightAndAppend</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                   double[]&nbsp;v,
+                   int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">
+<div class="block">Apply binary row operation on the right side with one extra row evaluating with zeros.</div>
+</td>
+</tr>
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                        double[]&nbsp;v,
@@ -375,7 +412,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Apply the binary operator such that each value is offset by the reference before application.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#centralMoment(org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,int)">centralMoment</a></span>&#8203;(<a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
              int[]&nbsp;counts,
@@ -384,7 +421,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Central moment function to calculate the central moment of this column group.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#centralMoment(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,int)">centralMoment</a></span>&#8203;(<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
              <a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
@@ -394,7 +431,30 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Central moment function to calculate the central moment of this column group.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i25" class="rowColor">
+<td class="colFirst"><code><a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#centralMomentWithDefault(org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithDefault</a></span>&#8203;(<a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                        int[]&nbsp;counts,
+                        double&nbsp;def,
+                        int&nbsp;nRows)</code></th>
+<td class="colLast">
+<div class="block">Central moment function to calculate the central moment of this column group with a default offset on all missing
+ tuples.</div>
+</td>
+</tr>
+<tr id="i26" class="altColor">
+<td class="colFirst"><code>abstract <a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#centralMomentWithDefault(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithDefault</a></span>&#8203;(<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
+                        <a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                        int[]&nbsp;counts,
+                        double&nbsp;def,
+                        int&nbsp;nRows)</code></th>
+<td class="colLast">
+<div class="block">Central moment function to calculate the central moment of this column group with a default offset on all missing
+ tuples.</div>
+</td>
+</tr>
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code><a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#centralMomentWithReference(org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithReference</a></span>&#8203;(<a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
                           int[]&nbsp;counts,
@@ -405,7 +465,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
  tuple.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#centralMomentWithReference(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithReference</a></span>&#8203;(<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
                           <a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
@@ -417,15 +477,15 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
  tuple.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#clone()">clone</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns a deep clone of the dictionary.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
-<td class="colFirst"><code>void</code></td>
+<tr id="i30" class="altColor">
+<td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#colProduct(double%5B%5D,int%5B%5D,int%5B%5D)">colProduct</a></span>&#8203;(double[]&nbsp;res,
           int[]&nbsp;counts,
           int[]&nbsp;colIndexes)</code></th>
@@ -433,7 +493,17 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Calculate the column product of the dictionary weighted by counts.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i31" class="rowColor">
+<td class="colFirst"><code>abstract void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#colProductWithReference(double%5B%5D,int%5B%5D,int%5B%5D,double%5B%5D)">colProductWithReference</a></span>&#8203;(double[]&nbsp;res,
+                       int[]&nbsp;counts,
+                       int[]&nbsp;colIndexes,
+                       double[]&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Calculate the column product of the dictionary weighted by counts.</div>
+</td>
+</tr>
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#colSum(double%5B%5D,int%5B%5D,int%5B%5D)">colSum</a></span>&#8203;(double[]&nbsp;c,
       int[]&nbsp;counts,
@@ -442,7 +512,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Get the column sum of the values contained in the dictionary</div>
 </td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#colSumSq(double%5B%5D,int%5B%5D,int%5B%5D)">colSumSq</a></span>&#8203;(double[]&nbsp;c,
         int[]&nbsp;counts,
@@ -451,7 +521,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Get the column sum of the values contained in the dictionary</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#colSumSqWithReference(double%5B%5D,int%5B%5D,int%5B%5D,double%5B%5D)">colSumSqWithReference</a></span>&#8203;(double[]&nbsp;c,
                      int[]&nbsp;counts,
@@ -461,14 +531,14 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Get the column sum of the values contained in the dictionary with an offset reference value added to each cell.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>abstract boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#containsValue(double)">containsValue</a></span>&#8203;(double&nbsp;pattern)</code></th>
 <td class="colLast">
 <div class="block">Detect if the dictionary contains a specific value.</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>abstract boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#containsValueWithReference(double,double%5B%5D)">containsValueWithReference</a></span>&#8203;(double&nbsp;pattern,
                           double[]&nbsp;reference)</code></th>
@@ -476,28 +546,28 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Detect if the dictionary contains a specific value with reference offset.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>abstract long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExactSizeOnDisk()">getExactSizeOnDisk</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Calculate the space consumption if the dictionary is stored on disk.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>abstract long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInMemorySize()">getInMemorySize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns the memory usage of the dictionary.</div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>abstract <a href="MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMBDict(int)">getMBDict</a></span>&#8203;(int&nbsp;nCol)</code></th>
 <td class="colLast">
 <div class="block">Get this dictionary as a MatrixBlock dictionary.</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>abstract long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumberNonZeros(int%5B%5D,int)">getNumberNonZeros</a></span>&#8203;(int[]&nbsp;counts,
                  int&nbsp;nCol)</code></th>
@@ -505,7 +575,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Calculate the number of non zeros in the dictionary.</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>abstract long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumberNonZerosWithReference(int%5B%5D,double%5B%5D,int)">getNumberNonZerosWithReference</a></span>&#8203;(int[]&nbsp;counts,
                               double[]&nbsp;reference,
@@ -514,56 +584,58 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Calculate the number of non zeros in the dictionary.</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumberOfValues(int)">getNumberOfValues</a></span>&#8203;(int&nbsp;ncol)</code></th>
 <td class="colLast">
 <div class="block">Get the number of distinct tuples given that the column group has n columns</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>abstract double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSparsity()">getSparsity</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the sparsity of the dictionary.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code>abstract <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getString(int)">getString</a></span>&#8203;(int&nbsp;colIndexes)</code></th>
 <td class="colLast">
 <div class="block">Get a string representation of the dictionary, that considers the layout of the data.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code>abstract double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValue(int)">getValue</a></span>&#8203;(int&nbsp;i)</code></th>
 <td class="colLast">
 <div class="block">Get Specific value contained in the dictionary at index.</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i46" class="altColor">
+<td class="colFirst"><code>abstract double</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValue(int,int,int)">getValue</a></span>&#8203;(int&nbsp;r,
+        int&nbsp;col,
+        int&nbsp;nCol)</code></th>
+<td class="colLast">
+<div class="block">Get Specific value contain in dictionary at index.</div>
+</td>
+</tr>
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValues()">getValues</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get all the values contained in the dictionary as a linearized double array.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
-<td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#inplaceScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">inplaceScalarOp</a></span>&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code></th>
-<td class="colLast">
-<div class="block">Applies the scalar operation on the dictionary.</div>
-</td>
-</tr>
-<tr id="i41" class="rowColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code>abstract boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isLossy()">isLossy</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Specify if the Dictionary is lossy.</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#multiplyScalar(double,double%5B%5D,int,int,int%5B%5D)">multiplyScalar</a></span>&#8203;(double&nbsp;v,
               double[]&nbsp;ret,
@@ -575,7 +647,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
  the int array.</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preaggValuesFromDense(int,int%5B%5D,int%5B%5D,double%5B%5D,int)">preaggValuesFromDense</a></span>&#8203;(int&nbsp;numVals,
                      int[]&nbsp;colIndexes,
@@ -586,7 +658,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Pre Aggregate values for Right Matrix Multiplication.</div>
 </td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i51" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#product(double%5B%5D,int%5B%5D,int)">product</a></span>&#8203;(double[]&nbsp;ret,
        int[]&nbsp;counts,
@@ -595,7 +667,29 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Calculate the product of the dictionary weighted by counts.</div>
 </td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i52" class="altColor">
+<td class="colFirst"><code>abstract double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#productAllRowsToDouble(int)">productAllRowsToDouble</a></span>&#8203;(int&nbsp;nrColumns)</code></th>
+<td class="colLast">
+<div class="block">Method to product all rows to a column vector.</div>
+</td>
+</tr>
+<tr id="i53" class="rowColor">
+<td class="colFirst"><code>abstract double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#productAllRowsToDoubleWithDefault(double%5B%5D)">productAllRowsToDoubleWithDefault</a></span>&#8203;(double[]&nbsp;defaultTuple)</code></th>
+<td class="colLast">
+<div class="block">Method to product all rows to a column vector with a default value added in the end.</div>
+</td>
+</tr>
+<tr id="i54" class="altColor">
+<td class="colFirst"><code>abstract double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#productAllRowsToDoubleWithReference(double%5B%5D)">productAllRowsToDoubleWithReference</a></span>&#8203;(double[]&nbsp;reference)</code></th>
+<td class="colLast">
+<div class="block">Method to product all rows to a column vector with a reference values added to all cells, and a reference product
+ in the end</div>
+</td>
+</tr>
+<tr id="i55" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#productWithDefault(double%5B%5D,int%5B%5D,double%5B%5D,int)">productWithDefault</a></span>&#8203;(double[]&nbsp;ret,
                   int[]&nbsp;counts,
@@ -605,7 +699,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Calculate the product of the dictionary weighted by counts with a default value added .</div>
 </td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i56" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#productWithReference(double%5B%5D,int%5B%5D,double%5B%5D,int)">productWithReference</a></span>&#8203;(double[]&nbsp;ret,
                     int[]&nbsp;counts,
@@ -615,7 +709,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Calculate the product of the dictionary weighted by counts and offset by reference</div>
 </td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i57" class="rowColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replace(double,double,int)">replace</a></span>&#8203;(double&nbsp;pattern,
        double&nbsp;replace,
@@ -624,7 +718,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Make a copy of the values, and replace all values that match pattern with replacement value.</div>
 </td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i58" class="altColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replaceWithReference(double,double,double%5B%5D)">replaceWithReference</a></span>&#8203;(double&nbsp;pattern,
                     double&nbsp;replace,
@@ -633,7 +727,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Make a copy of the values, and replace all values that match pattern with replacement value.</div>
 </td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i59" class="rowColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rexpandCols(int,boolean,boolean,int)">rexpandCols</a></span>&#8203;(int&nbsp;max,
            boolean&nbsp;ignore,
@@ -643,17 +737,17 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Rexpand the dictionary (one hot encode)</div>
 </td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i60" class="altColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rexpandColsWithReference(int,boolean,boolean,double)">rexpandColsWithReference</a></span>&#8203;(int&nbsp;max,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rexpandColsWithReference(int,boolean,boolean,int)">rexpandColsWithReference</a></span>&#8203;(int&nbsp;max,
                         boolean&nbsp;ignore,
                         boolean&nbsp;cast,
-                        double&nbsp;reference)</code></th>
+                        int&nbsp;reference)</code></th>
 <td class="colLast">
 <div class="block">Rexpand the dictionary (one hot encode)</div>
 </td>
 </tr>
-<tr id="i51" class="rowColor">
+<tr id="i61" class="rowColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#scaleTuples(int%5B%5D,int)">scaleTuples</a></span>&#8203;(int[]&nbsp;scaling,
            int&nbsp;nCol)</code></th>
@@ -661,7 +755,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Scale all tuples contained in the dictionary by the scaling factor given in the int list.</div>
 </td>
 </tr>
-<tr id="i52" class="altColor">
+<tr id="i62" class="altColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sliceOutColumnRange(int,int,int)">sliceOutColumnRange</a></span>&#8203;(int&nbsp;idxStart,
                    int&nbsp;idxEnd,
@@ -670,14 +764,14 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Modify the dictionary by removing columns not within the index range.</div>
 </td>
 </tr>
-<tr id="i53" class="rowColor">
+<tr id="i63" class="rowColor">
 <td class="colFirst"><code>abstract <a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#subtractTuple(double%5B%5D)">subtractTuple</a></span>&#8203;(double[]&nbsp;tuple)</code></th>
 <td class="colLast">
 <div class="block">Allocate a new dictionary where the tuple given is subtracted from all tuples in the previous dictionary.</div>
 </td>
 </tr>
-<tr id="i54" class="altColor">
+<tr id="i64" class="altColor">
 <td class="colFirst"><code>abstract double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sum(int%5B%5D,int)">sum</a></span>&#8203;(int[]&nbsp;counts,
    int&nbsp;nCol)</code></th>
@@ -685,35 +779,35 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Get the sum of the values contained in the dictionary</div>
 </td>
 </tr>
-<tr id="i55" class="rowColor">
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDouble(int)">sumAllRowsToDouble</a></span>&#8203;(int&nbsp;nrColumns)</code></th>
 <td class="colLast">
 <div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values.</div>
 </td>
 </tr>
-<tr id="i56" class="altColor">
+<tr id="i66" class="altColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDoubleSq(int)">sumAllRowsToDoubleSq</a></span>&#8203;(int&nbsp;nrColumns)</code></th>
 <td class="colLast">
 <div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values.</div>
 </td>
 </tr>
-<tr id="i57" class="rowColor">
+<tr id="i67" class="rowColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDoubleSqWithDefault(double%5B%5D)">sumAllRowsToDoubleSqWithDefault</a></span>&#8203;(double[]&nbsp;defaultTuple)</code></th>
 <td class="colLast">
 <div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values.</div>
 </td>
 </tr>
-<tr id="i58" class="altColor">
+<tr id="i68" class="altColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDoubleSqWithReference(double%5B%5D)">sumAllRowsToDoubleSqWithReference</a></span>&#8203;(double[]&nbsp;reference)</code></th>
 <td class="colLast">
 <div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values.</div>
 </td>
 </tr>
-<tr id="i59" class="rowColor">
+<tr id="i69" class="rowColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDoubleWithDefault(double%5B%5D)">sumAllRowsToDoubleWithDefault</a></span>&#8203;(double[]&nbsp;defaultTuple)</code></th>
 <td class="colLast">
@@ -721,14 +815,14 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
  array.</div>
 </td>
 </tr>
-<tr id="i60" class="altColor">
+<tr id="i70" class="altColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumAllRowsToDoubleWithReference(double%5B%5D)">sumAllRowsToDoubleWithReference</a></span>&#8203;(double[]&nbsp;reference)</code></th>
 <td class="colLast">
 <div class="block">Method used as a pre-aggregate of each tuple in the dictionary, to single double values with a reference.</div>
 </td>
 </tr>
-<tr id="i61" class="rowColor">
+<tr id="i71" class="rowColor">
 <td class="colFirst"><code>abstract double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumSq(int%5B%5D,int)">sumSq</a></span>&#8203;(int[]&nbsp;counts,
      int&nbsp;nCol)</code></th>
@@ -736,7 +830,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Get the square sum of the values contained in the dictionary</div>
 </td>
 </tr>
-<tr id="i62" class="altColor">
+<tr id="i72" class="altColor">
 <td class="colFirst"><code>abstract double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sumSqWithReference(int%5B%5D,double%5B%5D)">sumSqWithReference</a></span>&#8203;(int[]&nbsp;counts,
                   double[]&nbsp;reference)</code></th>
@@ -744,7 +838,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Get the square sum of the values contained in the dictionary with a reference offset on each value.</div>
 </td>
 </tr>
-<tr id="i63" class="rowColor">
+<tr id="i73" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
@@ -821,6 +915,26 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <dd><code>i</code> - The index to extract the value from</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The value contained at the index</dd>
+</dl>
+</li>
+</ul>
+<a id="getValue(int,int,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getValue</h4>
+<pre class="methodSignature">public abstract&nbsp;double&nbsp;getValue&#8203;(int&nbsp;r,
+                                int&nbsp;col,
+                                int&nbsp;nCol)</pre>
+<div class="block">Get Specific value contain in dictionary at index.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>r</code> - Row target</dd>
+<dd><code>col</code> - Col target</dd>
+<dd><code>nCol</code> - nCol in dictionary</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>value</dd>
 </dl>
 </li>
 </ul>
@@ -970,8 +1084,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <dd><code>c</code> - The target double array, this contains the full number of columns, therefore the colIndexes for
                    this specific dictionary is needed.</dd>
 <dd><code>fn</code> - The function to apply to individual columns</dd>
-<dd><code>reference</code> - The reference offset values to add to each cell.</dd>
 <dd><code>colIndexes</code> - The mapping to the target columns from the individual columns</dd>
+<dd><code>reference</code> - The reference offset values to add to each cell.</dd>
 <dd><code>def</code> - If the reference should be treated as a tuple as well</dd>
 </dl>
 </li>
@@ -983,10 +1097,31 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <li class="blockList">
 <h4>applyScalarOp</h4>
 <pre class="methodSignature">public abstract&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;applyScalarOp&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</pre>
-<div class="block">Allocate a new dictionary and applies the scalar operation on each cell of the to then return the new dictionary.</div>
+<div class="block">Allocate a new dictionary and applies the scalar operation on each cell of to then return the new dictionary.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>op</code> - The operator.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The new dictionary to return.</dd>
+</dl>
+</li>
+</ul>
+<a id="applyScalarOpAndAppend(org.apache.sysds.runtime.matrix.operators.ScalarOperator,double,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>applyScalarOpAndAppend</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;applyScalarOpAndAppend&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+                                                   double&nbsp;v0,
+                                                   int&nbsp;nCol)</pre>
+<div class="block">Allocate a new dictionary with one extra row and applies the scalar operation on each cell of to then return the
+ new dictionary.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - The operator</dd>
+<dd><code>v0</code> - The new value to put into each cell in the new row</dd>
+<dd><code>nCol</code> - The number of columns in the dictionary</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The new dictionary to return.</dd>
 </dl>
@@ -1002,7 +1137,27 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="block">Allocate a new dictionary and apply the unary operator on each cell.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>op</code> - the operator.</dd>
+<dd><code>op</code> - The operator.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The new dictionary to return.</dd>
+</dl>
+</li>
+</ul>
+<a id="applyUnaryOpAndAppend(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>applyUnaryOpAndAppend</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;applyUnaryOpAndAppend&#8203;(<a href="../../../matrix/operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                                                  double&nbsp;v0,
+                                                  int&nbsp;nCol)</pre>
+<div class="block">Allocate a new dictionary with one extra row and apply the unary operator on each cell.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - The operator.</dd>
+<dd><code>v0</code> - The new value to put into each cell in the new row</dd>
+<dd><code>nCol</code> - The number of columns in the dictionary</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The new dictionary to return.</dd>
 </dl>
@@ -1052,23 +1207,6 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 </dl>
 </li>
 </ul>
-<a id="inplaceScalarOp(org.apache.sysds.runtime.matrix.operators.ScalarOperator)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>inplaceScalarOp</h4>
-<pre class="methodSignature">public abstract&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;inplaceScalarOp&#8203;(<a href="../../../matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</pre>
-<div class="block">Applies the scalar operation on the dictionary. Note that this operation modifies the underlying data, and
- normally require a copy of the original Dictionary to preserve old objects.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>op</code> - The operator to apply to the dictionary values.</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>this dictionary with modified values.</dd>
-</dl>
-</li>
-</ul>
 <a id="binOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double[],int[])">
 <!--   -->
 </a>
@@ -1078,7 +1216,27 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <pre class="methodSignature">public abstract&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;binOpLeft&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                                       double[]&nbsp;v,
                                       int[]&nbsp;colIndexes)</pre>
-<div class="block">Apply binary row operation on the left side in place</div>
+<div class="block">Apply binary row operation on the left side</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - The operation to this dictionary</dd>
+<dd><code>v</code> - The values to use on the left hand side.</dd>
+<dd><code>colIndexes</code> - The column indexes to consider inside v.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A new dictionary containing the updated values.</dd>
+</dl>
+</li>
+</ul>
+<a id="binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double[],int[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>binOpLeftAndAppend</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;binOpLeftAndAppend&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                                               double[]&nbsp;v,
+                                               int[]&nbsp;colIndexes)</pre>
+<div class="block">Apply binary row operation on the left side with one extra row evaluating with zeros.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>op</code> - The operation to this dictionary</dd>
@@ -1136,6 +1294,26 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 </dl>
 </li>
 </ul>
+<a id="binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double[],int[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>binOpRightAndAppend</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;binOpRightAndAppend&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                                                double[]&nbsp;v,
+                                                int[]&nbsp;colIndexes)</pre>
+<div class="block">Apply binary row operation on the right side with one extra row evaluating with zeros.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - The operation to this dictionary</dd>
+<dd><code>v</code> - The values to use on the right hand side.</dd>
+<dd><code>colIndexes</code> - The column indexes to consider inside v.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A new dictionary containing the updated values.</dd>
+</dl>
+</li>
+</ul>
 <a id="binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double[])">
 <!--   -->
 </a>
@@ -1144,7 +1322,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <h4>binOpRight</h4>
 <pre class="methodSignature">public abstract&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;binOpRight&#8203;(<a href="../../../matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                                        double[]&nbsp;v)</pre>
-<div class="block">Apply binary row operation on the right side.</div>
+<div class="block">Apply binary row operation on the right side as with no columns to extract from v.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>op</code> - The operation to this dictionary</dd>
@@ -1351,6 +1529,55 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <dd><code>reference</code> - The reference values to add to each cell.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>a double array containing the row sums from this dictionary.</dd>
+</dl>
+</li>
+</ul>
+<a id="productAllRowsToDouble(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>productAllRowsToDouble</h4>
+<pre class="methodSignature">public abstract&nbsp;double[]&nbsp;productAllRowsToDouble&#8203;(int&nbsp;nrColumns)</pre>
+<div class="block">Method to product all rows to a column vector.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>nrColumns</code> - The number of columns in the ColGroup to know how to get the values from the dictionary.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A row product</dd>
+</dl>
+</li>
+</ul>
+<a id="productAllRowsToDoubleWithDefault(double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>productAllRowsToDoubleWithDefault</h4>
+<pre class="methodSignature">public abstract&nbsp;double[]&nbsp;productAllRowsToDoubleWithDefault&#8203;(double[]&nbsp;defaultTuple)</pre>
+<div class="block">Method to product all rows to a column vector with a default value added in the end.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>defaultTuple</code> - The default row that aggregate to last cell</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A row product</dd>
+</dl>
+</li>
+</ul>
+<a id="productAllRowsToDoubleWithReference(double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>productAllRowsToDoubleWithReference</h4>
+<pre class="methodSignature">public abstract&nbsp;double[]&nbsp;productAllRowsToDoubleWithReference&#8203;(double[]&nbsp;reference)</pre>
+<div class="block">Method to product all rows to a column vector with a reference values added to all cells, and a reference product
+ in the end</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>reference</code> - The reference row</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A row product</dd>
 </dl>
 </li>
 </ul>
@@ -1823,7 +2050,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <dd><code>ret</code> - The result dense double array (containing one value)</dd>
 <dd><code>counts</code> - The counts of each entry in the dictionary</dd>
 <dd><code>reference</code> - The reference value.</dd>
-<dd><code>refCount</code> - The number of occurences of the ref value.</dd>
+<dd><code>refCount</code> - The number of occurrences of the ref value.</dd>
 </dl>
 </li>
 </ul>
@@ -1833,15 +2060,35 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <ul class="blockList">
 <li class="blockList">
 <h4>colProduct</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;colProduct&#8203;(double[]&nbsp;res,
-                       int[]&nbsp;counts,
-                       int[]&nbsp;colIndexes)</pre>
+<pre class="methodSignature">public abstract&nbsp;void&nbsp;colProduct&#8203;(double[]&nbsp;res,
+                                int[]&nbsp;counts,
+                                int[]&nbsp;colIndexes)</pre>
 <div class="block">Calculate the column product of the dictionary weighted by counts.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>res</code> - The result vector to put the result into</dd>
 <dd><code>counts</code> - The weighted count of individual tuples</dd>
 <dd><code>colIndexes</code> - The column indexes.</dd>
+</dl>
+</li>
+</ul>
+<a id="colProductWithReference(double[],int[],int[],double[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>colProductWithReference</h4>
+<pre class="methodSignature">public abstract&nbsp;void&nbsp;colProductWithReference&#8203;(double[]&nbsp;res,
+                                             int[]&nbsp;counts,
+                                             int[]&nbsp;colIndexes,
+                                             double[]&nbsp;reference)</pre>
+<div class="block">Calculate the column product of the dictionary weighted by counts.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>res</code> - The result vector to put the result into</dd>
+<dd><code>counts</code> - The weighted count of individual tuples</dd>
+<dd><code>colIndexes</code> - The column indexes.</dd>
+<dd><code>reference</code> - The reference value.</dd>
 </dl>
 </li>
 </ul>
@@ -1883,6 +2130,54 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <dd><code>ret</code> - The Central Moment object to be modified and returned</dd>
 <dd><code>fn</code> - The value function to apply</dd>
 <dd><code>counts</code> - The weight of individual tuples</dd>
+<dd><code>nRows</code> - The number of rows in total of the column group</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The central moment Object</dd>
+</dl>
+</li>
+</ul>
+<a id="centralMomentWithDefault(org.apache.sysds.runtime.functionobjects.ValueFunction,int[],double,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>centralMomentWithDefault</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;centralMomentWithDefault&#8203;(<a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                                              int[]&nbsp;counts,
+                                              double&nbsp;def,
+                                              int&nbsp;nRows)</pre>
+<div class="block">Central moment function to calculate the central moment of this column group with a default offset on all missing
+ tuples. MUST be on a single column dictionary.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>fn</code> - The value function to apply</dd>
+<dd><code>counts</code> - The weight of individual tuples</dd>
+<dd><code>def</code> - The default values to offset the tuples with</dd>
+<dd><code>nRows</code> - The number of rows in total of the column group</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The central moment Object</dd>
+</dl>
+</li>
+</ul>
+<a id="centralMomentWithDefault(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int[],double,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>centralMomentWithDefault</h4>
+<pre class="methodSignature">public abstract&nbsp;<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;centralMomentWithDefault&#8203;(<a href="../../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
+                                                       <a href="../../../functionobjects/ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                                                       int[]&nbsp;counts,
+                                                       double&nbsp;def,
+                                                       int&nbsp;nRows)</pre>
+<div class="block">Central moment function to calculate the central moment of this column group with a default offset on all missing
+ tuples. MUST be on a single column dictionary.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ret</code> - The Central Moment object to be modified and returned</dd>
+<dd><code>fn</code> - The value function to apply</dd>
+<dd><code>counts</code> - The weight of individual tuples</dd>
+<dd><code>def</code> - The default values to offset the tuples with</dd>
 <dd><code>nRows</code> - The number of rows in total of the column group</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The central moment Object</dd>
@@ -1959,7 +2254,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 </dl>
 </li>
 </ul>
-<a id="rexpandColsWithReference(int,boolean,boolean,double)">
+<a id="rexpandColsWithReference(int,boolean,boolean,int)">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -1968,7 +2263,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <pre class="methodSignature">public abstract&nbsp;<a href="ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;rexpandColsWithReference&#8203;(int&nbsp;max,
                                                      boolean&nbsp;ignore,
                                                      boolean&nbsp;cast,
-                                                     double&nbsp;reference)</pre>
+                                                     int&nbsp;reference)</pre>
 <div class="block">Rexpand the dictionary (one hot encode)</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>

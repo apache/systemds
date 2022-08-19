@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -540,12 +540,20 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 </tr>
 <tr id="i34" class="altColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setConfigTypes(boolean,org.apache.sysds.conf.CompilerConfig.ConfigType...)">setConfigTypes</a></span>&#8203;(boolean&nbsp;activate,
+              <a href="../../conf/CompilerConfig.ConfigType.html" title="enum in org.apache.sysds.conf">CompilerConfig.ConfigType</a>...&nbsp;cconfigs)</code></th>
+<td class="colLast">
+<div class="block">Sets compiler configs.</div>
+</td>
+</tr>
+<tr id="i35" class="rowColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setLineage(boolean)">setLineage</a></span>&#8203;(boolean&nbsp;lt)</code></th>
 <td class="colLast">
 <div class="block">Sets a boolean flag indicating if lineage trace should be captured</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setStatistics(boolean)">setStatistics</a></span>&#8203;(boolean&nbsp;stats)</code></th>
 <td class="colLast">
@@ -645,6 +653,22 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="setConfigTypes(boolean,org.apache.sysds.conf.CompilerConfig.ConfigType...)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setConfigTypes</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setConfigTypes&#8203;(boolean&nbsp;activate,
+                           <a href="../../conf/CompilerConfig.ConfigType.html" title="enum in org.apache.sysds.conf">CompilerConfig.ConfigType</a>...&nbsp;cconfigs)</pre>
+<div class="block">Sets compiler configs.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>activate</code> - activate or disable</dd>
+<dd><code>cconfigs</code> - the configs to set</dd>
+</dl>
+</li>
+</ul>
 <a id="setStatistics(boolean)">
 <!--   -->
 </a>

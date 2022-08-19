@@ -118,34 +118,38 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.hops.fedplanner">org.apache.sysds.hops.fedplanner</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.hops.recompile">org.apache.sysds.hops.recompile</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.hops.rewrite">org.apache.sysds.hops.rewrite</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram">org.apache.sysds.runtime.controlprogram</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.context">org.apache.sysds.runtime.controlprogram.context</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.paramserv">org.apache.sysds.runtime.controlprogram.paramserv</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.parfor">org.apache.sysds.runtime.controlprogram.parfor</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.controlprogram.parfor.opt">org.apache.sysds.runtime.controlprogram.parfor.opt</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.cp">org.apache.sysds.runtime.instructions.cp</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -393,6 +397,54 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">CostEstimator.</span><code><span class="memberNameLink"><a href="../../../hops/cost/CostEstimator.html#getTimeEstimate(org.apache.sysds.runtime.controlprogram.Program,org.apache.sysds.runtime.controlprogram.LocalVariableMap,java.util.HashMap)">getTimeEstimate</a></span>&#8203;(<a href="../Program.html" title="class in org.apache.sysds.runtime.controlprogram">Program</a>&nbsp;rtprog,
                <a href="../LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;vars,
                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../../../hops/cost/VarStats.html" title="class in org.apache.sysds.hops.cost">VarStats</a>&gt;&nbsp;stats)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section role="region"><a id="org.apache.sysds.hops.fedplanner">
+<!--   -->
+</a>
+<h3>Uses of <a href="../LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a> in <a href="../../../hops/fedplanner/package-summary.html">org.apache.sysds.hops.fedplanner</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../hops/fedplanner/package-summary.html">org.apache.sysds.hops.fedplanner</a> with parameters of type <a href="../LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../../../hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FederatedPlannerUtils.</span><code><span class="memberNameLink"><a href="../../../hops/fedplanner/FederatedPlannerUtils.html#getTransientInputs(org.apache.sysds.hops.Hop,java.util.Map,java.util.Map,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">getTransientInputs</a></span>&#8203;(<a href="../../../hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;currentHop,
+                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../../../hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;paramMap,
+                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../../../hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;transientWrites,
+                  <a href="../LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;localVariableMap)</code></th>
+<td class="colLast">
+<div class="block">Get transient inputs from either paramMap or transientWrites.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AFederatedPlanner.</span><code><span class="memberNameLink"><a href="../../../hops/fedplanner/AFederatedPlanner.html#rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">rewriteFunctionDynamic</a></span>&#8203;(<a href="../../../parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&nbsp;function,
+                      <a href="../LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;funcArgs)</code></th>
+<td class="colLast">
+<div class="block">Selects a federated execution plan for the given function, taking into account
+ federation types of the arguments.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FederatedPlannerCostbased.</span><code><span class="memberNameLink"><a href="../../../hops/fedplanner/FederatedPlannerCostbased.html#rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">rewriteFunctionDynamic</a></span>&#8203;(<a href="../../../parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&nbsp;function,
+                      <a href="../LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;funcArgs)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">FederatedPlannerFedAll.</span><code><span class="memberNameLink"><a href="../../../hops/fedplanner/FederatedPlannerFedAll.html#rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">rewriteFunctionDynamic</a></span>&#8203;(<a href="../../../parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&nbsp;function,
+                      <a href="../LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;funcArgs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

@@ -136,6 +136,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a>
 <h3>Uses of <a href="../AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a> in <a href="../../package-summary.html">org.apache.sysds.runtime.compress.colgroup</a></h3>
 <table class="useSummary">
+<caption><span>Methods in <a href="../../package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> that return <a href="../AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDC.</span><code><span class="memberNameLink"><a href="../../ColGroupSDC.html#getMapping()">getMapping</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary">
 <caption><span>Methods in <a href="../../package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> with parameters of type <a href="../AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
@@ -145,9 +160,57 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDeltaDDC.</span><code><span class="memberNameLink"><a href="../../ColGroupDeltaDDC.html#create(int%5B%5D,int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndices,
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDC.</span><code><span class="memberNameLink"><a href="../../ColGroupDDC.html#create(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndexes,
+      <a href="../../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="../AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDCFOR.</span><code><span class="memberNameLink"><a href="../../ColGroupDDCFOR.html#create(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D,double%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndexes,
+      <a href="../../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="../AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts,
+      double[]&nbsp;reference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDeltaDDC.</span><code><span class="memberNameLink"><a href="../../ColGroupDeltaDDC.html#create(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndices,
+      <a href="../../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="../AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDC.</span><code><span class="memberNameLink"><a href="../../ColGroupSDC.html#create(int%5B%5D,int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndices,
       int&nbsp;numRows,
       <a href="../../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      double[]&nbsp;defaultTuple,
+      <a href="../../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;offsets,
+      <a href="../AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCFOR.</span><code><span class="memberNameLink"><a href="../../ColGroupSDCFOR.html#create(int%5B%5D,int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D,double%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndexes,
+      int&nbsp;numRows,
+      <a href="../../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="../../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;offsets,
+      <a href="../AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts,
+      double[]&nbsp;reference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCZeros.</span><code><span class="memberNameLink"><a href="../../ColGroupSDCZeros.html#create(int%5B%5D,int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndices,
+      int&nbsp;numRows,
+      <a href="../../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="../../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;offsets,
       <a href="../AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
       int[]&nbsp;cachedCounts)</code></th>
 <td class="colLast">&nbsp;</td>

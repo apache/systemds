@@ -124,7 +124,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Known Implementing Classes:</dt>
-<dd><code><a href="CoordinatorController.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers">CoordinatorController</a></code>, <code><a href="WorkerController.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers">WorkerController</a></code></dd>
+<dd><code><a href="CoordinatorController.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers">CoordinatorController</a></code>, <code><a href="StatisticsController.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers">StatisticsController</a></code>, <code><a href="WorkerController.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers">WorkerController</a></code></dd>
 </dl>
 <hr>
 <pre>public interface <span class="typeNameLabel">IController</span></pre>
@@ -150,29 +150,29 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>io.netty.handler.codec.http.FullHttpResponse</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request)">create</a></span>&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request)">create</a></span>&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>io.netty.handler.codec.http.FullHttpResponse</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#delete(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request,java.lang.Long)">delete</a></span>&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#delete(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request,java.lang.Long)">delete</a></span>&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request,
       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;objectId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>io.netty.handler.codec.http.FullHttpResponse</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request,java.lang.Long)">get</a></span>&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request,java.lang.Long)">get</a></span>&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request,
    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;objectId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>io.netty.handler.codec.http.FullHttpResponse</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAll(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request)">getAll</a></span>&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAll(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request)">getAll</a></span>&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>io.netty.handler.codec.http.FullHttpResponse</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#update(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request,java.lang.Long)">update</a></span>&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#update(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request,java.lang.Long)">update</a></span>&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request,
       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;objectId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -193,52 +193,52 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="create(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request)">
+<a id="create(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>create</h4>
-<pre class="methodSignature">io.netty.handler.codec.http.FullHttpResponse&nbsp;create&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request)</pre>
+<pre class="methodSignature">io.netty.handler.codec.http.FullHttpResponse&nbsp;create&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request)</pre>
 </li>
 </ul>
-<a id="update(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request,java.lang.Long)">
+<a id="update(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request,java.lang.Long)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>update</h4>
-<pre class="methodSignature">io.netty.handler.codec.http.FullHttpResponse&nbsp;update&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request,
+<pre class="methodSignature">io.netty.handler.codec.http.FullHttpResponse&nbsp;update&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request,
                                                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;objectId)</pre>
 </li>
 </ul>
-<a id="delete(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request,java.lang.Long)">
+<a id="delete(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request,java.lang.Long)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>delete</h4>
-<pre class="methodSignature">io.netty.handler.codec.http.FullHttpResponse&nbsp;delete&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request,
+<pre class="methodSignature">io.netty.handler.codec.http.FullHttpResponse&nbsp;delete&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request,
                                                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;objectId)</pre>
 </li>
 </ul>
-<a id="get(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request,java.lang.Long)">
+<a id="get(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request,java.lang.Long)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>get</h4>
-<pre class="methodSignature">io.netty.handler.codec.http.FullHttpResponse&nbsp;get&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request,
+<pre class="methodSignature">io.netty.handler.codec.http.FullHttpResponse&nbsp;get&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request,
                                                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;objectId)</pre>
 </li>
 </ul>
-<a id="getAll(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request)">
+<a id="getAll(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>getAll</h4>
-<pre class="methodSignature">io.netty.handler.codec.http.FullHttpResponse&nbsp;getAll&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request)</pre>
+<pre class="methodSignature">io.netty.handler.codec.http.FullHttpResponse&nbsp;getAll&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request)</pre>
 </li>
 </ul>
 </li>

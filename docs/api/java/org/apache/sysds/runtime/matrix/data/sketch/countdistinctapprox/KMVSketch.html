@@ -132,7 +132,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="../MatrixSketch.html" title="interface in org.apache.sysds.runtime.matrix.data.sketch">MatrixSketch</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;</code></dd>
+<dd><code><a href="../MatrixSketch.html" title="interface in org.apache.sysds.runtime.matrix.data.sketch">MatrixSketch</a></code></dd>
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">KMVSketch</span>
@@ -189,21 +189,21 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colFirst"><code><a href="../../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.matrix.data.MatrixBlock)">create</a></span>&#8203;(<a href="../../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</code></th>
 <td class="colLast">
-<div class="block">Create a initial sketch of a given block.</div>
+<div class="block">Create an initial sketch of a given block.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="../../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMatrixValue(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">getMatrixValue</a></span>&#8203;(<a href="../../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;arg0)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getValue</a></span>&#8203;(<a href="../../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</code></th>
 <td class="colLast">
-<div class="block">Obtain matrix distinct count value from estimation Used for estimating distinct in rows or columns.</div>
+<div class="block">Get scalar distinct count from an input matrix block.</div>
 </td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getScalarValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getScalarValue</a></span>&#8203;(<a href="../../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in)</code></th>
+<td class="colFirst"><code><a href="../../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValueFromSketch(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">getValueFromSketch</a></span>&#8203;(<a href="../../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;arg0)</code></th>
 <td class="colLast">
-<div class="block">Get scalar distinct count from a input matrix block.</div>
+<div class="block">Obtain matrix distinct count value from estimation Used for estimating distinct in rows or columns.</div>
 </td>
 </tr>
 <tr id="i3" class="rowColor">
@@ -273,31 +273,31 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="getScalarValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<a id="getValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getScalarValue</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&nbsp;getScalarValue&#8203;(<a href="../../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../MatrixSketch.html#getScalarValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">MatrixSketch</a></code></span></div>
-<div class="block">Get scalar distinct count from a input matrix block.</div>
+<h4>getValue</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;getValue&#8203;(<a href="../../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../MatrixSketch.html#getValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">MatrixSketch</a></code></span></div>
+<div class="block">Get scalar distinct count from an input matrix block.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>in</code> - A input block to estimate the number of distinct values in</dd>
+<dd><code>blkIn</code> - An input block to estimate the number of distinct values in</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>The distinct count estimate</dd>
+<dd>The result matrix block containing the distinct count estimate</dd>
 </dl>
 </li>
 </ul>
-<a id="getMatrixValue(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">
+<a id="getValueFromSketch(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getMatrixValue</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;getMatrixValue&#8203;(<a href="../../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;arg0)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../MatrixSketch.html#getMatrixValue(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">MatrixSketch</a></code></span></div>
+<h4>getValueFromSketch</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;getValueFromSketch&#8203;(<a href="../../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;arg0)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../MatrixSketch.html#getValueFromSketch(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">MatrixSketch</a></code></span></div>
 <div class="block">Obtain matrix distinct count value from estimation Used for estimating distinct in rows or columns.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -315,7 +315,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <h4>create</h4>
 <pre class="methodSignature">public&nbsp;<a href="../../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;create&#8203;(<a href="../../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../MatrixSketch.html#create(org.apache.sysds.runtime.matrix.data.MatrixBlock)">MatrixSketch</a></code></span></div>
-<div class="block">Create a initial sketch of a given block.</div>
+<div class="block">Create an initial sketch of a given block.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>blkIn</code> - A block to process</dd>
@@ -339,7 +339,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>arg0</code> - Sketch one</dd>
 <dd><code>arg1</code> - Sketch two</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>The combined sketch</dd>
+<dd>The sketch union is a sketch</dd>
 </dl>
 </li>
 </ul>
@@ -370,7 +370,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>arg0</code> - Sketch one</dd>
 <dd><code>arg1</code> - Sketch two</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>The intersected sketch</dd>
+<dd>The sketch intersection is a sketch</dd>
 </dl>
 </li>
 </ul>

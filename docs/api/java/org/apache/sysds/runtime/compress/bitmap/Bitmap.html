@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10};
+var data = {"i0":10,"i1":10,"i2":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -174,13 +174,6 @@ extends <a href="ABitmap.html" title="class in org.apache.sysds.runtime.compress
 </td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>int</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumValues()">getNumValues</a></span>()</code></th>
-<td class="colLast">
-<div class="block">Obtain number of distinct value groups in the column.</div>
-</td>
-</tr>
-<tr id="i3" class="rowColor">
 <td class="colFirst"><code>double[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValues()">getValues</a></span>()</code></th>
 <td class="colLast">
@@ -193,7 +186,7 @@ extends <a href="ABitmap.html" title="class in org.apache.sysds.runtime.compress
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.bitmap.<a href="ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a></h3>
-<code><a href="ABitmap.html#containsZero()">containsZero</a>, <a href="ABitmap.html#getNumOffsets()">getNumOffsets</a>, <a href="ABitmap.html#getNumOffsets(int)">getNumOffsets</a>, <a href="ABitmap.html#getNumZeros()">getNumZeros</a>, <a href="ABitmap.html#getOffsetList()">getOffsetList</a>, <a href="ABitmap.html#getOffsetsList(int)">getOffsetsList</a>, <a href="ABitmap.html#toString()">toString</a></code></li>
+<code><a href="ABitmap.html#containsZero()">containsZero</a>, <a href="ABitmap.html#getNumOffsets()">getNumOffsets</a>, <a href="ABitmap.html#getNumOffsets(int)">getNumOffsets</a>, <a href="ABitmap.html#getNumValues()">getNumValues</a>, <a href="ABitmap.html#getNumZeros()">getNumZeros</a>, <a href="ABitmap.html#getOffsetList()">getOffsetList</a>, <a href="ABitmap.html#getOffsetsList(int)">getOffsetsList</a>, <a href="ABitmap.html#toString()">toString</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -248,24 +241,6 @@ extends <a href="ABitmap.html" title="class in org.apache.sysds.runtime.compress
 <dd><code>idx</code> - The offset index to look at.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The nnz in the tuple.</dd>
-</dl>
-</li>
-</ul>
-<a id="getNumValues()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getNumValues</h4>
-<pre class="methodSignature">public final&nbsp;int&nbsp;getNumValues()</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="ABitmap.html#getNumValues()">ABitmap</a></code></span></div>
-<div class="block">Obtain number of distinct value groups in the column. this number is also the number of bitmaps, since there is
- one bitmap per value</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="ABitmap.html#getNumValues()">getNumValues</a></code>&nbsp;in class&nbsp;<code><a href="ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a></code></dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>number of distinct value groups in the column;</dd>
 </dl>
 </li>
 </ul>

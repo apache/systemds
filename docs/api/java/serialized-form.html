@@ -550,7 +550,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.AColGroupOffset">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/AColGroupOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.AColGroupOffset</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/AColGroupOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.AColGroupOffset</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/APreAgg.html" title="class in org.apache.sysds.runtime.compress.colgroup">APreAgg</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>-4105103687174067602L</dd>
@@ -564,10 +564,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <pre>char[] _data</pre>
 <div class="block">Linearized bitmaps (variable lengths)</div>
 </li>
-<li class="blockListLast">
+<li class="blockList">
+<h4>_numRows</h4>
+<pre>int _numRows</pre>
+</li>
+<li class="blockList">
 <h4>_ptr</h4>
 <pre>int[] _ptr</pre>
-<div class="block">Bitmaps, one per uncompressed value tuple in <a href="org/apache/sysds/runtime/compress/colgroup/AColGroupValue.html#_dict"><code>AColGroupValue._dict</code></a>.</div>
+<div class="block">Bitmaps, one per uncompressed value tuple in dict.</div>
+</li>
+<li class="blockListLast">
+<h4>_zeros</h4>
+<pre>boolean _zeros</pre>
 </li>
 </ul>
 </li>
@@ -576,7 +584,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.AColGroupValue">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.AColGroupValue</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.AColGroupValue</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictBasedColGroup</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>-6835757655517301955L</dd>
@@ -585,28 +593,27 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
-<li class="blockList">
-<h4>_dict</h4>
-<pre><a href="org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a> _dict</pre>
-<div class="block">Distinct value tuples associated with individual bitmaps.</div>
-</li>
-<li class="blockList">
-<h4>_numRows</h4>
-<pre>int _numRows</pre>
-<div class="block">The number of rows in the column group</div>
-</li>
-<li class="blockList">
-<h4>_zeros</h4>
-<pre>boolean _zeros</pre>
-<div class="block">ColGroup Implementation Contains zero tuple. Note this is not if it contains a zero value. If false then the
- stored values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
- 
- TODO remove</div>
-</li>
 <li class="blockListLast">
 <h4>counts</h4>
 <pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ref/SoftReference.html?is-external=true" title="class or interface in java.lang.ref" class="externalLink">SoftReference</a>&lt;int[]&gt; counts</pre>
 <div class="block">The count of each distinct value contained in the dictionary</div>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
+<h4>_dict</h4>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a> _dict</pre>
+<div class="block">Distinct value tuples associated with individual bitmaps.</div>
 </li>
 </ul>
 </li>
@@ -630,6 +637,31 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>3250955207277128281L</dd>
 </dl>
 </li>
+<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.ASDC">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ASDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ASDC</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AMorphingMMColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>769993538831949086L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_indexes</h4>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> _indexes</pre>
+<div class="block">Sparse row indexes for the data</div>
+</li>
+<li class="blockListLast">
+<h4>_numRows</h4>
+<pre>int _numRows</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.ASDCZero">
 <!--   -->
 </a>
@@ -642,10 +674,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
-<li class="blockListLast">
+<li class="blockList">
 <h4>_indexes</h4>
 <pre><a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> _indexes</pre>
 <div class="block">Sparse row indexes for the data</div>
+</li>
+<li class="blockListLast">
+<h4>_numRows</h4>
+<pre>int _numRows</pre>
 </li>
 </ul>
 </li>
@@ -654,22 +690,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.ColGroupConst">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupConst.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupConst</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupConst.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupConst</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictBasedColGroup</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>-7387793538322386611L</dd>
 </dl>
-<ul class="blockList">
-<li class="blockList">
-<h3>Serialized Fields</h3>
-<ul class="blockList">
-<li class="blockListLast">
-<h4>_dict</h4>
-<pre><a href="org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a> _dict</pre>
-</li>
-</ul>
-</li>
-</ul>
 </li>
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.ColGroupDDC">
 <!--   -->
@@ -780,7 +805,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.ColGroupSDC">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupSDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupSDC</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AMorphingMMColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupSDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupSDC</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ASDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ASDC</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>769993538831949086L</dd>
@@ -794,15 +819,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <pre><a href="org/apache/sysds/runtime/compress/colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a> _data</pre>
 <div class="block">Pointers to row indexes in the dictionary.</div>
 </li>
-<li class="blockList">
+<li class="blockListLast">
 <h4>_defaultTuple</h4>
 <pre>double[] _defaultTuple</pre>
 <div class="block">The default value stored in this column group</div>
-</li>
-<li class="blockListLast">
-<h4>_indexes</h4>
-<pre><a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> _indexes</pre>
-<div class="block">Sparse row indexes for the data</div>
 </li>
 </ul>
 </li>
@@ -811,7 +831,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.ColGroupSDCFOR">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupSDCFOR.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupSDCFOR</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AMorphingMMColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupSDCFOR.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupSDCFOR</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ASDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ASDC</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>3883228464052204203L</dd>
@@ -825,11 +845,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <pre><a href="org/apache/sysds/runtime/compress/colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a> _data</pre>
 <div class="block">Pointers to row indexes in the dictionary.</div>
 </li>
-<li class="blockList">
-<h4>_indexes</h4>
-<pre><a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> _indexes</pre>
-<div class="block">Sparse row indexes for the data that is nonZero</div>
-</li>
 <li class="blockListLast">
 <h4>_reference</h4>
 <pre>double[] _reference</pre>
@@ -842,7 +857,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingle">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingle.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingle</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AMorphingMMColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingle.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingle</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ASDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ASDC</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>3883228464052204200L</dd>
@@ -851,15 +866,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
-<li class="blockList">
+<li class="blockListLast">
 <h4>_defaultTuple</h4>
 <pre>double[] _defaultTuple</pre>
 <div class="block">The default value stored in this column group</div>
-</li>
-<li class="blockListLast">
-<h4>_indexes</h4>
-<pre><a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> _indexes</pre>
-<div class="block">Sparse row indexes for the data</div>
 </li>
 </ul>
 </li>
@@ -1238,9 +1248,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <h4>offsetToFirst</h4>
 <pre>int offsetToFirst</pre>
 </li>
-<li class="blockListLast">
+<li class="blockList">
 <h4>offsetToLast</h4>
 <pre>int offsetToLast</pre>
+</li>
+<li class="blockListLast">
+<h4>size</h4>
+<pre>int size</pre>
 </li>
 </ul>
 </li>
@@ -1878,11 +1892,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="blockList">
 <h4>coordinatorsTrafficBytes</h4>
-<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Triple&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/LocalDateTime.html?is-external=true" title="class or interface in java.time" class="externalLink">LocalDateTime</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&gt;&gt; coordinatorsTrafficBytes</pre>
-</li>
-<li class="blockList">
-<h4>cpuUsage</h4>
-<pre>double cpuUsage</pre>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/TrafficModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">TrafficModel</a>&gt; coordinatorsTrafficBytes</pre>
 </li>
 <li class="blockList">
 <h4>gcStats</h4>
@@ -1901,12 +1911,24 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <pre>org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.LineageCacheStatsCollection linCacheStats</pre>
 </li>
 <li class="blockList">
-<h4>memoryUsage</h4>
-<pre>double memoryUsage</pre>
-</li>
-<li class="blockListLast">
 <h4>mtStats</h4>
 <pre>org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.MultiTenantStatsCollection mtStats</pre>
+</li>
+<li class="blockList">
+<h4>utilization</h4>
+<pre><a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/UtilizationModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">UtilizationModel</a> utilization</pre>
+</li>
+<li class="blockList">
+<h4>workerDataObjects</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">DataObjectModel</a>&gt; workerDataObjects</pre>
+</li>
+<li class="blockList">
+<h4>workerEvents</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventModel</a>&gt; workerEvents</pre>
+</li>
+<li class="blockListLast">
+<h4>workerRequests</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt; workerRequests</pre>
 </li>
 </ul>
 </li>
@@ -2145,6 +2167,329 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt>serialVersionUID:</dt>
 <dd>1L</dd>
 </dl>
+</li>
+</ul>
+</section>
+</li>
+<li class="blockList">
+<section role="region">
+<h2 title="Package">Package&nbsp;org.apache.sysds.runtime.controlprogram.federated.monitoring.models</h2>
+<ul class="blockList">
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
+<h4>id</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> id</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorConnectionModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/CoordinatorConnectionModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorConnectionModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>coordinatorHostId</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> coordinatorHostId</pre>
+</li>
+<li class="blockListLast">
+<h4>coordinatorId</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> coordinatorId</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/CoordinatorModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>host</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> host</pre>
+</li>
+<li class="blockList">
+<h4>monitoringHostIdKey</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> monitoringHostIdKey</pre>
+</li>
+<li class="blockList">
+<h4>name</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> name</pre>
+</li>
+<li class="blockListLast">
+<h4>processId</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> processId</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>dataType</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> dataType</pre>
+</li>
+<li class="blockList">
+<h4>size</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> size</pre>
+</li>
+<li class="blockList">
+<h4>valueType</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> valueType</pre>
+</li>
+<li class="blockList">
+<h4>varName</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> varName</pre>
+</li>
+<li class="blockListLast">
+<h4>workerId</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> workerId</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/CoordinatorConnectionModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">CoordinatorConnectionModel</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>coordinatorName</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> coordinatorName</pre>
+</li>
+<li class="blockList">
+<h4>stages</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/EventStageModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventStageModel</a>&gt; stages</pre>
+</li>
+<li class="blockListLast">
+<h4>workerId</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> workerId</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/EventStageModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>endTime</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/LocalDateTime.html?is-external=true" title="class or interface in java.time" class="externalLink">LocalDateTime</a> endTime</pre>
+</li>
+<li class="blockList">
+<h4>eventId</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> eventId</pre>
+</li>
+<li class="blockList">
+<h4>operation</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> operation</pre>
+</li>
+<li class="blockListLast">
+<h4>startTime</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/LocalDateTime.html?is-external=true" title="class or interface in java.time" class="externalLink">LocalDateTime</a> startTime</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/CoordinatorConnectionModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">CoordinatorConnectionModel</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>count</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> count</pre>
+</li>
+<li class="blockList">
+<h4>type</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> type</pre>
+</li>
+<li class="blockListLast">
+<h4>workerId</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> workerId</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/StatisticsModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>dataObjects</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">DataObjectModel</a>&gt; dataObjects</pre>
+</li>
+<li class="blockList">
+<h4>events</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventModel</a>&gt; events</pre>
+</li>
+<li class="blockList">
+<h4>requests</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt; requests</pre>
+</li>
+<li class="blockList">
+<h4>traffic</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/TrafficModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">TrafficModel</a>&gt; traffic</pre>
+</li>
+<li class="blockListLast">
+<h4>utilization</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/UtilizationModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">UtilizationModel</a>&gt; utilization</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/StatisticsOptions.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>dataObjects</h4>
+<pre>boolean dataObjects</pre>
+</li>
+<li class="blockList">
+<h4>events</h4>
+<pre>boolean events</pre>
+</li>
+<li class="blockList">
+<h4>requests</h4>
+<pre>boolean requests</pre>
+</li>
+<li class="blockList">
+<h4>rowCount</h4>
+<pre>int rowCount</pre>
+</li>
+<li class="blockList">
+<h4>traffic</h4>
+<pre>boolean traffic</pre>
+</li>
+<li class="blockListLast">
+<h4>utilization</h4>
+<pre>boolean utilization</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/TrafficModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/CoordinatorConnectionModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">CoordinatorConnectionModel</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>byteAmount</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> byteAmount</pre>
+</li>
+<li class="blockList">
+<h4>timestamp</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/LocalDateTime.html?is-external=true" title="class or interface in java.time" class="externalLink">LocalDateTime</a> timestamp</pre>
+</li>
+<li class="blockListLast">
+<h4>workerId</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> workerId</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/UtilizationModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>cpuUsage</h4>
+<pre>double cpuUsage</pre>
+</li>
+<li class="blockList">
+<h4>memoryUsage</h4>
+<pre>double memoryUsage</pre>
+</li>
+<li class="blockList">
+<h4>timestamp</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/LocalDateTime.html?is-external=true" title="class or interface in java.time" class="externalLink">LocalDateTime</a> timestamp</pre>
+</li>
+<li class="blockListLast">
+<h4>workerId</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a> workerId</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/WorkerModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>address</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> address</pre>
+</li>
+<li class="blockList">
+<h4>isOnline</h4>
+<pre>boolean isOnline</pre>
+</li>
+<li class="blockListLast">
+<h4>name</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> name</pre>
+</li>
+</ul>
+</li>
+</ul>
 </li>
 </ul>
 </section>
@@ -8503,21 +8848,64 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <h3>Serialized Fields</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>tokenizerPost</h4>
-<pre><a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPost.html" title="interface in org.apache.sysds.runtime.transform.tokenize">TokenizerPost</a> tokenizerPost</pre>
+<h4>internalRepresentation</h4>
+<pre><a href="org/apache/sysds/runtime/transform/tokenize/DocumentRepresentation.html" title="class in org.apache.sysds.runtime.transform.tokenize">DocumentRepresentation</a>[] internalRepresentation</pre>
+</li>
+<li class="blockList">
+<h4>tokenizerApplier</h4>
+<pre><a href="org/apache/sysds/runtime/transform/tokenize/applier/TokenizerApplier.html" title="class in org.apache.sysds.runtime.transform.tokenize.applier">TokenizerApplier</a> tokenizerApplier</pre>
 </li>
 <li class="blockListLast">
-<h4>tokenizerPre</h4>
-<pre><a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPre.html" title="interface in org.apache.sysds.runtime.transform.tokenize">TokenizerPre</a> tokenizerPre</pre>
+<h4>tokenizerBuilder</h4>
+<pre><a href="org/apache/sysds/runtime/transform/tokenize/builder/TokenizerBuilder.html" title="class in org.apache.sysds.runtime.transform.tokenize.builder">TokenizerBuilder</a> tokenizerBuilder</pre>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.TokenizerPostCount">
+</ul>
+</section>
+</li>
+<li class="blockList">
+<section role="region">
+<h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.tokenize.applier</h2>
+<ul class="blockList">
+<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplier">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPostCount.html" title="class in org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize.TokenizerPostCount</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/applier/TokenizerApplier.html" title="class in org.apache.sysds.runtime.transform.tokenize.applier">org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplier</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>39116559705096787L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>applyPadding</h4>
+<pre>boolean applyPadding</pre>
+</li>
+<li class="blockList">
+<h4>maxTokens</h4>
+<pre>int maxTokens</pre>
+</li>
+<li class="blockList">
+<h4>numIdCols</h4>
+<pre>int numIdCols</pre>
+</li>
+<li class="blockListLast">
+<h4>wideFormat</h4>
+<pre>boolean wideFormat</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierCount">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/applier/TokenizerApplierCount.html" title="class in org.apache.sysds.runtime.transform.tokenize.applier">org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierCount</a> extends <a href="org/apache/sysds/runtime/transform/tokenize/applier/TokenizerApplier.html" title="class in org.apache.sysds.runtime.transform.tokenize.applier">TokenizerApplier</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>6382000606237705019L</dd>
@@ -8527,29 +8915,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <h3>Serialized Fields</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>maxTokens</h4>
-<pre>int maxTokens</pre>
-</li>
-<li class="blockList">
-<h4>numIdCols</h4>
-<pre>int numIdCols</pre>
-</li>
-<li class="blockList">
-<h4>params</h4>
-<pre>org.apache.sysds.runtime.transform.tokenize.TokenizerPostCount.Params params</pre>
+<h4>counts</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt;&gt; counts</pre>
 </li>
 <li class="blockListLast">
-<h4>wideFormat</h4>
-<pre>boolean wideFormat</pre>
+<h4>sort_alpha</h4>
+<pre>boolean sort_alpha</pre>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.TokenizerPostHash">
+<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierHash">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPostHash.html" title="class in org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize.TokenizerPostHash</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/applier/TokenizerApplierHash.html" title="class in org.apache.sysds.runtime.transform.tokenize.applier">org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierHash</a> extends <a href="org/apache/sysds/runtime/transform/tokenize/applier/TokenizerApplier.html" title="class in org.apache.sysds.runtime.transform.tokenize.applier">TokenizerApplier</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>4763889041868044668L</dd>
@@ -8559,57 +8939,46 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <h3>Serialized Fields</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>maxTokens</h4>
-<pre>int maxTokens</pre>
-</li>
-<li class="blockList">
-<h4>numIdCols</h4>
-<pre>int numIdCols</pre>
-</li>
-<li class="blockList">
-<h4>params</h4>
-<pre>org.apache.sysds.runtime.transform.tokenize.TokenizerPostHash.Params params</pre>
+<h4>hashes</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&gt;&gt; hashes</pre>
 </li>
 <li class="blockListLast">
-<h4>wideFormat</h4>
-<pre>boolean wideFormat</pre>
+<h4>num_features</h4>
+<pre>int num_features</pre>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.TokenizerPostPosition">
+<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierPosition">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPostPosition.html" title="class in org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize.TokenizerPostPosition</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/applier/TokenizerApplierPosition.html" title="class in org.apache.sysds.runtime.transform.tokenize.applier">org.apache.sysds.runtime.transform.tokenize.applier.TokenizerApplierPosition</a> extends <a href="org/apache/sysds/runtime/transform/tokenize/applier/TokenizerApplier.html" title="class in org.apache.sysds.runtime.transform.tokenize.applier">TokenizerApplier</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>3563407270742660830L</dd>
 </dl>
-<ul class="blockList">
-<li class="blockList">
-<h3>Serialized Fields</h3>
-<ul class="blockList">
-<li class="blockList">
-<h4>maxTokens</h4>
-<pre>int maxTokens</pre>
-</li>
-<li class="blockList">
-<h4>numIdCols</h4>
-<pre>int numIdCols</pre>
-</li>
-<li class="blockListLast">
-<h4>wideFormat</h4>
-<pre>boolean wideFormat</pre>
 </li>
 </ul>
+</section>
 </li>
-</ul>
-</li>
-<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.TokenizerPreNgram">
+<li class="blockList">
+<section role="region">
+<h2 title="Package">Package&nbsp;org.apache.sysds.runtime.transform.tokenize.builder</h2>
+<ul class="blockList">
+<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilder">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPreNgram.html" title="class in org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize.TokenizerPreNgram</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/builder/TokenizerBuilder.html" title="class in org.apache.sysds.runtime.transform.tokenize.builder">org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilder</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-4999630313246644464L</dd>
+</dl>
+</li>
+<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilderNgram">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/builder/TokenizerBuilderNgram.html" title="class in org.apache.sysds.runtime.transform.tokenize.builder">org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilderNgram</a> extends <a href="org/apache/sysds/runtime/transform/tokenize/builder/TokenizerBuilderWhitespaceSplit.html" title="class in org.apache.sysds.runtime.transform.tokenize.builder">TokenizerBuilderWhitespaceSplit</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>-6297904316677723802L</dd>
@@ -8619,21 +8988,25 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <h3>Serialized Fields</h3>
 <ul class="blockList">
 <li class="blockList">
-<h4>params</h4>
-<pre>org.apache.sysds.runtime.transform.tokenize.TokenizerPreNgram.Params params</pre>
+<h4>maxGram</h4>
+<pre>int maxGram</pre>
+</li>
+<li class="blockList">
+<h4>minGram</h4>
+<pre>int minGram</pre>
 </li>
 <li class="blockListLast">
-<h4>tokenizerPreWhitespaceSplit</h4>
-<pre><a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPreWhitespaceSplit.html" title="class in org.apache.sysds.runtime.transform.tokenize">TokenizerPreWhitespaceSplit</a> tokenizerPreWhitespaceSplit</pre>
+<h4>ngramType</h4>
+<pre>org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilderNgram.NgramType ngramType</pre>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.TokenizerPreWhitespaceSplit">
+<li class="blockList"><a id="org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilderWhitespaceSplit">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPreWhitespaceSplit.html" title="class in org.apache.sysds.runtime.transform.tokenize">org.apache.sysds.runtime.transform.tokenize.TokenizerPreWhitespaceSplit</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/transform/tokenize/builder/TokenizerBuilderWhitespaceSplit.html" title="class in org.apache.sysds.runtime.transform.tokenize.builder">org.apache.sysds.runtime.transform.tokenize.builder.TokenizerBuilderWhitespaceSplit</a> extends <a href="org/apache/sysds/runtime/transform/tokenize/builder/TokenizerBuilder.html" title="class in org.apache.sysds.runtime.transform.tokenize.builder">TokenizerBuilder</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>539127244034913364L</dd>
@@ -8644,11 +9017,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>idCols</h4>
-<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a>&gt; idCols</pre>
+<pre>int[] idCols</pre>
 </li>
 <li class="blockList">
-<h4>params</h4>
-<pre>org.apache.sysds.runtime.transform.tokenize.TokenizerPreWhitespaceSplit.Params params</pre>
+<h4>regex</h4>
+<pre><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a> regex</pre>
 </li>
 <li class="blockListLast">
 <h4>tokenizeCol</h4>

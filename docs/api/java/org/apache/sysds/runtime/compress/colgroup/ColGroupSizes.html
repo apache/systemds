@@ -26,12 +26,6 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9};
-var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
-var altColor = "altColor";
-var rowColor = "rowColor";
-var tableTab = "tableTab";
-var activeTableTab = "activeTableTab";
 var pathtoroot = "../../../../../../";
 var useModuleDirectories = true;
 loadScripts(document, 'script');</script>
@@ -89,14 +83,14 @@ loadScripts(document, 'script');</script>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
+<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
+<li><a href="#field.detail">Field</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
@@ -116,44 +110,37 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <main role="main">
 <div class="header">
 <div class="subTitle"><span class="packageLabelInType">Package</span>&nbsp;<a href="package-summary.html">org.apache.sysds.runtime.compress.colgroup</a></div>
-<h2 title="Class ColGroupSizes" class="title">Class ColGroupSizes</h2>
+<h2 title="Interface ColGroupSizes" class="title">Interface ColGroupSizes</h2>
 </div>
 <div class="contentContainer">
-<ul class="inheritance">
-<li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">java.lang.Object</a></li>
-<li>
-<ul class="inheritance">
-<li>org.apache.sysds.runtime.compress.colgroup.ColGroupSizes</li>
-</ul>
-</li>
-</ul>
 <div class="description">
 <ul class="blockList">
 <li class="blockList">
 <hr>
-<pre>public final class <span class="typeNameLabel">ColGroupSizes</span>
-extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
+<pre>public interface <span class="typeNameLabel">ColGroupSizes</span></pre>
 </li>
 </ul>
 </div>
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
-<!-- ======== CONSTRUCTOR SUMMARY ======== -->
+<!-- =========== FIELD SUMMARY =========== -->
 <section role="region">
 <ul class="blockList">
-<li class="blockList"><a id="constructor.summary">
+<li class="blockList"><a id="field.summary">
 <!--   -->
 </a>
-<h3>Constructor Summary</h3>
+<h3>Field Summary</h3>
 <table class="memberSummary">
-<caption><span>Constructors</span><span class="tabEnd">&nbsp;</span></caption>
+<caption><span>Fields</span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
-<th class="colFirst" scope="col">Constructor</th>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E()">ColGroupSizes</a></span>()</code></th>
+<td class="colFirst"><code>static org.apache.commons.logging.Log</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#LOG">LOG</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -168,7 +155,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span>Static Methods</span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
@@ -262,13 +249,6 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
-<ul class="blockList">
-<li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
-<!--   -->
-</a>
-<h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></h3>
-<code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang" class="externalLink">equals</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang" class="externalLink">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang" class="externalLink">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang" class="externalLink">notify</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang" class="externalLink">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang" class="externalLink">toString</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang" class="externalLink">wait</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true#wait(long,int)" title="class or interface in java.lang" class="externalLink">wait</a></code></li>
-</ul>
 </li>
 </ul>
 </section>
@@ -278,20 +258,20 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="details">
 <ul class="blockList">
 <li class="blockList">
-<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<!-- ============ FIELD DETAIL =========== -->
 <section role="region">
 <ul class="blockList">
-<li class="blockList"><a id="constructor.detail">
+<li class="blockList"><a id="field.detail">
 <!--   -->
 </a>
-<h3>Constructor Detail</h3>
-<a id="&lt;init&gt;()">
+<h3>Field Detail</h3>
+<a id="LOG">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>ColGroupSizes</h4>
-<pre>public&nbsp;ColGroupSizes()</pre>
+<h4>LOG</h4>
+<pre>static final&nbsp;org.apache.commons.logging.Log LOG</pre>
 </li>
 </ul>
 </li>
@@ -310,7 +290,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateInMemorySizeGroup</h4>
-<pre class="methodSignature">public static&nbsp;long&nbsp;estimateInMemorySizeGroup&#8203;(int&nbsp;nrColumns)</pre>
+<pre class="methodSignature">static&nbsp;long&nbsp;estimateInMemorySizeGroup&#8203;(int&nbsp;nrColumns)</pre>
 </li>
 </ul>
 <a id="estimateInMemorySizeGroupValue(int,int,double,boolean)">
@@ -319,10 +299,10 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateInMemorySizeGroupValue</h4>
-<pre class="methodSignature">public static&nbsp;long&nbsp;estimateInMemorySizeGroupValue&#8203;(int&nbsp;nrColumns,
-                                                  int&nbsp;nrValues,
-                                                  double&nbsp;tupleSparsity,
-                                                  boolean&nbsp;lossy)</pre>
+<pre class="methodSignature">static&nbsp;long&nbsp;estimateInMemorySizeGroupValue&#8203;(int&nbsp;nrColumns,
+                                           int&nbsp;nrValues,
+                                           double&nbsp;tupleSparsity,
+                                           boolean&nbsp;lossy)</pre>
 </li>
 </ul>
 <a id="estimateInMemorySizeDDC(int,int,int,double,boolean)">
@@ -331,11 +311,11 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateInMemorySizeDDC</h4>
-<pre class="methodSignature">public static&nbsp;long&nbsp;estimateInMemorySizeDDC&#8203;(int&nbsp;nrCols,
-                                           int&nbsp;numTuples,
-                                           int&nbsp;dataLength,
-                                           double&nbsp;tupleSparsity,
-                                           boolean&nbsp;lossy)</pre>
+<pre class="methodSignature">static&nbsp;long&nbsp;estimateInMemorySizeDDC&#8203;(int&nbsp;nrCols,
+                                    int&nbsp;numTuples,
+                                    int&nbsp;dataLength,
+                                    double&nbsp;tupleSparsity,
+                                    boolean&nbsp;lossy)</pre>
 </li>
 </ul>
 <a id="estimateInMemorySizeOffset(int,int,int,int,double,boolean)">
@@ -344,12 +324,12 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateInMemorySizeOffset</h4>
-<pre class="methodSignature">public static&nbsp;long&nbsp;estimateInMemorySizeOffset&#8203;(int&nbsp;nrColumns,
-                                              int&nbsp;nrValues,
-                                              int&nbsp;pointers,
-                                              int&nbsp;offsetLength,
-                                              double&nbsp;tupleSparsity,
-                                              boolean&nbsp;lossy)</pre>
+<pre class="methodSignature">static&nbsp;long&nbsp;estimateInMemorySizeOffset&#8203;(int&nbsp;nrColumns,
+                                       int&nbsp;nrValues,
+                                       int&nbsp;pointers,
+                                       int&nbsp;offsetLength,
+                                       double&nbsp;tupleSparsity,
+                                       boolean&nbsp;lossy)</pre>
 </li>
 </ul>
 <a id="estimateInMemorySizeOLE(int,int,int,int,double,boolean)">
@@ -358,12 +338,12 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateInMemorySizeOLE</h4>
-<pre class="methodSignature">public static&nbsp;long&nbsp;estimateInMemorySizeOLE&#8203;(int&nbsp;nrColumns,
-                                           int&nbsp;nrValues,
-                                           int&nbsp;offsetLength,
-                                           int&nbsp;nrRows,
-                                           double&nbsp;tupleSparsity,
-                                           boolean&nbsp;lossy)</pre>
+<pre class="methodSignature">static&nbsp;long&nbsp;estimateInMemorySizeOLE&#8203;(int&nbsp;nrColumns,
+                                    int&nbsp;nrValues,
+                                    int&nbsp;offsetLength,
+                                    int&nbsp;nrRows,
+                                    double&nbsp;tupleSparsity,
+                                    boolean&nbsp;lossy)</pre>
 </li>
 </ul>
 <a id="estimateInMemorySizeRLE(int,int,int,int,double,boolean)">
@@ -372,12 +352,12 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateInMemorySizeRLE</h4>
-<pre class="methodSignature">public static&nbsp;long&nbsp;estimateInMemorySizeRLE&#8203;(int&nbsp;nrColumns,
-                                           int&nbsp;nrValues,
-                                           int&nbsp;nrRuns,
-                                           int&nbsp;nrRows,
-                                           double&nbsp;tupleSparsity,
-                                           boolean&nbsp;lossy)</pre>
+<pre class="methodSignature">static&nbsp;long&nbsp;estimateInMemorySizeRLE&#8203;(int&nbsp;nrColumns,
+                                    int&nbsp;nrValues,
+                                    int&nbsp;nrRuns,
+                                    int&nbsp;nrRows,
+                                    double&nbsp;tupleSparsity,
+                                    boolean&nbsp;lossy)</pre>
 </li>
 </ul>
 <a id="estimateInMemorySizeSDC(int,int,int,int,double,boolean,boolean)">
@@ -386,13 +366,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateInMemorySizeSDC</h4>
-<pre class="methodSignature">public static&nbsp;long&nbsp;estimateInMemorySizeSDC&#8203;(int&nbsp;nrColumns,
-                                           int&nbsp;nrValues,
-                                           int&nbsp;nrRows,
-                                           int&nbsp;largestOff,
-                                           double&nbsp;tupleSparsity,
-                                           boolean&nbsp;largestOffZero,
-                                           boolean&nbsp;lossy)</pre>
+<pre class="methodSignature">static&nbsp;long&nbsp;estimateInMemorySizeSDC&#8203;(int&nbsp;nrColumns,
+                                    int&nbsp;nrValues,
+                                    int&nbsp;nrRows,
+                                    int&nbsp;largestOff,
+                                    double&nbsp;tupleSparsity,
+                                    boolean&nbsp;largestOffZero,
+                                    boolean&nbsp;lossy)</pre>
 </li>
 </ul>
 <a id="estimateInMemorySizeCONST(int,double,boolean)">
@@ -401,9 +381,9 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateInMemorySizeCONST</h4>
-<pre class="methodSignature">public static&nbsp;long&nbsp;estimateInMemorySizeCONST&#8203;(int&nbsp;nrColumns,
-                                             double&nbsp;tupleSparsity,
-                                             boolean&nbsp;lossy)</pre>
+<pre class="methodSignature">static&nbsp;long&nbsp;estimateInMemorySizeCONST&#8203;(int&nbsp;nrColumns,
+                                      double&nbsp;tupleSparsity,
+                                      boolean&nbsp;lossy)</pre>
 </li>
 </ul>
 <a id="estimateInMemorySizeEMPTY(int)">
@@ -412,7 +392,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateInMemorySizeEMPTY</h4>
-<pre class="methodSignature">public static&nbsp;long&nbsp;estimateInMemorySizeEMPTY&#8203;(int&nbsp;nrColumns)</pre>
+<pre class="methodSignature">static&nbsp;long&nbsp;estimateInMemorySizeEMPTY&#8203;(int&nbsp;nrColumns)</pre>
 </li>
 </ul>
 <a id="estimateInMemorySizeUncompressed(int,int,double)">
@@ -421,9 +401,9 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateInMemorySizeUncompressed</h4>
-<pre class="methodSignature">public static&nbsp;long&nbsp;estimateInMemorySizeUncompressed&#8203;(int&nbsp;nrRows,
-                                                    int&nbsp;nrColumns,
-                                                    double&nbsp;sparsity)</pre>
+<pre class="methodSignature">static&nbsp;long&nbsp;estimateInMemorySizeUncompressed&#8203;(int&nbsp;nrRows,
+                                             int&nbsp;nrColumns,
+                                             double&nbsp;sparsity)</pre>
 </li>
 </ul>
 <a id="estimateInMemorySizeLinearFunctional(int)">
@@ -432,7 +412,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockListLast">
 <li class="blockList">
 <h4>estimateInMemorySizeLinearFunctional</h4>
-<pre class="methodSignature">public static&nbsp;long&nbsp;estimateInMemorySizeLinearFunctional&#8203;(int&nbsp;nrColumns)</pre>
+<pre class="methodSignature">static&nbsp;long&nbsp;estimateInMemorySizeLinearFunctional&#8203;(int&nbsp;nrColumns)</pre>
 </li>
 </ul>
 </li>
@@ -488,14 +468,14 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
+<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
-<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
+<li><a href="#field.detail">Field</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>

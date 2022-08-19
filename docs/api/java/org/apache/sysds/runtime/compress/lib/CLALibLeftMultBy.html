@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -210,6 +210,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
  ret = t(left) %*% right</div>
 </td>
 </tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>static double[]</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rowSum(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">rowSum</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
+      int&nbsp;rl,
+      int&nbsp;ru,
+      int&nbsp;cl,
+      int&nbsp;cu)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -307,7 +316,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <a id="leftMultByMatrix(org.apache.sysds.runtime.compress.CompressedMatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>leftMultByMatrix</h4>
 <pre class="methodSignature">public static&nbsp;<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;leftMultByMatrix&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;right,
@@ -327,6 +336,19 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The result of the matrix multiplication</dd>
 </dl>
+</li>
+</ul>
+<a id="rowSum(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>rowSum</h4>
+<pre class="methodSignature">public static&nbsp;double[]&nbsp;rowSum&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
+                              int&nbsp;rl,
+                              int&nbsp;ru,
+                              int&nbsp;cl,
+                              int&nbsp;cu)</pre>
 </li>
 </ul>
 </li>

@@ -155,19 +155,37 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int,int)">EstimationFactors</a></span>&#8203;(int&nbsp;nCols,
-                 int&nbsp;numVals,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int)">EstimationFactors</a></span>&#8203;(int&nbsp;numVals,
                  int&nbsp;numRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int,int,int,int%5B%5D,int,int,boolean,boolean,double,double)">EstimationFactors</a></span>&#8203;(int&nbsp;nCols,
-                 int&nbsp;numVals,
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int,double)">EstimationFactors</a></span>&#8203;(int&nbsp;numVals,
+                 int&nbsp;numRows,
+                 double&nbsp;tupleSparsity)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int,int,int%5B%5D,int,int,boolean,boolean,double,double)">EstimationFactors</a></span>&#8203;(int&nbsp;numVals,
                  int&nbsp;numOffs,
                  int&nbsp;largestOff,
                  int[]&nbsp;frequencies,
                  int&nbsp;numSingle,
                  int&nbsp;numRows,
+                 boolean&nbsp;lossy,
+                 boolean&nbsp;zeroIsMostFrequent,
+                 double&nbsp;overAllSparsity,
+                 double&nbsp;tupleSparsity)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E(int,int,int,int%5B%5D,int,int,int,boolean,boolean,double,double)">EstimationFactors</a></span>&#8203;(int&nbsp;numVals,
+                 int&nbsp;numOffs,
+                 int&nbsp;largestOff,
+                 int[]&nbsp;frequencies,
+                 int&nbsp;numSingle,
+                 int&nbsp;numRows,
+                 int&nbsp;numRuns,
                  boolean&nbsp;lossy,
                  boolean&nbsp;zeroIsMostFrequent,
                  double&nbsp;overAllSparsity,
@@ -221,30 +239,58 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a id="&lt;init&gt;(int,int,int)">
+<a id="&lt;init&gt;(int,int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>EstimationFactors</h4>
-<pre>public&nbsp;EstimationFactors&#8203;(int&nbsp;nCols,
-                         int&nbsp;numVals,
+<pre>public&nbsp;EstimationFactors&#8203;(int&nbsp;numVals,
                          int&nbsp;numRows)</pre>
 </li>
 </ul>
-<a id="&lt;init&gt;(int,int,int,int,int[],int,int,boolean,boolean,double,double)">
+<a id="&lt;init&gt;(int,int,double)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>EstimationFactors</h4>
-<pre>public&nbsp;EstimationFactors&#8203;(int&nbsp;nCols,
-                         int&nbsp;numVals,
+<pre>public&nbsp;EstimationFactors&#8203;(int&nbsp;numVals,
+                         int&nbsp;numRows,
+                         double&nbsp;tupleSparsity)</pre>
+</li>
+</ul>
+<a id="&lt;init&gt;(int,int,int,int[],int,int,boolean,boolean,double,double)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>EstimationFactors</h4>
+<pre>public&nbsp;EstimationFactors&#8203;(int&nbsp;numVals,
                          int&nbsp;numOffs,
                          int&nbsp;largestOff,
                          int[]&nbsp;frequencies,
                          int&nbsp;numSingle,
                          int&nbsp;numRows,
+                         boolean&nbsp;lossy,
+                         boolean&nbsp;zeroIsMostFrequent,
+                         double&nbsp;overAllSparsity,
+                         double&nbsp;tupleSparsity)</pre>
+</li>
+</ul>
+<a id="&lt;init&gt;(int,int,int,int[],int,int,int,boolean,boolean,double,double)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>EstimationFactors</h4>
+<pre>public&nbsp;EstimationFactors&#8203;(int&nbsp;numVals,
+                         int&nbsp;numOffs,
+                         int&nbsp;largestOff,
+                         int[]&nbsp;frequencies,
+                         int&nbsp;numSingle,
+                         int&nbsp;numRows,
+                         int&nbsp;numRuns,
                          boolean&nbsp;lossy,
                          boolean&nbsp;zeroIsMostFrequent,
                          double&nbsp;overAllSparsity,

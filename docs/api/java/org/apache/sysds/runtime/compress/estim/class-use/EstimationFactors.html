@@ -106,6 +106,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.estim.encoding">org.apache.sysds.runtime.compress.estim.encoding</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -114,6 +118,35 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList">
+<section role="region"><a id="org.apache.sysds.runtime.compress.estim">
+<!--   -->
+</a>
+<h3>Uses of <a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a> in <a href="../package-summary.html">org.apache.sysds.runtime.compress.estim</a></h3>
+<table class="useSummary">
+<caption><span>Constructors in <a href="../package-summary.html">org.apache.sysds.runtime.compress.estim</a> with parameters of type <a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Constructor</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CompressedSizeInfoColGroup.html#%3Cinit%3E(int%5B%5D,org.apache.sysds.runtime.compress.estim.EstimationFactors,long,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType)">CompressedSizeInfoColGroup</a></span>&#8203;(int[]&nbsp;cols,
+                          <a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;facts,
+                          long&nbsp;minSize,
+                          <a href="../../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;bestCompressionType)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../CompressedSizeInfoColGroup.html#%3Cinit%3E(int%5B%5D,org.apache.sysds.runtime.compress.estim.EstimationFactors,org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType)">CompressedSizeInfoColGroup</a></span>&#8203;(int[]&nbsp;cols,
+                          <a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;facts,
+                          <a href="../../colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;bestCompressionType)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
 <li class="blockList">
 <section role="region"><a id="org.apache.sysds.runtime.compress.estim.encoding">
 <!--   -->
@@ -129,42 +162,44 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ConstEncoding.</span><code><span class="memberNameLink"><a href="../encoding/ConstEncoding.html#extractFacts(int%5B%5D,int,double,double)">extractFacts</a></span>&#8203;(int[]&nbsp;cols,
-            int&nbsp;nRows,
+<th class="colSecond" scope="row"><span class="typeNameLabel">ConstEncoding.</span><code><span class="memberNameLink"><a href="../encoding/ConstEncoding.html#extractFacts(int,double,double,org.apache.sysds.runtime.compress.CompressionSettings)">extractFacts</a></span>&#8203;(int&nbsp;nRows,
             double&nbsp;tupleSparsity,
-            double&nbsp;matrixSparsity)</code></th>
+            double&nbsp;matrixSparsity,
+            <a href="../../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">DenseEncoding.</span><code><span class="memberNameLink"><a href="../encoding/DenseEncoding.html#extractFacts(int%5B%5D,int,double,double)">extractFacts</a></span>&#8203;(int[]&nbsp;cols,
-            int&nbsp;nRows,
+<th class="colSecond" scope="row"><span class="typeNameLabel">DenseEncoding.</span><code><span class="memberNameLink"><a href="../encoding/DenseEncoding.html#extractFacts(int,double,double,org.apache.sysds.runtime.compress.CompressionSettings)">extractFacts</a></span>&#8203;(int&nbsp;nRows,
             double&nbsp;tupleSparsity,
-            double&nbsp;matrixSparsity)</code></th>
+            double&nbsp;matrixSparsity,
+            <a href="../../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">EmptyEncoding.</span><code><span class="memberNameLink"><a href="../encoding/EmptyEncoding.html#extractFacts(int%5B%5D,int,double,double)">extractFacts</a></span>&#8203;(int[]&nbsp;cols,
-            int&nbsp;nRows,
+<th class="colSecond" scope="row"><span class="typeNameLabel">EmptyEncoding.</span><code><span class="memberNameLink"><a href="../encoding/EmptyEncoding.html#extractFacts(int,double,double,org.apache.sysds.runtime.compress.CompressionSettings)">extractFacts</a></span>&#8203;(int&nbsp;nRows,
             double&nbsp;tupleSparsity,
-            double&nbsp;matrixSparsity)</code></th>
+            double&nbsp;matrixSparsity,
+            <a href="../../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">IEncode.</span><code><span class="memberNameLink"><a href="../encoding/IEncode.html#extractFacts(int%5B%5D,int,double,double)">extractFacts</a></span>&#8203;(int[]&nbsp;cols,
-            int&nbsp;nRows,
+<th class="colSecond" scope="row"><span class="typeNameLabel">IEncode.</span><code><span class="memberNameLink"><a href="../encoding/IEncode.html#extractFacts(int,double,double,org.apache.sysds.runtime.compress.CompressionSettings)">extractFacts</a></span>&#8203;(int&nbsp;nRows,
             double&nbsp;tupleSparsity,
-            double&nbsp;matrixSparsity)</code></th>
-<td class="colLast">&nbsp;</td>
+            double&nbsp;matrixSparsity,
+            <a href="../../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
+<td class="colLast">
+<div class="block">Extract the compression facts for this column group.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">SparseEncoding.</span><code><span class="memberNameLink"><a href="../encoding/SparseEncoding.html#extractFacts(int%5B%5D,int,double,double)">extractFacts</a></span>&#8203;(int[]&nbsp;cols,
-            int&nbsp;nRows,
+<th class="colSecond" scope="row"><span class="typeNameLabel">SparseEncoding.</span><code><span class="memberNameLink"><a href="../encoding/SparseEncoding.html#extractFacts(int,double,double,org.apache.sysds.runtime.compress.CompressionSettings)">extractFacts</a></span>&#8203;(int&nbsp;nRows,
             double&nbsp;tupleSparsity,
-            double&nbsp;matrixSparsity)</code></th>
+            double&nbsp;matrixSparsity,
+            <a href="../../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

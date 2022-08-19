@@ -141,7 +141,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">CoCoderFactory.</span><code><span class="memberNameLink"><a href="../../cocode/CoCoderFactory.html#findCoCodesByPartitioning(org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,int,org.apache.sysds.runtime.compress.cost.ACostEstimate,org.apache.sysds.runtime.compress.CompressionSettings)">findCoCodesByPartitioning</a></span>&#8203;(<a href="../CompressedSizeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimator</a>&nbsp;est,
+<th class="colSecond" scope="row"><span class="typeNameLabel">CoCoderFactory.</span><code><span class="memberNameLink"><a href="../../cocode/CoCoderFactory.html#findCoCodesByPartitioning(org.apache.sysds.runtime.compress.estim.AComEst,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,int,org.apache.sysds.runtime.compress.cost.ACostEstimate,org.apache.sysds.runtime.compress.CompressionSettings)">findCoCodesByPartitioning</a></span>&#8203;(<a href="../AComEst.html" title="class in org.apache.sysds.runtime.compress.estim">AComEst</a>&nbsp;est,
                          <a href="../CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;colInfos,
                          int&nbsp;k,
                          <a href="../../cost/ACostEstimate.html" title="class in org.apache.sysds.runtime.compress.cost">ACostEstimate</a>&nbsp;costEstimator,
@@ -162,7 +162,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">CoCoderFactory.</span><code><span class="memberNameLink"><a href="../../cocode/CoCoderFactory.html#findCoCodesByPartitioning(org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,int,org.apache.sysds.runtime.compress.cost.ACostEstimate,org.apache.sysds.runtime.compress.CompressionSettings)">findCoCodesByPartitioning</a></span>&#8203;(<a href="../CompressedSizeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimator</a>&nbsp;est,
+<th class="colSecond" scope="row"><span class="typeNameLabel">CoCoderFactory.</span><code><span class="memberNameLink"><a href="../../cocode/CoCoderFactory.html#findCoCodesByPartitioning(org.apache.sysds.runtime.compress.estim.AComEst,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,int,org.apache.sysds.runtime.compress.cost.ACostEstimate,org.apache.sysds.runtime.compress.CompressionSettings)">findCoCodesByPartitioning</a></span>&#8203;(<a href="../AComEst.html" title="class in org.apache.sysds.runtime.compress.estim">AComEst</a>&nbsp;est,
                          <a href="../CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;colInfos,
                          int&nbsp;k,
                          <a href="../../cost/ACostEstimate.html" title="class in org.apache.sysds.runtime.compress.cost">ACostEstimate</a>&nbsp;costEstimator,
@@ -190,6 +190,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../colgroup/ColGroupFactory.html#compressColGroups(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,org.apache.sysds.runtime.compress.CompressionSettings)">compressColGroups</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                 <a href="../CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
+                 <a href="../../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
+<td class="colLast">
+<div class="block">The actual compression method, that handles the logic of compressing multiple columns together.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../colgroup/ColGroupFactory.html#compressColGroups(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,org.apache.sysds.runtime.compress.CompressionSettings,int)">compressColGroups</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                  <a href="../CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
                  <a href="../../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
@@ -198,7 +207,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">The actual compression method, that handles the logic of compressing multiple columns together.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../colgroup/ColGroupFactory.html#compressColGroups(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,org.apache.sysds.runtime.compress.CompressionSettings,org.apache.sysds.runtime.compress.cost.ACostEstimate,int)">compressColGroups</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                  <a href="../CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
@@ -250,7 +259,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedSizeEstimator.</span><code><span class="memberNameLink"><a href="../CompressedSizeEstimator.html#computeCompressedSizeInfos(int)">computeCompressedSizeInfos</a></span>&#8203;(int&nbsp;k)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AComEst.</span><code><span class="memberNameLink"><a href="../AComEst.html#computeCompressedSizeInfos(int)">computeCompressedSizeInfos</a></span>&#8203;(int&nbsp;k)</code></th>
 <td class="colLast">
 <div class="block">Multi threaded version of extracting compression size info</div>
 </td>

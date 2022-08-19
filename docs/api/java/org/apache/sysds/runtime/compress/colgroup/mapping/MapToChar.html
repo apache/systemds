@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":9,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":9,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -209,51 +209,58 @@ extends <a href="AMapToData.html" title="class in org.apache.sysds.runtime.compr
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#countRuns()">countRuns</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Count the number of runs inside the map.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#fill(int)">fill</a></span>&#8203;(int&nbsp;v)</code></th>
 <td class="colLast">
 <div class="block">Fill the map with a given value.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExactSizeOnDisk()">getExactSizeOnDisk</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the size of this Mapping object on disk.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getIndex(int)">getIndex</a></span>&#8203;(int&nbsp;n)</code></th>
 <td class="colLast">
 <div class="block">Get the given index back as a integer</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInMemorySize()">getInMemorySize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the in memory size of this Mapping object.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getInMemorySize(int)">getInMemorySize</a></span>&#8203;(int&nbsp;dataLength)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="MapToFactory.MAP_TYPE.html" title="enum in org.apache.sysds.runtime.compress.colgroup.mapping">MapToFactory.MAP_TYPE</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getType()">getType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getUpperBoundValue()">getUpperBoundValue</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the maximum value that is possible to allocate inside this map.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#replace(int,int)">replace</a></span>&#8203;(int&nbsp;v,
        int&nbsp;r)</code></th>
@@ -265,12 +272,12 @@ extends <a href="AMapToData.html" title="class in org.apache.sysds.runtime.compr
  - with two distinct values that is representable inside the given AMapToData.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#resize(int)">resize</a></span>&#8203;(int&nbsp;unique)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#set(int,int)">set</a></span>&#8203;(int&nbsp;n,
    int&nbsp;v)</code></th>
@@ -278,7 +285,7 @@ extends <a href="AMapToData.html" title="class in org.apache.sysds.runtime.compr
 <div class="block">Set the index to the value.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setAndGet(int,int)">setAndGet</a></span>&#8203;(int&nbsp;n,
          int&nbsp;v)</code></th>
@@ -286,14 +293,14 @@ extends <a href="AMapToData.html" title="class in org.apache.sysds.runtime.compr
 <div class="block">Set the index to the value and get the contained value after.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#size()">size</a></span>()</code></th>
 <td class="colLast">
 <div class="block">The size of the Mapping object, signaling how many value cells are stored in this mapping object.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
@@ -306,7 +313,7 @@ extends <a href="AMapToData.html" title="class in org.apache.sysds.runtime.compr
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.mapping.<a href="AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a></h3>
-<code><a href="AMapToData.html#copy(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">copy</a>, <a href="AMapToData.html#getCounts(int%5B%5D)">getCounts</a>, <a href="AMapToData.html#getMax()">getMax</a>, <a href="AMapToData.html#getUnique()">getUnique</a>, <a href="AMapToData.html#preAggregateDDC_DDC(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_DDC</a>, <a href="AMapToData.html#preAggregateDDC_SDCZ(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_SDCZ</a>, <a href="AMapToData.html#preAggregateDDC_SDCZMultiCol(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,double%5B%5D,int)">preAggregateDDC_SDCZMultiCol</a>, <a href="AMapToData.html#preAggregateDDC_SDCZSingleCol(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,double%5B%5D)">preAggregateDDC_SDCZSingleCol</a>, <a href="AMapToData.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int)">preAggregateDense</a>, <a href="AMapToData.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int,org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">preAggregateDense</a>, <a href="AMapToData.html#preAggregateSDCZ_DDC(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateSDCZ_DDC</a>, <a href="AMapToData.html#preAggregateSDCZ_SDCZ(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateSDCZ_SDCZ</a>, <a href="AMapToData.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a>, <a href="AMapToData.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int,org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">preAggregateSparse</a>, <a href="AMapToData.html#setUnique(int)">setUnique</a>, <a href="AMapToData.html#toString()">toString</a></code></li>
+<code><a href="AMapToData.html#copy(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">copy</a>, <a href="AMapToData.html#countRuns(org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">countRuns</a>, <a href="AMapToData.html#getCounts(int%5B%5D)">getCounts</a>, <a href="AMapToData.html#getMax()">getMax</a>, <a href="AMapToData.html#getUnique()">getUnique</a>, <a href="AMapToData.html#preAggregateDDC_DDC(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_DDC</a>, <a href="AMapToData.html#preAggregateDDC_RLE(int%5B%5D,char%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_RLE</a>, <a href="AMapToData.html#preAggregateDDC_SDCZ(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateDDC_SDCZ</a>, <a href="AMapToData.html#preAggregateDDC_SDCZMultiCol(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,double%5B%5D,int)">preAggregateDDC_SDCZMultiCol</a>, <a href="AMapToData.html#preAggregateDDC_SDCZSingleCol(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,double%5B%5D)">preAggregateDDC_SDCZSingleCol</a>, <a href="AMapToData.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int)">preAggregateDense</a>, <a href="AMapToData.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int,org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">preAggregateDense</a>, <a href="AMapToData.html#preAggregateRLE_DDC(int%5B%5D,char%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateRLE_DDC</a>, <a href="AMapToData.html#preAggregateSDCZ_DDC(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateSDCZ_DDC</a>, <a href="AMapToData.html#preAggregateSDCZ_SDCZ(org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary,int)">preAggregateSDCZ_SDCZ</a>, <a href="AMapToData.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a>, <a href="AMapToData.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int,org.apache.sysds.runtime.compress.colgroup.offset.AOffset)">preAggregateSparse</a>, <a href="AMapToData.html#setUnique(int)">setUnique</a>, <a href="AMapToData.html#toString()">toString</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -613,13 +620,30 @@ extends <a href="AMapToData.html" title="class in org.apache.sysds.runtime.compr
 <a id="resize(int)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>resize</h4>
 <pre class="methodSignature">public&nbsp;<a href="AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;resize&#8203;(int&nbsp;unique)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="AMapToData.html#resize(int)">resize</a></code>&nbsp;in class&nbsp;<code><a href="AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="countRuns()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>countRuns</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;countRuns()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AMapToData.html#countRuns()">AMapToData</a></code></span></div>
+<div class="block">Count the number of runs inside the map.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="AMapToData.html#countRuns()">countRuns</a></code>&nbsp;in class&nbsp;<code><a href="AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The number of runs</dd>
 </dl>
 </li>
 </ul>

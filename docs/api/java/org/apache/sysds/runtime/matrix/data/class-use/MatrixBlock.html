@@ -2158,6 +2158,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Generate uncompressed bitmaps for a set of columns in an uncompressed matrix block.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../compress/bitmap/ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">BitmapEncoder.</span><code><span class="memberNameLink"><a href="../../../compress/bitmap/BitmapEncoder.html#extractBitmap(int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,org.apache.sysds.runtime.compress.CompressionSettings)">extractBitmap</a></span>&#8203;(int[]&nbsp;colIndices,
+             <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawBlock,
+             int&nbsp;estimatedNumberOfUniques,
+             <a href="../../../compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -2193,6 +2201,24 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUtils.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUtils.html#addMatrixToResult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D,int,int)">addMatrixToResult</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;tmp,
+                 <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                 int[]&nbsp;colIndexes,
+                 int&nbsp;rl,
+                 int&nbsp;ru)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupFactory.html#compressColGroups(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,org.apache.sysds.runtime.compress.CompressionSettings)">compressColGroups</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                 <a href="../../../compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
+                 <a href="../../../compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
+<td class="colLast">
+<div class="block">The actual compression method, that handles the logic of compressing multiple columns together.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupFactory.html#compressColGroups(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,org.apache.sysds.runtime.compress.CompressionSettings,int)">compressColGroups</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                  <a href="../../../compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
@@ -2212,6 +2238,16 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUtils.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUtils.html#copyValuesColGroupMatrixBlocks(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">copyValuesColGroupMatrixBlocks</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                              <a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;rhs,
+                              <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;tmpResult,
+                              <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<td class="colLast">
+<div class="block">Copy values from tmpResult into correct positions of result (according to colIndexes in lhs and rhs)</div>
+</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#create(int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">create</a></span>&#8203;(int[]&nbsp;colIndexes,
       <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawBlock,
@@ -2220,68 +2256,65 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Main constructor for Uncompressed ColGroup.</div>
 </td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#create(org.apache.sysds.runtime.matrix.data.MatrixBlock)">create</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="rowColor">
+<td class="colFirst"><code>static double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUtils.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUtils.html#extractMostCommonValueInColumns(org.apache.sysds.runtime.matrix.data.MatrixBlock)">extractMostCommonValueInColumns</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">
 <div class="block">Left side matrix multiplication with a column group that is transposed.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AMorphingMMColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AMorphingMMColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">AMorphingMMColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AMorphingMMColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">APreAgg.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/APreAgg.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">APreAgg.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/APreAgg.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupConst.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupConst.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupEmpty.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;c,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupEmpty.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;c)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupLinearFunctional.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupLinearFunctional.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupOLE.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupOLE.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupRLE.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#leftMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int)">leftMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
-                <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
-                int&nbsp;rl,
-                int&nbsp;ru)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -2338,16 +2371,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDCFOR.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupDDCFOR.html#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">leftMultByMatrixNoPreAgg</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
-                        <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
-                        int&nbsp;rl,
-                        int&nbsp;ru,
-                        int&nbsp;cl,
-                        int&nbsp;cu)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupEmpty.html#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">leftMultByMatrixNoPreAgg</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
                         <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
                         int&nbsp;rl,
@@ -2356,7 +2379,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         int&nbsp;cu)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupLinearFunctional.html#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">leftMultByMatrixNoPreAgg</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
                         <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
@@ -2366,7 +2389,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         int&nbsp;cu)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupOLE.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupOLE.html#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">leftMultByMatrixNoPreAgg</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
                         <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
@@ -2376,7 +2399,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         int&nbsp;cu)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupRLE.html#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">leftMultByMatrixNoPreAgg</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
                         <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
@@ -2386,7 +2409,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         int&nbsp;cu)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#leftMultByMatrixNoPreAgg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">leftMultByMatrixNoPreAgg</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
                         <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
@@ -2396,7 +2419,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         int&nbsp;cu)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">APreAgg.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/APreAgg.html#mmWithDictionary(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int)">mmWithDictionary</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;preAgg,
                 <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;tmpRes,
@@ -2406,7 +2429,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                 int&nbsp;ru)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">APreAgg.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/APreAgg.html#preAggregate(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int)">preAggregate</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
             double[]&nbsp;preAgg,
@@ -2416,7 +2439,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Pre aggregate a matrix block into a pre aggregate target (first step of left matrix multiplication)</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">APreAgg.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/APreAgg.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int)">preAggregateDense</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                  double[]&nbsp;preAgg,
@@ -2428,7 +2451,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Pre aggregate a dense matrix block into a pre aggregate target (first step of left matrix multiplication)</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDC.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupDDC.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int)">preAggregateDense</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                  double[]&nbsp;preAgg,
@@ -2438,7 +2461,27 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                  int&nbsp;cu)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupOLE.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupOLE.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int)">preAggregateDense</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                 double[]&nbsp;preAgg,
+                 int&nbsp;rl,
+                 int&nbsp;ru,
+                 int&nbsp;cl,
+                 int&nbsp;cu)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupRLE.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int)">preAggregateDense</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                 double[]&nbsp;preAgg,
+                 int&nbsp;rl,
+                 int&nbsp;ru,
+                 int&nbsp;cl,
+                 int&nbsp;cu)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCSingleZeros.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupSDCSingleZeros.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int)">preAggregateDense</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                  double[]&nbsp;preAgg,
@@ -2448,7 +2491,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                  int&nbsp;cu)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCZeros.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupSDCZeros.html#preAggregateDense(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int)">preAggregateDense</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                  double[]&nbsp;preAgg,
@@ -2458,39 +2501,46 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                  int&nbsp;cu)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
+<td class="colLast">
+<div class="block">Right matrix multiplication with this column group.</div>
+</td>
+</tr>
 <tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                 int[]&nbsp;allCols)</code></th>
 <td class="colLast">
 <div class="block">Right matrix multiplication with this column group.</div>
 </td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupValue.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroupValue.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictBasedColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ADictBasedColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                 int[]&nbsp;allCols)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupConst.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupEmpty.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                 int[]&nbsp;allCols)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupEmpty.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupLinearFunctional.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                 int[]&nbsp;allCols)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupLinearFunctional.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                 int[]&nbsp;allCols)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroup.html#tsmm(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">tsmm</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
     int&nbsp;nRows)</code></th>
@@ -2498,19 +2548,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupCompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroupCompressed.html#tsmm(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">tsmm</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
     int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#tsmm(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">tsmm</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
     int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroup.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
@@ -2520,68 +2570,41 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  1.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AMorphingMMColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AMorphingMMColGroup.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">APreAgg.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/APreAgg.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupConst.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupEmpty.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupLinearFunctional.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupOLE.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupOLE.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
-             <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 <tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupRLE.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
-             <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
              <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
-</tr>
-</tbody>
-</table>
-<table class="useSummary">
-<caption><span>Constructors in <a href="../../../compress/colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> with parameters of type <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Constructor</th>
-<th class="colLast" scope="col">Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#%3Cinit%3E(org.apache.sysds.runtime.matrix.data.MatrixBlock)">ColGroupUncompressed</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data)</code></th>
-<td class="colLast">
-<div class="block">Constructor for allocating a single uncompressed column group.</div>
-</td>
 </tr>
 </tbody>
 </table>
@@ -2683,9 +2706,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#%3Cinit%3E(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">MatrixBlockDictionary</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
-                     int&nbsp;nCol)</code></th>
-<td class="colLast">&nbsp;</td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#%3Cinit%3E(org.apache.sysds.runtime.matrix.data.MatrixBlock)">MatrixBlockDictionary</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data)</code></th>
+<td class="colLast">
+<div class="block">Unsafe private constructor that does not check the data validity.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#%3Cinit%3E(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">MatrixBlockDictionary</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+                     boolean&nbsp;check)</code></th>
+<td class="colLast">
+<div class="block">Unsafe private constructor that does not check the data validity.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -2844,8 +2875,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>static <a href="../../../compress/estim/CompressedSizeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimator</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedSizeEstimatorFactory.</span><code><span class="memberNameLink"><a href="../../../compress/estim/CompressedSizeEstimatorFactory.html#createEstimator(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.CompressionSettings,int)">createEstimator</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+<td class="colFirst"><code>static <a href="../../../compress/estim/AComEst.html" title="class in org.apache.sysds.runtime.compress.estim">AComEst</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ComEstFactory.</span><code><span class="memberNameLink"><a href="../../../compress/estim/ComEstFactory.html#createEstimator(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.CompressionSettings,int)">createEstimator</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
                <a href="../../../compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
                int&nbsp;k)</code></th>
 <td class="colLast">
@@ -2853,8 +2884,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>static <a href="../../../compress/estim/CompressedSizeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimator</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">CompressedSizeEstimatorFactory.</span><code><span class="memberNameLink"><a href="../../../compress/estim/CompressedSizeEstimatorFactory.html#createEstimator(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.CompressionSettings,int,int)">createEstimator</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+<td class="colFirst"><code>static <a href="../../../compress/estim/AComEst.html" title="class in org.apache.sysds.runtime.compress.estim">AComEst</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ComEstFactory.</span><code><span class="memberNameLink"><a href="../../../compress/estim/ComEstFactory.html#createEstimator(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.CompressionSettings,int,int)">createEstimator</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
                <a href="../../../compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
                int&nbsp;sampleSize,
                int&nbsp;k)</code></th>
@@ -2872,15 +2903,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../compress/estim/CompressedSizeEstimatorExact.html#%3Cinit%3E(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.CompressionSettings)">CompressedSizeEstimatorExact</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
-                            <a href="../../../compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../compress/estim/ComEstExact.html#%3Cinit%3E(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.CompressionSettings)">ComEstExact</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+           <a href="../../../compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../compress/estim/CompressedSizeEstimatorSample.html#%3Cinit%3E(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.CompressionSettings,int,int)">CompressedSizeEstimatorSample</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
-                             <a href="../../../compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
-                             int&nbsp;sampleSize,
-                             int&nbsp;k)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../../../compress/estim/ComEstSample.html#%3Cinit%3E(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.CompressionSettings,int,int)">ComEstSample</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+            <a href="../../../compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
+            int&nbsp;sampleSize,
+            int&nbsp;k)</code></th>
 <td class="colLast">
 <div class="block">CompressedSizeEstimatorSample, samples from the input data and estimates the size of the compressed matrix.</div>
 </td>
@@ -3258,6 +3289,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                  boolean&nbsp;allowOverlap)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">CLALibLeftMultBy.</span><code><span class="memberNameLink"><a href="../../../compress/lib/CLALibLeftMultBy.html#rowSum(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int)">rowSum</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
+      int&nbsp;rl,
+      int&nbsp;ru,
+      int&nbsp;cl,
+      int&nbsp;cu)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -3318,6 +3358,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Util.</span><code><span class="memberNameLink"><a href="../../../compress/utils/Util.html#matrixBlockFromDenseArray(double%5B%5D,int)">matrixBlockFromDenseArray</a></span>&#8203;(double[]&nbsp;values,
                          int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Util.</span><code><span class="memberNameLink"><a href="../../../compress/utils/Util.html#matrixBlockFromDenseArray(double%5B%5D,int,boolean)">matrixBlockFromDenseArray</a></span>&#8203;(double[]&nbsp;values,
+                         int&nbsp;nCol,
+                         boolean&nbsp;check)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -6402,8 +6449,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock)">append</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;that)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">append</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>[]&nbsp;that,
       <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+      boolean&nbsp;cbind)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">append</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;that,
       boolean&nbsp;cbind)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -6582,6 +6640,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCountDistinct.</span><code><span class="memberNameLink"><a href="../LibMatrixCountDistinct.html#estimateDistinctValues(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.CountDistinctOperator)">estimateDistinctValues</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                      <a href="../../operators/CountDistinctOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">CountDistinctOperator</a>&nbsp;op)</code></th>
+<td class="colLast">
+<div class="block">Public method to count the number of distinct values inside a matrix.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#extractTriangular(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean,boolean)">extractTriangular</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                  boolean&nbsp;lower,
@@ -6589,7 +6655,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                  boolean&nbsp;values)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#groupedAggOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.operators.Operator)">groupedAggOperations</a></span>&#8203;(<a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;tgt,
                     <a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;wghts,
@@ -6600,7 +6666,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Invocation from CP instructions.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#groupedAggOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue,int,org.apache.sysds.runtime.matrix.operators.Operator,int)">groupedAggOperations</a></span>&#8203;(<a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;tgt,
                     <a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;wghts,
@@ -6610,7 +6676,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                     int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#leftIndexingOperations(org.apache.sysds.runtime.instructions.cp.ScalarObject,int,int,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType)">leftIndexingOperations</a></span>&#8203;(<a href="../../../instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&nbsp;scalar,
                       int&nbsp;rl,
@@ -6621,7 +6687,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Explicitly allow left indexing for scalars.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#leftIndexingOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,int,int,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType)">leftIndexingOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rhsMatrix,
                       int&nbsp;rl,
@@ -6632,7 +6698,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                       <a href="../../../controlprogram/caching/MatrixObject.UpdateType.html" title="enum in org.apache.sysds.runtime.controlprogram.caching">MatrixObject.UpdateType</a>&nbsp;update)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#leftIndexingOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.util.IndexRange,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType)">leftIndexingOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rhsMatrix,
                       <a href="../../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
@@ -6640,7 +6706,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                       <a href="../../../controlprogram/caching/MatrixObject.UpdateType.html" title="enum in org.apache.sysds.runtime.controlprogram.caching">MatrixObject.UpdateType</a>&nbsp;update)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">OperationsOnMatrixValues.</span><code><span class="memberNameLink"><a href="../OperationsOnMatrixValues.html#matMult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator)">matMult</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value1,
        <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value2,
@@ -6648,14 +6714,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
        <a href="../../operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">OperationsOnMatrixValues.</span><code><span class="memberNameLink"><a href="../OperationsOnMatrixValues.html#matMult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator)">matMult</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value1,
        <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value2,
        <a href="../../operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">OperationsOnMatrixValues.</span><code><span class="memberNameLink"><a href="../OperationsOnMatrixValues.html#matMult(org.apache.sysds.runtime.matrix.data.MatrixIndexes,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixIndexes,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixIndexes,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator)">matMult</a></span>&#8203;(<a href="../MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexes1,
        <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value1,
@@ -6666,14 +6732,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
        <a href="../../operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibCommonsMath.</span><code><span class="memberNameLink"><a href="../LibCommonsMath.html#matrixMatrixOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,java.lang.String)">matrixMatrixOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in1,
                       <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in2,
                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixMult.</span><code><span class="memberNameLink"><a href="../LibMatrixMult.html#matrixMult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">matrixMult</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2)</code></th>
@@ -6683,7 +6749,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  All variants use a IKJ access pattern, and internally use dense output.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixMult.</span><code><span class="memberNameLink"><a href="../LibMatrixMult.html#matrixMult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">matrixMult</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -6694,7 +6760,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  All variants use a IKJ access pattern, and internally use dense output.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixMult.</span><code><span class="memberNameLink"><a href="../LibMatrixMult.html#matrixMult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">matrixMult</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -6703,7 +6769,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Performs a matrix multiplication and stores the result in the output matrix.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixMult.</span><code><span class="memberNameLink"><a href="../LibMatrixMult.html#matrixMult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">matrixMult</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -6713,7 +6779,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">This method allows one to disabling exam sparsity.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixMult.</span><code><span class="memberNameLink"><a href="../LibMatrixMult.html#matrixMult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int)">matrixMult</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -6724,7 +6790,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Performs a matrix multiplication and stores the result in the output matrix.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixMult.</span><code><span class="memberNameLink"><a href="../LibMatrixMult.html#matrixMult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">matrixMult</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -6734,7 +6800,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Performs a multi-threaded matrix multiplication and stores the result in the output matrix.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixNative.</span><code><span class="memberNameLink"><a href="../LibMatrixNative.html#matrixMult(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">matrixMult</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
           <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -6745,13 +6811,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  Java BLAS.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>[]</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibCommonsMath.</span><code><span class="memberNameLink"><a href="../LibCommonsMath.html#multiReturnOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,java.lang.String)">multiReturnOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>[]</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibCommonsMath.</span><code><span class="memberNameLink"><a href="../LibCommonsMath.html#multiReturnOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,java.lang.String,int,int,double)">multiReturnOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode,
@@ -6760,7 +6826,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                      double&nbsp;tol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>[]</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibCommonsMath.</span><code><span class="memberNameLink"><a href="../LibCommonsMath.html#multiReturnOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,java.lang.String,int,long)">multiReturnOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode,
@@ -6768,7 +6834,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                      long&nbsp;seed)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#naryOperations(org.apache.sysds.runtime.matrix.operators.Operator,org.apache.sysds.runtime.matrix.data.MatrixBlock%5B%5D,org.apache.sysds.runtime.instructions.cp.ScalarObject%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock)">naryOperations</a></span>&#8203;(<a href="../../operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
               <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>[]&nbsp;matrices,
@@ -6776,27 +6842,27 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
               <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#pickValues(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixValue)">pickValues</a></span>&#8203;(<a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;quantiles,
           <a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#prepareAggregateUnaryOutput(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int)">prepareAggregateUnaryOutput</a></span>&#8203;(<a href="../../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
                            <a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
                            int&nbsp;blen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixMult.</span><code><span class="memberNameLink"><a href="../LibMatrixMult.html#prepMatrixMultTransposeSelfInput(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean)">prepMatrixMultTransposeSelfInput</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                                 boolean&nbsp;leftTranspose,
                                 boolean&nbsp;par)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#quaternaryOperations(org.apache.sysds.runtime.matrix.operators.QuaternaryOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">quaternaryOperations</a></span>&#8203;(<a href="../../operators/QuaternaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">QuaternaryOperator</a>&nbsp;qop,
                     <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;um,
@@ -6805,7 +6871,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                     <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#quaternaryOperations(org.apache.sysds.runtime.matrix.operators.QuaternaryOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">quaternaryOperations</a></span>&#8203;(<a href="../../operators/QuaternaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">QuaternaryOperator</a>&nbsp;qop,
                     <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;U,
@@ -6815,7 +6881,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                     int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#randOperations(int,int,double,double,double,java.lang.String,long)">randOperations</a></span>&#8203;(int&nbsp;rows,
               int&nbsp;cols,
@@ -6828,7 +6894,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Function to generate the random matrix with specified dimensions (block sizes are not specified).</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#randOperations(int,int,double,double,double,java.lang.String,long,int)">randOperations</a></span>&#8203;(int&nbsp;rows,
               int&nbsp;cols,
@@ -6842,7 +6908,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Function to generate the random matrix with specified dimensions (block sizes are not specified).</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#randOperations(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,long)">randOperations</a></span>&#8203;(<a href="../RandomMatrixGenerator.html" title="class in org.apache.sysds.runtime.matrix.data">RandomMatrixGenerator</a>&nbsp;rgen,
               long&nbsp;seed)</code></th>
@@ -6850,7 +6916,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Function to generate the random matrix with specified dimensions and block dimensions.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#randOperations(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,long,int)">randOperations</a></span>&#8203;(<a href="../RandomMatrixGenerator.html" title="class in org.apache.sysds.runtime.matrix.data">RandomMatrixGenerator</a>&nbsp;rgen,
               long&nbsp;seed,
@@ -6859,7 +6925,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Function to generate the random matrix with specified dimensions and block dimensions.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#randOperationsInPlace(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,org.apache.commons.math3.random.Well1024a,long)">randOperationsInPlace</a></span>&#8203;(<a href="../RandomMatrixGenerator.html" title="class in org.apache.sysds.runtime.matrix.data">RandomMatrixGenerator</a>&nbsp;rgen,
                      org.apache.commons.math3.random.Well1024a&nbsp;bigrand,
@@ -6868,7 +6934,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Function to generate a matrix of random numbers.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#randOperationsInPlace(org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator,org.apache.commons.math3.random.Well1024a,long,int)">randOperationsInPlace</a></span>&#8203;(<a href="../RandomMatrixGenerator.html" title="class in org.apache.sysds.runtime.matrix.data">RandomMatrixGenerator</a>&nbsp;rgen,
                      org.apache.commons.math3.random.Well1024a&nbsp;bigrand,
@@ -6878,14 +6944,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Function to generate a matrix of random numbers.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#removeEmptyOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean)">removeEmptyOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                      boolean&nbsp;rows,
                      boolean&nbsp;emptyReturn)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#removeEmptyOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean,org.apache.sysds.runtime.matrix.data.MatrixBlock)">removeEmptyOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                      boolean&nbsp;rows,
@@ -6893,20 +6959,20 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                      <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;select)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#reorg(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.ReorgOperator)">reorg</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
      <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
      <a href="../../operators/ReorgOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ReorgOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#reorgInPlace(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.ReorgOperator)">reorgInPlace</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
             <a href="../../operators/ReorgOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ReorgOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#reorgOperations(org.apache.sysds.runtime.matrix.operators.ReorgOperator,org.apache.sysds.runtime.matrix.data.MatrixValue,int,int,int)">reorgOperations</a></span>&#8203;(<a href="../../operators/ReorgOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ReorgOperator</a>&nbsp;op,
                <a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;ret,
@@ -6915,14 +6981,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                int&nbsp;length)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#replaceOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,double,double)">replaceOperations</a></span>&#8203;(<a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
                  double&nbsp;pattern,
                  double&nbsp;replacement)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#reshape(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,int,boolean)">reshape</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
        <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
@@ -6938,13 +7004,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  order and column-wise being the default.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#rev(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">rev</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
    <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#rexpand(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,double,boolean,boolean,boolean,int)">rexpand</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
        <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
@@ -6958,7 +7024,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  column to multiple columns.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#rexpand(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,boolean,boolean,boolean,int)">rexpand</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
        <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
@@ -6972,7 +7038,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  column to multiple columns.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#rexpandOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,double,boolean,boolean,boolean,int)">rexpandOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                  double&nbsp;max,
@@ -6982,7 +7048,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                  int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#rmempty(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,boolean,org.apache.sysds.runtime.matrix.data.MatrixBlock)">rmempty</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
        <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
@@ -6993,21 +7059,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">CP rmempty operation (single input, single output matrix)</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#rowSum()">rowSum</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for single threaded reduceall-rowSum of a matrix.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#rowSum(int)">rowSum</a></span>&#8203;(int&nbsp;k)</code></th>
 <td class="colLast">
 <div class="block">Wrapper method for multi threaded reduceall-rowSum of a matrix.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#sampleOperations(long,int,boolean,long)">sampleOperations</a></span>&#8203;(long&nbsp;range,
                 int&nbsp;size,
@@ -7015,13 +7081,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                 long&nbsp;seed)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#scalarOperations(org.apache.sysds.runtime.matrix.operators.ScalarOperator,org.apache.sysds.runtime.matrix.data.MatrixValue)">scalarOperations</a></span>&#8203;(<a href="../../operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
                 <a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#seqOperations(double,double,double)">seqOperations</a></span>&#8203;(double&nbsp;from,
              double&nbsp;to,
@@ -7030,14 +7096,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Method to generate a sequence according to the given parameters.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#seqOperationsInPlace(double,double,double)">seqOperationsInPlace</a></span>&#8203;(double&nbsp;from,
                     double&nbsp;to,
                     double&nbsp;incr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#slice(int,int)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru)</code></th>
@@ -7045,14 +7111,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Slice out a row block</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#slice(int,int,boolean)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
      boolean&nbsp;deep)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#slice(int,int,int,int)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -7060,7 +7126,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
      int&nbsp;cu)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#slice(int,int,int,int,boolean)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -7071,7 +7137,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Slice out a row block</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#slice(int,int,int,int,boolean,org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -7083,7 +7149,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Method to perform rightIndex operation for a given lower and upper bounds in row and column dimensions.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#slice(int,int,int,int,org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">slice</a></span>&#8203;(int&nbsp;rl,
      int&nbsp;ru,
@@ -7092,13 +7158,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
      <a href="../../../controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#slice(org.apache.sysds.runtime.util.IndexRange,org.apache.sysds.runtime.matrix.data.MatrixBlock)">slice</a></span>&#8203;(<a href="../../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
      <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#sort(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D,boolean,boolean)">sort</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
     <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
@@ -7107,7 +7173,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
     boolean&nbsp;ixret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#sort(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D,boolean,boolean,int)">sort</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
     <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
@@ -7117,30 +7183,30 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
     int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#sortOperations()">sortOperations</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#sortOperations(org.apache.sysds.runtime.matrix.data.MatrixValue)">sortOperations</a></span>&#8203;(<a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;weights)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#sortOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixBlock)">sortOperations</a></span>&#8203;(<a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;weights,
               <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#sortOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">sortOperations</a></span>&#8203;(<a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;weights,
               <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
               int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#ternaryOperations(org.apache.sysds.runtime.matrix.operators.TernaryOperator,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">ternaryOperations</a></span>&#8203;(<a href="../../operators/TernaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">TernaryOperator</a>&nbsp;op,
                  <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -7148,37 +7214,37 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                  <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">CTableMap.</span><code><span class="memberNameLink"><a href="../CTableMap.html#toMatrixBlock(int,int)">toMatrixBlock</a></span>&#8203;(int&nbsp;rlen,
              int&nbsp;clen)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#transpose(org.apache.sysds.runtime.matrix.data.MatrixBlock)">transpose</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#transpose(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">transpose</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
          int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#transpose(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">transpose</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
          <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#transpose(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">transpose</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
          <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
          int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#transpose(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,boolean)">transpose</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
          <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
@@ -7186,26 +7252,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          boolean&nbsp;allowCSR)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixReorg.</span><code><span class="memberNameLink"><a href="../LibMatrixReorg.html#transposeInPlace(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">transposeInPlace</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                 int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#transposeSelfMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.lops.MMTSJ.MMTSJType)">transposeSelfMatrixMultOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
                                  <a href="../../../../lops/MMTSJ.MMTSJType.html" title="enum in org.apache.sysds.lops">MMTSJ.MMTSJType</a>&nbsp;tstype)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#transposeSelfMatrixMultOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.lops.MMTSJ.MMTSJType,int)">transposeSelfMatrixMultOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
                                  <a href="../../../../lops/MMTSJ.MMTSJType.html" title="enum in org.apache.sysds.lops">MMTSJ.MMTSJType</a>&nbsp;tstype,
                                  int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#uaggouterchainOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.BinaryOperator,org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">uaggouterchainOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mbLeft,
                         <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mbRight,
@@ -7214,19 +7280,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                         <a href="../../operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;uaggOp)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibCommonsMath.</span><code><span class="memberNameLink"><a href="../LibCommonsMath.html#unaryOperations(org.apache.sysds.runtime.matrix.data.MatrixBlock,java.lang.String)">unaryOperations</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;inj,
                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;opcode)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#unaryOperations(org.apache.sysds.runtime.matrix.operators.UnaryOperator,org.apache.sysds.runtime.matrix.data.MatrixValue)">unaryOperations</a></span>&#8203;(<a href="../../operators/UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
                <a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#zeroOutOperations(org.apache.sysds.runtime.matrix.data.MatrixValue,org.apache.sysds.runtime.util.IndexRange,boolean)">zeroOutOperations</a></span>&#8203;(<a href="../MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result,
                  <a href="../../../util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
@@ -7378,8 +7444,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock)">append</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;that)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">append</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>[]&nbsp;that,
       <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+      boolean&nbsp;cbind)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../MatrixBlock.html#append(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">append</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;that,
       boolean&nbsp;cbind)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -8014,7 +8091,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>static int</code></td>
+<td class="colFirst"><code>static <a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">LibMatrixCountDistinct.</span><code><span class="memberNameLink"><a href="../LibMatrixCountDistinct.html#estimateDistinctValues(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.CountDistinctOperator)">estimateDistinctValues</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                       <a href="../../operators/CountDistinctOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">CountDistinctOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
@@ -9058,7 +9135,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixSketch.</span><code><span class="memberNameLink"><a href="../sketch/MatrixSketch.html#getMatrixValue(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">getMatrixValue</a></span>&#8203;(<a href="../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;blkIn)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixSketch.</span><code><span class="memberNameLink"><a href="../sketch/MatrixSketch.html#getValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getValue</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</code></th>
+<td class="colLast">
+<div class="block">Get scalar distinct count from an input matrix block.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixSketch.</span><code><span class="memberNameLink"><a href="../sketch/MatrixSketch.html#getValueFromSketch(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">getValueFromSketch</a></span>&#8203;(<a href="../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;blkIn)</code></th>
 <td class="colLast">
 <div class="block">Obtain matrix distinct count value from estimation Used for estimating distinct in rows or columns.</div>
 </td>
@@ -9077,14 +9161,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code><a href="../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixSketch.</span><code><span class="memberNameLink"><a href="../sketch/MatrixSketch.html#create(org.apache.sysds.runtime.matrix.data.MatrixBlock)">create</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</code></th>
 <td class="colLast">
-<div class="block">Create a initial sketch of a given block.</div>
+<div class="block">Create an initial sketch of a given block.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../sketch/MatrixSketch.html" title="type parameter in MatrixSketch">T</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixSketch.</span><code><span class="memberNameLink"><a href="../sketch/MatrixSketch.html#getScalarValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getScalarValue</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</code></th>
+<td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixSketch.</span><code><span class="memberNameLink"><a href="../sketch/MatrixSketch.html#getValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getValue</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</code></th>
 <td class="colLast">
-<div class="block">Get scalar distinct count from a input matrix block.</div>
+<div class="block">Get scalar distinct count from an input matrix block.</div>
 </td>
 </tr>
 </tbody>
@@ -9106,7 +9190,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">KMVSketch.</span><code><span class="memberNameLink"><a href="../sketch/countdistinctapprox/KMVSketch.html#getMatrixValue(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">getMatrixValue</a></span>&#8203;(<a href="../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;arg0)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">KMVSketch.</span><code><span class="memberNameLink"><a href="../sketch/countdistinctapprox/KMVSketch.html#getValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getValue</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">KMVSketch.</span><code><span class="memberNameLink"><a href="../sketch/countdistinctapprox/KMVSketch.html#getValueFromSketch(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">getValueFromSketch</a></span>&#8203;(<a href="../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;arg0)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -9125,8 +9214,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Integer.html?is-external=true" title="class or interface in java.lang" class="externalLink">Integer</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">KMVSketch.</span><code><span class="memberNameLink"><a href="../sketch/countdistinctapprox/KMVSketch.html#getScalarValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getScalarValue</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in)</code></th>
+<td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">KMVSketch.</span><code><span class="memberNameLink"><a href="../sketch/countdistinctapprox/KMVSketch.html#getValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getValue</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

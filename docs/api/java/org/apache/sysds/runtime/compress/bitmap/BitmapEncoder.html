@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9};
+var data = {"i0":9,"i1":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -186,6 +186,14 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="block">Generate uncompressed bitmaps for a set of columns in an uncompressed matrix block.</div>
 </td>
 </tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>static <a href="ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#extractBitmap(int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock,int,org.apache.sysds.runtime.compress.CompressionSettings)">extractBitmap</a></span>&#8203;(int[]&nbsp;colIndices,
+             <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawBlock,
+             int&nbsp;estimatedNumberOfUniques,
+             <a href="../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -229,6 +237,18 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="extractBitmap(int[],org.apache.sysds.runtime.matrix.data.MatrixBlock,int,org.apache.sysds.runtime.compress.CompressionSettings)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>extractBitmap</h4>
+<pre class="methodSignature">public static&nbsp;<a href="ABitmap.html" title="class in org.apache.sysds.runtime.compress.bitmap">ABitmap</a>&nbsp;extractBitmap&#8203;(int[]&nbsp;colIndices,
+                                    <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawBlock,
+                                    int&nbsp;estimatedNumberOfUniques,
+                                    <a href="../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</pre>
+</li>
+</ul>
 <a id="extractBitmap(int[],org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int,boolean)">
 <!--   -->
 </a>

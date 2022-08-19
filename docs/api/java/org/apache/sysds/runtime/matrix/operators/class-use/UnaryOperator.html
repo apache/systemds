@@ -240,6 +240,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUncompressed.html#unaryOperation(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">unaryOperation</a></span>&#8203;(<a href="../UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code>static double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUtils.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUtils.html#unaryOperator(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double%5B%5D)">unaryOperator</a></span>&#8203;(<a href="../UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+             double[]&nbsp;reference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -277,6 +283,36 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#applyUnaryOp(org.apache.sysds.runtime.matrix.operators.UnaryOperator)">applyUnaryOp</a></span>&#8203;(<a href="../UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#applyUnaryOpAndAppend(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double,int)">applyUnaryOpAndAppend</a></span>&#8203;(<a href="../UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                     double&nbsp;v0,
+                     int&nbsp;nCol)</code></th>
+<td class="colLast">
+<div class="block">Allocate a new dictionary with one extra row and apply the unary operator on each cell.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#applyUnaryOpAndAppend(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double,int)">applyUnaryOpAndAppend</a></span>&#8203;(<a href="../UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                     double&nbsp;v0,
+                     int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#applyUnaryOpAndAppend(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double,int)">applyUnaryOpAndAppend</a></span>&#8203;(<a href="../UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                     double&nbsp;v0,
+                     int&nbsp;nCol)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#applyUnaryOpAndAppend(org.apache.sysds.runtime.matrix.operators.UnaryOperator,double,int)">applyUnaryOpAndAppend</a></span>&#8203;(<a href="../UnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">UnaryOperator</a>&nbsp;op,
+                     double&nbsp;v0,
+                     int&nbsp;nCol)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">

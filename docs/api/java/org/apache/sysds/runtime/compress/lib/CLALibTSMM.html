@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9};
+var data = {"i0":9,"i1":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -176,6 +176,14 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addCorrectionLayer(double%5B%5D,double%5B%5D,int,double%5B%5D)">addCorrectionLayer</a></span>&#8203;(double[]&nbsp;constV,
+                  double[]&nbsp;correctedSum,
+                  int&nbsp;nRow,
+                  double[]&nbsp;ret)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#leftMultByTransposeSelf(org.apache.sysds.runtime.compress.CompressedMatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByTransposeSelf</a></span>&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
                        <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret,
                        int&nbsp;k)</code></th>
@@ -231,7 +239,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <a id="leftMultByTransposeSelf(org.apache.sysds.runtime.compress.CompressedMatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>leftMultByTransposeSelf</h4>
 <pre class="methodSignature">public static&nbsp;void&nbsp;leftMultByTransposeSelf&#8203;(<a href="../CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;cmb,
@@ -246,6 +254,18 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>ret</code> - The output matrix to put the result into</dd>
 <dd><code>k</code> - The parallelization degree allowed</dd>
 </dl>
+</li>
+</ul>
+<a id="addCorrectionLayer(double[],double[],int,double[])">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>addCorrectionLayer</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;addCorrectionLayer&#8203;(double[]&nbsp;constV,
+                                      double[]&nbsp;correctedSum,
+                                      int&nbsp;nRow,
+                                      double[]&nbsp;ret)</pre>
 </li>
 </ul>
 </li>

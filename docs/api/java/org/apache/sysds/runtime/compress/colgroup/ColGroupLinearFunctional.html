@@ -370,8 +370,9 @@ extends <a href="AColGroupCompressed.html" title="class in org.apache.sysds.runt
 </tr>
 <tr id="i25" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">
 <div class="block">Left side matrix multiplication with a column group that is transposed.</div>
 </td>
@@ -391,9 +392,7 @@ extends <a href="AColGroupCompressed.html" title="class in org.apache.sysds.runt
 <tr id="i27" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#readFields(java.io.DataInput)">readFields</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)</code></th>
-<td class="colLast">
-<div class="block">Deserialize column group from data input.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
@@ -415,7 +414,8 @@ extends <a href="AColGroupCompressed.html" title="class in org.apache.sysds.runt
 </tr>
 <tr id="i30" class="altColor">
 <td class="colFirst"><code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></span>&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                 int[]&nbsp;allCols)</code></th>
 <td class="colLast">
 <div class="block">Right matrix multiplication with this column group.</div>
 </td>
@@ -458,9 +458,7 @@ extends <a href="AColGroupCompressed.html" title="class in org.apache.sysds.runt
 <tr id="i36" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
-<td class="colLast">
-<div class="block">Serializes column group to data output.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -468,14 +466,14 @@ extends <a href="AColGroupCompressed.html" title="class in org.apache.sysds.runt
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a></h3>
-<code><a href="AColGroupCompressed.html#preAggRows(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator)">preAggRows</a>, <a href="AColGroupCompressed.html#tsmm(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">tsmm</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int)">unaryAggregateOperations</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int,double%5B%5D)">unaryAggregateOperations</a></code></li>
+<code><a href="AColGroupCompressed.html#isEmpty()">isEmpty</a>, <a href="AColGroupCompressed.html#preAggRows(org.apache.sysds.runtime.functionobjects.ValueFunction)">preAggRows</a>, <a href="AColGroupCompressed.html#tsmm(org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">tsmm</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int)">unaryAggregateOperations</a>, <a href="AColGroupCompressed.html#unaryAggregateOperations(org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator,double%5B%5D,int,int,int,double%5B%5D)">unaryAggregateOperations</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.AColGroup">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></h3>
-<code><a href="AColGroup.html#colSum(java.util.List,double%5B%5D,int)">colSum</a>, <a href="AColGroup.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int)">decompressToDenseBlock</a>, <a href="AColGroup.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int)">decompressToSparseBlock</a>, <a href="AColGroup.html#get(int,int)">get</a>, <a href="AColGroup.html#getColIndices()">getColIndices</a>, <a href="AColGroup.html#getNumCols()">getNumCols</a>, <a href="AColGroup.html#shiftColIndices(int)">shiftColIndices</a>, <a href="AColGroup.html#sliceColumn(int)">sliceColumn</a>, <a href="AColGroup.html#sliceColumns(int,int)">sliceColumns</a></code></li>
+<code><a href="AColGroup.html#colSum(java.util.Collection,double%5B%5D,int)">colSum</a>, <a href="AColGroup.html#decompressToDenseBlock(org.apache.sysds.runtime.data.DenseBlock,int,int)">decompressToDenseBlock</a>, <a href="AColGroup.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int)">decompressToSparseBlock</a>, <a href="AColGroup.html#get(int,int)">get</a>, <a href="AColGroup.html#getColIndices()">getColIndices</a>, <a href="AColGroup.html#getNumCols()">getNumCols</a>, <a href="AColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a>, <a href="AColGroup.html#shiftColIndices(int)">shiftColIndices</a>, <a href="AColGroup.html#sliceColumn(int)">sliceColumn</a>, <a href="AColGroup.html#sliceColumns(int,int)">sliceColumns</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -799,22 +797,24 @@ extends <a href="AColGroupCompressed.html" title="class in org.apache.sysds.runt
 </dl>
 </li>
 </ul>
-<a id="rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<a id="rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int[])">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>rightMultByMatrix</h4>
-<pre class="methodSignature">public&nbsp;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;rightMultByMatrix&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">AColGroup</a></code></span></div>
+<pre class="methodSignature">public&nbsp;<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;rightMultByMatrix&#8203;(<a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                                   int[]&nbsp;allCols)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">AColGroup</a></code></span></div>
 <div class="block">Right matrix multiplication with this column group.
  
  This method can return null, meaning that the output overlapping group would have been empty.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="AColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></code>&nbsp;in class&nbsp;<code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
+<dd><code><a href="AColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></code>&nbsp;in class&nbsp;<code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>right</code> - The MatrixBlock on the right of this matrix multiplication</dd>
+<dd><code>allCols</code> - A pre-materialized list of all col indexes, that can be shared across all column groups if use full, can be set to null.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The new Column Group or null that is the result of the matrix multiplication.</dd>
 </dl>
@@ -859,23 +859,25 @@ extends <a href="AColGroupCompressed.html" title="class in org.apache.sysds.runt
 </dl>
 </li>
 </ul>
-<a id="leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<a id="leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>leftMultByAColGroup</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;leftMultByAColGroup&#8203;(<a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                                <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">AColGroup</a></code></span></div>
+                                <a href="../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                                int&nbsp;nRows)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">AColGroup</a></code></span></div>
 <div class="block">Left side matrix multiplication with a column group that is transposed.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="AColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></code>&nbsp;in class&nbsp;<code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
+<dd><code><a href="AColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></code>&nbsp;in class&nbsp;<code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>lhs</code> - The left hand side Column group to multiply with, the left hand side should be considered
-               transposed.</dd>
+               transposed. Also it should be guaranteed that this column group is not empty.</dd>
 <dd><code>result</code> - The result matrix to insert the result of the multiplication into</dd>
+<dd><code>nRows</code> - Number of rows in the lhs colGroup</dd>
 </dl>
 </li>
 </ul>
@@ -1003,15 +1005,9 @@ extends <a href="AColGroupCompressed.html" title="class in org.apache.sysds.runt
 <h4>readFields</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;readFields&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in)
                 throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#readFields(java.io.DataInput)">AColGroup</a></code></span></div>
-<div class="block">Deserialize column group from data input.</div>
 <dl>
-<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="AColGroup.html#readFields(java.io.DataInput)">readFields</a></code>&nbsp;in class&nbsp;<code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>in</code> - data input</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -1023,15 +1019,9 @@ extends <a href="AColGroupCompressed.html" title="class in org.apache.sysds.runt
 <h4>write</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;write&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)
            throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AColGroup.html#write(java.io.DataOutput)">AColGroup</a></code></span></div>
-<div class="block">Serializes column group to data output.</div>
 <dl>
-<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="AColGroup.html#write(java.io.DataOutput)">write</a></code>&nbsp;in class&nbsp;<code><a href="AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>out</code> - data output</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code> - if IOException occurs</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/IOException.html?is-external=true" title="class or interface in java.io" class="externalLink">IOException</a></code></dd>
 </dl>
 </li>
 </ul>

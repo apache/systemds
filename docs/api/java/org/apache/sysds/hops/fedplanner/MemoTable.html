@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -240,13 +240,18 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </td>
 </tr>
 <tr id="i9" class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSize()">getSize</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hasFederatedOutputAlternative(org.apache.sysds.hops.Hop)">hasFederatedOutputAlternative</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root)</code></th>
 <td class="colLast">
 <div class="block">Checks if any of the federated execution alternatives for the given root hop has federated output.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#put(org.apache.sysds.hops.Hop,java.util.List)">put</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root,
    <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../cost/HopRel.html" title="class in org.apache.sysds.hops.cost">HopRel</a>&gt;&nbsp;hopRels)</code></th>
@@ -254,7 +259,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="block">Memoize hopRels related to given root.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -464,6 +469,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <h4>getHopRel</h4>
 <pre class="methodSignature">public&nbsp;<a href="../cost/HopRel.html" title="class in org.apache.sysds.hops.cost">HopRel</a>&nbsp;getHopRel&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;root,
                         <a href="FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&nbsp;fType)</pre>
+</li>
+</ul>
+<a id="getSize()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getSize</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getSize()</pre>
 </li>
 </ul>
 <a id="toString()">

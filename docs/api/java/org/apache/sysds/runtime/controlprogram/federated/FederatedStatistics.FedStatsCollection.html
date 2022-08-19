@@ -167,28 +167,38 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Triple&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/LocalDateTime.html?is-external=true" title="class or interface in java.time" class="externalLink">LocalDateTime</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&gt;&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/TrafficModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">TrafficModel</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#coordinatorsTrafficBytes">coordinatorsTrafficBytes</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>double</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cpuUsage">cpuUsage</a></span></code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html?is-external=true" title="class or interface in java.util" class="externalLink">HashMap</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html?is-external=true" title="class or interface in java.lang" class="externalLink">Double</a>&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#heavyHitters">heavyHitters</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>double</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#jitCompileTime">jitCompileTime</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="monitoring/models/UtilizationModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">UtilizationModel</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#utilization">utilization</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="altColor">
-<td class="colFirst"><code>double</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#memoryUsage">memoryUsage</a></span></code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">DataObjectModel</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#workerDataObjects">workerDataObjects</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventModel</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#workerEvents">workerEvents</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#workerRequests">workerRequests</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -268,22 +278,13 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <pre>public&nbsp;double jitCompileTime</pre>
 </li>
 </ul>
-<a id="cpuUsage">
+<a id="utilization">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>cpuUsage</h4>
-<pre>public&nbsp;double cpuUsage</pre>
-</li>
-</ul>
-<a id="memoryUsage">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>memoryUsage</h4>
-<pre>public&nbsp;double memoryUsage</pre>
+<h4>utilization</h4>
+<pre>public&nbsp;<a href="monitoring/models/UtilizationModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">UtilizationModel</a> utilization</pre>
 </li>
 </ul>
 <a id="heavyHitters">
@@ -298,10 +299,37 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <a id="coordinatorsTrafficBytes">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>coordinatorsTrafficBytes</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Triple&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/LocalDateTime.html?is-external=true" title="class or interface in java.time" class="externalLink">LocalDateTime</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&gt;&gt; coordinatorsTrafficBytes</pre>
+<pre>public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/TrafficModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">TrafficModel</a>&gt; coordinatorsTrafficBytes</pre>
+</li>
+</ul>
+<a id="workerEvents">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>workerEvents</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventModel</a>&gt; workerEvents</pre>
+</li>
+</ul>
+<a id="workerDataObjects">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>workerDataObjects</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">DataObjectModel</a>&gt; workerDataObjects</pre>
+</li>
+</ul>
+<a id="workerRequests">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>workerRequests</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt; workerRequests</pre>
 </li>
 </ul>
 </li>

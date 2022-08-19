@@ -210,11 +210,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></span></code></th>
-<td class="colLast">
-<div class="block">Base class for column groups encoded with value dictionary.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictBasedColGroup</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../AMorphingMMColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a></span></code></th>
 <td class="colLast">
@@ -222,11 +225,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  reasons but instead transforms into another type of column group type to perform that operation.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../APreAgg.html" title="class in org.apache.sysds.runtime.compress.colgroup">APreAgg</a></span></code></th>
 <td class="colLast">
 <div class="block">Abstract class for all the column groups that use preAggregation for Left matrix multiplications.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="../ASDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ASDC</a></span></code></th>
+<td class="colLast">
+<div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
 <tr class="rowColor">
@@ -606,8 +616,24 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDeltaDDC.</span><code><span class="memberNameLink"><a href="../ColGroupDeltaDDC.html#create(int%5B%5D,int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndices,
-      int&nbsp;numRows,
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDC.</span><code><span class="memberNameLink"><a href="../ColGroupDDC.html#create(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndexes,
+      <a href="../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDCFOR.</span><code><span class="memberNameLink"><a href="../ColGroupDDCFOR.html#create(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D,double%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndexes,
+      <a href="../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts,
+      double[]&nbsp;reference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDeltaDDC.</span><code><span class="memberNameLink"><a href="../ColGroupDeltaDDC.html#create(int%5B%5D,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndices,
       <a href="../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
       <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
       int[]&nbsp;cachedCounts)</code></th>
@@ -624,6 +650,57 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDC.</span><code><span class="memberNameLink"><a href="../ColGroupSDC.html#create(int%5B%5D,int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndices,
+      int&nbsp;numRows,
+      <a href="../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      double[]&nbsp;defaultTuple,
+      <a href="../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;offsets,
+      <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCFOR.</span><code><span class="memberNameLink"><a href="../ColGroupSDCFOR.html#create(int%5B%5D,int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D,double%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndexes,
+      int&nbsp;numRows,
+      <a href="../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;offsets,
+      <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts,
+      double[]&nbsp;reference)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCSingle.</span><code><span class="memberNameLink"><a href="../ColGroupSDCSingle.html#create(int%5B%5D,int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,double%5B%5D,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndexes,
+      int&nbsp;numRows,
+      <a href="../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      double[]&nbsp;defaultTuple,
+      <a href="../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;offsets,
+      int[]&nbsp;cachedCounts)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCSingleZeros.</span><code><span class="memberNameLink"><a href="../ColGroupSDCSingleZeros.html#create(int%5B%5D,int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndices,
+      int&nbsp;numRows,
+      <a href="../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;offsets,
+      int[]&nbsp;cachedCounts)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCZeros.</span><code><span class="memberNameLink"><a href="../ColGroupSDCZeros.html#create(int%5B%5D,int,org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary,org.apache.sysds.runtime.compress.colgroup.offset.AOffset,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData,int%5B%5D)">create</a></span>&#8203;(int[]&nbsp;colIndices,
+      int&nbsp;numRows,
+      <a href="../dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;dict,
+      <a href="../offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a>&nbsp;offsets,
+      <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data,
+      int[]&nbsp;cachedCounts)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../ColGroupUncompressed.html#create(int%5B%5D,org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean)">create</a></span>&#8203;(int[]&nbsp;colIndexes,
       <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawBlock,
       boolean&nbsp;transposed)</code></th>
@@ -631,10 +708,17 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Main constructor for Uncompressed ColGroup.</div>
 </td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../ColGroupUncompressed.html#create(org.apache.sysds.runtime.matrix.data.MatrixBlock)">create</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="rowColor">
 <td class="colFirst"><code>abstract <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AMorphingMMColGroup.</span><code><span class="memberNameLink"><a href="../AMorphingMMColGroup.html#extractCommon(double%5B%5D)">extractCommon</a></span>&#8203;(double[]&nbsp;constV)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">extract common value from group and return non morphing group</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
@@ -813,35 +897,42 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>abstract <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colFirst"><code><a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../AColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
 <td class="colLast">
 <div class="block">Right matrix multiplication with this column group.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupValue.</span><code><span class="memberNameLink"><a href="../AColGroupValue.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colFirst"><code>abstract <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../AColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                 int[]&nbsp;allCols)</code></th>
+<td class="colLast">
+<div class="block">Right matrix multiplication with this column group.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../ColGroupConst.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictBasedColGroup.</span><code><span class="memberNameLink"><a href="../ADictBasedColGroup.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                 int[]&nbsp;allCols)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../ColGroupEmpty.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../ColGroupEmpty.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                 int[]&nbsp;allCols)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../ColGroupLinearFunctional.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../ColGroupLinearFunctional.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                 int[]&nbsp;allCols)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../ColGroupUncompressed.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock)">rightMultByMatrix</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../ColGroupUncompressed.html#rightMultByMatrix(org.apache.sysds.runtime.matrix.data.MatrixBlock,int%5B%5D)">rightMultByMatrix</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right,
+                 int[]&nbsp;allCols)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -939,6 +1030,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDC.</span><code><span class="memberNameLink"><a href="../ColGroupDDC.html#sparsifyFOR()">sparsifyFOR</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDCFOR.</span><code><span class="memberNameLink"><a href="../ColGroupDDCFOR.html#sparsifyFOR(org.apache.sysds.runtime.compress.colgroup.ColGroupDDC)">sparsifyFOR</a></span>&#8203;(<a href="../ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a>&nbsp;g)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDC.</span><code><span class="memberNameLink"><a href="../ColGroupSDC.html#sparsifyFOR()">sparsifyFOR</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDCFOR.</span><code><span class="memberNameLink"><a href="../ColGroupSDCFOR.html#sparsifyFOR(org.apache.sysds.runtime.compress.colgroup.ColGroupSDC)">sparsifyFOR</a></span>&#8203;(<a href="../ColGroupSDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDC</a>&nbsp;g)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupSDC.</span><code><span class="memberNameLink"><a href="../ColGroupSDC.html#subtractDefaultTuple()">subtractDefaultTuple</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -1024,6 +1135,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../ColGroupFactory.html#compressColGroups(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,org.apache.sysds.runtime.compress.CompressionSettings)">compressColGroups</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                 <a href="../../estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
+                 <a href="../../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
+<td class="colLast">
+<div class="block">The actual compression method, that handles the logic of compressing multiple columns together.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../ColGroupFactory.html#compressColGroups(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,org.apache.sysds.runtime.compress.CompressionSettings,int)">compressColGroups</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                  <a href="../../estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
                  <a href="../../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
@@ -1032,7 +1152,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">The actual compression method, that handles the logic of compressing multiple columns together.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../ColGroupFactory.html#compressColGroups(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.compress.estim.CompressedSizeInfo,org.apache.sysds.runtime.compress.CompressionSettings,org.apache.sysds.runtime.compress.cost.ACostEstimate,int)">compressColGroups</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                  <a href="../../estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
@@ -1041,7 +1161,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                  int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupIO.</span><code><span class="memberNameLink"><a href="../ColGroupIO.html#readGroups(java.io.DataInput,int)">readGroups</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataInput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataInput</a>&nbsp;in,
           int&nbsp;nRows)</code></th>
@@ -1060,62 +1180,67 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUtils.</span><code><span class="memberNameLink"><a href="../ColGroupUtils.html#copyValuesColGroupMatrixBlocks(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.data.MatrixBlock)">copyValuesColGroupMatrixBlocks</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                              <a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;rhs,
+                              <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;tmpResult,
+                              <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<td class="colLast">
+<div class="block">Copy values from tmpResult into correct positions of result (according to colIndexes in lhs and rhs)</div>
+</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../AColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../AColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">
 <div class="block">Left side matrix multiplication with a column group that is transposed.</div>
 </td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AMorphingMMColGroup.</span><code><span class="memberNameLink"><a href="../AMorphingMMColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">AMorphingMMColGroup.</span><code><span class="memberNameLink"><a href="../AMorphingMMColGroup.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">APreAgg.</span><code><span class="memberNameLink"><a href="../APreAgg.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">APreAgg.</span><code><span class="memberNameLink"><a href="../APreAgg.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../ColGroupConst.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../ColGroupConst.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../ColGroupEmpty.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;c,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../ColGroupEmpty.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;c)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../ColGroupLinearFunctional.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../ColGroupLinearFunctional.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../ColGroupUncompressed.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock,int)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                   int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupOLE.</span><code><span class="memberNameLink"><a href="../ColGroupOLE.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../ColGroupRLE.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../ColGroupUncompressed.html#leftMultByAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">leftMultByAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
-                   <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../AColGroup.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
@@ -1125,49 +1250,37 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  1.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AMorphingMMColGroup.</span><code><span class="memberNameLink"><a href="../AMorphingMMColGroup.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">APreAgg.</span><code><span class="memberNameLink"><a href="../APreAgg.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../ColGroupConst.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../ColGroupEmpty.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../ColGroupLinearFunctional.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
              <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupOLE.</span><code><span class="memberNameLink"><a href="../ColGroupOLE.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
-             <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 <tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../ColGroupRLE.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;other,
-             <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../ColGroupUncompressed.html#tsmmAColGroup(org.apache.sysds.runtime.compress.colgroup.AColGroup,org.apache.sysds.runtime.matrix.data.MatrixBlock)">tsmmAColGroup</a></span>&#8203;(<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
              <a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code></th>
@@ -1185,7 +1298,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static double[]</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../AColGroup.html#colSum(java.util.List,double%5B%5D,int)">colSum</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;groups,
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../AColGroup.html#colSum(java.util.Collection,double%5B%5D,int)">colSum</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Collection.html?is-external=true" title="class or interface in java.util" class="externalLink">Collection</a>&lt;<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;groups,
       double[]&nbsp;res,
       int&nbsp;nRows)</code></th>
 <td class="colLast">
@@ -1201,8 +1314,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupIO.</span><code><span class="memberNameLink"><a href="../ColGroupIO.html#writeGroups(java.io.DataOutput,java.util.List)">writeGroups</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out,
-           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupIO.</span><code><span class="memberNameLink"><a href="../ColGroupIO.html#writeGroups(java.io.DataOutput,java.util.Collection)">writeGroups</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out,
+           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Collection.html?is-external=true" title="class or interface in java.util" class="externalLink">Collection</a>&lt;<a href="../AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code></th>
 <td class="colLast">
 <div class="block">Writes the ColGroups out to the DataOutput.</div>
 </td>

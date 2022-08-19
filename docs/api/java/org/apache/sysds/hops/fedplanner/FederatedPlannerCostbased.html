@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -199,6 +199,15 @@ extends <a href="AFederatedPlanner.html" title="class in org.apache.sysds.hops.f
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">rewriteFunctionDynamic</a></span>&#8203;(<a href="../../parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&nbsp;function,
+                      <a href="../../runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;funcArgs)</code></th>
+<td class="colLast">
+<div class="block">Selects a federated execution plan for the given function, taking into account
+ federation types of the arguments.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rewriteProgram(org.apache.sysds.parser.DMLProgram,org.apache.sysds.hops.ipa.FunctionCallGraph,org.apache.sysds.hops.ipa.FunctionCallSizeInfo)">rewriteProgram</a></span>&#8203;(<a href="../../parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
               <a href="../ipa/FunctionCallGraph.html" title="class in org.apache.sysds.hops.ipa">FunctionCallGraph</a>&nbsp;fgraph,
               <a href="../ipa/FunctionCallSizeInfo.html" title="class in org.apache.sysds.hops.ipa">FunctionCallSizeInfo</a>&nbsp;fcallSizes)</code></th>
@@ -207,13 +216,27 @@ extends <a href="AFederatedPlanner.html" title="class in org.apache.sysds.hops.f
  by setting the forced execution type.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../../parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rewriteStatementBlock(org.apache.sysds.parser.DMLProgram,org.apache.sysds.parser.StatementBlock,java.util.Map)">rewriteStatementBlock</a></span>&#8203;(<a href="../../parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
                      <a href="../../parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb,
                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;paramMap)</code></th>
 <td class="colLast">
 <div class="block">Estimates cost and enumerates federated execution plans in hopRelMemo.</div>
+</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setFinalFedouts()">setFinalFedouts</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Set final fedouts of all hops starting from terminal hops.</div>
+</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#updateExplain()">updateExplain</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Add hopRelMemo to Explain class to get explain info related to federated enumeration.</div>
 </td>
 </tr>
 </table>
@@ -290,6 +313,26 @@ extends <a href="AFederatedPlanner.html" title="class in org.apache.sysds.hops.f
 </dl>
 </li>
 </ul>
+<a id="rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>rewriteFunctionDynamic</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;rewriteFunctionDynamic&#8203;(<a href="../../parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&nbsp;function,
+                                   <a href="../../runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;funcArgs)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AFederatedPlanner.html#rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">AFederatedPlanner</a></code></span></div>
+<div class="block">Selects a federated execution plan for the given function, taking into account
+ federation types of the arguments.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="AFederatedPlanner.html#rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">rewriteFunctionDynamic</a></code>&nbsp;in class&nbsp;<code><a href="AFederatedPlanner.html" title="class in org.apache.sysds.hops.fedplanner">AFederatedPlanner</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>function</code> - The function statement block to recompile.</dd>
+<dd><code>funcArgs</code> - The function arguments.</dd>
+</dl>
+</li>
+</ul>
 <a id="rewriteStatementBlock(org.apache.sysds.parser.DMLProgram,org.apache.sysds.parser.StatementBlock,java.util.Map)">
 <!--   -->
 </a>
@@ -311,6 +354,16 @@ extends <a href="AFederatedPlanner.html" title="class in org.apache.sysds.hops.f
 </dl>
 </li>
 </ul>
+<a id="setFinalFedouts()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setFinalFedouts</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setFinalFedouts()</pre>
+<div class="block">Set final fedouts of all hops starting from terminal hops.</div>
+</li>
+</ul>
 <a id="getAllCombinations(java.util.List)">
 <!--   -->
 </a>
@@ -323,13 +376,23 @@ extends <a href="AFederatedPlanner.html" title="class in org.apache.sysds.hops.f
 <a id="buildCombinations(java.util.List,java.util.List,int,java.util.List)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>buildCombinations</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;buildCombinations&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&gt;&gt;&nbsp;validFTypes,
                               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&gt;&gt;&nbsp;result,
                               int&nbsp;currentIndex,
                               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="FTypes.FType.html" title="enum in org.apache.sysds.hops.fedplanner">FTypes.FType</a>&gt;&nbsp;currentResult)</pre>
+</li>
+</ul>
+<a id="updateExplain()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>updateExplain</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;updateExplain()</pre>
+<div class="block">Add hopRelMemo to Explain class to get explain info related to federated enumeration.</div>
 </li>
 </ul>
 </li>

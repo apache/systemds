@@ -175,14 +175,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>static <a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getModelFromBody(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request)">getModelFromBody</a></span>&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request)</code></th>
+<td class="colFirst"><code>static &lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;<br>T</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getModelFromBody(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request,java.lang.Class)">getModelFromBody</a></span>&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request,
+                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;classType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>static <a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mapEntityToModel(java.sql.ResultSet,org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum)">mapEntityToModel</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/ResultSet.html?is-external=true" title="class or interface in java.sql" class="externalLink">ResultSet</a>&nbsp;resultSet,
-                <a href="../repositories/EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;targetModel)</code></th>
+<td class="colFirst"><code>static &lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;<br>T</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mapResultToModel(java.sql.ResultSet,java.lang.Class)">mapResultToModel</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/ResultSet.html?is-external=true" title="class or interface in java.sql" class="externalLink">ResultSet</a>&nbsp;resultSet,
+                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;classType)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -228,23 +229,24 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="getModelFromBody(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Request)">
+<a id="getModelFromBody(org.apache.sysds.runtime.controlprogram.federated.monitoring.Request,java.lang.Class)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getModelFromBody</h4>
-<pre class="methodSignature">public static&nbsp;<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;getModelFromBody&#8203;(<a href="../models/Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">Request</a>&nbsp;request)</pre>
+<pre class="methodSignature">public static&nbsp;&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;&nbsp;T&nbsp;getModelFromBody&#8203;(<a href="../Request.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring">Request</a>&nbsp;request,
+                                                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;classType)</pre>
 </li>
 </ul>
-<a id="mapEntityToModel(java.sql.ResultSet,org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum)">
+<a id="mapResultToModel(java.sql.ResultSet,java.lang.Class)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>mapEntityToModel</h4>
-<pre class="methodSignature">public static&nbsp;<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;mapEntityToModel&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/ResultSet.html?is-external=true" title="class or interface in java.sql" class="externalLink">ResultSet</a>&nbsp;resultSet,
-                                               <a href="../repositories/EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;targetModel)</pre>
+<h4>mapResultToModel</h4>
+<pre class="methodSignature">public static&nbsp;&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;&nbsp;T&nbsp;mapResultToModel&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/ResultSet.html?is-external=true" title="class or interface in java.sql" class="externalLink">ResultSet</a>&nbsp;resultSet,
+                                                       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;classType)</pre>
 </li>
 </ul>
 </li>

@@ -529,7 +529,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <li class="blockList">
 <h4>genUncompressedCompressedMatrixBlock</h4>
 <pre class="methodSignature">public static&nbsp;<a href="CompressedMatrixBlock.html" title="class in org.apache.sysds.runtime.compress">CompressedMatrixBlock</a>&nbsp;genUncompressedCompressedMatrixBlock&#8203;(<a href="../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb)</pre>
-<div class="block">Generate a CompressedMatrixBlock Object that contains a single uncompressed matrix block column group.</div>
+<div class="block">Generate a CompressedMatrixBlock Object that contains a single uncompressed matrix block column group. Note this
+ could be an empty colgroup if the input is empty.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>mb</code> - The matrix block to be contained in the uncompressed matrix block column,</dd>

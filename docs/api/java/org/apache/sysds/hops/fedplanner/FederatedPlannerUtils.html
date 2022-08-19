@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9};
+var data = {"i0":9,"i1":9,"i2":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -133,6 +133,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <hr>
 <pre>public class <span class="typeNameLabel">FederatedPlannerUtils</span>
 extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a></pre>
+<div class="block">Utility class for federated planners.</div>
 </li>
 </ul>
 </div>
@@ -184,11 +185,22 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getTransientInputs(org.apache.sysds.hops.Hop,java.util.Map,java.util.Map)">getTransientInputs</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;currentHop,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getTransientInputs(org.apache.sysds.hops.Hop,java.util.Map,java.util.Map,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">getTransientInputs</a></span>&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;currentHop,
                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;paramMap,
-                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;transientWrites)</code></th>
+                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;transientWrites,
+                  <a href="../../runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;localVariableMap)</code></th>
 <td class="colLast">
 <div class="block">Get transient inputs from either paramMap or transientWrites.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mapFunctionOutputs(org.apache.sysds.hops.FunctionOp,org.apache.sysds.parser.FunctionStatement,java.util.Map)">mapFunctionOutputs</a></span>&#8203;(<a href="../FunctionOp.html" title="class in org.apache.sysds.hops">FunctionOp</a>&nbsp;sbHop,
+                  <a href="../../parser/FunctionStatement.html" title="class in org.apache.sysds.parser">FunctionStatement</a>&nbsp;funcStatement,
+                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;transientWrites)</code></th>
+<td class="colLast">
+<div class="block">Saves the HOPs (TWrite) of the function return values for
+ the variable name used when calling the function.</div>
 </td>
 </tr>
 </table>
@@ -234,7 +246,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="getTransientInputs(org.apache.sysds.hops.Hop,java.util.Map,java.util.Map)">
+<a id="getTransientInputs(org.apache.sysds.hops.Hop,java.util.Map,java.util.Map,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -242,7 +254,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <h4>getTransientInputs</h4>
 <pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ArrayList.html?is-external=true" title="class or interface in java.util" class="externalLink">ArrayList</a>&lt;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;getTransientInputs&#8203;(<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;currentHop,
                                                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;paramMap,
-                                                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;transientWrites)</pre>
+                                                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;transientWrites,
+                                                <a href="../../runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;localVariableMap)</pre>
 <div class="block">Get transient inputs from either paramMap or transientWrites.
  Inputs from paramMap has higher priority than inputs from transientWrites.</div>
 <dl>
@@ -250,6 +263,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>currentHop</code> - hop for which inputs are read from maps</dd>
 <dd><code>paramMap</code> - of local parameters</dd>
 <dd><code>transientWrites</code> - map of transient writes</dd>
+<dd><code>localVariableMap</code> - map of local variables</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>inputs of currentHop</dd>
 </dl>
@@ -258,7 +272,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <a id="getParamMap(org.apache.sysds.hops.FunctionOp)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getParamMap</h4>
 <pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;getParamMap&#8203;(<a href="../FunctionOp.html" title="class in org.apache.sysds.hops">FunctionOp</a>&nbsp;funcOp)</pre>
@@ -269,6 +283,32 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>funcOp</code> - hop for which the mapping of parameter names to input hops are made</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>parameter map or empty map if function has no parameters</dd>
+</dl>
+</li>
+</ul>
+<a id="mapFunctionOutputs(org.apache.sysds.hops.FunctionOp,org.apache.sysds.parser.FunctionStatement,java.util.Map)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>mapFunctionOutputs</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;mapFunctionOutputs&#8203;(<a href="../FunctionOp.html" title="class in org.apache.sysds.hops">FunctionOp</a>&nbsp;sbHop,
+                                      <a href="../../parser/FunctionStatement.html" title="class in org.apache.sysds.parser">FunctionStatement</a>&nbsp;funcStatement,
+                                      <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html?is-external=true" title="class or interface in java.util" class="externalLink">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;transientWrites)</pre>
+<div class="block">Saves the HOPs (TWrite) of the function return values for
+ the variable name used when calling the function.
+
+ Example:
+ <code>
+     f = function() return (matrix[double] model) {a = rand(1, 1);}
+     b = f();
+ </code>
+ This function saves the HOP writing to <code>a</code> for identifier <code>b</code>.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>sbHop</code> - The <code>FunctionOp</code> for the call</dd>
+<dd><code>funcStatement</code> - The <code>FunctionStatement</code> of the called function</dd>
+<dd><code>transientWrites</code> - map of transient writes</dd>
 </dl>
 </li>
 </ul>

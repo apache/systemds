@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":6};
+var data = {"i0":6,"i1":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -180,6 +180,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">rewriteFunctionDynamic</a></span>&#8203;(<a href="../../parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&nbsp;function,
+                      <a href="../../runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;funcArgs)</code></th>
+<td class="colLast">
+<div class="block">Selects a federated execution plan for the given function, taking into account
+ federation types of the arguments.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rewriteProgram(org.apache.sysds.parser.DMLProgram,org.apache.sysds.hops.ipa.FunctionCallGraph,org.apache.sysds.hops.ipa.FunctionCallSizeInfo)">rewriteProgram</a></span>&#8203;(<a href="../../parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
               <a href="../ipa/FunctionCallGraph.html" title="class in org.apache.sysds.hops.ipa">FunctionCallGraph</a>&nbsp;fgraph,
               <a href="../ipa/FunctionCallSizeInfo.html" title="class in org.apache.sysds.hops.ipa">FunctionCallSizeInfo</a>&nbsp;fcallSizes)</code></th>
@@ -234,7 +243,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <a id="rewriteProgram(org.apache.sysds.parser.DMLProgram,org.apache.sysds.hops.ipa.FunctionCallGraph,org.apache.sysds.hops.ipa.FunctionCallSizeInfo)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>rewriteProgram</h4>
 <pre class="methodSignature">public abstract&nbsp;void&nbsp;rewriteProgram&#8203;(<a href="../../parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
@@ -247,6 +256,23 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>prog</code> - dml program</dd>
 <dd><code>fgraph</code> - function call graph</dd>
 <dd><code>fcallSizes</code> - function call graph sizes</dd>
+</dl>
+</li>
+</ul>
+<a id="rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>rewriteFunctionDynamic</h4>
+<pre class="methodSignature">public abstract&nbsp;void&nbsp;rewriteFunctionDynamic&#8203;(<a href="../../parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&nbsp;function,
+                                            <a href="../../runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;funcArgs)</pre>
+<div class="block">Selects a federated execution plan for the given function, taking into account
+ federation types of the arguments.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>function</code> - The function statement block to recompile.</dd>
+<dd><code>funcArgs</code> - The function arguments.</dd>
 </dl>
 </li>
 </ul>

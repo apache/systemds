@@ -185,21 +185,29 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/AColGroupValue.html#org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></th>
-<td class="colLast">
-<div class="block">Base class for column groups encoded with value dictionary.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/ADictBasedColGroup.html#org.apache.sysds.runtime.compress.colgroup">ADictBasedColGroup</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/AMorphingMMColGroup.html#org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a></th>
 <td class="colLast">
 <div class="block">Abstract class for column group types that do not perform matrix Multiplication, and decompression for performance
  reasons but instead transforms into another type of column group type to perform that operation.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="class-use/APreAgg.html#org.apache.sysds.runtime.compress.colgroup">APreAgg</a></th>
 <td class="colLast">
 <div class="block">Abstract class for all the column groups that use preAggregation for Left matrix multiplications.</div>
+</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="class-use/ASDC.html#org.apache.sysds.runtime.compress.colgroup">ASDC</a></th>
+<td class="colLast">
+<div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
 <tr class="rowColor">
@@ -217,12 +225,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<th class="colFirst" scope="row"><a href="class-use/ColGroupSDCSingleZeros.html#org.apache.sysds.runtime.compress.colgroup">ColGroupSDCSingleZeros</a></th>
+<th class="colFirst" scope="row"><a href="class-use/ColGroupSDC.html#org.apache.sysds.runtime.compress.colgroup">ColGroupSDC</a></th>
 <td class="colLast">
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="class-use/ColGroupSDCSingleZeros.html#org.apache.sysds.runtime.compress.colgroup">ColGroupSDCSingleZeros</a></th>
+<td class="colLast">
+<div class="block">Column group that sparsely encodes the dictionary values.</div>
+</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="class-use/ColGroupSDCZeros.html#org.apache.sysds.runtime.compress.colgroup">ColGroupSDCZeros</a></th>
 <td class="colLast">
 <div class="block">Column group that sparsely encodes the dictionary values.</div>

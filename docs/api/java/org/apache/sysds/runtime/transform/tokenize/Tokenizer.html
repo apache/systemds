@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -89,13 +89,13 @@ loadScripts(document, 'script');</script>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
+<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
 <li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
+<li><a href="#field.detail">Field</a>&nbsp;|&nbsp;</li>
 <li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
@@ -148,6 +148,29 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
+<!-- =========== FIELD SUMMARY =========== -->
+<section role="region">
+<ul class="blockList">
+<li class="blockList"><a id="field.summary">
+<!--   -->
+</a>
+<h3>Field Summary</h3>
+<table class="memberSummary">
+<caption><span>Fields</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Field</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#TOKENIZE_NUM_BLOCKS">TOKENIZE_NUM_BLOCKS</a></span></code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</table>
+</li>
+</ul>
+</section>
 <!-- ========== METHOD SUMMARY =========== -->
 <section role="region">
 <ul class="blockList">
@@ -163,24 +186,56 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allocateInternalRepresentation(int)">allocateInternalRepresentation</a></span>&#8203;(int&nbsp;numDocuments)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code><a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#apply(org.apache.sysds.runtime.matrix.data.FrameBlock,int)">apply</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out,
+     int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#build(org.apache.sysds.runtime.matrix.data.FrameBlock,int)">build</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+     int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getBuildTasks(org.apache.sysds.runtime.matrix.data.FrameBlock)">getBuildTasks</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMaxNumRows(int)">getMaxNumRows</a></span>&#8203;(int&nbsp;inRows)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumCols()">getNumCols</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i1" class="rowColor">
-<td class="colFirst"><code>long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumRows(long)">getNumRows</a></span>&#8203;(long&nbsp;inRows)</code></th>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumRowsEstimate()">getNumRowsEstimate</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSchema()">getSchema</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenize</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
-        <a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenize</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code><a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock,int)">tokenize</a></span>&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+        int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -200,6 +255,25 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <div class="details">
 <ul class="blockList">
 <li class="blockList">
+<!-- ============ FIELD DETAIL =========== -->
+<section role="region">
+<ul class="blockList">
+<li class="blockList"><a id="field.detail">
+<!--   -->
+</a>
+<h3>Field Detail</h3>
+<a id="TOKENIZE_NUM_BLOCKS">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>TOKENIZE_NUM_BLOCKS</h4>
+<pre>public static final&nbsp;int TOKENIZE_NUM_BLOCKS</pre>
+</li>
+</ul>
+</li>
+</ul>
+</section>
 <!-- ============ METHOD DETAIL ========== -->
 <section role="region">
 <ul class="blockList">
@@ -216,13 +290,22 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <pre class="methodSignature">public&nbsp;<a href="../../../common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;getSchema()</pre>
 </li>
 </ul>
-<a id="getNumRows(long)">
+<a id="getMaxNumRows(int)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getNumRows</h4>
-<pre class="methodSignature">public&nbsp;long&nbsp;getNumRows&#8203;(long&nbsp;inRows)</pre>
+<h4>getMaxNumRows</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getMaxNumRows&#8203;(int&nbsp;inRows)</pre>
+</li>
+</ul>
+<a id="getNumRowsEstimate()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getNumRowsEstimate</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getNumRowsEstimate()</pre>
 </li>
 </ul>
 <a id="getNumCols()">
@@ -234,14 +317,61 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <pre class="methodSignature">public&nbsp;long&nbsp;getNumCols()</pre>
 </li>
 </ul>
-<a id="tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<a id="allocateInternalRepresentation(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>allocateInternalRepresentation</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;allocateInternalRepresentation&#8203;(int&nbsp;numDocuments)</pre>
+</li>
+</ul>
+<a id="tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>tokenize</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;tokenize&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</pre>
+</li>
+</ul>
+<a id="tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>tokenize</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;tokenize&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+                           int&nbsp;k)</pre>
+</li>
+</ul>
+<a id="apply(org.apache.sysds.runtime.matrix.data.FrameBlock,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>apply</h4>
+<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;apply&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out,
+                        int&nbsp;k)</pre>
+</li>
+</ul>
+<a id="getBuildTasks(org.apache.sysds.runtime.matrix.data.FrameBlock)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getBuildTasks</h4>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;&nbsp;getBuildTasks&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</pre>
+</li>
+</ul>
+<a id="build(org.apache.sysds.runtime.matrix.data.FrameBlock,int)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>tokenize</h4>
-<pre class="methodSignature">public&nbsp;<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;tokenize&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
-                           <a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</pre>
+<h4>build</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;build&#8203;(<a href="../../matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+                  int&nbsp;k)</pre>
 </li>
 </ul>
 </li>
@@ -297,13 +427,13 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
+<li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
 <li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
-<li>Field&nbsp;|&nbsp;</li>
+<li><a href="#field.detail">Field</a>&nbsp;|&nbsp;</li>
 <li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>

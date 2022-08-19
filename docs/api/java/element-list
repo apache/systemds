@@ -87,6 +87,8 @@ org.apache.sysds.runtime.transform.decode
 org.apache.sysds.runtime.transform.encode
 org.apache.sysds.runtime.transform.meta
 org.apache.sysds.runtime.transform.tokenize
+org.apache.sysds.runtime.transform.tokenize.applier
+org.apache.sysds.runtime.transform.tokenize.builder
 org.apache.sysds.runtime.util
 org.apache.sysds.utils
 org.apache.sysds.utils.stats

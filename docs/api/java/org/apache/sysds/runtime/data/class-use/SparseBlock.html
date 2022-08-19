@@ -226,7 +226,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupValue.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/AColGroupValue.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictBasedColGroup.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ADictBasedColGroup.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
                        int&nbsp;rl,
                        int&nbsp;ru,
                        int&nbsp;offR,
@@ -234,15 +234,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ColGroupConst.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;ret,
-                       int&nbsp;rl,
-                       int&nbsp;ru,
-                       int&nbsp;offR,
-                       int&nbsp;offC)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ColGroupEmpty.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
                        int&nbsp;rl,
@@ -251,7 +242,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                        int&nbsp;offC)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupLinearFunctional.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ColGroupLinearFunctional.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;ret,
                        int&nbsp;rl,
@@ -260,13 +251,24 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                        int&nbsp;offC)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ColGroupUncompressed.html#decompressToSparseBlock(org.apache.sysds.runtime.data.SparseBlock,int,int,int,int)">decompressToSparseBlock</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;ret,
                        int&nbsp;rl,
                        int&nbsp;ru,
                        int&nbsp;offR,
                        int&nbsp;offC)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUtils.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ColGroupUtils.html#outerProduct(double%5B%5D,org.apache.sysds.runtime.data.SparseBlock,int%5B%5D,double%5B%5D,int,int,int)">outerProduct</a></span>&#8203;(double[]&nbsp;leftRowSum,
+            <a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;rightColSum,
+            int[]&nbsp;colIdxRight,
+            double[]&nbsp;result,
+            int&nbsp;nColR,
+            int&nbsp;rl,
+            int&nbsp;ru)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -280,6 +282,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupDDC.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ColGroupDDC.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                  double[]&nbsp;preAgg,
+                  int&nbsp;rl,
+                  int&nbsp;ru)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupOLE.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ColGroupOLE.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
+                  double[]&nbsp;preAgg,
+                  int&nbsp;rl,
+                  int&nbsp;ru)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/ColGroupRLE.html#preAggregateSparse(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int)">preAggregateSparse</a></span>&#8203;(<a href="../SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
                   double[]&nbsp;preAgg,
                   int&nbsp;rl,
                   int&nbsp;ru)</code></th>

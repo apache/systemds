@@ -99,6 +99,31 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <table class="typeSummary">
+<caption><span>Interface Summary</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Interface</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="ColGroupIO.html" title="interface in org.apache.sysds.runtime.compress.colgroup">ColGroupIO</a></th>
+<td class="colLast">
+<div class="block">IO for ColGroups, it enables read and write ColGroups</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="ColGroupSizes.html" title="interface in org.apache.sysds.runtime.compress.colgroup">ColGroupSizes</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="ColGroupUtils.html" title="interface in org.apache.sysds.runtime.compress.colgroup">ColGroupUtils</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList">
+<table class="typeSummary">
 <caption><span>Class Summary</span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Class</th>
@@ -125,21 +150,29 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <th class="colFirst" scope="row"><a href="AColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupValue</a></th>
-<td class="colLast">
-<div class="block">Base class for column groups encoded with value dictionary.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<th class="colFirst" scope="row"><a href="ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictBasedColGroup</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="AMorphingMMColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AMorphingMMColGroup</a></th>
 <td class="colLast">
 <div class="block">Abstract class for column group types that do not perform matrix Multiplication, and decompression for performance
  reasons but instead transforms into another type of column group type to perform that operation.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="APreAgg.html" title="class in org.apache.sysds.runtime.compress.colgroup">APreAgg</a></th>
 <td class="colLast">
 <div class="block">Abstract class for all the column groups that use preAggregation for Left matrix multiplications.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="ASDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ASDC</a></th>
+<td class="colLast">
+<div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
 <tr class="altColor">
@@ -180,76 +213,57 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </td>
 </tr>
 <tr class="rowColor">
-<th class="colFirst" scope="row"><a href="ColGroupIO.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupIO</a></th>
-<td class="colLast">
-<div class="block">This has the IO responsibility of ColGroups, such that it enables to read and write ColGroups to and from a DataInput
- and DataOutput</div>
-</td>
-</tr>
-<tr class="altColor">
 <th class="colFirst" scope="row"><a href="ColGroupLinearFunctional.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupLinearFunctional</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="ColGroupOLE.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupOLE</a></th>
 <td class="colLast">
 <div class="block">Class to encapsulate information about a column group that is encoded with simple lists of offsets for each set of
  distinct values.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="ColGroupRLE.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupRLE</a></th>
 <td class="colLast">
 <div class="block">A group of columns compressed with a single run-length encoded bitmap.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="ColGroupSDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDC</a></th>
 <td class="colLast">
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="ColGroupSDCFOR.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCFOR</a></th>
 <td class="colLast">
 <div class="block">ColGroup for Patched Frame Of Reference.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="ColGroupSDCSingle.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCSingle</a></th>
 <td class="colLast">
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="ColGroupSDCSingleZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCSingleZeros</a></th>
 <td class="colLast">
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="ColGroupSDCZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCZeros</a></th>
 <td class="colLast">
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="ColGroupSizes.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSizes</a></th>
-<td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <th class="colFirst" scope="row"><a href="ColGroupUncompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupUncompressed</a></th>
 <td class="colLast">
 <div class="block">Column group type for columns that are stored as dense arrays of doubles.</div>
 </td>
-</tr>
-<tr class="altColor">
-<th class="colFirst" scope="row"><a href="ColGroupUtils.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupUtils</a></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<th class="colFirst" scope="row"><a href="FORUtil.html" title="class in org.apache.sysds.runtime.compress.colgroup">FORUtil</a></th>
-<td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
 </table>

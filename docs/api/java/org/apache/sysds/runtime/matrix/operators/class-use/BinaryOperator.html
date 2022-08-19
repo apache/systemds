@@ -214,6 +214,28 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>static double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUtils.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUtils.html#binaryDefRowLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binaryDefRowLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                double[]&nbsp;v,
+                int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">
+<div class="block">Calculate the result of performing the binary operation on an empty row to the left
+ 
+ v op empty</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ColGroupUtils.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/ColGroupUtils.html#binaryDefRowRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binaryDefRowRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                 double[]&nbsp;v,
+                 int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">
+<div class="block">Calculate the result of performing the binary operation on an empty row to the right
+ 
+ empty op v</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/AColGroup.html#binaryRowOpLeft(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,boolean)">binaryRowOpLeft</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                double[]&nbsp;v,
@@ -436,7 +458,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
          double[]&nbsp;v,
          int[]&nbsp;colIndexes)</code></th>
 <td class="colLast">
-<div class="block">Apply binary row operation on the left side in place</div>
+<div class="block">Apply binary row operation on the left side</div>
 </td>
 </tr>
 <tr class="rowColor">
@@ -462,6 +484,36 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpLeftAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                  double[]&nbsp;v,
+                  int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">
+<div class="block">Apply binary row operation on the left side with one extra row evaluating with zeros.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpLeftAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                  double[]&nbsp;v,
+                  int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpLeftAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                  double[]&nbsp;v,
+                  int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#binOpLeftAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpLeftAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                  double[]&nbsp;v,
+                  int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                       double[]&nbsp;v,
                       int[]&nbsp;colIndexes,
@@ -481,7 +533,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#binOpLeftWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpLeftWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                       double[]&nbsp;v,
                       int[]&nbsp;colIndexes,
@@ -503,7 +555,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpRight(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D)">binOpRight</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
           double[]&nbsp;v)</code></th>
 <td class="colLast">
-<div class="block">Apply binary row operation on the right side.</div>
+<div class="block">Apply binary row operation on the right side as with no columns to extract from v.</div>
 </td>
 </tr>
 <tr class="rowColor">
@@ -556,6 +608,36 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpRightAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                   double[]&nbsp;v,
+                   int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">
+<div class="block">Apply binary row operation on the right side with one extra row evaluating with zeros.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/Dictionary.html#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpRightAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                   double[]&nbsp;v,
+                   int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpRightAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                   double[]&nbsp;v,
+                   int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/QDictionary.html#binOpRightAndAppend(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D)">binOpRightAndAppend</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
+                   double[]&nbsp;v,
+                   int[]&nbsp;colIndexes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>abstract <a href="../../../compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/ADictionary.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                        double[]&nbsp;v,
                        int[]&nbsp;colIndexes,
@@ -575,7 +657,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
+<td class="colFirst"><code><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">MatrixBlockDictionary</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../../compress/colgroup/dictionary/MatrixBlockDictionary.html#binOpRightWithReference(org.apache.sysds.runtime.matrix.operators.BinaryOperator,double%5B%5D,int%5B%5D,double%5B%5D,double%5B%5D)">binOpRightWithReference</a></span>&#8203;(<a href="../BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                        double[]&nbsp;v,
                        int[]&nbsp;colIndexes,

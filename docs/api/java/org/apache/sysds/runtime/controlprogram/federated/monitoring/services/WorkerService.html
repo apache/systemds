@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -175,28 +175,33 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel)">create</a></span>&#8203;(<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;model)</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel)">create</a></span>&#8203;(<a href="../models/WorkerModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">WorkerModel</a>&nbsp;model)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a></code></td>
+<td class="colFirst"><code><a href="../models/WorkerModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">WorkerModel</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#get(java.lang.Long)">get</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../models/WorkerModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">WorkerModel</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAll()">getAll</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#remove(java.lang.Long)">remove</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id)</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getWorkerOnlineStatus(java.lang.Long)">getWorkerOnlineStatus</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;workerId)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#update(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel)">update</a></span>&#8203;(<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;model)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#remove(java.lang.Long)">remove</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#update(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel)">update</a></span>&#8203;(<a href="../models/WorkerModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">WorkerModel</a>&nbsp;model)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -242,22 +247,22 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="create(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel)">
+<a id="create(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>create</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;create&#8203;(<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;model)</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;create&#8203;(<a href="../models/WorkerModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">WorkerModel</a>&nbsp;model)</pre>
 </li>
 </ul>
-<a id="update(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel)">
+<a id="update(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>update</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;update&#8203;(<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;model)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;update&#8203;(<a href="../models/WorkerModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">WorkerModel</a>&nbsp;model)</pre>
 </li>
 </ul>
 <a id="remove(java.lang.Long)">
@@ -275,16 +280,25 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>get</h4>
-<pre class="methodSignature">public&nbsp;<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;get&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id)</pre>
+<pre class="methodSignature">public&nbsp;<a href="../models/WorkerModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">WorkerModel</a>&nbsp;get&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id)</pre>
 </li>
 </ul>
 <a id="getAll()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getAll</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&gt;&nbsp;getAll()</pre>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../models/WorkerModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">WorkerModel</a>&gt;&nbsp;getAll()</pre>
+</li>
+</ul>
+<a id="getWorkerOnlineStatus(java.lang.Long)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getWorkerOnlineStatus</h4>
+<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&nbsp;getWorkerOnlineStatus&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;workerId)</pre>
 </li>
 </ul>
 </li>

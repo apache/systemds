@@ -183,7 +183,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>static int</code></td>
+<td class="colFirst"><code>static <a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#estimateDistinctValues(org.apache.sysds.runtime.matrix.data.MatrixBlock,org.apache.sysds.runtime.matrix.operators.CountDistinctOperator)">estimateDistinctValues</a></span>&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
                       <a href="../operators/CountDistinctOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">CountDistinctOperator</a>&nbsp;op)</code></th>
 <td class="colLast">
@@ -254,22 +254,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateDistinctValues</h4>
-<pre class="methodSignature">static&nbsp;int&nbsp;estimateDistinctValues&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
-                                  <a href="../operators/CountDistinctOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">CountDistinctOperator</a>&nbsp;op)</pre>
+<pre class="methodSignature">static&nbsp;<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;estimateDistinctValues&#8203;(<a href="MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                                          <a href="../operators/CountDistinctOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">CountDistinctOperator</a>&nbsp;op)</pre>
 <div class="block">Public method to count the number of distinct values inside a matrix. Depending on which CountDistinctOperator
  selected it either gets the absolute number or a estimated value.
  
  TODO: Support counting num distinct in rows, or columns axis.
- 
- TODO: Add support for distributed spark operations
- 
  TODO: If the MatrixBlock type is CompressedMatrix, simply read the values from the ColGroups.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - the input matrix to count number distinct values in</dd>
 <dd><code>op</code> - the selected operator to use</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the distinct count</dd>
+<dd>A matrix block containing the absolute distinct count for the entire input or along given row/col axis</dd>
 </dl>
 </li>
 </ul>

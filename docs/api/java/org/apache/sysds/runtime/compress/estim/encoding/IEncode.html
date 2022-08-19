@@ -212,11 +212,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#extractFacts(int%5B%5D,int,double,double)">extractFacts</a></span>&#8203;(int[]&nbsp;cols,
-            int&nbsp;nRows,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#extractFacts(int,double,double,org.apache.sysds.runtime.compress.CompressionSettings)">extractFacts</a></span>&#8203;(int&nbsp;nRows,
             double&nbsp;tupleSparsity,
-            double&nbsp;matrixSparsity)</code></th>
-<td class="colLast">&nbsp;</td>
+            double&nbsp;matrixSparsity,
+            <a href="../../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code></th>
+<td class="colLast">
+<div class="block">Extract the compression facts for this column group.</div>
+</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>int</code></td>
@@ -337,16 +339,26 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <pre class="methodSignature">int&nbsp;getUnique()</pre>
 </li>
 </ul>
-<a id="extractFacts(int[],int,double,double)">
+<a id="extractFacts(int,double,double,org.apache.sysds.runtime.compress.CompressionSettings)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>extractFacts</h4>
-<pre class="methodSignature"><a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;extractFacts&#8203;(int[]&nbsp;cols,
-                               int&nbsp;nRows,
+<pre class="methodSignature"><a href="../EstimationFactors.html" title="class in org.apache.sysds.runtime.compress.estim">EstimationFactors</a>&nbsp;extractFacts&#8203;(int&nbsp;nRows,
                                double&nbsp;tupleSparsity,
-                               double&nbsp;matrixSparsity)</pre>
+                               double&nbsp;matrixSparsity,
+                               <a href="../../CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</pre>
+<div class="block">Extract the compression facts for this column group.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>nRows</code> - The total number of rows</dd>
+<dd><code>tupleSparsity</code> - The Sparsity of the unique tuples</dd>
+<dd><code>matrixSparsity</code> - The matrix sparsity</dd>
+<dd><code>cs</code> - The compression settings</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A EstimationFactors object</dd>
+</dl>
 </li>
 </ul>
 <a id="isDense()">

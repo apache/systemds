@@ -44,6 +44,7 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.VariableOp
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 
+// TODO: merge with `CastFEDInstruction`
 public class VariableFEDInstruction extends FEDInstruction implements LineageTraceable {
 	private static final Log LOG = LogFactory.getLog(VariableFEDInstruction.class.getName());
 

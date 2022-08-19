@@ -46,8 +46,10 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.IndexingSPInstruction;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 
@@ -78,6 +80,16 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 			(int) (ec.getScalarInput(rowUpper).getLongValue() - 1),
 			(int) (ec.getScalarInput(colLower).getLongValue() - 1),
 			(int) (ec.getScalarInput(colUpper).getLongValue() - 1));
+	}
+
+	public static IndexingFEDInstruction parseInstruction(IndexingCPInstruction instr) {
+		return new IndexingFEDInstruction(instr.input1, instr.input2, instr.getRowLower(), instr.getRowUpper(),
+			instr.getColLower(), instr.getColUpper(), instr.output, instr.getOpcode(), instr.getInstructionString());
+	}
+
+	public static IndexingFEDInstruction parseInstruction(IndexingSPInstruction instr) {
+		return new IndexingFEDInstruction(instr.input1, instr.input2, instr.getRowLower(), instr.getRowUpper(),
+			instr.getColLower(), instr.getColUpper(), instr.output, instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static IndexingFEDInstruction parseInstruction(String str) {

@@ -33,6 +33,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.TernaryCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.TernarySPInstruction;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
@@ -42,6 +44,16 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 	protected TernaryFEDInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 		String opcode, String str, FederatedOutput fedOut) {
 		super(FEDInstruction.FEDType.Ternary, op, in1, in2, in3, out, opcode, str, fedOut);
+	}
+
+	public static TernaryFEDInstruction parseInstruction(TernaryCPInstruction instr) {
+		return new TernaryFEDInstruction((TernaryOperator) instr.getOperator(), instr.input1, instr.input2,
+			instr.input3, instr.output, instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
+	}
+
+	public static TernaryFEDInstruction parseInstruction(TernarySPInstruction instr) {
+		return new TernaryFEDInstruction((TernaryOperator) instr.getOperator(), instr.input1, instr.input2,
+				instr.input3, instr.output, instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
 	}
 
 	public static TernaryFEDInstruction parseInstruction(String str) {

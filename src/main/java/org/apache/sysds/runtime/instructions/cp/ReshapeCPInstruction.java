@@ -113,4 +113,20 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 		return Pair.of(output.getName(), new LineageItem(getOpcode(),
 			LineageItemUtils.getLineage(ec, input1, _opRows, _opCols, _opDims, _opByRow)));
 	}
+
+	public CPOperand getOpRows() {
+		return _opRows;
+	}
+
+	public CPOperand getOpCols() {
+		return _opCols;
+	}
+
+	public CPOperand getOpDims() {
+		return _opDims;
+	}
+
+	public CPOperand getOpByRow() {
+		return _opByRow;
+	}
 }

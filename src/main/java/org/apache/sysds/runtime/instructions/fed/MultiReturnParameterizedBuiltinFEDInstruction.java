@@ -50,6 +50,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -64,16 +66,28 @@ import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
-	protected final ArrayList<CPOperand> _outputs;
+	protected final List<CPOperand> _outputs;
 
 	private MultiReturnParameterizedBuiltinFEDInstruction(Operator op, CPOperand input1, CPOperand input2,
-		ArrayList<CPOperand> outputs, String opcode, String istr) {
+		List<CPOperand> outputs, String opcode, String istr) {
 		super(FEDType.MultiReturnParameterizedBuiltin, op, input1, input2, null, opcode, istr);
 		_outputs = outputs;
 	}
 
 	public CPOperand getOutput(int i) {
 		return _outputs.get(i);
+	}
+
+	public static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
+		MultiReturnParameterizedBuiltinCPInstruction instr) {
+		return new MultiReturnParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.input1, instr.input2,
+			instr.getOutputs(), instr.getOpcode(), instr.getInstructionString());
+	}
+
+	public static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
+			MultiReturnParameterizedBuiltinSPInstruction instr) {
+		return new MultiReturnParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.input1, instr.input2,
+				instr.getOutputs(), instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(String str) {

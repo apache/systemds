@@ -40,13 +40,10 @@ import scala.Tuple2;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class AppendGSPInstruction extends BinarySPInstruction {
-	private boolean _cbind = true;
-
+public class AppendGSPInstruction extends AppendSPInstruction {
 	private AppendGSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand offset, CPOperand offset2,
-			CPOperand out, boolean cbind, String opcode, String istr) {
-		super(SPType.GAppend, op, in1, in2, out, opcode, istr);
-		_cbind = cbind;
+		CPOperand out, boolean cbind, String opcode, String istr) {
+		super(SPType.GAppend, op, in1, in2, out, cbind, opcode, istr);
 	}
 
 	public static AppendGSPInstruction parseInstruction ( String str ) {

@@ -135,5 +135,5 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 				}
 			ec.setMatrixOutput(output.getName(), out);
 		}
-	}	
+	}
 }

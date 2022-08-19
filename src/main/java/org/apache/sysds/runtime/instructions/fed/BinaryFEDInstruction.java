@@ -104,7 +104,7 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 				" and " + in2.getName() + " must produce a matrix, which " + out.getName() + " is not");
 	}
 
-	private static String rewriteSparkInstructionToCP(String inst_str) {
+	protected static String rewriteSparkInstructionToCP(String inst_str) {
 		// rewrite the spark instruction to a cp instruction
 		inst_str = inst_str.replace(ExecType.SPARK.name(), ExecType.CP.name());
 		inst_str = inst_str.replace(Lop.OPERAND_DELIMITOR + "map", Lop.OPERAND_DELIMITOR);

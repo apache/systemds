@@ -33,6 +33,8 @@ import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
@@ -59,6 +61,18 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 	protected QuaternaryWSLossFEDInstruction(Operator operator, CPOperand in1, CPOperand in2, CPOperand in3,
 		CPOperand in4, CPOperand out, String opcode, String instruction_str) {
 		super(FEDType.Quaternary, operator, in1, in2, in3, in4, out, opcode, instruction_str);
+	}
+
+	public static QuaternaryWSLossFEDInstruction parseInstruction(QuaternaryCPInstruction instr) {
+		return new QuaternaryWSLossFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.input3,
+			instr.getInput4(), instr.output, instr.getOpcode(), instr.getInstructionString());
+	}
+
+	public static QuaternaryWSLossFEDInstruction parseInstruction(QuaternarySPInstruction instr) {
+		String instrStr = rewriteSparkInstructionToCP(instr.getInstructionString());
+		String opcode = InstructionUtils.getInstructionPartsWithValueType(instrStr)[0];
+		return new QuaternaryWSLossFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.input3,
+				instr.getInput4(), instr.output, opcode, instrStr);
 	}
 
 	@Override

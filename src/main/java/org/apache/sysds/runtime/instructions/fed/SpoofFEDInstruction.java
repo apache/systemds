@@ -50,6 +50,8 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.cp.SpoofCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.SpoofSPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
@@ -65,6 +67,17 @@ public class SpoofFEDInstruction extends FEDInstruction
 		_op = op;
 		_inputs = in;
 		_output = out;
+	}
+
+	public static SpoofFEDInstruction parseInstruction(SpoofCPInstruction instr) {
+		return new SpoofFEDInstruction(instr.getSpoofOperator(), instr.getInputs(), instr.getOutput(),
+			instr.getOpcode(), instr.getInstructionString());
+	}
+
+	public static SpoofFEDInstruction parseInstruction(SpoofSPInstruction instr) {
+		SpoofOperator op = CodegenUtils.createInstance(instr.getOperatorClass());
+		return new SpoofFEDInstruction(op, instr.getInputs(), instr.getOutput(), instr.getOpcode(),
+			instr.getInstructionString());
 	}
 
 	public static SpoofFEDInstruction parseInstruction(String str) {
@@ -482,6 +495,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 	}
 
 	public static boolean isFederated(ExecutionContext ec, CPOperand[] inputs, Class<?> scla) {
+		// TODO: use the `SpoofOperator` instead of the `Class<?>`, as it is more robust to inheritance hierarchy change
 		return isFederated(ec, null, inputs, scla);
 	}
 

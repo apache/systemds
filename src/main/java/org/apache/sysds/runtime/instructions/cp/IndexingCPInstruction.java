@@ -56,6 +56,22 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 			(int)(ec.getScalarInput(colUpper).getLongValue()-1));
 	}
 
+	public CPOperand getRowLower() {
+		return rowLower;
+	}
+
+	public CPOperand getRowUpper() {
+		return rowUpper;
+	}
+
+	public CPOperand getColLower() {
+		return colLower;
+	}
+
+	public CPOperand getColUpper() {
+		return colUpper;
+	}
+
 	public static IndexingCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];

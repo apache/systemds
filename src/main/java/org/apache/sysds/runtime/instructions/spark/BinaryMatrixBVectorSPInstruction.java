@@ -24,12 +24,12 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-public class BinaryMatrixBVectorSPInstruction extends BinarySPInstruction {
+public class BinaryMatrixBVectorSPInstruction extends BinaryMatrixMatrixSPInstruction {
 	private VectorType _vtype = null;
 
 	protected BinaryMatrixBVectorSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			VectorType vtype, String opcode, String istr) {
-		super(SPType.Binary, op, in1, in2, out, opcode, istr);
+		super(op, in1, in2, out, opcode, istr);
 		_vtype = vtype;
 	}
 

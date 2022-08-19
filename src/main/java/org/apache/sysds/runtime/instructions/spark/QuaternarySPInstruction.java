@@ -323,6 +323,10 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		}
 	}
 
+	public CPOperand getInput4() {
+		return _input4;
+	}
+
 	private abstract static class RDDQuaternaryBaseFunction implements Serializable
 	{
 		private static final long serialVersionUID = -3175397651350954930L;

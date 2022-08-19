@@ -36,7 +36,9 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.spark.AggregateBinarySPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
@@ -52,7 +54,17 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 		String opcode, String istr, FederatedOutput fedOut) {
 		super(FEDType.AggregateBinary, op, in1, in2, out, opcode, istr, fedOut);
 	}
-	
+
+	public static AggregateBinaryFEDInstruction parseInstruction(AggregateBinaryCPInstruction instr) {
+		return new AggregateBinaryFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
+			instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
+	}
+
+	public static AggregateBinaryFEDInstruction parseInstruction(AggregateBinarySPInstruction instr) {
+		return new AggregateBinaryFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
+				instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
+	}
+
 	public static AggregateBinaryFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];

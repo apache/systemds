@@ -33,8 +33,10 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -64,6 +66,17 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr)
 	{
 		super(FEDType.AggregateUnary, op, in1, in2, in3, out, opcode, istr);
+	}
+
+	public static AggregateUnaryFEDInstruction parseInstruction(AggregateUnaryCPInstruction instr) {
+		return new AggregateUnaryFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.input3,
+			instr.output, instr.getOpcode(), instr.getInstructionString());
+	}
+
+	public static AggregateUnaryFEDInstruction parseInstruction(AggregateUnarySPInstruction instr) {
+		// TODO: during processing the NONE-flag of AggregateUnarySPInstruction (SparkAggType) will be removed, making the instruction unparseable
+		return new AggregateUnaryFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.input3,
+			instr.output, instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static AggregateUnaryFEDInstruction parseInstruction(String str) {

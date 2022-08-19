@@ -272,4 +272,12 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		//default reblock w/ active lineage tracing
 		return super.getLineageItem(ec);
 	}
+
+	public int getBlockLength() {
+		return blen;
+	}
+
+	public boolean getOutputEmptyBlocks() {
+		return outputEmptyBlocks;
+	}
 }

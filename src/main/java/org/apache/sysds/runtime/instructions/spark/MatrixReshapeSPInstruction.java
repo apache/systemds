@@ -127,7 +127,19 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}
 	}
-	
+
+	public CPOperand getOpRows() {
+		return _opRows;
+	}
+
+	public CPOperand getOpCols() {
+		return _opCols;
+	}
+
+	public CPOperand getOpByRow() {
+		return _opByRow;
+	}
+
 	private static class RDDReshapeFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock>
 	{
 		private static final long serialVersionUID = 2819309412002224478L;

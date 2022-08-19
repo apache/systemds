@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class TsmmFEDInstruction extends BinaryFEDInstruction {
@@ -49,7 +50,12 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 	public TsmmFEDInstruction(CPOperand in, CPOperand out, MMTSJType type, int k, String opcode, String istr) {
 		this(in, out, type, k, opcode, istr, FederatedOutput.NONE);
 	}
-	
+
+	public static TsmmFEDInstruction parseInstruction(MMTSJCPInstruction instr) {
+		return new TsmmFEDInstruction(instr.input1, instr.getOutput(), instr.getMMTSJType(), instr.getNumThreads(),
+			instr.getOpcode(), instr.getInstructionString());
+	}
+
 	public static TsmmFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];

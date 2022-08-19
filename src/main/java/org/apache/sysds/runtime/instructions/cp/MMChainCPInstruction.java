@@ -41,6 +41,10 @@ public class MMChainCPInstruction extends UnaryCPInstruction {
 		return _type;
 	}
 
+	public int getNumThreads() {
+		return _numThreads;
+	}
+
 	public static MMChainCPInstruction parseInstruction ( String str ) {
 		//parse instruction parts (without exec type)
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );

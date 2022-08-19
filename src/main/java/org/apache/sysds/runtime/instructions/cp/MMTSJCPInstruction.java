@@ -70,4 +70,8 @@ public class MMTSJCPInstruction extends UnaryCPInstruction {
 	{
 		return _type;
 	}
+
+	public int getNumThreads() {
+		return _numThreads;
+	}
 }

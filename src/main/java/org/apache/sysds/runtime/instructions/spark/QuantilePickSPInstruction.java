@@ -235,7 +235,11 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 				pos + " in block of size " + tmp.getNumRows()+"x"+tmp.getNumColumns());
 		return val.get(0).quickGetValue((int)pos, 0);
 	}
-	
+
+	public OperationTypes getOperationType() {
+		return _type;
+	}
+
 	private static class FilterFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> 
 	{
 		private static final long serialVersionUID = -8249102381116157388L;

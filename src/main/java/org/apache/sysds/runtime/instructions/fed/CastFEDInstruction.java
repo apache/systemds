@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.spark.CastSPInstruction;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
@@ -46,6 +47,11 @@ public class CastFEDInstruction extends UnaryFEDInstruction {
 
 	private CastFEDInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
 		super(FEDInstruction.FEDType.Cast, op, in, out, opcode, istr);
+	}
+
+	public static CastFEDInstruction parseInstruction(CastSPInstruction spInstruction) {
+		return new CastFEDInstruction(spInstruction.getOperator(), spInstruction.input1, spInstruction.output,
+			spInstruction.getOpcode(), spInstruction.getInstructionString());
 	}
 
 	public static CastFEDInstruction parseInstruction ( String str ) {

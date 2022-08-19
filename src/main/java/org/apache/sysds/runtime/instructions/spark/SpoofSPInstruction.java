@@ -354,6 +354,10 @@ public class SpoofSPInstruction extends SPInstruction {
 		}
 	}
 
+	public CPOperand getOutput() {
+		return _out;
+	}
+
 	private static class SpoofFunction implements Serializable
 	{
 		private static final long serialVersionUID = 2953479427746463003L;

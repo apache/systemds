@@ -47,6 +47,8 @@ import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.ReorgSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -62,6 +64,16 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 
 	public ReorgFEDInstruction(Operator op, CPOperand in1, CPOperand out, String opcode, String istr) {
 		super(FEDType.Reorg, op, in1, out, opcode, istr);
+	}
+
+	public static ReorgFEDInstruction parseInstruction(ReorgCPInstruction rinst) {
+		return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.output, rinst.getOpcode(),
+			rinst.getInstructionString(), FederatedOutput.NONE);
+	}
+
+	public static ReorgFEDInstruction parseInstruction(ReorgSPInstruction rinst) {
+		return new ReorgFEDInstruction(rinst.getOperator(), rinst.input1, rinst.output, rinst.getOpcode(),
+			rinst.getInstructionString(), FederatedOutput.NONE);
 	}
 
 	public static ReorgFEDInstruction parseInstruction ( String str ) {

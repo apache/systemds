@@ -31,7 +31,10 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class QuaternaryWUMMFEDInstruction extends QuaternaryFEDInstruction {
@@ -53,6 +56,18 @@ public class QuaternaryWUMMFEDInstruction extends QuaternaryFEDInstruction {
 	protected QuaternaryWUMMFEDInstruction(Operator operator, CPOperand in1, CPOperand in2, CPOperand in3,
 		CPOperand out, String opcode, String instruction_str) {
 		super(FEDType.Quaternary, operator, in1, in2, in3, out, opcode, instruction_str);
+	}
+
+	public static QuaternaryWUMMFEDInstruction parseInstruction(QuaternaryCPInstruction instr) {
+		return new QuaternaryWUMMFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.input3,
+			instr.output, instr.getOpcode(), instr.getInstructionString());
+	}
+
+	public static QuaternaryWUMMFEDInstruction parseInstruction(QuaternarySPInstruction instr) {
+		String instrStr = rewriteSparkInstructionToCP(instr.getInstructionString());
+		String opcode = InstructionUtils.getInstructionPartsWithValueType(instrStr)[0];
+		return new QuaternaryWUMMFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.input3,
+			instr.output, opcode, instrStr);
 	}
 
 	@Override

@@ -47,7 +47,7 @@ import scala.Tuple2;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-public class RmmSPInstruction extends BinarySPInstruction {
+public class RmmSPInstruction extends AggregateBinarySPInstruction {
 
 	private RmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(SPType.RMM, op, in1, in2, out, opcode, istr);

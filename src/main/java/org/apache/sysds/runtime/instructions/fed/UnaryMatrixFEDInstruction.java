@@ -36,6 +36,8 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.UnaryMatrixCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -49,6 +51,16 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 
 	public static boolean isValidOpcode(String opcode) {
 		return !LibCommonsMath.isSupportedUnaryOperation(opcode);
+	}
+
+	public static UnaryMatrixFEDInstruction parseInstruction(UnaryMatrixCPInstruction instr) {
+		return new UnaryMatrixFEDInstruction(instr.getOperator(), instr.input1, instr.output, instr.getOpcode(),
+			instr.getInstructionString());
+	}
+
+	public static UnaryMatrixFEDInstruction parseInstruction(UnaryMatrixSPInstruction instr) {
+		return new UnaryMatrixFEDInstruction(instr.getOperator(), instr.input1, instr.output, instr.getOpcode(),
+			instr.getInstructionString());
 	}
 
 	public static UnaryMatrixFEDInstruction parseInstruction(String str) {

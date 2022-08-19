@@ -640,6 +640,7 @@ run_with_hyperparamNested = function(Frame[Unknown] ph_pip, Integer r_i = 1, Mat
 
   parfor(i in 1:nrow(ph_pip), check = 0) # , opt=CONSTRAINED, mode=REMOTE_SPARK
   {
+    evalFunOutput = as.matrix(0)
     # execute configurations with r resources
     op = removeEmpty(target=ph_pip[i], margin="cols")
     # print("PIPELINE EXECUTION START ... "+toString(op))

@@ -180,7 +180,7 @@ return (Matrix[Double] dist){
  
   dist = matrix(1, 1, ncol(X))
   X = replace(target=X, pattern=0, replacement=max(X)+1)
-  parfor(i in 1:ncol(X))
+  for(i in 1:ncol(X))
   {
     if(as.scalar(mask[,i]) == 1)
     {

@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-name: Application Test
+name: Monitoring UI Test
 
 on:
   push:

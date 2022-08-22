@@ -106,7 +106,7 @@ public class FederatedCompilationTimer {
 	}
 
 	public static String getStringRepresentation(){
-		if (activated){
+		if (activated && timesNotNull()){
 			long totalFetchTime = getTotalFetchTime();
 			long privPropagationTime = privProcessTime.getDuration()-totalFetchTime;
 			long basicCompileTime = getBasicCompileTime();
@@ -119,6 +119,10 @@ public class FederatedCompilationTimer {
 			return sb.toString();
 		}
 		else return "";
+	}
+
+	private static boolean timesNotNull(){
+		return privProcessTime != null && enumerationTime != null && selectPlanTime != null;
 	}
 
 	public static void activate(){

@@ -48,9 +48,10 @@ return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
   majority_label = as.scalar(rowIndexMax(t(label)))
 
   tomek_links = get_links(X, y, majority_label)
-  drop_idx = tomek_links * seq(1, nrow(X)) 
+
   if(sum(tomek_links == 0) > 0)
   {
+    drop_idx = tomek_links * seq(1, nrow(X)) 
     X_under = removeEmpty(target=X, margin="rows", select = (tomek_links == 0))
     y_under = removeEmpty(target=y, margin="rows", select = (tomek_links == 0))
     drop_idx = removeEmpty(target=drop_idx, margin="rows", select = tomek_links)
@@ -80,6 +81,7 @@ return (Matrix[Double] nn) {
 # find the tomek links
 get_links = function(Matrix[Double] X, Matrix[Double] y, double majority_label)
 return (Matrix[Double] tomek_links) {
+  tomek_links = matrix(-1, 1, 1)
   nn = get_nn(X)
   perm = table(seq(1, nrow(y)), nn, nrow(y), nrow(y))
   nn_labels = perm %*% y

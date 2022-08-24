@@ -77,8 +77,9 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Boolean 
       sampledX = P %*% eX
       sampledY = eY 
     }
+    print("sampled rows "+nrow(sampledY)+" out of "+nrow(eY))
   }
-  print("sampled rows "+nrow(sampledY)+" out of "+nrow(eY))
+
 }
 
 # #######################################################################
@@ -139,16 +140,16 @@ return(Frame[Unknown] data, List[Unknown] distanceMatrix, List[Unknown] dictiona
   print(prefix+" convert strings to lower case");
   data = map(data, "x -> x.toLowerCase()")
   # step 2 fix invalid lengths
-  q0 = 0.05
-  q1 = 0.95
-  print(prefix+" fixing invalid lengths between "+q0+" and "+q1+" quantile");
+  # q0 = 0.05
+  # q1 = 0.95
+  # print(prefix+" fixing invalid lengths between "+q0+" and "+q1+" quantile");
 
-  [data, mask, qlow, qup] = fixInvalidLengths(data, mask, q0, q1)
+  # [data, mask, qlow, qup] = fixInvalidLengths(data, mask, q0, q1)
 
   
     # # step 3 fix swap values
-  print(prefix+" value swap fixing");
-  data = valueSwap(data, schema)
+  # print(prefix+" value swap fixing");
+  # data = valueSwap(data, schema)
   
   # step 3 drop invalid types
   print(prefix+" drop values with type mismatch");

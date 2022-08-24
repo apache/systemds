@@ -1,5 +1,5 @@
-outlierByIQRApply,normalizeApply,normalizeApply,imputeByMedianApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0
-scaleApply,normalizeApply,imputeByMedianApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-outlierByIQRApply,normalizeApply,normalizeApply,imputeByMedianApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0
-normalizeApply,imputeByMedianApply,normalizeApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-imputeByMedianApply,outlierByIQRApply,normalizeApply,imputeByMedianApply,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0,0
+imputeByMedianApply,scaleApply,imputeByMedianApply,normalizeApply,forward_fill,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0
+imputeByMedianApply,scaleApply,imputeByMedianApply,normalizeApply,forward_fill,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0
+imputeByMedianApply,scaleApply,imputeByMedianApply,normalizeApply,forward_fill,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0
+imputeByMedianApply,scaleApply,imputeByMedianApply,normalizeApply,forward_fill,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0
+imputeByMedianApply,scaleApply,imputeByMedianApply,normalizeApply,forward_fill,dummycodingApply,0,0,0,0,0,0,0,0,0,0,0,0

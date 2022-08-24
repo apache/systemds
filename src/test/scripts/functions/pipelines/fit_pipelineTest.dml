@@ -70,8 +70,11 @@ eXtest = replace(target=eXtest, pattern=NaN, replacement=0)
 tsX = replace(target=tsX, pattern=NaN, replacement=0)
 
 
-resApply = sum(eXtest - tsX[, 1:ncol(eXtest)]) == 0
-resultBool = resultBool & resApply
+resApply = sum(eXtest[51:111] - tsX[51:111, 1:ncol(eXtest)]) == 0
+percent = sum(eXtest-tsX[, 1:ncol(eXtest)] > 0) / (nrow(eXtest) * ncol(eXtest))
+errorMargin = percent < 0.05
+resultBool = resultBool & errorMargin
+
 write(resultBool, $6)
 
 header = frame(["dirty acc", "train acc", "test acc"], rows=1, cols=3)

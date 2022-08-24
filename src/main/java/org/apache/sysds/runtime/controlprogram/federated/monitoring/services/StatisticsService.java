@@ -19,24 +19,31 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
-import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.*;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.Constants;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
-
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorConnectionModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.Constants;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.IRepository;
 
 public class StatisticsService {
 

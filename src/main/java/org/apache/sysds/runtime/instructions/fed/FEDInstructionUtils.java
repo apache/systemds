@@ -36,7 +36,6 @@ import org.apache.sysds.runtime.instructions.cp.SpoofCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.TernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.apache.sysds.runtime.instructions.spark.AggregateBinarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AggregateTernarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CastSPInstruction;
@@ -119,8 +118,6 @@ public class FEDInstructionUtils {
 				return VariableCPInstruction.parseInstruction(instruction.getInstructionString());
 			}
 		}
-		else if(inst instanceof AggregateBinarySPInstruction)
-			fedinst = AggregateBinaryFEDInstruction.parseInstruction((AggregateBinarySPInstruction) inst, ec);
 		else if(inst instanceof QuaternarySPInstruction)
 			fedinst = QuaternaryFEDInstruction.parseInstruction((QuaternarySPInstruction) inst, ec);
 		else if(inst instanceof SpoofSPInstruction)

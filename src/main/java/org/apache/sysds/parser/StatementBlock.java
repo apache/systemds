@@ -917,12 +917,14 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		else { //all builtin functions and expressions
 			if( target == null  ) {
 				// check if IOGEN
-				if(source instanceof DataExpression && ((DataExpression) source).getOpCode() == Expression.DataOp.READ &&
-					!(((DataExpression) source).getVarParam(DataExpression.SAMPLE_RAW) != null &&
-						((DataExpression) source).getVarParam(DataExpression.SAMPLE) != null &&
-						((DataExpression) source).getVarParam(DataExpression.FORMAT_TYPE) != null &&
-						((DataExpression) source).getVarParam(DataExpression.DATATYPEPARAM) != null))
-					raiseValidateError("Missing variable assignment.", false);
+				if (source instanceof DataExpression && ((DataExpression)source).getOpCode() == Expression.DataOp.READ){
+					if(!(((DataExpression)source).getVarParam(DataExpression.SAMPLE_RAW) != null &&
+						((DataExpression)source).getVarParam(DataExpression.SAMPLE) != null &&
+						((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE) != null &&
+						((DataExpression)source).getVarParam(DataExpression.DATATYPEPARAM) != null)){
+						raiseValidateError("Missing variable assignment.", false);
+					}
+				}
 				else
 					raiseValidateError("Missing variable assignment.", false);
 			}

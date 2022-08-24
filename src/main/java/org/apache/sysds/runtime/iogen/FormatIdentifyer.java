@@ -40,8 +40,8 @@ public class FormatIdentifyer {
 	private MappingProperties mappingProperties;
 	private ArrayList<RawIndex> sampleRawIndexes;
 
-	private static int nrows;
-	private static int ncols;
+	private int nrows;
+	private int ncols;
 	private int nlines;
 
 	private int windowSize = 20;

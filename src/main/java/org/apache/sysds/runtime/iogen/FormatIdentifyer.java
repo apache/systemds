@@ -31,7 +31,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class FormatIdentifying {
+public class FormatIdentifyer {
 
 	private int[][] mapRow;
 	private int[][] mapCol;
@@ -49,12 +49,12 @@ public class FormatIdentifying {
 	private ReaderMapping mappingValues;
 	private CustomProperties properties;
 
-	public FormatIdentifying(String raw, MatrixBlock matrix) throws Exception {
+	public FormatIdentifyer(String raw, MatrixBlock matrix) throws Exception {
 		this.mappingValues = new ReaderMapping(raw, matrix);
 		this.runIdentification();
 	}
 
-	public FormatIdentifying(String raw, FrameBlock frame) throws Exception {
+	public FormatIdentifyer(String raw, FrameBlock frame) throws Exception {
 		this.mappingValues = new ReaderMapping(raw, frame);
 		this.runIdentification();
 	}

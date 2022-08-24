@@ -306,10 +306,13 @@ public class Dag<N extends Lop>
 		
 		// filter out non-executable nodes
 		List<Lop> execNodes = nodes.stream()
-			.filter(l -> (!l.isDataIOGenExecLocation() && !l.isReaderGenExecLocation() && (!l.isDataExecLocation()
-				|| (((Data)l).getOperationType().isWrite() && !isTransientWriteRead((Data)l))
-				|| (((Data)l).isPersistentRead() && l.getDataType().isScalar()))))
-			.collect(Collectors.toList());
+			.filter(l -> (!l.isDataIOGenExecLocation() &&
+				!l.isReaderGenExecLocation() &&
+				(!l.isDataExecLocation()||
+					(((Data)l).getOperationType().isWrite() && !isTransientWriteRead((Data)l)) ||
+					(((Data)l).isPersistentRead() && l.getDataType().isScalar())
+				)
+			)).collect(Collectors.toList());
 		
 		// generate executable instruction
 		generateControlProgramJobs(execNodes, inst, writeInst, deleteInst);
@@ -381,15 +384,16 @@ public class Dag<N extends Lop>
 		HashMap<String, Lop> updatedLabelsLineNum =  new HashMap<>();
 		
 		// first capture all transient read variables
-		for ( Lop node : nodeV ) {
-			if ((node.isDataIOGenExecLocation() && node.getDataType() == DataType.MATRIX)
-				|| (node.isDataExecLocation()
-					&& ((Data) node).getOperationType().isTransient()
-					&& ((Data) node).getOperationType().isRead()
-					&& ((Data) node).getDataType() == DataType.MATRIX)) {
+		for(Lop node : nodeV) {
+			if((node.isDataIOGenExecLocation() && node.getDataType() == DataType.MATRIX) ||
+				(node.isDataExecLocation() &&
+					((Data) node).getOperationType().isTransient()&&
+					((Data) node).getOperationType().isRead() &&
+					((Data) node).getDataType() == DataType.MATRIX
+				)){
 				// "node" is considered as updated ONLY IF the old value is not used any more
 				// So, make sure that this READ node does not feed into any (transient/persistent) WRITE
-				boolean hasWriteParent=false;
+				boolean hasWriteParent = false;
 				for(Lop p : node.getOutputs()) {
 					if(p.isDataExecLocation()) {
 						// if the "p" is of type Data, then it has to be a WRITE
@@ -397,7 +401,7 @@ public class Dag<N extends Lop>
 						break;
 					}
 				}
-				if ( !hasWriteParent ) {
+				if(!hasWriteParent) {
 					// node has no parent of type WRITE, so this is a CANDIDATE variable 
 					// add it to labelNodeMapping so that it is considered in further processing
 					labelNodeMapping.put(node.getOutputParameters().getLabel(), node);
@@ -469,13 +473,16 @@ public class Dag<N extends Lop>
 	private static ArrayList<Instruction> generateInstructionsForInputVariables(List<Lop> nodes_v) {
 		ArrayList<Instruction> insts = new ArrayList<>();
 		for(Lop n : nodes_v) {
-			if (n.isReaderGenExecLocation() || n.isDataIOGenExecLocation() || ( n.isDataExecLocation()
-				&& !((Data) n).getOperationType().isTransient()
-				&& ((Data) n).getOperationType().isRead()
-				&& (n.getDataType() == DataType.MATRIX || n.getDataType() == DataType.FRAME 
-				   || n.getDataType() == DataType.LIST)))
-			{
-				if ( n.isDataIOGenExecLocation() || n.isReaderGenExecLocation() || (n.isDataExecLocation() && !((Data)n).isLiteral()) ) {
+			if( n.isReaderGenExecLocation() ||
+				n.isDataIOGenExecLocation() ||
+				(n.isDataExecLocation() &&
+					!((Data) n).getOperationType().isTransient() &&
+					((Data) n).getOperationType().isRead() &&
+					(n.getDataType() == DataType.MATRIX || n.getDataType() == DataType.FRAME || n.getDataType() == DataType.LIST)
+				)) {
+				if ( n.isDataIOGenExecLocation() ||
+					 n.isReaderGenExecLocation() ||
+					(n.isDataExecLocation() && !((Data)n).isLiteral()) ) {
 					try {
 						String inst_string = n.getInstructions();
 						CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
@@ -649,13 +656,8 @@ public class Dag<N extends Lop>
 					inst_string = node.getInstructions(inputs, 
 						node.getOutputParameters().getLabel());
 				}
-				else if(node instanceof ReaderGen)
+				else if(node instanceof ReaderGen || node instanceof DataIOGen)
 					inst_string = node.getInstructions();
-
-				else if(node instanceof DataIOGen){
-					inst_string = node.getInstructions();
-				}
-
 				else {
 					if ( node.getInputs().isEmpty() ) {
 						// currently, such a case exists only for Rand lop

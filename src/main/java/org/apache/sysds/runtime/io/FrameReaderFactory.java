@@ -84,7 +84,7 @@ public class FrameReaderFactory {
 					reader = frm.getReader();
 				}
 				catch(Exception e) {
-					throw new DMLRuntimeException("IOGEN Matrix Reader Error: " + e);
+					throw new DMLRuntimeException("IOGEN Matrix Reader Error: ", e);
 				}
 				break;
 

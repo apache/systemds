@@ -139,7 +139,7 @@ public class MatrixReaderFactory {
 					reader = grm.getReader();
 				}
 				catch(Exception e) {
-					throw new DMLRuntimeException("IOGEN Matrix Reader Error: " + e);
+					throw new DMLRuntimeException("IOGEN Matrix Reader Error: ", e);
 				}
 				break;
 

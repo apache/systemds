@@ -128,8 +128,7 @@ public class FrameReaderJSONL
 
 		}
 		if(temp == null){
-			return null;
-			//throw new IOException("Could not traverse the JSON path: '" + path + "'!");
+			throw new IOException("Could not traverse the JSON path: '" + path + "'!");
 		}
 		return temp.toString();
 	}

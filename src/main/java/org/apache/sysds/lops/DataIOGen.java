@@ -48,7 +48,8 @@ public class DataIOGen extends Lop {
 	 */
 	public static DataIOGen createLiteralLop(ValueType vt, String literalValue) {
 		// All literals have default format type of TEXT
-		return new DataIOGen(OpOpData.PERSISTENTREAD, null, null, null, literalValue, DataType.SCALAR, vt, FileFormat.TEXT.toString());
+		return new DataIOGen(OpOpData.PERSISTENTREAD, null, null, null, literalValue, DataType.SCALAR, vt,
+			FileFormat.TEXT.toString());
 	}
 
 	/**
@@ -65,8 +66,8 @@ public class DataIOGen extends Lop {
 	 * @param vt                  value type
 	 * @param fmt                 file format
 	 */
-	public DataIOGen(OpOpData op, Lop input, HashMap<String, Lop> inputParametersLops, String name, String literal, DataType dt, ValueType vt,
-		String fmt) {
+	public DataIOGen(OpOpData op, Lop input, HashMap<String, Lop> inputParametersLops, String name, String literal,
+		DataType dt, ValueType vt, String fmt) {
 		super(Type.Data, dt, vt);
 		_op = op;
 		literal_var = (literal != null);
@@ -74,7 +75,8 @@ public class DataIOGen extends Lop {
 		// Either <code>name</code> or <code>literal</code> can be non-null.
 		if(literal_var) {
 			if(_op.isTransient())
-				throw new LopsException("Invalid parameter values while setting up a Data LOP -- transient flag is invalid for a literal.");
+				throw new LopsException(
+					"Invalid parameter values while setting up a Data LOP -- transient flag is invalid for a literal.");
 			getOutputParameters().setLabel(literal);
 		}
 		else if(name != null) {
@@ -86,7 +88,8 @@ public class DataIOGen extends Lop {
 			}
 		}
 		else {
-			throw new LopsException("Invalid parameter values while setting up a Data LOP -- the lop must have either literal value or a name.");
+			throw new LopsException(
+				"Invalid parameter values while setting up a Data LOP -- the lop must have either literal value or a name.");
 		}
 
 		// WRITE operation must have an input Lops, we always put this
@@ -105,7 +108,8 @@ public class DataIOGen extends Lop {
 				lop.addOutput(this);
 			}
 			if(inputParametersLops.get(DataExpression.IO_FILENAME) != null) {
-				OutputParameters outParams = (inputParametersLops.get(DataExpression.IO_FILENAME)).getOutputParameters();
+				OutputParameters outParams = (inputParametersLops.get(
+					DataExpression.IO_FILENAME)).getOutputParameters();
 				String fName = outParams.getLabel();
 				this.getOutputParameters().setFile_name(fName);
 			}
@@ -123,8 +127,6 @@ public class DataIOGen extends Lop {
 
 	/**
 	 * Data-Lop-specific method to set the execution type for persistent write.
-	 * TODO: split lops into MR/CP lop.
-	 *
 	 * @param et execution type
 	 */
 	public void setExecType(ExecType et) {
@@ -133,7 +135,6 @@ public class DataIOGen extends Lop {
 
 	/**
 	 * method to get format type for input, output files.
-	 *
 	 * @return file format
 	 */
 	public String getFileFormatType() {
@@ -142,12 +143,20 @@ public class DataIOGen extends Lop {
 
 	@Override
 	public String toString() {
-		return getID() + ":" + "File_Name: " + getOutputParameters().getFile_name() + " " + "Label: " + getOutputParameters().getLabel() + " " + "Operation: = " + _op + " " + "Format: " + outParams.getFormat() + " Datatype: " + getDataType() + " Valuetype: " + getValueType() + " num_rows = " + getOutputParameters().getNumRows() + " num_cols = " + getOutputParameters().getNumCols() + " UpdateInPlace: " + getOutputParameters().getUpdateType();
+		return getID() + ":" +
+			" File_Name: " + getOutputParameters().getFile_name() +
+			" Label: " + getOutputParameters().getLabel() +
+			" Operation: = " + _op +
+			" Format: " + outParams.getFormat() +
+			" Datatype: " + getDataType() +
+			" Valuetype: " + getValueType() +
+			" num_rows = " + getOutputParameters().getNumRows() +
+			" num_cols = " + getOutputParameters().getNumCols() +
+			" UpdateInPlace: " + getOutputParameters().getUpdateType();
 	}
 
 	/**
 	 * method to get operation type, i.e. read/write.
-	 *
 	 * @return operation type
 	 */
 
@@ -157,7 +166,6 @@ public class DataIOGen extends Lop {
 
 	/**
 	 * method to get inputParams
-	 *
 	 * @return input parameters
 	 */
 	public HashMap<String, Lop> getInputParams() {
@@ -177,7 +185,6 @@ public class DataIOGen extends Lop {
 
 	/**
 	 * method to check if this data lop represents a literal.
-	 *
 	 * @return true if data lop is a literal
 	 */
 	public boolean isLiteral() {
@@ -210,7 +217,8 @@ public class DataIOGen extends Lop {
 					return (long) Double.parseDouble(getOutputParameters().getLabel());
 
 				default:
-					throw new LopsException("Encountered a non-numeric value " + (vt) + ", while a numeric value is expected.");
+					throw new LopsException(
+						"Encountered a non-numeric value " + (vt) + ", while a numeric value is expected.");
 			}
 		}
 		else
@@ -280,7 +288,9 @@ public class DataIOGen extends Lop {
 			Lop descriptionLop = getInputParams().get(DataExpression.DESCRIPTIONPARAM);
 			if(descriptionLop != null) {
 				boolean descLiteral = (descriptionLop instanceof DataIOGen && ((DataIOGen) descriptionLop).isLiteral());
-				sb.append(prepOperand(descriptionLop.getOutputParameters().getLabel(), DataType.SCALAR, ValueType.STRING, descLiteral));
+				sb.append(
+					prepOperand(descriptionLop.getOutputParameters().getLabel(), DataType.SCALAR, ValueType.STRING,
+						descLiteral));
 			}
 			else {
 				sb.append(prepOperand("", DataType.SCALAR, ValueType.STRING, true));

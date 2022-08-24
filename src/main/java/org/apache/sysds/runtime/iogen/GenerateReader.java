@@ -40,10 +40,10 @@ public abstract class GenerateReader {
 	protected String className;
 
 	public GenerateReader(SampleProperties sampleProperties) throws Exception {
-		FormatIdentifying formatIdentifying = sampleProperties.getDataType().isMatrix() ? new FormatIdentifying(sampleProperties.getSampleRaw(),
-			sampleProperties.getSampleMatrix()) : new FormatIdentifying(sampleProperties.getSampleRaw(), sampleProperties.getSampleFrame());
+		FormatIdentifyer formatIdentifyer = sampleProperties.getDataType().isMatrix() ? new FormatIdentifyer(sampleProperties.getSampleRaw(),
+			sampleProperties.getSampleMatrix()) : new FormatIdentifyer(sampleProperties.getSampleRaw(), sampleProperties.getSampleFrame());
 
-		properties = formatIdentifying.getFormatProperties();
+		properties = formatIdentifyer.getFormatProperties();
 		if(properties == null) {
 			throw new Exception("The file format couldn't recognize!!");
 		}
@@ -103,7 +103,8 @@ public abstract class GenerateReader {
 			return matrixReader;
 		}
 
-		@Override public String getReaderString() {
+		@Override
+		public String getReaderString() {
 			MatrixCodeGen src = new MatrixCodeGen(properties, className);
 			// constructor with arguments as CustomProperties
 			Class[] cArg = new Class[1];
@@ -133,7 +134,8 @@ public abstract class GenerateReader {
 			return frameReader;
 		}
 
-		@Override public String getReaderString() {
+		@Override
+		public String getReaderString() {
 			FrameCodeGen src = new FrameCodeGen(properties, className);
 			// constructor with arguments as CustomProperties
 			Class[] cArg = new Class[1];

@@ -284,20 +284,20 @@ public class FederatedStatistics {
 	}
 
 	public static String displayFedWorkerStats() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(displayFedLookupTableStats());
-		sb.append(displayFedReuseReadStats());
-		sb.append(displayFedPutLineageStats());
-		sb.append(displayFedSerializationReuseStats());
-		sb.append(displayFedTransfer());
-		//FIXME: the following statistics need guards to only show
-		// results if federated operations where executed, also the CPU
-		// and mem usage only probe once at the time of stats printing
-		//sb.append(displayFedTransfer());
-		//sb.append(displayCPUUsage());
-		//sb.append(displayMemoryUsage());
-    
-		return sb.toString();
+		if( readCount.longValue() > 0){ 
+			StringBuilder sb = new StringBuilder();
+			sb.append(displayFedLookupTableStats());
+			sb.append(displayFedReuseReadStats());
+			sb.append(displayFedPutLineageStats());
+			sb.append(displayFedSerializationReuseStats());
+
+			//sb.append(displayFedTransfer());
+			//sb.append(displayCPUUsage());
+			//sb.append(displayMemoryUsage());
+		 
+			return sb.toString();
+		}
+		return "";
 	}
 
 	public static String displayStatistics(int numHeavyHitters) {

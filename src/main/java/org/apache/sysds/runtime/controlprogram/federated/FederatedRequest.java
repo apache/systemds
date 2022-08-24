@@ -211,11 +211,22 @@ public class FederatedRequest implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("FederatedRequest[");
-		sb.append(_method); sb.append(";");
-		sb.append(_pid); sb.append(";");
-		sb.append(_id); sb.append(";");
-		sb.append("t"); sb.append(_tid); sb.append(";");
-		sb.append(_data.toString());
+		sb.append(_method);
+		sb.append(";");
+		sb.append(_pid);
+		sb.append(";");
+		sb.append(_id);
+		sb.append(";t");
+		sb.append(_tid);
+		if(_data.size() > 0) {
+			sb.append(";[");
+			for(Object o : _data) {
+				sb.append(o.getClass().getSimpleName());
+				sb.append(", ");
+			}
+			sb.delete(sb.length() - 2, sb.length());
+			sb.append("]");
+		}
 		sb.append("]");
 		return sb.toString();
 	}

@@ -36,6 +36,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.fedplanner.FTypes;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -84,7 +85,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		MultiReturnParameterizedBuiltinCPInstruction inst, ExecutionContext ec) {
 		if(inst.getOpcode().equals("transformencode") && inst.input1.isFrame()) {
 			CacheableData<?> fo = ec.getCacheableData(inst.input1);
-			if(fo.isFederatedExcept(FType.BROADCAST)) 
+			if(fo.isFederatedExcept(FType.BROADCAST))
 				return MultiReturnParameterizedBuiltinFEDInstruction.parseInstruction(inst);
 		}
 		return null;
@@ -339,7 +340,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				.createEncoder(_spec, colNames, fb.getNumColumns(), null, _offset, _offset + fb.getNumColumns());
 
 			// build necessary structures for encoding
-			encoder.build(fb); // FIXME skip equi-height sorting
+			encoder.build(fb, OptimizerUtils.getTransformNumThreads()); // FIXME skip equi-height sorting
 			fo.release();
 
 			// create federated response
@@ -370,7 +371,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			// offset is applied on the Worker to shift the local encoders to their respective column
 			_encoder.applyColumnOffset();
 			// apply transformation
-			MatrixBlock mbout = _encoder.apply(fb);
+			MatrixBlock mbout = _encoder.apply(fb, OptimizerUtils.getTransformNumThreads());
 
 			// create output matrix object
 			MatrixObject mo = ExecutionContext.createMatrixObject(mbout);

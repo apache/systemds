@@ -22,29 +22,30 @@
 __all__ = ["SystemDSContext"]
 
 import json
+import logging
 import os
 import socket
 import sys
+from contextlib import contextmanager
 from glob import glob
 from queue import Queue
 from subprocess import PIPE, Popen
 from threading import Thread
 from time import sleep
 from typing import Dict, Iterable, Sequence, Tuple, Union
-from contextlib import contextmanager
 
 import numpy as np
 import pandas as pd
 from py4j.java_gateway import GatewayParameters, JavaGateway
 from systemds.operator import (Frame, List, Matrix, OperationNode, Scalar,
                                Source)
-from systemds.script_building import OutputType
+from systemds.script_building import DMLScript, OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.helpers import get_module_dir
 
 
 class SystemDSContext(object):
-    """A context with a connection to a java instance with which SystemDS operations are executed. 
+    """A context with a connection to a java instance with which SystemDS operations are executed.
     The java process is started and is running using a random tcp port for instruction parsing.
 
     This class is used as the starting point for all SystemDS execution. It gives the ability to create
@@ -54,22 +55,35 @@ class SystemDSContext(object):
     java_gateway: JavaGateway
     _capture_statistics: bool
     _statistics: str
+    _log: logging.Logger
 
-    def __init__(self, port: int = -1, capture_statistics: bool = False):
+    def __init__(self, port: int = -1, capture_statistics: bool = False, logging_level: int = 20):
         """Starts a new instance of SystemDSContext, in which the connection to a JVM systemds instance is handled
         Any new instance of this SystemDS Context, would start a separate new JVM.
 
         Standard out and standard error form the JVM is also handled in this class, filling up Queues,
         that can be read from to get the printed statements from the JVM.
+
+        :param port: default -1, giving a random port for communication with JVM
+        :param capture_statistics: If the statistics of the execution in SystemDS should be captured
+        :param logging_level: Specify the logging level used for informative messages, default 20 indicating INFO.
+        The logging levels are as follows: 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL.
         """
         actual_port = self.__start(port)
         process = self.__process
         self._statistics = ""
         self._capture_statistics = capture_statistics
+
+        self._log = logging.Logger(self.__class__.__name__)
+        self._log.setLevel(logging_level)
+
         if process.poll() is None:
             self.__start_gateway(actual_port)
         else:
-            self.exception_and_close("Java process stopped before gateway could connect")
+            self.exception_and_close(
+                "Java process stopped before gateway could connect")
+
+        self._log.debug("Started JVM and SystemDS python context manager")
 
     def get_stdout(self, lines: int = -1):
         """Getter for the stdout of the java subprocess
@@ -189,10 +203,9 @@ class SystemDSContext(object):
 
         files = glob(os.path.join(root, "conf", "log4j*.properties"))
         if len(files) > 1:
-            print(
-                "WARNING: Multiple logging files found selecting: " + files[0])
+            self._log.warning("Multiple logging files found selecting: " + files[0])
         if len(files) == 0:
-            print("WARNING: No log4j file found at: "
+            self._log.warning("No log4j file found at: "
                   + os.path.join(root, "conf")
                   + " therefore using default settings")
         else:
@@ -200,12 +213,11 @@ class SystemDSContext(object):
 
         command.append("org.apache.sysds.api.PythonDMLScript")
 
-        files = glob(os.path.join(root, "conf", "SystemDS*.xml"))
+        files=glob(os.path.join(root, "conf", "SystemDS*.xml"))
         if len(files) > 1:
-            print(
-                "WARNING: Multiple config files found selecting: " + files[0])
+            self._log.warning("Multiple config files found selecting: " + files[0])
         if len(files) == 0:
-            print("WARNING: No log4j file found at: "
+            self._log.warning("No log4j file found at: "
                   + os.path.join(root, "conf")
                   + " therefore using default settings")
         else:
@@ -279,7 +291,7 @@ class SystemDSContext(object):
             self.__kill_Popen(self.java_gateway.java_process)
             self.java_gateway.shutdown()
         if hasattr(self, '__process'):
-            print("Has process variable")
+            logging.error("Has process variable")
             self.__kill_Popen(self.__process)
         if hasattr(self, '__stdout_thread') and self.__stdout_thread.is_alive():
             self.__stdout_thread.join(0)
@@ -311,7 +323,7 @@ class SystemDSContext(object):
         s.close()
         return port
 
-    def _execution_completed(self, script: 'DMLScript'):
+    def _execution_completed(self, script: DMLScript):
         """
         Should/will be called after execution of a script.
         Used to update statistics.
@@ -448,6 +460,10 @@ class SystemDSContext(object):
 
         return Matrix(self, 'rand', [], named_input_nodes=named_input_nodes)
 
+    def __fix_string_args(self, arg: str) -> str:
+        nf = str(arg).replace('"', "").replace("'", "")
+        return f'"{nf}"'
+
     def read(self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
         """ Read an file from disk. Supportted types include:
         CSV, Matrix Market(coordinate), Text(i,j,v), SystemDS Binary, etc.
@@ -455,33 +471,44 @@ class SystemDSContext(object):
         :return: an Operation Node, containing the read data the operationNode read can be of types, Matrix, Frame or Scalar.
         """
         mdt_filepath = path + ".mtd"
-        if os.path.exists(mdt_filepath):
+        if os.path.exists(mdt_filepath): # If metadata file is existing, then simply use that and force data type to mtd file
             with open(mdt_filepath) as jspec_file:
                 mtd = json.load(jspec_file)
                 kwargs["data_type"] = mtd["data_type"]
+            if kwargs.get("format", None):
+                kwargs["format"] = self.__fix_string_args(kwargs["format"])
+        elif kwargs.get("format", None): # If format is specified. Then use that format
+            kwargs["format"] = self.__fix_string_args(kwargs["format"])
+        else: #Otherwise guess at what format the file is based on file extension
+            if ".csv" in path[-4:]:
+                kwargs["format"] = '"csv"'
+                self._log.warning("Guessing '"+path+"' is a csv file, please add a mtd file, or specify in arguments")
+                if not ("header" in kwargs) and "data_type" in kwargs and kwargs["data_type"]  == "frame":
+                    kwargs["header"] = True
 
         data_type = kwargs.get("data_type", None)
-        file_format = kwargs.get("format", None)
+
         if data_type == "matrix":
             kwargs["data_type"] = f'"{data_type}"'
             return Matrix(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
         elif data_type == "frame":
             kwargs["data_type"] = f'"{data_type}"'
-            if isinstance(file_format, str):
-                kwargs["format"] = f'"{kwargs["format"]}"'
             return Frame(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
         elif data_type == "scalar":
             kwargs["data_type"] = f'"{data_type}"'
             output_type = OutputType.from_str(kwargs.get("value_type", None))
-            kwargs["value_type"] = f'"{output_type.name}"'
-            return Scalar(self, "read", [f'"{path}"'], named_input_nodes=kwargs, output_type=output_type)
+            if output_type:
+                kwargs["value_type"] = f'"{output_type.name}"'
+                return Scalar(self, "read", [f'"{path}"'], named_input_nodes=kwargs, output_type=output_type)
+            else:
+                raise ValueError("Invalid arguments for reading scalar, value_type must be specified")
         elif data_type == "list":
             # Reading a list have no extra arguments.
             return List(self, "read", [f'"{path}"'])
-
-        kwargs["data_type"] = None
-        print("WARNING: Unknown type read please add a mtd file, or specify in arguments")
-        return OperationNode(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
+        else:
+            kwargs["data_type"] = '"matrix"'
+            self._log.warning("Unknown type read please add a mtd file, or specify in arguments, defaulting to matrix")
+            return Matrix(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
 
     def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> Scalar:
         """ Construct an scalar value, this can contain str, float, double, integers and booleans.
@@ -572,7 +599,7 @@ class SystemDSContext(object):
         named_params.update(kwargs)
         return Matrix(self, 'federated', args, named_params)
 
-    def source(self, path: str, name: str, print_imported_methods: bool = False) -> Source:
+    def source(self, path: str, name: str) -> Source:
         """Import methods from a given dml file.
 
         The importing is done thorugh the DML command source, and adds all defined methods from
@@ -587,9 +614,8 @@ class SystemDSContext(object):
 
         :param path: The absolute or relative path to the file to import
         :param name: The name to give the imported file in the script, this name must be unique
-        :param print_imported_methods: boolean specifying if the imported methods should be printed.
         """
-        return Source(self, path, name, print_imported_methods)
+        return Source(self, path, name)
 
     def list(self, *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]) -> List:
         """ Create a List object containing the given nodes.

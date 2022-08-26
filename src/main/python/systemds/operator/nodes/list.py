@@ -34,7 +34,7 @@ from systemds.utils.helpers import create_params_string
 
 class List(OperationNode):
 
-    def __init__(self, sds_context: 'SystemDSContext', func='list',
+    def __init__(self, sds_context, func='list',
                  unnamed_input_nodes: Union[str,
                                             Iterable[VALID_INPUT_TYPES]] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None):

@@ -20,7 +20,9 @@
 # -------------------------------------------------------------
 
 import unittest
+import logging
 
+logging.getLogger("root").setLevel(50)
 
 class TestAlgorithmsBasics(unittest.TestCase):
     def test_algorithms_script(self):

@@ -25,7 +25,7 @@ import zipfile
 import pandas as pd
 import requests
 from systemds.context import SystemDSContext
-
+from systemds.operator import Frame, Scalar
 
 class DataManager:
 
@@ -41,8 +41,8 @@ class DataManager:
     _test_data_loc: str
     _test_labels_loc: str
 
-    _data_columns: []
-    _data_string_labels: []
+    _data_columns: list
+    _data_string_labels: list
 
     def __init__(self):
         self._data_zip_url = "https://systemds.apache.org/assets/datasets/adult/data.zip"

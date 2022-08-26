@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 # Import numpy and SystemDS
 import numpy as np
+import logging
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import l2svm
 
@@ -41,4 +42,4 @@ for i in range(10):
 with SystemDSContext() as sds:
     model = l2svm(sds.from_numpy(features),
                   sds.from_numpy(labels)).compute()
-    print(model)
+    logging.info(model)

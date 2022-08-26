@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 # Import SystemDS
+import logging
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import l2svm
 
@@ -31,4 +32,4 @@ with SystemDSContext() as sds:
     labels = sds.rand(10, 1, 1, 1, sparsity = 0.5)
 
     model = l2svm(features, labels).compute()
-    print(model)
+    logging.info(model)

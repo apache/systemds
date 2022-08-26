@@ -75,8 +75,7 @@ class Frame(OperationNode):
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> pd.DataFrame:
         if self._is_pandas():
-            if verbose:
-                print("[Pandas Frame - No Compilation necessary]")
+            self.sds_context._log.info("Pandas Frame - No Compilation necessary")
             return self._pd_dataframe
         else:
             return super().compute(verbose, lineage)

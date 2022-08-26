@@ -35,7 +35,7 @@ from systemds.utils.helpers import create_params_string
 
 class MultiReturn(OperationNode):
 
-    def __init__(self, sds_context: 'SystemDSContext', operation,
+    def __init__(self, sds_context, operation,
                  output_nodes: List[OperationNode],
                  unnamed_input_nodes: Union[str,
                                             Iterable[VALID_INPUT_TYPES]] = None,

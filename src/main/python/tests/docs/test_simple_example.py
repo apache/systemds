@@ -20,6 +20,9 @@
 # -------------------------------------------------------------
 
 import unittest
+import logging
+
+logging.getLogger("root").setLevel(50)
 
 
 class TestSimpleExample(unittest.TestCase):

@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 # Python
+import logging
 import numpy as np
 from systemds.context import SystemDSContext
 
@@ -44,4 +45,4 @@ with SystemDSContext() as sds:
     # Multiply local and federated
     ret = loc @ fed
     # execute the lazy script and print
-    print(ret.compute())
+    logging.info(ret.compute())

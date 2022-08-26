@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 # Python
-import numpy as np
+import logging
 from systemds.context import SystemDSContext
 
 # Create a federated matrix
@@ -35,5 +35,5 @@ address = "localhost:8001/temp/test.csv"
 with SystemDSContext() as sds:
     fed_a = sds.federated([address], [dims])
     # Sum the federated matrix and call compute to execute
-    print(fed_a.sum().compute())
+    logging.info(fed_a.sum().compute())
     # Result should be 45.

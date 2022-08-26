@@ -22,11 +22,12 @@
 __all__ = ["Source"]
 
 from types import MethodType
-from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
-                    Union)
+from typing import TYPE_CHECKING, Dict, Iterable, Sequence
 
-import numpy as np
-from systemds.operator import List, Matrix, OperationNode, Scalar
+# Import more node types than used,
+# since source dynamically adds code and the import is needed.
+from systemds.operator import (List, ListAccess, Matrix, MultiReturn,
+                               OperationNode, Scalar)
 from systemds.script_building.dag import OutputType
 
 
@@ -43,7 +44,8 @@ class Func(object):
         else:
             self._outputs = None
 
-    def get_func(self, sds_context: "SystemDSContext", source_name, id: int, print_imported_methods: bool = False) -> MethodType:
+    def get_func(self, sds_context, source_name) -> MethodType:
+
         operation = f'"{source_name}::{self._name}"'
         argument_string, named_arguments = self.parse_inputs()
         named_intput_nodes = f'named_arguments = {{{named_arguments}}}'
@@ -61,8 +63,7 @@ class Func(object):
 
         full_function = "\n\t".join(lines)
 
-        if print_imported_methods:
-            print(full_function)
+        sds_context._log.debug(full_function)
 
         # Use Exec to build the function from the string
         exec(full_function)
@@ -130,7 +131,7 @@ class Source(OperationNode):
 
     __name: str
 
-    def __init__(self, sds_context: "SystemDSContext", path: str, name: str, print_imported_methods: bool = False) -> "Import":
+    def __init__(self, sds_context, path: str, name: str):
         super().__init__(sds_context,
                          f'"{path}"', output_type=OutputType.IMPORT)
         self.__name = name
@@ -138,7 +139,7 @@ class Source(OperationNode):
 
         # Add all the functions found in the source file to this object.
         for id, f in enumerate(functions):
-            func = f.get_func(sds_context, name, id, print_imported_methods)
+            func = f.get_func(sds_context, name)
             setattr(self, f._name, MethodType(func, self))
 
     def __parse_functions_from_script(self, path: str) -> Iterable[Func]:

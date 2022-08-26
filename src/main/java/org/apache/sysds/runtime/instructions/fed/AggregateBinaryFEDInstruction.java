@@ -124,7 +124,13 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				setOutputFedMapping(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
 			}
 			else {
-				aggregateLocally(mo1.getFedMapping(), mo1.isFederated(FType.PART), ec, fr1, fr2);
+				boolean isDoubleBroadcast = (mo1.isFederated(FType.BROADCAST) && mo2.isFederated(FType.BROADCAST));
+				if (isDoubleBroadcast){
+					aggregateLocallySingleWorker(mo1.getFedMapping(), ec, fr1, fr2);
+				}
+				else{
+					aggregateLocally(mo1.getFedMapping(), false, ec, fr1, fr2);
+				}
 			}
 		}
 		//#2 vector - federated matrix multiplication
@@ -230,5 +236,21 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 		else
 			ret = FederationUtils.bind(ffr, false);
 		ec.setMatrixOutput(output.getName(), ret);
+	}
+
+	private void aggregateLocallySingleWorker(FederationMap fedMap, ExecutionContext ec, FederatedRequest... fr) {
+		//create GET calls on output
+		long callInstID = fr[fr.length - 1].getID();
+		FederatedRequest frG = new FederatedRequest(RequestType.GET_VAR, callInstID);
+		FederatedRequest frC = fedMap.cleanup(getTID(), callInstID);
+		//execute federated operations
+		Future<FederatedResponse>[] ffr = fedMap.execute(getTID(), ArrayUtils.addAll(fr, frG, frC));
+		try {
+			//use only one response (all responses contain the same result)
+			MatrixBlock ret = (MatrixBlock) ffr[0].get().getData()[0];
+			ec.setMatrixOutput(output.getName(), ret);
+		} catch(Exception ex){
+			throw new DMLRuntimeException(ex);
+		}
 	}
 }

@@ -19,6 +19,8 @@
 #
 # -------------------------------------------------------------
 
+import logging
+
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
 from systemds.examples.tutorials.mnist import DataManager
@@ -35,4 +37,4 @@ with SystemDSContext() as sds:
     Yt = sds.from_numpy(d.get_test_labels()) + 1.0
     [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute()
 
-print(acc)
+logging.info(acc)

@@ -50,7 +50,7 @@ class TestPCA(unittest.TestCase):
         """
         m1 = self.generate_matrices_for_pca(30, seed=1304)
         X = self.sds.from_numpy( m1)
-        # print(features)
+
         [res, model, _, _] = pca(X, K=1, scale="FALSE", center="FALSE").compute()
         for (x, y) in zip(m1, res):
             self.assertTrue((x[0] > 0 and y > 0) or (x[0] < 0 and y < 0))

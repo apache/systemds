@@ -18,9 +18,10 @@
 # under the License.
 #
 # -------------------------------------------------------------
-# Import numpy and SystemDS
-import numpy as np
+
 import logging
+
+import numpy as np
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import l2svm
 

@@ -79,3 +79,6 @@ class TestFederatedAggFn(unittest.TestCase):
     def test_slice_row_col_both(self):
         with self.assertRaises(NotImplementedError):
             self.sds.from_numpy(m)[[1, 2], [0, 3]]
+
+if __name__ == "__main__":
+    unittest.main(exit=False)

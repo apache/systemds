@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 # Python
 import logging
+
 from systemds.context import SystemDSContext
 
 # Create a federated matrix

@@ -57,11 +57,10 @@ class TestReplaceFrame(unittest.TestCase):
             format="csv",
             header=True,
         )
-        ret = F1.replace("north", "south").replace("west", "south").replace("east","south").compute()
+        ret = F1.replace("north", "south").replace(
+            "west", "south").replace("east", "south").compute()
         self.assertTrue(any(ret.district == "south"))
-        self.assertTrue(not( any(ret.district == "north")))
-
-
+        self.assertTrue(not(any(ret.district == "north")))
 
 
 if __name__ == "__main__":

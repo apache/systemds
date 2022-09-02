@@ -19,8 +19,10 @@
 #
 # -------------------------------------------------------------
 # Python
-import numpy as np
 import os
+
+import numpy as np
+
 if not os.path.isdir("temp"):
     os.mkdir("temp")
 a = np.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])

@@ -51,4 +51,6 @@ class TestSignal(unittest.TestCase):
         Xa = M.cos() @ signal
         Xb = M.sin() @ signal
         DFT = signal.cbind(Xa).cbind(Xb).compute()
-        print(DFT)
+        
+if __name__ == "__main__":
+    unittest.main(exit=False)

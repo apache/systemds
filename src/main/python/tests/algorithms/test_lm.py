@@ -28,6 +28,7 @@ from systemds.operator.algorithm import lm
 
 np.random.seed(7)
 
+
 class TestLm(unittest.TestCase):
 
     sds: SystemDSContext = None
@@ -47,8 +48,8 @@ class TestLm(unittest.TestCase):
         regressor = LinearRegression(fit_intercept=False)
         model = regressor.fit(X, Y).coef_
 
-        X_sds = self.sds.from_numpy( X)
-        Y_sds = self.sds.from_numpy( Y)
+        X_sds = self.sds.from_numpy(X)
+        Y_sds = self.sds.from_numpy(Y)
 
         sds_model_weights = lm(X_sds, Y_sds).compute()
         model = model.reshape(sds_model_weights.shape)
@@ -58,7 +59,6 @@ class TestLm(unittest.TestCase):
         self.assertTrue(
             np.allclose(sds_model_weights, model, eps),
             "All elements are not close")
-
 
 
 if __name__ == "__main__":

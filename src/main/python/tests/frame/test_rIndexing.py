@@ -63,37 +63,37 @@ class Test_rIndexing(unittest.TestCase):
 
     def test_4(self):
         m1 = self.sds.from_pandas(self.df)
-        npres = np.array(self.df.loc[:,4])
-        res = np.array(m1[:,4].compute()).flatten()
+        npres = np.array(self.df.loc[:, 4])
+        res = np.array(m1[:, 4].compute()).flatten()
         self.assertTrue(np.allclose(res, npres))
 
     def test_5(self):
         m1 = self.sds.from_pandas(self.df)
-        npres = np.array(self.df.loc[:,4:5])
-        res = np.array(m1[:,4:6].compute())
+        npres = np.array(self.df.loc[:, 4:5])
+        res = np.array(m1[:, 4:6].compute())
         self.assertTrue(np.allclose(res, npres))
 
     def test_6(self):
         m1 = self.sds.from_pandas(self.df)
-        npres = self.df.loc[1:1,4:5]
-        res = m1[1:2,4:6].compute()
+        npres = self.df.loc[1:1, 4:5]
+        res = m1[1:2, 4:6].compute()
         self.assertTrue(np.allclose(res, npres))
 
     def test_7(self):
         m1 = self.sds.from_pandas(self.df)
-        npres = self.df.loc[1,4:5]
-        res = m1[1,4:6].compute()
+        npres = self.df.loc[1, 4:5]
+        res = m1[1, 4:6].compute()
         self.assertTrue(np.allclose(res, npres))
 
     def test_8(self):
         m1 = self.sds.from_pandas(self.df)
         with self.assertRaises(NotImplementedError) as context:
-            res = m1[1:,4:6].compute()
+            res = m1[1:, 4:6].compute()
 
     def test_9(self):
         m1 = self.sds.from_pandas(self.df)
         with self.assertRaises(NotImplementedError) as context:
-            res = m1[:3,4:6].compute()
+            res = m1[:3, 4:6].compute()
 
 
 if __name__ == "__main__":

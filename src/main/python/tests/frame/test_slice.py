@@ -93,3 +93,7 @@ class TestFederatedAggFn(unittest.TestCase):
     def test_slice_row_col_both(self):
         with self.assertRaises(NotImplementedError):
             self.sds.from_pandas(df)[[1, 2], [0, 2]]
+
+
+if __name__ == "__main__":
+    unittest.main(exit=False)

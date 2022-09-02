@@ -203,23 +203,25 @@ class SystemDSContext(object):
 
         files = glob(os.path.join(root, "conf", "log4j*.properties"))
         if len(files) > 1:
-            self._log.warning("Multiple logging files found selecting: " + files[0])
+            self._log.warning(
+                "Multiple logging files found selecting: " + files[0])
         if len(files) == 0:
             self._log.warning("No log4j file found at: "
-                  + os.path.join(root, "conf")
-                  + " therefore using default settings")
+                              + os.path.join(root, "conf")
+                              + " therefore using default settings")
         else:
             command.append("-Dlog4j.configuration=file:" + files[0])
 
         command.append("org.apache.sysds.api.PythonDMLScript")
 
-        files=glob(os.path.join(root, "conf", "SystemDS*.xml"))
+        files = glob(os.path.join(root, "conf", "SystemDS*.xml"))
         if len(files) > 1:
-            self._log.warning("Multiple config files found selecting: " + files[0])
+            self._log.warning(
+                "Multiple config files found selecting: " + files[0])
         if len(files) == 0:
             self._log.warning("No log4j file found at: "
-                  + os.path.join(root, "conf")
-                  + " therefore using default settings")
+                              + os.path.join(root, "conf")
+                              + " therefore using default settings")
         else:
             command.append("-config")
             command.append(files[0])
@@ -471,19 +473,21 @@ class SystemDSContext(object):
         :return: an Operation Node, containing the read data the operationNode read can be of types, Matrix, Frame or Scalar.
         """
         mdt_filepath = path + ".mtd"
-        if os.path.exists(mdt_filepath): # If metadata file is existing, then simply use that and force data type to mtd file
+        # If metadata file is existing, then simply use that and force data type to mtd file
+        if os.path.exists(mdt_filepath):
             with open(mdt_filepath) as jspec_file:
                 mtd = json.load(jspec_file)
                 kwargs["data_type"] = mtd["data_type"]
             if kwargs.get("format", None):
                 kwargs["format"] = self.__fix_string_args(kwargs["format"])
-        elif kwargs.get("format", None): # If format is specified. Then use that format
+        elif kwargs.get("format", None):  # If format is specified. Then use that format
             kwargs["format"] = self.__fix_string_args(kwargs["format"])
-        else: #Otherwise guess at what format the file is based on file extension
+        else:  # Otherwise guess at what format the file is based on file extension
             if ".csv" in path[-4:]:
                 kwargs["format"] = '"csv"'
-                self._log.warning("Guessing '"+path+"' is a csv file, please add a mtd file, or specify in arguments")
-                if not ("header" in kwargs) and "data_type" in kwargs and kwargs["data_type"]  == "frame":
+                self._log.warning(
+                    "Guessing '"+path+"' is a csv file, please add a mtd file, or specify in arguments")
+                if not ("header" in kwargs) and "data_type" in kwargs and kwargs["data_type"] == "frame":
                     kwargs["header"] = True
 
         data_type = kwargs.get("data_type", None)
@@ -501,13 +505,15 @@ class SystemDSContext(object):
                 kwargs["value_type"] = f'"{output_type.name}"'
                 return Scalar(self, "read", [f'"{path}"'], named_input_nodes=kwargs, output_type=output_type)
             else:
-                raise ValueError("Invalid arguments for reading scalar, value_type must be specified")
+                raise ValueError(
+                    "Invalid arguments for reading scalar, value_type must be specified")
         elif data_type == "list":
             # Reading a list have no extra arguments.
             return List(self, "read", [f'"{path}"'])
         else:
             kwargs["data_type"] = '"matrix"'
-            self._log.warning("Unknown type read please add a mtd file, or specify in arguments, defaulting to matrix")
+            self._log.warning(
+                "Unknown type read please add a mtd file, or specify in arguments, defaulting to matrix")
             return Matrix(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
 
     def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> Scalar:

@@ -18,8 +18,9 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import numpy as np
 import logging
+
+import numpy as np
 from systemds.context import SystemDSContext
 
 # create a random array

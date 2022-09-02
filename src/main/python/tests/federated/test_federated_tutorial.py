@@ -37,3 +37,7 @@ class TestFederatedAggFn(unittest.TestCase):
 
     def test_part3(self):
         import docs.source.code.guide.federated.federatedTutorial_part3
+
+
+if __name__ == "__main__":
+    unittest.main(exit=False)

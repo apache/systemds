@@ -18,9 +18,11 @@
 # under the License.
 #
 # -------------------------------------------------------------
-# Import SystemDSContext
+
 import logging
+
 from systemds.context import SystemDSContext
+
 # Create a context and if necessary (no SystemDS py4j instance running)
 # it starts a subprocess which does the execution in SystemDS
 with SystemDSContext() as sds:

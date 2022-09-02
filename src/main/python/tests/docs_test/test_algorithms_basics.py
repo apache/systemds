@@ -19,21 +19,16 @@
 #
 # -------------------------------------------------------------
 
-import unittest
 import logging
+import unittest
 
 logging.getLogger("root").setLevel(50)
 
 
-class TestSimpleExample(unittest.TestCase):
-    def test_multiply(self):
-        import docs.source.code.getting_started.simpleExamples.multiply
+class TestAlgorithmsBasics(unittest.TestCase):
+    def test_algorithms_script(self):
+        import docs.source.code.guide.algorithms.FullScript
 
-    def test_multiplyMatrix(self):
-        import docs.source.code.getting_started.simpleExamples.multiplyMatrix
 
-    def test_l2svm(self):
-        import docs.source.code.getting_started.simpleExamples.l2svm
-
-    def test_l2svm_internal(self):
-        import docs.source.code.getting_started.simpleExamples.l2svm_internal
+if __name__ == "__main__":
+    unittest.main(exit=False)

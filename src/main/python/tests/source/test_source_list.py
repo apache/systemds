@@ -61,3 +61,6 @@ class TestSource_01(unittest.TestCase):
     #     [b, c] = self.sds.source(self.source_path, "test", True).func2(arr)
     #     res = c.sum().compute()
     #     self.assertTrue(res == 10*10*4)
+
+if __name__ == "__main__":
+    unittest.main(exit=False)

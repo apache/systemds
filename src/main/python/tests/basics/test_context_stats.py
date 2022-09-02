@@ -23,13 +23,13 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
+
 np.random.seed(1412)
 
 
 class TestContextCreation(unittest.TestCase):
 
     sds: SystemDSContext = None
-
 
     @classmethod
     def setUpClass(cls):
@@ -57,7 +57,10 @@ class TestContextCreation(unittest.TestCase):
 
         stats = self.sds.get_stats()
         self.sds.clear_stats()
-        instructions = "\n".join(stats.split("Heavy hitter instructions:")[1].split("\n")[2:])
+        instructions = "\n".join(stats.split(
+            "Heavy hitter instructions:")[1].split("\n")[2:])
         assert("+" in instructions and "*" in instructions and "/" in instructions)
 
 
+if __name__ == "__main__":
+    unittest.main(exit=False)

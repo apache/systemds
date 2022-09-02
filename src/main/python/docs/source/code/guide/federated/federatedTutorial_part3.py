@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 # Python
 import logging
+
 import numpy as np
 from systemds.context import SystemDSContext
 
@@ -38,10 +39,10 @@ with SystemDSContext() as sds:
         ([6, 0], [9, 3])])
     # local matrix to multiply with
     loc = sds.from_numpy(np.array([
-      [1,2,3,4,5,6,7,8,9],
-      [1,2,3,4,5,6,7,8,9],
-      [1,2,3,4,5,6,7,8,9]
-      ]))
+        [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ]))
     # Multiply local and federated
     ret = loc @ fed
     # execute the lazy script and print

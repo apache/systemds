@@ -19,27 +19,29 @@
 #
 #-------------------------------------------------------------
 
-# Builtin function Implements binary-class SVM with squared slack variables
+# This builting function implements binary-class Support Vector Machine (SVM)
+# with squared slack variables (l2 regularization).
 #
 # INPUT:
-# -----------------------------------------------------------------------------------------
-# X              matrix X of feature vectors
-# Y              matrix Y of class labels have to be a single column
-# intercept      No Intercept ( If set to TRUE then a constant bias column is added to X)
-# epsilon        Procedure terminates early if the reduction in objective function value is less
-#                than epsilon (tolerance) times the initial objective function value.
-# reg            Regularization parameter (reg) for L2 regularization
-# maxIterations  Maximum number of conjugate gradient iterations
-# maxii          max inner for loop iterations
-# verbose        Set to true if one wants print statements updating on loss.
-# columnId       The column Id used if one wants to add a ID to the print statement, 
+# ------------------------------------------------------------------------------
+# X              Feature matrix X (shape: m x n)
+# Y              Label vector y of class labels (shape: m x 1), assumed binary
+#                in -1/+1 or 1/2 encoding.
+# intercept      Indicator if a bias column should be added to X and the model
+# epsilon        Tolerance for early termination if the reduction of objective
+#                function is less than epsilon times the initial objective
+# reg            Regularization parameter (lambda) for L2 regularization
+# maxIterations  Maximum number of conjugate gradient (outer) iterations
+# maxii          Maximum number of line search (inner) iterations
+# verbose        Indicator if training details should be printed
+# columnId       An optional class ID used in verbose print output,
 #                eg. used when L2SVM is used in MSVM.
-# -----------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #
 # OUTPUT:
-# ------------------------------------------------------------------------------------------
-# model  the trained model
-# ------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# model          Trained model/weights (shape: n x 1, w/ intercept: n+1)
+# ------------------------------------------------------------------------------
 
 m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
     Double epsilon = 0.001, Double reg = 1, Integer maxIterations = 100, 
@@ -73,28 +75,21 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
   if(check_min != -1 | check_max != +1)
     Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
     
-  # If column_id is -1 then we assume that the fundamental algorithm is MSVM, 
-  # Therefore don't print message.
+  # If column_id is -1 then we assume that it's called from within MSVM
   if(verbose & columnId == -1)
     print('Running L2-SVM ')
 
-  num_samples = nrow(X)
-  num_classes = ncol(Y)
-  
   # Add Bias 
-  num_rows_in_w = ncol(X)
   if (intercept) {
-    ones  = matrix(1, rows=num_samples, cols=1)
+    ones  = matrix(1, rows=nrow(X), cols=1)
     X = cbind(X, ones);
-    num_rows_in_w += 1
   }
   
-  w = matrix(0, rows=num_rows_in_w, cols=1)
+  w = matrix(0, rows=ncol(X), cols=1)
+  Xw = matrix(0, rows=nrow(X), cols=1)
 
   g_old = t(X) %*% Y
   s = g_old
-
-  Xw = matrix(0, rows=nrow(X), cols=1)
 
   iter = 0
   continue = TRUE
@@ -129,8 +124,8 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
     g_new = t(X) %*% (out * Y) - reg * w
 
     if(verbose) {
-      colstr = ifelse(columnId!=-1, ", Col:"+columnId + " ,", " ,")
-      print("Iter: " + toString(iter) + " InnerIter: " + toString(iiter) +" --- "+ colstr + " Obj:" + obj)
+      colstr = ifelse(columnId!=-1, "-- MSVM class="+columnId+": ", "")
+      print(colstr + "Iter: " + iter + " InnerIter: " + iiter +" --- " + " Obj:" + obj)
     }
 
     tmp = sum(s * g_old)

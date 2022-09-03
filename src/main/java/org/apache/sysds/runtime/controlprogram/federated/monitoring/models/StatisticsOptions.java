@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
 public class StatisticsOptions extends BaseModel {
+	private static final long serialVersionUID = 2524032122999491726L;
 	public int rowCount = 20;
 	public boolean utilization = true;
 	public boolean traffic = true;

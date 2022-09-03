@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
 public abstract class CoordinatorConnectionModel extends BaseModel {
+	private static final long serialVersionUID = 918360814223266197L;
 	public Long coordinatorId;
 	private String coordinatorHostId;
 	private static final String localhostIp = "127.0.0.1";

@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
 public class RequestModel extends CoordinatorConnectionModel {
-
+	private static final long serialVersionUID = -5376072120202921000L;
 	public Long workerId;
 	public String type;
 	public Long count;

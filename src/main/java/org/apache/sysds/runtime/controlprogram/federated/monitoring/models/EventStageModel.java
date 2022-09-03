@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 import java.time.LocalDateTime;
 
 public class EventStageModel extends BaseModel {
-
+	private static final long serialVersionUID = -6867424341266726981L;
 	public Long eventId;
 	public String operation;
 	public LocalDateTime startTime;

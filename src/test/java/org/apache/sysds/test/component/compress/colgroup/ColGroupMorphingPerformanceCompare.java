@@ -150,7 +150,7 @@ public class ColGroupMorphingPerformanceCompare {
 	}
 
 	protected static class SDCNoMorph extends ColGroupSDC {
-
+		private static final long serialVersionUID = -7157464508602251065L;
 		private final MatrixBlock mbDict;
 
 		protected SDCNoMorph(int numRows) {

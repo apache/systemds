@@ -293,14 +293,14 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 		byte[] _partial_pubkey_a;
 
-        protected SetupHEFederatedWorker(byte[] partial_pubkey_a) {
-            // delegate everything to parent class. set modelAvg to true, as it is the only supported case
-            super();
-            _partial_pubkey_a = partial_pubkey_a;
-        }
+		protected SetupHEFederatedWorker(byte[] partial_pubkey_a) {
+			// delegate everything to parent class. set modelAvg to true, as it is the only supported case
+			super();
+			_partial_pubkey_a = partial_pubkey_a;
+		}
 
-        @Override
-        public FederatedResponse execute(ExecutionContext ec, Data... data) {
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			// TODO: set other CKKS parameters
 			// TODO generate partial public key
 			NativeHEHelper.initialize();
@@ -315,9 +315,10 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			}
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, partial_pubkey);
-        }
-    }
-		/**
+		}
+	}
+	
+	/**
 	 * Teardown UDF executed on the federated worker
 	 */
 	private static class SetPublicKeyFederatedWorker extends FederatedUDF {

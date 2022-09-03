@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class EventModel extends CoordinatorConnectionModel {
-
+	private static final long serialVersionUID = -5597621916956632690L;
 	public Long workerId;
 	private String coordinatorName;
 	public List<EventStageModel> stages;

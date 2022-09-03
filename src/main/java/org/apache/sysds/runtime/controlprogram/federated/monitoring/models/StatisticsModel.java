@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class StatisticsModel extends BaseModel {
+	private static final long serialVersionUID = -2492467768854934429L;
 	public List<UtilizationModel> utilization;
 	public List<TrafficModel> traffic;
 	public List<EventModel> events;

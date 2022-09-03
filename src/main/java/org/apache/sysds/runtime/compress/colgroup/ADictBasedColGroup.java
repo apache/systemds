@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public abstract class ADictBasedColGroup extends AColGroupCompressed {
+	private static final long serialVersionUID = -3737025296618703668L;
 	/** Distinct value tuples associated with individual bitmaps. */
 	protected ADictionary _dict;
 

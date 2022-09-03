@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
 public class WorkerModel extends BaseModel {
+	private static final long serialVersionUID = -7516912892237220796L;
 	public String name;
 	public String address;
 

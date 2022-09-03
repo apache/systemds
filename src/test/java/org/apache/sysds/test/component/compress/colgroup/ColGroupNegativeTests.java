@@ -138,6 +138,8 @@ public class ColGroupNegativeTests {
 	}
 
 	private class FakeIndexing extends IndexFunction {
+		private static final long serialVersionUID = -4099420257856761251L;
+
 		protected FakeIndexing() {
 		}
 
@@ -173,12 +175,16 @@ public class ColGroupNegativeTests {
 	}
 
 	private class FakeValueFunction extends ValueFunction {
+		private static final long serialVersionUID = -585186573175954738L;
+
 		private FakeValueFunction() {
 
 		}
 	}
 
 	private class FakeAPreAgg extends APreAgg {
+		private static final long serialVersionUID = 8759470530917794282L;
+
 		private FakeAPreAgg() {
 			super(new int[1], Dictionary.createNoCheck(new double[13]), null);
 		}
@@ -339,6 +345,7 @@ public class ColGroupNegativeTests {
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
+		private static final long serialVersionUID = 7578204757649117273L;
 
 		private FakeDictBasedColGroup() {
 			super(null, null);

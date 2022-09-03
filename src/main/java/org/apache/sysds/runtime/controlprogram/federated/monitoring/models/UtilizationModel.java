@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 import java.time.LocalDateTime;
 
 public class UtilizationModel extends BaseModel {
-
+	private static final long serialVersionUID = 6984053518916899551L;
 	public Long workerId;
 	public LocalDateTime timestamp;
 	public double cpuUsage;

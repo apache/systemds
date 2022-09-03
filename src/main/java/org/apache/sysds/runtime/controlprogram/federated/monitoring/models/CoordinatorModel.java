@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 
 public class CoordinatorModel extends BaseModel {
+	private static final long serialVersionUID = 4116787631938152573L;
 	public String name;
 	public String host;
 	public Long processId;

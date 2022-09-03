@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.models;
 import java.time.LocalDateTime;
 
 public class TrafficModel extends CoordinatorConnectionModel {
-
+	private static final long serialVersionUID = 5042814368347405998L;
 	public Long workerId;
 	public LocalDateTime timestamp;
 	public Long byteAmount;

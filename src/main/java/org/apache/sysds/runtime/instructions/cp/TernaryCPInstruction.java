@@ -19,7 +19,9 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.functionobjects.IfElse;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
@@ -71,12 +73,20 @@ public class TernaryCPInstruction extends ComputationCPInstruction {
 			ec.setMatrixOutput(output.getName(), out);
 		}
 		else { //SCALARS
-			double value = ((TernaryOperator)_optr).fn.execute(
-				ec.getScalarInput(input1).getDoubleValue(),
-				ec.getScalarInput(input2).getDoubleValue(),
-				ec.getScalarInput(input3).getDoubleValue());
-			ec.setScalarOutput(output.getName(), ScalarObjectFactory
-				.createScalarObject(output.getValueType(), value));
+			if( ((TernaryOperator)_optr).fn instanceof IfElse
+				&& output.getValueType() == ValueType.STRING) {
+				String value = (ec.getScalarInput(input1).getDoubleValue() != 0 ?
+					ec.getScalarInput(input2) : ec.getScalarInput(input3)).getStringValue();
+				ec.setScalarOutput(output.getName(), new StringObject(value));
+			}
+			else {
+				double value = ((TernaryOperator)_optr).fn.execute(
+					ec.getScalarInput(input1).getDoubleValue(),
+					ec.getScalarInput(input2).getDoubleValue(),
+					ec.getScalarInput(input3).getDoubleValue());
+				ec.setScalarOutput(output.getName(), ScalarObjectFactory
+					.createScalarObject(output.getValueType(), value));
+			}
 		}
 	}
 }

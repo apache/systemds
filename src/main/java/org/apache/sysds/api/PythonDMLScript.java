@@ -19,6 +19,8 @@
 
 package org.apache.sysds.api;
 
+import java.net.InetAddress;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.jmlc.Connection;
@@ -26,7 +28,6 @@ import org.apache.sysds.api.python.IPythonContext;
 
 import py4j.GatewayServer;
 import py4j.GatewayServerListener;
-import py4j.Py4JNetworkException;
 import py4j.Py4JServerConnection;
 
 public class PythonDMLScript {
@@ -42,11 +43,8 @@ public class PythonDMLScript {
 	public static void main(String[] args) throws Exception {
 		final DMLOptions dmlOptions = DMLOptions.parseCLArguments(args);
 		DMLScript.loadConfiguration(dmlOptions.configFile);
-		start(dmlOptions.pythonPort);
-	}
-
-	private static void start(int port) throws Py4JNetworkException {
-		GatewayServer GwS = new GatewayServer(new PythonDMLScript(), port);
+		GatewayServer GwS = new GatewayServer(new PythonDMLScript(), dmlOptions.pythonPort);
+		GwS.resetCallbackClient(InetAddress.getByName("127.0.0.1"), dmlOptions.pythonCallbackPort);
 		GwS.addListener(new DMLGateWayListener());
 		GwS.start();
 	}
@@ -103,14 +101,11 @@ public class PythonDMLScript {
 	
 		@Override
 		public void serverStarted() {
-			// message the python interface that the JVM is ready.
-			// System.out.println("GatewayServer Started");
 			LOG.info("GatewayServer Started");
 		}
 	
 		@Override
 		public void serverStopped() {
-			// System.out.println("GatewayServer Stopped");
 			LOG.info("GatewayServer Stopped");
 			System.exit(0);
 		}

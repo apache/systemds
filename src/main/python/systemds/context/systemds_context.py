@@ -23,14 +23,12 @@ __all__ = ["SystemDSContext"]
 
 import json
 import logging
-import math
 import os
 import socket
 import sys
 from contextlib import contextmanager
 from glob import glob
 from queue import Queue
-from sqlite3 import connect
 from subprocess import PIPE, Popen
 from threading import Thread
 from time import sleep
@@ -59,11 +57,14 @@ class SystemDSContext(object):
     java_gateway: JavaGateway
     _capture_statistics: bool
     _statistics: str
+
     _log: logging.Logger
     __startupSuccess: bool = False
     __startupThread: Thread 
+    __stdout:Queue
+    __stderr:Queue
 
-    def __init__(self, port: int = -1, capture_statistics: bool = False, capture_stdout: bool = False, logging_level: int = 20, 
+    def __init__(self, port: int = -1, callback_port: int = -1, capture_statistics: bool = False, capture_stdout: bool = False, logging_level: int = 20, 
         py4j_logging_level: int = 50):
         """Starts a new instance of SystemDSContext, in which the connection to a JVM systemds instance is handled
         Any new instance of this SystemDS Context, would start a separate new JVM.
@@ -91,9 +92,9 @@ class SystemDSContext(object):
         self._log.addHandler(f_handler)
 
 
-        # self.__start(port, capture_stdout)
-        self.__startupThread = Thread(target=self.__start, args=(self, port, capture_stdout), daemon=True)
-        self.__startupThread.start()
+        self.__start(port, callback_port, capture_stdout)
+        # self.__startupThread = Thread(target=self.__start, args=(self, port, capture_stdout), daemon=True)
+        # self.__startupThread.start()
 
         self._statistics = ""
         self._capture_statistics = capture_statistics
@@ -112,11 +113,14 @@ class SystemDSContext(object):
         :param lines: The number of lines to try to read from the stdout queue.
         default -1 prints all current lines in the queue.
         """
-        if hasattr(self, "__stdout"):
+        if self.__stdout:
             if (lines == -1 or self.__stdout.qsize() < lines):
                 return [self.__stdout.get() for x in range(self.__stdout.qsize())]
             else:
                 return [self.__stdout.get() for x in range(lines)]
+        else:
+            return []
+
 
     def get_stderr(self, lines: int = -1):
         """Getter for the stderr of the java subprocess
@@ -124,11 +128,13 @@ class SystemDSContext(object):
         :param lines: The number of lines to try to read from the stderr queue.
         default -1 prints all current lines in the queue.
         """
-        if hasattr(self, "__stderr"):
+        if  self.__stderr:
             if lines == -1 or self.__stderr.qsize() < lines:
                 return [self.__stderr.get() for x in range(self.__stderr.qsize())]
             else:
                 return [self.__stderr.get() for x in range(lines)]
+        else:
+            return []
 
     def exception_and_close(self, exception, trace_back_limit: int = None):
         """
@@ -167,37 +173,10 @@ class SystemDSContext(object):
             self.__stdout_thread.start()
             self.__stderr_thread.start()
             return process
-            # return self.__verify_startup(command)
         else:
             return Popen(command)
-            # return self.
 
-    # def __verify_startup(self, command) -> bool:
-    #     first_stdout = self.get_stdout()
-    #     if(not "GatewayServer Started" in first_stdout):
-    #         return self.__verify_startup_retry(command)
-    #     else:
-    #         return True
-
-    # def __verify_startup_retry(self, command,  retry: int = 1) -> bool:
-    #     sleep(0.8 * retry)
-    #     stdout = self.get_stdout()
-    #     if "GatewayServer Started" in stdout:
-    #         return True, ""
-    #     elif retry < 3:  # retry 3 times
-    #         return self.__verify_startup_retry(command, retry + 1)
-    #     else:
-    #         error_message = "Error in startup of systemDS gateway process:"
-    #         error_message += "\n" + " ".join(command)
-    #         stderr = self.get_stderr()
-    #         if len(stderr) > 0:
-    #             error_message += "\n" + "\n".join(stderr)
-    #         if len(stdout) > 0:
-    #             error_message += "\n\n" + "\n".join(stdout)
-    #         self.__error_message = error_message
-    #         return False
-
-    def __build_startup_command(self, port: int):
+    def __build_startup_command(self, port: int, callback_port: int):
 
         command = ["java", "-cp"]
         root = os.environ.get("SYSTEMDS_ROOT")
@@ -254,23 +233,30 @@ class SystemDSContext(object):
 
         if port == -1:
             actual_port = self.__get_open_port()
+
         else:
             actual_port = port
+
+        if callback_port == -1:
+            callback_port = self.__get_open_port()
+        else:
+            callback_port = callback_port;
 
         command.append("--python")
         command.append(str(actual_port))
 
-        return command, actual_port
+        command.append("--pythonCallBack")
+        command.append(str(callback_port))
 
-    def __start(self, port: int, capture_stdout: bool, retry: int = 0):
+        return command, actual_port, callback_port
+
+    def __start(self, port: int, callback_port: int, capture_stdout: bool, retry: int = 0):
         if retry > 3:
             raise Exception(
                 "Failed startup of SystemDS Context with 3 repeats")
         
-        command, actual_port = self.__build_startup_command(port)
+        command, actual_port, callback_port = self.__build_startup_command(port, callback_port)
         process = self.__try_startup(command, capture_stdout)
-        # self._log.info("Startup SystemDS Context: " + str(port) +
-        #                " " + str(actual_port) + " " + str(retry))
 
         gwp = GatewayParameters(port=actual_port, eager_load=True)
         try:
@@ -283,7 +269,7 @@ class SystemDSContext(object):
                 sleep(sleep_time)
                 try:
                     # raw_token = proto.unescape_new_line(gateway_parameters.auth_token)
-                    proxy_port = 25334 #self.__get_open_port()
+                    proxy_port = callback_port #self.__get_open_port()
 
                     cbp = CallbackServerParameters(port= proxy_port, eager_load=True, auth_token=None, propagate_java_exceptions = True)
                     # cbp = None
@@ -316,10 +302,10 @@ class SystemDSContext(object):
                     # connect_retry = connect_retry + 1
             if not self.__startupSuccess:
                 self.__kill_Popen(process)
-                self.__start(-1, capture_stdout, retry + 1)
+                self.__start(-1,-1, capture_stdout, retry + 1)
         except Exception:
             self.__kill_Popen(process)
-            self.__start(-1, capture_stdout, retry + 3)
+            self.__start(-1,-1, capture_stdout, retry + 3)
 
     # def __retry_start(self, ret):
     #     command, actual_port = self.__build_startup_command(-1)
@@ -725,14 +711,6 @@ class SystemDSContext(object):
         """ Interface method for Java to callback into python. """
         self.__startupSuccess = True
         self._log.info("Callback successful")
-        # self.__startupThread.join()
-        # self.__startupThread = None
-
-    # def awaitStartup(self):
-    #     while(self.__startupThread != None):
-    #         self.__startupThread.join()
-    #         self.__startupThread = None
-        # return self.__startupThread == None and self.__startupSuccess
 
     class Java:
         implements = ['org.apache.sysds.api.python.IPythonContext']

@@ -76,6 +76,7 @@ public class DMLOptions {
 	public boolean              fedMonitoring = false;
 	public int                  fedMonitoringPort = -1;
 	public int                  pythonPort    = -1;
+	public int                  pythonCallbackPort = -1;
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
 	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
 	public boolean              noFedRuntimeConversion = false;   // If activated, no runtime conversion of CP instructions to FED instructions will be performed.
@@ -261,6 +262,7 @@ public class DMLOptions {
 
 		if (line.hasOption("python")){
 			dmlOptions.pythonPort = Integer.parseInt(line.getOptionValue("python"));
+			dmlOptions.pythonCallbackPort = Integer.parseInt(line.getOptionValue("pythonCallBack"));
 		}
 
 		// Named arguments map is created as ("$K, 123), ("$X", "X.csv"), etc
@@ -347,8 +349,11 @@ public class DMLOptions {
 		Option debugOpt = OptionBuilder.withDescription("runs in debug mode; default off")
 			.create("debug");
 		Option pythonOpt = OptionBuilder
-			.withDescription("Python Context start with port argument for communication to python")
+			.withDescription("Python Context start with port argument for communication to from python to java")
 			.isRequired().hasArg().create("python");
+		Option pythonCallbackOpt = OptionBuilder
+			.withDescription("Python Context start with port argument for communication to java to python")
+			.isRequired().hasArg().create("pythonCallBack");
 		Option monitorIdOpt = OptionBuilder
 				.withDescription("Coordinator context start with monitorId argument for monitoring registration")
 				.hasOptionalArg().create("monitorId");
@@ -402,6 +407,7 @@ public class DMLOptions {
 		options.addOption(federatedCompilation);
 		options.addOption(noFedRuntimeConversion);
 		options.addOption(commandlineSeed);
+		options.addOption(pythonCallbackOpt);
 
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()

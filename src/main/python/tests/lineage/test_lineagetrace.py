@@ -37,7 +37,7 @@ class TestLineageTrace(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -61,6 +61,9 @@ class TestLineageTrace(unittest.TestCase):
         )
 
         sysds_trace = create_execute_and_trace_dml(dml_script, "trace1")
+
+        print(python_trace)
+        print(sysds_trace)
 
         # It is not garantied, that the two lists 100% align to be the same.
         # Therefore for now, we only compare if the command is the same, in same order.

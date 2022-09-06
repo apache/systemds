@@ -50,11 +50,4 @@ public class StartupTest {
 		// Number out of range
 		PythonDMLScript.main(new String[] {"-python", "918757"});
 	}
-
-	@Test(expected = Exception.class)
-	public void testStartupCorrectButTwice() throws Exception {
-		// crash if you start two instances on same port.
-		PythonDMLScript.main(new String[] {"-python", "8142"});
-		PythonDMLScript.main(new String[] {"-python", "8142"});
-	}
 }

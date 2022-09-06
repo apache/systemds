@@ -51,7 +51,7 @@ class TestLm(unittest.TestCase):
         X_sds = self.sds.from_numpy(X)
         Y_sds = self.sds.from_numpy(Y)
 
-        sds_model_weights = lm(X_sds, Y_sds).compute()
+        sds_model_weights = lm(X_sds, Y_sds, verbose=False).compute()
         model = model.reshape(sds_model_weights.shape)
 
         eps = 1e-03

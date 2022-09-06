@@ -30,10 +30,10 @@ source("nn/optim/sgd.dml") as sgd
 init_model = function(Integer inputDimension, Integer outputDimension, int seed = -1)
   return(list[unknown] model){
   [W1, b1] = affine::init(inputDimension, 200, seed = seed)
-  lseed = ifelse(seed==-1, -1, seed + 1);
-  [W2, b2] = affine::init(200, 200,  seed = lseed)
-  lseed = ifelse(seed==-1, -1, seed + 2);
-  [W3, b3] = affine::init(200, outputDimension, seed = lseed)
+  l_seed = ifelse(seed==-1, -1, seed + 1);
+  [W2, b2] = affine::init(200, 200,  seed = l_seed)
+  l_seed = ifelse(seed==-1, -1, seed + 2);
+  [W3, b3] = affine::init(200, outputDimension, seed = l_seed)
   model = list(W1, W2, W3, b1, b2, b3)
 }
 
@@ -75,8 +75,8 @@ gradients = function(list[unknown] model,
   probs = softmax::forward(out3)
 
   # Compute loss & accuracy for training data
-  loss = cross_entropy_loss::forward(probs, labels)
-  print("Batch loss: " + loss)
+  # loss = cross_entropy_loss::forward(probs, labels)
+  # print("Batch loss: " + loss)
 
   # Compute data backward pass
   # Note it is same arguments as forward with one extra argument in front

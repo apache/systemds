@@ -19,9 +19,6 @@
 #
 # -------------------------------------------------------------
 
-from systemds.context import SystemDSContext
-from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
 from systemds.examples.tutorials.adult import DataManager
 
-d = DataManager()
-
+DataManager()

@@ -21,11 +21,9 @@
 
 import unittest
 
-import numpy as np
 from systemds.context import SystemDSContext
 from systemds.examples.tutorials.mnist import DataManager
-from systemds.operator.algorithm import kmeans, multiLogReg, multiLogRegPredict
-from systemds.script_building import DMLScript
+from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
 
 
 class Test_DMLScript(unittest.TestCase):
@@ -64,8 +62,8 @@ class Test_DMLScript(unittest.TestCase):
 
     def test_multi_log_reg(self):
         # Reduced because we want the tests to finish a bit faster.
-        train_count = 15000
-        test_count = 5000
+        train_count = 5000
+        test_count = 2000
         # Train data
         X = self.sds.from_numpy( self.d.get_train_data().reshape(
             (60000, 28*28))[:train_count])
@@ -78,9 +76,8 @@ class Test_DMLScript(unittest.TestCase):
         Yt = self.sds.from_numpy( self.d.get_test_labels()[:test_count])
         Yt = Yt + 1.0
 
-        bias = multiLogReg(X, Y)
-
-        [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute()
+        bias = multiLogReg(X, Y, verbose = False)
+        [_, _, acc] = multiLogRegPredict(Xt, bias, Yt, verbose=False).compute()
 
         self.assertGreater(acc, 80)
 

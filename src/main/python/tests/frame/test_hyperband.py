@@ -67,6 +67,7 @@ class TestHyperband(unittest.TestCase):
             y_val=y_val,
             params=params,
             paramRanges=paramRanges,
+            verbose=False
         ).compute()
         self.assertTrue(isinstance(best_weights_mat, np.ndarray))
         self.assertTrue(best_weights_mat.shape[0] == self.X_train.shape[1])

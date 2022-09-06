@@ -20,11 +20,22 @@
 # -------------------------------------------------------------
 
 import unittest
+import logging
 
 from systemds.context import SystemDSContext
 
 
 class TestContextCreation(unittest.TestCase):
+
+    def test_random_port(self):
+        sds1 = SystemDSContext()
+        sds1.close()
+
+    def test_two_random_port(self):
+        sds1 = SystemDSContext(logging_level=20)
+        sds2 = SystemDSContext(logging_level=20)
+        sds1.close()
+        sds2.close()
 
     def test_same_port(self):
         # Same port should graciously change port

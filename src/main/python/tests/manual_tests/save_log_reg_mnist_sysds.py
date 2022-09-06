@@ -27,12 +27,11 @@ d = DataManager()
 base_path = "systemds/examples/tutorials/mnist/"
 with SystemDSContext() as sds:
     # Train Data
-    X = sds.from_numpy( d.get_train_data().reshape((60000, 28*28)))
+    X = sds.from_numpy(d.get_train_data().reshape((60000, 28*28)))
     X.write(base_path + "train_data").compute()
-    Y = sds.from_numpy( d.get_train_labels()) + 1.0
+    Y = sds.from_numpy(d.get_train_labels()) + 1.0
     Y.write(base_path + "train_labels").compute()
-    Xt = sds.from_numpy( d.get_test_data().reshape((10000, 28*28)))
+    Xt = sds.from_numpy(d.get_test_data().reshape((10000, 28*28)))
     Xt.write(base_path + "test_data").compute()
-    Yt = sds.from_numpy( d.get_test_labels()) + 1.0
+    Yt = sds.from_numpy(d.get_test_labels()) + 1.0
     Yt.write(base_path + "test_labels").compute()
-    

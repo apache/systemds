@@ -18,27 +18,30 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import logging
 
-from systemds.context import SystemDSContext
-from systemds.examples.tutorials.mnist import DataManager
-from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
+export SYSDS_QUIET=1
 
-d = DataManager()
+tests=("startup_time_run for_loop_time_run")
+tests=("for_loop_time_run")
+base="tests/manual_tests/time/"
+gr="elapsed"
+gr="elapsed|task-clock|cycles|instructions"
+rep=50
 
-X = d.get_train_data().reshape((60000, 28*28))
-Y = d.get_train_labels()
-Xt = d.get_test_data().reshape((10000, 28*28))
-Yt = d.get_test_labels()
+for t in $tests; do
 
-with SystemDSContext() as sds:
-    # Train Data
-    X_ds = sds.from_numpy(X)
-    Y_ds = sds.from_numpy(Y) + 1.0
-    bias = multiLogReg(X_ds, Y_ds, maxi=30, verbose=False)
-    # Test data
-    Xt_ds = sds.from_numpy(Xt)
-    Yt_ds = sds.from_numpy(Yt) + 1.0
-    [m, y_pred, acc] = multiLogRegPredict(Xt_ds, bias, Yt_ds, verbose=False).compute()
+    # Verbose runs. to verify it works.
+    systemds $base$t.dml
+    python $base$t.py
 
-logging.info(acc)
+    # Timed runs
+    # Systemds
+    perf stat -d -d -d -r $rep \
+        systemds $base$t.dml \
+        2>&1 | grep -E $gr
+
+    # PythonAPI SystemDS
+    perf stat -d -d -d -r $rep \
+        python $base$t.py \
+        2>&1 | grep -E $gr
+done

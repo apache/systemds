@@ -34,7 +34,7 @@ class Test_DMLScript(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True)
         sleep(1)
         cls.sds.get_stdout()
         cls.sds.get_stdout()

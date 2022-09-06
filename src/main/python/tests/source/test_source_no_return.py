@@ -31,7 +31,7 @@ class TestSource_NoReturn(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True)
 
     @classmethod
     def tearDownClass(cls):

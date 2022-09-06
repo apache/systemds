@@ -31,5 +31,5 @@ with SystemDSContext() as sds:
     # Generate labels of all ones and zeros
     labels = sds.rand(10, 1, 1, 1, sparsity=0.5)
 
-    model = l2svm(features, labels).compute()
+    model = l2svm(features, labels, verbose=False).compute()
     logging.info(model)

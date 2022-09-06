@@ -69,60 +69,57 @@ class TestAdultStandardML(unittest.TestCase):
         self.assertEqual((16281, 1), y_l.shape)
 
     def test_train_data_pandas_vs_systemds(self):
-        pandas = self.d.get_train_data_pandas()
-        systemds = self.d.get_train_data(self.sds).compute()
+        pandas = self.d.get_train_data_pandas()[0:2000]
+        systemds = self.d.get_train_data(self.sds)[0:2000].compute()
         self.assertTrue(len(pandas.columns.difference(systemds.columns)) == 0)
         self.assertEqual(pandas.shape, systemds.shape)
 
     def test_train_labels_pandas_vs_systemds(self):
          # Pandas does not strip the parsed values.. so i have to do it here.
-        pandas = np.array(
-            [x.strip() for x in self.d.get_train_labels_pandas().to_numpy().flatten()])
-        systemds = self.d.get_train_labels(
-            self.sds).compute().to_numpy().flatten()
+        pandas = np.array([x.strip() for x in self.d.get_train_labels_pandas()[0:2000].to_numpy().flatten()])
+        systemds = self.d.get_train_labels(self.sds)[0:2000].compute().to_numpy().flatten()
         comp = pandas == systemds
         self.assertTrue(comp.all())
 
     def test_test_labels_pandas_vs_systemds(self):
         # Pandas does not strip the parsed values.. so i have to do it here.
         pandas = np.array(
-            [x.strip() for x in self.d.get_test_labels_pandas().to_numpy().flatten()])
-        systemds = self.d.get_test_labels(
-            self.sds).compute().to_numpy().flatten()
+            [x.strip() for x in self.d.get_test_labels_pandas()[0:2000].to_numpy().flatten()])
+        systemds = self.d.get_test_labels(self.sds)[0:2000].compute().to_numpy().flatten()
         comp = pandas == systemds
         self.assertTrue(comp.all())
 
     def test_transform_encode_train_data(self):
         jspec = self.d.get_jspec(self.sds)
-        train_x, M1 = self.d.get_train_data(self.sds).transform_encode(spec=jspec)
+        train_x, M1 = self.d.get_train_data(self.sds)[0:2000].transform_encode(spec=jspec)
         train_x_numpy = train_x.compute()
-        self.assertEqual((32561, 107), train_x_numpy.shape)
+        self.assertEqual((2000, 101), train_x_numpy.shape)
 
     def test_transform_encode_apply_test_data(self):
         jspec = self.d.get_jspec(self.sds)
-        train_x, M1 = self.d.get_train_data(self.sds).transform_encode(spec=jspec)
-        test_x = self.d.get_test_data(self.sds).transform_apply(spec=jspec, meta=M1)
+        train_x, M1 = self.d.get_train_data(self.sds)[0:2000].transform_encode(spec=jspec)
+        test_x = self.d.get_test_data(self.sds)[0:2000].transform_apply(spec=jspec, meta=M1)
         test_x_numpy = test_x.compute()
-        self.assertEqual((16281, 107), test_x_numpy.shape)
+        self.assertEqual((2000, 101), test_x_numpy.shape)
 
     def test_transform_encode_train_labels(self):
         jspec_dict = {"recode":["income"]}
         jspec = self.sds.scalar(f'"{jspec_dict}"')
-        train_y, M1 = self.d.get_train_labels(self.sds).transform_encode(spec=jspec)
+        train_y, M1 = self.d.get_train_labels(self.sds)[0:2000].transform_encode(spec=jspec)
         train_y_numpy = train_y.compute()
-        self.assertEqual((32561, 1), train_y_numpy.shape)
+        self.assertEqual((2000, 1), train_y_numpy.shape)
 
     def test_transform_encode_test_labels(self):
         jspec_dict = {"recode":["income"]}
         jspec = self.sds.scalar(f'"{jspec_dict}"')
-        train_y, M1 = self.d.get_train_labels(self.sds).transform_encode(spec=jspec)
-        test_y = self.d.get_test_labels(self.sds).transform_apply(spec=jspec, meta=M1)
+        train_y, M1 = self.d.get_train_labels(self.sds)[0:2000].transform_encode(spec=jspec)
+        test_y = self.d.get_test_labels(self.sds)[0:2000].transform_apply(spec=jspec, meta=M1)
         test_y_numpy = test_y.compute()
-        self.assertEqual((16281, 1), test_y_numpy.shape)
+        self.assertEqual((2000, 1), test_y_numpy.shape)
 
     def test_multi_log_reg(self):
         # Reduced because we want the tests to finish a bit faster.
-        train_count = 10000
+        train_count = 2000
         test_count = 500
 
         jspec_data = self.d.get_jspec(self.sds)
@@ -138,8 +135,8 @@ class TestAdultStandardML(unittest.TestCase):
         test_y_frame = self.d.get_test_labels(self.sds)[0:test_count]
         test_y = test_y_frame.transform_apply(spec=jspec_labels, meta=M2)
 
-        betas = multiLogReg(train_x, train_y)
-        [_, y_pred, acc] = multiLogRegPredict(test_x, betas, test_y)
+        betas = multiLogReg(train_x, train_y, verbose=False)
+        [_, y_pred, acc] = multiLogRegPredict(test_x, betas, test_y, verbose=False)
 
         [_, conf_avg] = confusionMatrix(y_pred, test_y)
         confusion_numpy = conf_avg.compute()

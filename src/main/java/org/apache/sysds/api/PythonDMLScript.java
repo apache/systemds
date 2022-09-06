@@ -30,7 +30,8 @@ import py4j.Py4JServerConnection;
 
 public class PythonDMLScript {
 
-	private Connection _connection;
+	private static final Log LOG = LogFactory.getLog(PythonDMLScript.class.getName());
+	final private Connection _connection;
 
 	/**
 	 * Entry point for Python API.
@@ -41,13 +42,22 @@ public class PythonDMLScript {
 	public static void main(String[] args) throws Exception {
 		final DMLOptions dmlOptions = DMLOptions.parseCLArguments(args);
 		DMLScript.loadConfiguration(dmlOptions.configFile);
-		start(dmlOptions.pythonPort);
-	}
-
-	private static void start(int port) throws Py4JNetworkException {
-		GatewayServer GwS = new GatewayServer(new PythonDMLScript(), port);
+		final GatewayServer GwS = new GatewayServer(new PythonDMLScript(), dmlOptions.pythonPort);
 		GwS.addListener(new DMLGateWayListener());
-		GwS.start();
+		try {
+			GwS.start();
+		}
+		catch(Py4JNetworkException p4e) {
+			/**
+			 * This sometimes happens when the startup is using a port already in use. In this case we handle it in python
+			 * therefore use logging framework. and terminate program.
+			 */
+			LOG.info("failed startup", p4e);
+			System.exit(-1);
+		}
+		catch(Exception e) {
+			throw new DMLException("Failed startup and maintaining Python gateway", e);
+		}
 	}
 
 	private PythonDMLScript() {
@@ -60,53 +70,52 @@ public class PythonDMLScript {
 	public Connection getConnection() {
 		return _connection;
 	}
-	
+
 	protected static class DMLGateWayListener implements GatewayServerListener {
 		private static final Log LOG = LogFactory.getLog(DMLGateWayListener.class.getName());
-	
+
 		@Override
 		public void connectionError(Exception e) {
 			LOG.warn("Connection error: " + e.getMessage());
 			System.exit(1);
 		}
-	
+
 		@Override
 		public void connectionStarted(Py4JServerConnection gatewayConnection) {
 			LOG.debug("Connection Started: " + gatewayConnection.toString());
 		}
-	
+
 		@Override
 		public void connectionStopped(Py4JServerConnection gatewayConnection) {
 			LOG.debug("Connection stopped: " + gatewayConnection.toString());
 		}
-	
+
 		@Override
 		public void serverError(Exception e) {
 			LOG.error("Server Error " + e.getMessage());
 		}
-	
+
 		@Override
 		public void serverPostShutdown() {
 			LOG.info("Shutdown done");
 			System.exit(0);
 		}
-	
+
 		@Override
 		public void serverPreShutdown() {
 			LOG.info("Starting JVM shutdown");
 		}
-	
+
 		@Override
 		public void serverStarted() {
-			// message the python interface that the JVM is ready.
-			System.out.println("GatewayServer Started");
+			LOG.info("GatewayServer Started");
 		}
-	
+
 		@Override
 		public void serverStopped() {
-			System.out.println("GatewayServer Stopped");
+			LOG.info("GatewayServer Stopped");
 			System.exit(0);
 		}
 	}
-}
 
+}

@@ -259,9 +259,8 @@ public class DMLOptions {
 			}
 		}
 
-		if (line.hasOption("python")){
+		if (line.hasOption("python"))
 			dmlOptions.pythonPort = Integer.parseInt(line.getOptionValue("python"));
-		}
 
 		// Named arguments map is created as ("$K, 123), ("$X", "X.csv"), etc
 		if (line.hasOption("nvargs")){
@@ -347,7 +346,7 @@ public class DMLOptions {
 		Option debugOpt = OptionBuilder.withDescription("runs in debug mode; default off")
 			.create("debug");
 		Option pythonOpt = OptionBuilder
-			.withDescription("Python Context start with port argument for communication to python")
+			.withDescription("Python Context start with port argument for communication to from python to java")
 			.isRequired().hasArg().create("python");
 		Option monitorIdOpt = OptionBuilder
 				.withDescription("Coordinator context start with monitorId argument for monitoring registration")

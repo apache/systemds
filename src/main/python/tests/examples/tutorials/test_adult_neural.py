@@ -43,7 +43,7 @@ class TestAdultNeural(unittest.TestCase):
     dataset_path_test_mtd: str = "../../test/resources/datasets/adult/test_data.csv.mtd"
     dataset_jspec: str = "../../test/resources/datasets/adult/jspec.json"
 
-    train_count: int = 15000
+    train_count: int = 5000
     test_count: int = 300
 
     network_dir: str = "tests/examples/tutorials/model"

@@ -22,6 +22,7 @@ package org.apache.sysds.api;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.jmlc.Connection;
+import org.apache.sysds.api.python.IPythonContext;
 
 import py4j.GatewayServer;
 import py4j.GatewayServerListener;
@@ -59,6 +60,10 @@ public class PythonDMLScript {
 
 	public Connection getConnection() {
 		return _connection;
+	}
+
+	public void callBackStartupSuccessful(IPythonContext ctx){
+		ctx.startupSuccessful();
 	}
 	
 	protected static class DMLGateWayListener implements GatewayServerListener {
@@ -99,14 +104,17 @@ public class PythonDMLScript {
 		@Override
 		public void serverStarted() {
 			// message the python interface that the JVM is ready.
-			System.out.println("GatewayServer Started");
+			// System.out.println("GatewayServer Started");
+			LOG.info("GatewayServer Started");
 		}
 	
 		@Override
 		public void serverStopped() {
-			System.out.println("GatewayServer Stopped");
+			// System.out.println("GatewayServer Stopped");
+			LOG.info("GatewayServer Stopped");
 			System.exit(0);
 		}
 	}
+
 }
 

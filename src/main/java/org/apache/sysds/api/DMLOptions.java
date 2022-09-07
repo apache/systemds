@@ -353,7 +353,7 @@ public class DMLOptions {
 			.isRequired().hasArg().create("python");
 		Option pythonCallbackOpt = OptionBuilder
 			.withDescription("Python Context start with port argument for communication to java to python")
-			.isRequired().hasArg().create("pythonCallBack");
+			.hasArg().create("pythonCallBack");
 		Option monitorIdOpt = OptionBuilder
 				.withDescription("Coordinator context start with monitorId argument for monitoring registration")
 				.hasOptionalArg().create("monitorId");

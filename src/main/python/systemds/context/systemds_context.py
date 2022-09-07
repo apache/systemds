@@ -59,8 +59,8 @@ class SystemDSContext(object):
     _log: logging.Logger
 
     __startupSuccess: bool = False
-    __stdout: Queue
-    __stderr: Queue
+    __stdout: Queue = None
+    __stderr: Queue = None
 
     def __init__(self, port: int = -1, callback_port: int = -1, capture_statistics: bool = False, capture_stdout: bool = False, logging_level: int = 20,
                  py4j_logging_level: int = 50):
@@ -81,7 +81,6 @@ class SystemDSContext(object):
 
         self._statistics = ""
         self._capture_statistics = capture_statistics
-
 
         self._log.debug("Started JVM and SystemDS python context manager")
 

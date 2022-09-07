@@ -42,5 +42,5 @@ for i in range(10):
 # compute our model
 with SystemDSContext() as sds:
     model = l2svm(sds.from_numpy(features),
-                  sds.from_numpy(labels)).compute()
+                  sds.from_numpy(labels), verbose=False).compute()
     logging.info(model)

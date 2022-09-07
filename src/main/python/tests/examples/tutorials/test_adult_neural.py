@@ -52,14 +52,11 @@ class TestAdultNeural(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
-        cls.sds.capture_stats()
         cls.d = DataManager()
         shutil.rmtree(cls.network_dir, ignore_errors=True)
 
     @classmethod
     def tearDownClass(cls):
-        print(cls.sds.get_stats())
-
         cls.sds.close()
         shutil.rmtree(cls.network_dir, ignore_errors=True)
 

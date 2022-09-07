@@ -19,19 +19,18 @@
 
 package org.apache.sysds.api;
 
-import java.net.InetAddress;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.jmlc.Connection;
-import org.apache.sysds.api.python.IPythonContext;
 
 import py4j.GatewayServer;
 import py4j.GatewayServerListener;
+import py4j.Py4JNetworkException;
 import py4j.Py4JServerConnection;
 
 public class PythonDMLScript {
 
+	private static final Log LOG = LogFactory.getLog(PythonDMLScript.class.getName());
 	private Connection _connection;
 
 	/**
@@ -44,9 +43,20 @@ public class PythonDMLScript {
 		final DMLOptions dmlOptions = DMLOptions.parseCLArguments(args);
 		DMLScript.loadConfiguration(dmlOptions.configFile);
 		GatewayServer GwS = new GatewayServer(new PythonDMLScript(), dmlOptions.pythonPort);
-		GwS.resetCallbackClient(InetAddress.getByName("127.0.0.1"), dmlOptions.pythonCallbackPort);
 		GwS.addListener(new DMLGateWayListener());
-		GwS.start();
+		try{
+			GwS.start();
+		} 
+		catch (Py4JNetworkException p4e){
+			// This sometimes happens when the startup is using a port already in use.
+			// In this case we handle it in python therefore use logging framework.
+			// and terminate program.
+			LOG.info("failed startup", p4e);
+			System.exit(-1);
+		}
+		catch( Exception e){
+			throw new DMLException("Failed startup and maintaining Python gateway", e);
+		}
 	}
 
 	private PythonDMLScript() {
@@ -58,10 +68,6 @@ public class PythonDMLScript {
 
 	public Connection getConnection() {
 		return _connection;
-	}
-
-	public void callBackStartupSuccessful(IPythonContext ctx){
-		ctx.startupSuccessful();
 	}
 	
 	protected static class DMLGateWayListener implements GatewayServerListener {

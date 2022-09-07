@@ -260,10 +260,8 @@ public class DMLOptions {
 			}
 		}
 
-		if (line.hasOption("python")){
+		if (line.hasOption("python"))
 			dmlOptions.pythonPort = Integer.parseInt(line.getOptionValue("python"));
-			dmlOptions.pythonCallbackPort = Integer.parseInt(line.getOptionValue("pythonCallBack"));
-		}
 
 		// Named arguments map is created as ("$K, 123), ("$X", "X.csv"), etc
 		if (line.hasOption("nvargs")){
@@ -351,9 +349,6 @@ public class DMLOptions {
 		Option pythonOpt = OptionBuilder
 			.withDescription("Python Context start with port argument for communication to from python to java")
 			.isRequired().hasArg().create("python");
-		Option pythonCallbackOpt = OptionBuilder
-			.withDescription("Python Context start with port argument for communication to java to python")
-			.hasArg().create("pythonCallBack");
 		Option monitorIdOpt = OptionBuilder
 				.withDescription("Coordinator context start with monitorId argument for monitoring registration")
 				.hasOptionalArg().create("monitorId");
@@ -407,7 +402,6 @@ public class DMLOptions {
 		options.addOption(federatedCompilation);
 		options.addOption(noFedRuntimeConversion);
 		options.addOption(commandlineSeed);
-		options.addOption(pythonCallbackOpt);
 
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()

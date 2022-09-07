@@ -30,13 +30,14 @@ from contextlib import contextmanager
 from glob import glob
 from queue import Queue
 from subprocess import PIPE, Popen
-from threading import Thread
+from threading import RLock, Thread
 from time import sleep
 from typing import Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from py4j.java_gateway import (CallbackServerParameters, GatewayParameters,
+from py4j.java_gateway import (DEFAULT_PORT, DEFAULT_PYTHON_PROXY_PORT,
+                               CallbackServerParameters, GatewayParameters,
                                JavaGateway, Py4JNetworkError)
 from systemds.operator import (Frame, List, Matrix, OperationNode, Scalar,
                                Source)
@@ -54,15 +55,16 @@ class SystemDSContext(object):
     """
 
     java_gateway: JavaGateway
-    _capture_statistics: bool
-    _statistics: str
+    _capture_statistics: bool = False
+    _statistics: str = ""
     _log: logging.Logger
-
-    __startupSuccess: bool = False
     __stdout: Queue = None
     __stderr: Queue = None
 
-    def __init__(self, port: int = -1, callback_port: int = -1, capture_statistics: bool = False, capture_stdout: bool = False, logging_level: int = 20,
+    def __init__(self, port: int = -1,
+                 capture_statistics: bool = False,
+                 capture_stdout: bool = False,
+                 logging_level: int = 20,
                  py4j_logging_level: int = 50):
         """Starts a new instance of SystemDSContext, in which the connection to a JVM systemds instance is handled
         Any new instance of this SystemDS Context, would start a separate new JVM.
@@ -77,11 +79,8 @@ class SystemDSContext(object):
         The logging levels are as follows: 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL.
         """
         self.__setup_logging(logging_level, py4j_logging_level)
-        self.__start(port, callback_port, capture_stdout)
-
-        self._statistics = ""
-        self._capture_statistics = capture_statistics
-
+        self.__start(port,  capture_stdout)
+        self.capture_stats(capture_statistics)
         self._log.debug("Started JVM and SystemDS python context manager")
 
     def get_stdout(self, lines: int = -1):
@@ -152,7 +151,7 @@ class SystemDSContext(object):
         else:
             return Popen(command)
 
-    def __build_startup_command(self, port: int, callback_port: int):
+    def __build_startup_command(self, port: int):
 
         command = ["java", "-cp"]
         root = os.environ.get("SYSTEMDS_ROOT")
@@ -209,68 +208,56 @@ class SystemDSContext(object):
 
         if port == -1:
             actual_port = self.__get_open_port()
-
         else:
             actual_port = port
-
-        if callback_port == -1:
-            callback_port = self.__get_open_port()
-        else:
-            callback_port = callback_port
 
         command.append("--python")
         command.append(str(actual_port))
 
-        command.append("--pythonCallBack")
-        command.append(str(callback_port))
+        return command, actual_port
 
-        return command, actual_port, callback_port
-
-    def __start(self, port: int, callback_port: int, capture_stdout: bool, retry: int = 0):
+    def __start(self, port: int, capture_stdout: bool, retry: int = 0):
         if retry > 3:
             raise Exception(
                 "Failed startup of SystemDS Context with 3 repeats")
+        if port != -1 and self.__is_port_in_use(port):
+            port = -1
+        command, actual_port = self.__build_startup_command(port)
 
-        command, actual_port, callback_actual_port = self.__build_startup_command(
-            port, callback_port)
+        while self.__is_port_in_use(actual_port):
+            command, actual_port, = self.__build_startup_command(actual_port)
+
         process = self.__try_startup(command, capture_stdout)
 
         gwp = GatewayParameters(port=actual_port, eager_load=True)
-        cbp = CallbackServerParameters(
-            port=callback_actual_port, eager_load=True, auth_token=None, propagate_java_exceptions=True)
         try:
-            connect_retry = 0
-            while not self.__startupSuccess and connect_retry < 11:
-                sleep_time = min(0.015 * 2 * connect_retry, 1)
+            connect_retry = 1
+            max_retry = 25
+            while connect_retry < max_retry:
+                sleep_time = 0.04 * connect_retry
                 sleep(sleep_time)
                 try:
-
                     self.java_gateway = JavaGateway(
-                        gateway_parameters=gwp, java_process=process,
-                        callback_server_parameters=cbp, python_proxy_port=callback_actual_port)
-                    self.java_gateway.entry_point.callBackStartupSuccessful(
-                        self)
+                        gateway_parameters=gwp, java_process=process)
+                    # a = self.java_gateway.jvm.System.currentTimeMillis()
+                    # b = self.java_gateway.jvm.System.currentTimeMillis()
+                    # assert(a < b)
+                    return
                 except Py4JNetworkError as pe:
                     m = str(pe)
                     if "An error occurred while trying to connect to the Java server" in m:
                         # Here the startup failed because the java process is not ready.
                         connect_retry += 1
-                    elif "An error occurred while trying to start the callback server" in m:
-                        # Here the startup of the server failed because the port is in use.
-                        connect_retry += 1
-                    else:
-                        # unknown new error.
-                        self._log.error("Network Error startup " + m)
-                        connect_retry = connect_retry + 1
+                    else:  # unknown new error or java process crashed
+                        raise pe
                 except Exception as e:
-                    raise e
-            if not self.__startupSuccess:
-                self.__kill_Popen(process)
-                self.__start(-1, -1, capture_stdout, retry + 1)
-        except Exception:
+                    raise Exception("Exception hit when connecting to JavaGateway, perhaps the JVM terminated because of port", e)
+            raise Exception("Failed to connect to process, making a new JVM")
+        except Exception :    
             self.__kill_Popen(process)
-            self.__start(-1, -1, capture_stdout, retry + 1)
+            self.__start(-1, capture_stdout, retry + 1)
 
+        
     def __enter__(self):
         return self
 
@@ -310,12 +297,16 @@ class SystemDSContext(object):
         """
         # https://stackoverflow.com/questions/2838244/get-open-tcp-port-in-python
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(("", 0))
-        s.listen(1)
-        port = s.getsockname()[1]
-        s.close()
-        return port
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("", 0))
+            s.listen(1)
+            return s.getsockname()[1]
+
+    def __is_port_in_use(self, port: int) -> bool:
+        """Get if the given port is in use."""
+        # https://stackoverflow.com/questions/2470971/fast-way-to-test-if-a-port-is-in-use-using-python
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            return s.connect_ex(('localhost', port)) == 0
 
     def _execution_completed(self, script: DMLScript):
         """
@@ -645,24 +636,27 @@ class SystemDSContext(object):
         """
         return List(self, named_input_nodes=kwargs)
 
-    def startupSuccessful(self):
-        """ Interface method for Java to callback into python. """
-        self.__startupSuccess = True
-        self._log.info("Callback successful")
+    # def startupSuccessful(self):
+    #     """ Interface method for Java to callback into python. """
+    #     self.__startupSuccess = True
+    #     self._log.info("Callback successful")
 
-    def __setup_logging(self, level:int, py4j_level:int):
+    def __setup_logging(self, level: int, py4j_level: int):
         logging.basicConfig()
         py4j = logging.getLogger("py4j.java_gateway")
         py4j.setLevel(py4j_level)
+        py4j.propagate = False
 
         self._log = logging.getLogger(self.__class__.__name__)
         f_handler = logging.StreamHandler()
-
         f_handler.setLevel(level)
         f_format = logging.Formatter(
-            '%(asctime)s - SystemDS - %(levelname)s - %(message)s')
+            '%(asctime)s - SystemDS- %(levelname)s - %(message)s')
         f_handler.setFormatter(f_format)
-        self._log.addHandler(f_handler)
+        self._log.addHandler
+        # avoid the logger to call loggers above.
+        self._log.propagate = False
+        # Reset all handlers to only this new handler.
+        self._log.handlers = [f_handler]
+        self._log.debug("Logging setup done")
 
-    class Java:
-        implements = ['org.apache.sysds.api.python.IPythonContext']

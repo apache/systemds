@@ -25,16 +25,16 @@ tests=("startup_time_run for_loop_time_run")
 tests=("for_loop_time_run")
 base="tests/manual_tests/time/"
 gr="elapsed"
-# gr="elapsed|task-clock|cycles|instructions"
-rep=10
+gr="elapsed|task-clock|cycles|instructions"
+rep=300
 
 for t in $tests; do
     # systemds $base$t.dml
     # python $base$t.py
     # echo $t
-    # perf stat -d -d -d -r $rep \
-    #     systemds $base$t.dml \
-    #     2>&1 | grep -E $gr
+    perf stat -d -d -d -r $rep \
+        systemds $base$t.dml \
+        2>&1 | grep -E $gr
 
     # python $base$t.py
     perf stat -d -d -d -r $rep \

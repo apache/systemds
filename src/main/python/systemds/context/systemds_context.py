@@ -36,7 +36,6 @@ from typing import Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from py4j import protocol as proto
 from py4j.java_gateway import (CallbackServerParameters, GatewayParameters,
                                JavaGateway, Py4JNetworkError)
 from systemds.operator import (Frame, List, Matrix, OperationNode, Scalar,
@@ -57,15 +56,14 @@ class SystemDSContext(object):
     java_gateway: JavaGateway
     _capture_statistics: bool
     _statistics: str
-
     _log: logging.Logger
-    __startupSuccess: bool = False
-    __startupThread: Thread 
-    __stdout:Queue
-    __stderr:Queue
 
-    def __init__(self, port: int = -1, callback_port: int = -1, capture_statistics: bool = False, capture_stdout: bool = False, logging_level: int = 20, 
-        py4j_logging_level: int = 50):
+    __startupSuccess: bool = False
+    __stdout: Queue
+    __stderr: Queue
+
+    def __init__(self, port: int = -1, callback_port: int = -1, capture_statistics: bool = False, capture_stdout: bool = False, logging_level: int = 20,
+                 py4j_logging_level: int = 50):
         """Starts a new instance of SystemDSContext, in which the connection to a JVM systemds instance is handled
         Any new instance of this SystemDS Context, would start a separate new JVM.
 
@@ -78,32 +76,12 @@ class SystemDSContext(object):
         :param logging_level: Specify the logging level used for informative messages, default 20 indicating INFO.
         The logging levels are as follows: 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL.
         """
-        logging.basicConfig()
-        py4j = logging.getLogger("py4j.java_gateway")
-        py4j.setLevel(py4j_logging_level)
-
-        self._log = logging.getLogger(self.__class__.__name__)
-        f_handler = logging.StreamHandler()
-
-        f_handler.setLevel(logging_level)
-        f_format = logging.Formatter(
-            '%(asctime)s - SystemDS - %(levelname)s - %(message)s')
-        f_handler.setFormatter(f_format)
-        self._log.addHandler(f_handler)
-
-
+        self.__setup_logging(logging_level, py4j_logging_level)
         self.__start(port, callback_port, capture_stdout)
-        # self.__startupThread = Thread(target=self.__start, args=(self, port, capture_stdout), daemon=True)
-        # self.__startupThread.start()
 
         self._statistics = ""
         self._capture_statistics = capture_statistics
 
-        # if process.poll() is None:
-        #     self.__start_gateway(actual_port)
-        # else:
-        #     self.exception_and_close(
-        #         "Java process stopped before gateway could connect")
 
         self._log.debug("Started JVM and SystemDS python context manager")
 
@@ -121,14 +99,13 @@ class SystemDSContext(object):
         else:
             return []
 
-
     def get_stderr(self, lines: int = -1):
         """Getter for the stderr of the java subprocess
         The output is taken from the stderr queue and returned in a new list.
         :param lines: The number of lines to try to read from the stderr queue.
         default -1 prints all current lines in the queue.
         """
-        if  self.__stderr:
+        if self.__stderr:
             if lines == -1 or self.__stderr.qsize() < lines:
                 return [self.__stderr.get() for x in range(self.__stderr.qsize())]
             else:
@@ -240,7 +217,7 @@ class SystemDSContext(object):
         if callback_port == -1:
             callback_port = self.__get_open_port()
         else:
-            callback_port = callback_port;
+            callback_port = callback_port
 
         command.append("--python")
         command.append(str(actual_port))
@@ -254,84 +231,46 @@ class SystemDSContext(object):
         if retry > 3:
             raise Exception(
                 "Failed startup of SystemDS Context with 3 repeats")
-        
-        command, actual_port, callback_port = self.__build_startup_command(port, callback_port)
+
+        command, actual_port, callback_actual_port = self.__build_startup_command(
+            port, callback_port)
         process = self.__try_startup(command, capture_stdout)
 
         gwp = GatewayParameters(port=actual_port, eager_load=True)
+        cbp = CallbackServerParameters(
+            port=callback_actual_port, eager_load=True, auth_token=None, propagate_java_exceptions=True)
         try:
-            # self.__retry_start_gateway(process, gwp)
             connect_retry = 0
             while not self.__startupSuccess and connect_retry < 11:
-                sleep_time = min(0.015 * 2* connect_retry, 1)
-                # self._log.info("Retrying connection: " +
-                #                str(connect_retry) + " Sleeping: " + str(sleep_time))
+                sleep_time = min(0.015 * 2 * connect_retry, 1)
                 sleep(sleep_time)
                 try:
-                    # raw_token = proto.unescape_new_line(gateway_parameters.auth_token)
-                    proxy_port = callback_port #self.__get_open_port()
 
-                    cbp = CallbackServerParameters(port= proxy_port, eager_load=True, auth_token=None, propagate_java_exceptions = True)
-                    # cbp = None
                     self.java_gateway = JavaGateway(
                         gateway_parameters=gwp, java_process=process,
-                        callback_server_parameters=cbp, python_proxy_port=proxy_port)
+                        callback_server_parameters=cbp, python_proxy_port=callback_actual_port)
                     self.java_gateway.entry_point.callBackStartupSuccessful(
                         self)
                 except Py4JNetworkError as pe:
                     m = str(pe)
                     if "An error occurred while trying to connect to the Java server" in m:
                         # Here the startup failed because the java process is not ready.
-                        connect_retry = connect_retry + 1
+                        connect_retry += 1
                     elif "An error occurred while trying to start the callback server" in m:
                         # Here the startup of the server failed because the port is in use.
                         connect_retry += 1
-                    # elif "Address already in use" in m:
-                    #     connect_retry += 10000
-                    # elif "Transport endpoint is not connected" in m:
-                    #     connect_retry += 1
                     else:
-                        # Unique new error.
+                        # unknown new error.
                         self._log.error("Network Error startup " + m)
                         connect_retry = connect_retry + 1
-                except ConnectionRefusedError as ce:
-                    connect_retry += 10
                 except Exception as e:
-                    self._log.error("Other Error type", e)
-                    connect_retry += 11
-                    # connect_retry = connect_retry + 1
+                    raise e
             if not self.__startupSuccess:
                 self.__kill_Popen(process)
-                self.__start(-1,-1, capture_stdout, retry + 1)
+                self.__start(-1, -1, capture_stdout, retry + 1)
         except Exception:
             self.__kill_Popen(process)
-            self.__start(-1,-1, capture_stdout, retry + 3)
-
-    # def __retry_start(self, ret):
-    #     command, actual_port = self.__build_startup_command(-1)
-    #     success = self.__try_startup(command)
-    #     return success, command, actual_port
-
-    # def __start_gateway(self, actual_port: int):
-    #     process = self.__process
-    #     gwp = GatewayParameters(port=actual_port, eager_load=True)
-    #     self.__retry_start_gateway(process, gwp)
-
-    # def __retry_start_gateway(self, process: Popen, gwp: GatewayParameters, retry: int = 0):
-    #     # try:
-    #         self.java_gateway = JavaGateway(
-    #             gateway_parameters=gwp, java_process=process, start_callback_server=True)
-    #         self.java_gateway.entry_point.callBackStartupSuccessful(self)
-    #         self.__process = None  # On success clear process variable
-    #         return
-    #     # except:
-    #     #     sleep(3 * retry)
-    #     #     if retry < 3:
-    #     #         self.__retry_start_gateway(process, gwp, retry + 1)
-    #     #         return
-    #     #     else:
-    #     #         e = "Error in startup of Java Gateway"
-    #     # self.exception_and_close(e)
+            self.__start(-1, -1, capture_stdout, retry + 1)
 
     def __enter__(self):
         return self
@@ -711,6 +650,20 @@ class SystemDSContext(object):
         """ Interface method for Java to callback into python. """
         self.__startupSuccess = True
         self._log.info("Callback successful")
+
+    def __setup_logging(self, level:int, py4j_level:int):
+        logging.basicConfig()
+        py4j = logging.getLogger("py4j.java_gateway")
+        py4j.setLevel(py4j_level)
+
+        self._log = logging.getLogger(self.__class__.__name__)
+        f_handler = logging.StreamHandler()
+
+        f_handler.setLevel(level)
+        f_format = logging.Formatter(
+            '%(asctime)s - SystemDS - %(levelname)s - %(message)s')
+        f_handler.setFormatter(f_format)
+        self._log.addHandler(f_handler)
 
     class Java:
         implements = ['org.apache.sysds.api.python.IPythonContext']

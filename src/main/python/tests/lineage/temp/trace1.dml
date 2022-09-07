@@ -1,3 +1,0 @@
-x = matrix(1, rows=10, cols=10);
-y = x + x;
-print(lineage(y));

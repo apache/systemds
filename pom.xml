@@ -577,6 +577,7 @@
 							<excludes>
 								<exclude>scripts/perftest/results/**</exclude>
 								<exclude>scripts/perftest/temp/**</exclude>
+								<exclude>scripts/perftest/logs/**</exclude>
 								<exclude>.gitignore</exclude>
 								<exclude>src/main/python/.gitignore</exclude>
 								<exclude>.gitmodules</exclude>
@@ -590,6 +591,8 @@
 								<exclude>src/main/python/docs/build/**/*</exclude>
 								<exclude>src/main/python/docs/source/_build/**</exclude>
 								<exclude>src/main/python/generator/resources/**</exclude>
+								<exclude>src/main/python/generator.log</exclude>
+								<exclude>**/systemds.egg-info/**</exclude>
 								<exclude>docs/api/**/*</exclude>
 								<exclude>docs/_site/**/*</exclude>
 								<exclude>docs/site/run_issues.md</exclude>

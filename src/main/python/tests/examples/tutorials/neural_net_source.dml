@@ -75,8 +75,8 @@ gradients = function(list[unknown] model,
   probs = softmax::forward(out3)
 
   # Compute loss & accuracy for training data
-  loss = cross_entropy_loss::forward(probs, labels)
-  print("Batch loss: " + loss)
+  # loss = cross_entropy_loss::forward(probs, labels)
+  # print("Batch loss: " + loss)
 
   # Compute data backward pass
   # Note it is same arguments as forward with one extra argument in front
@@ -185,6 +185,6 @@ train_paramserv = function(matrix[Double] X, matrix[Double] y,
     upd="./tests/examples/tutorials/neural_net_source.dml::gradients",
     agg="./tests/examples/tutorials/neural_net_source.dml::aggregation",
     mode=mode, utype=utype, freq=freq, epochs=epochs, batchsize=batch_size,
-    k=workers, hyperparams=params, checkpointing="NONE")
+    k=workers, hyperparams=params, checkpointing="NONE", verbose=FALSE)
 
 }

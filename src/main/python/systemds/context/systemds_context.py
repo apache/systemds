@@ -50,7 +50,7 @@ class SystemDSContext(object):
     The java process is started and is running using a random tcp port for instruction parsing.
 
     This class is used as the starting point for all SystemDS execution. It gives the ability to create
-    all the different objects and adding them to the exectution.
+    all the different objects and adding them to the execution.
     """
 
     java_gateway: JavaGateway
@@ -298,7 +298,7 @@ class SystemDSContext(object):
 
     def __enqueue_output(self, out, queue):
         """Method for handling the output from java.
-        It is locating the string handeling inside a different thread, since the 'out.readline' is a blocking command.
+        It is locating the string handling inside a different thread, since the 'out.readline' is a blocking command.
         """
         for line in iter(out.readline, b""):
             line_string = line.decode("utf-8")
@@ -459,7 +459,7 @@ class SystemDSContext(object):
         return f'"{nf}"'
 
     def read(self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
-        """ Read an file from disk. Supportted types include:
+        """ Read an file from disk. Supported types include:
         CSV, Matrix Market(coordinate), Text(i,j,v), SystemDS Binary, etc.
         See: http://apache.github.io/systemds/site/dml-language-reference#readwrite-built-in-functions for more details
         :return: an Operation Node, containing the read data the operationNode read can be of types, Matrix, Frame or Scalar.
@@ -600,7 +600,7 @@ class SystemDSContext(object):
     def source(self, path: str, name: str) -> Source:
         """Import methods from a given dml file.
 
-        The importing is done thorugh the DML command source, and adds all defined methods from
+        The importing is done through the DML command source, and adds all defined methods from
         the script to the Source object returned in python. This gives the flexibility to call the methods 
         directly on the object returned.
 

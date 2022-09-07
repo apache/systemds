@@ -43,7 +43,7 @@ class TestAdultNeural(unittest.TestCase):
     dataset_path_test_mtd: str = "../../test/resources/datasets/adult/test_data.csv.mtd"
     dataset_jspec: str = "../../test/resources/datasets/adult/jspec.json"
 
-    train_count: int = 15000
+    train_count: int = 5000
     test_count: int = 300
 
     network_dir: str = "tests/examples/tutorials/model"
@@ -52,11 +52,14 @@ class TestAdultNeural(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
+        cls.sds.capture_stats()
         cls.d = DataManager()
         shutil.rmtree(cls.network_dir, ignore_errors=True)
 
     @classmethod
     def tearDownClass(cls):
+        print(cls.sds.get_stats())
+
         cls.sds.close()
         shutil.rmtree(cls.network_dir, ignore_errors=True)
 

@@ -26,7 +26,7 @@ tests=("for_loop_time_run")
 base="tests/manual_tests/time/"
 gr="elapsed"
 gr="elapsed|task-clock|cycles|instructions"
-rep=300
+rep=50
 
 for t in $tests; do
 

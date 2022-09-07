@@ -29,14 +29,18 @@ gr="elapsed|task-clock|cycles|instructions"
 rep=300
 
 for t in $tests; do
-    # systemds $base$t.dml
-    # python $base$t.py
-    # echo $t
+
+    # Verbose runs. to verify it works.
+    systemds $base$t.dml
+    python $base$t.py
+
+    # Timed runs
+    # Systemds
     perf stat -d -d -d -r $rep \
         systemds $base$t.dml \
         2>&1 | grep -E $gr
 
-    # python $base$t.py
+    # PythonAPI SystemDS
     perf stat -d -d -d -r $rep \
         python $base$t.py \
         2>&1 | grep -E $gr

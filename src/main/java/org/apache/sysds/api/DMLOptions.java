@@ -76,7 +76,6 @@ public class DMLOptions {
 	public boolean              fedMonitoring = false;
 	public int                  fedMonitoringPort = -1;
 	public int                  pythonPort    = -1;
-	public int                  pythonCallbackPort = -1;
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
 	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
 	public boolean              noFedRuntimeConversion = false;   // If activated, no runtime conversion of CP instructions to FED instructions will be performed.

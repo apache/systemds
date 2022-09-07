@@ -31,7 +31,7 @@ import py4j.Py4JServerConnection;
 public class PythonDMLScript {
 
 	private static final Log LOG = LogFactory.getLog(PythonDMLScript.class.getName());
-	private Connection _connection;
+	final private Connection _connection;
 
 	/**
 	 * Entry point for Python API.
@@ -42,19 +42,20 @@ public class PythonDMLScript {
 	public static void main(String[] args) throws Exception {
 		final DMLOptions dmlOptions = DMLOptions.parseCLArguments(args);
 		DMLScript.loadConfiguration(dmlOptions.configFile);
-		GatewayServer GwS = new GatewayServer(new PythonDMLScript(), dmlOptions.pythonPort);
+		final GatewayServer GwS = new GatewayServer(new PythonDMLScript(), dmlOptions.pythonPort);
 		GwS.addListener(new DMLGateWayListener());
-		try{
+		try {
 			GwS.start();
-		} 
-		catch (Py4JNetworkException p4e){
-			// This sometimes happens when the startup is using a port already in use.
-			// In this case we handle it in python therefore use logging framework.
-			// and terminate program.
+		}
+		catch(Py4JNetworkException p4e) {
+			/**
+			 * This sometimes happens when the startup is using a port already in use. In this case we handle it in python
+			 * therefore use logging framework. and terminate program.
+			 */
 			LOG.info("failed startup", p4e);
 			System.exit(-1);
 		}
-		catch( Exception e){
+		catch(Exception e) {
 			throw new DMLException("Failed startup and maintaining Python gateway", e);
 		}
 	}
@@ -69,47 +70,47 @@ public class PythonDMLScript {
 	public Connection getConnection() {
 		return _connection;
 	}
-	
+
 	protected static class DMLGateWayListener implements GatewayServerListener {
 		private static final Log LOG = LogFactory.getLog(DMLGateWayListener.class.getName());
-	
+
 		@Override
 		public void connectionError(Exception e) {
 			LOG.warn("Connection error: " + e.getMessage());
 			System.exit(1);
 		}
-	
+
 		@Override
 		public void connectionStarted(Py4JServerConnection gatewayConnection) {
 			LOG.debug("Connection Started: " + gatewayConnection.toString());
 		}
-	
+
 		@Override
 		public void connectionStopped(Py4JServerConnection gatewayConnection) {
 			LOG.debug("Connection stopped: " + gatewayConnection.toString());
 		}
-	
+
 		@Override
 		public void serverError(Exception e) {
 			LOG.error("Server Error " + e.getMessage());
 		}
-	
+
 		@Override
 		public void serverPostShutdown() {
 			LOG.info("Shutdown done");
 			System.exit(0);
 		}
-	
+
 		@Override
 		public void serverPreShutdown() {
 			LOG.info("Starting JVM shutdown");
 		}
-	
+
 		@Override
 		public void serverStarted() {
 			LOG.info("GatewayServer Started");
 		}
-	
+
 		@Override
 		public void serverStopped() {
 			LOG.info("GatewayServer Stopped");
@@ -118,4 +119,3 @@ public class PythonDMLScript {
 	}
 
 }
-

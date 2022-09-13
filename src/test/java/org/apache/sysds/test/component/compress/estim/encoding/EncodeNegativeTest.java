@@ -44,12 +44,12 @@ public class EncodeNegativeTest {
 		EncodingFactory.createFromMatrixBlock(mock, true, 3);
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test(expected = NullPointerException.class)
 	public void testInvalidToCallWithNullDeltaTransposed() {
 		EncodingFactory.createFromMatrixBlockDelta(null, true, null);
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test(expected = NullPointerException.class)
 	public void testInvalidToCallWithNullDelta() {
 		EncodingFactory.createFromMatrixBlockDelta(null, false, null);
 	}

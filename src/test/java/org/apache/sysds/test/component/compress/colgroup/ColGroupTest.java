@@ -1827,7 +1827,6 @@ public class ColGroupTest extends ColGroupBase {
 		return getColGroup(mbt, ct, nRow);
 	}
 
-
 	protected static AColGroup getColGroup(MatrixBlock mbt, CompressionType ct, int nRow) {
 		try {
 
@@ -2003,8 +2002,9 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void getCost() {
-		final ComputationCostEstimator cheap = new ComputationCostEstimator(1, 1, 1, 1, 1, 1, 1, false);
-		final ComputationCostEstimator expensive = new ComputationCostEstimator(100, 100, 100, 100, 100, 100, 100, true);
+		final ComputationCostEstimator cheap = new ComputationCostEstimator(1, 1, 1, 1, 1, 1, 1, 1, false);
+		final ComputationCostEstimator expensive = new ComputationCostEstimator(100, 100, 100, 100, 100, 100, 100, 100,
+			true);
 		double cb = base.getCost(cheap, nRow);
 		double eb = base.getCost(expensive, nRow);
 		double co = other.getCost(cheap, nRow);

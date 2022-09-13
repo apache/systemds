@@ -407,7 +407,7 @@ public abstract class CompressedTestBase extends TestBase {
 			ov, null, null});
 
 		CompressionSettingsBuilder sb = csb().setCostType(CostType.W_TREE);
-		InstructionTypeCounter itc = new InstructionTypeCounter(10, 10, 0, 100, 10, 0, 0, 10, 50, false);
+		InstructionTypeCounter itc = new InstructionTypeCounter(10, 10, 0, 100, 10, 0, 0, 10,  false);
 		CostEstimatorBuilder csb = new CostEstimatorBuilder(itc);
 		SparsityType st = SparsityType.THIRTY;
 		ValueType vt = ValueType.ONE_HOT;

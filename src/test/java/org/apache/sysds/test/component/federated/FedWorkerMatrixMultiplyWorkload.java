@@ -69,7 +69,7 @@ public class FedWorkerMatrixMultiplyWorkload extends FedWorkerBase {
 	@Test
 	public void verifySameOrAlsoCompressedAsLocalCompress() {
 		// Local
-		final InstructionTypeCounter c = InstructionTypeCounter.MML(1000, 10);
+		final InstructionTypeCounter c =  new InstructionTypeCounter(0, 0, 0, 1000, 0, 0, 0, 0, false);
 		final MatrixBlock mbcLocal = CompressedMatrixBlockFactory.compress(mbr, c).getLeft();
 		if(!(mbcLocal instanceof CompressedMatrixBlock))
 			return; // would not compress anyway so skip

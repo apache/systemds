@@ -30,7 +30,8 @@ public interface SampleEstimatorFactory {
 
 	public enum EstimationType {
 		HassAndStokes, ShlosserEstimator, //
-		ShlosserJackknifeEstimator, SmoothedJackknifeEstimator
+		ShlosserJackknifeEstimator, SmoothedJackknifeEstimator,
+		HassAndStokesNoSolveCache,
 	}
 
 	/**
@@ -86,6 +87,8 @@ public interface SampleEstimatorFactory {
 				return ShlosserJackknifeEstimator.distinctCount(numVals, frequencies, invHist, nRows, sampleSize);
 			case SmoothedJackknifeEstimator:
 				return SmoothedJackknifeEstimator.distinctCount(numVals, invHist, nRows, sampleSize);
+			case HassAndStokesNoSolveCache:
+				return HassAndStokes.distinctCount(numVals, invHist, nRows, sampleSize, null);
 			case HassAndStokes:
 			default:
 				return HassAndStokes.distinctCount(numVals, invHist, nRows, sampleSize, solveCache);

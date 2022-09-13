@@ -29,7 +29,6 @@ import org.apache.sysds.runtime.compress.estim.AComEst;
 import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class SampleEstimatorTest {
@@ -51,43 +50,37 @@ public class SampleEstimatorTest {
 	}
 
 	@Test
-	@Ignore
 	public void compressedSizeInfoEstimatorSample_90() {
-		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.9, 0.9);
+		// Overrule to exact when over 80%
+		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.9, 1.0); 
 	}
 
 	@Test
-	@Ignore
 	public void compressedSizeInfoEstimatorSample_50() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.5, 0.90);
 	}
 
 	@Test
-	@Ignore
 	public void compressedSizeInfoEstimatorSample_20() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.2, 0.8);
 	}
 
 	@Test
-	@Ignore
 	public void compressedSizeInfoEstimatorSample_10() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.1, 0.75);
 	}
 
 	@Test
-	@Ignore
 	public void compressedSizeInfoEstimatorSample_5() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.05, 0.7);
 	}
 
 	@Test
-	@Ignore
 	public void compressedSizeInfoEstimatorSample_1() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.01, 0.6);
 	}
 
 	@Test
-	@Ignore
 	public void compressedSizeInfoEstimatorSample_p1() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.001, 0.5);
 	}
@@ -109,7 +102,7 @@ public class SampleEstimatorTest {
 
 		cs_estimate.transposed = true;
 
-		final AComEst estimate = ComEstFactory.createEstimator(mbt, cs_estimate, 1);
+		final AComEst estimate = ComEstFactory.createEstimator(mbt, cs_estimate, (int)(ratio * mbt.getNumColumns()) ,1);
 		final int estimate_1 = estimate.getColGroupInfo(new int[] {0}).getNumVals() + 1;
 		final int estimate_2 = estimate.getColGroupInfo(new int[] {1}).getNumVals() + 1;
 

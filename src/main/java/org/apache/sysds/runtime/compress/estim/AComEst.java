@@ -291,4 +291,9 @@ public abstract class AComEst {
 			}
 		}
 	}
+
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
 }

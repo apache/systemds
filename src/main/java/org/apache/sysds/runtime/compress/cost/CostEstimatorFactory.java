@@ -21,12 +21,25 @@ package org.apache.sysds.runtime.compress.cost;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 
-public final class CostEstimatorFactory {
+/**
+ * Factory class for the construction of cost estimators for compression
+ */
+public interface CostEstimatorFactory {
 
 	public enum CostType {
 		MEMORY, W_TREE, HYBRID_W_TREE, DISTINCT, AUTO;
 	}
 
+	/**
+	 * Create a cost estimator to enable comparison of different suggested compression formats
+	 * 
+	 * @param cs          The compression settings to use.
+	 * @param costBuilder A cost builder to build the specific specialized formats of cost estimators
+	 * @param nRows       The number of rows in a given input to compress
+	 * @param nCols       The number of columns in a given input to compress
+	 * @param sparsity    The sparsity of the input to compress
+	 * @return A cost estimator
+	 */
 	public static ACostEstimate create(CompressionSettings cs, CostEstimatorBuilder costBuilder, int nRows, int nCols,
 		double sparsity) {
 		switch(cs.costComputationType) {

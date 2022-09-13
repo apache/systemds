@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
@@ -78,7 +78,7 @@ public class ComEstSample extends AComEst {
 				_data.getSparseBlock().isEmpty(colIndexes[0])))
 			return new CompressedSizeInfoColGroup(colIndexes, getNumRows());
 
-		final IEncode map = IEncode.createFromMatrixBlock(_sample, _transposed, colIndexes);
+		final IEncode map = EncodingFactory.createFromMatrixBlock(_sample, _transposed, colIndexes);
 		return extractInfo(map, colIndexes, maxDistinct);
 	}
 
@@ -86,7 +86,7 @@ public class ComEstSample extends AComEst {
 	public CompressedSizeInfoColGroup getDeltaColGroupInfo(int[] colIndexes, int estimate, int maxDistinct) {
 		// Don't use sample when doing estimation of delta encoding, instead we read from the start of the matrix until
 		// sample size. This guarantees that the delta values are actually represented in the full compression
-		final IEncode map = IEncode.createFromMatrixBlockDelta(_data, _transposed, colIndexes, _sampleSize);
+		final IEncode map = EncodingFactory.createFromMatrixBlockDelta(_data, _transposed, colIndexes, _sampleSize);
 		return extractInfo(map, colIndexes, maxDistinct);
 	}
 
@@ -132,26 +132,17 @@ public class ComEstSample extends AComEst {
 		final double overallSparsity = calculateSparsity(colIndexes, nnz, scalingFactor, sampleFacts.overAllSparsity);
 		// For robustness safety add 10 percent more tuple sparsity
 		final double tupleSparsity = Math.min(overallSparsity * 1.3, 1.0); // increase sparsity by 30%.
-		try {
-			if(_cs.isRLEAllowed()) {
-				final int scaledRuns = Math.max(estDistinct,
-					calculateRuns(sampleFacts, scalingFactor, numOffs, estDistinct));
-				return new EstimationFactors(estDistinct, numOffs, mostFrequentOffsetCount, sampleFacts.frequencies,
-					sampleFacts.numSingle, numRows, scaledRuns, sampleFacts.lossy, sampleFacts.zeroIsMostFrequent,
-					overallSparsity, tupleSparsity);
-			}
-			else {
-				return new EstimationFactors(estDistinct, numOffs, mostFrequentOffsetCount, sampleFacts.frequencies,
-					sampleFacts.numSingle, numRows, sampleFacts.lossy, sampleFacts.zeroIsMostFrequent, overallSparsity,
-					tupleSparsity);
-			}
+
+		if(_cs.isRLEAllowed()) {
+			final int scaledRuns = Math.max(estDistinct, calculateRuns(sampleFacts, scalingFactor, numOffs, estDistinct));
+			return new EstimationFactors(estDistinct, numOffs, mostFrequentOffsetCount, sampleFacts.frequencies,
+				sampleFacts.numSingle, numRows, scaledRuns, sampleFacts.lossy, sampleFacts.zeroIsMostFrequent,
+				overallSparsity, tupleSparsity);
 		}
-		catch(Exception e) {
-			throw new DMLCompressionException("Invalid construction of estimation factors with observed values:\n"
-				+ Arrays.toString(colIndexes) + " " + nnz + " " + numOffs + "  " + estDistinct + "  "
-				+ maxLargestInstanceCount + "  " + scaledLargestInstanceCount + " " + mostFrequentOffsetCount + " "
-				+ overallSparsity + " " + tupleSparsity + "\n" + nnzCols[colIndexes[0]], e);
-		}
+		else
+			return new EstimationFactors(estDistinct, numOffs, mostFrequentOffsetCount, sampleFacts.frequencies,
+				sampleFacts.numSingle, numRows, sampleFacts.lossy, sampleFacts.zeroIsMostFrequent, overallSparsity,
+				tupleSparsity);
 
 	}
 

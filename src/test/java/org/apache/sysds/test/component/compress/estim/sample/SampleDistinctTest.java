@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.compress.estim;
+package org.apache.sysds.test.component.compress.estim.sample;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -59,6 +59,7 @@ public class SampleDistinctTest {
 		HashMap<Integer, Double> solveCache = new HashMap<>();
 
 		for(EstimationType type : EstimationType.values()) {
+			
 			tests.add(new Object[] {null, type, solveCache});
 			tests.add(new Object[] {new int[] {}, type, solveCache});
 			tests.add(new Object[] {new int[] {97, 6, 56, 4, 242, 123, 2}, type, solveCache});

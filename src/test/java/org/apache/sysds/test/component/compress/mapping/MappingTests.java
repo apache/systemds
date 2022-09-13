@@ -80,7 +80,7 @@ public class MappingTests {
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
-		this.max = Math.min(MappingTestUtil.getUpperBoundValue(type), fictiveMax) + 1;
+		this.max =Math.min(Math.min(MappingTestUtil.getUpperBoundValue(type), fictiveMax) + 1, size);
 		expected = new int[size];
 		m = genMap(MapToFactory.create(size, max), expected, max, fill, seed);
 	}
@@ -113,8 +113,11 @@ public class MappingTests {
 		}
 
 		// to make sure that the bit set is actually filled.
-		m.set(size - 1, max - 1);
-		expected[size - 1] = max - 1;
+		for(int i = 0; i < max; i++){
+
+			m.set(i, i);
+			expected[i] = i;
+		}
 		return m;
 	}
 

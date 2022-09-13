@@ -25,6 +25,9 @@ import static org.junit.Assert.fail;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
@@ -93,7 +96,7 @@ public abstract class EncodeSampleTest {
 	public void testCombineEmptyLeft() {
 		try {
 			final MatrixBlock empty = new MatrixBlock(m.getNumRows(), m.getNumColumns(), true);
-			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(empty, t, 0);
+			final IEncode emptyEncoding = EncodingFactory.createFromMatrixBlock(empty, t, 0);
 			assertEquals(u, emptyEncoding.combine(e).getUnique());
 		}
 		catch(Exception e) {
@@ -106,7 +109,7 @@ public abstract class EncodeSampleTest {
 	public void testCombineEmptyRight() {
 		try {
 			final MatrixBlock empty = new MatrixBlock(m.getNumRows(), m.getNumColumns(), true);
-			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(empty, t, 0);
+			final IEncode emptyEncoding = EncodingFactory.createFromMatrixBlock(empty, t, 0);
 			assertEquals(u, e.combine(emptyEncoding).getUnique());
 		}
 		catch(Exception e) {
@@ -119,7 +122,7 @@ public abstract class EncodeSampleTest {
 	public void testCombineConstLeft() {
 		try {
 			final MatrixBlock c = new MatrixBlock(m.getNumRows(), m.getNumColumns(), 1.0);
-			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(c, t, 0);
+			final IEncode emptyEncoding = EncodingFactory.createFromMatrixBlock(c, t, 0);
 			assertEquals(u, emptyEncoding.combine(e).getUnique());
 		}
 		catch(Exception e) {
@@ -132,7 +135,7 @@ public abstract class EncodeSampleTest {
 	public void testCombineConstRight() {
 		try {
 			final MatrixBlock c = new MatrixBlock(m.getNumRows(), m.getNumColumns(), 1.0);
-			final IEncode emptyEncoding = IEncode.createFromMatrixBlock(c, t, 0);
+			final IEncode emptyEncoding = EncodingFactory.createFromMatrixBlock(c, t, 0);
 			final IEncode comp = e.combine(emptyEncoding);
 			assertEquals(u, comp.getUnique());
 		}
@@ -146,11 +149,41 @@ public abstract class EncodeSampleTest {
 	public void toEstimationFactors() {
 		try {
 			int rows = t ? m.getNumColumns() : m.getNumRows();
-			e.extractFacts(rows, 1.0, 1.0, new CompressionSettingsBuilder().create());
+			EstimationFactors a = e.extractFacts(rows, 1.0, 1.0, new CompressionSettingsBuilder().create());
+			int[] f = a.getFrequencies();
+			if(f != null)
+				for(int i : f)
+					if(i <= 0)
+						fail("Frequencies contains zero");
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	@Test
+	public void toEstimationFactorsWithRLE() {
+		try {
+			int rows = t ? m.getNumColumns() : m.getNumRows();
+			EstimationFactors a = e.extractFacts(rows, 1.0, 1.0, new CompressionSettingsBuilder().addValidCompression(CompressionType.RLE).create());
+			int[] f = a.getFrequencies();
+			if(f != null)
+				for(int i : f)
+					if(i <= 0)
+						fail("Frequencies contains zero");
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void isDense(){
+		boolean d = e.isDense();
+		int rows = t ? m.getNumColumns() : m.getNumRows();
+		if(rows == 1 && m.isInSparseFormat() && ! d)
+			fail ("Should extract sparse if input is sparse and one column (row)");
 	}
 }

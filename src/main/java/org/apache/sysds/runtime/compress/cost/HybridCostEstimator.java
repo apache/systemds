@@ -37,9 +37,9 @@ public class HybridCostEstimator extends ACostEstimate {
 	}
 
 	protected HybridCostEstimator(int scans, int decompressions, int overlappingDecompressions, int leftMultiplications,
-		int compressedMultiplication, int rightMultiplications, int dictionaryOps, boolean isDensifying) {
+		int compressedMultiplication, int rightMultiplications, int dictionaryOps, int indexing, boolean isDensifying) {
 		costEstimator = new ComputationCostEstimator(scans, decompressions, overlappingDecompressions,
-			leftMultiplications, compressedMultiplication, rightMultiplications, dictionaryOps, isDensifying);
+			leftMultiplications, compressedMultiplication, rightMultiplications, dictionaryOps, indexing, isDensifying);
 		memoryCostEstimator = new MemoryCostEstimator();
 	}
 

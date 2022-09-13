@@ -93,6 +93,10 @@ public class EstimationFactors {
 			throw new DMLCompressionException("Num vals cannot be greater than num offs");
 	}
 
+	public int[] getFrequencies(){
+		return frequencies;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

@@ -370,18 +370,27 @@ public abstract class AMapToData implements Serializable {
 	 * Get the number of counts of each unique value contained in this map. Note that in the case the mapping is shorter
 	 * than number of rows the counts sum to the number of mapped values not the number of rows.
 	 * 
+	 * @return The counts
+	 */
+	public final int[] getCounts() {
+		return getCounts(new int[getUnique()]);
+	}
+
+	/**
+	 * Get the number of counts of each unique value contained in this map. Note that in the case the mapping is shorter
+	 * than number of rows the counts sum to the number of mapped values not the number of rows.
+	 * 
 	 * @param counts The object to return.
-	 * @return the Counts
+	 * @return The counts
 	 */
 	public final int[] getCounts(int[] counts) {
 		count(counts);
 
-		if(counts[counts.length - 1] == 0) {
-			int actualUnique = counts.length;
-			for(; actualUnique > 1; actualUnique--) {
-				if(counts[actualUnique - 1] > 0)
-					break;
-			}
+		if(counts[counts.length - 1] == 0 || counts[0] == 0) { // small check for first and last index.
+			int actualUnique = 0;
+			for(int c : counts)
+				actualUnique += c > 0 ? 1 : 0;
+
 			throw new DMLCompressionException("Invalid number unique expected: " + counts.length + " but is actually: "
 				+ actualUnique + " type: " + getType());
 		}

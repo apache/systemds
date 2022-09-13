@@ -25,6 +25,8 @@ import static org.junit.Assert.fail;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
@@ -146,11 +148,41 @@ public abstract class EncodeSampleTest {
 	public void toEstimationFactors() {
 		try {
 			int rows = t ? m.getNumColumns() : m.getNumRows();
-			e.extractFacts(rows, 1.0, 1.0, new CompressionSettingsBuilder().create());
+			EstimationFactors a = e.extractFacts(rows, 1.0, 1.0, new CompressionSettingsBuilder().create());
+			int[] f = a.getFrequencies();
+			if(f != null)
+				for(int i : f)
+					if(i <= 0)
+						fail("Frequencies contains zero");
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	@Test
+	public void toEstimationFactorsWithRLE() {
+		try {
+			int rows = t ? m.getNumColumns() : m.getNumRows();
+			EstimationFactors a = e.extractFacts(rows, 1.0, 1.0, new CompressionSettingsBuilder().addValidCompression(CompressionType.RLE).create());
+			int[] f = a.getFrequencies();
+			if(f != null)
+				for(int i : f)
+					if(i <= 0)
+						fail("Frequencies contains zero");
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void isDense(){
+		boolean d = e.isDense();
+		int rows = t ? m.getNumColumns() : m.getNumRows();
+		if(rows == 1 && m.isInSparseFormat() && ! d)
+			fail ("Should extract sparse if input is sparse and one column (row)");
 	}
 }

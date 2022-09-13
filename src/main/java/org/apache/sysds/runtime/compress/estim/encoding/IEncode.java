@@ -25,7 +25,6 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
@@ -57,7 +56,7 @@ public interface IEncode {
 	}
 
 	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, int[] rowCols) {
-		return createFromMatrixBlockDelta(m, transposed, rowCols, transposed ? m.getNumColumns() : m.getNumRows());
+		throw new NotImplementedException();
 	}
 
 	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, int[] rowCols, int nVals) {
@@ -80,8 +79,10 @@ public interface IEncode {
 	}
 
 	private static IEncode createFromDenseTransposed(MatrixBlock m, int row) {
-		final DoubleCountHashMap map = new DoubleCountHashMap(16);
 		final DenseBlock db = m.getDenseBlock();
+		if(!db.isContiguous())
+			throw new NotImplementedException("Not Implemented non contiguous dense matrix encoding for sample");
+		final DoubleCountHashMap map = new DoubleCountHashMap(16);
 		final int off = db.pos(row);
 		final int nCol = m.getNumColumns();
 		final int end = off + nCol;
@@ -148,12 +149,15 @@ public interface IEncode {
 
 		final int nCol = m.getNumColumns();
 		if(alen - apos > nCol / 4) { // return a dense encoding
-			final AMapToData d = MapToFactory.create(nCol, nUnique + 1);
+			// If the row was full but the overall matrix is sparse.
+			final int correct = (alen - apos == m.getNumColumns()) ? 0 : 1;
+			final AMapToData d = MapToFactory.create(nCol, nUnique + correct);
 			// Since the dictionary is allocated with zero then we exploit that here and
 			// only iterate through non zero entries.
 			for(int i = apos; i < alen; i++)
-				// plus one to assign unique IDs.
-				d.set(aix[i], map.get(avals[i]) + 1);
+				// correction one to assign unique IDs taking into account zero
+				d.set(aix[i], map.get(avals[i]) + correct);
+			// the rest is automatically set to zero.
 
 			return new DenseEncoding(d);
 		}
@@ -167,15 +171,9 @@ public interface IEncode {
 
 			// Iteration 3 of non zero indexes, make a Offset Encoding to know what cells are zero and not.
 			// not done yet
-			AOffset o = OffsetFactory.createOffset(aix, apos, alen);
+			final AOffset o = OffsetFactory.createOffset(aix, apos, alen);
 			final int zero = m.getNumColumns() - o.getSize();
-			try {
-				return new SparseEncoding(d, o, zero, m.getNumColumns());
-			}
-			catch(Exception e) {
-				throw new DMLCompressionException(Arrays.toString(aix), e);
-			}
-
+			return new SparseEncoding(d, o, zero, m.getNumColumns());
 		}
 	}
 
@@ -354,8 +352,8 @@ public interface IEncode {
 	public IEncode combine(IEncode e);
 
 	public int getUnique();
-	
-	//  * @param cols           The cols involved
+
+	// * @param cols The cols involved
 	/**
 	 * Extract the compression facts for this column group.
 	 * 

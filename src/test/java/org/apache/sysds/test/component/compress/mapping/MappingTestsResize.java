@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.component.compress.mapping;
 
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -45,6 +47,7 @@ public class MappingTestsResize {
 		ArrayList<Object[]> tests = new ArrayList<>();
 		for(MAP_TYPE t : MAP_TYPE.values()) {
 			tests.add(new Object[] {1, t, 13, false});
+			tests.add(new Object[] {1, t, 632, false});
 		}
 		return tests;
 	}
@@ -53,10 +56,17 @@ public class MappingTestsResize {
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
-		final int max = MappingTestUtil.getUpperBoundValue(type);
-		final int maxSmaller = getMaxSmaller(type);
-		expected = new int[size];
-		m = MappingTests.genMap(MapToFactory.create(size, max), expected, maxSmaller, fill, seed);
+		try{
+
+			final int max = Math.min(MappingTestUtil.getUpperBoundValue(type),size);
+			final int maxSmaller = Math.min(getMaxSmaller(type), size);
+			expected = new int[size];
+			m = MappingTests.genMap(MapToFactory.create(size, max), expected, maxSmaller, fill, seed);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail("Failed creating mapping resize test");
+		}
 	}
 
 	@Test

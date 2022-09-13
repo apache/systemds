@@ -36,14 +36,14 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public interface EncodingFactory {
-	
+
 	/**
 	 * Encode a list of columns together from the input matrix, as if it is cocoded.
 	 * 
 	 * @param m          The matrix input to encode
 	 * @param transposed If the matrix is transposed in memory
 	 * @param rowCols    The list of columns to encode.
-	 * @return
+	 * @return An encoded format of the information of the columns.
 	 */
 	public static IEncode createFromMatrixBlock(MatrixBlock m, boolean transposed, int[] rowCols) {
 		if(m.isEmpty())
@@ -92,7 +92,7 @@ public interface EncodingFactory {
 	 * @param m          The Matrix to encode a column from
 	 * @param transposed If the matrix is in transposed format.
 	 * @param rowCol     The column index to encode
-	 * @return A Encoded format of the information of this column.
+	 * @return An encoded format of the information of this column.
 	 */
 	public static IEncode createFromMatrixBlock(MatrixBlock m, boolean transposed, int rowCol) {
 		if(m.isEmpty())

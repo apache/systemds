@@ -26,6 +26,7 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -118,7 +119,7 @@ public class EncodeSampleSingleColTest extends EncodeSampleTest {
 			u += sparsity < 1.0 && sparsity != 0 ? 1 : 0;
 			boolean t = transposed;
 
-			IEncode e = IEncode.createFromMatrixBlock(m, t, 0);
+			IEncode e = EncodingFactory.createFromMatrixBlock(m, t, 0);
 			return new Object[] {m, t, u, e};
 		}
 		catch(Exception e) {
@@ -137,7 +138,7 @@ public class EncodeSampleSingleColTest extends EncodeSampleTest {
 
 			boolean t = transposed;
 
-			IEncode e = IEncode.createFromMatrixBlock(m, t, 0);
+			IEncode e = EncodingFactory.createFromMatrixBlock(m, t, 0);
 			return new Object[] {m, t, u, e};
 		}
 		catch(Exception e) {

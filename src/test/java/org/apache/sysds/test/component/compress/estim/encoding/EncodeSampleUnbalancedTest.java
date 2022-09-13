@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -125,11 +126,11 @@ public class EncodeSampleUnbalancedTest extends EncodeSampleMultiColTest {
 	protected static Object[] create(MatrixBlock m, MatrixBlock m1, MatrixBlock m2, boolean t) {
 		try {
 
-			final IEncode e = IEncode.createFromMatrixBlock(m, t, genRowCol(t ? m.getNumRows() : m.getNumColumns()));
+			final IEncode e = EncodingFactory.createFromMatrixBlock(m, t, genRowCol(t ? m.getNumRows() : m.getNumColumns()));
 
 			// sub part.
-			final IEncode fh = IEncode.createFromMatrixBlock(m1, t, genRowCol(t ? m1.getNumRows() : m1.getNumColumns()));
-			final IEncode sh = IEncode.createFromMatrixBlock(m2, t, genRowCol(t ? m2.getNumRows() : m2.getNumColumns()));
+			final IEncode fh = EncodingFactory.createFromMatrixBlock(m1, t, genRowCol(t ? m1.getNumRows() : m1.getNumColumns()));
+			final IEncode sh = EncodingFactory.createFromMatrixBlock(m2, t, genRowCol(t ? m2.getNumRows() : m2.getNumColumns()));
 
 			// join subparts and use its unique count for tests
 			final IEncode er = fh.combine(sh);

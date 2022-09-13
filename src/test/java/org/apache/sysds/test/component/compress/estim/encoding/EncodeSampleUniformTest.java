@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -98,12 +99,12 @@ public class EncodeSampleUniformTest extends EncodeSampleMultiColTest {
 			// Make sure that nUnique always is correct if we have a large enough matrix.
 
 			final int d = t ? m.getNumRows() : m.getNumColumns();
-			final IEncode e = IEncode.createFromMatrixBlock(m, t, genRowCol(d));
+			final IEncode e = EncodingFactory.createFromMatrixBlock(m, t, genRowCol(d));
 
 			// split and read subparts individually
 			final int dfh = d / 2;
-			final IEncode fh = IEncode.createFromMatrixBlock(m, t, genRowCol(dfh));
-			final IEncode sh = IEncode.createFromMatrixBlock(m, t, genRowCol(dfh, d));
+			final IEncode fh = EncodingFactory.createFromMatrixBlock(m, t, genRowCol(dfh));
+			final IEncode sh = EncodingFactory.createFromMatrixBlock(m, t, genRowCol(dfh, d));
 
 			// join subparts and use its unique count for tests
 			final IEncode er = fh.combine(sh);

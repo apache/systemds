@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
@@ -77,7 +78,7 @@ public class ComEstSample extends AComEst {
 				_data.getSparseBlock().isEmpty(colIndexes[0])))
 			return new CompressedSizeInfoColGroup(colIndexes, getNumRows());
 
-		final IEncode map = IEncode.createFromMatrixBlock(_sample, _transposed, colIndexes);
+		final IEncode map = EncodingFactory.createFromMatrixBlock(_sample, _transposed, colIndexes);
 		return extractInfo(map, colIndexes, maxDistinct);
 	}
 
@@ -85,7 +86,7 @@ public class ComEstSample extends AComEst {
 	public CompressedSizeInfoColGroup getDeltaColGroupInfo(int[] colIndexes, int estimate, int maxDistinct) {
 		// Don't use sample when doing estimation of delta encoding, instead we read from the start of the matrix until
 		// sample size. This guarantees that the delta values are actually represented in the full compression
-		final IEncode map = IEncode.createFromMatrixBlockDelta(_data, _transposed, colIndexes, _sampleSize);
+		final IEncode map = EncodingFactory.createFromMatrixBlockDelta(_data, _transposed, colIndexes, _sampleSize);
 		return extractInfo(map, colIndexes, maxDistinct);
 	}
 

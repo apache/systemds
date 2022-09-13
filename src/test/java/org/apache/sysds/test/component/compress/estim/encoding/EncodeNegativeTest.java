@@ -20,7 +20,7 @@
 package org.apache.sysds.test.component.compress.estim.encoding;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
@@ -36,47 +36,47 @@ public class EncodeNegativeTest {
 
 	@Test(expected = NotImplementedException.class)
 	public void encodeNonContiguous() {
-		IEncode.createFromMatrixBlock(mock, false, 3);
+		EncodingFactory.createFromMatrixBlock(mock, false, 3);
 	}
 
 	@Test(expected = NotImplementedException.class)
 	public void encodeNonContiguousTransposed() {
-		IEncode.createFromMatrixBlock(mock, true, 3);
+		EncodingFactory.createFromMatrixBlock(mock, true, 3);
 	}
 
 	@Test(expected = NotImplementedException.class)
 	public void testInvalidToCallWithNullDeltaTransposed() {
-		IEncode.createFromMatrixBlockDelta(null, true, null);
+		EncodingFactory.createFromMatrixBlockDelta(null, true, null);
 	}
 
 	@Test(expected = NotImplementedException.class)
 	public void testInvalidToCallWithNullDelta() {
-		IEncode.createFromMatrixBlockDelta(null, false, null);
+		EncodingFactory.createFromMatrixBlockDelta(null, false, null);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testInvalidToCallWithNull() {
-		IEncode.createFromMatrixBlock(null, false, null);
+		EncodingFactory.createFromMatrixBlock(null, false, null);
 	}
 
 	@Test(expected = NotImplementedException.class)
 	public void testDeltaTransposed() {
-		IEncode.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), true, null);
+		EncodingFactory.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), true, null);
 	}
 
 	@Test(expected = NotImplementedException.class)
 	public void testDelta() {
-		IEncode.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), false, null);
+		EncodingFactory.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), false, null);
 	}
 
 	@Test(expected = NotImplementedException.class)
 	public void testDeltaTransposedNVals() {
-		IEncode.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), true, null, 2);
+		EncodingFactory.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), true, null, 2);
 	}
 
 	@Test(expected = NotImplementedException.class)
 	public void testDeltaNVals() {
-		IEncode.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), false, null, 1);
+		EncodingFactory.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), false, null, 1);
 	}
 
 	private class DenseBlockFP64Mock extends DenseBlockFP64 {

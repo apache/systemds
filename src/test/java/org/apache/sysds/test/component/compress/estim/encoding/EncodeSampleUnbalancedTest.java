@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -49,6 +50,27 @@ public class EncodeSampleUnbalancedTest extends EncodeSampleMultiColTest {
 		tests.add(createT(1, .1, 2, 1, 1.0, 2, 100, 32141));
 		tests.add(createT(1, 1.0, 2, 1, 0.1, 2, 100, 777));
 
+		tests.add(createT(1, .1, 1, 1, 1.0, 1, 100, 32141));
+		tests.add(createT(1, 1.0, 1, 1, 0.1, 1, 100, 777));
+
+		tests.add(createT(1, .4, 1, 1, .4, 1, 100, 32141));
+		tests.add(createT(1, .4, 1, 1, .4, 1, 100, 777));
+
+		tests.add(createT(1, .4, 2, 1, .4, 2, 100, 32141));
+		tests.add(createT(1, .4, 2, 1, .4, 2, 100, 777));
+
+		tests.add(createT(1, .4, 3, 1, .4, 3, 100, 32141));
+		tests.add(createT(1, .4, 3, 1, .4, 3, 100, 777));
+
+		tests.add(createTSparse(1, .5, 3, 1, .5, 3, 100, 32141, true, true));
+		tests.add(createTSparse(1, .5, 3, 1, .5, 3, 100, 777, true, true));
+		tests.add(createTSparse(1, .2, 3, 1, 1.0, 3, 100, 3377, true, true));
+
+		for(int i = 0; i < 10; i++) {
+
+			tests.add(createTSparse(1, .01, 2, 1, .01, 2, 100, i * 231, true, true));
+		}
+
 		// big sparse
 		tests.add(createT(1, 0.0001, 10, 1, 0.0000001, 2, 10000000, 1231));
 		// more rows
@@ -60,12 +82,17 @@ public class EncodeSampleUnbalancedTest extends EncodeSampleMultiColTest {
 		return tests;
 	}
 
+	private static Object[] createTSparse(int nRow1, double sp1, int nU1, int nRow2, double sp2, int nU2, int nCol,
+		int seed, boolean forceSparse, boolean forceSparse2) {
+		return create(nRow1, nCol, sp1, nU1, nRow2, nCol, sp2, nU2, seed, true, forceSparse, forceSparse2);
+	}
+
 	private static Object[] createT(int nRow1, double sp1, int nU1, int nRow2, double sp2, int nU2, int nCol, int seed) {
-		return create(nRow1, nCol, sp1, nU1, nRow2, nCol, sp2, nU2, seed, true);
+		return create(nRow1, nCol, sp1, nU1, nRow2, nCol, sp2, nU2, seed, true, false, false);
 	}
 
 	private static Object[] create(int nRow1, int nCol1, double sp1, int nU1, int nRow2, int nCol2, double sp2, int nU2,
-		int seed, boolean t) {
+		int seed, boolean t, boolean forceSparse, boolean forceSparse2) {
 		try {
 			// Make sure that nUnique always is correct if we have a large enough matrix.
 			nU1 -= sp1 < 1.0 ? 1 : 0;
@@ -75,6 +102,12 @@ public class EncodeSampleUnbalancedTest extends EncodeSampleMultiColTest {
 			final int min2 = sp2 < 1.0 ? 0 : 1;
 			MatrixBlock m2 = TestUtils
 				.round(TestUtils.generateTestMatrixBlock(nRow2, nCol2, min2, nU2, sp2, seed * 21351));
+
+			if(forceSparse)
+				m1.denseToSparse(true);
+			if(forceSparse2)
+				m2.denseToSparse(true);
+
 			return create(m1, m2, t);
 		}
 		catch(Exception e) {
@@ -87,18 +120,17 @@ public class EncodeSampleUnbalancedTest extends EncodeSampleMultiColTest {
 	protected static Object[] create(MatrixBlock m1, MatrixBlock m2, boolean t) {
 
 		MatrixBlock m = m1.append(m2, null, !t);
-		return create(m,m1,m2,t);
+		return create(m, m1, m2, t);
 	}
-
 
 	protected static Object[] create(MatrixBlock m, MatrixBlock m1, MatrixBlock m2, boolean t) {
 		try {
 
-			final IEncode e = IEncode.createFromMatrixBlock(m, t, genRowCol(t ? m.getNumRows() : m.getNumColumns()));
+			final IEncode e = EncodingFactory.createFromMatrixBlock(m, t, genRowCol(t ? m.getNumRows() : m.getNumColumns()));
 
 			// sub part.
-			final IEncode fh = IEncode.createFromMatrixBlock(m1, t, genRowCol(t ? m1.getNumRows() : m1.getNumColumns()));
-			final IEncode sh = IEncode.createFromMatrixBlock(m2, t, genRowCol(t ? m2.getNumRows() : m2.getNumColumns()));
+			final IEncode fh = EncodingFactory.createFromMatrixBlock(m1, t, genRowCol(t ? m1.getNumRows() : m1.getNumColumns()));
+			final IEncode sh = EncodingFactory.createFromMatrixBlock(m2, t, genRowCol(t ? m2.getNumRows() : m2.getNumColumns()));
 
 			// join subparts and use its unique count for tests
 			final IEncode er = fh.combine(sh);

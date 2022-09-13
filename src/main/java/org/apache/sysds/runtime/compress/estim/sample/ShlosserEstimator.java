@@ -48,9 +48,6 @@ public interface ShlosserEstimator {
 			denomSum += (++i) * q * p1;
 		}
 
-		if(denomSum == 0 || denomSum == Double.POSITIVE_INFINITY || denomSum == Double.NaN)
-			return (int) numVals;
-
 		return (int) Math.round(numVals + freqCounts[0] * numberSum / denomSum);
 
 	}

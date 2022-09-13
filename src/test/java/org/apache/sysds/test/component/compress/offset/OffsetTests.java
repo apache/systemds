@@ -446,6 +446,15 @@ public class OffsetTests {
 		}
 	}
 
+	@Test
+	public void testIteratorToString(){
+		AOffsetIterator a = o.getOffsetIterator();
+		a.toString();
+
+		AIterator b = o.getIterator();
+		b.toString();
+	}
+
 	protected static void compare(AOffset o, int[] v) {
 		AIterator i = o.getIterator();
 		if(v[0] != i.value())

@@ -56,34 +56,34 @@ public class ComputeCostTest extends ACostTest {
 	private static List<ACostEstimate> getComputeCosts() {
 		List<ACostEstimate> costEstimators = new ArrayList<>();
 		// dictionary op that is densifying (plus)
-		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 0, 0, 0, 1, true));
+		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 0, 0, 0, 1, 0, true));
 		// Left multiplication
-		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 1, 0, 0, 0, false));
+		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 1, 0, 0, 0, 0, false));
 		// Left Multiplication but the matrix is densified
-		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 1, 0, 0, 1, true));
+		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 1, 0, 0, 1, 0, true));
 		// 10 LMM densified
-		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 10, 0, 0, 1, true));
+		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 10, 0, 0, 1, 0, true));
 
 		// Right Matrix Multiplication
-		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 0, 1, 0, 0, false));
-		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 0, 1, 0, 1, true));
+		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 0, 1, 0, 0, 0, false));
+		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 0, 1, 0, 1, 0, true));
 
 		// Decompression
-		costEstimators.add(new ComputationCostEstimator(0, 1, 0, 0, 0, 0, 0, false));
+		costEstimators.add(new ComputationCostEstimator(0, 1, 0, 0, 0, 0, 0, 0, false));
 
 		// decompressing after densifying
-		costEstimators.add(new ComputationCostEstimator(0, 1, 0, 0, 0, 0, 1, true));
+		costEstimators.add(new ComputationCostEstimator(0, 1, 0, 0, 0, 0, 1, 0, true));
 
 		// One Scan (this is the type that is used if we
 		// require a process through the index structure) such as in rowSum.
-		costEstimators.add(new ComputationCostEstimator(1, 0, 0, 0, 0, 0, 0, false));
-		costEstimators.add(new ComputationCostEstimator(1, 0, 0, 0, 0, 0, 1, true));
+		costEstimators.add(new ComputationCostEstimator(1, 0, 0, 0, 0, 0, 0, 0, false));
+		costEstimators.add(new ComputationCostEstimator(1, 0, 0, 0, 0, 0, 1, 0, true));
 
 		// Overlapping decompression
-		costEstimators.add(new ComputationCostEstimator(0, 0, 1, 0, 0, 0, 0, false));
+		costEstimators.add(new ComputationCostEstimator(0, 0, 1, 0, 0, 0, 0, 0, false));
 
 		// Compressed Multiplication
-		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 0, 0, 1, 0, false));
+		costEstimators.add(new ComputationCostEstimator(0, 0, 0, 0, 0, 1, 0, 0, false));
 
 		return costEstimators;
 	}

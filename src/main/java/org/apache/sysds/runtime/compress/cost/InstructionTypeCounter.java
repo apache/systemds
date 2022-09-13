@@ -25,25 +25,31 @@ public final class InstructionTypeCounter implements Serializable {
 
 	private static final long serialVersionUID = 115L;
 
-	protected int total = 0;
-
-	protected int scans = 0;
-	protected int decompressions = 0;
-	protected int overlappingDecompressions = 0;
-	protected int leftMultiplications = 0;
-	protected int rightMultiplications = 0;
-	protected int compressedMultiplications = 0;
-	protected int dictionaryOps = 0; // base cost is one pass of dictionary
-	protected int indexing = 0;
-	protected boolean isDensifying = false;
+	/** Number of scans through the column groups (aka. rowSums for instance) */
+	private int scans = 0;
+	/** Number of decompressions of this column group directly (aka decompress to same size output) */
+	private int decompressions = 0;
+	/** Total number of columns to decompress overlapping into */
+	private int overlappingDecompressions = 0;
+	/** Total number of left side rows to multiply with */
+	private int leftMultiplications = 0;
+	/** Total number of right side columns to multiply with */
+	private int rightMultiplications = 0;
+	/** Total number of left column groups to compressed multiply with, taken as worst case meaning number of rows */
+	private int compressedMultiplications = 0;
+	/** Number of operations that only modify underlying dictionary */
+	private int dictionaryOps = 0;
+	/** Number of operations that scan through the entry index structure */
+	private int indexing = 0;
+	/** Boolean specifying if the matrix is getting densified, meaning exploiting zeros is gone. */
+	private boolean isDensifying = false;
 
 	public InstructionTypeCounter() {
 		// default no count.
 	}
 
 	public InstructionTypeCounter(int scans, int decompressions, int overlappingDecompressions, int leftMultiplications,
-		int rightMultiplications, int compressedMultiplications, int dictionaryOps, int indexing, int total,
-		boolean isDensifying) {
+		int rightMultiplications, int compressedMultiplications, int dictionaryOps, int indexing, boolean isDensifying) {
 		this.scans = scans;
 		this.decompressions = decompressions;
 		this.overlappingDecompressions = overlappingDecompressions;
@@ -53,7 +59,6 @@ public final class InstructionTypeCounter implements Serializable {
 		this.dictionaryOps = dictionaryOps;
 		this.indexing = indexing;
 		this.isDensifying = isDensifying;
-		this.total = total;
 	}
 
 	public int getScans() {
@@ -62,7 +67,10 @@ public final class InstructionTypeCounter implements Serializable {
 
 	public void incScans() {
 		scans++;
-		total++;
+	}
+
+	public void incScans(int c) {
+		scans += c;
 	}
 
 	public int getDecompressions() {
@@ -71,7 +79,10 @@ public final class InstructionTypeCounter implements Serializable {
 
 	public void incDecompressions() {
 		decompressions++;
-		total++;
+	}
+
+	public void incDecompressions(int c) {
+		decompressions += c;
 	}
 
 	public int getOverlappingDecompressions() {
@@ -80,7 +91,10 @@ public final class InstructionTypeCounter implements Serializable {
 
 	public void incOverlappingDecompressions() {
 		overlappingDecompressions++;
-		total++;
+	}
+
+	public void incOverlappingDecompressions(int c) {
+		overlappingDecompressions += c;
 	}
 
 	public int getLeftMultiplications() {
@@ -89,12 +103,10 @@ public final class InstructionTypeCounter implements Serializable {
 
 	public void incLMM() {
 		leftMultiplications++;
-		total++;
 	}
 
 	public void incLMM(int c) {
 		leftMultiplications += c;
-		total++;
 	}
 
 	public int getRightMultiplications() {
@@ -103,12 +115,10 @@ public final class InstructionTypeCounter implements Serializable {
 
 	public void incRMM() {
 		rightMultiplications++;
-		total++;
 	}
 
 	public void incRMM(int c) {
 		rightMultiplications += c;
-		total++;
 	}
 
 	public int getCompressedMultiplications() {
@@ -117,7 +127,10 @@ public final class InstructionTypeCounter implements Serializable {
 
 	public void incCMM() {
 		compressedMultiplications++;
-		total++;
+	}
+
+	public void incCMM(int c) {
+		compressedMultiplications += c;
 	}
 
 	public int getDictionaryOps() {
@@ -126,7 +139,10 @@ public final class InstructionTypeCounter implements Serializable {
 
 	public void incDictOps() {
 		dictionaryOps++;
-		total++;
+	}
+
+	public void incDictOps(int c) {
+		dictionaryOps += c;
 	}
 
 	public int getIndexing() {
@@ -135,43 +151,42 @@ public final class InstructionTypeCounter implements Serializable {
 
 	public void incIndexOp() {
 		indexing++;
-		total++;
 	}
 
-	public static InstructionTypeCounter MMR(int nCols, int calls) {
-		return new InstructionTypeCounter(0, 0, 0, 0, nCols, 0, 0, 0, calls, false);
+	public void incIndexOp(int c) {
+		indexing += c;
 	}
 
-	public static InstructionTypeCounter MML(int nRows, int calls) {
-		return new InstructionTypeCounter(0, 0, 0, nRows, 0, 0, 0, 0, calls, false);
+	public void setDensifying(boolean d) {
+		isDensifying = d;
+	}
+
+	public boolean isDensifying() {
+		return isDensifying;
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		if(total > 1) {
-			sb.append(String.format("Tot:%d;", total));
-			if(scans > 0)
-				sb.append(String.format("Sca:%d;", scans));
-			if(decompressions > 0)
-				sb.append(String.format("DeC:%d;", decompressions));
-			if(overlappingDecompressions > 0)
-				sb.append(String.format("OvD:%d;", overlappingDecompressions));
-			if(leftMultiplications > 0)
-				sb.append(String.format("LMM:%d;", leftMultiplications));
-			if(rightMultiplications > 0)
-				sb.append(String.format("RMM:%d;", rightMultiplications));
-			if(compressedMultiplications > 0)
-				sb.append(String.format("CMM:%d;", compressedMultiplications));
-			if(dictionaryOps > 0)
-				sb.append(String.format("dic:%d;", dictionaryOps));
-			if(indexing > 0)
-				sb.append(String.format("ind:%d;", indexing));
-			if(sb.length() > 1)
-				sb.setLength(sb.length() - 1); // remove last semicolon
-		}
-		else
-			sb.append("Empty");
+
+		if(scans > 0)
+			sb.append(String.format("Sca:%d;", scans));
+		if(decompressions > 0)
+			sb.append(String.format("DeC:%d;", decompressions));
+		if(overlappingDecompressions > 0)
+			sb.append(String.format("OvD:%d;", overlappingDecompressions));
+		if(leftMultiplications > 0)
+			sb.append(String.format("LMM:%d;", leftMultiplications));
+		if(rightMultiplications > 0)
+			sb.append(String.format("RMM:%d;", rightMultiplications));
+		if(compressedMultiplications > 0)
+			sb.append(String.format("CMM:%d;", compressedMultiplications));
+		if(dictionaryOps > 0)
+			sb.append(String.format("dic:%d;", dictionaryOps));
+		if(indexing > 0)
+			sb.append(String.format("ind:%d;", indexing));
+		if(sb.length() > 1)
+			sb.setLength(sb.length() - 1); // remove last semicolon
 
 		return sb.toString();
 	}

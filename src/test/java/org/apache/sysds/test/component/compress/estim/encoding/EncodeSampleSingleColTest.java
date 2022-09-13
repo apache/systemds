@@ -26,6 +26,7 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -103,14 +104,22 @@ public class EncodeSampleSingleColTest extends EncodeSampleTest {
 	}
 
 	public static Object[] create(int nRow, int nCol, double sparsity, boolean transposed, int nUnique, int seed) {
+		return create(nRow, nCol, sparsity, transposed, nUnique, seed, false);
+	}
+
+	public static Object[] create(int nRow, int nCol, double sparsity, boolean transposed, int nUnique, int seed, boolean forceSparse) {
 		try {
 			int u = nUnique;
 			// Make sure that nUnique always is correct if we have a large enough matrix.
 			MatrixBlock m = TestUtils.round(TestUtils.generateTestMatrixBlock(nRow, nCol, 0.5, nUnique, sparsity, seed));
+
+			if(forceSparse)
+				m.denseToSparse(true);
+
 			u += sparsity < 1.0 && sparsity != 0 ? 1 : 0;
 			boolean t = transposed;
 
-			IEncode e = IEncode.createFromMatrixBlock(m, t, 0);
+			IEncode e = EncodingFactory.createFromMatrixBlock(m, t, 0);
 			return new Object[] {m, t, u, e};
 		}
 		catch(Exception e) {
@@ -129,7 +138,7 @@ public class EncodeSampleSingleColTest extends EncodeSampleTest {
 
 			boolean t = transposed;
 
-			IEncode e = IEncode.createFromMatrixBlock(m, t, 0);
+			IEncode e = EncodingFactory.createFromMatrixBlock(m, t, 0);
 			return new Object[] {m, t, u, e};
 		}
 		catch(Exception e) {

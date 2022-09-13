@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.estim;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.encoding.EmptyEncoding;
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -35,7 +36,7 @@ public class ComEstExact extends AComEst {
 
 	@Override
 	public CompressedSizeInfoColGroup getColGroupInfo(int[] colIndexes, int estimate, int nrUniqueUpperBound) {
-		final IEncode map = IEncode.createFromMatrixBlock(_data, _cs.transposed, colIndexes);
+		final IEncode map = EncodingFactory.createFromMatrixBlock(_data, _cs.transposed, colIndexes);
 		if(map instanceof EmptyEncoding)
 			return new CompressedSizeInfoColGroup(colIndexes, getNumRows());
 		return getFacts(map, colIndexes);
@@ -43,7 +44,7 @@ public class ComEstExact extends AComEst {
 
 	@Override
 	public CompressedSizeInfoColGroup getDeltaColGroupInfo(int[] colIndexes, int estimate, int nrUniqueUpperBound) {
-		final IEncode map = IEncode.createFromMatrixBlockDelta(_data, _cs.transposed, colIndexes);
+		final IEncode map = EncodingFactory.createFromMatrixBlockDelta(_data, _cs.transposed, colIndexes);
 		return getFacts(map, colIndexes);
 	}
 

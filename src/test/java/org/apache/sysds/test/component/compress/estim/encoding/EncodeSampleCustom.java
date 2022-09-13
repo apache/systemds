@@ -28,14 +28,11 @@ import java.util.Arrays;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.DenseEncoding;
-import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 
 import scala.NotImplementedError;
@@ -50,8 +47,6 @@ public class EncodeSampleCustom {
 		int[] d2 = readData("src/test/resources/component/compress/sample/s2.dat");
 		int m1 = Arrays.stream(d1).max().getAsInt() + 1;
 		int m2 = Arrays.stream(d2).max().getAsInt() + 1;
-		// LOG.error(m1 + " " + m2 + " " + (m1 * m2));
-
 		AMapToData dm1 = MapToFactory.create(d1.length, d1, m1);
 		AMapToData dm2 = MapToFactory.create(d2.length, d2, m2);
 
@@ -89,25 +84,4 @@ public class EncodeSampleCustom {
 			throw new NotImplementedError();
 		}
 	}
-
-	@Test(expected = NullPointerException.class)
-	public void testInvalidToCallWithNullDelta() {
-		IEncode.createFromMatrixBlockDelta(null, true, null);
-	}
-
-	@Test(expected = NullPointerException.class)
-	public void testInvalidToCallWithNull() {
-		IEncode.createFromMatrixBlock(null, true, null);
-	}
-
-	@Test(expected = NotImplementedException.class)
-	public void testDeltaTransposed() {
-		IEncode.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), true, null);
-	}
-
-	@Test(expected = NotImplementedException.class)
-	public void testDelta() {
-		IEncode.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), false, null);
-	}
-
 }

@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.compress.colgroup.insertionsort;
 
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
@@ -54,20 +53,9 @@ public class MaterializeSort extends AInsertionSorter {
 	}
 
 	private void insert(int rl, int ru) {
-		try {
-			md.fill(_numLabels);
-			materializeInsert(rl, ru);
-			filterInsert(rl, ru);
-		}
-		catch(Exception e) {
-			int sum = 0;
-			for(IntArrayList o : _offsets)
-				sum += o.size();
-			throw new DMLCompressionException(
-				"Failed normal materialize sorting with list of " + _offsets.length + " with sum (aka output size): " + sum
-					+ " requested Size: " + _indexes.length + " range: " + rl + " " + ru,
-				e);
-		}
+		md.fill(_numLabels);
+		materializeInsert(rl, ru);
+		filterInsert(rl, ru);
 	}
 
 	private void materializeInsert(int rl, int ru) {

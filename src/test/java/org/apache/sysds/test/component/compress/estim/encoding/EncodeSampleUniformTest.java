@@ -54,12 +54,14 @@ public class EncodeSampleUniformTest extends EncodeSampleMultiColTest {
 		tests.add(create(30, 10, 1.0, false, 2, 7654));
 
 		// row sparse
-		tests.add(create(2, 300, 0.1, true, 2, 1251));
-		tests.add(create(2, 300, 0.1, true, 2, 11));
-		tests.add(create(2, 300, 0.2, true, 2, 65));
-		tests.add(create(2, 300, 0.24, true, 2, 245));
-		tests.add(create(2, 300, 0.24, true, 4, 16));
-		tests.add(create(2, 300, 0.23, true, 4, 15));
+		for(int i = 0; i < 5; i++) {
+			tests.add(create(2, 300, 0.1, true, 2 , 1251 * i));
+			tests.add(create(2, 300, 0.1, true, 2 , 11 * i));
+			tests.add(create(2, 300, 0.2, true, 2 , 65 * i));
+			tests.add(create(2, 300, 0.24, true, 2 , 245 * i));
+			tests.add(create(2, 300, 0.24, true, 3 , 16 * i));
+			tests.add(create(2, 300, 0.23, true, 3 , 15 * i));
+		}
 
 		// ultra sparse
 		tests.add(create(2, 10000, 0.001, true, 3, 215));

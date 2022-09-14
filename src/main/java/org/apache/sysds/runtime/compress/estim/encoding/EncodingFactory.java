@@ -66,8 +66,9 @@ public interface EncodingFactory {
 	 * @return A delta encoded encoding.
 	 */
 	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, int[] rowCols) {
-		final int sampleSize = transposed ? m.getNumColumns() : m.getNumRows();
-		return createFromMatrixBlockDelta(m, transposed, rowCols, sampleSize);
+		throw new NotImplementedException();
+		// final int sampleSize = transposed ? m.getNumColumns() : m.getNumRows();
+		// return createFromMatrixBlockDelta(m, transposed, rowCols, sampleSize);
 	}
 
 	/**
@@ -145,7 +146,7 @@ public interface EncodingFactory {
 			}
 
 			final AOffset o = OffsetFactory.createOffset(offsets);
-			return new SparseEncoding(d, o, zeroCount, nCol);
+			return new SparseEncoding(d, o, nCol);
 		}
 		else {
 			map.replaceWithUIDs();
@@ -203,8 +204,7 @@ public interface EncodingFactory {
 			// Iteration 3 of non zero indexes, make a Offset Encoding to know what cells are zero and not.
 			// not done yet
 			final AOffset o = OffsetFactory.createOffset(aix, apos, alen);
-			final int zero = m.getNumColumns() - o.getSize();
-			return new SparseEncoding(d, o, zero, m.getNumColumns());
+			return new SparseEncoding(d, o, m.getNumColumns());
 		}
 	}
 
@@ -244,7 +244,7 @@ public interface EncodingFactory {
 
 			final AOffset o = OffsetFactory.createOffset(offsets);
 
-			return new SparseEncoding(d, o, zeroCount, nRow);
+			return new SparseEncoding(d, o, nRow);
 		}
 		else {
 			// Allocate counts, and iterate once to replace counts with u ids
@@ -300,10 +300,8 @@ public interface EncodingFactory {
 		}
 
 		// Iteration 3 of non zero indexes, make a Offset Encoding to know what cells are zero and not.
-		AOffset o = OffsetFactory.createOffset(offsets);
-
-		final int zero = m.getNumRows() - offsets.size();
-		return new SparseEncoding(d, o, zero, m.getNumRows());
+		final AOffset o = OffsetFactory.createOffset(offsets);
+		return new SparseEncoding(d, o, m.getNumRows());
 	}
 
 	private static IEncode createWithReader(MatrixBlock m, int[] rowCols, boolean transposed) {
@@ -326,11 +324,9 @@ public interface EncodingFactory {
 			return new ConstEncoding(nRows);
 
 		map.replaceWithUIDs();
-		if(offsets.size() < nRows / 4) {
+		if(offsets.size() < nRows / 4)
 			// Output encoded sparse since there is very empty.
-			final int zeros = nRows - offsets.size();
-			return createWithReaderSparse(m, map, zeros, rowCols, offsets, nRows, transposed);
-		}
+			return createWithReaderSparse(m, map, rowCols, offsets, nRows, transposed);
 		else
 			return createWithReaderDense(m, map, rowCols, nRows, transposed, offsets.size() < nRows);
 
@@ -354,7 +350,7 @@ public interface EncodingFactory {
 		return new DenseEncoding(d);
 	}
 
-	private static IEncode createWithReaderSparse(MatrixBlock m, DblArrayCountHashMap map, int zeros, int[] rowCols,
+	private static IEncode createWithReaderSparse(MatrixBlock m, DblArrayCountHashMap map, int[] rowCols,
 		IntArrayList offsets, int nRows, boolean transposed) {
 		final ReaderColumnSelection reader2 = ReaderColumnSelection.createReader(m, rowCols, transposed);
 		DblArray cellVals = reader2.nextRow();
@@ -370,6 +366,10 @@ public interface EncodingFactory {
 
 		final AOffset o = OffsetFactory.createOffset(offsets);
 
-		return new SparseEncoding(d, o, zeros, nRows);
+		return new SparseEncoding(d, o, nRows);
+	}
+
+	public static SparseEncoding createSparse(AMapToData map, AOffset off, int nRows){
+		return new SparseEncoding(map, off, nRows);
 	}
 }

@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -31,6 +33,8 @@ import org.apache.sysds.runtime.compress.utils.IntArrayList;
 /** Most common is zero encoding */
 public class SparseEncoding implements IEncode {
 
+	static final Log LOG = LogFactory.getLog(SparseEncoding.class.getName());
+
 	/** A map to the distinct values contained */
 	protected final AMapToData map;
 
@@ -40,13 +44,9 @@ public class SparseEncoding implements IEncode {
 	/** Total number of rows encoded */
 	protected final int nRows;
 
-	/** Count of Zero tuples in this encoding */
-	protected final int zeroCount;
-
-	protected SparseEncoding(AMapToData map, AOffset off, int zeroCount, int nRows) {
+	protected SparseEncoding(AMapToData map, AOffset off, int nRows) {
 		this.map = map;
 		this.off = off;
-		this.zeroCount = zeroCount;
 		this.nRows = nRows;
 	}
 
@@ -90,7 +90,7 @@ public class SparseEncoding implements IEncode {
 		if(retOff.size() < nRows / 4) {
 			final AOffset o = OffsetFactory.createOffset(retOff);
 			final AMapToData retMap = MapToFactory.create(tmpVals.size(), tmpVals.extractValues(), unique - 1);
-			return new SparseEncoding(retMap, o, nRows - retOff.size(), nRows);
+			return new SparseEncoding(retMap, o, nRows);
 		}
 		else {
 			// there will always be a zero therefore unique is not subtracted one.
@@ -111,26 +111,6 @@ public class SparseEncoding implements IEncode {
 		int newUID = 1;
 		int il = itl.value();
 		int ir = itr.value();
-
-		if(il == fl && ir == fr) { // easy both only have one value
-			tmpVals.appendValue(0);
-			if(fl == fr) { // both on same row
-				retOff.appendValue(fl);
-				return 2;
-			}
-			// Known two locations to add.
-			tmpVals.appendValue(1);
-			if(fl < fr) {// fl is first
-				retOff.appendValue(fl);
-				retOff.appendValue(fr);
-				return 3;
-			}
-			else {// fl is last
-				retOff.appendValue(fr);
-				retOff.appendValue(fl);
-				return 3;
-			}
-		}
 
 		while(il < fl && ir < fr) {
 			if(il == ir) {// Both sides have a value same row.
@@ -164,61 +144,110 @@ public class SparseEncoding implements IEncode {
 		int il = itl.value();
 		int ir = itr.value();
 
-		if(il < fl) {
-			while(il < fr && il < fl) {
-				final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
-				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
-				il = itl.next();
-			}
+		if(il == fl && ir == fr) {
 			if(fl == fr) {
 				final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
 				return addVal(nv, il, d, newUID, tmpVals, retOff);
 			}
-			else if(il == fr) {
-				final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
+			else if(fl < fr) {// fl is first
+				int nv = lMap.getIndex(itl.getDataIndex()) + defR;
 				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
-				il = itl.next();
-			}
-			else {
-				final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
+				nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
 				newUID = addVal(nv, fr, d, newUID, tmpVals, retOff);
 			}
-			while(il < fl) {
-				final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
+			else {// fl is last
+				int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
 				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
-				il = itl.next();
+				nv = lMap.getIndex(itl.getDataIndex()) + defR;
+				newUID = addVal(nv, fr, d, newUID, tmpVals, retOff);
 			}
-			final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
-			newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
 		}
-		else if(ir < fr) {
-			while(ir < fl && ir < fr) {
-				final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
-				newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
-				ir = itr.next();
-			}
-
-			if(fr == fl) {
-				final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
-				return addVal(nv, ir, d, newUID, tmpVals, retOff);
-			}
-			else if(ir == fl) {
-				final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
-				newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
-				ir = itr.next();
+		else if(il < fl) {
+			if(fl < fr) {
+				while(il < fl) {
+					final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
+					newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
+					il = itl.next();
+				}
+				int nv = lMap.getIndex(itl.getDataIndex()) + defR;
+				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
+				nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
+				newUID = addVal(nv, fr, d, newUID, tmpVals, retOff);
+				return newUID;
 			}
 			else {
-				final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
-				newUID = addVal(nv, fl, d, newUID, tmpVals, retOff);
-			}
+				while(il < fr) {
+					final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
+					newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
+					il = itl.next();
+				}
+				if(fl == fr) {
+					final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
+					return addVal(nv, il, d, newUID, tmpVals, retOff);
+				}
+				else if(il == fr) {
+					final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
+					newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
+					il = itl.next();
+				}
+				else {
+					final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
+					newUID = addVal(nv, fr, d, newUID, tmpVals, retOff);
+				}
 
-			while(ir < fr) {
+				while(il < fl) {
+					final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
+					newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
+					il = itl.next();
+				}
+				final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
+				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
+
+			}
+		}
+		else { // if(ir < fr)
+			if(fr < fl) {
+				while(ir < fr) {
+					final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
+					newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
+					ir = itr.next();
+				}
+				int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
+				newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
+				nv = lMap.getIndex(itl.getDataIndex()) + defR;
+				newUID = addVal(nv, fl, d, newUID, tmpVals, retOff);
+				return newUID;
+			}
+			else {
+				while(ir < fl) {
+					final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
+					newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
+					ir = itr.next();
+				}
+
+				if(fr == fl) {
+					final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
+					return addVal(nv, ir, d, newUID, tmpVals, retOff);
+				}
+				else if(ir == fl) {
+					final int nv = lMap.getIndex(itl.getDataIndex()) + rMap.getIndex(itr.getDataIndex()) * nVl;
+					newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
+					ir = itr.next();
+				}
+				else {
+					final int nv = lMap.getIndex(itl.getDataIndex()) + defR;
+					newUID = addVal(nv, fl, d, newUID, tmpVals, retOff);
+				}
+
+				while(ir < fr) {
+					final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
+					newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
+					ir = itr.next();
+				}
 				final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
 				newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
-				ir = itr.next();
+
 			}
-			final int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
-			newUID = addVal(nv, ir, d, newUID, tmpVals, retOff);
 		}
 
 		return newUID;
@@ -295,6 +324,10 @@ public class SparseEncoding implements IEncode {
 	@Override
 	public boolean isDense() {
 		return false;
+	}
+
+	public AOffset getOffsets() {
+		return off;
 	}
 
 	@Override

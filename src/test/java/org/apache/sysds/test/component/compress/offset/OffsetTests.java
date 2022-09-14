@@ -447,7 +447,7 @@ public class OffsetTests {
 	}
 
 	@Test
-	public void testIteratorToString(){
+	public void testIteratorToString() {
 		AOffsetIterator a = o.getOffsetIterator();
 		a.toString();
 
@@ -455,8 +455,12 @@ public class OffsetTests {
 		b.toString();
 	}
 
-	protected static void compare(AOffset o, int[] v) {
+	public static void compare(AOffset o, int[] v) {
 		AIterator i = o.getIterator();
+
+		if(o.getSize() != v.length) {
+			fail("Incorrect result sizes : " + o + " " + Arrays.toString(v));
+		}
 		if(v[0] != i.value())
 			fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
 				+ " but was :" + o.toString());
@@ -471,7 +475,10 @@ public class OffsetTests {
 				+ o.getOffsetsLength() + "\n" + Arrays.toString(v));
 	}
 
-	protected static void compareOffsetIterator(AOffset o, int[] v) {
+	public static void compareOffsetIterator(AOffset o, int[] v) {
+		if(o.getSize() != v.length) {
+			fail("Incorrect result sizes : " + o + " " + Arrays.toString(v));
+		}
 		AOffsetIterator i = o.getOffsetIterator();
 		if(v[0] != i.value())
 			fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)

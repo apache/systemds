@@ -69,6 +69,7 @@ public class EncodeSampleUnbalancedTest extends EncodeSampleMultiColTest {
 		for(int i = 0; i < 10; i++) {
 
 			tests.add(createTSparse(1, .01, 2, 1, .01, 2, 100, i * 231, true, true));
+			tests.add(createTSparse(1, .1, 3, 1, .2, 3, 100, i * 231, true, true));
 		}
 
 		// big sparse

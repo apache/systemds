@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -77,30 +78,42 @@ public interface OffsetFactory {
 	 * @return A new Offset.
 	 */
 	public static AOffset createOffset(int[] indexes, int apos, int alen) {
+		try {
+			final int endLength = alen - apos - 1;
+			if(endLength < 0)
+				throw new DMLCompressionException("Invalid empty offset to create");
+			else if(endLength == 0) // means size of 1 since we store the first offset outside the list
+				return new OffsetSingle(indexes[apos]);
+			else if(endLength == 1)
+				return new OffsetTwo(indexes[apos], indexes[apos + 1]);
 
-		final int endLength = alen - apos - 1;
-		if(endLength < 0)
-			throw new DMLCompressionException("Invalid empty offset to create");
-		else if(endLength == 0) // means size of 1 since we store the first offset outside the list
-			return new OffsetSingle(indexes[apos]);
-		else if(endLength == 1)
-			return new OffsetTwo(indexes[apos], indexes[apos + 1]);
+			final int minValue = indexes[apos];
+			final int maxValue = indexes[alen - 1];
+			final int range = maxValue - minValue;
+			// -1 because one index is skipped using a first idex allocated as a int.
 
-		final int minValue = indexes[apos];
-		final int maxValue = indexes[alen - 1];
-		final int range = maxValue - minValue;
-		// -1 because one index is skipped using a first idex allocated as a int.
+			final int correctionByte = correctionByte(range, endLength);
+			final int correctionChar = correctionChar(range, endLength);
 
-		final int correctionByte = correctionByte(range, endLength);
-		final int correctionChar = correctionChar(range, endLength);
+			final long byteSize = OffsetByte.estimateInMemorySize(endLength + correctionByte);
+			final long charSize = OffsetChar.estimateInMemorySize(endLength + correctionChar);
 
-		final long byteSize = OffsetByte.estimateInMemorySize(endLength + correctionByte);
-		final long charSize = OffsetChar.estimateInMemorySize(endLength + correctionChar);
-
-		if(byteSize < charSize)
-			return new OffsetByte(indexes, apos, alen);
-		else
-			return new OffsetChar(indexes, apos, alen);
+			if(byteSize < charSize)
+				return new OffsetByte(indexes, apos, alen);
+			else
+				return new OffsetChar(indexes, apos, alen);
+		}
+		catch(Exception e) {
+			for(int i = apos+1; i < alen ; i++){
+				if(indexes[i] <= indexes[i-1]){
+					String message = "Invalid input to create offset, all values should be continuously increasing.\n";
+					message += "Index " + (i-1) + " and Index " + i + " are wrong with values: " + indexes[i-1] + " and " + indexes[i]; 
+					throw new DMLCompressionException(message , e);
+				}
+			}
+			throw new DMLCompressionException(
+				"Failed to create offset with input:" + Arrays.toString(indexes) + " Apos: " + apos + " Alen: " + alen, e);
+		}
 	}
 
 	/**

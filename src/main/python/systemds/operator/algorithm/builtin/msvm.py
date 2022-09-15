@@ -33,21 +33,22 @@ def msvm(X: Matrix,
          Y: Matrix,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-     Implements builtin multi-class SVM with squared slack variables, 
-     learns one-against-the-rest binary-class classifiers by making a function call to l2SVM
+     This builtin function implements a multi-class Support Vector Machine (SVM)
+     with squared slack variables. The trained model comprises #classes
+     one-against-the-rest binary-class l2svm classification models.
     
     
     
-    :param X: matrix X of feature vectors
-    :param Y: matrix Y of class labels
-    :param intercept: No Intercept ( If set to TRUE then a constant bias column is added to X)
-    :param num_classes: Number of classes
-    :param epsilon: Procedure terminates early if the reduction in objective function
-        value is less than epsilon (tolerance) times the initial objective function value.
+    :param X: Feature matrix X (shape: m x n)
+    :param Y: Label vector y of class labels (shape: m x 1),
+        where max(Y) is assumed to be the number of classes
+    :param intercept: Indicator if a bias column should be added to X and the model
+    :param epsilon: Tolerance for early termination if the reduction of objective
+        function is less than epsilon times the initial objective
     :param reg: Regularization parameter (lambda) for L2 regularization
-    :param maxIterations: Maximum number of conjugate gradient iterations
-    :param verbose: Set to true to print while training.
-    :return: model matrix
+    :param maxIterations: Maximum number of conjugate gradient (outer l2svm) iterations
+    :param verbose: Indicator if training details should be printed
+    :return: Trained model/weights (shape: n x max(Y), w/ intercept: n+1)
     """
 
     params_dict = {'X': X, 'Y': Y}

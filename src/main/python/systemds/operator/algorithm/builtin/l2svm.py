@@ -33,22 +33,24 @@ def l2svm(X: Matrix,
           Y: Matrix,
           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-     Builtin function Implements binary-class SVM with squared slack variables
+     This builting function implements binary-class Support Vector Machine (SVM)
+     with squared slack variables (l2 regularization).
     
     
     
-    :param X: matrix X of feature vectors
-    :param Y: matrix Y of class labels have to be a single column
-    :param intercept: No Intercept ( If set to TRUE then a constant bias column is added to X)
-    :param epsilon: Procedure terminates early if the reduction in objective function value is less
-        than epsilon (tolerance) times the initial objective function value.
-    :param reg: Regularization parameter (reg) for L2 regularization
-    :param maxIterations: Maximum number of conjugate gradient iterations
-    :param maxii: max inner for loop iterations
-    :param verbose: Set to true if one wants print statements updating on loss.
-    :param columnId: The column Id used if one wants to add a ID to the print statement,
+    :param X: Feature matrix X (shape: m x n)
+    :param Y: Label vector y of class labels (shape: m x 1), assumed binary
+        in -1/+1 or 1/2 encoding.
+    :param intercept: Indicator if a bias column should be added to X and the model
+    :param epsilon: Tolerance for early termination if the reduction of objective
+        function is less than epsilon times the initial objective
+    :param reg: Regularization parameter (lambda) for L2 regularization
+    :param maxIterations: Maximum number of conjugate gradient (outer) iterations
+    :param maxii: Maximum number of line search (inner) iterations
+    :param verbose: Indicator if training details should be printed
+    :param columnId: An optional class ID used in verbose print output,
         eg. used when L2SVM is used in MSVM.
-    :return: the trained model
+    :return: Trained model/weights (shape: n x 1, w/ intercept: n+1)
     """
 
     params_dict = {'X': X, 'Y': Y}

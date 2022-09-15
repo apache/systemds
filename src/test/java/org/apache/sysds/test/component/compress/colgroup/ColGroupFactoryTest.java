@@ -64,31 +64,31 @@ public class ColGroupFactoryTest {
 	@Parameters
 	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
-		add(tests, 100, 5, 2, 5, 0.7, 234);
-		add(tests, 100, 5, 1, 1, 0.7, 234);
-		add(tests, 100, 1, 2, 5, 0.7, 234);
-		add(tests, 100, 1, 1, 1, 0.7, 234);
-		add(tests, 100, 5, 2, 5, 0.2, 234);
-		add(tests, 100, 5, 2, 5, 0.1, 234);
-		add(tests, 100, 1, 2, 5, 0.1, 234);
-		add(tests, 100, 1, 1, 1, 0.8, 234);
-		add(tests, 100, 1, 1, 1, 0.1, 234);
-		add(tests, 100, 5, 2, 5, 0.0, 234);
-		add(tests, 100, 1, 1, 3, 1.0, 234);
-		add(tests, 100, 1, 1, 3, 1.0, 234);
+		// add(tests, 40, 5, 2, 5, 0.7, 234);
+		// add(tests, 40, 5, 1, 1, 0.7, 234);
+		add(tests, 40, 1, 2, 5, 0.7, 234);
+		add(tests, 40, 1, 1, 1, 0.7, 234);
+		add(tests, 40, 5, 2, 5, 0.2, 234);
+		add(tests, 40, 5, 2, 5, 0.1, 234);
+		add(tests, 40, 1, 2, 5, 0.1, 234);
+		add(tests, 40, 1, 1, 1, 0.8, 234);
+		add(tests, 40, 1, 1, 1, 0.1, 234);
+		add(tests, 40, 5, 2, 5, 0.0, 234);
+		add(tests, 40, 1, 1, 3, 1.0, 234);
+		add(tests, 40, 1, 1, 3, 1.0, 234);
 
-		addWithEmpty(tests, 100, 1, 2, 5, 0.1, 234);
-		addWithEmpty(tests, 100, 1, 1, 1, 0.1, 234);
-		addWithEmpty(tests, 100, 1, 1, 1, 0.8, 234);
-		addWithEmpty(tests, 100, 3, 2, 5, 0.1, 234);
+		addWithEmpty(tests, 40, 1, 2, 5, 0.1, 234);
+		addWithEmpty(tests, 40, 1, 1, 1, 0.1, 234);
+		addWithEmpty(tests, 40, 1, 1, 1, 0.8, 234);
+		addWithEmpty(tests, 40, 3, 2, 5, 0.1, 234);
 
-		addWithEmptyReverse(tests, 100, 1, 2, 5, 0.1, 234);
-		addWithEmptyReverse(tests, 100, 1, 2, 5, 0.7, 234);
-		addWithEmptyReverse(tests, 100, 1, 1, 1, 0.7, 234);
-		addWithEmptyReverse(tests, 100, 3, 2, 5, 0.1, 234);
+		addWithEmptyReverse(tests, 40, 1, 2, 5, 0.1, 234);
+		addWithEmptyReverse(tests, 40, 1, 2, 5, 0.7, 234);
+		addWithEmptyReverse(tests, 40, 1, 1, 1, 0.7, 234);
+		addWithEmptyReverse(tests, 40, 3, 2, 5, 0.1, 234);
 
-		addDenseMultiBlock(tests, 100, 3, 2, 5, 0.7, 234);
-		addDenseMultiBlock(tests, 100, 1, 2, 5, 0.7, 234);
+		addDenseMultiBlock(tests, 40, 3, 2, 5, 0.7, 234);
+		addDenseMultiBlock(tests, 40, 1, 2, 5, 0.7, 234);
 
 		return tests;
 	}
@@ -232,9 +232,9 @@ public class ColGroupFactoryTest {
 
 		cs.transposed = true;
 		if(ce != null)
-			ColGroupFactory.compressColGroups(mbt, csi, cs, ce, 6);
+			ColGroupFactory.compressColGroups(mbt, csi, cs, ce, 4);
 		else
-			ColGroupFactory.compressColGroups(mbt, csi, cs, 6);
+			ColGroupFactory.compressColGroups(mbt, csi, cs, 4);
 	}
 
 	private void compare(List<AColGroup> gt) {
@@ -251,7 +251,7 @@ public class ColGroupFactoryTest {
 	}
 
 	private List<AColGroup> compMT() {
-		return comp(6, false);
+		return comp(4, false);
 	}
 
 	private List<AColGroup> compTransposedST() {
@@ -259,7 +259,7 @@ public class ColGroupFactoryTest {
 	}
 
 	private List<AColGroup> compTransposedMT() {
-		return comp(6, true);
+		return comp(4, true);
 	}
 
 	private List<AColGroup> comp(int k, boolean transposed) {
@@ -267,7 +267,7 @@ public class ColGroupFactoryTest {
 			final int offs = Math.min((int) (mbt.getSparsity() * nRow * nCol), nRow);
 			final EstimationFactors f = new EstimationFactors(Math.min(nRow, offs), nRow, offs, mbt.getSparsity());
 			final List<CompressedSizeInfoColGroup> es = new ArrayList<>();
-			es.add(new CompressedSizeInfoColGroup(cols, f, 312152, ct));
+			es.add(new CompressedSizeInfoColGroup(cols, f, 314152, ct));
 			final CompressedSizeInfo csi = new CompressedSizeInfo(es);
 			CompressionSettings cs = csb.create();
 

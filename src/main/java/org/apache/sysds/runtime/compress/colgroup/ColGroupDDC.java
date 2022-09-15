@@ -57,10 +57,6 @@ public class ColGroupDDC extends APreAgg {
 	private ColGroupDDC(int[] colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
-		getCounts();
-		// if(data.getUnique() != dict.getNumberOfValues(colIndexes.length))
-		// 	throw new DMLCompressionException("Invalid construction of DDC group " + data.getUnique() + " vs. "
-		// 		+ dict.getNumberOfValues(colIndexes.length));
 	}
 
 	public static AColGroup create(int[] colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {

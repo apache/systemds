@@ -49,6 +49,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.functionobjects.Modulus;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -106,6 +107,7 @@ public abstract class ColGroupBase {
 		this.maxCol = Arrays.stream(base.getColIndices()).max().getAsInt() + 1;
 	}
 
+
 	protected AColGroup serializeAndBack(AColGroup g) {
 		try {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -141,6 +143,35 @@ public abstract class ColGroupBase {
 		MatrixBlock t = new MatrixBlock(nRow, nCol, false);
 		t.allocateDenseBlock();
 		return t;
+	}
+
+	protected MatrixBlock multiBlockDenseMB(int nCol){
+
+		MatrixBlock t = new MatrixBlock(nRow, nCol, false);
+		t.allocateDenseBlock();
+
+		double[] values = t.getDenseBlockValues();
+		DenseBlockFP64Mock m = new DenseBlockFP64Mock(new int[]{nRow, nCol}, values);
+
+		return new MatrixBlock(nRow, nCol, m);
+	}
+
+	private class DenseBlockFP64Mock extends DenseBlockFP64 {
+		private static final long serialVersionUID = -3601232958390554672L;
+
+		public DenseBlockFP64Mock(int[] dims, double[] data) {
+			super(dims, data);
+		}
+
+		@Override
+		public boolean isContiguous() {
+			return false;
+		}
+
+		@Override
+		public int numBlocks() {
+			return 2;
+		}
 	}
 
 	protected static void compare(MatrixBlock m1, MatrixBlock m2) {

@@ -24,7 +24,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
@@ -57,9 +56,6 @@ public class ColGroupDDC extends APreAgg {
 
 	private ColGroupDDC(int[] colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
-		if(data.getUnique() != dict.getNumberOfValues(colIndexes.length))
-			throw new DMLCompressionException("Invalid construction of DDC group " + data.getUnique() + " vs. "
-				+ dict.getNumberOfValues(colIndexes.length));
 		_data = data;
 	}
 

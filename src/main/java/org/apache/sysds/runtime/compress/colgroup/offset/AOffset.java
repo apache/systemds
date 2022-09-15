@@ -347,6 +347,8 @@ public abstract class AOffset implements Serializable {
 
 		while(i < last) { // while we are not done iterating
 			for(int r = rl; r < ru; r++) {
+				if(sb.isEmpty(r))
+					continue;
 				final int off = r - rl;
 				int apos = aOffs[off]; // current offset
 				final int alen = sb.size(r) + sb.pos(r);
@@ -363,6 +365,8 @@ public abstract class AOffset implements Serializable {
 
 		// process final element
 		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
 			final int off = r - rl;
 			int apos = aOffs[off];
 			final int alen = sb.size(r) + sb.pos(r);

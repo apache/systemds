@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.junit.Test;
 
-public class genOffsetOLETest {
+public class GenOffsetOLETest {
 
 	@Test
 	public void testEmpty() {

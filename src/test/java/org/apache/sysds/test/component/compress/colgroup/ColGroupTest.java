@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.compress.colgroup;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -284,6 +285,13 @@ public class ColGroupTest extends ColGroupBase {
 	public void decompressToDenseBlockEnd() {
 		MatrixBlock ot = denseMB(maxCol);
 		MatrixBlock bt = denseMB(maxCol);
+		decompressToDenseBlock(ot, bt, nRow - 5, nRow - 1);
+	}
+
+	@Test
+	public void decompressToMultiBlockDenseBlock() {
+		MatrixBlock ot = multiBlockDenseMB(maxCol);
+		MatrixBlock bt = multiBlockDenseMB(maxCol);
 		decompressToDenseBlock(ot, bt, nRow - 5, nRow - 1);
 	}
 
@@ -1225,10 +1233,28 @@ public class ColGroupTest extends ColGroupBase {
 	}
 
 	public void leftMultNoPreAgg(int nRowLeft, int rl, int ru, int cl, int cu, double sparsity) {
+
+		final MatrixBlock left = TestUtils
+			.round(TestUtils.generateTestMatrixBlock(nRowLeft, nRow, -10, 10, sparsity, 1342));
+
+		leftMultNoPreAgg(nRowLeft, rl, ru, cl, cu, left);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void leftMultNoPreAggWithEmptyRows() {
+
+		MatrixBlock left = TestUtils.round(TestUtils.generateTestMatrixBlock(3, nRow, -10, 10, 0.2, 222));
+
+		left = left.append(new MatrixBlock(3, nRow, true), null, false);
+		left.denseToSparse(true);
+		left.recomputeNonZeros();
+		leftMultNoPreAgg(6, 2, 5, 0, nRow, left);
+		throw new NotImplementedException("Make test parse since the check actually says it is correct");
+	}
+
+	public void leftMultNoPreAgg(int nRowLeft, int rl, int ru, int cl, int cu, MatrixBlock left) {
 		try {
 
-			final MatrixBlock left = TestUtils
-				.round(TestUtils.generateTestMatrixBlock(nRowLeft, nRow, -10, 10, sparsity, 1342));
 			final MatrixBlock bt = new MatrixBlock(nRowLeft, maxCol, false);
 			bt.allocateDenseBlock();
 
@@ -1256,13 +1282,28 @@ public class ColGroupTest extends ColGroupBase {
 	}
 
 	@Test
+	public void preAggLeftMulRand() {
+		preAggLeftMult(TestUtils.ceil(TestUtils.generateTestMatrixBlock(1, nRow, -10, 10, 1.0, 32)), 0, 1);
+	}
+
+	@Test
 	public void preAggLeftMultTwoRows() {
 		preAggLeftMult(new MatrixBlock(2, nRow, 1.0), 0, 2);
 	}
 
 	@Test
+	public void preAggLeftMultTwoRowsRand() {
+		preAggLeftMult(TestUtils.ceil(TestUtils.generateTestMatrixBlock(2, nRow, -10, 10, 1.0, 324)), 0, 2);
+	}
+
+	@Test
 	public void preAggLeftMultSecondRow() {
 		preAggLeftMult(new MatrixBlock(2, nRow, 1.0), 1, 2);
+	}
+
+	@Test
+	public void preAggLeftMultSecondRowRand() {
+		preAggLeftMult(TestUtils.ceil(TestUtils.generateTestMatrixBlock(2, nRow, -10, 10, 1.0, 241)), 0, 2);
 	}
 
 	@Test
@@ -1282,6 +1323,7 @@ public class ColGroupTest extends ColGroupBase {
 	@Test
 	public void preAggLeftMultSparseFiveRows() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(5, nRow, -1, 10, 0.2, 1342));
+		mb.sparseToDense();
 		mb.denseToSparse(true);
 		preAggLeftMult(mb, 0, 5);
 	}
@@ -1289,6 +1331,7 @@ public class ColGroupTest extends ColGroupBase {
 	@Test
 	public void preAggLeftMultSparseFiveRowsMCSR() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(5, nRow, -1, 10, 0.2, 1342));
+		mb.sparseToDense();
 		mb.denseToSparse(false);
 		preAggLeftMult(mb, 0, 5);
 	}
@@ -1305,7 +1348,17 @@ public class ColGroupTest extends ColGroupBase {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(2, nRow, -1, 10, 0.2, 1342));
 		mb = mb.append(new MatrixBlock(2, nRow, false), null, false);
 		mb.denseToSparse(true);
+		mb.recomputeNonZeros();
 		preAggLeftMult(mb, 3, 4);
+	}
+
+	@Test
+	public void preAggLeftMultSparseSomeEmptyRows() {
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(3, nRow, -1, 10, 0.2, 1342));
+		mb = mb.append(new MatrixBlock(3, nRow, false), null, false);
+		mb.denseToSparse(true);
+		mb.recomputeNonZeros();
+		preAggLeftMult(mb, 2, 4);
 	}
 
 	public void preAggLeftMult(MatrixBlock mb, int rl, int ru) {
@@ -1415,7 +1468,7 @@ public class ColGroupTest extends ColGroupBase {
 		// if we get here throw the exception
 	}
 
-	private class DenseBlockFP64Mock extends DenseBlockFP64 {
+	private static class DenseBlockFP64Mock extends DenseBlockFP64 {
 		private static final long serialVersionUID = -3601232958390554672L;
 
 		public DenseBlockFP64Mock(int[] dims, double[] data) {
@@ -1677,6 +1730,16 @@ public class ColGroupTest extends ColGroupBase {
 	}
 
 	@Test
+	public void rightMultDenseMatrixSomewhatSparse() {
+		rightMultWithAllCols(TestUtils.generateTestMatrixBlock(maxCol, 10, 1, 1, 0.6, 1342));
+	}
+
+	@Test
+	public void rightMultDenseMatrixSomewhatSparseManyColumns() {
+		rightMultWithAllCols(TestUtils.generateTestMatrixBlock(maxCol, 201, 1, 1, 0.6, 1342));
+	}
+
+	@Test
 	public void rightMultEmptyMatrix() {
 		rightMult(new MatrixBlock(maxCol, 10, false));
 	}
@@ -1724,6 +1787,31 @@ public class ColGroupTest extends ColGroupBase {
 		}
 		mb.denseToSparse(true);
 		rightMult(mb);
+	}
+
+	@Test
+	public void rightMultMatrixDiagonalSparseWithCols() {
+		MatrixBlock mb = new MatrixBlock(maxCol, 10, false);
+		mb.allocateDenseBlock();
+		for(int i = 0; i < maxCol; i++) {
+			mb.setValue(i, i % 10, i);
+		}
+		mb.denseToSparse(true);
+		rightMultWithAllCols(mb);
+	}
+
+	public void rightMultWithAllCols(MatrixBlock right) {
+		try {
+			final int[] cols = Util.genColsIndices(right.getNumColumns());
+			AColGroup b = base.rightMultByMatrix(right, cols);
+			AColGroup o = other.rightMultByMatrix(right, cols);
+			if(!(b == null && o == null))
+				compare(b, o);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	public void rightMult(MatrixBlock right) {
@@ -2014,4 +2102,15 @@ public class ColGroupTest extends ColGroupBase {
 		assertTrue(co < eo);
 	}
 
+	@Test
+	public void copyMaintainPointers() {
+		AColGroup a = base.copy();
+		AColGroup b = other.copy();
+
+		assertTrue(a.getColIndices() == base.getColIndices());
+		assertTrue(b.getColIndices() == other.getColIndices());
+		// assertFalse(a.getColIndices() == other.getColIndices());
+		assertFalse(a == base);
+		assertFalse(b == other);
+	}
 }

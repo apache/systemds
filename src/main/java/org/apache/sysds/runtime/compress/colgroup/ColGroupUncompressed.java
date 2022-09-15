@@ -528,17 +528,17 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	private void leftMultByAPreAggColGroup(APreAgg paCG, MatrixBlock result) {
+		final int nCols = paCG.getNumCols();
+		final MatrixBlock dictM = paCG._dict.getMBDict(nCols).getMatrixBlock();
+		if(dictM == null)
+			return;
 		LOG.warn("\nInefficient transpose of uncompressed to fit to"
 			+ " t(AColGroup) %*% UncompressedColGroup mult by colGroup uncompressed column"
 			+ "\nCurrently solved by t(t(Uncompressed) %*% AColGroup)");
 		final int k = InfrastructureAnalyzer.getLocalParallelism();
 		final MatrixBlock ucCGT = LibMatrixReorg.transpose(getData(), k);
-		final int nCols = paCG.getNumCols();
 		final MatrixBlock preAgg = new MatrixBlock(1, paCG.getNumValues(), false);
 		final MatrixBlock tmpRes = new MatrixBlock(1, nCols, false);
-		final MatrixBlock dictM = paCG._dict.getMBDict(nCols).getMatrixBlock();
-		if(dictM == null)
-			return;
 		preAgg.allocateDenseBlock();
 		tmpRes.allocateDenseBlock();
 		final int nRowsTransposed = ucCGT.getNumRows();

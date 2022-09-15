@@ -60,6 +60,10 @@ public class EstimationFactors {
 		this(numVals, numRows, -1, null, -1, numRows, false, false, 1.0, tupleSparsity);
 	}
 
+	public EstimationFactors(int numVals, int numRows, int numOffs, double tupleSparsity) {
+		this(numVals, numOffs, -1, null, -1, numRows, false, false, 1.0, tupleSparsity);
+	}
+
 	public EstimationFactors(int numVals, int numOffs, int largestOff, int[] frequencies, int numSingle, int numRows,
 		boolean lossy, boolean zeroIsMostFrequent, double overAllSparsity, double tupleSparsity) {
 		this(numVals, numOffs, largestOff, frequencies, numSingle, numRows, numOffs, lossy, zeroIsMostFrequent,
@@ -90,7 +94,7 @@ public class EstimationFactors {
 				"Invalid number of instance of most common element should be lower than number of rows. " + largestOff
 					+ " > numRows: " + numRows);
 		else if(numVals > numOffs)
-			throw new DMLCompressionException("Num vals cannot be greater than num offs");
+			throw new DMLCompressionException("Num vals cannot be greater than num offs: vals: "+ numVals + " offs: " + numOffs);
 	}
 
 	public int[] getFrequencies(){

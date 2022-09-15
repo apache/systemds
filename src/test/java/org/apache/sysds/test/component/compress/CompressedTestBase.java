@@ -92,7 +92,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 	protected static SparsityType[] usedSparsityTypes = new SparsityType[] { //
 		SparsityType.FULL, //
-		SparsityType.SPARSE, //
+		// SparsityType.SPARSE, //
 		SparsityType.ULTRA_SPARSE //
 	};
 

@@ -941,8 +941,6 @@ public class ColGroupRLE extends AColGroupOffset {
 			for(int apos = _ptr[k], rs = 0, re = 0; apos < blen; apos += 2) {
 				rs = re + _data[apos];
 				re = rs + _data[apos + 1];
-				if(rs == re)// empty run
-					continue;
 				for(int tk = 0; tk < tnv; tk++) {
 					final int tblen = that._ptr[tk + 1];
 					int tapos = skip[tk];

@@ -27,6 +27,8 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.test.functions.federated.multitenant.MultiTenantTestBase;
 import org.junit.After;
@@ -40,7 +42,14 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 	private static final String MAIN_URI = "http://localhost";
 
 	private static final String WORKER_MAIN_PATH = "/workers";
-	// private static final String COORDINATOR_MAIN_PATH = "/coordinators";
+	private static final String COORDINATOR_MAIN_PATH = "/coordinators";
+	private static final String STATISTICS_MAIN_PATH = "/statistics";
+
+	public enum Entity {
+		WORKER,
+		COORDINATOR,
+		STATISTICS
+	}
 
 	@Override
 	public abstract void setUp();
@@ -63,9 +72,14 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 		monitoringProcess = startLocalFedMonitoring(monitoringPort, addArgs);
 	}
 
-	protected List<HttpResponse<?>> addEntities(int count) {
+	protected List<HttpResponse<?>> addEntities(int count, Entity entity) {
 		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH;
 		String name = "Worker";
+
+		if (entity == Entity.COORDINATOR) {
+			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH;
+			name = "Coordinator";
+		}
 
 		List<HttpResponse<?>> responses = new ArrayList<>();
 		try {
@@ -89,14 +103,25 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 		}
 	}
 
-	protected HttpResponse<?> updateEntity(WorkerModel editModel) {
-		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH;
+	protected HttpResponse<?> updateEntity(BaseModel editModel, Entity entity) {
+		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH + "/" + editModel.id;
+
+		if (entity == Entity.COORDINATOR) {
+			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH + "/" + editModel.id;
+		}
 
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
+
 			String requestBody = objectMapper
 				.writerWithDefaultPrettyPrinter()
-				.writeValueAsString(new WorkerModel(editModel.id, editModel.name, editModel.address));
+				.writeValueAsString(new WorkerModel(editModel.id, ((WorkerModel)editModel).name, ((WorkerModel)editModel).address));
+
+			if (entity == Entity.COORDINATOR) {
+				requestBody = objectMapper
+					.writerWithDefaultPrettyPrinter()
+					.writeValueAsString(new CoordinatorModel());
+			}
 			var client = HttpClient.newHttpClient();
 			var request = HttpRequest.newBuilder(URI.create(uriStr))
 				.header("accept", "application/json")
@@ -110,8 +135,12 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 		}
 	}
 
-	protected HttpResponse<?> removeEntity(Long id) {
+	protected HttpResponse<?> removeEntity(Long id, Entity entity) {
 		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH + "/" + id;
+
+		if (entity == Entity.COORDINATOR) {
+			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH + "/" + id;
+		}
 
 		try {
 			var client = HttpClient.newHttpClient();
@@ -127,8 +156,16 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 		}
 	}
 
-	protected HttpResponse<?> getEntities() {
+	protected HttpResponse<?> getEntities(Entity entity) {
 		String uriStr = MAIN_URI + ":" + monitoringPort + WORKER_MAIN_PATH;
+
+		if (entity == Entity.COORDINATOR) {
+			uriStr = MAIN_URI + ":" + monitoringPort + COORDINATOR_MAIN_PATH;
+		}
+
+		if (entity == Entity.STATISTICS) {
+			uriStr = MAIN_URI + ":" + monitoringPort + STATISTICS_MAIN_PATH + "/1";
+		}
 
 		try {
 			var client = HttpClient.newHttpClient();

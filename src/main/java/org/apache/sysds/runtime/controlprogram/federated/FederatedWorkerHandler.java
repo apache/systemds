@@ -303,6 +303,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		switch(method) {
 			case READ_VAR:
+				eventStage.operation = method.name();
 				result = readData(request, ecm); // matrix/frame
 				break;
 			case PUT_VAR:
@@ -317,12 +318,14 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				result = execInstruction(request, ecm, eventStage);
 				break;
 			case EXEC_UDF:
-				result = execUDF(request, ecm);
+				result = execUDF(request, ecm, eventStage);
 				break;
 			case CLEAR:
+				eventStage.operation = method.name();
 				result = execClear(ecm);
 				break;
 			case NOOP:
+				eventStage.operation = method.name();
 				result = execNoop();
 				break;
 			default:
@@ -623,13 +626,16 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private FederatedResponse execUDF(FederatedRequest request, ExecutionContextMap ecm) {
+	private FederatedResponse execUDF(FederatedRequest request, ExecutionContextMap ecm, EventStageModel eventStage) {
 		checkNumParams(request.getNumParams(), 1);
 		ExecutionContext ec = ecm.get(request.getTID());
 
 		// get function and input parameters
 		try {
 			FederatedUDF udf = (FederatedUDF) request.getParam(0);
+
+			eventStage.operation = udf.getClass().getSimpleName();
+
 			Data[] inputs = Arrays.stream(udf.getInputIDs()).mapToObj(id -> ec.getVariable(String.valueOf(id)))
 				.map(PrivacyMonitor::handlePrivacy).toArray(Data[]::new);
 

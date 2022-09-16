@@ -1620,7 +1620,7 @@ public abstract class AutomatedTestBase {
 		String classpath = System.getProperty("java.class.path");
 		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
 		String[] args = ArrayUtils.addAll(new String[]{path, "-cp", classpath, DMLScript.class.getName(),
-				"-fedMonitor", Integer.toString(port)}, addArgs);
+				"-fedMonitoring", Integer.toString(port)}, addArgs);
 		ProcessBuilder processBuilder = new ProcessBuilder(args);
 
 		try {

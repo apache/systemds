@@ -28,10 +28,10 @@ The backend process can be started in a similar manner with how a worker is star
 ```bash
   cd systemds
   mvn package
-  ./bin/systemds [-r] FEDMONITOR [SystemDS.jar] <portnumber> [arguments]
+  ./bin/systemds [-r] FEDMONITORING [SystemDS.jar] <portnumber> [arguments]
 ```
 
-Or with the specified **-fedMonitor 8080** flag indicating the start of the backend process on the specified port, in our case **8080**.
+Or with the specified **-fedMonitoring 8080** flag indicating the start of the backend process on the specified port, in our case **8080**.
 
 ## Main components
 

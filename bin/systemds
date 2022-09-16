@@ -167,7 +167,7 @@ Worker Usage: $0 [-r] WORKER [SystemDS.jar] <portnumber> [arguments] [-help]
 
     port         : The port to open for the federated worker.
 
-Federated Monitoring Usage: $0 [-r] FEDMONITOR [SystemDS.jar] <portnumber> [arguments] [-help]
+Federated Monitoring Usage: $0 [-r] FEDMONITORING [SystemDS.jar] <portnumber> [arguments] [-help]
 
     port         : The port to open for the federated monitoring tool.
 
@@ -257,8 +257,8 @@ elif echo "$1" | grep -q "WORKER"; then
     printUsage
   fi
   shift
-elif echo "$1" | grep -q "FEDMONITOR"; then
-  FEDMONITOR=1
+elif echo "$1" | grep -q "FEDMONITORING"; then
+  FEDMONITORING=1
   shift
   if echo "$1" | grep -q "jar"; then
     SYSTEMDS_JAR_FILE=$1
@@ -287,8 +287,8 @@ if [ -z "$WORKER" ] ; then
   WORKER=0
 fi
 
-if [ -z "$FEDMONITOR" ] ; then
-  FEDMONITOR=0
+if [ -z "$FEDMONITORING" ] ; then
+  FEDMONITORING=0
 fi
 
 # find me a SystemDS jar file to run
@@ -449,7 +449,7 @@ elif [ "$FEDMONITORING" == 1 ]; then
   -cp $CLASSPATH \
   $LOG4JPROP \
   org.apache.sysds.api.DMLScript \
-  -fedMonitor $PORT \
+  -fedMonitoring $PORT \
   $CONFIG_FILE \
   $*"
   print_out "Executing command: $CMD"

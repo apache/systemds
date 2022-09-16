@@ -22,7 +22,9 @@ export class Utils {
 		return a.x < b.x ? -1 : (a.x > b.x ? 1 : 0);
 	}
 
-	public static sortStartDate(a, b) {
-		return a.startTime < b.startTime ? -1 : (a.startTime > b.startTime ? 1 : 0);
+	public static sortEventsStartDate(a, b) {
+		let aFirstStage = a.stages[0];
+		let bFirstStage = b.stages[0];
+		return aFirstStage.startTime < bFirstStage.startTime ? -1 : (aFirstStage.startTime > bFirstStage.startTime ? 1 : 0);
 	}
 }

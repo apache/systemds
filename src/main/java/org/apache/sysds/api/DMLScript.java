@@ -25,12 +25,18 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Scanner;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.lang.StringUtils;
@@ -65,6 +71,8 @@ import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorker;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.FederatedMonitoringServer;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
@@ -140,6 +148,8 @@ public class DMLScript
 
 	// Global seed 
 	public static int               SEED                 = -1;
+
+	public static String MONITORING_ADDRESS = null;
 
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -262,6 +272,7 @@ public class DMLScript
 			LINEAGE_DEBUGGER      = dmlOptions.lineage_debugger;
 			SEED                  = dmlOptions.seed;
 
+
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
 			String fileOrScript = isFile ? dmlOptions.filePath : dmlOptions.script;
@@ -286,8 +297,13 @@ public class DMLScript
 			}
 
 			if(dmlOptions.fedMonitoring) {
+				loadConfiguration(fnameOptConfig);
 				new FederatedMonitoringServer(dmlOptions.fedMonitoringPort, dmlOptions.debug);
 				return true;
+			}
+
+			if(dmlOptions.fedMonitoringAddress != null) {
+				MONITORING_ADDRESS = dmlOptions.fedMonitoringAddress;
 			}
 
 			LineageCacheConfig.setConfig(LINEAGE_REUSE);
@@ -410,6 +426,9 @@ public class DMLScript
 	{
 		// print basic time, environment info, and process id
 		printStartExecInfo(dmlScriptStr);
+
+		// optionally register for monitoring
+		registerForMonitoring();
 		
 		//Step 1: parse configuration files & write any configuration specific global variables
 		loadConfiguration(fnameOptConfig);
@@ -584,6 +603,37 @@ public class DMLScript
 			LOG.debug("DML script: \n" + dmlScriptString);
 		if(info)
 			LOG.info("Process id:  " + IDHandler.obtainProcessID());
+	}
+
+	private static void registerForMonitoring() {
+
+		if (MONITORING_ADDRESS != null && !MONITORING_ADDRESS.isBlank() && !MONITORING_ADDRESS.isEmpty()) {
+			try {
+
+				String uriString = MONITORING_ADDRESS + "/coordinators";
+
+				ObjectMapper objectMapper = new ObjectMapper();
+
+				var model = new CoordinatorModel();
+				model.name = InetAddress.getLocalHost().getHostName();
+				model.host = InetAddress.getLocalHost().getHostName();
+				model.processId = Long.parseLong(IDHandler.obtainProcessID());
+
+				String requestBody = objectMapper
+						.writerWithDefaultPrettyPrinter()
+						.writeValueAsString(model);
+
+				var client = HttpClient.newHttpClient();
+				var request = HttpRequest.newBuilder(URI.create(uriString))
+						.header("accept", "application/json")
+						.POST(HttpRequest.BodyPublishers.ofString(requestBody))
+						.build();
+
+				client.send(request, HttpResponse.BodyHandlers.ofString());
+			} catch (IOException | InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 	
 	private static String getDateTime() {

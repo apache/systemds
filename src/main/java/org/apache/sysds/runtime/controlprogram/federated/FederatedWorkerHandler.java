@@ -564,6 +564,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private FederatedResponse execInstruction(FederatedRequest request, ExecutionContextMap ecm, EventStageModel eventStage) throws Exception {
 		final Instruction ins = InstructionParser.parseSingleInstruction((String) request.getParam(0));
 
+		System.out.println(ins.getExtendedOpcode());
+		System.out.println(ins.getInstructionString());
+
 		eventStage.operation = ins.getExtendedOpcode();
 
 		final long tid = request.getTID();

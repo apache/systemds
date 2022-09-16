@@ -30,13 +30,34 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.Wor
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+
+import static java.lang.Thread.sleep;
 
 public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 	private final static String TEST_NAME = "FederatedWorkerStatisticsTest";
 
 	private final static String TEST_DIR = "functions/federated/monitoring/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedWorkerStatisticsTest.class.getSimpleName() + "/";
+
+	private static final String PERFORMANCE_FORMAT = "For %d number of requests, milliseconds elapsed %d.";
 
 	private static int[] workerPorts;
 	private final WorkerService workerMonitoringService = new WorkerService();
@@ -56,6 +77,41 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 
 		Assert.assertNotNull("Stats parsed correctly", model);
 		Assert.assertNotEquals("Utilization stats parsed correctly", 0, model.utilization.size());
+	}
+
+	@Test
+	public void testWorkerStatisticsPerformance() throws InterruptedException {
+		int numRequests = 60;
+
+		ExecutorService executor = Executors.newFixedThreadPool(numRequests);
+
+		long start = System.currentTimeMillis();
+
+		// Returns a list of Futures holding their status and results when all complete.
+		// Future.isDone() is true for each element of the returned list
+		// https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html#invokeAll(java.util.Collection)
+		List<Future<StatisticsModel>> taskFutures = executor.invokeAll(Collections.nCopies(numRequests,
+				() -> StatisticsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0])));
+
+		long finish = System.currentTimeMillis();
+		long elapsedTime = (finish - start);
+
+		taskFutures.forEach(res -> {
+			try {
+				Assert.assertNotNull("Stats parsed correctly", res.get());
+			} catch (InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+			}
+		});
+
+		executor.shutdown();
+
+		// Wait until all threads are finish
+		// Returns true if all tasks have completed following shut down.
+		// Note that isTerminated is never true unless either shutdown or shutdownNow was called first.
+		while (!executor.isTerminated());
+
+		System.out.println(String.format(PERFORMANCE_FORMAT, numRequests, elapsedTime));
 	}
 
 	@Test

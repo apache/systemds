@@ -39,10 +39,10 @@ public class WorkerService {
 	private static final IRepository entityRepository = new DerbyRepository();
 	// { workerId, { workerAddress, workerStatus } }
 	private static final Map<Long, Pair<String, Boolean>> cachedWorkers = new HashMap<>();
+	private static ScheduledExecutorService executorService;
 
 	public WorkerService() {
-		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-		executor.scheduleAtFixedRate(syncWorkerStatisticsWithDB(), 0, 3, TimeUnit.SECONDS);
+		startStatsCollectionProcess(1, 3);
 	}
 
 	public Long create(WorkerModel model) {
@@ -102,6 +102,13 @@ public class WorkerService {
 					cachedWorkers.replace(worker.id, new MutablePair<>(worker.address, oldPair.getRight()));
 				}
 			}
+		}
+	}
+
+	private static synchronized void startStatsCollectionProcess(int threadCount, int frequencySeconds) {
+		if (executorService == null) {
+			executorService = Executors.newScheduledThreadPool(threadCount);
+			executorService.scheduleAtFixedRate(syncWorkerStatisticsWithDB(), 0, frequencySeconds, TimeUnit.SECONDS);
 		}
 	}
 

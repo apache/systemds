@@ -65,11 +65,6 @@ public class ColGroupUncompressed extends AColGroup {
 	 */
 	private MatrixBlock _data;
 
-	/** Constructor for serialization */
-	protected ColGroupUncompressed() {
-		super();
-	}
-
 	private ColGroupUncompressed(MatrixBlock mb, int[] colIndexes) {
 		super(colIndexes);
 		_data = mb;
@@ -454,11 +449,11 @@ public class ColGroupUncompressed extends AColGroup {
 		}
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		_data = new MatrixBlock();
-		_data.readFields(in);
+	public static ColGroupUncompressed read(DataInput in) throws IOException {
+		int[] cols = readCols(in);
+		MatrixBlock data = new MatrixBlock();
+		data.readFields(in);
+		return new ColGroupUncompressed(data, cols);
 	}
 
 	@Override

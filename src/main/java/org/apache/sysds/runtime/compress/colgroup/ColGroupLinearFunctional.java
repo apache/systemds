@@ -57,11 +57,6 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	protected int _numRows;
 
-	/** Constructor for serialization */
-	protected ColGroupLinearFunctional() {
-		super();
-	}
-
 	/**
 	 * Constructs a Linear Functional Column Group that compresses its content using a linear functional.
 	 *
@@ -417,12 +412,10 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		throw new DMLCompressionException("This method should never be called");
 	}
 
-
 	@Override
 	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result, int nRows) {
-		if(lhs instanceof ColGroupEmpty) 
+		if(lhs instanceof ColGroupEmpty)
 			return;
-		
 
 		MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.length, 0);
 
@@ -526,14 +519,17 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		throw new NotImplementedException();
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		throw new NotImplementedException();
+	public static ColGroupLinearFunctional read(DataInput in, int nRows) throws IOException {
+		int[] cols = readCols(in);
+		double[] coefficients = ColGroupIO.readDoubleArray(2 * cols.length, in);
+		return new ColGroupLinearFunctional(cols, coefficients, nRows);
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		throw new NotImplementedException();
+		super.write(out);
+		for(double d : _coefficents)
+			out.writeDouble(d);
 	}
 
 	@Override

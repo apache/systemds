@@ -45,16 +45,6 @@ public abstract class AColGroupOffset extends APreAgg {
 
 	protected boolean _zeros;
 
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
-	protected AColGroupOffset(int numRows) {
-		super();
-		_numRows = numRows;
-	}
-
 	protected AColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict, int[] cachedCounts) {
 		super(colIndices, dict, cachedCounts);
 		_numRows = numRows;
@@ -104,20 +94,18 @@ public abstract class AColGroupOffset extends APreAgg {
 		return ret;
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
+	public static int[] readPointers(DataInput in) throws IOException {
+		int[] ptr = new int[in.readInt()];
+		for(int i = 0; i < ptr.length; i++)
+			ptr[i] = in.readInt();
+		return ptr;
+	}
 
-		// read bitmaps
-		_ptr = new int[in.readInt()];
-		for(int i = 0; i < _ptr.length; i++)
-			_ptr[i] = in.readInt();
-
-		_data = new char[in.readInt()];
-		for(int i = 0; i < _data.length; i++)
-			_data[i] = in.readChar();
-
-		_zeros = in.readBoolean();
+	public static char[] readData(DataInput in) throws IOException {
+		char[] data = new char[in.readInt()];
+		for(int i = 0; i < data.length; i++)
+			data[i] = in.readChar();
+		return data;
 	}
 
 	@Override

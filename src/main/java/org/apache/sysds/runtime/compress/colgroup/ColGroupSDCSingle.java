@@ -28,6 +28,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
@@ -54,15 +55,6 @@ public class ColGroupSDCSingle extends ASDC {
 
 	/** The default value stored in this column group */
 	protected double[] _defaultTuple;
-
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
-	protected ColGroupSDCSingle(int numRows) {
-		super(numRows);
-	}
 
 	private ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 		int[] cachedCounts) {
@@ -434,13 +426,12 @@ public class ColGroupSDCSingle extends ASDC {
 			out.writeDouble(d);
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		_indexes = OffsetFactory.readIn(in);
-		_defaultTuple = new double[_colIndexes.length];
-		for(int i = 0; i < _colIndexes.length; i++)
-			_defaultTuple[i] = in.readDouble();
+	public static ColGroupSDCSingle read(DataInput in, int nRows) throws IOException {
+		int[] cols = readCols(in);
+		ADictionary dict = DictionaryFactory.read(in);
+		AOffset indexes = OffsetFactory.readIn(in);
+		double[] defaultTuple = ColGroupIO.readDoubleArray(cols.length, in);
+		return new ColGroupSDCSingle(cols, nRows, dict, defaultTuple, indexes, null);
 	}
 
 	@Override

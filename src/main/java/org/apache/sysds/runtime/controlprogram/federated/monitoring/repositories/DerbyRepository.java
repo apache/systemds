@@ -36,7 +36,6 @@ import java.util.List;
 
 public class DerbyRepository implements IRepository {
 	private final static String DB_CONNECTION = "jdbc:derby:memory:derbyDB";
-	private final Connection _db;
 	private final List<BaseModel> _allEntities = new ArrayList<>(List.of(
 			new WorkerModel(),
 			new CoordinatorModel(),
@@ -60,17 +59,15 @@ public class DerbyRepository implements IRepository {
 	private static final String GET_ALL_ENTITIES_STMT = "SELECT * FROM %s";
 
 	public DerbyRepository() {
-		_db = createMonitoringDatabase();
+		createMonitoringDatabase();
 	}
 
-	private Connection createMonitoringDatabase() {
+	private void createMonitoringDatabase() {
 		Connection db = null;
 		try {
 			// Creates only if DB doesn't exist
 			db = DriverManager.getConnection(DB_CONNECTION + ";create=true");
 			createMonitoringEntitiesInDB(db);
-
-			return db;
 		}
 		catch (SQLException e) {
 			throw new RuntimeException(e);
@@ -127,7 +124,7 @@ public class DerbyRepository implements IRepository {
 		PreparedStatement st = null;
 		long id = -1L;
 
-		try {
+		try (var db = DriverManager.getConnection(DB_CONNECTION)) {
 
 			StringBuilder sb = new StringBuilder();
 
@@ -156,7 +153,7 @@ public class DerbyRepository implements IRepository {
 			sb.replace(sb.length() - 1, sb.length(), ")");
 			String bindVarsStr = String.format("(%s)", String.join(",", Collections.nCopies(dbFieldCount, "?")));
 
-			st = _db.prepareStatement(String.format(ENTITY_INSERT_STMT, sb, bindVarsStr), PreparedStatement.RETURN_GENERATED_KEYS);
+			st = db.prepareStatement(String.format(ENTITY_INSERT_STMT, sb, bindVarsStr), PreparedStatement.RETURN_GENERATED_KEYS);
 
 			int bindVarIndex = 1;
 			for (var field: fields) {
@@ -198,13 +195,15 @@ public class DerbyRepository implements IRepository {
 	public <T extends BaseModel> T getEntity(Long id, Class<T> type) {
 		T resultModel = null;
 
-		try {
+		PreparedStatement st = null;
+
+		try (var db = DriverManager.getConnection(DB_CONNECTION)) {
 			var entityName = type.getSimpleName().replace(Constants.ENTITY_CLASS_SUFFIX, "");
 
-			PreparedStatement st = _db.prepareStatement(
-				String.format(GET_ENTITY_WITH_COL_STMT, entityName, Constants.ENTITY_ID_COL));
+			st = db.prepareStatement(String.format(GET_ENTITY_WITH_COL_STMT, entityName, Constants.ENTITY_ID_COL));
 
 			st.setLong(1, id);
+
 			var resultSet = st.executeQuery();
 
 			if (resultSet.next()){
@@ -219,12 +218,12 @@ public class DerbyRepository implements IRepository {
 
 	public <T extends BaseModel> List<T> getAllEntities(Class<T> type) {
 		List<T> resultModels = new ArrayList<>();
+		PreparedStatement st = null;
 
-		try {
+		try (var db = DriverManager.getConnection(DB_CONNECTION)) {
 			var entityName = type.getSimpleName().replace(Constants.ENTITY_CLASS_SUFFIX, "");
 
-			PreparedStatement st = _db.prepareStatement(
-				String.format(GET_ALL_ENTITIES_STMT, entityName));
+			st = db.prepareStatement(String.format(GET_ALL_ENTITIES_STMT, entityName));
 
 			var resultSet = st.executeQuery();
 			while (resultSet.next()){
@@ -244,15 +243,13 @@ public class DerbyRepository implements IRepository {
 		List<T> resultModels = new ArrayList<>();
 		PreparedStatement st = null;
 
-		try {
+		try (var db = DriverManager.getConnection(DB_CONNECTION)) {
 			var entityName = type.getSimpleName().replace(Constants.ENTITY_CLASS_SUFFIX, "");
 
 			if (rowCount < 0) {
-				st = _db.prepareStatement(
-						String.format(GET_ENTITY_WITH_COL_STMT, entityName, fieldName));
+				st = db.prepareStatement(String.format(GET_ENTITY_WITH_COL_STMT, entityName, fieldName));
 			} else {
-				st = _db.prepareStatement(
-						String.format(GET_ENTITY_WITH_COL_LIMIT_STMT, entityName, fieldName, rowCount));
+				st = db.prepareStatement(String.format(GET_ENTITY_WITH_COL_LIMIT_STMT, entityName, fieldName, rowCount));
 			}
 
 			if (value.getClass().isAssignableFrom(String.class)) {
@@ -274,12 +271,13 @@ public class DerbyRepository implements IRepository {
 
 	public <T extends BaseModel> void removeAllEntitiesByField(String fieldName, Object value, Class<T> type) {
 
-		try {
+		PreparedStatement st = null;
+
+		try (var db = DriverManager.getConnection(DB_CONNECTION)) {
 
 			var entityName = type.getSimpleName().replace(Constants.ENTITY_CLASS_SUFFIX, "");
 
-			PreparedStatement st = _db.prepareStatement(
-					String.format(DELETE_ENTITY_WITH_COL_STMT, entityName, fieldName));
+			st = db.prepareStatement(String.format(DELETE_ENTITY_WITH_COL_STMT, entityName, fieldName));
 
 			if (value.getClass().isAssignableFrom(String.class)) {
 				st.setString(1, String.valueOf(value));
@@ -296,7 +294,9 @@ public class DerbyRepository implements IRepository {
 	@Override
 	public <T extends BaseModel> void updateEntity(T model) {
 
-		try {
+		PreparedStatement st = null;
+
+		try (var db = DriverManager.getConnection(DB_CONNECTION)) {
 			StringBuilder sb = new StringBuilder();
 
 			var entityName = model.getClass().getSimpleName().replace(Constants.ENTITY_CLASS_SUFFIX, "");
@@ -324,7 +324,7 @@ public class DerbyRepository implements IRepository {
 
 			sb.replace(sb.length() - 1, sb.length(), "");
 
-			PreparedStatement st = _db.prepareStatement(String.format(UPDATE_ENTITY_WITH_COL_STMT, entityName, sb, Constants.ENTITY_ID_COL));
+			st = db.prepareStatement(String.format(UPDATE_ENTITY_WITH_COL_STMT, entityName, sb, Constants.ENTITY_ID_COL));
 
 			for (int i = 0; i < fieldsToChange.size(); i++) {
 				var field = fieldsToChange.get(i);
@@ -352,13 +352,16 @@ public class DerbyRepository implements IRepository {
 
 	@Override
 	public <T extends BaseModel> void removeEntity(Long id, Class<T> type) {
-		try {
+
+		PreparedStatement st = null;
+
+		try (var db = DriverManager.getConnection(DB_CONNECTION)) {
 			var entityName = type.getSimpleName().replace(Constants.ENTITY_CLASS_SUFFIX, "");
 
-			PreparedStatement st = _db.prepareStatement(
-					String.format(DELETE_ENTITY_WITH_COL_STMT, entityName, Constants.ENTITY_ID_COL));
+			st = db.prepareStatement(String.format(DELETE_ENTITY_WITH_COL_STMT, entityName, Constants.ENTITY_ID_COL));
 
 			st.setLong(1, id);
+
 			st.executeUpdate();
 		} catch (SQLException e) {
 			throw new RuntimeException(e);

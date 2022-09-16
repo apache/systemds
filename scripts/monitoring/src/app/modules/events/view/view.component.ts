@@ -28,6 +28,7 @@ import { constants } from "../../../constants";
 import 'chartjs-adapter-moment';
 import { Subject } from "rxjs";
 import { EventStage } from "../../../models/eventStage.model";
+import { Utils } from "../../../utils";
 
 @Component({
 	selector: 'app-view-worker-events',
@@ -41,7 +42,7 @@ export class ViewWorkerEventsComponent {
 	@ViewChild(MatPaginator) paginator: MatPaginator;
 	@ViewChild(MatSort) sort: MatSort;
 
-	private eventTimelineChart: Chart;
+	private eventTimelineChart: any = {};
 
 	private stopPollingStatistics = new Subject<any>();
 
@@ -56,7 +57,7 @@ export class ViewWorkerEventsComponent {
 
 		this.statistics = new Statistics();
 
-		const eventCanvasEle: any = document.getElementById('event-timeline');
+		const eventSectionEle: any = document.getElementById('events-metric-card');
 
 		this.fedSiteService.getStatisticsPolling(id, this.stopPollingStatistics).subscribe(stats => {
 			this.statistics = stats;
@@ -64,66 +65,75 @@ export class ViewWorkerEventsComponent {
 			const timeframe = this.getTimeframe();
 			const minVal = this.getLastSeconds(timeframe[1], 3);
 
-			if (!this.eventTimelineChart) {
-				this.eventTimelineChart = new Chart(eventCanvasEle.getContext('2d'), {
-					type: 'bar',
-					data: {
-						labels: [],
-						datasets: []
-					},
-					options: {
-						indexAxis: 'y',
-						responsive: true,
-						plugins: {
-							legend: {
-								position: 'top',
-								onClick: () => null,
-								onHover: () => null,
-								onLeave: () => null,
-								labels: {
-									generateLabels(chart: Chart): LegendItem[] {
-										let legendItemsTmp: LegendItem[] = [];
+			const coordinatorNames = this.getCoordinatorNames();
 
-										for (const dataset of chart.data.datasets) {
-											const label = dataset.label!
-											if (!legendItemsTmp.find(i => i.text === label)) {
-												let li: LegendItem = {
-													text: label,
-													//@ts-ignore
-													fillStyle: dataset.backgroundColor,
-													//@ts-ignore
-													strokeStyle: dataset.borderColor,
-												}
-												legendItemsTmp.push(li);
-											}
-										}
+			for (const coordinatorName of coordinatorNames) {
 
-										return legendItemsTmp;
-									}
-								}
-							},
-							title: {
-								display: true,
-								text: 'Event timeline of worker with respect to coordinators'
-							}
+				if (!this.eventTimelineChart[coordinatorName]) {
+					const canvas: any = document.createElement("canvas");
+					canvas.width = 400;
+					eventSectionEle.appendChild(canvas);
+
+					this.eventTimelineChart[coordinatorName] = new Chart(canvas.getContext('2d'), {
+						type: 'bar',
+						data: {
+							labels: [],
+							datasets: []
 						},
-						scales: {
-							x: {
-								min: 0,
-								ticks: {
-									callback: function(value, index, ticks) {
-										// @ts-ignore
-										return new Date(minVal + value).toLocaleTimeString();
+						options: {
+							indexAxis: 'y',
+							responsive: true,
+							plugins: {
+								legend: {
+									position: 'top',
+									onClick: () => null,
+									onHover: () => null,
+									onLeave: () => null,
+									labels: {
+										generateLabels(chart: Chart): LegendItem[] {
+											let legendItemsTmp: LegendItem[] = [];
+
+											for (const dataset of chart.data.datasets) {
+												const label = dataset.label!
+												if (!legendItemsTmp.find(i => i.text === label)) {
+													let li: LegendItem = {
+														text: label,
+														//@ts-ignore
+														fillStyle: dataset.backgroundColor,
+														//@ts-ignore
+														strokeStyle: dataset.borderColor,
+													}
+													legendItemsTmp.push(li);
+												}
+											}
+
+											return legendItemsTmp;
+										}
 									}
 								},
-								stacked: true
+								title: {
+									display: true,
+									text: `Event timeline of worker with respect to coordinator ${coordinatorName}`
+								}
 							},
-							y: {
-								stacked: true
-							}
+							scales: {
+								x: {
+									min: 0,
+									ticks: {
+										callback: function(value, index, ticks) {
+											// @ts-ignore
+											return new Date(minVal + value).toLocaleTimeString();
+										}
+									},
+									stacked: true
+								},
+								y: {
+									stacked: true
+								}
+							},
 						},
-					},
-				})
+					})
+				}
 			}
 
 			this.updateEventTimeline();
@@ -198,10 +208,11 @@ export class ViewWorkerEventsComponent {
 		const coordinatorNames = this.getCoordinatorNames();
 		coordinatorNames.forEach(c => {
 
-			this.eventTimelineChart.data.datasets = [];
-			this.eventTimelineChart.data.labels = [coordinatorNames];
+			this.eventTimelineChart[c].data.datasets = [];
+			this.eventTimelineChart[c].data.labels = [c];
 
 			let coordinatorEvents = this.statistics.events.filter(e => e.coordinatorName === c);
+			coordinatorEvents.sort(Utils.sortEventsStartDate);
 
 			let stageStack: EventStage[] = [];
 
@@ -217,14 +228,14 @@ export class ViewWorkerEventsComponent {
 						let nextStage = event.stages[stageIndex];
 						stageStack.push(nextStage);
 
-						this.eventTimelineChart.data.datasets.push({
+						this.eventTimelineChart[c].data.datasets.push({
 							type: 'bar',
 							label: currentStage.operation,
 							backgroundColor: this.getColor(currentStage.operation),
 							data: [new Date(currentStage.endTime).getTime() - new Date(currentStage.startTime).getTime()]
 						});
 
-						this.placeIntermediateBars(currentStage, nextStage);
+						this.placeIntermediateBars(currentStage, nextStage, c);
 					}
 				} else {
 					stageStack.push(event.stages[0]);
@@ -232,7 +243,7 @@ export class ViewWorkerEventsComponent {
 
 				const lastStage = stageStack.pop()!;
 
-				this.eventTimelineChart.data.datasets.push({
+				this.eventTimelineChart[c].data.datasets.push({
 					type: 'bar',
 					label: lastStage.operation,
 					borderColor: constants.chartColors.red,
@@ -247,25 +258,25 @@ export class ViewWorkerEventsComponent {
 				});
 			}
 
-			this.eventTimelineChart.update('none');
+			this.eventTimelineChart[c].update('none');
 		})
 	}
 
-	private placeIntermediateBars(first: EventStage, second: EventStage) {
+	private placeIntermediateBars(first: EventStage, second: EventStage, coordinatorName: any) {
 		let firstEnd = new Date(first.endTime).getTime();
 		let secondStart = new Date(second.startTime).getTime();
 
 		let diff = secondStart - firstEnd;
 
 		if (diff > 0) {
-			this.eventTimelineChart.data.datasets.push({
+			this.eventTimelineChart[coordinatorName].data.datasets.push({
 				type: 'bar',
 				label: 'Idle',
 				backgroundColor: constants.chartColors.white,
 				data: [diff]
 			});
 		} else if (diff < 0) {
-			this.eventTimelineChart.data.datasets.push({
+			this.eventTimelineChart[coordinatorName].data.datasets.push({
 				type: 'bar',
 				label: 'Overlap',
 				backgroundColor: constants.chartColors.grey,

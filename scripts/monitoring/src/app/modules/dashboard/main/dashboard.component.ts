@@ -44,10 +44,12 @@ export class DashboardComponent implements OnInit {
 	@ViewChild(DashboardDirective, {static: true}) fedSiteHost!: DashboardDirective;
 
 	private jsPlumbInstance: jsPlumbInstance;
+	private scale: number = 1;
+
+	private dashboardId: string = 'dashboard-content';
 
 	constructor(public dialog: MatDialog,
-				private fedSiteService: FederatedSiteService) {
-	}
+				private fedSiteService: FederatedSiteService) { }
 
 	ngOnInit(): void {
 
@@ -57,9 +59,25 @@ export class DashboardComponent implements OnInit {
 		};
 
 		this.jsPlumbInstance = jsPlumb.getInstance();
-		this.jsPlumbInstance.setContainer('dashboard-content');
+		this.jsPlumbInstance.setContainer(this.dashboardId);
 
 		this.openConfigDialog();
+	}
+
+	zoom(type: string): void {
+		let element = document.getElementById(this.dashboardId)
+
+		if (type === 'in') {
+			this.scale += 0.1
+		} else if (type === 'out') {
+			this.scale -= 0.1
+		} else if (type === 'zero') {
+			this.scale = 1;
+		}
+
+		// @ts-ignore
+		element.style.transform = `scale(${this.scale})`;
+		this.jsPlumbInstance.setZoom(this.scale);
 	}
 
 	openConfigDialog(): void {
@@ -78,9 +96,19 @@ export class DashboardComponent implements OnInit {
 				let selectedWorkers = this.fedSiteData.workers.filter(w => result['selectedWorkerIds'].includes(w.id));
 
 				this.fedSiteHost.viewContainerRef.clear();
-				this.jsPlumbInstance.removeAllEndpoints('dashboard-content');
+				this.jsPlumbInstance.reset();
 
-				this.redrawDiagram(selectedCoordinators, selectedWorkers);
+				let mainDashboard = document.getElementById(this.dashboardId);
+
+				// @ts-ignore
+				for (const child of mainDashboard.children) {
+					if (child.tagName === 'DIV' || child.tagName === 'svg') {
+						mainDashboard!.removeChild(child);
+					}
+				}
+
+				// Wait for previous components to be destroyed
+				setTimeout(() => this.redrawDiagram(selectedCoordinators, selectedWorkers), 500)
 			}
 		});
 	}

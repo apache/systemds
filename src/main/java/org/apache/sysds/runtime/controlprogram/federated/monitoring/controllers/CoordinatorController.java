@@ -19,12 +19,13 @@
 
 package org.apache.sysds.runtime.controlprogram.federated.monitoring.controllers;
 
-import io.netty.handler.codec.http.FullHttpResponse;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.Request;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.Response;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.CoordinatorService;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.services.MapperService;
+
+import io.netty.handler.codec.http.FullHttpResponse;
 
 public class CoordinatorController implements IController {
 	private final CoordinatorService coordinatorService = new CoordinatorService();
@@ -42,9 +43,25 @@ public class CoordinatorController implements IController {
 
 	@Override
 	public FullHttpResponse update(Request request, Long objectId) {
-		var model = MapperService.getModelFromBody(request, CoordinatorModel.class);
-		model.generateMonitoringKey();
+		var result = coordinatorService.get(objectId);
 
+		if (result == null) {
+			return Response.notFound(Constants.NOT_FOUND_MSG);
+		}
+
+		var model = MapperService.getModelFromBody(request, CoordinatorModel.class);
+		model.id = objectId;
+
+		// Setting host
+		model.host = model.host == null ? result.host : model.host;
+
+		// Setting processId
+		model.processId = model.processId == null ? result.processId : model.processId;
+
+		// Setting name
+		model.name = model.name == null ? result.name : model.name;
+
+		model.generateMonitoringKey();
 		coordinatorService.update(model);
 
 		return Response.ok(model.toString());

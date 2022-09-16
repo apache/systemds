@@ -34,11 +34,6 @@ public abstract class ASDCZero extends APreAgg {
 	protected AOffset _indexes;
 	final protected int _numRows;
 
-	protected ASDCZero(int numRows) {
-		super();
-		_numRows = numRows;
-	}
-
 	protected ASDCZero(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, int[] cachedCounts) {
 		super(colIndices, dict, cachedCounts);
 		_indexes = offsets;

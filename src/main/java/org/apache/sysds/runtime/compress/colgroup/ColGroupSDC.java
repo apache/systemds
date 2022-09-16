@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -57,15 +58,6 @@ public class ColGroupSDC extends ASDC {
 	/** The default value stored in this column group */
 	protected double[] _defaultTuple;
 
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
-	protected ColGroupSDC(int numRows) {
-		super(numRows);
-	}
-
 	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 		AMapToData data, int[] cachedCounts) {
 		super(colIndices, numRows, dict, offsets, cachedCounts);
@@ -81,7 +73,6 @@ public class ColGroupSDC extends ASDC {
 
 		_data = data;
 		_defaultTuple = defaultTuple;
-
 	}
 
 	public static AColGroup create(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple,
@@ -112,11 +103,11 @@ public class ColGroupSDC extends ASDC {
 	}
 
 	@Override
-	public  double[] getDefaultTuple(){
+	public double[] getDefaultTuple() {
 		return _defaultTuple;
 	}
 
-	public AMapToData getMapping(){
+	public AMapToData getMapping() {
 		return _data;
 	}
 
@@ -431,14 +422,13 @@ public class ColGroupSDC extends ASDC {
 			out.writeDouble(d);
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		_indexes = OffsetFactory.readIn(in);
-		_data = MapToFactory.readIn(in);
-		_defaultTuple = new double[_colIndexes.length];
-		for(int i = 0; i < _colIndexes.length; i++)
-			_defaultTuple[i] = in.readDouble();
+	public static ColGroupSDC read(DataInput in, int nRows) throws IOException {
+		int[] cols = readCols(in);
+		ADictionary dict = DictionaryFactory.read(in);
+		AOffset indexes = OffsetFactory.readIn(in);
+		AMapToData data = MapToFactory.readIn(in);
+		double[] defaultTuple = ColGroupIO.readDoubleArray(cols.length, in);
+		return new ColGroupSDC(cols, nRows, dict, defaultTuple, indexes, data, null);
 	}
 
 	@Override

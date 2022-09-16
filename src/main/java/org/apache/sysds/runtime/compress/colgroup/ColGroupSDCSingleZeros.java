@@ -28,6 +28,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
@@ -51,15 +52,6 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  */
 public class ColGroupSDCSingleZeros extends ASDCZero {
 	private static final long serialVersionUID = 8033235615964315078L;
-
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
-	protected ColGroupSDCSingleZeros(int numRows) {
-		super(numRows);
-	}
 
 	private ColGroupSDCSingleZeros(int[] colIndices, int numRows, ADictionary dict, AOffset offsets,
 		int[] cachedCounts) {
@@ -95,7 +87,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			return;
 		else if(it.value() >= ru)
 			_indexes.cacheIterator(it, ru);
-		else{
+		else {
 			decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, values, it);
 			_indexes.cacheIterator(it, ru);
 		}
@@ -563,10 +555,11 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		_indexes.write(out);
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		_indexes = OffsetFactory.readIn(in);
+	public static ColGroupSDCSingleZeros read(DataInput in, int nRows) throws IOException {
+		int[] cols = readCols(in);
+		ADictionary dict = DictionaryFactory.read(in);
+		AOffset indexes = OffsetFactory.readIn(in);
+		return new ColGroupSDCSingleZeros(cols, nRows, dict, indexes, null);
 	}
 
 	@Override

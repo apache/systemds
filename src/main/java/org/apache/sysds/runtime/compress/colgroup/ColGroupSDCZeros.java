@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -58,15 +59,6 @@ public class ColGroupSDCZeros extends ASDCZero {
 
 	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
 	protected AMapToData _data;
-
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
-	protected ColGroupSDCZeros(int numRows) {
-		super(numRows);
-	}
 
 	private ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
 		int[] cachedCounts) {
@@ -549,11 +541,12 @@ public class ColGroupSDCZeros extends ASDCZero {
 		_data.write(out);
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		_indexes = OffsetFactory.readIn(in);
-		_data = MapToFactory.readIn(in);
+	public static ColGroupSDCZeros read(DataInput in, int nRows) throws IOException {
+		int[] cols = readCols(in);
+		ADictionary dict = DictionaryFactory.read(in);
+		AOffset indexes = OffsetFactory.readIn(in);
+		AMapToData data = MapToFactory.readIn(in);
+		return new ColGroupSDCZeros(cols, nRows, dict, indexes, data, null);
 	}
 
 	@Override

@@ -40,14 +40,6 @@ public abstract class APreAgg extends AColGroupValue {
 	private static boolean loggedWarningForDirect = false;
 
 	/**
-	 * Constructor for serialization
-	 * 
-	 */
-	protected APreAgg() {
-		super();
-	}
-
-	/**
 	 * A Abstract class for column groups that contain ADictionary for values.
 	 * 
 	 * @param colIndices   The Column indexes

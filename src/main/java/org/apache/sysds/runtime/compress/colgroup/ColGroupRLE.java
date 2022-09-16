@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.io.DataInput;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,15 +44,6 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 /** A group of columns compressed with a single run-length encoded bitmap. */
 public class ColGroupRLE extends AColGroupOffset {
 	private static final long serialVersionUID = -1560710477952862791L;
-
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
-	protected ColGroupRLE(int numRows) {
-		super(numRows);
-	}
 
 	private ColGroupRLE(int[] colIndexes, int numRows, boolean zeros, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
 		int[] cachedCounts) {
@@ -974,6 +967,15 @@ public class ColGroupRLE extends AColGroupOffset {
 		final int nVals = getNumValues();
 		final int nCols = getNumCols();
 		return e.getCost(_numRows, _data.length, nCols, nVals, _dict.getSparsity());
+	}
+
+	public static ColGroupRLE read(DataInput in, int nRows) throws IOException {
+		int[] cols = readCols(in);
+		ADictionary dict = DictionaryFactory.read(in);
+		int[] ptr = readPointers(in);
+		char[] data = readData(in);
+		boolean zeros = in.readBoolean();
+		return new ColGroupRLE(cols, nRows, zeros, dict, data, ptr,null);
 	}
 
 	/**

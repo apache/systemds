@@ -36,13 +36,6 @@ public abstract class AMorphingMMColGroup extends AColGroupValue {
 	private static final long serialVersionUID = -4265713396790607199L;
 
 	/**
-	 * Constructor for serialization
-	 */
-	protected AMorphingMMColGroup() {
-		super();
-	}
-
-	/**
 	 * A Abstract class for column groups that contain ADictionary for values.
 	 * 
 	 * @param colIndices   The Column indexes

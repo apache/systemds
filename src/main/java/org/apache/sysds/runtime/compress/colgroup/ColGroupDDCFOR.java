@@ -28,6 +28,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -56,11 +57,6 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 
 	/** Reference values in this column group */
 	protected double[] _reference;
-
-	/** Constructor for serialization */
-	protected ColGroupDDCFOR() {
-		super();
-	}
 
 	private ColGroupDDCFOR(int[] colIndexes, ADictionary dict, double[] reference, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
@@ -91,10 +87,10 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 		// It is assumed whoever call this does not use an empty Dictionary in g.
 		final int nCol = g.getColIndices().length;
 		final MatrixBlockDictionary mbd = g._dict.getMBDict(nCol);
-		if(mbd != null){
+		if(mbd != null) {
 
 			final MatrixBlock mb = mbd.getMatrixBlock();
-			
+
 			final double[] ref = ColGroupUtils.extractMostCommonValueInColumns(mb);
 			if(ref != null) {
 				MatrixBlockDictionary mDict = mbd.binOpRight(new BinaryOperator(Minus.getMinusFnObject()), ref);
@@ -217,13 +213,12 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 			out.writeDouble(d);
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		_data = MapToFactory.readIn(in);
-		_reference = new double[_colIndexes.length];
-		for(int i = 0; i < _colIndexes.length; i++)
-			_reference[i] = in.readDouble();
+	public static ColGroupDDCFOR read(DataInput in) throws IOException {
+		int[] cols = AColGroup.readCols(in);
+		ADictionary dict = DictionaryFactory.read(in);
+		AMapToData data = MapToFactory.readIn(in);
+		double[] ref = ColGroupIO.readDoubleArray(cols.length, in);
+		return new ColGroupDDCFOR(cols, dict, ref, data, null);
 	}
 
 	@Override

@@ -68,10 +68,6 @@ public abstract class AColGroup implements Serializable {
 	/** The ColGroup Indexes contained in the ColGroup */
 	protected int[] _colIndexes;
 
-	/** Empty constructor, used for serializing into an empty new object of ColGroup. */
-	protected AColGroup() {
-		// empty
-	}
 
 	/**
 	 * Main constructor.
@@ -174,18 +170,12 @@ public abstract class AColGroup implements Serializable {
 			out.writeInt(_colIndexes[i]);
 	}
 
-	/**
-	 * Deserialize column group from data input.
-	 * 
-	 * @param in data input
-	 * @throws IOException if IOException occurs
-	 */
-	protected void readFields(DataInput in) throws IOException {
-		// column group type is read in ColGroupIO
+	protected static int[] readCols(DataInput in) throws IOException {
 		final int numCols = in.readInt();
-		_colIndexes = new int[numCols];
+		int[] cols = new int[numCols];
 		for(int i = 0; i < numCols; i++)
-			_colIndexes[i] = in.readInt();
+			cols[i] = in.readInt();
+		return cols;
 	}
 
 	/**
@@ -358,7 +348,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param right The MatrixBlock on the right of this matrix multiplication
 	 * @return The new Column Group or null that is the result of the matrix multiplication.
 	 */
-	public final AColGroup rightMultByMatrix(MatrixBlock right){
+	public final AColGroup rightMultByMatrix(MatrixBlock right) {
 		return rightMultByMatrix(right, null);
 	}
 
@@ -367,8 +357,9 @@ public abstract class AColGroup implements Serializable {
 	 * 
 	 * This method can return null, meaning that the output overlapping group would have been empty.
 	 * 
-	 * @param right The MatrixBlock on the right of this matrix multiplication
-	 * @param allCols A pre-materialized list of all col indexes, that can be shared across all column groups if use full, can be set to null.
+	 * @param right   The MatrixBlock on the right of this matrix multiplication
+	 * @param allCols A pre-materialized list of all col indexes, that can be shared across all column groups if use
+	 *                full, can be set to null.
 	 * @return The new Column Group or null that is the result of the matrix multiplication.
 	 */
 	public abstract AColGroup rightMultByMatrix(MatrixBlock right, int[] allCols);
@@ -406,7 +397,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param lhs    The left hand side Column group to multiply with, the left hand side should be considered
 	 *               transposed. Also it should be guaranteed that this column group is not empty.
 	 * @param result The result matrix to insert the result of the multiplication into
-	 * @param nRows   Number of rows in the lhs colGroup
+	 * @param nRows  Number of rows in the lhs colGroup
 	 */
 	public abstract void leftMultByAColGroup(AColGroup lhs, MatrixBlock result, int nRows);
 

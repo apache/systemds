@@ -34,34 +34,23 @@ public abstract class ASDC extends AMorphingMMColGroup {
 
 	/** Sparse row indexes for the data */
 	protected AOffset _indexes;
-	
+
 	final protected int _numRows;
 
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
-	protected ASDC(int numRows) {
-		super();
-		_numRows = numRows;
-	}
-
-	protected ASDC(int[] colIndices, int numRows, ADictionary dict,  AOffset offsets,
-		int[] cachedCounts) {
+	protected ASDC(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, int[] cachedCounts) {
 		super(colIndices, dict, cachedCounts);
 
 		_indexes = offsets;
 		_numRows = numRows;
 	}
 
-	public int getNumRows(){
+	public int getNumRows() {
 		return _numRows;
 	}
 
 	public abstract double[] getDefaultTuple();
 
-	public AOffset getOffsets(){
+	public AOffset getOffsets() {
 		return _indexes;
 	}
 }

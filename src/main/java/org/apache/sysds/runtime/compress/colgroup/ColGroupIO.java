@@ -48,20 +48,13 @@ public interface ColGroupIO {
 
 		// Read in how many colGroups there are
 		final int nColGroups = in.readInt();
-		final boolean trace = LOG.isTraceEnabled();
 
 		// Allocate that amount into an ArrayList
 		final List<AColGroup> _colGroups = new ArrayList<>(nColGroups);
 
 		// Read each ColGroup one at a time.
-		for(int i = 0; i < nColGroups; i++) {
-			ColGroupType ctype = ColGroupType.values()[in.readByte()];
-			if(trace)
-				LOG.trace("Reading in : " + ctype);
-			final AColGroup grp = constructColGroup(ctype, nRows);
-			grp.readFields(in);
-			_colGroups.add(grp);
-		}
+		for(int i = 0; i < nColGroups; i++)
+			_colGroups.add(readColGroup(in, nRows));
 
 		return _colGroups;
 	}
@@ -93,36 +86,44 @@ public interface ColGroupIO {
 		return ret;
 	}
 
-	private static AColGroup constructColGroup(ColGroupType ctype, int nRows) {
+	public static AColGroup readColGroup(DataInput in, int nRows) throws IOException {
+		final ColGroupType ctype = ColGroupType.values()[in.readByte()];
 		switch(ctype) {
-			case UNCOMPRESSED:
-				return new ColGroupUncompressed();
-			case OLE:
-				return new ColGroupOLE(nRows);
-			case RLE:
-				return new ColGroupRLE(nRows);
 			case DDC:
-				return new ColGroupDDC();
-			case DeltaDDC:
-				return new ColGroupDeltaDDC();
-			case CONST:
-				return new ColGroupConst();
-			case EMPTY:
-				return new ColGroupEmpty();
-			case SDC:
-				return new ColGroupSDC(nRows);
-			case SDCSingle:
-				return new ColGroupSDCSingle(nRows);
-			case SDCSingleZeros:
-				return new ColGroupSDCSingleZeros(nRows);
-			case SDCZeros:
-				return new ColGroupSDCZeros(nRows);
-			case SDCFOR:
-				return new ColGroupSDCFOR(nRows);
+				return ColGroupDDC.read(in);
 			case DDCFOR:
-				return new ColGroupDDCFOR();
+				return ColGroupDDCFOR.read(in);
+			case OLE:
+				return ColGroupOLE.read(in, nRows);
+			case RLE:
+				return ColGroupRLE.read(in, nRows);
+			case CONST:
+				return ColGroupConst.read(in);
+			case EMPTY:
+				return ColGroupEmpty.read(in);
+			case UNCOMPRESSED:
+				return ColGroupUncompressed.read(in);
+			case SDC:
+				return ColGroupSDC.read(in, nRows);
+			case SDCSingle:
+				return ColGroupSDCSingle.read(in, nRows);
+			case SDCSingleZeros:
+				return ColGroupSDCSingleZeros.read(in, nRows);
+			case SDCZeros:
+				return ColGroupSDCZeros.read(in, nRows);
+			case SDCFOR:
+				return ColGroupSDCFOR.read(in, nRows);
+			case LinearFunctional:
+				return ColGroupLinearFunctional.read(in, nRows);
 			default:
-				throw new DMLRuntimeException("Unsupported ColGroup Type used:  " + ctype);
+				throw new DMLRuntimeException("Unsupported ColGroup Type used: " + ctype);
 		}
+	}
+
+	public static double[] readDoubleArray(int length, DataInput in) throws IOException {
+		double[] ret = new double[length];
+		for(int i = 0; i < length; i++)
+			ret[i] = in.readDouble();
+		return ret;
 	}
 }

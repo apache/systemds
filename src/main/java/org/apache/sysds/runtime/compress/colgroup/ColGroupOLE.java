@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.io.DataInput;
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -42,15 +44,6 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  */
 public class ColGroupOLE extends AColGroupOffset {
 	private static final long serialVersionUID = 5723227906925121066L;
-
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
-	protected ColGroupOLE(int numRows) {
-		super(numRows);
-	}
 
 	private ColGroupOLE(int[] colIndices, int numRows, boolean zero, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
 		int[] counts) {
@@ -644,4 +637,14 @@ public class ColGroupOLE extends AColGroupOffset {
 	public double getCost(ComputationCostEstimator e, int nRows) {
 		throw new NotImplementedException();
 	}
+
+	public static ColGroupOLE read(DataInput in, int nRows) throws IOException {
+		int[] cols = readCols(in);
+		ADictionary dict = DictionaryFactory.read(in);
+		int[] ptr = readPointers(in);
+		char[] data = readData(in);
+		boolean zeros = in.readBoolean();
+		return new ColGroupOLE(cols, nRows, zeros, dict, data, ptr, null);
+	}
+
 }

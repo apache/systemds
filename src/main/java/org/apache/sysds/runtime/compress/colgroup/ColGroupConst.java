@@ -19,9 +19,13 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.io.DataInput;
+import java.io.IOException;
+
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
@@ -39,11 +43,6 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 public class ColGroupConst extends ADictBasedColGroup {
 
 	private static final long serialVersionUID = -7387793538322386611L;
-
-	/** Constructor for serialization */
-	protected ColGroupConst() {
-		super();
-	}
 
 	/**
 	 * Constructs an Constant Colum Group, that contains only one tuple, with the given value.
@@ -512,6 +511,12 @@ public class ColGroupConst extends ADictBasedColGroup {
 			return create(colIndexes, preAgg);
 		else
 			return null;
+	}
+
+	public static ColGroupConst read(DataInput in) throws IOException {
+		int[] cols = readCols(in);
+		ADictionary dict = DictionaryFactory.read(in);
+		return new ColGroupConst(cols, dict);
 	}
 
 	@Override

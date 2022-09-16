@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.io.DataInput;
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -38,11 +40,6 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class ColGroupEmpty extends AColGroupCompressed {
 	private static final long serialVersionUID = -2307677253622099958L;
-
-	/** Constructor for serialization */
-	protected ColGroupEmpty() {
-		super();
-	}
 
 	/**
 	 * Constructs an Constant Colum Group, that contains only one tuple, with the given value.
@@ -303,5 +300,10 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	@Override
 	public boolean isEmpty() {
 		return true;
+	}
+
+	public static ColGroupEmpty read(DataInput in) throws IOException {
+		int[] cols = readCols(in);
+		return new ColGroupEmpty(cols);
 	}
 }

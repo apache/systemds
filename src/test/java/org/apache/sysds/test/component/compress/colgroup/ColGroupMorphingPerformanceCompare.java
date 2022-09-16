@@ -153,11 +153,6 @@ public class ColGroupMorphingPerformanceCompare {
 		private static final long serialVersionUID = -7157464508602251065L;
 		private final MatrixBlock mbDict;
 
-		protected SDCNoMorph(int numRows) {
-			super(numRows);
-			mbDict = null;
-		}
-
 		public SDCNoMorph(ColGroupSDC g) {
 			this(g.getColIndices(), g.getNumRows(), g.getDictionary(), g.getDefaultTuple(), g.getOffsets(), g.getMapping(),
 				null);

@@ -26,6 +26,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -62,15 +63,6 @@ public class ColGroupSDCFOR extends ASDC {
 
 	/** Reference values in this column group */
 	protected double[] _reference;
-
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
-	protected ColGroupSDCFOR(int numRows) {
-		super(numRows);
-	}
 
 	private ColGroupSDCFOR(int[] colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
 		int[] cachedCounts, double[] reference) {
@@ -113,7 +105,7 @@ public class ColGroupSDCFOR extends ASDC {
 	}
 
 	@Override
-	public  double[] getDefaultTuple(){
+	public double[] getDefaultTuple() {
 		return _reference;
 	}
 
@@ -211,14 +203,13 @@ public class ColGroupSDCFOR extends ASDC {
 			out.writeDouble(d);
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		_indexes = OffsetFactory.readIn(in);
-		_data = MapToFactory.readIn(in);
-		_reference = new double[_colIndexes.length];
-		for(int i = 0; i < _colIndexes.length; i++)
-			_reference[i] = in.readDouble();
+	public static ColGroupSDCFOR read(DataInput in, int nRows) throws IOException {
+		int[] cols = readCols(in);
+		ADictionary dict = DictionaryFactory.read(in);
+		AOffset indexes = OffsetFactory.readIn(in);
+		AMapToData data = MapToFactory.readIn(in);
+		double[] reference = ColGroupIO.readDoubleArray(cols.length, in);
+		return new ColGroupSDCFOR(cols, nRows, dict, indexes, data, null, reference);
 	}
 
 	@Override

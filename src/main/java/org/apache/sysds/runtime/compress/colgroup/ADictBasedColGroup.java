@@ -18,7 +18,6 @@
  */
 package org.apache.sysds.runtime.compress.colgroup;
 
-import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
@@ -27,7 +26,6 @@ import java.util.Set;
 
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -38,10 +36,6 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 	private static final long serialVersionUID = -3737025296618703668L;
 	/** Distinct value tuples associated with individual bitmaps. */
 	protected ADictionary _dict;
-
-	protected ADictBasedColGroup() {
-		super();
-	}
 
 	/**
 	 * A Abstract class for column groups that contain ADictionary for values.
@@ -142,12 +136,6 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 	 */
 	protected abstract void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
 		double[] values);
-
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		_dict = DictionaryFactory.read(in);
-	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {

@@ -26,6 +26,7 @@ import java.io.IOException;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -48,11 +49,6 @@ public class ColGroupDDC extends APreAgg {
 	private static final long serialVersionUID = -5769772089913918987L;
 
 	protected AMapToData _data;
-
-	/** Constructor for serialization */
-	protected ColGroupDDC() {
-		super();
-	}
 
 	private ColGroupDDC(int[] colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
@@ -427,10 +423,11 @@ public class ColGroupDDC extends APreAgg {
 		_data.write(out);
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		_data = MapToFactory.readIn(in);
+	public static ColGroupDDC read(DataInput in) throws IOException {
+		int[] cols = AColGroup.readCols(in);
+		ADictionary dict = DictionaryFactory.read(in);
+		AMapToData data = MapToFactory.readIn(in);
+		return new ColGroupDDC(cols, dict, data, null);
 	}
 
 	@Override

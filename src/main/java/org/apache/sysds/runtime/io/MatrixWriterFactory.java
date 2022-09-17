@@ -19,10 +19,11 @@
 
 package org.apache.sysds.runtime.io;
 
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.io.WriterCompressed;
 
 public class MatrixWriterFactory
 {
@@ -84,6 +85,9 @@ public class MatrixWriterFactory
 					return new WriterHDF5Parallel((FileFormatPropertiesHDF5) props);
 				else
 					return new WriterHDF5((FileFormatPropertiesHDF5) props);
+
+			case COMPRESSED:
+				return WriterCompressed.create(props);
 
 			default:
 				throw new DMLRuntimeException("Failed to create matrix writer for unknown format: " + fmt.toString());

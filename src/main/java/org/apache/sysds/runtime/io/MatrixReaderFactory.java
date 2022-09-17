@@ -25,6 +25,7 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.io.ReaderCompressed;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -66,6 +67,10 @@ public class MatrixReaderFactory {
 				reader = (par & mcsr) ? new ReaderHDF5Parallel(
 					new FileFormatPropertiesHDF5()) : new ReaderHDF5(new FileFormatPropertiesHDF5());
 				break;
+
+			case COMPRESSED:
+				reader = ReaderCompressed.create();
+
 			default:
 				throw new DMLRuntimeException("Failed to create matrix reader for unknown format: " + fmt.toString());
 		}

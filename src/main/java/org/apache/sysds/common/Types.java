@@ -539,6 +539,7 @@ public class Types
 		TEXT,   // text cell IJV representation (mm w/o header)
 		MM,     // text matrix market IJV representation
 		CSV,    // text dense representation
+		COMPRESSED, // Internal SYSTEMDS compressed format 
 		LIBSVM, // text libsvm sparse row representation
 		JSONL,  // text nested JSON (Line) representation
 		BINARY, // binary block representation (dense/sparse/ultra-sparse)

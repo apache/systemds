@@ -122,6 +122,7 @@ public class DMLConfig
 	public static final String FEDERATED_PAR_INST = "sysds.federated.par_inst";
 	public static final String FEDERATED_PAR_CONN = "sysds.federated.par_conn";
 	public static final String PRIVACY_CONSTRAINT_MOCK = "sysds.federated.priv_mock";
+	public static final String FEDERATED_MONITOR_FREQUENCY = "sysds.federated.monitorFreq";
 	public static final int DEFAULT_FEDERATED_PORT = 4040; // borrowed default Spark Port
 	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 8;
 	
@@ -192,6 +193,7 @@ public class DMLConfig
 		_defaultVals.put(FEDERATED_PLANNER,      FederatedPlanner.RUNTIME.name());
 		_defaultVals.put(FEDERATED_PAR_CONN,     "-1"); // vcores
 		_defaultVals.put(FEDERATED_PAR_INST,     "-1"); // vcores
+		_defaultVals.put(FEDERATED_MONITOR_FREQUENCY, "3");
 		_defaultVals.put(PRIVACY_CONSTRAINT_MOCK, null);
 	}
 	
@@ -445,7 +447,7 @@ public class DMLConfig
 			PRINT_GPU_MEMORY_INFO, AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION,
 			GPU_EVICTION_POLICY, LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE, GPU_MEMORY_ALLOCATOR,
 			GPU_MEMORY_UTILIZATION_FACTOR, USE_SSL_FEDERATED_COMMUNICATION, DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT,
-			FEDERATED_TIMEOUT
+			FEDERATED_TIMEOUT, FEDERATED_MONITOR_FREQUENCY
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

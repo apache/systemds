@@ -42,7 +42,22 @@ public class WorkerController implements IController {
 
 	@Override
 	public FullHttpResponse update(Request request, Long objectId) {
+		var result = workerService.get(objectId);
+
+		if (result == null) {
+			return Response.notFound(Constants.NOT_FOUND_MSG);
+		}
+
 		var model = MapperService.getModelFromBody(request, WorkerModel.class);
+		model.id = objectId;
+
+		if (model.address == null) {
+			model.address = result.address;
+		}
+
+		if (model.name == null) {
+			model.name = result.name;
+		}
 
 		workerService.update(model);
 		model.setOnlineStatus(workerService.getWorkerOnlineStatus(model.id));

@@ -127,6 +127,9 @@
     <!-- set the degree of parallelism of the federated worker event loop (<=0 means number of virtual cores) -->
     <sysds.federated.par_conn>0</sysds.federated.par_conn>
 
+    <!-- Set worker polling frequency for the monitoring backend in seconds -->
+    <sysds.federated.monitorFreq>3</sysds.federated.monitorFreq>
+
     <!-- set the degree of parallelism of the federated worker instructions (<=0 means number of virtual cores) -->
     <sysds.federated.par_inst>0</sysds.federated.par_inst>
 

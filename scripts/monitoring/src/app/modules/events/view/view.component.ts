@@ -28,6 +28,7 @@ import { constants } from "../../../constants";
 import 'chartjs-adapter-moment';
 import { Subject } from "rxjs";
 import { EventStage } from "../../../models/eventStage.model";
+import { Utils } from "../../../utils";
 
 @Component({
 	selector: 'app-view-worker-events',
@@ -211,6 +212,7 @@ export class ViewWorkerEventsComponent {
 			this.eventTimelineChart[c].data.labels = [c];
 
 			let coordinatorEvents = this.statistics.events.filter(e => e.coordinatorName === c);
+			coordinatorEvents.sort(Utils.sortEventsStartDate);
 
 			let stageStack: EventStage[] = [];
 

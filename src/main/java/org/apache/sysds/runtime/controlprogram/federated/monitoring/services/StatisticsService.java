@@ -21,7 +21,10 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,33 +53,58 @@ public class StatisticsService {
 	private static final IRepository entityRepository = new DerbyRepository();
 
 	public StatisticsModel getAll(Long workerId, StatisticsOptions options) {
+		CompletableFuture<Void> utilizationFuture = null;
+		CompletableFuture<Void> trafficFuture = null;
+		CompletableFuture<Void> eventsFuture = null;
+		CompletableFuture<Void> dataObjFuture = null;
+		CompletableFuture<Void> requestsFuture = null;
+
 		var stats = new StatisticsModel();
 
 		if (options.utilization) {
-			stats.utilization = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, UtilizationModel.class, options.rowCount);
+			utilizationFuture = CompletableFuture
+					.runAsync(() -> stats.utilization = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, UtilizationModel.class, options.rowCount));
 		}
 
 		if (options.traffic) {
-			stats.traffic = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, TrafficModel.class, options.rowCount);
+			trafficFuture = CompletableFuture
+					.runAsync(() -> stats.traffic = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, TrafficModel.class, options.rowCount));
 		}
 
 		if (options.events) {
-			stats.events = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, EventModel.class, options.rowCount);
+			eventsFuture = CompletableFuture
+					.runAsync(() -> {
+						var events = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, EventModel.class, options.rowCount);
 
-			for (var event: stats.events) {
-				event.setCoordinatorName(entityRepository.getEntity(event.coordinatorId, CoordinatorModel.class).name);
+						for (var event : events) {
+							event.setCoordinatorName(entityRepository.getEntity(event.coordinatorId, CoordinatorModel.class).name);
 
-				event.stages = entityRepository.getAllEntitiesByField(Constants.ENTITY_EVENT_ID_COL, event.id, EventStageModel.class);
-			}
+							event.stages = entityRepository.getAllEntitiesByField(Constants.ENTITY_EVENT_ID_COL, event.id, EventStageModel.class);
+						}
+
+						stats.events = events;
+					});
 		}
 
 		if (options.dataObjects) {
-			stats.dataObjects = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, DataObjectModel.class);
+			dataObjFuture = CompletableFuture
+					.runAsync(() -> stats.dataObjects = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, DataObjectModel.class));
 		}
 
 		if (options.requests) {
-			stats.requests = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, RequestModel.class);
+			requestsFuture = CompletableFuture
+					.runAsync(() -> stats.requests = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, RequestModel.class));
 		}
+
+		List<CompletableFuture<Void>> completableFutures = Arrays.asList(utilizationFuture, trafficFuture, eventsFuture, dataObjFuture, requestsFuture);
+
+		completableFutures.forEach(cf -> {
+			try {
+				cf.get();
+			} catch (InterruptedException | ExecutionException e) {
+				throw new RuntimeException(e);
+			}
+		});
 
 		return stats;
 	}
@@ -121,7 +149,6 @@ public class StatisticsService {
 		utilization.workerId = workerId;
 		traffic.forEach(t -> t.workerId = workerId);
 		dataObjects.forEach(o -> o.workerId = workerId);
-
 
 		for (var event: events) {
 			event.workerId = workerId;

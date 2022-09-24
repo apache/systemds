@@ -21,8 +21,14 @@ package org.apache.sysds.runtime.controlprogram.federated.monitoring.services;
 
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.Constants;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.DerbyRepository;
@@ -31,9 +37,11 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class WorkerService {
 	private static final IRepository entityRepository = new DerbyRepository();
@@ -42,7 +50,8 @@ public class WorkerService {
 	private static ScheduledExecutorService executorService;
 
 	public WorkerService() {
-		startStatsCollectionProcess(1, 3);
+		var freq = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.FEDERATED_MONITOR_FREQUENCY);
+		startStatsCollectionProcess(1, freq);
 	}
 
 	public Long create(WorkerModel model) {
@@ -105,68 +114,80 @@ public class WorkerService {
 		}
 	}
 
-	private static synchronized void startStatsCollectionProcess(int threadCount, int frequencySeconds) {
+	private static synchronized void startStatsCollectionProcess(int threadCount, double frequencySeconds) {
 		if (executorService == null) {
 			executorService = Executors.newScheduledThreadPool(threadCount);
-			executorService.scheduleAtFixedRate(syncWorkerStatisticsWithDB(), 0, frequencySeconds, TimeUnit.SECONDS);
+			executorService.scheduleAtFixedRate(syncWorkerStatisticsRunnable(), 0, Math.round(frequencySeconds * 1000), TimeUnit.MILLISECONDS);
 		}
 	}
 
-	private static Runnable syncWorkerStatisticsWithDB() {
-		return () -> {
+	public static void syncWorkerStatisticsWithDB(StatisticsModel stats, Long id) {
 
+		if (stats != null) {
+
+			cachedWorkers.get(id).setValue(true);
+
+			if (stats.utilization != null) {
+				CompletableFuture.runAsync(() -> entityRepository.createEntity(stats.utilization.get(0)));
+			}
+			if (stats.traffic != null) {
+				CompletableFuture.runAsync(() -> {
+					for (var trafficEntity : stats.traffic) {
+						if (trafficEntity.coordinatorId > 0) {
+							entityRepository.createEntity(trafficEntity);
+						}
+					}
+				});
+			}
+			if (stats.events != null) {
+				for (var eventEntity: stats.events) {
+					if (eventEntity.coordinatorId > 0) {
+						CompletableFuture.runAsync(() -> {
+							var eventId = entityRepository.createEntity(eventEntity);
+
+							for (var stageEntity : eventEntity.stages) {
+								stageEntity.eventId = eventId;
+
+								entityRepository.createEntity(stageEntity);
+							}
+						});
+					}
+				}
+			}
+			if (stats.dataObjects != null) {
+				CompletableFuture.runAsync(() -> {
+					entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, DataObjectModel.class);
+
+					for (var dataObjectEntity : stats.dataObjects) {
+						entityRepository.createEntity(dataObjectEntity);
+					}
+				});
+			}
+			if (stats.requests != null) {
+				CompletableFuture.runAsync(() -> {
+					entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, RequestModel.class);
+
+					for (var requestEntity : stats.requests) {
+						if (requestEntity.coordinatorId > 0) {
+							entityRepository.createEntity(requestEntity);
+						}
+					}
+				});
+			}
+		} else {
+			cachedWorkers.get(id).setValue(false);
+		}
+	}
+
+	private static Runnable syncWorkerStatisticsRunnable() {
+		return () -> {
 			for(Map.Entry<Long, Pair<String, Boolean>> entry : cachedWorkers.entrySet()) {
 				Long id = entry.getKey();
 				String address = entry.getValue().getLeft();
 
-				var stats = StatisticsService.getWorkerStatistics(id, address);
-
-				if (stats != null) {
-
-					cachedWorkers.get(id).setValue(true);
-
-					if (stats.utilization != null) {
-						entityRepository.createEntity(stats.utilization.get(0));
-					}
-					if (stats.traffic != null) {
-						for (var trafficEntity: stats.traffic) {
-							if (trafficEntity.coordinatorId > 0) {
-								entityRepository.createEntity(trafficEntity);
-							}
-						}
-					}
-					if (stats.events != null) {
-						for (var eventEntity: stats.events) {
-							if (eventEntity.coordinatorId > 0) {
-								var eventId = entityRepository.createEntity(eventEntity);
-
-								for (var stageEntity: eventEntity.stages) {
-									stageEntity.eventId = eventId;
-
-									entityRepository.createEntity(stageEntity);
-								}
-							}
-						}
-					}
-					if (stats.dataObjects != null) {
-						entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, DataObjectModel.class);
-
-						for (var dataObjectEntity: stats.dataObjects) {
-							entityRepository.createEntity(dataObjectEntity);
-						}
-					}
-					if (stats.requests != null) {
-						entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, RequestModel.class);
-
-						for (var requestEntity: stats.requests) {
-							if (requestEntity.coordinatorId > 0) {
-								entityRepository.createEntity(requestEntity);
-							}
-						}
-					}
-				} else {
-					cachedWorkers.get(id).setValue(false);
-				}
+				CompletableFuture
+						.supplyAsync(() -> StatisticsService.getWorkerStatistics(id, address))
+						.thenAcceptAsync(stats -> syncWorkerStatisticsWithDB(stats, id));
 			}
 		};
 	}

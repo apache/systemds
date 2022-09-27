@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
@@ -54,7 +55,7 @@ public class ColGroupSDCSingle extends ASDC {
 	private static final long serialVersionUID = 3883228464052204200L;
 
 	/** The default value stored in this column group */
-	protected double[] _defaultTuple;
+	protected final double[] _defaultTuple;
 
 	private ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 		int[] cachedCounts) {
@@ -560,6 +561,24 @@ public class ColGroupSDCSingle extends ASDC {
 	@Override
 	protected AColGroup allocateRightMultiplicationCommon(double[] common, int[] colIndexes, ADictionary preAgg) {
 		return create(colIndexes, _numRows, preAgg, common, _indexes, getCachedCounts());
+	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		OffsetSliceInfo off = _indexes.slice(rl, ru);
+		if(off.lIndex == -1)
+			return ColGroupConst.create(_colIndexes, Dictionary.create(_defaultTuple));
+		return new ColGroupSDCSingle(_colIndexes, _numRows, _dict, _defaultTuple, off.offsetSlice, null);
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+		return create(colIndexes, _numRows, newDictionary, _defaultTuple, _indexes, getCounts());
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
 	}
 
 	@Override

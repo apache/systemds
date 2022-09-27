@@ -105,20 +105,22 @@ public class DoubleIntListHashMap {
 
 		int hash = hash(key);
 		int ix = indexFor(hash, _data.length);
-		IntArrayList lstPtr = null; // The list to add the value to.
 		if(_data[ix] == null) {
-			lstPtr = new IntArrayList();
+			IntArrayList lstPtr = new IntArrayList();
+			lstPtr.appendValue(value);
 			_data[ix] = new DIListEntry(key, lstPtr);
 			_size++;
 		}
 		else {
 			for(DIListEntry e = _data[ix]; e != null; e = e.next) {
 				if(e.key == key) {
-					lstPtr = e.value;
+					IntArrayList lstPtr = e.value;
+					lstPtr.appendValue(value);
 					break;
 				}
 				else if(e.next == null) {
-					lstPtr = new IntArrayList();
+					IntArrayList lstPtr = new IntArrayList();
+					lstPtr.appendValue(value);
 					// Swap to place the new value, in front.
 					DIListEntry eOld = _data[ix];
 					_data[ix] = new DIListEntry(key, lstPtr);
@@ -128,7 +130,6 @@ public class DoubleIntListHashMap {
 				}
 			}
 		}
-		lstPtr.appendValue(value);
 		if(_size >= LOAD_FACTOR * _data.length)
 			resize();
 	}

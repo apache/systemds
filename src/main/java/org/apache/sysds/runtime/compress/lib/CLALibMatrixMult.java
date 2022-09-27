@@ -23,7 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -38,7 +37,6 @@ public class CLALibMatrixMult {
 
 	public static MatrixBlock matrixMultiply(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		int k, boolean transposeLeft, boolean transposeRight) {
-		final Timing time = LOG.isTraceEnabled() ? new Timing(true) : null;
 
 		if(m1 instanceof CompressedMatrixBlock && m2 instanceof CompressedMatrixBlock) {
 			return doubleCompressedMatrixMultiply((CompressedMatrixBlock) m1, (CompressedMatrixBlock) m2, ret,
@@ -80,10 +78,6 @@ public class CLALibMatrixMult {
 		else
 			ret = CLALibLeftMultBy.leftMultByMatrix(c, that, ret, k);
 
-		if(LOG.isTraceEnabled())
-			LOG.trace("MM: Time block w/ sharedDim: " + m1.getNumColumns() + " rowLeft: " + m1.getNumRows() + " colRight:"
-				+ m2.getNumColumns() + " in " + time.stop() + "ms.");
-
 		if(transposeOutput) {
 			if(ret instanceof CompressedMatrixBlock) {
 				LOG.warn("Transposing decompression");
@@ -114,7 +108,7 @@ public class CLALibMatrixMult {
 
 		}
 		else if(!transposeLeft && transposeRight) {
-			throw new DMLCompressionException("Not Implemented compressed Matrix Mult, to produce larger matrix");
+			throw new DMLCompressionException("Not Implemented compressed Matrix Mult to produce larger matrix");
 			// worst situation since it blows up the result matrix in number of rows in
 			// either compressed matrix.
 		}

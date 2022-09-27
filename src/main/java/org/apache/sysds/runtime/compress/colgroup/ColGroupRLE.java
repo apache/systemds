@@ -47,9 +47,7 @@ public class ColGroupRLE extends AColGroupOffset {
 
 	private ColGroupRLE(int[] colIndexes, int numRows, boolean zeros, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
 		int[] cachedCounts) {
-		super(colIndexes, numRows, zeros, dict, cachedCounts);
-		_data = bitmaps;
-		_ptr = bitmapOffs;
+		super(colIndexes, numRows, zeros, dict, bitmapOffs, bitmaps, cachedCounts);
 	}
 
 	protected static AColGroup create(int[] colIndexes, int numRows, boolean zeros, ADictionary dict, char[] bitmaps,
@@ -62,7 +60,7 @@ public class ColGroupRLE extends AColGroupOffset {
 
 	protected static AColGroup compressRLE(int[] colIndexes, ABitmap ubm, int nRow, double tupleSparsity) {
 		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
-		// ColGroupRLE rle = new ColGroupRLE(nRow);
+
 		// compress the bitmaps
 		final int numVals = ubm.getNumValues();
 		char[][] lBitMaps = new char[numVals][];
@@ -736,37 +734,18 @@ public class ColGroupRLE extends AColGroupOffset {
 		return _dict.containsValue(pattern);
 	}
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(super.toString());
-		sb.append(String.format("\n%14s len(%d) Zeros:%b", "Data:", this._data.length, _zeros));
-		sb.append("\n{{");
-		sb.append(pair(_data, 0));
-		int p = 1;
-		for(int i = 2; i < _data.length; i += 2) {
-			if(_ptr[p] == i) {
-				if(_ptr[p] + 2 == _ptr[p + 1])
-					sb.append("}, {" + pair(_data, i));
-				else
-
-					sb.append("},\n {" + pair(_data, i));
-				p++;
-			}
-			else
-				sb.append(", " + pair(_data, i));
-
-		}
-		sb.append("}}");
-
-		return sb.toString();
-	}
-
 	private String pair(char[] d, int off) {
 		if((int) _data[off + 1] == 1)
 			return ((int) _data[off]) + "";
 		else
 			return ((int) _data[off]) + "-" + ((int) _data[off + 1]);
+	}
+
+	private String pair(char[] d, int off, int sum) {
+		if((int) _data[off + 1] == 1)
+			return ((int) _data[off] + sum) + "";
+		else
+			return ((int) _data[off] + sum) + "-" + ((int) _data[off + 1]);
 	}
 
 	@Override
@@ -975,7 +954,116 @@ public class ColGroupRLE extends AColGroupOffset {
 		int[] ptr = readPointers(in);
 		char[] data = readData(in);
 		boolean zeros = in.readBoolean();
-		return new ColGroupRLE(cols, nRows, zeros, dict, data, ptr,null);
+		return new ColGroupRLE(cols, nRows, zeros, dict, data, ptr, null);
+	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		throw new NotImplementedException();
+		// if(rl == 0 && ru >= _numRows)
+		// return this;
+
+		// final int newRows = ru - rl;
+		// final int numVals = getNumValues();
+		// char[][] newData = new char[numVals][];
+
+		// LOG.error(this);
+		// for(int k = 0; k < numVals; k++) {
+		// final int blen = _ptr[k + 1];
+
+		// skipPair start = skipScanVal(k, rl).next();
+		// skipPair end = skipScanVal(k, ru);
+		// int lenStart = _data[start.apos + 1];
+		// int lenEnd = end.apos == blen ? _data[end.apos - 1] : _data[end.apos + 1];
+		// LOG.error(
+		// start.apos + " " + start.astart + " " + lenStart + " -- " + end.apos + " " + end.astart + " " + lenEnd);
+		// LOG.error(rl + " " + ru);
+
+		// int newStartPos = start.astart - rl;
+		// // correct the length of the new start if needed
+		// int newStartLen = newStartPos < 0 ? lenStart + newStartPos : lenStart;
+		// int newEndPos = 0;
+		// int newDataLength = 0;
+		// newData[k] = new char[newDataLength];
+
+		// StringBuilder sb = new StringBuilder();
+		// sb.append("\nStart pos ");
+		// sb.append(newStartPos);
+		// sb.append(" New Start len: ");
+		// sb.append(newStartLen);
+		// sb.append("\n");
+		// for(char c : newData[k])
+		// sb.append((int) c);
+
+		// Arrays.copyOfRange(_data, startPos, endPos);
+		// Modify start offset.
+		// modify end offset.
+
+		// }
+
+		// throw new NotImplementedException();
+		// return new ColGroupRLE(_colIndexes, newRows, _zeros, _dict, newMap, newOffs, null);
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+		return create(colIndexes, _numRows, _zeros, newDictionary, _data, _ptr, getCounts());
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(String.format("\n%14s len(%d) Zeros:%b", "Data:", this._data.length, _zeros));
+		sb.append("\nData Simplified Delta: {{");
+		sb.append(pair(_data, 0));
+		int p = 1;
+		for(int i = 2; i < _data.length; i += 2) {
+			if(_ptr[p] == i) {
+				if(_ptr[p] + 2 == _ptr[p + 1])
+					sb.append("}, {" + pair(_data, i));
+				else
+
+					sb.append("},\n {" + pair(_data, i));
+				p++;
+			}
+			else
+				sb.append(", " + pair(_data, i));
+
+		}
+		sb.append("}}");
+
+		sb.append("\nData Simplified RunningSum{{");
+		int sum = 0;
+		sb.append(pair(_data, 0, sum));
+		p = 1;
+		sum += _data[0] + _data[1];
+		for(int i = 2; i < _data.length; i += 2) {
+			if(_ptr[p] == i) {
+				sum = 0;
+				sb.append("},\n {" + pair(_data, i, sum));
+				sum += _data[i] + _data[i + 1];
+				p++;
+			}
+			else {
+				sb.append(", " + pair(_data, i, sum));
+				sum += _data[i] + _data[i + 1];
+			}
+
+		}
+		sb.append("}}");
+
+		sb.append("\nActual: ");
+		for(char c : _data) {
+			sb.append((int) c + ", ");
+		}
+
+		return sb.toString();
 	}
 
 	/**

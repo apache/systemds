@@ -34,27 +34,59 @@ public class CLALibSlice {
 
 	protected static final Log LOG = LogFactory.getLog(CLALibSlice.class.getName());
 
+	/**
+	 * Slice blocks of compressed matrices from the compressed representation.
+	 * 
+	 * @param cmb  The input block to slice.
+	 * @param blen The length of the blocks.
+	 * @return A list containing CompressedMatrixBlocks where there is values, and null if there is no values in the sub
+	 *         block.
+	 */
+	public static List<CompressedMatrixBlock> sliceBlocks(CompressedMatrixBlock cmb, int blen) {
+		List<CompressedMatrixBlock> mbs = new ArrayList<>();
+		for(int b = 0; b < cmb.getNumRows(); b += blen) {
+			MatrixBlock mb = sliceRowsCompressed(cmb, b, Math.min(b + blen, cmb.getNumRows()));
+			if(mb instanceof CompressedMatrixBlock)
+				mbs.add((CompressedMatrixBlock) mb);
+			else
+				mbs.add(null);
+		}
+		return mbs;
+	}
+
 	public static MatrixBlock slice(CompressedMatrixBlock cmb, int rl, int ru, int cl, int cu, boolean deep) {
 		if(rl == ru && cl == cu)
 			return sliceSingle(cmb, rl, cl);
 		else if(rl == 0 && ru == cmb.getNumRows() - 1)
 			return sliceColumns(cmb, cl, cu);
 		else if(cl == 0 && cu == cmb.getNumColumns() - 1)
-			return sliceRows(cmb, rl, ru);
+			return sliceRows(cmb, rl, ru, deep);
 		else
-			return sliceInternal(cmb, rl, ru, cl, cu);
+			return sliceInternal(cmb, rl, ru, cl, cu, deep);
 	}
 
-	private static MatrixBlock sliceInternal(CompressedMatrixBlock cmb, int rl, int ru, int cl, int cu) {
+	private static MatrixBlock sliceInternal(CompressedMatrixBlock cmb, int rl, int ru, int cl, int cu, boolean deep) {
 		/**
 		 * In the case where an internal matrix is sliced out, then first slice out the columns to an compressed
 		 * intermediate. Then call slice recursively, to do the row slice. Since we do not copy the index structure but
 		 * simply maintain a pointer to the original this is fine.
 		 */
-		return sliceRows(sliceColumns(cmb, cl, cu), rl, ru);
+		return sliceRows(sliceColumns(cmb, cl, cu), rl, ru, deep);
 	}
 
-	private static MatrixBlock sliceRows(CompressedMatrixBlock cmb, int rl, int ru) {
+	private static MatrixBlock sliceRows(CompressedMatrixBlock cmb, int rl, int ru, boolean deep) {
+		if(shouldDecompressSliceRows(cmb, rl, ru))
+			return sliceRowsDecompress(cmb, rl, ru);
+		else
+			return sliceRowsCompressed(cmb, rl, ru);
+
+	}
+
+	private static boolean shouldDecompressSliceRows(CompressedMatrixBlock cmb, int rl, int ru) {
+		return ru - rl > 124;
+	}
+
+	private static MatrixBlock sliceRowsDecompress(CompressedMatrixBlock cmb, int rl, int ru) {
 		final int nCol = cmb.getNumColumns();
 		final int rue = ru + 1;
 		MatrixBlock tmp = new MatrixBlock(rue - rl, nCol, false).allocateDenseBlock();
@@ -76,6 +108,28 @@ public class CLALibSlice {
 		tmp.recomputeNonZeros();
 		tmp.examSparsity();
 		return tmp;
+	}
+
+	private static MatrixBlock sliceRowsCompressed(CompressedMatrixBlock cmb, int rl, int ru) {
+		final List<AColGroup> groups = cmb.getColGroups();
+		final List<AColGroup> newColGroups = new ArrayList<AColGroup>(groups.size());
+		final int rue = ru + 1;
+
+		final CompressedMatrixBlock ret = new CompressedMatrixBlock(rue - rl, cmb.getNumColumns());
+
+		for(AColGroup grp : cmb.getColGroups()) {
+			final AColGroup slice = grp.sliceRows(rl, rue);
+			if(slice != null)
+				newColGroups.add(slice);
+		}
+
+		if(newColGroups.size() == 0)
+			return new MatrixBlock(rue - rl, cmb.getNumColumns(), 0.0);
+
+		ret.allocateColGroupList(newColGroups);
+		ret.recomputeNonZeros();
+		ret.setOverlapping(cmb.isOverlapping());
+		return ret;
 	}
 
 	private static MatrixBlock sliceSingle(CompressedMatrixBlock cmb, int row, int col) {

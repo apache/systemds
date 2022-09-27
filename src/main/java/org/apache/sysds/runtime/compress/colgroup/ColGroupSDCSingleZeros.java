@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
@@ -793,6 +794,24 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			return create(colIndexes, _numRows, preAgg, _indexes, getCachedCounts());
 		else
 			return null;
+	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		OffsetSliceInfo off = _indexes.slice(rl, ru);
+		if(off.lIndex == -1)
+			return null;
+		return new ColGroupSDCSingleZeros(_colIndexes, _numRows, _dict, off.offsetSlice, null);
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+		return create(colIndexes, _numRows, newDictionary, _indexes, getCounts());
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
 	}
 
 	@Override

@@ -24,10 +24,12 @@ import java.io.IOException;
 
 import org.apache.sysds.utils.MemoryEstimates;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
+
 public class OffsetByte extends AOffset {
 
 	private static final long serialVersionUID = -4716104973912491790L;
-	private static final int maxV = 255;
+	protected static final int maxV = 255;
 
 	private final byte[] offsets;
 	private final int offsetToFirst;
@@ -36,76 +38,14 @@ public class OffsetByte extends AOffset {
 	private final boolean noOverHalf;
 	private final boolean noZero;
 
-	public OffsetByte(int[] indexes) {
-		this(indexes, 0, indexes.length);
-	}
-
-	public OffsetByte(int[] indexes, int apos, int alen) {
-		int endSize = 0;
-		offsetToFirst = indexes[apos];
-		offsetToLast = indexes[alen - 1];
-		int ov = offsetToFirst;
-		// find the size of the array
-		for(int i = apos + 1; i < alen; i++) {
-			final int nv = indexes[i];
-			endSize += 1 + (nv - ov - 1) / maxV;
-			ov = nv;
-		}
-
-		this.noZero = endSize == alen - apos - 1;
-		offsets = new byte[endSize];
-		ov = offsetToFirst;
-		int p = 0;
-
-		// populate the array
-		for(int i = apos + 1; i < alen; i++) {
-			final int nv = indexes[i];
-			final int offsetSize = nv - ov;
-			final int div = offsetSize / maxV;
-			final int mod = offsetSize % maxV;
-			if(mod == 0) {
-				p += div - 1; // skip values
-				offsets[p++] = (byte) maxV;
-			}
-			else {
-				p += div; // skip values
-				offsets[p++] = (byte) (mod);
-			}
-
-			ov = nv;
-		}
-
-		this.noOverHalf = getNoOverHalf();
-		this.size = alen - apos;
-	}
-
-	protected OffsetByte(byte[] offsets, int offsetToFirst, int offsetToLast, int size) {
+	protected OffsetByte(byte[] offsets, int offsetToFirst, int offsetToLast, int size, boolean noOverHalf,
+		boolean noZero) {
 		this.offsets = offsets;
 		this.offsetToFirst = offsetToFirst;
 		this.offsetToLast = offsetToLast;
-		this.noOverHalf = getNoOverHalf();
-		this.noZero = getNoZero();
+		this.noOverHalf = noOverHalf;
+		this.noZero = noZero;
 		this.size = size;
-	}
-
-	private boolean getNoOverHalf() {
-		boolean noOverHalf = true;
-		for(byte b : offsets)
-			if(b < 1) {
-				noOverHalf = false;
-				break;
-			}
-		return noOverHalf;
-	}
-
-	private boolean getNoZero() {
-		boolean noZero = true;
-		for(byte b : offsets)
-			if(b == 0) {
-				noZero = false;
-				break;
-			}
-		return noZero;
 	}
 
 	@Override
@@ -130,7 +70,7 @@ public class OffsetByte extends AOffset {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(OffsetFactory.OFF_TYPE.BYTE.ordinal());
+		out.writeByte(OffsetFactory.OFF_TYPE_SPECIALIZATIONS.BYTE.ordinal());
 		out.writeInt(offsetToFirst);
 		out.writeInt(offsets.length);
 		out.writeInt(offsetToLast);
@@ -160,11 +100,6 @@ public class OffsetByte extends AOffset {
 	}
 
 	@Override
-	public int getOffsetsLength() {
-		return offsets.length;
-	}
-
-	@Override
 	public long getInMemorySize() {
 		return estimateInMemorySize(offsets.length);
 	}
@@ -186,7 +121,25 @@ public class OffsetByte extends AOffset {
 		for(int i = 0; i < offsetsLength; i++)
 			offsets[i] = in.readByte();
 
-		return new OffsetByte(offsets, offsetToFirst, offsetToLast, size);
+		return new OffsetByte(offsets, offsetToFirst, offsetToLast, size, OffsetFactory.getNoOverHalf(offsets),
+			OffsetFactory.getNoZero(offsets));
+	}
+
+	protected OffsetSliceInfo slice(int lowOff, int highOff, int lowValue, int highValue, int low, int high) {
+		int newSize = high - low - 1;
+		byte[] newOffsets = Arrays.copyOfRange(offsets, lowOff, highOff);
+		AOffset off = new OffsetByte(newOffsets, lowValue, highValue, newSize, noOverHalf, noZero);
+		return new OffsetSliceInfo(low, high + 1, off);
+	}
+
+	@Override
+	protected AOffset moveIndex(int m) {
+		return new OffsetByte(offsets, offsetToFirst - m, offsetToLast - m, size, noOverHalf, noZero);
+	}
+
+	@Override
+	protected int getLength(){
+		return offsets.length;
 	}
 
 	private class IterateByteOffset extends AIterator {

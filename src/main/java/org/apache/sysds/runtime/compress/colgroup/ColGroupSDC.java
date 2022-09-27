@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.utils.Util;
@@ -54,9 +55,9 @@ public class ColGroupSDC extends ASDC {
 	private static final long serialVersionUID = 769993538831949086L;
 
 	/** Pointers to row indexes in the dictionary. */
-	protected AMapToData _data;
+	protected final AMapToData _data;
 	/** The default value stored in this column group */
-	protected double[] _defaultTuple;
+	protected final double[] _defaultTuple;
 
 	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, double[] defaultTuple, AOffset offsets,
 		AMapToData data, int[] cachedCounts) {
@@ -516,31 +517,31 @@ public class ColGroupSDC extends ASDC {
 
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-		ColGroupSDC ret = (ColGroupSDC) super.sliceMultiColumns(idStart, idEnd, outputCols);
-		ret._defaultTuple = new double[idEnd - idStart];
+		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
+		final double[] newDef = new double[idEnd - idStart];
 		for(int i = idStart, j = 0; i < idEnd; i++, j++)
-			ret._defaultTuple[j] = _defaultTuple[i];
-		return ret;
+			newDef[j] = _defaultTuple[i];
+		return create(outputCols, _numRows, retDict, newDef, _indexes, _data, getCounts());
 	}
 
 	@Override
 	protected AColGroup sliceSingleColumn(int idx) {
-		ColGroupSDC ret = (ColGroupSDC) super.sliceSingleColumn(idx);
-		ret._defaultTuple = new double[1];
-		ret._defaultTuple[0] = _defaultTuple[idx];
-		return ret;
+		final int[] retIndexes = new int[] {0};
+		if(_colIndexes.length == 1) // early abort, only single column already.
+			return create(retIndexes, _numRows, _dict, _defaultTuple, _indexes, _data, getCounts());
+		final double[] newDef = new double[] {_defaultTuple[idx]};
+		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
+		return create(retIndexes, _numRows, retDict, newDef, _indexes, _data, getCounts());
 	}
 
 	@Override
 	public boolean containsValue(double pattern) {
 		if(_dict.containsValue(pattern))
 			return true;
-		else {
-			for(double v : _defaultTuple)
-				if(v == pattern)
-					return true;
-			return false;
-		}
+		for(double v : _defaultTuple)
+			if(v == pattern)
+				return true;
+		return false;
 	}
 
 	@Override
@@ -551,6 +552,26 @@ public class ColGroupSDC extends ASDC {
 	@Override
 	protected AColGroup allocateRightMultiplicationCommon(double[] common, int[] colIndexes, ADictionary preAgg) {
 		return create(colIndexes, _numRows, preAgg, common, _indexes, _data, getCachedCounts());
+	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+
+		OffsetSliceInfo off = _indexes.slice(rl, ru);
+		if(off.lIndex == -1)
+			return ColGroupConst.create(_colIndexes, Dictionary.create(_defaultTuple));
+		AMapToData newData = _data.slice(off.lIndex, off.uIndex);
+		return new ColGroupSDC(_colIndexes, _numRows, _dict, _defaultTuple, off.offsetSlice, newData, null);
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+		return create(colIndexes, _numRows, newDictionary, _defaultTuple, _indexes, _data, getCounts());
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
 	}
 
 	@Override

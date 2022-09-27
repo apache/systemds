@@ -65,9 +65,8 @@ public abstract class AColGroup implements Serializable {
 		LinearFunctional;
 	}
 
-	/** The ColGroup Indexes contained in the ColGroup */
-	protected int[] _colIndexes;
-
+	/** The ColGroup indexes contained in the ColGroup */
+	protected final int[] _colIndexes;
 
 	/**
 	 * Main constructor.
@@ -88,15 +87,6 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	/**
-	 * Set the column indexes of the column group.
-	 * 
-	 * @param colIndexes
-	 */
-	protected final void setColIndices(int[] colIndexes) {
-		_colIndexes = colIndexes;
-	}
-
-	/**
 	 * Obtain the number of columns in this column group.
 	 * 
 	 * @return number of columns in this column group
@@ -113,13 +103,24 @@ public abstract class AColGroup implements Serializable {
 	 * Since column indexes are reused between operations, we allocate a new list here to be safe
 	 * 
 	 * @param offset The offset to move all columns
+	 * @return A new column group object with the shifted columns
 	 */
-	public final void shiftColIndices(int offset) {
-		int[] newIndexes = new int[_colIndexes.length];
+	public final AColGroup shiftColIndices(int offset) {
+		final int[] newIndexes = new int[_colIndexes.length];
 		for(int i = 0; i < _colIndexes.length; i++)
 			newIndexes[i] = _colIndexes[i] + offset;
-		_colIndexes = newIndexes;
+		return copyAndSet(newIndexes);
 	}
+
+	/**
+	 * Copy the content of the column group with pointers to the previous content but with new column given Note this
+	 * method does not verify if the colIndexes specified are valid and correct dimensions for the underlying column
+	 * groups.
+	 * 
+	 * @param colIndexes the new indexes to use in the copy
+	 * @return a new object with pointers to underlying data.
+	 */
+	protected abstract AColGroup copyAndSet(int[] colIndexes);
 
 	/**
 	 * Get the upper bound estimate of in memory allocation for the column group.
@@ -170,6 +171,13 @@ public abstract class AColGroup implements Serializable {
 			out.writeInt(_colIndexes[i]);
 	}
 
+	/**
+	 * Read in the columns from the input and return them
+	 * 
+	 * @param in The data source to read from
+	 * @return A new int[] column groups
+	 * @throws IOException If there is some error in reading the input.
+	 */
 	protected static int[] readCols(DataInput in) throws IOException {
 		final int numCols = in.readInt();
 		int[] cols = new int[numCols];
@@ -477,11 +485,22 @@ public abstract class AColGroup implements Serializable {
 	 * It is guaranteed that the columns to slice is contained in this columnGroup.
 	 * 
 	 * @param idStart    The column index to start at
-	 * @param idEnd      The column index to end at
+	 * @param idEnd      The column index to end at (not included)
 	 * @param outputCols The output columns to extract materialized for ease of implementation
 	 * @return The sliced ColGroup from this. (never null)
 	 */
 	protected abstract AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols);
+
+	/**
+	 * Slice range of rows out of the column group and return a new column group only containing the row segment.
+	 * 
+	 * Note that this slice should maintain pointers back to the original dictionaries and only modify index structures.
+	 * 
+	 * @param rl The row to start at
+	 * @param ru The row to end at (not included)
+	 * @return A new column group containing the specified row range.
+	 */
+	public abstract AColGroup sliceRows(int rl, int ru);
 
 	/**
 	 * Short hand method for getting minimum value contained in this column group.
@@ -496,14 +515,6 @@ public abstract class AColGroup implements Serializable {
 	 * @return The maximum value contained in this ColumnGroup
 	 */
 	public abstract double getMax();
-
-	/**
-	 * Get a copy of this column group note this is only a shallow copy. Meaning only the object wrapping index
-	 * structures, column indexes and dictionaries are copied.
-	 * 
-	 * @return Get a copy of this column group.
-	 */
-	public abstract AColGroup copy();
 
 	/**
 	 * Detect if the column group contains a specific value.
@@ -568,6 +579,12 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public abstract double getCost(ComputationCostEstimator e, int nRows);
 
+	/**
+	 * Perform unary operation on the column group and return a new column group
+	 * 
+	 * @param op The operation to perform
+	 * @return The new column group
+	 */
 	public abstract AColGroup unaryOperation(UnaryOperator op);
 
 	/**
@@ -577,10 +594,23 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public abstract boolean isEmpty();
 
+	/**
+	 * Append the other column group to this column group. This method tries to combine them to return a new column group
+	 * containing both. In some cases it is possible in reasonable time, in others it is not.
+	 * 
+	 * The result is first this column group followed by the other column group in higher row values.
+	 * 
+	 * If it is not possible or very inefficient null is returned.
+	 * 
+	 * @param g The other column group
+	 * @return A combined column group
+	 */
+	public abstract AColGroup append(AColGroup g);
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("\n\n%15s", "ColGroupType: "));
+		sb.append(String.format("%15s", "ColGroupType: "));
 		sb.append(this.getClass().getSimpleName());
 		sb.append(String.format("\n%15s", "Columns: "));
 		sb.append(Arrays.toString(_colIndexes));

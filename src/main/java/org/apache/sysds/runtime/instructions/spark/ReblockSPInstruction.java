@@ -29,6 +29,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.io.SPCompressedReblock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -192,6 +193,12 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			LIBSVMReblockSPInstruction libsvmInstruction = new LIBSVMReblockSPInstruction(null, input1, output,
 				mcOut.getBlocksize(), mcOut.getBlocksize(), "libsvmblk", delim, indexDelim, instString);
 			libsvmInstruction.processInstruction(sec);
+		}
+		else if(fmt == FileFormat.COMPRESSED){
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = SPCompressedReblock.getRDDHandle(sec, input1.getName(), output.getName());
+			
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
 		}
 		else {
 			throw new DMLRuntimeException("The given format is not implemented "

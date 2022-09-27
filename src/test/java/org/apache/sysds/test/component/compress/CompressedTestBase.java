@@ -266,7 +266,7 @@ public abstract class CompressedTestBase extends TestBase {
 				throw new DMLCompressionException("Matrix block gone");
 
 			if(cmb instanceof CompressedMatrixBlock) {
-				if(tmp != null && ov == OverLapping.APPEND_EMPTY || ov == OverLapping.APPEND_CONST) {
+				if(tmp != null && (ov == OverLapping.APPEND_EMPTY || ov == OverLapping.APPEND_CONST)) {
 					mb = mb.append(tmp, new MatrixBlock());
 					cmb = cmb.append(tmp, new MatrixBlock());
 					cols += tmp.getNumColumns();
@@ -447,7 +447,6 @@ public abstract class CompressedTestBase extends TestBase {
 				return; // Input was not compressed then just pass test
 			((CompressedMatrixBlock) cmb).clearSoftReferenceToDecompressed();
 			MatrixBlock decompressedMatrixBlock = ((CompressedMatrixBlock) cmb).decompress(_k);
-			// LOG.error(cmb);
 			compareResultMatrices(mb, decompressedMatrixBlock, 1);
 			if(mb.getNonZeros() != decompressedMatrixBlock.getNonZeros())
 				fail(bufferedToString + "\n NonZeros not equivalent: expected:" + mb.getNonZeros() + " was: "

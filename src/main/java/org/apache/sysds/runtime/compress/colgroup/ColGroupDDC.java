@@ -48,7 +48,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 public class ColGroupDDC extends APreAgg {
 	private static final long serialVersionUID = -5769772089913918987L;
 
-	protected AMapToData _data;
+	protected final AMapToData _data;
 
 	private ColGroupDDC(int[] colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
@@ -473,6 +473,22 @@ public class ColGroupDDC extends APreAgg {
 	}
 
 	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		AMapToData sliceMap = _data.slice(rl, ru);
+		return new ColGroupDDC(_colIndexes, _dict, sliceMap, null);
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+		return create(colIndexes, newDictionary, _data, getCounts());
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
@@ -480,4 +496,5 @@ public class ColGroupDDC extends APreAgg {
 		sb.append(_data);
 		return sb.toString();
 	}
+
 }

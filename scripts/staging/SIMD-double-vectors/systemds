@@ -167,10 +167,6 @@ Worker Usage: $0 [-r] WORKER [SystemDS.jar] <portnumber> [arguments] [-help]
 
     port         : The port to open for the federated worker.
 
-Federated Monitoring Usage: $0 [-r] FEDMONITORING [SystemDS.jar] <portnumber> [arguments] [-help]
-
-    port         : The port to open for the federated monitoring tool.
-
 Set custom launch configuration by setting/editing SYSTEMDS_STANDALONE_OPTS
 and/or SYSTEMDS_DISTRIBUTED_OPTS.
 

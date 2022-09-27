@@ -21,10 +21,13 @@ package org.apache.sysds.test.functions.federated.monitoring;
 
 import static java.lang.Thread.sleep;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.http.HttpResponse;
@@ -36,6 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class FederatedBackendPerformanceTest extends FederatedMonitoringTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedBackendPerformanceTest.class.getName());
 	private final static String TEST_NAME = "FederatedBackendPerformanceTest";
 	private final static String TEST_DIR = "functions/federated/monitoring/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedBackendPerformanceTest.class.getSimpleName() + "/";
@@ -52,8 +56,9 @@ public class FederatedBackendPerformanceTest extends FederatedMonitoringTestBase
 	}
 
 	@Test
+	@Ignore
 	public void testBackendPerformance() throws InterruptedException {
-		int numRequests = 30;
+		int numRequests = 20;
 
 		double meanExecTime = 0.f;
 		double numRepetitionsExperiment = 100.f;
@@ -101,6 +106,6 @@ public class FederatedBackendPerformanceTest extends FederatedMonitoringTestBase
 		// Note that isTerminated is never true unless either shutdown or shutdownNow was called first.
 		while (!executor.isTerminated());
 
-		System.out.println(String.format(PERFORMANCE_FORMAT, numRequests, Math.round(meanExecTime / numRepetitionsExperiment)));
+		LOG.info(String.format(PERFORMANCE_FORMAT, numRequests, Math.round(meanExecTime / numRepetitionsExperiment)));
 	}
 }

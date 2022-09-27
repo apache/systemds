@@ -63,17 +63,19 @@ public class StatisticsService {
 
 		if (options.utilization) {
 			utilizationFuture = CompletableFuture
-					.runAsync(() -> stats.utilization = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, UtilizationModel.class, options.rowCount));
+					.supplyAsync(() -> entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, UtilizationModel.class, options.rowCount))
+					.thenAcceptAsync(result -> stats.utilization = result);
 		}
 
 		if (options.traffic) {
 			trafficFuture = CompletableFuture
-					.runAsync(() -> stats.traffic = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, TrafficModel.class, options.rowCount));
+					.supplyAsync(() -> entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, TrafficModel.class, options.rowCount))
+					.thenAcceptAsync(result -> stats.traffic = result);
 		}
 
 		if (options.events) {
 			eventsFuture = CompletableFuture
-					.runAsync(() -> {
+					.supplyAsync(() -> {
 						var events = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, EventModel.class, options.rowCount);
 
 						for (var event : events) {
@@ -82,18 +84,21 @@ public class StatisticsService {
 							event.stages = entityRepository.getAllEntitiesByField(Constants.ENTITY_EVENT_ID_COL, event.id, EventStageModel.class);
 						}
 
-						stats.events = events;
-					});
+						return events;
+					})
+					.thenAcceptAsync(result -> stats.events = result);
 		}
 
 		if (options.dataObjects) {
 			dataObjFuture = CompletableFuture
-					.runAsync(() -> stats.dataObjects = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, DataObjectModel.class));
+					.supplyAsync(() -> entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, DataObjectModel.class))
+					.thenAcceptAsync(result -> stats.dataObjects = result);
 		}
 
 		if (options.requests) {
 			requestsFuture = CompletableFuture
-					.runAsync(() -> stats.requests = entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, RequestModel.class));
+					.supplyAsync(() -> entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, RequestModel.class))
+					.thenAcceptAsync(result -> stats.requests = result);
 		}
 
 		List<CompletableFuture<Void>> completableFutures = Arrays.asList(utilizationFuture, trafficFuture, eventsFuture, dataObjFuture, requestsFuture);

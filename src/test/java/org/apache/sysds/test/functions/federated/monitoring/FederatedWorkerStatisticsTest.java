@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.federated.monitoring;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
@@ -37,14 +39,9 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -52,13 +49,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.lang.Thread.sleep;
 
 public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedWorkerStatisticsTest.class.getName());
+
 	private final static String TEST_NAME = "FederatedWorkerStatisticsTest";
 
 	private final static String TEST_DIR = "functions/federated/monitoring/";
@@ -75,7 +69,7 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S"}));
-		workerPorts = startFedWorkers(2);
+		workerPorts = startFedWorkers(6);
 	}
 
 	@Test
@@ -88,6 +82,7 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testWorkerStatisticsPerformance() throws InterruptedException {
 		ExecutorService executor = Executors.newFixedThreadPool(workerPorts.length);
 
@@ -132,7 +127,7 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 		// Note that isTerminated is never true unless either shutdown or shutdownNow was called first.
 		while (!executor.isTerminated());
 
-		System.out.println(String.format(PERFORMANCE_FORMAT, workerPorts.length, Math.round(meanExecTime / numRepetitionsExperiment)));
+		LOG.info(String.format(PERFORMANCE_FORMAT, workerPorts.length, Math.round(meanExecTime / numRepetitionsExperiment)));
 	}
 
 	@Test

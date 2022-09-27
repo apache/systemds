@@ -52,17 +52,14 @@ public class CoordinatorController implements IController {
 		var model = MapperService.getModelFromBody(request, CoordinatorModel.class);
 		model.id = objectId;
 
-		if (model.host == null) {
-			model.host = result.host;
-		}
+		// Setting host
+		model.host = model.host == null ? result.host : model.host;
 
-		if (model.processId == null) {
-			model.processId = result.processId;
-		}
+		// Setting processId
+		model.processId = model.processId == null ? result.processId : model.processId;
 
-		if (model.name == null) {
-			model.name = result.name;
-		}
+		// Setting name
+		model.name = model.name == null ? result.name : model.name;
 
 		model.generateMonitoringKey();
 		coordinatorService.update(model);

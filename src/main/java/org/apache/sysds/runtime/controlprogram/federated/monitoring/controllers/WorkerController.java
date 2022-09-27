@@ -51,13 +51,11 @@ public class WorkerController implements IController {
 		var model = MapperService.getModelFromBody(request, WorkerModel.class);
 		model.id = objectId;
 
-		if (model.address == null) {
-			model.address = result.address;
-		}
+		// Setting address
+		model.address = model.address == null ? result.address : model.address;
 
-		if (model.name == null) {
-			model.name = result.name;
-		}
+		// Setting name
+		model.name = model.name == null ? result.name : model.name;
 
 		workerService.update(model);
 		model.setOnlineStatus(workerService.getWorkerOnlineStatus(model.id));

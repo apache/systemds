@@ -38,33 +38,38 @@ the **monitoring frontend** developed in [Angular](https://angular.io/).
 
 #### 1. Monitoring Backend
 
-The required packages for SystemDS, can be found [here](./install.md).
-
-To install and build the packages for the backend, the usual process for building and installing
-SystemDS is sufficient:
+To compile the project, run the following code, more information can be found [here](./install.md):
 
 ```bash
-# 1. Go into the directory of systemds
-cd /home/ubuntu/systemds
-# 2. Compile SystemDS
-mvn clean package
+mvn package -P distribution
+```
+
+```bash
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  31.730 s
+[INFO] Finished at: 2020-06-18T11:00:29+02:00
+[INFO] ------------------------------------------------------------------------
+```
+
+The following example works if you open an terminal at the root of the downloaded release,
+or a cloned repository. (You can also change the `$(pwd)` with the full path to the folder.), 
+more information can be found [here](./run.md):
+
+```bash
+export SYSTEMDS_ROOT=$(pwd)
+export PATH=$SYSTEMDS_ROOT/bin:$PATH
 ```
 
 #### 2. Monitoring Frontend
 
-Since the frontend is in **Angular v13**, a **node version 12/14/16** or later minor version is required.
+Since the frontend is in **Angular v13**, a **node version 12/14/16** or later minor version is required. 
+To install `nodejs` and `npm` go to [https://nodejs.org/en/](https://nodejs.org/en/) and install version either **12.x**, 
+**14.x** or **16.x**:
 
-Example **node and npm** installation for **Ubuntu 20.04**:
 ```bash
-# Installation tutorial:
-# https://linuxize.com/post/how-to-install-node-js-on-ubuntu-20-04/
-
-# 1. Download and execute the NodeSource installation script
-curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
-# 2. Install Node.js and npm
-sudo apt install nodejs
-
-# 3. Verify installation ----
+# Verify installation -------
 node --version
 # Output
 # v14.2.0
@@ -75,14 +80,13 @@ npm --version
 # ---------------------------
 ```
 
-To install the npm packages required for the Angular app to run:
+To install the npm packages required for the Angular app to run, open the directory with 
+the SystemDS code and run:
 
 ```bash
-# 1. Go into the directory of systemds
-cd /home/ubuntu/systemds
-# 2. Go into the directory with the frontend app
+# 1. Go into the directory with the frontend app
 cd scripts/monitoring
-# 3. Install all npm packages 
+# 2. Install all npm packages 
 npm install
 ```
 After those steps all the packages needed for running the monitoring tool should be installed.
@@ -96,15 +100,11 @@ preserved.
 
 #### 1. Monitoring Backend
 
-To run the backend, use the `-fedMonitoring` flag followed by a `port`:
+To run the backend, use the `-fedMonitoring` flag followed by a `port` and can be executed using the systemds binary like this:
 
 ```bash
-# 1. Go into the directory of systemds
-cd /home/ubuntu/systemds
-# 2. Go to the target directory
-cd target
-# 3. Start the backend with the -fedMonitoring flag and a port
-java -cp ./lib/*:./SystemDS.jar org.apache.sysds.api.DMLScript -fedMonitoring 8080
+# Start the backend with the binary
+systemds FEDMONITORING 8080
 
 # You should see something like this
 #[ INFO] Setting up Federated Monitoring Backend on port 8080
@@ -123,11 +123,9 @@ here will start the backend with polling with frequency of **3 seconds**, which 
 To run the Angular app:
 
 ```bash
-# 1. Go into the directory of systemds
-cd /home/ubuntu/systemds
-# 2. Go into the directory with the frontend app
+# 1. While in the systemds directory go to the folder holding the frontend app
 cd scripts/monitoring
-# 3. Start the angular app 
+# 2. Start the angular app 
 npm start
 ```
 After this step the Angular UI should be started on [http://localhost:4200](http://localhost:4200) and can be viewed by opening the 
@@ -141,13 +139,9 @@ In addition to the manual registration of coordinators for monitoring, the self-
 setting the `-fedMonitoringAddress` flag followed by the address of the backend:
 
 ```bash
-# 1. Go into the directory of systemds
-cd /home/ubuntu/systemds
-# 2. Go to the target directory
-cd target
-# 3. Start the coordinator process with the -fedMonitoringAddress flag and the address of the backend
-java -cp ./lib/*:./SystemDS.jar org.apache.sysds.api.DMLScript \
--f testFederated.dml -exec singlenode -explain -debug -stats 20 -fedMonitoringAddress http://localhost:8080
+# Start the coordinator process with the -fedMonitoringAddress flag and the address of the backend
+systemds -f testFederated.dml -exec singlenode -explain -debug -stats 20 -fedMonitoringAddress http://localhost:8080
 ```
 
 **NOTE:** The backend service should already be running, otherwise the coordinator will not start.
+

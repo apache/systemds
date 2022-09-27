@@ -123,6 +123,10 @@ public class WorkerService {
 
 	public static void syncWorkerStatisticsWithDB(StatisticsModel stats, Long id) {
 
+		// NOTE: This part of the code is not directly connected to requests coming from the frontend
+		// and runs in the background. There is no need to handle the result data from the futures since
+		// it is directly saved in the database, and it will be returned in the next frontend request.
+
 		if (stats != null) {
 
 			cachedWorkers.get(id).setValue(true);

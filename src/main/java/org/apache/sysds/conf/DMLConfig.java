@@ -122,6 +122,8 @@ public class DMLConfig
 	public static final String FEDERATED_PAR_INST = "sysds.federated.par_inst";
 	public static final String FEDERATED_PAR_CONN = "sysds.federated.par_conn";
 	public static final String PRIVACY_CONSTRAINT_MOCK = "sysds.federated.priv_mock";
+	// Trigger frequency of the collecting and parsing statistics process on registered workers for monitoring.
+	// In SECONDS.
 	public static final String FEDERATED_MONITOR_FREQUENCY = "sysds.federated.monitorFreq";
 	public static final int DEFAULT_FEDERATED_PORT = 4040; // borrowed default Spark Port
 	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 8;

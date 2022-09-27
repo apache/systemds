@@ -19,18 +19,14 @@
 
 package org.apache.sysds.test.component.compress.io;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.io.ReaderCompressed;
 import org.apache.sysds.runtime.compress.io.WriterCompressed;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -41,85 +37,75 @@ public class IOTest {
 
 	protected static final Log LOG = LogFactory.getLog(IOTest.class.getName());
 
-	final static Object lock = new Object();
-
-	final static String nameBeginning = "src/test/java/org/apache/sysds/test/component/compress/io/files/";
-
-	static AtomicInteger id = new AtomicInteger(0);
+	final static String nameBeginning = "src/test/java/org/apache/sysds/test/component/compress/io/files"
+		+ IOTest.class.getSimpleName() + "/";
 
 	public IOTest() {
-		synchronized(lock) {
+		synchronized(IOTestUtils.lock) {
 			new File(nameBeginning).mkdirs();
 		}
 	}
 
-	private static void deleteDirectory(File file) {
-		for(File subfile : file.listFiles()) {
-			if(subfile.isDirectory())
-				deleteDirectory(subfile);
-			subfile.delete();
-		}
-		file.delete();
-	}
-
 	@AfterClass
 	public static void cleanup() {
-		deleteDirectory(new File(nameBeginning));
+		IOTestUtils.deleteDirectory(new File(nameBeginning));
 	}
 
 	public static String getName() {
-		return nameBeginning + "testWrite" + id.incrementAndGet() + ".cla";
+		return IOTestUtils.getName(nameBeginning);
 	}
 
 	@Test
 	public void testWrite() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1000, 3, 1, 3, 1.0, 2514));
-		write(mb, getName());
+		String n = getName();
+		write(mb, n);
+		File f = new File(n);
+		assertTrue(f.isFile());
 	}
 
 	@Test
-	public void testWriteAlreadyCompressed() {
+	public void testWriteAlreadyCompressed() throws Exception {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1000, 3, 1, 3, 1.0, 2514));
 		MatrixBlock mb2 = CompressedMatrixBlockFactory.compress(mb).getLeft();
-		write(mb2, getName());
+		writeAndRead(mb2);
 	}
 
 	@Test
-	public void testWriteAndRead() {
-		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(1000, 3, 1, 3, 1.0, 2514));
-
-		String filename = getName();
-		write(mb, filename);
-		MatrixBlock mbr = read(filename);
-
-		assertEquals(mb.sum(), mbr.sum(), 0.0001);
-		assertEquals(mb.min(), mbr.min(), 0.0001);
-		assertEquals(mb.max(), mbr.max(), 0.0001);
-		assertEquals(mb.getNumRows(), mbr.getNumRows());
-		assertEquals(mb.getNumColumns(), mbr.getNumColumns());
-		assertTrue(mb.getInMemorySize() > mbr.getInMemorySize());
-		assertTrue(mb.getExactSizeOnDisk() > mbr.getExactSizeOnDisk());
-
+	public void testWriteAndRead() throws Exception {
+		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(1000, 3, 1, 3, 1.0, 2514)));
 	}
 
-	@Test(expected = DMLCompressionException.class)
+	@Test
 	public void testWriteNotCompressable() throws Exception {
-		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(3, 3, 1, 3, 1.0, 2514));
-		WriterCompressed.writeCompressedMatrixToHDFS(mb, getName());
+		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(3, 3, 1, 3, 1.0, 2514)));
 	}
 
-	private static MatrixBlock read(String path) {
-		try {
-			return ReaderCompressed.readCompressedMatrixFromHDFS(path);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail("Failed to read file");
-			return null;
-		}
+	@Test
+	public void testWriteNotCompressableV2() throws Exception {
+		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(30, 3, 1, 10, 1.0, 2514)));
 	}
 
-	private static void write(MatrixBlock src, String path) {
+	@Test
+	public void testWriteNotCompressableV3() throws Exception {
+		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(300, 3, 1, 50, 1.0, 2514)));
+	}
+
+	@Test
+	public void testWriteNotCompressableRandomSparse() throws Exception {
+		writeAndRead(TestUtils.generateTestMatrixBlock(300, 3, 1, 50, 0.1, 2514));
+	}
+
+	protected static void writeAndRead(MatrixBlock mb) throws Exception {
+		String filename = getName();
+		WriterCompressed.writeCompressedMatrixToHDFS(mb, filename);
+		File f = new File(filename);
+		assertTrue(f.isFile() || f.isDirectory());
+		MatrixBlock mbr = IOTestUtils.read(filename);
+		IOTestUtils.verifyEquivalence(mb, mbr);
+	}
+
+	protected static void write(MatrixBlock src, String path) {
 		try {
 			WriterCompressed.writeCompressedMatrixToHDFS(src, path);
 		}
@@ -127,5 +113,39 @@ public class IOTest {
 			e.printStackTrace();
 			fail("Failed to write file");
 		}
+	}
+
+	@Test
+	public void testWriteAndReadSmallBlen() throws Exception {
+		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(1000, 3, 1, 3, 1.0, 2514)), 100);
+	}
+
+	@Test
+	public void testWriteAndReadSmallBlenBiggerClen() throws Exception {
+		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(1000, 51, 1, 3, 1.0, 2514)), 50);
+	}
+
+	@Test
+	public void testWriteAndReadSmallBlenBiggerClenOnly() throws Exception {
+		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(50, 51, 1, 3, 1.0, 2514)), 50);
+	}
+
+	@Test
+	public void testWriteAndReadSmallBlenBiggerClenMultiBlock() throws Exception {
+		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(50, 124, 1, 3, 1.0, 2514)), 50);
+	}
+
+	@Test
+	public void testWriteAndReadSmallBlenMultiBlock() throws Exception {
+		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(142, 124, 1, 3, 1.0, 2514)), 50);
+	}
+
+	protected static void writeAndRead(MatrixBlock mb, int blen) throws Exception {
+		String filename = getName();
+		WriterCompressed.writeCompressedMatrixToHDFS(mb, filename, blen);
+		File f = new File(filename);
+		assertTrue(f.isFile() || f.isDirectory());
+		MatrixBlock mbr = IOTestUtils.read(filename);
+		IOTestUtils.verifyEquivalence(mb, mbr);
 	}
 }

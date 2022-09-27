@@ -28,13 +28,22 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
-public interface OffsetFactory {
+public final class OffsetFactory {
 
 	static final Log LOG = LogFactory.getLog(OffsetFactory.class.getName());
 
+	private OffsetFactory() {
+		// Empty private constructor.
+	}
+
 	/** The specific underlying types of offsets. */
 	public enum OFF_TYPE {
-		BYTE, CHAR, SINGLE_OFFSET, TWO_OFFSET
+		BYTE, CHAR
+	}
+
+	/** Specialized types of underlying offsets. */
+	public enum OFF_TYPE_SPECIALIZATIONS {
+		BYTE, CHAR, SINGLE_OFFSET, TWO_OFFSET, EMPTY
 	}
 
 	/**
@@ -64,6 +73,17 @@ public interface OffsetFactory {
 	}
 
 	/**
+	 * try to create a specific type of offset.
+	 * 
+	 * @param indexes the List of indexes, that is assumed to be sorted and have no duplicates
+	 * @param type    The type requested.
+	 * @return The return offset
+	 */
+	public static AOffset createOffset(int[] indexes, OFF_TYPE type) {
+		return createOffset(indexes, 0, indexes.length, type);
+	}
+
+	/**
 	 * Create a Offset based on a subset of the indexes given.
 	 * 
 	 * This is useful if the input is created from a CSR matrix, since it allows us to not reallocate the indexes[] but
@@ -79,9 +99,13 @@ public interface OffsetFactory {
 	 */
 	public static AOffset createOffset(int[] indexes, int apos, int alen) {
 		try {
+			if(indexes == null)
+				throw new DMLCompressionException("Invalid null indexes input");
 			final int endLength = alen - apos - 1;
 			if(endLength < 0)
-				throw new DMLCompressionException("Invalid empty offset to create");
+				return new OffsetEmpty();
+			else if(indexes[0] < 0)
+				throw new DMLCompressionException("Invalid negative offset");
 			else if(endLength == 0) // means size of 1 since we store the first offset outside the list
 				return new OffsetSingle(indexes[apos]);
 			else if(endLength == 1)
@@ -99,21 +123,38 @@ public interface OffsetFactory {
 			final long charSize = OffsetChar.estimateInMemorySize(endLength + correctionChar);
 
 			if(byteSize < charSize)
-				return new OffsetByte(indexes, apos, alen);
+				return createByte(indexes, apos, alen);
 			else
-				return new OffsetChar(indexes, apos, alen);
+				return createChar(indexes, apos, alen);
 		}
 		catch(Exception e) {
-			for(int i = apos+1; i < alen ; i++){
-				if(indexes[i] <= indexes[i-1]){
+			if(indexes == null)
+				throw e;
+			for(int i = apos + 1; i < alen; i++) {
+				if(indexes[i] <= indexes[i - 1]) {
 					String message = "Invalid input to create offset, all values should be continuously increasing.\n";
-					message += "Index " + (i-1) + " and Index " + i + " are wrong with values: " + indexes[i-1] + " and " + indexes[i]; 
-					throw new DMLCompressionException(message , e);
+					message += "Index " + (i - 1) + " and Index " + i + " are wrong with values: " + indexes[i - 1] + " and "
+						+ indexes[i];
+					throw new DMLCompressionException(message, e);
 				}
 			}
 			throw new DMLCompressionException(
 				"Failed to create offset with input:" + Arrays.toString(indexes) + " Apos: " + apos + " Alen: " + alen, e);
 		}
+	}
+
+	public static AOffset createOffset(int[] indexes, int apos, int alen, OFF_TYPE type) {
+		final int indexesLength = alen - apos;
+		if(indexesLength <= 0)
+			return new OffsetEmpty();
+		else if(indexesLength == 1)
+			return new OffsetSingle(indexes[apos]);
+		else if(indexesLength == 2)
+			return new OffsetTwo(indexes[apos], indexes[apos + 1]);
+		else if(type == OFF_TYPE.BYTE)
+			return createByte(indexes, 0, indexes.length);
+		else
+			return createChar(indexes, 0, indexes.length);
 	}
 
 	/**
@@ -124,8 +165,10 @@ public interface OffsetFactory {
 	 * @throws IOException If the DataInput fails reading in the variables
 	 */
 	public static AOffset readIn(DataInput in) throws IOException {
-		OFF_TYPE t = OFF_TYPE.values()[in.readByte()];
+		OFF_TYPE_SPECIALIZATIONS t = OFF_TYPE_SPECIALIZATIONS.values()[in.readByte()];
 		switch(t) {
+			case EMPTY:
+				return OffsetEmpty.readFields(in);
 			case SINGLE_OFFSET:
 				return OffsetSingle.readFields(in);
 			case TWO_OFFSET:
@@ -151,8 +194,8 @@ public interface OffsetFactory {
 	 * @return The estimated size of an offset given the number of offsets and rows.
 	 */
 	public static long estimateInMemorySize(int size, int nRows) {
-		if(size == 0)
-			return 8; // If this is the case, then the compression results in constant col groups
+		if(size == 0) // If this is the case, then the compression results in constant col groups
+			return OffsetEmpty.estimateInMemorySize();
 		else if(size == 1)
 			return OffsetSingle.estimateInMemorySize();
 		else if(size == 2)
@@ -167,7 +210,6 @@ public interface OffsetFactory {
 			final int correctionChar = correctionChar(nRows, size);
 			return OffsetChar.estimateInMemorySize(size - 1 + correctionChar);
 		}
-
 	}
 
 	public static int correctionByte(int nRows, int size) {
@@ -177,4 +219,113 @@ public interface OffsetFactory {
 	public static int correctionChar(int nRows, int size) {
 		return Math.max((nRows - size * Character.MAX_VALUE), 0) / Character.MAX_VALUE;
 	}
+
+	private static AOffset createByte(int[] indexes, int apos, int alen) {
+		final int indexesLength = alen - apos;
+
+		int endSize = 0;
+		int offsetToFirst = indexes[apos];
+		int offsetToLast = indexes[alen - 1];
+		int ov = offsetToFirst;
+		// find the size of the array
+		for(int i = apos + 1; i < alen; i++) {
+			final int nv = indexes[i];
+			endSize += 1 + (nv - ov - 1) / OffsetByte.maxV;
+			ov = nv;
+		}
+
+		boolean noZero = endSize == indexesLength - 1;
+		byte[] offsets = new byte[endSize];
+		ov = offsetToFirst;
+		int p = 0;
+
+		// populate the array
+		for(int i = apos + 1; i < alen; i++) {
+			final int nv = indexes[i];
+			final int offsetSize = nv - ov;
+			if(offsetSize <= 0)
+				throw new DMLCompressionException("Invalid offset");
+			final int div = offsetSize / OffsetByte.maxV;
+			final int mod = offsetSize % OffsetByte.maxV;
+			if(mod == 0) {
+				p += div - 1; // skip values
+				offsets[p++] = (byte) OffsetByte.maxV;
+			}
+			else {
+				p += div; // skip values
+				offsets[p++] = (byte) (mod);
+			}
+
+			ov = nv;
+		}
+
+		boolean noOverHalf = getNoOverHalf(offsets);
+		return new OffsetByte(offsets, offsetToFirst, offsetToLast, indexesLength, noOverHalf, noZero);
+	}
+
+	private static AOffset createChar(int[] indexes, int apos, int alen) {
+
+		int endSize = 0;
+		int offsetToFirst = indexes[apos];
+		int offsetToLast = indexes[alen - 1];
+		int ov = offsetToFirst;
+		for(int i = apos + 1; i < alen; i++) {
+			final int nv = indexes[i];
+			endSize += 1 + (nv - ov - 1) / OffsetChar.maxV;
+			ov = nv;
+		}
+		boolean noZero = endSize == alen - apos - 1;
+		char[] offsets = new char[endSize];
+		ov = offsetToFirst;
+		int p = 0;
+		for(int i = apos + 1; i < alen; i++) {
+			final int nv = indexes[i];
+			final int offsetSize = (nv - ov);
+			if(offsetSize <= 0)
+				throw new DMLCompressionException("Invalid offset");
+			final int div = offsetSize / OffsetChar.maxV;
+			final int mod = offsetSize % OffsetChar.maxV;
+			if(mod == 0) {
+				p += div - 1; // skip values
+				offsets[p++] = (char) OffsetChar.maxV;
+			}
+			else {
+				p += div; // skip values
+				offsets[p++] = (char) (mod);
+			}
+			ov = nv;
+		}
+		return new OffsetChar(offsets, offsetToFirst, offsetToLast, noZero);
+	}
+
+	protected static boolean getNoOverHalf(byte[] off) {
+		boolean noOverHalf = true;
+		for(byte b : off)
+			if(b < 1) {
+				noOverHalf = false;
+				break;
+			}
+		return noOverHalf;
+	}
+
+	protected static boolean getNoZero(byte[] off) {
+		boolean noZero = true;
+		for(byte b : off)
+			if(b == 0) {
+				noZero = false;
+				break;
+			}
+		return noZero;
+	}
+
+	protected static boolean getNoZero(char[] off) {
+		boolean noZero = true;
+		for(char b : off)
+			if(b == 0) {
+				noZero = false;
+				break;
+			}
+		return noZero;
+	}
+
 }

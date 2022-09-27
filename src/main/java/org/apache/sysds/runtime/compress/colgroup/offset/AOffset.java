@@ -167,13 +167,6 @@ public abstract class AOffset implements Serializable {
 	 */
 	public abstract int getSize();
 
-	/**
-	 * Get the length of the underlying offsets lists.
-	 * 
-	 * @return The number of offsets.
-	 */
-	public abstract int getOffsetsLength();
-
 	public final void preAggregateDenseMap(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
 		AMapToData data) {
 		// multi row iterator.
@@ -398,25 +391,89 @@ public abstract class AOffset implements Serializable {
 		return false;
 	}
 
+	protected abstract AOffset moveIndex(int m);
+
+	protected abstract int getLength();
+
+	public OffsetSliceInfo slice(int l, int u) {
+		AIterator it = getIterator(l);
+		if(it == null || it.value() >= u)
+			return new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+		else if(l <= getOffsetToFirst() && u > getOffsetToLast()) {
+			if(l == 0)
+				return new OffsetSliceInfo(0, getSize(), this);
+			else
+				return new OffsetSliceInfo(0, getSize(), moveIndex(l));
+		}
+		int low = it.getDataIndex();
+		int lowOff = it.getOffsetsIndex();
+		int lowValue = it.value();
+
+		int high = it.getDataIndex();
+		int highOff = it.getOffsetsIndex();
+		int highValue = it.value();
+		if(u >= getOffsetToLast()) { // If including the last do not iterate.
+			high = getSize() - 1;
+			highOff = getLength();
+			highValue = getOffsetToLast();
+		}
+		else { // Have to iterate through until we find last.
+			while(it.value() < u) {
+				high = it.getDataIndex();
+				highOff = it.getOffsetsIndex();
+				highValue = it.value();
+				it.next();
+			}
+		}
+
+		lowValue -= l;
+		highValue -= l;
+
+		if(low == high)
+			return new OffsetSliceInfo(low, high + 1, new OffsetSingle(lowValue));
+		else if(low + 1 == high)
+			return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue, highValue));
+		else if(this instanceof OffsetByte)
+			return ((OffsetByte) this).slice(lowOff, highOff, lowValue, highValue, low, high);
+		else // if(this instanceof OffsetChar)
+			return ((OffsetChar) this).slice(lowOff, highOff, lowValue, highValue, low, high);
+	}
+
+	// protected abstract OffsetSliceInfo slice(int lowOff, int highOff, int lowValue, int highValue, int low, int high);
+
+	public static final class OffsetSliceInfo {
+		public final int lIndex;
+		public final int uIndex;
+		public final AOffset offsetSlice;
+
+		protected OffsetSliceInfo(int l, int u, AOffset off) {
+			this.lIndex = l;
+			this.uIndex = u;
+			this.offsetSlice = off;
+		}
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
 		final AIterator it = getIterator();
-		final int last = getOffsetToLast();
-		sb.append("[");
-		while(it.offset < last) {
+		if(it != null) {
+			final int last = getOffsetToLast();
+			sb.append("[");
+			while(it.offset < last) {
+				sb.append(it.offset);
+				sb.append(", ");
+				it.next();
+			}
 			sb.append(it.offset);
-			sb.append(", ");
-			it.next();
-		}
-		sb.append(it.offset);
-		sb.append("]");
+			sb.append("]");
 
-		if(it.offset != last)
-			throw new DMLCompressionException(
-				"Invalid iteration of offset when making string, the last offset is not equal to a iteration: "
-					+ getOffsetToLast() + " String: " + sb.toString());
+			if(it.offset != last)
+				throw new DMLCompressionException(
+					"Invalid iteration of offset when making string, the last offset is not equal to a iteration: "
+						+ getOffsetToLast() + " String: " + sb.toString());
+		}
 		return sb.toString();
 	}
 

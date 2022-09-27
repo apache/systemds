@@ -63,7 +63,7 @@ public class ColGroupUncompressed extends AColGroup {
 	 * We store the contents of the columns as a MatrixBlock to take advantage of high-performance routines available for
 	 * this data structure.
 	 */
-	private MatrixBlock _data;
+	private final MatrixBlock _data;
 
 	private ColGroupUncompressed(MatrixBlock mb, int[] colIndexes) {
 		super(colIndexes);
@@ -498,11 +498,6 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public AColGroup copy() {
-		return create(_data, _colIndexes);
-	}
-
-	@Override
 	public boolean containsValue(double pattern) {
 		return _data.containsValue(pattern);
 	}
@@ -758,6 +753,19 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		final MatrixBlock mb = _data.slice(rl, ru - 1);
+		if(mb.isEmpty())
+			return null;
+		return new ColGroupUncompressed(mb, _colIndexes);
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
@@ -774,5 +782,10 @@ public class ColGroupUncompressed extends AColGroup {
 			sb.append(" don't print uncompressed matrix because it is to big.");
 
 		return sb.toString();
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes) {
+		return ColGroupUncompressed.create(_data, colIndexes);
 	}
 }

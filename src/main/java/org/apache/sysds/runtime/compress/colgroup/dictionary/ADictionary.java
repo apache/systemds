@@ -903,4 +903,13 @@ public abstract class ADictionary implements Serializable {
 		for(int j = 0; j < colIndexes.length; j++)
 			res[colIndexes[j]] = Double.isNaN(res[colIndexes[j]]) ? 0 : res[colIndexes[j]];
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		if(o instanceof ADictionary)
+			return eq((ADictionary) o);
+		return false;
+	}
+
+	public abstract boolean eq(ADictionary o);
 }

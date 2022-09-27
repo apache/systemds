@@ -328,7 +328,7 @@ public class ColGroupNegativeTests {
 		@Override
 		protected void computeColMxx(double[] c, Builtin builtin) {
 			// TODO Auto-generated method stub
-			
+
 		}
 
 		@Override
@@ -340,7 +340,25 @@ public class ColGroupNegativeTests {
 		@Override
 		protected void preAggregateThatRLEStructure(ColGroupRLE that, Dictionary ret) {
 			// TODO Auto-generated method stub
-			
+
+		}
+
+		@Override
+		public AColGroup sliceRows(int rl, int ru) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public AColGroup append(AColGroup g) {
+			// TODO Auto-generated method stub
+			return null;
 		}
 	}
 
@@ -494,11 +512,6 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		public AColGroup copy() {
-			return null;
-		}
-
-		@Override
 		public boolean containsValue(double pattern) {
 			return false;
 		}
@@ -538,17 +551,24 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		protected AColGroup copyAndSet(int[] colIndexes, double[] newDictionary) {
-			return null;
-		}
-
-		@Override
 		protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
 			return null;
 		}
 
 		@Override
 		protected AColGroup allocateRightMultiplication(MatrixBlock right, int[] colIndexes, ADictionary preAgg) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public AColGroup sliceRows(int rl, int ru) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public AColGroup append(AColGroup g) {
 			// TODO Auto-generated method stub
 			return null;
 		}

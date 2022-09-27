@@ -552,7 +552,7 @@ public class Types
 		}
 		
 		public boolean isTextFormat() {
-			return this != BINARY;
+			return this != BINARY && this != COMPRESSED;
 		}
 		
 		public static boolean isTextFormat(String fmt) {

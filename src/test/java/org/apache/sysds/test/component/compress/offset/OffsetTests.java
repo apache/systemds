@@ -39,9 +39,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetChar;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetEmpty;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetSingle;
@@ -66,6 +68,7 @@ public class OffsetTests {
 		ArrayList<Object[]> tests = new ArrayList<>();
 		// It is assumed that the input is in sorted order, all values are positive and there are no duplicates.
 		for(OFF_TYPE t : OFF_TYPE.values()) {
+			tests.add(new Object[] {new int[] {}, t});
 			tests.add(new Object[] {new int[] {1, 2}, t});
 			tests.add(new Object[] {new int[] {2, 142}, t});
 			tests.add(new Object[] {new int[] {142, 421}, t});
@@ -77,11 +80,9 @@ public class OffsetTests {
 			tests.add(new Object[] {new int[] {500}, t});
 			tests.add(new Object[] {new int[] {1442}, t});
 			tests.add(new Object[] {new int[] {Character.MAX_VALUE, ((int) Character.MAX_VALUE) + 1}, t});
-			tests.add(new Object[] {new int[] {Character.MAX_VALUE, ((int) Character.MAX_VALUE) * 2}, t});
 			tests.add(new Object[] {new int[] {0, 256}, t});
 			tests.add(new Object[] {new int[] {0, 254}, t});
 			tests.add(new Object[] {new int[] {0, Character.MAX_VALUE}, t});
-			tests.add(new Object[] {new int[] {0, Character.MAX_VALUE, ((int) Character.MAX_VALUE) * 2}, t});
 			tests.add(new Object[] {new int[] {2, Character.MAX_VALUE + 2}, t});
 			tests.add(new Object[] {new int[] {0, ((int) Character.MAX_VALUE) + 1}, t});
 			tests.add(new Object[] {new int[] {0, ((int) Character.MAX_VALUE) - 1}, t});
@@ -105,6 +106,10 @@ public class OffsetTests {
 			tests.add(new Object[] {new int[] {2458248, 2458249, 2458253, 2458254, 2458256, 2458257, 2458258, 2458262,
 				2458264, 2458266, 2458267, 2458271, 2458272, 2458275, 2458276, 2458281}, t});
 		}
+		tests.add(new Object[] {new int[] {Character.MAX_VALUE, ((int) Character.MAX_VALUE) * 2}, OFF_TYPE.CHAR});
+		tests.add(new Object[] {new int[] {0, Character.MAX_VALUE, ((int) Character.MAX_VALUE) * 2}, OFF_TYPE.CHAR});
+		tests.add(new Object[] {new int[] {1, (int) Character.MAX_VALUE * 2 + 3, (int) Character.MAX_VALUE * 4 + 4,
+			(int) Character.MAX_VALUE * 16 + 4}, OFF_TYPE.CHAR});
 		return tests;
 	}
 
@@ -190,6 +195,15 @@ public class OffsetTests {
 	}
 
 	@Test
+	public void offsetSet() {
+		AIterator a = o.getIterator();
+		if(a != null) {
+			a.setOff(324);
+			assertTrue(a.value() == 324);
+		}
+	}
+
+	@Test
 	public void testOnDiskSizeInBytes() {
 		try {
 			// Serialize out
@@ -215,28 +229,28 @@ public class OffsetTests {
 			final long inMemorySize = o.getInMemorySize();
 			long estimatedSize;
 
-			switch(type) {
-				case SINGLE_OFFSET:
-					if(data.length == 1) {
-						estimatedSize = OffsetSingle.estimateInMemorySize();
+			if(data.length == 0)
+				estimatedSize = OffsetEmpty.estimateInMemorySize();
+			else if(data.length == 1)
+				estimatedSize = OffsetSingle.estimateInMemorySize();
+			else if(data.length == 2)
+				estimatedSize = OffsetTwo.estimateInMemorySize();
+			else {
+
+				switch(type) {
+					case BYTE:
+						final int correctionByte = OffsetFactory.correctionByte(data[data.length - 1] - data[0], data.length);
+						estimatedSize = OffsetByte.estimateInMemorySize(data.length + correctionByte);
 						break;
-					}
-				case TWO_OFFSET:
-					if(data.length == 2) {
-						estimatedSize = OffsetTwo.estimateInMemorySize();
+					case CHAR:
+						final int correctionChar = OffsetFactory.correctionChar(data[data.length - 1] - data[0], data.length);
+						estimatedSize = OffsetChar.estimateInMemorySize(data.length + correctionChar);
 						break;
-					}
-				case BYTE:
-					final int correctionByte = OffsetFactory.correctionByte(data[data.length - 1] - data[0], data.length);
-					estimatedSize = OffsetByte.estimateInMemorySize(data.length + correctionByte);
-					break;
-				case CHAR:
-					final int correctionChar = OffsetFactory.correctionChar(data[data.length - 1] - data[0], data.length);
-					estimatedSize = OffsetChar.estimateInMemorySize(data.length + correctionChar);
-					break;
-				default:
-					throw new DMLCompressionException("Unknown input");
+					default:
+						throw new DMLCompressionException("Unknown input");
+				}
 			}
+
 			if(!(inMemorySize <= estimatedSize + sizeTolerance)) {
 				fail("in memory size: " + inMemorySize + " is not smaller than estimate: " + estimatedSize
 					+ " with tolerance " + sizeTolerance + "\nEncoded:" + o + "\nData:" + Arrays.toString(data));
@@ -251,7 +265,8 @@ public class OffsetTests {
 	@Test
 	public void testSkipToContainedIndex() {
 		try {
-			assertEquals(data[data.length - 1], o.getIterator().skipTo(data[data.length - 1]));
+			if(data.length > 0)
+				assertEquals(data[data.length - 1], o.getIterator().skipTo(data[data.length - 1]));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -262,7 +277,8 @@ public class OffsetTests {
 	@Test
 	public void testSkipToContainedIndexPlusOne() {
 		try {
-			assertNotEquals(data[data.length - 1] + 1, o.getIterator().skipTo(data[data.length - 1]));
+			if(data.length > 0)
+				assertNotEquals(data[data.length - 1] + 1, o.getIterator().skipTo(data[data.length - 1]));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -285,9 +301,11 @@ public class OffsetTests {
 	@Test
 	public void testSkipToContainedIndexMinusOne() {
 		try {
-			int v = data[data.length - 1];
-			int maxDiff = 1;
-			assertTrue(v <= o.getIterator().skipTo(v - 1) + maxDiff);
+			if(data.length > 0) {
+				int v = data[data.length - 1];
+				int maxDiff = 1;
+				assertTrue(v <= o.getIterator().skipTo(v - 1) + maxDiff);
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -298,9 +316,11 @@ public class OffsetTests {
 	@Test
 	public void testSkipToContainedIndexMinusN() {
 		try {
-			int v = data[data.length - 1];
-			int maxDiff = 142;
-			assertTrue(v <= o.getIterator().skipTo(v - 1) + maxDiff);
+			if(data.length > 0) {
+				int v = data[data.length - 1];
+				int maxDiff = 142;
+				assertTrue(v <= o.getIterator().skipTo(v - 1) + maxDiff);
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -310,17 +330,29 @@ public class OffsetTests {
 
 	@Test
 	public void testToString() {
-		String os = o.toString();
-		os = os.substring(os.indexOf("["), os.length());
-		String vs = Arrays.toString(data);
-		if(!os.equals(vs)) {
-			fail("The two array string are not equivalent with " + type + "\n" + os + " : " + vs);
+		try {
+			String os = o.toString();
+			if(data.length > 0) {
+				os = os.substring(os.indexOf("["), os.length());
+				String vs = Arrays.toString(data);
+				if(!os.equals(vs)) {
+					fail("The two array string are not equivalent with " + type + "\n" + os + " : " + vs);
+				}
+			}
+			else {
+				assertTrue(os.contains("Empty"));
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
 		}
 	}
 
 	@Test
 	public void testIsNotOverFirstDataPoint() {
-		assertFalse(o.getIterator().isNotOver(data[0]));
+
+		if(data.length > 0)
+			assertFalse(o.getIterator().isNotOver(data[0]));
 	}
 
 	@Test
@@ -355,7 +387,9 @@ public class OffsetTests {
 
 	@Test
 	public void testGetDataIndexOnInit() {
-		assertTrue(o.getIterator().getDataIndex() == 0);
+
+		if(data.length > 0)
+			assertTrue(o.getIterator().getDataIndex() == 0);
 	}
 
 	@Test
@@ -418,12 +452,13 @@ public class OffsetTests {
 
 	@Test
 	public void testCloneIterator() {
-		assertTrue(o.getIterator().clone().equals(o.getIterator()));
+		if(o.getIterator() != null)
+			assertTrue(o.getIterator().clone().equals(o.getIterator()));
 	}
 
 	@Test
 	public void testCloneIteratorNext() {
-		if(data.length > 1 || type == OFF_TYPE.SINGLE_OFFSET) {
+		if(data.length > 1) {
 
 			AIterator a = o.getIterator().clone();
 			AIterator b = o.getIterator();
@@ -436,8 +471,7 @@ public class OffsetTests {
 
 	@Test
 	public void testCloneIteratorOffsetNext() {
-		if(data.length > 1 || type == OFF_TYPE.SINGLE_OFFSET) {
-
+		if(data.length > 1) {
 			AOffsetIterator a = o.getOffsetIterator();
 			AOffsetIterator b = o.getOffsetIterator();
 			a.next();
@@ -449,10 +483,95 @@ public class OffsetTests {
 	@Test
 	public void testIteratorToString() {
 		AOffsetIterator a = o.getOffsetIterator();
-		a.toString();
+		if(a != null)
+			a.toString();
 
 		AIterator b = o.getIterator();
-		b.toString();
+		if(b != null)
+			b.toString();
+	}
+
+	@Test
+	public void testIteratorSkipToOverEnd() {
+		AIterator a = o.getIterator();
+		if(a != null) {
+			a.skipTo(Integer.MAX_VALUE);
+		}
+	}
+
+	@Test
+	public void testNextOn1Element() {
+		if(data.length == 1) {
+			AIterator a = o.getIterator();
+			a.next();
+			a.next();
+			a.next();
+
+			AOffsetIterator b = o.getOffsetIterator();
+			b.next();
+			b.next();
+			// should be possible... but not really relevant.
+		}
+	}
+
+	@Test
+	public void sliceFirst100() {
+		slice(0, 100);
+	}
+
+	@Test
+	public void sliceToLast() {
+		if(data.length > 1)
+			slice(0, data[data.length - 1]);
+	}
+
+	@Test
+	public void sliceToLastMissingFirst100() {
+		if(data.length > 1)
+			slice(100, data[data.length - 1]);
+	}
+
+	@Test
+	public void slice100to10000() {
+		slice(100, 10000);
+	}
+
+	@Test
+	public void slice1to4() {
+		slice(1, 4);
+	}
+
+	@Test
+	public void sliceAllSpecific() {
+		if(data.length > 1)
+			slice(data[0], data[data.length - 1] + 1);
+	}
+
+	private void slice(int l, int u) {
+		try {
+
+			OffsetSliceInfo a = o.slice(l, u);
+			a.offsetSlice.toString();
+			if(data.length > 0 && data[data.length - 1] > u) {
+
+				AIterator it = a.offsetSlice.getIterator();
+				int i = 0;
+				while(i < data.length && data[i] < l)
+					i++;
+
+				while(data[i] < u) {
+					assertEquals(data[i] - l, it.value());
+					if(a.offsetSlice.getOffsetToLast() > it.value())
+						it.next();
+					i++;
+				}
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("Failed to slice first 100");
+		}
+
 	}
 
 	public static void compare(AOffset o, int[] v) {
@@ -461,33 +580,34 @@ public class OffsetTests {
 		if(o.getSize() != v.length) {
 			fail("Incorrect result sizes : " + o + " " + Arrays.toString(v));
 		}
-		if(v[0] != i.value())
-			fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
-				+ " but was :" + o.toString());
-		for(int j = 1; j < v.length; j++) {
-			i.next();
-			if(v[j] != i.value())
+		if(o.getSize() > 0) {
+			if(v[0] != i.value())
 				fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
 					+ " but was :" + o.toString());
+			for(int j = 1; j < v.length; j++) {
+				i.next();
+				if(v[j] != i.value())
+					fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
+						+ " but was :" + o.toString());
+			}
 		}
-		if(i.getOffsetsIndex() != o.getOffsetsLength())
-			fail("The allocated offsets are longer than needed: idx " + i.getOffsetsIndex() + " vs len "
-				+ o.getOffsetsLength() + "\n" + Arrays.toString(v));
 	}
 
 	public static void compareOffsetIterator(AOffset o, int[] v) {
 		if(o.getSize() != v.length) {
 			fail("Incorrect result sizes : " + o + " " + Arrays.toString(v));
 		}
-		AOffsetIterator i = o.getOffsetIterator();
-		if(v[0] != i.value())
-			fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
-				+ " but was :" + o.toString());
-		for(int j = 1; j < v.length; j++) {
-			i.next();
-			if(v[j] != i.value())
+		if(o.getSize() > 0) {
+			AOffsetIterator i = o.getOffsetIterator();
+			if(v[0] != i.value())
 				fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
 					+ " but was :" + o.toString());
+			for(int j = 1; j < v.length; j++) {
+				i.next();
+				if(v[j] != i.value())
+					fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
+						+ " but was :" + o.toString());
+			}
 		}
 	}
 }

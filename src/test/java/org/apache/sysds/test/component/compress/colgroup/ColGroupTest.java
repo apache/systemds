@@ -20,7 +20,6 @@
 package org.apache.sysds.test.component.compress.colgroup;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -163,9 +162,13 @@ public class ColGroupTest extends ColGroupBase {
 	}
 
 	private void decompressToSparseBlock(MatrixBlock ot, MatrixBlock bt, int rl, int ru) {
+		decompressToSparseBlock(base, other, ot, bt, rl, ru);
+	}
+
+	private void decompressToSparseBlock(AColGroup a, AColGroup b, MatrixBlock ot, MatrixBlock bt, int rl, int ru) {
 		try {
-			base.decompressToSparseBlock(ot.getSparseBlock(), rl, ru);
-			other.decompressToSparseBlock(bt.getSparseBlock(), rl, ru);
+			a.decompressToSparseBlock(ot.getSparseBlock(), rl, ru);
+			b.decompressToSparseBlock(bt.getSparseBlock(), rl, ru);
 			compare(ot, bt);
 		}
 		catch(DMLCompressionException e) {
@@ -460,8 +463,10 @@ public class ColGroupTest extends ColGroupBase {
 			AColGroup bs = base.rightMultByMatrix(right);
 			AColGroup os = other.rightMultByMatrix(right);
 			if(bs == null || os == null) // if null return
-				if(bs != os)
+				if(bs != os){
 					fail("both results are not equally null");
+					return;
+				}
 				else
 					return;
 			bs = bs.sliceColumns(4, 6);
@@ -821,6 +826,10 @@ public class ColGroupTest extends ColGroupBase {
 	}
 
 	protected void UA_ROW(AggregateUnaryOperator op, int rl, int ru) {
+		UA_ROW(op, rl, ru, base, other, nRow);
+	}
+
+	protected static void UA_ROW(AggregateUnaryOperator op, int rl, int ru, AColGroup a, AColGroup b, int nRow) {
 		try {
 			double[] res1 = new double[ru];
 			double[] res2 = new double[ru];
@@ -829,8 +838,8 @@ public class ColGroupTest extends ColGroupBase {
 				Arrays.fill(res2, 1);
 			}
 
-			base.unaryAggregateOperations(op, res1, nRow, rl, ru);
-			other.unaryAggregateOperations(op, res2, nRow, rl, ru);
+			a.unaryAggregateOperations(op, res1, nRow, rl, ru);
+			b.unaryAggregateOperations(op, res2, nRow, rl, ru);
 			TestUtils.compareMatrices(res1, res2, 0.0001);
 		}
 		catch(Exception e) {
@@ -2102,15 +2111,104 @@ public class ColGroupTest extends ColGroupBase {
 		assertTrue(co < eo);
 	}
 
-	@Test
-	public void copyMaintainPointers() {
-		AColGroup a = base.copy();
-		AColGroup b = other.copy();
+	// @Test
+	// public void copyMaintainPointers() {
+	// 	AColGroup a = base.copy();
+	// 	AColGroup b = other.copy();
 
-		assertTrue(a.getColIndices() == base.getColIndices());
-		assertTrue(b.getColIndices() == other.getColIndices());
-		// assertFalse(a.getColIndices() == other.getColIndices());
-		assertFalse(a == base);
-		assertFalse(b == other);
+	// 	assertTrue(a.getColIndices() == base.getColIndices());
+	// 	assertTrue(b.getColIndices() == other.getColIndices());
+	// 	// assertFalse(a.getColIndices() == other.getColIndices());
+	// 	assertFalse(a == base);
+	// 	assertFalse(b == other);
+	// }
+
+	@Test
+	public void sliceRowsBeforeEnd() {
+		if(nRow > 10)
+			sliceRows(0, nRow - 1);
+	}
+
+	@Test
+	public void sliceRowsFull() {
+		if(nRow > 10)
+			sliceRows(0, nRow);
+	}
+
+	@Test
+	public void sliceRowsAfterStart() {
+		if(nRow > 10)
+			sliceRows(3, nRow);
+	}
+
+	@Test
+	public void sliceRowsMiddle() {
+		if(nRow > 10)
+			sliceRows(5, nRow - 3);
+	}
+
+	@Test
+	public void sliceRowsEnd() {
+		if(nRow > 10)
+			sliceRows(nRow - 7, nRow - 4);
+	}
+
+	@Test
+	public void sliceRowsStart() {
+		if(nRow > 10)
+			sliceRows(2, 7);
+	}
+
+	public void sliceRows(int rl, int ru) {
+		try {
+			if(base instanceof ColGroupRLE || other instanceof ColGroupRLE) {
+				expectNotImplementedSlice(rl, ru);
+				return;
+			}
+
+			AColGroup a = base.sliceRows(rl, ru);
+			AColGroup b = other.sliceRows(rl, ru);
+			final int newNRow = ru - rl;
+
+			if(a == null || b == null) 
+				// one side is concluded empty
+				// We do not enforce that empty is returned if it is empty, since some column groups
+				// are to expensive to analyze if empty.
+				return;
+			assertTrue(a.getColIndices() == base.getColIndices());
+			assertTrue(b.getColIndices() == other.getColIndices());
+			UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1), 0, newNRow, a, b, newNRow);
+
+			int nRow = ru - rl;
+			MatrixBlock ot = sparseMB(ru - rl, maxCol);
+			MatrixBlock bt = sparseMB(ru - rl, maxCol);
+			decompressToSparseBlock(a, b, ot, bt, 0, nRow);
+
+			MatrixBlock otd = denseMB(ru - rl, maxCol);
+			MatrixBlock btd = denseMB(ru - rl, maxCol);
+			decompressToDenseBlock(otd, btd, a, b, 0, nRow);
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
+	private void expectNotImplementedSlice(int rl, int ru) {
+		boolean exception = false;
+		try {
+			base.sliceRows(rl, ru);
+			other.sliceRows(rl, ru);
+		}
+		catch(NotImplementedException nie) {
+			// good
+			exception = true;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+		assertTrue(exception);
 	}
 }

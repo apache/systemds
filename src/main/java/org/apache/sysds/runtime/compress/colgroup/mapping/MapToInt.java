@@ -187,9 +187,10 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
-	public void count(int[] ret) {
+	public int[] getCounts(int[] ret) {
 		for(int i = 0; i < _data.length; i++)
 			ret[_data[i]]++;
+		return ret;
 	}
 
 	@Override
@@ -225,5 +226,10 @@ public class MapToInt extends AMapToData {
 		}
 		ret.copyInt(_data);
 		return ret;
+	}
+
+	@Override
+	public AMapToData slice(int l, int u) {
+		return new MapToInt(getUnique(), Arrays.copyOfRange(_data, l, u));
 	}
 }

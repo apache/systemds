@@ -142,10 +142,11 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	protected void count(int[] ret) {
+	public int[] getCounts(int[] ret) {
 		final int sz = size();
 		ret[1] = _data.cardinality();
 		ret[0] = sz - ret[1];
+		return ret;
 	}
 
 	@Override
@@ -317,5 +318,10 @@ public class MapToBit extends AMapToData {
 
 			return c;
 		}
+	}
+
+	@Override
+	public AMapToData slice(int l, int u) {
+		return new MapToBit(getUnique(), _data.get(l,u), u - l);
 	}
 }

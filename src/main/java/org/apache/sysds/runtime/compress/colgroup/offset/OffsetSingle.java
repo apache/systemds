@@ -63,11 +63,6 @@ public class OffsetSingle extends AOffset {
 	}
 
 	@Override
-	public int getOffsetsLength() {
-		return 0;
-	}
-
-	@Override
 	public long getInMemorySize() {
 		return estimateInMemorySize();
 	}
@@ -78,12 +73,32 @@ public class OffsetSingle extends AOffset {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(OffsetFactory.OFF_TYPE.SINGLE_OFFSET.ordinal());
+		out.writeByte(OffsetFactory.OFF_TYPE_SPECIALIZATIONS.SINGLE_OFFSET.ordinal());
 		out.writeInt(off);
 	}
 
 	public static OffsetSingle readFields(DataInput in) throws IOException {
 		return new OffsetSingle(in.readInt());
+	}
+
+	@Override
+	public OffsetSliceInfo slice(int l, int u) {
+
+		if(l <= off && u > off)
+			return new OffsetSliceInfo(0, 1, new OffsetSingle(off - l));
+		else
+			return new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+
+	}
+
+	@Override
+	protected AOffset moveIndex(int m) {
+		return new OffsetSingle(off - m);
+	}
+
+	@Override
+	protected int getLength() {
+		return 1;
 	}
 
 	private class IterateSingle extends AIterator {

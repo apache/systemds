@@ -21,18 +21,14 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.lang.ref.SoftReference;
 
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 
-public abstract class AColGroupValue extends ADictBasedColGroup implements Cloneable {
+public abstract class AColGroupValue extends ADictBasedColGroup {
 	private static final long serialVersionUID = -6835757655517301955L;
-
-	private static final boolean soft = true;
 
 	/** The count of each distinct value contained in the dictionary */
 	private SoftReference<int[]> counts = null;
@@ -67,18 +63,12 @@ public abstract class AColGroupValue extends ADictBasedColGroup implements Clone
 	 * @return The count of each value in the MatrixBlock.
 	 */
 	public final int[] getCounts() {
-		if(soft){
-
-			int[] ret = getCachedCounts();
-			if(ret == null) {
-				ret = getCounts(new int[getNumValues()]);
-				counts = new SoftReference<>(ret);
-			}
-			return ret;
+		int[] ret = getCachedCounts();
+		if(ret == null) {
+			ret = getCounts(new int[getNumValues()]);
+			counts = new SoftReference<>(ret);
 		}
-		else{
-			return getCounts(new int[getNumValues()]);
-		}
+		return ret;
 	}
 
 	/**
@@ -146,61 +136,17 @@ public abstract class AColGroupValue extends ADictBasedColGroup implements Clone
 	}
 
 	@Override
-	protected Object clone() {
-		try {
-			return super.clone();
-		}
-		catch(CloneNotSupportedException e) {
-			throw new DMLCompressionException("Error while cloning: " + getClass().getSimpleName(), e);
-		}
-	}
-
-	protected AColGroup copyAndSet(ADictionary newDictionary) {
-		AColGroupValue clone = (AColGroupValue) this.clone();
-		clone._dict = newDictionary;
-		return clone;
-	}
-
-	@Override
-	protected AColGroup copyAndSet(int[] colIndexes, double[] newDictionary) {
-		return copyAndSet(colIndexes, Dictionary.create(newDictionary));
-	}
-
-	@Override
-	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
-		AColGroupValue clone = (AColGroupValue) this.clone();
-		clone._dict = newDictionary;
-		clone.setColIndices(colIndexes);
-		return clone;
-	}
-
-	@Override
-	public AColGroupValue copy() {
-		return (AColGroupValue) this.clone();
-	}
-
-	@Override
 	protected AColGroup sliceSingleColumn(int idx) {
 		final int[] retIndexes = new int[] {0};
-		if(_colIndexes.length == 1) {
-			final AColGroupValue ret = (AColGroupValue) this.clone();
-			ret._colIndexes = retIndexes;
-			ret._dict = ret._dict.clone();
-			ret._dict.getNumberOfValues(1);
-			return ret;
-		}
-		else {
-			final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
-			if(retDict == null)
-				return new ColGroupEmpty(retIndexes);
-			else {
-				final AColGroupValue ret = (AColGroupValue) this.clone();
-				ret._colIndexes = retIndexes;
-				ret._dict = retDict;
-				ret._dict.getNumberOfValues(1);
-				return ret;
-			}
-		}
+		if(_colIndexes.length == 1)
+			return copyAndSet(retIndexes, _dict);
+
+		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
+		if(retDict == null)
+			return new ColGroupEmpty(retIndexes);
+		else
+			return copyAndSet(retIndexes, retDict);
+
 	}
 
 	@Override
@@ -208,11 +154,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup implements Clone
 		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
 		if(retDict == null)
 			return new ColGroupEmpty(outputCols);
-		final AColGroupValue ret = (AColGroupValue) this.clone();
-		ret._dict = retDict;
-		ret._colIndexes = outputCols;
-		ret._dict.getNumberOfValues(outputCols.length);
-		return ret;
+		return copyAndSet(outputCols, retDict);
 	}
 
 	@Override
@@ -252,10 +194,6 @@ public abstract class AColGroupValue extends ADictBasedColGroup implements Clone
 			return ColGroupEmpty.create(max);
 		else
 			return copyAndSet(Util.genColsIndices(max), d);
-	}
-
-	protected AColGroup rexpandCols(int max, ADictionary d) {
-		return (d == null) ? ColGroupEmpty.create(max) : copyAndSet(Util.genColsIndices(max), d);
 	}
 
 	@Override

@@ -191,9 +191,10 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
-	public void count(int[] ret){
+	public int[] getCounts(int[] ret) {
 		for(int i = 0; i < _data.length; i++)
 			ret[_data[i]]++; 
+		return ret;
 	}
 
 	@Override
@@ -225,5 +226,10 @@ public class MapToChar extends AMapToData {
 			prev = _data[i];
 		}
 		return c;
+	}
+
+	@Override
+	public AMapToData slice(int l, int u) {
+		return new MapToChar(getUnique(), Arrays.copyOfRange(_data, l, u));
 	}
 }

@@ -114,9 +114,10 @@ public class MapToUByte extends MapToByte {
 	}
 
 	@Override
-	public void count(int[] ret) {
+	public int[] getCounts(int[] ret) {
 		for(int i = 0; i < _data.length; i++)
 			ret[_data[i]]++;
+			return ret;
 	}
 
 	@Override

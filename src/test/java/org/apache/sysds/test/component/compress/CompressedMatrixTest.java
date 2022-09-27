@@ -145,11 +145,9 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		if(!(cmb instanceof CompressedMatrixBlock))
 			return; // Input was not compressed then just pass test
 		if(!(cmb.getNonZeros() >= mb.getNonZeros())) { // guarantee that the nnz is at least the nnz
-			LOG.error(cmb);
 			fail(bufferedToString + "\nIncorrect number of non Zeros should guarantee greater than or equals but are "
 				+ cmb.getNonZeros() + " and should be: " + mb.getNonZeros());
 		}
-
 	}
 
 	@Test
@@ -687,11 +685,37 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
-	public void toRDDAndBack() {
-		JavaSparkContext sc = SparkExecutionContext.getSparkContextStatic();
-		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = SparkExecutionContext.toMatrixJavaPairRDD(sc, cmb, 200);
-		MatrixBlock back = SparkExecutionContext.toMatrixBlock(rdd, mb.getNumRows(), mb.getNumColumns(), 200,
-			mb.getNonZeros());
-		compareResultMatrices(back, mb, 1);
+	public void toRDDAndBack100() {
+		toRDDAndBack(100);
+	}
+
+	@Test
+	public void toRDDAndBack200() {
+		toRDDAndBack(200);
+	}
+
+	@Test
+	public void toRDDAndBack500() {
+		toRDDAndBack(500);
+	}
+
+	@Test
+	public void toRDDAndBack1000() {
+		toRDDAndBack(1000);
+	}
+
+
+	public void toRDDAndBack(int blen) {
+		try {
+			JavaSparkContext sc = SparkExecutionContext.getSparkContextStatic();
+			JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = SparkExecutionContext.toMatrixJavaPairRDD(sc, cmb, blen);
+			MatrixBlock back = SparkExecutionContext.toMatrixBlock(rdd, mb.getNumRows(), mb.getNumColumns(), blen,
+				mb.getNonZeros());
+			compareResultMatrices(back, mb, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 }

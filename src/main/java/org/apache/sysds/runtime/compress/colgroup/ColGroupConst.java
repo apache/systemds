@@ -418,11 +418,6 @@ public class ColGroupConst extends ADictBasedColGroup {
 	}
 
 	@Override
-	public AColGroup copy() {
-		return create(_colIndexes, _dict.clone());
-	}
-
-	@Override
 	public boolean containsValue(double pattern) {
 		return _dict.containsValue(pattern);
 	}
@@ -520,6 +515,19 @@ public class ColGroupConst extends ADictBasedColGroup {
 	}
 
 	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		return this;
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		if(g instanceof ColGroupConst && g._colIndexes.length == _colIndexes.length &&
+			((ColGroupConst) g)._dict.eq(_dict))
+			return this;
+		return null;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
@@ -527,4 +535,5 @@ public class ColGroupConst extends ADictBasedColGroup {
 		sb.append(_dict.getString(_colIndexes.length));
 		return sb.toString();
 	}
+
 }

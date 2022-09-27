@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -67,7 +68,7 @@ public class Dictionary extends ADictionary {
 		return nonZero ? new Dictionary(values) : null;
 	}
 
-	public static Dictionary createNoCheck(double[] values){
+	public static Dictionary createNoCheck(double[] values) {
 		return new Dictionary(values);
 	}
 
@@ -1063,5 +1064,20 @@ public class Dictionary extends ADictionary {
 	protected void TSMMToUpperTriangleSparseScaling(SparseBlock left, int[] rowsLeft, int[] colsRight, int[] scale,
 		MatrixBlock result) {
 		DictLibMatrixMult.TSMMToUpperTriangleSparseDenseScaling(left, _values, rowsLeft, colsRight, scale, result);
+	}
+
+	@Override
+	public boolean eq(ADictionary o) {
+		if(o instanceof Dictionary)
+			return Arrays.equals(_values, ((Dictionary) o)._values);
+		else if(o instanceof MatrixBlockDictionary){
+			final MatrixBlock mb = ((MatrixBlockDictionary) o).getMatrixBlock();
+			if(mb.isInSparseFormat())
+				throw new NotImplementedException();
+			final double[] dv = mb.getDenseBlockValues();
+			return Arrays.equals(_values, dv);
+		}
+		
+		return false;
 	}
 }

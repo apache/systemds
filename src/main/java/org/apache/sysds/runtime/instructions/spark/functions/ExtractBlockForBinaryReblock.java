@@ -19,16 +19,21 @@
 
 package org.apache.sysds.runtime.instructions.spark.functions;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import scala.Tuple2;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import scala.Tuple2;
 
 public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
 {
@@ -53,6 +58,8 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 	public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
 		throws Exception 
 	{
+		if(in_blen == out_blen)
+			return Collections.singletonList(arg0).listIterator();
 		MatrixIndexes ixIn = arg0._1();
 		MatrixBlock in = arg0._2();
 		
@@ -85,7 +92,11 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 				final int cixi = UtilFunctions.computeCellInBlock(rowLower, out_blen);
 				final int cixj = UtilFunctions.computeCellInBlock(colLower, out_blen);
 				
-				if( aligned ) {
+				if(in instanceof CompressedMatrixBlock){
+					blk.allocateSparseRowsBlock(false);
+					CLALibDecompress.decompressTo((CompressedMatrixBlock) in, blk, cixi, cixj, 1);
+				}
+				else if( aligned ) {
 					blk.appendToSparse(in, cixi, cixj);
 					blk.setNonZeros(in.getNonZeros());
 				}

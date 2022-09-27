@@ -62,6 +62,7 @@ public class SparseEncoding implements IEncode {
 		}
 		else
 			return e.combine(this);
+
 	}
 
 	protected IEncode combineSparse(SparseEncoding e) {
@@ -157,9 +158,9 @@ public class SparseEncoding implements IEncode {
 			}
 			else {// fl is last
 				int nv = rMap.getIndex(itr.getDataIndex()) * nVl + defL;
-				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
-				nv = lMap.getIndex(itl.getDataIndex()) + defR;
 				newUID = addVal(nv, fr, d, newUID, tmpVals, retOff);
+				nv = lMap.getIndex(itl.getDataIndex()) + defR;
+				newUID = addVal(nv, il, d, newUID, tmpVals, retOff);
 			}
 		}
 		else if(il < fl) {

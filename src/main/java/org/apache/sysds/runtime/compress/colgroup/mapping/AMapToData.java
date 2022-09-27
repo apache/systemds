@@ -27,7 +27,6 @@ import java.util.BitSet;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -383,24 +382,7 @@ public abstract class AMapToData implements Serializable {
 	 * @param counts The object to return.
 	 * @return The counts
 	 */
-	public final int[] getCounts(int[] counts) {
-		count(counts);
-
-		if(counts[counts.length - 1] == 0 || counts[0] == 0) { // small check for first and last index.
-			int actualUnique = 0;
-			for(int c : counts)
-				actualUnique += c > 0 ? 1 : 0;
-
-			throw new DMLCompressionException("Invalid number unique expected: " + counts.length + " but is actually: "
-				+ actualUnique + " type: " + getType());
-		}
-		return counts;
-	}
-
-	protected void count(int[] ret) {
-		for(int i = 0; i < size(); i++)
-			ret[getIndex(i)]++;
-	}
+	public abstract int[] getCounts(int[] counts);
 
 	/**
 	 * PreAggregate into dictionary with two sides of DDC.
@@ -823,6 +805,15 @@ public abstract class AMapToData implements Serializable {
 		}
 		return c;
 	}
+
+	/**
+	 * Slice out the range from lower to upper from this map toData.
+	 * 
+	 * @param l Low value to slice from
+	 * @param u high value to slice to (not inclusive)
+	 * @return A new map containing only the values from the range.
+	 */
+	public abstract AMapToData slice(int l, int u);
 
 	@Override
 	public String toString() {

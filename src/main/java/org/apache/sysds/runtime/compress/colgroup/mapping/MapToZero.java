@@ -103,9 +103,10 @@ public class MapToZero extends AMapToData {
 	}
 
 	@Override
-	protected void count(int[] ret) {
+	public int[] getCounts(int[] ret) {
 		final int sz = size();
 		ret[0] = sz;
+		return ret;
 	}
 
 	@Override
@@ -142,5 +143,10 @@ public class MapToZero extends AMapToData {
 	@Override
 	public int countRuns() {
 		return 1;
+	}
+
+	@Override
+	public AMapToData slice(int l, int u) {
+		return new MapToZero(u - l);
 	}
 }

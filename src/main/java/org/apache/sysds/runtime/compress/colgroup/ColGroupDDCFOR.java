@@ -26,7 +26,6 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
@@ -53,16 +52,13 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	private static final long serialVersionUID = -5769772089913918987L;
 
 	/** Pointers to row indexes in the dictionary */
-	protected AMapToData _data;
+	protected final AMapToData _data;
 
 	/** Reference values in this column group */
-	protected double[] _reference;
+	protected final double[] _reference;
 
 	private ColGroupDDCFOR(int[] colIndexes, ADictionary dict, double[] reference, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
-		if(data.getUnique() != dict.getNumberOfValues(colIndexes.length))
-			throw new DMLCompressionException("Invalid construction of DDC group " + data.getUnique() + " vs. "
-				+ dict.getNumberOfValues(colIndexes.length));
 		_data = data;
 		_reference = reference;
 	}
@@ -335,23 +331,23 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	}
 
 	@Override
-	protected AColGroup sliceSingleColumn(int idx) {
-		ColGroupDDCFOR ret = (ColGroupDDCFOR) super.sliceSingleColumn(idx);
-		// select values from double array.
-		ret._reference = new double[1];
-		ret._reference[0] = _reference[idx];
-		return ret;
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
+		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
+		final double[] newDef = new double[idEnd - idStart];
+		for(int i = idStart, j = 0; i < idEnd; i++, j++)
+			newDef[j] = _reference[i];
+		return create(outputCols, retDict, _data, getCounts(), newDef);
 	}
 
 	@Override
-	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-		ColGroupDDCFOR ret = (ColGroupDDCFOR) super.sliceMultiColumns(idStart, idEnd, outputCols);
-		final int len = idEnd - idStart;
-		ret._reference = new double[len];
-		for(int i = 0, ii = idStart; i < len; i++, ii++)
-			ret._reference[i] = _reference[ii];
+	protected AColGroup sliceSingleColumn(int idx) {
+		final int[] retIndexes = new int[] {0};
+		if(_colIndexes.length == 1) // early abort, only single column already.
+			return create(retIndexes, _dict, _data, getCounts(), _reference);
+		final double[] newDef = new double[] {_reference[idx]};
+		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
+		return create(retIndexes, retDict, _data, getCounts(), newDef);
 
-		return ret;
 	}
 
 	@Override
@@ -424,6 +420,22 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	@Override
 	protected AColGroup allocateRightMultiplicationCommon(double[] common, int[] colIndexes, ADictionary preAgg) {
 		return create(colIndexes, preAgg, _data, getCachedCounts(), common);
+	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		AMapToData sliceMap = _data.slice(rl, ru);
+		return new ColGroupDDCFOR(_colIndexes, _dict, _reference, sliceMap, null);
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+		return create(colIndexes, newDictionary, _data, getCounts(), _reference);
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
 	}
 
 	@Override

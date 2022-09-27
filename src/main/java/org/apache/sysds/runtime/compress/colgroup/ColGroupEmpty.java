@@ -144,11 +144,6 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	public AColGroup copy() {
-		return new ColGroupEmpty(_colIndexes);
-	}
-
-	@Override
 	public boolean containsValue(double pattern) {
 		return pattern == 0;
 	}
@@ -306,4 +301,22 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		int[] cols = readCols(in);
 		return new ColGroupEmpty(cols);
 	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		return null;
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes) {
+		return new ColGroupEmpty(colIndexes);
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		if(g instanceof ColGroupEmpty && g._colIndexes.length == _colIndexes.length)
+			return this;
+		return null;
+	}
+
 }

@@ -258,9 +258,9 @@ public class CompressedMatrixBlockFactory {
 		AColGroup cg = ColGroupConst.create(numCols, value);
 		block.allocateColGroup(cg);
 		block.recomputeNonZeros();
-		if(block.getNumRows() == 0 || block.getNumColumns() == 0) {
+		if(block.getNumRows() == 0 || block.getNumColumns() == 0)
 			throw new DMLCompressionException("Invalid size of allocated constant compressed matrix block");
-		}
+		
 		return block;
 	}
 

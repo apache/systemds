@@ -113,7 +113,7 @@ public class MapToByte extends AMapToData {
 	}
 
 	protected static MapToByte readFields(DataInput in) throws IOException {
-		int unique = in.readInt();
+		final int unique = in.readInt();
 		final int length = in.readInt();
 		final byte[] data = new byte[length];
 		for(int i = 0; i < length; i++)
@@ -144,9 +144,10 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public void count(int[] ret) {
+	public int[] getCounts(int[] ret) {
 		for(int i = 0; i < _data.length; i++)
 			ret[_data[i] & 0xFF]++;
+			return ret;
 	}
 
 	@Override
@@ -202,5 +203,10 @@ public class MapToByte extends AMapToData {
 		}
 		ret.copy(this);
 		return ret;
+	}
+
+	@Override
+	public AMapToData slice(int l, int u) {
+		return new MapToByte(getUnique(), Arrays.copyOfRange(_data, l, u));
 	}
 }

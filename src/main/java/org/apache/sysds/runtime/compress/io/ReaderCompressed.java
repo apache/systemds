@@ -19,30 +19,33 @@
 
 package org.apache.sysds.runtime.compress.io;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Reader;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.lib.CLALibCombine;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 
-public class ReaderCompressed extends MatrixReader {
+public final class ReaderCompressed extends MatrixReader {
 
 	public static ReaderCompressed create() {
 		return new ReaderCompressed();
 	}
 
 	public static MatrixBlock readCompressedMatrixFromHDFS(String fname) throws IOException {
-		return create().readMatrixFromHDFS(fname, 0, 0, 0, 0);
+		return create().readMatrixFromHDFS(fname, 10, 10, 10, 100);
 	}
 
 	@Override
@@ -55,15 +58,7 @@ public class ReaderCompressed extends MatrixReader {
 
 		checkValidInputFile(fs, path);
 
-		MatrixBlock cmb = readCompressedMatrix(path, job, fs);
-
-		if(cmb.getNumRows() != rlen)
-			LOG.warn("Metadata file does not correlate with compressed file, NRows : " + cmb.getNumRows() + " vs " + rlen);
-		if(cmb.getNumColumns() != clen)
-			LOG.warn(
-				"Metadata file does not correlate with compressed file, NCols : " + cmb.getNumColumns() + " vs " + clen);
-
-		return cmb;
+		return readCompressedMatrix(path, job, fs, (int) rlen, (int) clen, blen);
 	}
 
 	@Override
@@ -72,28 +67,30 @@ public class ReaderCompressed extends MatrixReader {
 		throw new NotImplementedException("Not implemented reading compressedMatrix from input stream");
 	}
 
-	private static MatrixBlock readCompressedMatrix(Path path, JobConf job, FileSystem fs) throws IOException {
-		if(fs.getFileStatus(path).isDirectory())
-			return readCompressedMatrixFolder(path, job, fs);
-		else
-			return readCompressedMatrixSingleFile(path, job, fs);
-	}
+	private static MatrixBlock readCompressedMatrix(Path path, JobConf job, FileSystem fs, int rlen, int clen, int blen)
+		throws IOException {
+		final Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path));
 
-	private static MatrixBlock readCompressedMatrixFolder(Path path, JobConf job, FileSystem fs) {
-		throw new NotImplementedException();
-	}
-
-	private static MatrixBlock readCompressedMatrixSingleFile(Path path, JobConf job, FileSystem fs) throws IOException {
-		final InputStream is = fs.open(path);
-		final DataInput in = new DataInputStream(is);
-		MatrixBlock ret;
 		try {
-			ret = CompressedMatrixBlock.read(in);
+			// Materialize all sub blocks.
+			Map<MatrixIndexes, MatrixBlock> data = new HashMap<>();
+
+			// Use write and read interface to read and write this object.
+			MatrixIndexes key = new MatrixIndexes();
+			CompressedWriteBlock value = new CompressedWriteBlock();
+
+			while(reader.next(key, value)) {
+				data.put(key, value.get());
+				key = new MatrixIndexes();
+				value = new CompressedWriteBlock();
+			}
+			if(data.size() == 1)
+				return data.entrySet().iterator().next().getValue();
+			else
+				return CLALibCombine.combine(data);
 		}
 		finally {
-			is.close();
+			IOUtilFunctions.closeSilently(reader);
 		}
-		return ret;
 	}
-
 }

@@ -197,9 +197,7 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	protected static void tsmm(double[] result, int numColumns, int[] counts, ADictionary dict, int[] colIndexes) {
 		dict = dict.getMBDict(colIndexes.length);
-		if(dict == null) // null if empty
-			return;
-		MatrixBlock mb = ((MatrixBlockDictionary) dict).getMatrixBlock();
+		final MatrixBlock mb = ((MatrixBlockDictionary) dict).getMatrixBlock();
 		if(mb.isInSparseFormat())
 			tsmmSparse(result, numColumns, mb.getSparseBlock(), counts, colIndexes);
 		else

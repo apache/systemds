@@ -19,77 +19,129 @@
 
 package org.apache.sysds.runtime.compress.io;
 
-import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.HDFSTool;
 
-public class WriterCompressed extends MatrixWriter {
+public final class WriterCompressed extends MatrixWriter {
+
+	protected static final Log LOG = LogFactory.getLog(ReaderCompressed.class.getName());
 
 	public static WriterCompressed create(FileFormatProperties props) {
 		return new WriterCompressed();
 	}
 
 	public static void writeCompressedMatrixToHDFS(MatrixBlock src, String fname) throws IOException {
-		create(null).writeMatrixToHDFS(src, fname, 0, 0, 0, 0, false);
+		writeCompressedMatrixToHDFS(src, fname, src.getNumRows(), src.getNumColumns(), OptimizerUtils.DEFAULT_BLOCKSIZE,
+			src.getNonZeros(), false);
+	}
+
+	public static void writeCompressedMatrixToHDFS(MatrixBlock src, String fname, int blen) throws IOException {
+		writeCompressedMatrixToHDFS(src, fname, src.getNumRows(), src.getNumColumns(), blen, src.getNonZeros(), false);
+	}
+
+	public static void writeCompressedMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen,
+		long nnz, boolean diag) throws IOException {
+		create(null).writeMatrixToHDFS(src, fname, rlen, clen, blen, nnz, diag);
 	}
 
 	@Override
 	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag)
 		throws IOException {
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		Path path = new Path(fname);
-		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-
-		HDFSTool.deleteFileIfExistOnHDFS(fname);
-		try {
-			writeCompressedMatrixToHDFS(path, job, fs, src);
-		}
-		catch(DMLCompressionException ce) {
-			fs.delete(path, true);
-			throw ce;
-		}
-		finally {
-			IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
-		}
+		if(blen <= 0)
+			throw new DMLRuntimeException("Invalid block size for writing to disk");
+		if(diag)
+			throw new DMLRuntimeException("Not supported diag for compressed writing.");
+		if(fname == null)
+			throw new DMLRuntimeException("Invalid missing path.");
+		if(src == null)
+			throw new DMLRuntimeException("Null matrix block invalid");
+		if(src.getNumRows() != rlen || src.getNumColumns() != clen)
+			throw new DMLRuntimeException("Invalid number of rows or columns specified not matching");
+		write(src, fname, blen);
 	}
 
 	@Override
 	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen) throws IOException {
-		throw new NotImplementedException();
+		if(rlen <= 0)
+			throw new RuntimeException("Invalid empty write with rlen : " + rlen);
+		if(clen <= 0)
+			throw new RuntimeException("Invalid empty write with clen : " + clen);
+		if(blen <= 0)
+			throw new RuntimeException("Invalid empty write with blen " + blen);
+		if(rlen > Integer.MAX_VALUE || clen > Integer.MAX_VALUE)
+			throw new RuntimeException("Unable to create compressed matrix block larger than IntMax");
+		if(fname == null)
+			throw new RuntimeException("Invalid null file name to write to");
+		CompressedMatrixBlock m = CompressedMatrixBlockFactory.createConstant((int) rlen, (int) clen, 0.0);
+		write(m, fname, blen);
 	}
 
-	private void writeCompressedMatrixToHDFS(Path path, JobConf conf, FileSystem fs, MatrixBlock src)
-		throws IOException {
-		final OutputStream os = fs.create(path, true);
-		final DataOutput out = new DataOutputStream(os);
-		try {
-			final MatrixBlock mb = src instanceof CompressedMatrixBlock ? // If compressed
-				src : // Do not compress
-				CompressedMatrixBlockFactory.compress(src).getLeft(); // otherwise compress
+	private void write(MatrixBlock src, String fname, int blen) throws IOException {
+		final int k = OptimizerUtils.getParallelTextWriteParallelism();
+		final Path path = new Path(fname);
+		final JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+		// Delete previous
+		HDFSTool.deleteFileIfExistOnHDFS(path, job);
 
-			if(!(mb instanceof CompressedMatrixBlock))
-				throw new DMLCompressionException("Input was not compressed, therefore the file was not saved to disk");
+		// Make Writer (New interface)
+		Writer w = SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096), Writer.blockSize(4096),
+			Writer.keyClass(MatrixIndexes.class), Writer.valueClass(CompressedWriteBlock.class),
+			Writer.compression(SequenceFile.CompressionType.RECORD), Writer.replication((short) 1));
 
-			CompressedMatrixBlock cmb = (CompressedMatrixBlock) mb;
-			cmb.write(out);
-		}
-		finally {
-			os.close();
+		final int rlen = src.getNumRows();
+		final int clen = src.getNumColumns();
+
+		if(rlen <= blen && clen <= blen)
+			writeSingleBlock(w, src, k);
+		else
+			writeMultiBlock(w, src, rlen, clen, blen, k);
+
+		IOUtilFunctions.closeSilently(w);
+
+		// Cleanup
+		final FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
+	}
+
+	private void writeSingleBlock(Writer w, MatrixBlock b, int k) throws IOException {
+		MatrixIndexes idx = new MatrixIndexes(1, 1);
+		MatrixBlock mc = CompressedMatrixBlockFactory.compress(b, k).getLeft();
+		w.append(idx, new CompressedWriteBlock(mc));
+	}
+
+	private void writeMultiBlock(Writer w, MatrixBlock b, int rlen, int clen, int blen, int k) throws IOException {
+		final MatrixIndexes indexes = new MatrixIndexes();
+		for(int br = 0; br * blen < rlen; br++) {
+			for(int bc = 0; bc * blen < clen; bc++) {
+				// Max Row and col in block
+				int sR = br * blen;
+				int sC = bc * blen;
+				int mR = Math.min(br * blen + blen, rlen) - 1;
+				int mC = Math.min(bc * blen + blen, clen) - 1;
+
+				MatrixBlock mb = b.slice(sR, mR, sC, mC);
+				MatrixBlock mc = CompressedMatrixBlockFactory.compress(mb, k).getLeft();
+				indexes.setIndexes(br + 1, bc + 1);
+				w.append(indexes, new CompressedWriteBlock(mc));
+			}
 		}
 	}
 }

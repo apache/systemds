@@ -145,6 +145,12 @@ public abstract class ColGroupBase {
 		return t;
 	}
 
+	protected static  MatrixBlock denseMB(int nRow, int nCol) {
+		MatrixBlock t = new MatrixBlock(nRow, nCol, false);
+		t.allocateDenseBlock();
+		return t;
+	}
+
 	protected MatrixBlock multiBlockDenseMB(int nCol){
 
 		MatrixBlock t = new MatrixBlock(nRow, nCol, false);

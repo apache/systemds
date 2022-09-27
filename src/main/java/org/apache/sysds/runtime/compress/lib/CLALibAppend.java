@@ -84,9 +84,7 @@ public class CLALibAppend {
 		final AColGroup g = ColGroupUncompressed.create(colIdx, left, false);
 		newGroup.add(g);
 		for(AColGroup group : prev) {
-			final AColGroup tmp = group.copy();
-			tmp.shiftColIndices(nColL);
-			newGroup.add(tmp);
+			newGroup.add(group.shiftColIndices(nColL));
 		}
 
 		ret.allocateColGroupList(newGroup);
@@ -158,13 +156,10 @@ public class CLALibAppend {
 		ret.allocateColGroupList(new ArrayList<AColGroup>(left.size() + right.size()));
 
 		for(AColGroup group : left)
-			ret.getColGroups().add(group.copy());
+			ret.getColGroups().add(group);
 
-		for(AColGroup group : right) {
-			final AColGroup tmp = group.copy();
-			tmp.shiftColIndices(leftNumCols);
-			ret.getColGroups().add(tmp);
-		}
+		for(AColGroup group : right) 
+			ret.getColGroups().add(group.shiftColIndices(leftNumCols));
 
 		// meta data maintenance
 		CLALibUtils.combineConstColumns(ret);

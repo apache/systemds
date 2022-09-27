@@ -47,9 +47,7 @@ public class ColGroupOLE extends AColGroupOffset {
 
 	private ColGroupOLE(int[] colIndices, int numRows, boolean zero, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
 		int[] counts) {
-		super(colIndices, numRows, zero, dict, counts);
-		_data = bitmaps;
-		_ptr = bitmapOffs;
+		super(colIndices, numRows, zero, dict, bitmapOffs, bitmaps, counts);
 	}
 
 	protected static AColGroup create(int[] colIndices, int numRows, boolean zeros, ADictionary dict, char[] bitmaps,
@@ -645,6 +643,21 @@ public class ColGroupOLE extends AColGroupOffset {
 		char[] data = readData(in);
 		boolean zeros = in.readBoolean();
 		return new ColGroupOLE(cols, nRows, zeros, dict, data, ptr, null);
+	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+		return create(colIndexes, _numRows, _zeros, newDictionary, _data, _ptr, getCounts());
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
 	}
 
 }

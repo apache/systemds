@@ -31,8 +31,9 @@ public abstract class ASDCZero extends APreAgg {
 	private static final long serialVersionUID = -69266306137398807L;
 
 	/** Sparse row indexes for the data */
-	protected AOffset _indexes;
-	final protected int _numRows;
+	protected final AOffset _indexes;
+	/** The number of rows in this column group */
+	protected final int _numRows;
 
 	protected ASDCZero(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, int[] cachedCounts) {
 		super(colIndices, dict, cachedCounts);

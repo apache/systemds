@@ -33,6 +33,7 @@ import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.io.CompressedWriteBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -76,6 +77,8 @@ public class InputOutputInfo implements Serializable
 		TextInputFormat.class, TextOutputFormat.class, LongWritable.class, Text.class);
 	public static final InputOutputInfo HDF5InputOutputInfo = new InputOutputInfo(
 		TextInputFormat.class, TextOutputFormat.class, LongWritable.class, Text.class);
+	public static final InputOutputInfo CompressedInputOutputInfo = new InputOutputInfo(
+		SequenceFileInputFormat.class, SequenceFileOutputFormat.class, MatrixIndexes.class, CompressedWriteBlock.class);
 
 	@SuppressWarnings("incomplete-switch")
 	public static InputOutputInfo get(DataType dt, FileFormat fmt) {
@@ -91,6 +94,9 @@ public class InputOutputInfo implements Serializable
 					case FRAME:  return BinaryBlockFrameInputOutputInfo;
 					case TENSOR: return BinaryBlockTensorInputOutputInfo;
 				}
+			}
+			case COMPRESSED: {
+				return CompressedInputOutputInfo;
 			}
 		}
 		throw new DMLRuntimeException(

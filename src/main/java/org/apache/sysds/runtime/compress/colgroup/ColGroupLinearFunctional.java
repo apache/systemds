@@ -485,11 +485,6 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	public AColGroup copy() {
-		return this;
-	}
-
-	@Override
 	public boolean containsValue(double pattern) {
 		for(int col = 0; col < getNumCols(); col++) {
 			if(colContainsValue(col, pattern))
@@ -659,4 +654,20 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 		return slopes;
 	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes) {
+		return ColGroupLinearFunctional.create(colIndexes, _coefficents, _numRows);
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
+	}
+
 }

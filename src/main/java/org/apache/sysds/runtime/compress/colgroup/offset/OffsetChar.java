@@ -21,69 +21,25 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class OffsetChar extends AOffset {
 
 	private static final long serialVersionUID = -1192266421395964882L;
-	private static final int maxV = (int) Character.MAX_VALUE;
+	protected static final int maxV = (int) Character.MAX_VALUE;
 
 	private final char[] offsets;
 	private final int offsetToFirst;
 	private final int offsetToLast;
 	private final boolean noZero;
 
-	public OffsetChar(int[] indexes) {
-		this(indexes, 0, indexes.length);
-	}
-
-	public OffsetChar(int[] indexes, int apos, int alen) {
-		int endSize = 0;
-		offsetToFirst = indexes[apos];
-		offsetToLast = indexes[alen - 1];
-		int ov = offsetToFirst;
-		for(int i = apos + 1; i < alen; i++) {
-			final int nv = indexes[i];
-			endSize += 1 + (nv - ov - 1) / maxV;
-			ov = nv;
-		}
-		this.noZero = endSize == alen - apos - 1;
-		offsets = new char[endSize];
-		ov = offsetToFirst;
-		int p = 0;
-		for(int i = apos + 1; i < alen; i++) {
-			final int nv = indexes[i];
-			final int offsetSize = (nv - ov);
-			final int div = offsetSize / maxV;
-			final int mod = offsetSize % maxV;
-			if(mod == 0) {
-				p += div - 1; // skip values
-				offsets[p++] = (char) maxV;
-			}
-			else {
-				p += div; // skip values
-				offsets[p++] = (char) (mod);
-			}
-			ov = nv;
-		}
-	}
-
-	private OffsetChar(char[] offsets, int offsetToFirst, int offsetToLast) {
+	protected OffsetChar(char[] offsets, int offsetToFirst, int offsetToLast, boolean noZero) {
 		this.offsets = offsets;
 		this.offsetToFirst = offsetToFirst;
 		this.offsetToLast = offsetToLast;
-		this.noZero = getNoZero();
-	}
-
-	private boolean getNoZero() {
-		boolean noZero = true;
-		for(char b : offsets)
-			if(b == 0) {
-				noZero = false;
-				break;
-			}
-		return noZero;
+		this.noZero = noZero;
 	}
 
 	@Override
@@ -104,7 +60,7 @@ public class OffsetChar extends AOffset {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(OffsetFactory.OFF_TYPE.CHAR.ordinal());
+		out.writeByte(OffsetFactory.OFF_TYPE_SPECIALIZATIONS.CHAR.ordinal());
 		out.writeInt(offsetToFirst);
 		out.writeInt(offsets.length);
 		out.writeInt(offsetToLast);
@@ -152,11 +108,6 @@ public class OffsetChar extends AOffset {
 		return offsetToLast;
 	}
 
-	@Override
-	public int getOffsetsLength() {
-		return offsets.length;
-	}
-
 	public static OffsetChar readFields(DataInput in) throws IOException {
 		final int offsetToFirst = in.readInt();
 		final int offsetsLength = in.readInt();
@@ -166,7 +117,24 @@ public class OffsetChar extends AOffset {
 		for(int i = 0; i < offsetsLength; i++)
 			offsets[i] = in.readChar();
 
-		return new OffsetChar(offsets, offsetToFirst, offsetToLast);
+		OffsetFactory.getNoZero(offsets);
+		return new OffsetChar(offsets, offsetToFirst, offsetToLast, OffsetFactory.getNoZero(offsets));
+	}
+
+	protected OffsetSliceInfo slice(int lowOff, int highOff, int lowValue, int highValue, int low, int high) {
+		char[] newOffsets = Arrays.copyOfRange(offsets, lowOff, highOff);
+		AOffset off = new OffsetChar(newOffsets, lowValue, highValue, noZero);
+		return new OffsetSliceInfo(low, high + 1, off);
+	}
+
+	@Override
+	protected AOffset moveIndex(int m) {
+		return new OffsetChar(offsets, offsetToFirst - m, offsetToLast - m, noZero);
+	}
+
+	@Override
+	protected int getLength(){
+		return offsets.length;
 	}
 
 	private class IterateCharOffset extends AIterator {
@@ -246,11 +214,6 @@ public class OffsetChar extends AOffset {
 		@Override
 		public int next() {
 			char v = offsets[index];
-			while(v == 0) {
-				offset += maxV;
-				index++;
-				v = offsets[index];
-			}
 			offset += v;
 			index++;
 			return offset;

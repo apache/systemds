@@ -23,6 +23,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
+
 public class OffsetTwo extends AOffset {
 	private static final long serialVersionUID = -3756723021239389269L;
 
@@ -32,6 +34,8 @@ public class OffsetTwo extends AOffset {
 	public OffsetTwo(int first, int last) {
 		this.first = first;
 		this.last = last;
+		if(last <= first)
+			throw new DMLCompressionException("Invalid offsets last should be greater than first");
 	}
 
 	@Override
@@ -65,11 +69,6 @@ public class OffsetTwo extends AOffset {
 	}
 
 	@Override
-	public int getOffsetsLength() {
-		return 1;
-	}
-
-	@Override
 	public long getInMemorySize() {
 		return estimateInMemorySize();
 	}
@@ -80,13 +79,37 @@ public class OffsetTwo extends AOffset {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(OffsetFactory.OFF_TYPE.TWO_OFFSET.ordinal());
+		out.writeByte(OffsetFactory.OFF_TYPE_SPECIALIZATIONS.TWO_OFFSET.ordinal());
 		out.writeInt(first);
 		out.writeInt(last);
 	}
 
 	public static OffsetTwo readFields(DataInput in) throws IOException {
 		return new OffsetTwo(in.readInt(), in.readInt());
+	}
+
+	@Override
+	public OffsetSliceInfo slice(int l, int u) {
+		if(l <= first) {
+			if(u > last)
+				return new OffsetSliceInfo(0, 2, moveIndex(l));
+			else
+				return new OffsetSliceInfo(0, 1, new OffsetSingle(first - l));
+		}
+		else if(l <= last && u > last)
+			return new OffsetSliceInfo(1, 2, new OffsetSingle(last - l));
+		else
+			return new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+	}
+
+	@Override
+	protected AOffset moveIndex(int m) {
+		return new OffsetTwo(first - m, last - m);
+	}
+
+	@Override
+	protected int getLength() {
+		return 2;
 	}
 
 	private class IterateTwo extends AIterator {
@@ -103,7 +126,7 @@ public class OffsetTwo extends AOffset {
 
 		@Override
 		public int skipTo(int idx) {
-			if(idx > first ){
+			if(idx > first) {
 				offset = last;
 				return last;
 			}

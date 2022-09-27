@@ -25,16 +25,23 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.Program;
 
-public class ExecutionContextFactory 
-{
+public class ExecutionContextFactory {
 	public static ExecutionContext createContext() {
-		return createContext( null );
+		return createContext(true, DMLScript.LINEAGE,(Program) null );
 	}
 	
 	public static ExecutionContext createContext(Program prog) {
-		return createContext(true, prog);
+		return createContext(true, DMLScript.LINEAGE, prog);
 	}
-	
+
+	public static SparkExecutionContext createSparkExecutionContext(){
+		return (SparkExecutionContext) createContext(true, DMLScript.LINEAGE, null, ExecMode.SPARK);
+	}
+
+	public static ExecutionContext createContext(ExecMode mode) {
+		return createContext(true, DMLScript.LINEAGE, null, mode);
+	}
+
 	public static ExecutionContext createContext(LocalVariableMap vars, Program prog) {
 		ExecutionContext ec = createContext(false, prog);
 		ec.setVariables(vars);
@@ -44,13 +51,16 @@ public class ExecutionContextFactory
 	public static ExecutionContext createContext(boolean allocateVars, Program prog) {
 		return createContext(allocateVars, DMLScript.LINEAGE, prog );
 	}
+
+	public static ExecutionContext createContext(boolean allocateVars, boolean allocateLineage, Program prog){
+		return createContext(allocateVars, allocateLineage, prog, DMLScript.getGlobalExecMode());
+	}
 	
-	public static ExecutionContext createContext(boolean allocateVars, boolean allocateLineage, Program prog)
-	{
+	public static ExecutionContext createContext(boolean allocateVars, boolean allocateLineage, Program prog,
+		ExecMode mode) {
 		ExecutionContext ec = null;
 
-		switch( DMLScript.getGlobalExecMode() )
-		{
+		switch(mode) {
 			case SINGLE_NODE:
 				//NOTE: even in case of forced singlenode operations, users might still 
 				//want to run remote parfor which requires the correct execution context

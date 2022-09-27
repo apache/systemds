@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -58,7 +59,7 @@ public class ColGroupSDCZeros extends ASDCZero {
 	private static final long serialVersionUID = -3703199743391937991L;
 
 	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
-	protected AMapToData _data;
+	protected final AMapToData _data;
 
 	private ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
 		int[] cachedCounts) {
@@ -703,6 +704,25 @@ public class ColGroupSDCZeros extends ASDCZero {
 	@Override
 	public boolean containsValue(double pattern) {
 		return (pattern == 0) || _dict.containsValue(pattern);
+	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		OffsetSliceInfo off = _indexes.slice(rl, ru);
+		if(off.lIndex == -1)
+			return null;
+		AMapToData newData = _data.slice(off.lIndex, off.uIndex);
+		return new ColGroupSDCZeros(_colIndexes, _numRows, _dict, off.offsetSlice, newData, null);
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+		return create(colIndexes, _numRows, newDictionary, _indexes, _data, getCounts());
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
 	}
 
 	@Override

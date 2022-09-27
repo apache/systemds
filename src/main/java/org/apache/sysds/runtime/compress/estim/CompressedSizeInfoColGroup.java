@@ -84,17 +84,19 @@ public class CompressedSizeInfoColGroup {
 		_cols = columns;
 		_facts = facts;
 		_sizes = calculateCompressionSizes(_cols.length, facts, validCompressionTypes);
-		Map.Entry<CompressionType, Double> bestEntry = null;
+
+		CompressionType tmpBestCompressionType = CompressionType.UNCOMPRESSED;
+		double tmpBestCompressionSize = _sizes.getOrDefault(tmpBestCompressionType, Double.MAX_VALUE);
 		for(Map.Entry<CompressionType, Double> ent : _sizes.entrySet()) {
-			if(bestEntry == null || ent.getValue() < bestEntry.getValue())
-				bestEntry = ent;
+			if(ent.getValue() < tmpBestCompressionSize) {
+				tmpBestCompressionType = ent.getKey();
+				tmpBestCompressionSize = ent.getValue();
+			}
 		}
 
-		_bestCompressionType = bestEntry.getKey();
-		_minSize = bestEntry.getValue();
+		_bestCompressionType = tmpBestCompressionType;
+		_minSize = tmpBestCompressionSize;
 		_map = map;
-		if(LOG.isTraceEnabled())
-			LOG.trace(this);
 	}
 
 	/**
@@ -109,7 +111,7 @@ public class CompressedSizeInfoColGroup {
 
 		_sizes = new EnumMap<>(CompressionType.class);
 		final CompressionType ct = CompressionType.EMPTY;
-		_sizes.put(ct, (double)ColGroupSizes.estimateInMemorySizeEMPTY(columns.length));
+		_sizes.put(ct, (double) ColGroupSizes.estimateInMemorySizeEMPTY(columns.length));
 		_bestCompressionType = ct;
 		_minSize = _sizes.get(ct);
 		_map = null;
@@ -219,8 +221,8 @@ public class CompressedSizeInfoColGroup {
 				nv = fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0);
 				return ColGroupSizes.estimateInMemorySizeDDC(numCols, nv, fact.numRows, fact.tupleSparsity, fact.lossy);
 			case RLE:
-				return ColGroupSizes.estimateInMemorySizeRLE(numCols,  fact.numVals, fact.numRuns, fact.numRows, fact.tupleSparsity,
-					fact.lossy);
+				return ColGroupSizes.estimateInMemorySizeRLE(numCols, fact.numVals, fact.numRuns, fact.numRows,
+					fact.tupleSparsity, fact.lossy);
 			case OLE:
 				nv = fact.numVals + (fact.zeroIsMostFrequent ? 1 : 0);
 				return ColGroupSizes.estimateInMemorySizeOLE(numCols, nv, fact.numOffs + fact.numVals, fact.numRows,

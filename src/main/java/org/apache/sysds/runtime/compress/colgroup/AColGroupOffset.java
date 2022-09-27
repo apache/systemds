@@ -37,18 +37,20 @@ public abstract class AColGroupOffset extends APreAgg {
 	private static final long serialVersionUID = -4105103687174067602L;
 
 	/** Bitmaps, one per uncompressed value tuple in dict. */
-	protected int[] _ptr;
+	protected final int[] _ptr;
 	/** Linearized bitmaps (variable lengths) */
-	protected char[] _data;
+	protected final char[] _data;
+	/** The number of rows in this column group */
+	protected final int _numRows;
+	/** If the column group contains unassigned rows. */
+	protected final boolean _zeros;
 
-	final protected int _numRows;
-
-	protected boolean _zeros;
-
-	protected AColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict, int[] cachedCounts) {
+	protected AColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict, int[] ptr, char[] data, int[] cachedCounts) {
 		super(colIndices, dict, cachedCounts);
 		_numRows = numRows;
 		_zeros = zeros;
+		_ptr = ptr;
+		_data = data;
 	}
 
 	protected final int len(int k) {

@@ -47,9 +47,7 @@ public class ColGroupRLE extends AColGroupOffset {
 
 	private ColGroupRLE(int[] colIndexes, int numRows, boolean zeros, ADictionary dict, char[] bitmaps, int[] bitmapOffs,
 		int[] cachedCounts) {
-		super(colIndexes, numRows, zeros, dict, cachedCounts);
-		_data = bitmaps;
-		_ptr = bitmapOffs;
+		super(colIndexes, numRows, zeros, dict, bitmapOffs, bitmaps, cachedCounts);
 	}
 
 	protected static AColGroup create(int[] colIndexes, int numRows, boolean zeros, ADictionary dict, char[] bitmaps,
@@ -62,7 +60,7 @@ public class ColGroupRLE extends AColGroupOffset {
 
 	protected static AColGroup compressRLE(int[] colIndexes, ABitmap ubm, int nRow, double tupleSparsity) {
 		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
-		// ColGroupRLE rle = new ColGroupRLE(nRow);
+
 		// compress the bitmaps
 		final int numVals = ubm.getNumValues();
 		char[][] lBitMaps = new char[numVals][];
@@ -736,37 +734,18 @@ public class ColGroupRLE extends AColGroupOffset {
 		return _dict.containsValue(pattern);
 	}
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(super.toString());
-		sb.append(String.format("\n%14s len(%d) Zeros:%b", "Data:", this._data.length, _zeros));
-		sb.append("\n{{");
-		sb.append(pair(_data, 0));
-		int p = 1;
-		for(int i = 2; i < _data.length; i += 2) {
-			if(_ptr[p] == i) {
-				if(_ptr[p] + 2 == _ptr[p + 1])
-					sb.append("}, {" + pair(_data, i));
-				else
-
-					sb.append("},\n {" + pair(_data, i));
-				p++;
-			}
-			else
-				sb.append(", " + pair(_data, i));
-
-		}
-		sb.append("}}");
-
-		return sb.toString();
-	}
-
 	private String pair(char[] d, int off) {
 		if((int) _data[off + 1] == 1)
 			return ((int) _data[off]) + "";
 		else
 			return ((int) _data[off]) + "-" + ((int) _data[off + 1]);
+	}
+
+	private String pair(char[] d, int off, int sum) {
+		if((int) _data[off + 1] == 1)
+			return ((int) _data[off] + sum) + "";
+		else
+			return ((int) _data[off] + sum) + "-" + ((int) _data[off + 1]);
 	}
 
 	@Override
@@ -975,7 +954,73 @@ public class ColGroupRLE extends AColGroupOffset {
 		int[] ptr = readPointers(in);
 		char[] data = readData(in);
 		boolean zeros = in.readBoolean();
-		return new ColGroupRLE(cols, nRows, zeros, dict, data, ptr,null);
+		return new ColGroupRLE(cols, nRows, zeros, dict, data, ptr, null);
+	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		throw new NotImplementedException("Slice rows for RLE is not implemented yet!");
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+		return create(colIndexes, _numRows, _zeros, newDictionary, _data, _ptr, getCounts());
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(String.format("\n%14s len(%d) Zeros:%b", "Data:", this._data.length, _zeros));
+		sb.append("\nData Simplified Delta: {{");
+		sb.append(pair(_data, 0));
+		int p = 1;
+		for(int i = 2; i < _data.length; i += 2) {
+			if(_ptr[p] == i) {
+				if(_ptr[p] + 2 == _ptr[p + 1])
+					sb.append("}, {" + pair(_data, i));
+				else
+
+					sb.append("},\n {" + pair(_data, i));
+				p++;
+			}
+			else
+				sb.append(", " + pair(_data, i));
+
+		}
+		sb.append("}}");
+
+		sb.append("\nData Simplified RunningSum{{");
+		int sum = 0;
+		sb.append(pair(_data, 0, sum));
+		p = 1;
+		sum += _data[0] + _data[1];
+		for(int i = 2; i < _data.length; i += 2) {
+			if(_ptr[p] == i) {
+				sum = 0;
+				sb.append("},\n {" + pair(_data, i, sum));
+				sum += _data[i] + _data[i + 1];
+				p++;
+			}
+			else {
+				sb.append(", " + pair(_data, i, sum));
+				sum += _data[i] + _data[i + 1];
+			}
+
+		}
+		sb.append("}}");
+
+		sb.append("\nActual: ");
+		for(char c : _data) {
+			sb.append((int) c + ", ");
+		}
+
+		return sb.toString();
 	}
 
 	/**

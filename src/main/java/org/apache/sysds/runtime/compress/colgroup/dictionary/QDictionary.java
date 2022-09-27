@@ -595,4 +595,9 @@ public class QDictionary extends ADictionary {
 		MatrixBlock result) {
 		throw new NotImplementedException();
 	}
+
+	@Override
+	public boolean eq(ADictionary o) {
+			throw new NotImplementedException();
+	}
 }

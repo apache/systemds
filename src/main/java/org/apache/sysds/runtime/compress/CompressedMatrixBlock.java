@@ -177,7 +177,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @param overlapping If the matrix is overlapping
 	 * @param groups      The list of column groups
 	 */
-	protected CompressedMatrixBlock(int rl, int cl, long nnz, boolean overlapping, List<AColGroup> groups) {
+	public CompressedMatrixBlock(int rl, int cl, long nnz, boolean overlapping, List<AColGroup> groups) {
 		super(true);
 		this.rlen = rl;
 		this.clen = cl;
@@ -1052,7 +1052,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		this._colGroups = new ArrayList<>(that.getColGroups().size());
 		for(AColGroup cg : that._colGroups)
-			_colGroups.add(cg.copy());
+			_colGroups.add(cg);
 
 		overlappingColGroups = that.overlappingColGroups;
 	}

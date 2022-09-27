@@ -110,8 +110,9 @@ public class CLALibScalar {
 	private static List<AColGroup> copyGroups(CompressedMatrixBlock m1, ScalarOperator sop, ColGroupConst c,
 		CompressedMatrixBlock ret) {
 		final double[] constV = c != null ? c.getValues() : null;
-		final List<AColGroup> newColGroups = new ArrayList<>();
-		for(AColGroup grp : m1.getColGroups()) {
+		final List<AColGroup> old = m1.getColGroups();
+		final List<AColGroup> newColGroups = new ArrayList<>(old.size() + 1);
+		for(AColGroup grp : old) {
 			if(grp instanceof ColGroupEmpty)
 				continue;
 			else if(grp instanceof ColGroupConst) {
@@ -123,7 +124,7 @@ public class CLALibScalar {
 						constV[colIdx[i]] += gv[i];
 			}
 			else
-				newColGroups.add(grp.copy());
+				newColGroups.add(grp);
 		}
 		if(c != null)
 			newColGroups.add(c);

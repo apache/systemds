@@ -33,13 +33,12 @@ public abstract class ASDC extends AMorphingMMColGroup {
 	private static final long serialVersionUID = 769993538831949086L;
 
 	/** Sparse row indexes for the data */
-	protected AOffset _indexes;
-
-	final protected int _numRows;
+	protected final AOffset _indexes;
+	/** The number of rows in this column group */
+	protected final int _numRows;
 
 	protected ASDC(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, int[] cachedCounts) {
 		super(colIndices, dict, cachedCounts);
-
 		_indexes = offsets;
 		_numRows = numRows;
 	}

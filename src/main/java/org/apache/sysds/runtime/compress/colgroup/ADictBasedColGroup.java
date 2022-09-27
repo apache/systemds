@@ -35,7 +35,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public abstract class ADictBasedColGroup extends AColGroupCompressed {
 	private static final long serialVersionUID = -3737025296618703668L;
 	/** Distinct value tuples associated with individual bitmaps. */
-	protected ADictionary _dict;
+	protected final ADictionary _dict;
 
 	/**
 	 * A Abstract class for column groups that contain ADictionary for values.
@@ -173,7 +173,7 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 
 		if(agCols == null)
 			return null;
-			
+
 		final int nVals = getNumValues();
 		final ADictionary preAgg = (right.isInSparseFormat()) ? // Chose Sparse or Dense
 			rightMMPreAggSparse(nVals, right.getSparseBlock(), agCols, 0, nCol) : // sparse
@@ -272,7 +272,14 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed {
 		return Dictionary.create(ret);
 	}
 
-	protected abstract AColGroup copyAndSet(int[] colIndexes, double[] newDictionary);
+	@Override
+	protected final AColGroup copyAndSet(int[] colIndexes){
+		return copyAndSet(colIndexes, _dict);
+	}
+	
+	protected final AColGroup copyAndSet(ADictionary newDictionary) {
+		return copyAndSet(_colIndexes, newDictionary);
+	}
 
 	protected abstract AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary);
 

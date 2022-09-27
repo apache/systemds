@@ -176,6 +176,22 @@ public class EncodeSampleCustom {
 		compareSparse(a, b, exp);
 	}
 
+	@Test
+	public void testSparse_12() {
+		AOffset a = OffsetFactory.createOffset(new int[] {466, 496, 499});
+		AOffset b = OffsetFactory.createOffset(new int[] {479, 496, 497});
+		int[] exp = new int[] {466, 479, 496, 497, 499};
+		compareSparse(a, b, exp);
+	}
+
+	@Test
+	public void testSparse_13() {
+		AOffset a = OffsetFactory.createOffset(new int[] {466, 496, 497});
+		AOffset b = OffsetFactory.createOffset(new int[] {479, 496, 499});
+		int[] exp = new int[] {466, 479, 496, 497, 499};
+		compareSparse(a, b, exp);
+	}
+
 	public void compareSparse(AOffset a, AOffset b, int[] exp) {
 		try {
 			AMapToData Z0 = MapToFactory.create(a.getSize(), 0);

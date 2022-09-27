@@ -60,6 +60,9 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.io.CompressUnwrap;
+import org.apache.sysds.runtime.compress.io.CompressedWriteBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -441,19 +444,19 @@ public class SparkExecutionContext extends ExecutionContext
 		{
 			// parallelize hdfs-resident file
 			// For binary block, these are: SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class
-			if(fmt == FileFormat.BINARY) {
-				rdd = sc.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.keyClass, inputInfo.valueClass);
+			rdd = sc.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.keyClass, inputInfo.valueClass);
+			if(fmt == FileFormat.BINARY) 
 				//note: this copy is still required in Spark 1.4 because spark hands out whatever the inputformat
 				//recordreader returns; the javadoc explicitly recommend to copy all key/value pairs
-				rdd = SparkUtils.copyBinaryBlockMatrix((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd); //cp is workaround for read bug
-			}
-			else if(fmt.isTextFormat()) {
-				rdd = sc.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.keyClass, inputInfo.valueClass);
-				rdd = ((JavaPairRDD<LongWritable, Text>)rdd).mapToPair( new CopyTextInputFunction() ); //cp is workaround for read bug
-			}
-			else {
+				// cp is workaround for read bug
+				rdd = SparkUtils.copyBinaryBlockMatrix((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd); 
+			else if(fmt == FileFormat.COMPRESSED)
+				rdd = ((JavaPairRDD<MatrixIndexes, CompressedWriteBlock>) rdd).mapValues(new CompressUnwrap());
+			else if(fmt.isTextFormat())
+				// cp is workaround for read bug
+				rdd = ((JavaPairRDD<LongWritable, Text>) rdd).mapToPair(new CopyTextInputFunction());
+			else
 				throw new DMLRuntimeException("Incorrect input format in getRDDHandleForVariable");
-			}
 
 			//keep rdd handle for future operations on it
 			RDDObject rddhandle = new RDDObject(rdd);
@@ -1099,9 +1102,20 @@ public class SparkExecutionContext extends ExecutionContext
 		// post-processing output matrix
 		if(sparse)
 			out.sortSparseRows();
-		out.setNonZeros(aNnz.longValue());
+		if(containsCompressedMatrixBlock(list))
+			// Recompute zeros since compressed does not maintain it perfectly
+			out.recomputeNonZeros();
+		else 
+			out.setNonZeros(aNnz.longValue());
 		out.examSparsity();
 		return out;
+	}
+
+	private static boolean containsCompressedMatrixBlock(List<Tuple2<MatrixIndexes, MatrixBlock>> list) {
+		for(Tuple2<MatrixIndexes, MatrixBlock> t : list)
+			if(t._2() instanceof CompressedMatrixBlock)
+				return true;
+		return false;
 	}
 
 	private static void blockPartitionsToMatrixBlock(List<Tuple2<MatrixIndexes, MatrixBlock>> tuples, MatrixBlock out,

@@ -226,6 +226,10 @@ public class ConfigurationManager
 	public static boolean isFederatedSSL(){
 		return getDMLConfig().getBooleanValue(DMLConfig.USE_SSL_FEDERATED_COMMUNICATION);
 	}
+	
+	public static boolean isFederatedReadCacheEnabled(){
+		return getDMLConfig().getBooleanValue(DMLConfig.FEDERATED_READCACHE);
+	}
 
 	///////////////////////////////////////
 	// Thread-local classes

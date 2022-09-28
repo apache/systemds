@@ -130,6 +130,9 @@
     <!-- set the degree of parallelism of the federated worker instructions (<=0 means number of virtual cores) -->
     <sysds.federated.par_inst>0</sysds.federated.par_inst>
 
+    <!-- enables the federated read cache for multi-tenancy / cross-session reuse -->
+    <sysds.federated.readcache>true</sysds.federated.readcache>
+
     <!-- set buffer pool threshold (max size) in % of total heap -->
     <sysds.caching.bufferpoollimit>15</sysds.caching.bufferpoollimit>
 

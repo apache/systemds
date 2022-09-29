@@ -36,7 +36,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Scanner;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.lang.StringUtils;
@@ -72,7 +71,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorker;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.FederatedMonitoringServer;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
@@ -89,6 +87,8 @@ import org.apache.sysds.utils.Explain.ExplainCounts;
 import org.apache.sysds.utils.Explain.ExplainType;
 import org.apache.sysds.utils.NativeHelper;
 import org.apache.sysds.utils.Statistics;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DMLScript 
 {

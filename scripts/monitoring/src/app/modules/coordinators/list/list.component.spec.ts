@@ -60,9 +60,10 @@ describe('ListCoordinatorsComponent', () => {
 		expect(de.query(By.css('table'))).not.toBeNull();
 	});
 
-	it('should contain name, address and actions table fields', () => {
+	it('should contain name, host, processId and actions table fields', () => {
 		expect(component.displayedColumns).toContain('name');
-		expect(component.displayedColumns).toContain('address');
+		expect(component.displayedColumns).toContain('host');
+		expect(component.displayedColumns).toContain('processId');
 		expect(component.displayedColumns).toContain('actions');
 	});
 

@@ -36,7 +36,17 @@ describe('DashboardComponent', () => {
 			declarations: [DashboardComponent],
 			providers: [
 				{ provide: FederatedSiteService , useClass: FederatedSiteServiceStub },
-				{ provide: MatDialog, useValue: {} }
+				{
+					provide: MatDialog,
+					useValue: {
+						open: () => {
+							return { afterClosed: () => {
+									return { subscribe: () => null };
+								}
+							}
+						}
+					}
+				}
 			]
 		})
 		.compileComponents();
@@ -54,7 +64,9 @@ describe('DashboardComponent', () => {
 		expect(component).toBeTruthy();
 	});
 
-	it('should contain config button', () => {
-		expect(de.query(By.css('button')).nativeElement.innerText.toLowerCase()).toContain('config');
+	it('should contain zoom and config buttons', () => {
+		expect(de.nativeElement.innerText.toLowerCase()).toContain('config');
+		expect(de.nativeElement.innerText.toLowerCase()).toContain('-');
+		expect(de.nativeElement.innerText.toLowerCase()).toContain('+');
 	});
 });

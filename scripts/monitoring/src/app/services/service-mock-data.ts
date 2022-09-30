@@ -21,12 +21,14 @@ let coordinators = [
 	{
 		"id": 1,
 		"name": "Coordinator 1",
-		"address": "localhost:8445"
+		"host": "localhost",
+		"processId": 4242
 	},
 	{
 		"id": 2,
 		"name": "Coordinator 1",
-		"address": "localhost:8446"
+		"host": "localhost",
+		"processId": 4241
 	}
 ]
 
@@ -35,74 +37,31 @@ let workers = [
 		"id": 1,
 		"name": "Worker 1",
 		"address": "localhost:8001",
-		"isOnline": false,
-		"jitCompileTime": 0,
-		"requestTypeCounts": [
-			{"type": "GET_VAR", "count": 0},
-			{"type": "PUT_VAR", "count": 0},
-			{"type": "READ_VAR", "count": 0},
-			{"type": "EXEC_UDF", "count": 0},
-			{"type": "EXEC_INST", "count": 0}
-		],
-		"stats": []
+		"isOnline": false
 	},
 	{
 		"id": 2,
 		"name": "Worker 2",
 		"address": "localhost:8002",
-		"isOnline": false,
-		"jitCompileTime": 0,
-		"requestTypeCounts": [
-			{"type": "GET_VAR", "count": 0},
-			{"type": "PUT_VAR", "count": 0},
-			{"type": "READ_VAR", "count": 0},
-			{"type": "EXEC_UDF", "count": 0},
-			{"type": "EXEC_INST", "count": 0}
-		],
-		"stats": [{
-			"timestamp": "2022-06-25 13:18:19.578",
-			"x": 1.96,
-			"memoryUsage": 1.46,
-			"coordinatorTraffic": [],
-			"heavyHitters": []
-		}, {
-			"timestamp": "2022-06-25 13:18:22.522",
-			"x": 1.95,
-			"memoryUsage": 1.46,
-			"coordinatorTraffic": [],
-			"heavyHitters": []
-		}]
+		"isOnline": false
 	},
 	{
 		"id": 3,
 		"name": "Worker 3",
 		"address": "localhost:8003",
 		"isOnline": true,
-		"jitCompileTime": 3.69,
-		"requestTypeCounts": [
-			{"type": "GET_VAR", "count": 0},
-			{"type": "PUT_VAR", "count": 0},
-			{"type": "READ_VAR", "count": 0},
-			{"type": "EXEC_UDF", "count": 0},
-			{"type": "EXEC_INST", "count": 0}
-		],
-		"stats": [{
-			"timestamp": "2022-06-25 13:18:19.578",
-			"x": 1.96,
-			"memoryUsage": 1.46,
-			"coordinatorTraffic": [],
-			"heavyHitters": []
-		}, {
-			"timestamp": "2022-06-25 13:18:22.522",
-			"x": 1.95,
-			"memoryUsage": 1.46,
-			"coordinatorTraffic": [],
-			"heavyHitters": []
-		}]
 	}
 ]
 
+
+let statistics = {
+	"utilization": [],
+	"traffic": [],
+	"dataObjects": [],
+	"requests": []
+}
 export const serviceMockData = {
 	workers: workers,
-	coordinators: coordinators
+	coordinators: coordinators,
+	statistics: statistics
 }

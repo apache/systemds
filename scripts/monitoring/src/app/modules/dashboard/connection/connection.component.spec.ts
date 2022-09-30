@@ -20,6 +20,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ConnectionComponent } from './connection.component';
+import { FederatedSiteService } from "../../../services/federatedSiteService.service";
+import { FederatedSiteServiceStub } from "../../../services/federatedSiteService.stub";
 
 describe('ConnectionComponent', () => {
 	let component: ConnectionComponent;
@@ -27,7 +29,10 @@ describe('ConnectionComponent', () => {
 
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
-			declarations: [ConnectionComponent]
+			declarations: [ConnectionComponent],
+			providers: [
+				{ provide: FederatedSiteService , useClass: FederatedSiteServiceStub }
+			]
 		})
 			.compileComponents();
 	});
@@ -38,7 +43,5 @@ describe('ConnectionComponent', () => {
 		fixture.detectChanges();
 	});
 
-	it('should create', () => {
-		expect(component).toBeTruthy();
-	});
+	// TODO: Add test integrated with dashboard component, since creation of worker component depends on it
 });

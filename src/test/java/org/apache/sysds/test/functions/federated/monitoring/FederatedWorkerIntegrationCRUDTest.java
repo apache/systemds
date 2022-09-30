@@ -50,7 +50,6 @@ public class FederatedWorkerIntegrationCRUDTest extends FederatedMonitoringTestB
 	}
 
 	@Test
-	@Ignore
 	public void testWorkerRemovedFromMonitoring() {
 		addEntities(2, Entity.WORKER);
 		var statusCode = removeEntity(1L, Entity.WORKER).statusCode();
@@ -63,7 +62,6 @@ public class FederatedWorkerIntegrationCRUDTest extends FederatedMonitoringTestB
 	}
 
 	@Test
-	@Ignore
 	public void testWorkerDataUpdated() {
 		addEntities(3, Entity.WORKER);
 		var newWorkerData = new WorkerModel(1L, "NonExistentName", "nonexistent.address");
@@ -78,7 +76,6 @@ public class FederatedWorkerIntegrationCRUDTest extends FederatedMonitoringTestB
 	}
 
 	@Test
-	@Ignore
 	public void testCorrectAmountAddedWorkersForMonitoring() {
 		int numWorkers = 3;
 		var addedWorkers = addEntities(numWorkers, Entity.WORKER);

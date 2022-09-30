@@ -43,6 +43,13 @@ public class CoordinatorModel extends BaseModel {
 		this(-1L);
 	}
 
+	public CoordinatorModel(final Long id, final String name, final String host, final Long processId) {
+		this.id = id;
+		this.name = name;
+		this.host = host;
+		this.processId = processId;
+	}
+
 	public void generateMonitoringKey() {
 		this.monitoringHostIdKey = String.format(keyFormat, host, processId);
 	}

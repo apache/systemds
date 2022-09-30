@@ -69,11 +69,10 @@ describe('ViewWorkerComponent', () => {
 		expect(component.model).not.toBeNull();
 	});
 
-	it('should contain address, status and JIT information', () => {
+	it('should contain address and status information', () => {
 		let html = de.query(By.css('#main-worker-information')).nativeElement.innerText;
 		expect(html).toContain('Address');
 		expect(html).toContain('Status');
-		expect(html).toContain('JIT');
 	});
 
 	it('should contain CPU metrics diagram', () => {

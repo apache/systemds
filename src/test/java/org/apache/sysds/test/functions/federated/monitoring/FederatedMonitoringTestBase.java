@@ -85,9 +85,20 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
 			for (int i = 0; i < count; i++) {
-				String requestBody = objectMapper
-					.writerWithDefaultPrettyPrinter()
-					.writeValueAsString(new WorkerModel((i + 1L), name, "localhost"));
+				String requestBody = "";
+
+				if (entity == Entity.WORKER) {
+					requestBody = objectMapper
+							.writerWithDefaultPrettyPrinter()
+							.writeValueAsString(new WorkerModel((i + 1L), name, "localhost"));
+				} else if (entity == Entity.COORDINATOR) {
+					CoordinatorModel model = new CoordinatorModel(i + 1L, name, "localhost", 4242L);
+					model.generateMonitoringKey();
+
+					requestBody = objectMapper
+							.writerWithDefaultPrettyPrinter()
+							.writeValueAsString(model);
+				}
 				var client = HttpClient.newHttpClient();
 				var request = HttpRequest.newBuilder(URI.create(uriStr))
 					.header("accept", "application/json")
@@ -112,15 +123,20 @@ public abstract class FederatedMonitoringTestBase extends MultiTenantTestBase {
 
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
+			String requestBody = "";
 
-			String requestBody = objectMapper
-				.writerWithDefaultPrettyPrinter()
-				.writeValueAsString(new WorkerModel(editModel.id, ((WorkerModel)editModel).name, ((WorkerModel)editModel).address));
+			if (entity == Entity.WORKER) {
+				requestBody = objectMapper
+						.writerWithDefaultPrettyPrinter()
+						.writeValueAsString(new WorkerModel(editModel.id, ((WorkerModel) editModel).name, ((WorkerModel) editModel).address));
+			} else if (entity == Entity.COORDINATOR) {
+				CoordinatorModel model = new CoordinatorModel(
+						editModel.id, ((CoordinatorModel)editModel).name,((CoordinatorModel)editModel).host, ((CoordinatorModel)editModel).processId);
+				model.generateMonitoringKey();
 
-			if (entity == Entity.COORDINATOR) {
 				requestBody = objectMapper
 					.writerWithDefaultPrettyPrinter()
-					.writeValueAsString(new CoordinatorModel());
+					.writeValueAsString(model);
 			}
 			var client = HttpClient.newHttpClient();
 			var request = HttpRequest.newBuilder(URI.create(uriStr))

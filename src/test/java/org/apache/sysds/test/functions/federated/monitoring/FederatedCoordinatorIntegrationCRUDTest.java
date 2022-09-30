@@ -50,7 +50,6 @@ public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoring
 	}
 
 	@Test
-	@Ignore
 	public void testCoordinatorRemovedFromMonitoring() {
 		addEntities(2, Entity.COORDINATOR);
 		var statusCode = removeEntity(1L, Entity.COORDINATOR).statusCode();
@@ -63,10 +62,9 @@ public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoring
 	}
 
 	@Test
-	@Ignore
 	public void testCoordinatorDataUpdated() {
 		addEntities(3, Entity.COORDINATOR);
-		var newCoordinatorData = new CoordinatorModel(1L);
+		var newCoordinatorData = new CoordinatorModel(1L, "NonExistentName", "nonexistent.address", 4241L);
 
 		var editedCoordinator = updateEntity(newCoordinatorData, Entity.COORDINATOR);
 
@@ -74,11 +72,10 @@ public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoring
 		var numCoordinatorsNewData = StringUtils.countMatches(getAllCoordinatorsResponse.body().toString(), newCoordinatorData.name);
 
 		Assert.assertEquals("Updated coordinator status code", HttpStatus.SC_OK, editedCoordinator.statusCode());
-		Assert.assertEquals("Updated coordinators num", 1, numCoordinatorsNewData);
+		Assert.assertEquals("Updated coordinator name", 1, numCoordinatorsNewData);
 	}
 
 	@Test
-	@Ignore
 	public void testCorrectAmountAddedCoordinatorsForMonitoring() {
 		int numCoordinators = 3;
 		var addedCoordinators = addEntities(numCoordinators, Entity.COORDINATOR);

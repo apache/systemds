@@ -66,3 +66,7 @@ jobs:
         run: |
           npm install
         working-directory: scripts/monitoring
+      - name: Run tests
+        run: |
+          npm test
+        working-directory: scripts/monitoring

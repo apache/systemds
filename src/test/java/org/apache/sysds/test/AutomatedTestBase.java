@@ -1625,7 +1625,8 @@ public abstract class AutomatedTestBase {
 
 		try {
 			process = processBuilder.start();
-			sleep(1000);
+			// Wait till process is started
+			sleep(5000);
 		}
 		catch(IOException | InterruptedException e) {
 			throw new RuntimeException(e);

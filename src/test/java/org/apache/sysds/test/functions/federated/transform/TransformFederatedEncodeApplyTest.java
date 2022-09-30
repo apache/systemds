@@ -227,6 +227,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			case BIN_HEIGHT_DUMMY:    SPEC = colnames?SPEC7d:SPEC7c; DATASET = DATASET1; break;
 			case HASH: SPEC = colnames ? SPEC8b : SPEC8; DATASET = DATASET1; break;
 			case HASH_RECODE: SPEC = colnames ? SPEC9b : SPEC9; DATASET = DATASET1; break;
+			default: throw new RuntimeException("Not supported type");
 		}
 
 		Thread t1 = null, t2 = null, t3 = null, t4 = null;

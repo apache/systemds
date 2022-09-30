@@ -19,11 +19,20 @@
 
 package org.apache.sysds.test.functions.federated.monitoring;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions;
@@ -38,17 +47,6 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 	private static final Log LOG = LogFactory.getLog(FederatedWorkerStatisticsTest.class.getName());
@@ -73,12 +71,18 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 	}
 
 	@Test
-	public void testWorkerStatisticsParsedCorrectly() {
+	public void testWorkerStatisticsParsedCorrectly() throws InterruptedException {
 
 		var model = (StatisticsModel) StatisticsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0]);
+		int retry = 10;
+		while(model == null && retry > 0){
+			Thread.sleep(1000);
+			model = (StatisticsModel) StatisticsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0]);
+			retry--;
+		}
 
-		Assert.assertNotNull("Stats parsed correctly", model);
-		Assert.assertNotEquals("Utilization stats parsed correctly", 0, model.utilization.size());
+		Assert.assertNotNull("Stats still null", model);
+		Assert.assertNotEquals("Utilization stats not parsed correctly", 0, model.utilization.size());
 	}
 
 	@Test

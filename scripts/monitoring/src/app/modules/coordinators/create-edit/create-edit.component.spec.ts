@@ -59,10 +59,10 @@ describe('CreateEditCoordinatorsComponent', () => {
 		expect(component.model).not.toBeNull();
 	});
 
-	it('should contain name and address fields', () => {
+	it('should contain name host and processId fields', () => {
 		let html = de.query(By.css('#register-coordinator-content')).nativeElement.innerText;
 		expect(html).toContain('Name');
 		expect(html).toContain('Host');
-		expect(html).toContain('Monitoring Id');
+		expect(html).toContain('Process Id');
 	});
 });

@@ -59,9 +59,7 @@ export class ViewWorkerComponent {
 
 	ngOnInit(): void {
 		const id = Number(this.router.snapshot.paramMap.get('id'));
-		this.fedSiteService.getWorker(id).subscribe(worker => {
-			this.model = worker;
-		});
+		this.fedSiteService.getWorkerPolling(id, this.stopPollingWorker).subscribe(worker => this.model = worker);
 
 		this.statistics = new Statistics();
 
@@ -174,8 +172,6 @@ export class ViewWorkerComponent {
 				}
 			},
 		});
-
-		this.fedSiteService.getWorkerPolling(id, this.stopPollingWorker).subscribe(worker => this.model = worker);
 
 		this.fedSiteService.getStatisticsPolling(id, this.stopPollingStatistics).subscribe(stats => {
 			this.statistics = stats;

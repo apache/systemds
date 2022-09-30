@@ -19,13 +19,13 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ListWorkersComponent } from './list.component';
 import { DebugElement } from "@angular/core";
 import { FederatedSiteService } from "../../../services/federatedSiteService.service";
 import { FederatedSiteServiceStub } from "../../../services/federatedSiteService.stub";
 import { Router } from "@angular/router";
 import { MatDialog } from "@angular/material/dialog";
 import { By } from "@angular/platform-browser";
+import { ListWorkersComponent } from "../../workers/list/list.component";
 
 describe('ListWorkersComponent', () => {
 	let component: ListWorkersComponent;

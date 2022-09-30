@@ -141,18 +141,6 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 
 	@Test
 	public void testNonExistentWorkerStatistics() {
-		var bla = new EventModel(1L, -1L);
-		var derby = new DerbyRepository();
-
-		derby.createEntity(bla);
-		derby.createEntity(bla);
-		var in3 = derby.createEntity(bla);
-		derby.createEntity(bla);
-
-		derby.getEntity(in3, EventModel.class);
-
-		new EventStageModel();
-
 		workerMonitoringService.create(new WorkerModel(1L, "Worker", "localhost:8001"));
 		var options = new StatisticsOptions();
 		options.utilization = true;

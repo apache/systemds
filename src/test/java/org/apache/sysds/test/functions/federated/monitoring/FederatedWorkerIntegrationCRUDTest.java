@@ -25,7 +25,6 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Worke
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class FederatedWorkerIntegrationCRUDTest extends FederatedMonitoringTestBase {

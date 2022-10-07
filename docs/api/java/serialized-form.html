@@ -606,6 +606,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ADictBasedColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroupCompressed</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-3737025296618703668L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -741,15 +745,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </ul>
 </li>
 </ul>
-</li>
-<li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.ColGroupDeltaDDC">
-<!--   -->
-</a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupDeltaDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupDeltaDDC</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a> implements Serializable</h3>
-<dl class="nameValue">
-<dt>serialVersionUID:</dt>
-<dd>-1045556313148564147L</dd>
-</dl>
 </li>
 <li class="blockList"><a id="org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty">
 <!--   -->
@@ -1364,45 +1359,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
-<li class="blockList">
-<h4>_compressedMultiplication</h4>
-<pre>int _compressedMultiplication</pre>
-<div class="block">Total number of left column groups to compressed multiply with, taken as worst case meaning number of rows</div>
-</li>
-<li class="blockList">
-<h4>_decompressions</h4>
-<pre>int _decompressions</pre>
-<div class="block">Number of decompressions of this column group directly (aka decompress to same size output)</div>
-</li>
-<li class="blockList">
-<h4>_dictionaryOps</h4>
-<pre>int _dictionaryOps</pre>
-<div class="block">Number of operations that only modify underlying dictionary</div>
-</li>
-<li class="blockList">
-<h4>_isDensifying</h4>
-<pre>boolean _isDensifying</pre>
-<div class="block">Boolean specifying if the matrix is getting densified, meaning exploiting zeros is gone.</div>
-</li>
-<li class="blockList">
-<h4>_leftMultiplications</h4>
-<pre>int _leftMultiplications</pre>
-<div class="block">Total number of left side rows to multiply with</div>
-</li>
-<li class="blockList">
-<h4>_overlappingDecompressions</h4>
-<pre>int _overlappingDecompressions</pre>
-<div class="block">Total number of columns to decompress overlapping into</div>
-</li>
-<li class="blockList">
-<h4>_rightMultiplications</h4>
-<pre>int _rightMultiplications</pre>
-<div class="block">Total number of right side columns to multiply with</div>
-</li>
 <li class="blockListLast">
-<h4>_scans</h4>
-<pre>int _scans</pre>
-<div class="block">Number of scans through the column groups (aka. rowSums for instance)</div>
+<h4>ins</h4>
+<pre><a href="org/apache/sysds/runtime/compress/cost/InstructionTypeCounter.html" title="class in org.apache.sysds.runtime.compress.cost">InstructionTypeCounter</a> ins</pre>
 </li>
 </ul>
 </li>
@@ -1487,42 +1446,47 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h4>compressedMultiplications</h4>
 <pre>int compressedMultiplications</pre>
+<div class="block">Total number of left column groups to compressed multiply with, taken as worst case meaning number of rows</div>
 </li>
 <li class="blockList">
 <h4>decompressions</h4>
 <pre>int decompressions</pre>
+<div class="block">Number of decompressions of this column group directly (aka decompress to same size output)</div>
 </li>
 <li class="blockList">
 <h4>dictionaryOps</h4>
 <pre>int dictionaryOps</pre>
+<div class="block">Number of operations that only modify underlying dictionary</div>
 </li>
 <li class="blockList">
 <h4>indexing</h4>
 <pre>int indexing</pre>
+<div class="block">Number of operations that scan through the entry index structure</div>
 </li>
 <li class="blockList">
 <h4>isDensifying</h4>
 <pre>boolean isDensifying</pre>
+<div class="block">Boolean specifying if the matrix is getting densified, meaning exploiting zeros is gone.</div>
 </li>
 <li class="blockList">
 <h4>leftMultiplications</h4>
 <pre>int leftMultiplications</pre>
+<div class="block">Total number of left side rows to multiply with</div>
 </li>
 <li class="blockList">
 <h4>overlappingDecompressions</h4>
 <pre>int overlappingDecompressions</pre>
+<div class="block">Total number of columns to decompress overlapping into</div>
 </li>
 <li class="blockList">
 <h4>rightMultiplications</h4>
 <pre>int rightMultiplications</pre>
-</li>
-<li class="blockList">
-<h4>scans</h4>
-<pre>int scans</pre>
+<div class="block">Total number of right side columns to multiply with</div>
 </li>
 <li class="blockListLast">
-<h4>total</h4>
-<pre>int total</pre>
+<h4>scans</h4>
+<pre>int scans</pre>
+<div class="block">Number of scans through the column groups (aka. rowSums for instance)</div>
 </li>
 </ul>
 </li>
@@ -2179,6 +2143,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel</a> extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>5565981270528383999L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -2195,6 +2163,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/CoordinatorConnectionModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorConnectionModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>918360814223266197L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -2215,6 +2187,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/CoordinatorModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>4116787631938152573L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -2243,6 +2219,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>7914784187151939188L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -2275,6 +2255,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/CoordinatorConnectionModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">CoordinatorConnectionModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-5597621916956632690L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -2299,6 +2283,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/EventStageModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-6867424341266726981L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -2327,6 +2315,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/CoordinatorConnectionModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">CoordinatorConnectionModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-5376072120202921000L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -2351,6 +2343,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/StatisticsModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-2492467768854934429L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -2383,6 +2379,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/StatisticsOptions.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>2524032122999491726L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -2419,6 +2419,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/TrafficModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.TrafficModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/CoordinatorConnectionModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">CoordinatorConnectionModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>5042814368347405998L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -2443,6 +2447,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/UtilizationModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.UtilizationModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>6984053518916899551L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>
@@ -2471,6 +2479,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/WorkerModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/monitoring/models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-7516912892237220796L</dd>
+</dl>
 <ul class="blockList">
 <li class="blockList">
 <h3>Serialized Fields</h3>

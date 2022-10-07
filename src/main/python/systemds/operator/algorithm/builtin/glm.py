@@ -39,7 +39,7 @@ def glm(X: Matrix,
      In addition, some GLM statistics are provided as console output by setting verbose=TRUE, one comma-separated name-value
      pair per each line, as follows:
     
-     .. code-block:: txt
+     .. code-block::
     
        --------------------------------------------------------------------------------------------
        TERMINATION_CODE      A positive integer indicating success/failure as follows:
@@ -78,7 +78,7 @@ def glm(X: Matrix,
      SOME OF THE SUPPORTED GLM DISTRIBUTION FAMILIES
      AND LINK FUNCTIONS:
     
-     .. code-block:: txt
+     .. code-block::
     
        dfam vpow link lpow  Distribution.link   nical?
        ---------------------------------------------------

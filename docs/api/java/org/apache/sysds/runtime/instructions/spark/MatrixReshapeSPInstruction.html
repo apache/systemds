@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":9,"i4":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -226,11 +226,26 @@ extends <a href="UnarySPInstruction.html" title="class in org.apache.sysds.runti
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code><a href="../cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOpByRow()">getOpByRow</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code><a href="../cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOpCols()">getOpCols</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code><a href="../cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOpRows()">getOpRows</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>static <a href="MatrixReshapeSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">MatrixReshapeSPInstruction</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseInstruction(java.lang.String)">parseInstruction</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;str)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#processInstruction(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">processInstruction</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">
@@ -301,7 +316,7 @@ extends <a href="UnarySPInstruction.html" title="class in org.apache.sysds.runti
 <a id="processInstruction(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>processInstruction</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;processInstruction&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
@@ -313,6 +328,33 @@ extends <a href="UnarySPInstruction.html" title="class in org.apache.sysds.runti
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ec</code> - execution context</dd>
 </dl>
+</li>
+</ul>
+<a id="getOpRows()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getOpRows</h4>
+<pre class="methodSignature">public&nbsp;<a href="../cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;getOpRows()</pre>
+</li>
+</ul>
+<a id="getOpCols()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getOpCols</h4>
+<pre class="methodSignature">public&nbsp;<a href="../cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;getOpCols()</pre>
+</li>
+</ul>
+<a id="getOpByRow()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getOpByRow</h4>
+<pre class="methodSignature">public&nbsp;<a href="../cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;getOpByRow()</pre>
 </li>
 </ul>
 </li>

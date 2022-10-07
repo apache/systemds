@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9};
+var data = {"i0":9,"i1":9,"i2":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -257,6 +257,18 @@ extends <a href="ComputationFEDInstruction.html" title="class in org.apache.sysd
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseInstruction(java.lang.String)">parseInstruction</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;str)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>static <a href="BinaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">BinaryFEDInstruction</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseInstruction(org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">parseInstruction</a></span>&#8203;(<a href="../cp/BinaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">BinaryCPInstruction</a>&nbsp;inst,
+                <a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>static <a href="BinaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">BinaryFEDInstruction</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseInstruction(org.apache.sysds.runtime.instructions.spark.BinarySPInstruction,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">parseInstruction</a></span>&#8203;(<a href="../spark/BinarySPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">BinarySPInstruction</a>&nbsp;inst,
+                <a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction">
@@ -335,6 +347,26 @@ extends <a href="ComputationFEDInstruction.html" title="class in org.apache.sysd
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="parseInstruction(org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>parseInstruction</h4>
+<pre class="methodSignature">public static&nbsp;<a href="BinaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">BinaryFEDInstruction</a>&nbsp;parseInstruction&#8203;(<a href="../cp/BinaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">BinaryCPInstruction</a>&nbsp;inst,
+                                                    <a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
+</li>
+</ul>
+<a id="parseInstruction(org.apache.sysds.runtime.instructions.spark.BinarySPInstruction,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>parseInstruction</h4>
+<pre class="methodSignature">public static&nbsp;<a href="BinaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">BinaryFEDInstruction</a>&nbsp;parseInstruction&#8203;(<a href="../spark/BinarySPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">BinarySPInstruction</a>&nbsp;inst,
+                                                    <a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
+</li>
+</ul>
 <a id="parseInstruction(java.lang.String)">
 <!--   -->
 </a>

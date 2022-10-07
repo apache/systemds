@@ -23,7 +23,7 @@
 #
 # Additional statistics are printed one per each line, in the following 
 #
-# .. code-block:: txt
+# .. code-block::
 #
 #   CSV format: NAME,[COLUMN],[SCALED],VALUE
 #   ---
@@ -35,7 +35,7 @@
 #   VALUE  is the value of the statistic.
 #   ---
 #
-# .. code-block:: txt
+# .. code-block::
 #
 #   NAME                  COLUMN  SCALED  MEANING
 #   ---------------------------------------------------------------------------------------------

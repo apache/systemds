@@ -1,35 +1,68 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
   <title>Built-in Algorithms &mdash; SystemDS 3.1.0-dev documentation</title>
-      <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../static/css/theme.css" type="text/css" />
+  
+
+  
+  <link rel="stylesheet" href="../static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
   <!--[if lt IE 9]>
     <script src="../static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="../" id="documentation_options" src="../static/documentation_options.js"></script>
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../static/documentation_options.js"></script>
         <script src="../static/jquery.js"></script>
         <script src="../static/underscore.js"></script>
-        <script src="../static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../static/doctools.js"></script>
-    <script src="../static/js/theme.js"></script>
+        <script src="../static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Python end-to-end tutorial" href="python_end_to_end_tut.html" />
     <link rel="prev" title="Federated Environment" href="federated.html" /> 
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
+
+   
   <div class="wy-grid-for-nav">
+    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> SystemDS
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> SystemDS
+          
+
+          
           </a>
+
+          
+            
+            
+          
+
+          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -37,13 +70,24 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/install.html">Install SystemDS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started/simple_examples.html">QuickStart</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<p class="caption"><span class="caption-text">Guides</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="federated.html">Federated Environment</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Built-in Algorithms</a><ul>
@@ -57,7 +101,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="python_end_to_end_tut.html">Python end-to-end tutorial</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<p class="caption"><span class="caption-text">API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api/context/systemds_context.html">SystemDSContext</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/algorithms.html">Algorithms</a></li>
@@ -67,7 +111,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/node/scalar.html">Scalar</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/node/source.html">Source</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Internals API</span></p>
+<p class="caption"><span class="caption-text">Internals API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api/operator/operation_node.html">Operation Node</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/script_building/dag.html">Dag</a></li>
@@ -76,32 +120,71 @@
 <li class="toctree-l1"><a class="reference internal" href="../api/utils/helpers.html">Helpers</a></li>
 </ul>
 
+            
+          
         </div>
+        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">SystemDS</a>
+        
       </nav>
 
+
       <div class="wy-nav-content">
+        
         <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
+    
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
       <li>Built-in Algorithms</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
+        
+            
             <a href="../sources/guide/algorithms_basics.rst.txt" rel="nofollow"> View page source</a>
+          
+        
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
-  <section id="built-in-algorithms">
-<h1>Built-in Algorithms<a class="headerlink" href="#built-in-algorithms" title="Permalink to this heading"></a></h1>
+            
+  <div class="section" id="built-in-algorithms">
+<h1>Built-in Algorithms<a class="headerlink" href="#built-in-algorithms" title="Permalink to this headline">¶</a></h1>
 <p>Prerequisite:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="../getting_started/install.html"><span class="doc">Install SystemDS</span></a></p></li>
@@ -110,24 +193,24 @@
 For simplicity the dataset used for this is <a class="reference external" href="http://yann.lecun.com/exdb/mnist/">MNIST</a>,
 since it is commonly known and explored.</p>
 <p>If one wants to skip the explanation then the full script is available at the bottom of this page.</p>
-<section id="step-1-get-dataset">
-<h2>Step 1: Get Dataset<a class="headerlink" href="#step-1-get-dataset" title="Permalink to this heading"></a></h2>
+<div class="section" id="step-1-get-dataset">
+<h2>Step 1: Get Dataset<a class="headerlink" href="#step-1-get-dataset" title="Permalink to this headline">¶</a></h2>
 <p>SystemDS provides builtin for downloading and setup of the MNIST dataset.
 To setup this simply use</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.examples.tutorials.mnist</span> <span class="kn">import</span> <span class="n">DataManager</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<span class="kn">from</span> <span class="nn">systemds.examples.tutorials.mnist</span> <span class="kn">import</span> <span class="n">DataManager</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span><span class="p">,</span> <span class="n">multiLogRegPredict</span>
 
 <span class="n">d</span> <span class="o">=</span> <span class="n">DataManager</span><span class="p">()</span>
 
 <span class="n">X</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_train_data</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">60000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">))</span>
 <span class="n">Y</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_train_labels</span><span class="p">()</span>
-<span class="n">Xt</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_test_data</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">10000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">))</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_test_labels</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>Here the DataManager contains the code for downloading and setting up numpy arrays containing the data.</p>
-</section>
-<section id="step-2-reshape-format">
-<h2>Step 2: Reshape &amp; Format<a class="headerlink" href="#step-2-reshape-format" title="Permalink to this heading"></a></h2>
+</div>
+<div class="section" id="step-2-reshape-format">
+<h2>Step 2: Reshape &amp; Format<a class="headerlink" href="#step-2-reshape-format" title="Permalink to this headline">¶</a></h2>
 <p>Usually data does not come in formats that perfectly fits the algorithms, to make this tutorial more
 realistic some data preprocessing is required to change the input to fit.</p>
 <p>First the training data, X, has multiple dimensions resulting in a shape (60000, 28, 28).
@@ -150,14 +233,14 @@ unfortunately the algorithm require the labels to be distinct integers from 1 an
 </pre></div>
 </div>
 <p>With these steps we are now ready to train a simple model.</p>
-</section>
-<section id="step-3-training">
-<h2>Step 3: Training<a class="headerlink" href="#step-3-training" title="Permalink to this heading"></a></h2>
+</div>
+<div class="section" id="step-3-training">
+<h2>Step 3: Training<a class="headerlink" href="#step-3-training" title="Permalink to this headline">¶</a></h2>
 <p>To start with, we setup a SystemDS context and setup the data:</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Yt</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_test_labels</span><span class="p">()</span>
+
+<span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
     <span class="c1"># Train Data</span>
-    <span class="n">X_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-    <span class="n">Y_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
 </pre></div>
 </div>
 <p>to reduce the training time and verify everything works, it is usually good to reduce the amount of data,
@@ -178,9 +261,9 @@ to train on a smaller sample to start with</p>
 </div>
 <p>bias is a matrix, that if matrix multiplied with an instance returns a value distribution where, the highest value is the predicted type.
 This is the matrix that could be saved and used for predicting labels later.</p>
-</section>
-<section id="step-3-validate">
-<h2>Step 3: Validate<a class="headerlink" href="#step-3-validate" title="Permalink to this heading"></a></h2>
+</div>
+<div class="section" id="step-3-validate">
+<h2>Step 3: Validate<a class="headerlink" href="#step-3-validate" title="Permalink to this headline">¶</a></h2>
 <p>To see what accuracy the model achieves, we have to load in the test dataset as well.</p>
 <p>this can also be extracted from our builtin MNIST loader, to keep the tutorial short the operations are combined</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Xt</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get_test_data</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">10000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">)))</span>
@@ -202,9 +285,9 @@ This is the matrix that could be saved and used for predicting labels later.</p>
 </ul>
 <p>If the subset of the training data is used then you could expect an accuracy of 85% in this example
 using 1000 pictures of the training data.</p>
-</section>
-<section id="step-4-tuning">
-<h2>Step 4: Tuning<a class="headerlink" href="#step-4-tuning" title="Permalink to this heading"></a></h2>
+</div>
+<div class="section" id="step-4-tuning">
+<h2>Step 4: Tuning<a class="headerlink" href="#step-4-tuning" title="Permalink to this headline">¶</a></h2>
 <p>Now that we have a working baseline we can start tuning parameters.</p>
 <p>But first it is valuable to know how much of a difference in performance there is on the training data, vs the test data.
 This gives an indication of if we have exhausted the learning potential of the training data.</p>
@@ -218,30 +301,30 @@ and have nothing more to learn from the data as it is now.</p>
 <p>To improve further we have to increase the training data, here for example we increase it
 from our sample of 1k to the full training dataset of 60k, in this example the maxi is set to reduce the number of iterations the algorithm takes,
 to again reduce training time</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
-    <span class="c1"># Train Data</span>
-    <span class="n">X_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-    <span class="n">Y_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
-    <span class="n">bias</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X_ds</span><span class="p">,</span> <span class="n">Y_ds</span><span class="p">,</span> <span class="n">maxi</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
-    <span class="c1"># Test data</span>
-    <span class="n">Xt_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Xt</span><span class="p">)</span>
-    <span class="n">Yt_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Yt</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
-    <span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt_ds</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Yt_ds</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+<pre class="code python literal-block"><code><span class="name">Yt</span> <span class="operator">=</span> <span class="name">d</span><span class="operator">.</span><span class="name">get_test_labels</span><span class="punctuation">()</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
-</pre></div>
-</div>
+<span class="keyword">with</span> <span class="name">SystemDSContext</span><span class="punctuation">()</span> <span class="keyword">as</span> <span class="name">sds</span><span class="punctuation">:</span>
+    <span class="comment single"># Train Data</span>
+    <span class="name">X_ds</span> <span class="operator">=</span> <span class="name">sds</span><span class="operator">.</span><span class="name">from_numpy</span><span class="punctuation">(</span><span class="name">X</span><span class="punctuation">)</span>
+    <span class="name">Y_ds</span> <span class="operator">=</span> <span class="name">sds</span><span class="operator">.</span><span class="name">from_numpy</span><span class="punctuation">(</span><span class="name">Y</span><span class="punctuation">)</span> <span class="operator">+</span> <span class="literal number float">1.0</span>
+    <span class="name">bias</span> <span class="operator">=</span> <span class="name">multiLogReg</span><span class="punctuation">(</span><span class="name">X_ds</span><span class="punctuation">,</span> <span class="name">Y_ds</span><span class="punctuation">,</span> <span class="name">maxi</span><span class="operator">=</span><span class="literal number integer">30</span><span class="punctuation">,</span> <span class="name">verbose</span><span class="operator">=</span><span class="keyword constant">False</span><span class="punctuation">)</span>
+    <span class="comment single"># Test data</span>
+    <span class="name">Xt_ds</span> <span class="operator">=</span> <span class="name">sds</span><span class="operator">.</span><span class="name">from_numpy</span><span class="punctuation">(</span><span class="name">Xt</span><span class="punctuation">)</span>
+    <span class="name">Yt_ds</span> <span class="operator">=</span> <span class="name">sds</span><span class="operator">.</span><span class="name">from_numpy</span><span class="punctuation">(</span><span class="name">Yt</span><span class="punctuation">)</span> <span class="operator">+</span> <span class="literal number float">1.0</span>
+    <span class="punctuation">[</span><span class="name">m</span><span class="punctuation">,</span> <span class="name">y_pred</span><span class="punctuation">,</span> <span class="name">acc</span><span class="punctuation">]</span> <span class="operator">=</span> <span class="name">multiLogRegPredict</span><span class="punctuation">(</span><span class="name">Xt_ds</span><span class="punctuation">,</span> <span class="name">bias</span><span class="punctuation">,</span> <span class="name">Yt_ds</span><span class="punctuation">,</span> <span class="name">verbose</span><span class="operator">=</span><span class="keyword constant">False</span><span class="punctuation">)</span><span class="operator">.</span><span class="name">compute</span><span class="punctuation">()</span></code></pre>
 <p>With this change the accuracy achieved changes from the previous value to 92%.
 But this is a basic implementation that can be replaced by a variety of algorithms and techniques.</p>
-</section>
-<section id="full-script">
-<h2>Full Script<a class="headerlink" href="#full-script" title="Permalink to this heading"></a></h2>
+</div>
+<div class="section" id="full-script">
+<h2>Full Script<a class="headerlink" href="#full-script" title="Permalink to this headline">¶</a></h2>
 <p>The full script, some steps are combined to reduce the overall script.
 One noteworthy change is the + 1 is done on the matrix ready for SystemDS,
 this makes SystemDS responsible for adding the 1 to each value.</p>
-<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
-<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span><span class="p">,</span> <span class="n">multiLogRegPredict</span>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.mnist</span> <span class="kn">import</span> <span class="n">DataManager</span>
+<span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span><span class="p">,</span> <span class="n">multiLogRegPredict</span>
 
 <span class="n">d</span> <span class="o">=</span> <span class="n">DataManager</span><span class="p">()</span>
 
@@ -254,47 +337,72 @@ this makes SystemDS responsible for adding the 1 to each value.</p>
     <span class="c1"># Train Data</span>
     <span class="n">X_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
     <span class="n">Y_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
-    <span class="n">bias</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X_ds</span><span class="p">,</span> <span class="n">Y_ds</span><span class="p">,</span> <span class="n">maxi</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+    <span class="n">bias</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X_ds</span><span class="p">,</span> <span class="n">Y_ds</span><span class="p">,</span> <span class="n">maxi</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="c1"># Test data</span>
     <span class="n">Xt_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Xt</span><span class="p">)</span>
     <span class="n">Yt_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Yt</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
-    <span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt_ds</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Yt_ds</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+    <span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt_ds</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Yt_ds</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
 </pre></div>
 </div>
-</section>
-</section>
+</div>
+</div>
 
 
            </div>
+           
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="federated.html" class="btn btn-neutral float-left" title="Federated Environment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="python_end_to_end_tut.html" class="btn btn-neutral float-right" title="Python end-to-end tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="python_end_to_end_tut.html" class="btn btn-neutral float-right" title="Python end-to-end tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="federated.html" class="btn btn-neutral float-left" title="Federated Environment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
     </div>
+  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, Apache SystemDS.</p>
-  </div>
+    <p>
+        
+        &copy; Copyright 2022, Apache SystemDS
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
+
         </div>
       </div>
+
     </section>
+
   </div>
-  <script>
+  
+
+  <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

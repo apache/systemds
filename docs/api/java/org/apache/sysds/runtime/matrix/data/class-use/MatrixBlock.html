@@ -2935,32 +2935,40 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../compress/estim/encoding/IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">IEncode.</span><code><span class="memberNameLink"><a href="../../../compress/estim/encoding/IEncode.html#createFromMatrixBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int)">createFromMatrixBlock</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../../../compress/estim/encoding/EncodingFactory.html#createFromMatrixBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int)">createFromMatrixBlock</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                      boolean&nbsp;transposed,
                      int&nbsp;rowCol)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Create encoding of a single specific column inside the matrix input.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../compress/estim/encoding/IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">IEncode.</span><code><span class="memberNameLink"><a href="../../../compress/estim/encoding/IEncode.html#createFromMatrixBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int%5B%5D)">createFromMatrixBlock</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../../../compress/estim/encoding/EncodingFactory.html#createFromMatrixBlock(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int%5B%5D)">createFromMatrixBlock</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                      boolean&nbsp;transposed,
                      int[]&nbsp;rowCols)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Encode a list of columns together from the input matrix, as if it is cocoded.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../compress/estim/encoding/IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">IEncode.</span><code><span class="memberNameLink"><a href="../../../compress/estim/encoding/IEncode.html#createFromMatrixBlockDelta(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int%5B%5D)">createFromMatrixBlockDelta</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../../../compress/estim/encoding/EncodingFactory.html#createFromMatrixBlockDelta(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int%5B%5D)">createFromMatrixBlockDelta</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                           boolean&nbsp;transposed,
                           int[]&nbsp;rowCols)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Encode a full delta representation of the matrix input taking all rows into account.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../compress/estim/encoding/IEncode.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding">IEncode</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">IEncode.</span><code><span class="memberNameLink"><a href="../../../compress/estim/encoding/IEncode.html#createFromMatrixBlockDelta(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int%5B%5D,int)">createFromMatrixBlockDelta</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+<th class="colSecond" scope="row"><span class="typeNameLabel">EncodingFactory.</span><code><span class="memberNameLink"><a href="../../../compress/estim/encoding/EncodingFactory.html#createFromMatrixBlockDelta(org.apache.sysds.runtime.matrix.data.MatrixBlock,boolean,int%5B%5D,int)">createFromMatrixBlockDelta</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                           boolean&nbsp;transposed,
                           int[]&nbsp;rowCols,
-                          int&nbsp;nVals)</code></th>
-<td class="colLast">&nbsp;</td>
+                          int&nbsp;sampleSize)</code></th>
+<td class="colLast">
+<div class="block">Encode a delta representation of the matrix input taking the first "sampleSize" rows into account.</div>
+</td>
 </tr>
 </tbody>
 </table>

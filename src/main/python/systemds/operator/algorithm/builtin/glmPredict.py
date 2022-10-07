@@ -37,7 +37,7 @@ def glmPredict(X: Matrix,
     
      Additional statistics are printed one per each line, in the following 
     
-     .. code-block:: txt
+     .. code-block::
     
        CSV format: NAME,[COLUMN],[SCALED],VALUE
        ---
@@ -49,7 +49,7 @@ def glmPredict(X: Matrix,
        VALUE  is the value of the statistic.
        ---
     
-     .. code-block:: txt
+     .. code-block::
     
        NAME                  COLUMN  SCALED  MEANING
        ---------------------------------------------------------------------------------------------

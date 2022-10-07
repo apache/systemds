@@ -109,6 +109,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.cp">org.apache.sysds.runtime.instructions.cp</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -130,6 +134,54 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../QuaternaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">QuaternaryCPInstruction</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QuaternaryCPInstruction.</span><code><span class="memberNameLink"><a href="../QuaternaryCPInstruction.html#parseInstruction(java.lang.String)">parseInstruction</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;inst)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section role="region"><a id="org.apache.sysds.runtime.instructions.fed">
+<!--   -->
+</a>
+<h3>Uses of <a href="../QuaternaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">QuaternaryCPInstruction</a> in <a href="../../fed/package-summary.html">org.apache.sysds.runtime.instructions.fed</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../fed/package-summary.html">org.apache.sysds.runtime.instructions.fed</a> with parameters of type <a href="../QuaternaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">QuaternaryCPInstruction</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../fed/QuaternaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">QuaternaryFEDInstruction</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QuaternaryFEDInstruction.</span><code><span class="memberNameLink"><a href="../../fed/QuaternaryFEDInstruction.html#parseInstruction(org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction,org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">parseInstruction</a></span>&#8203;(<a href="../QuaternaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">QuaternaryCPInstruction</a>&nbsp;inst,
+                <a href="../../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../fed/QuaternaryWCeMMFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">QuaternaryWCeMMFEDInstruction</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QuaternaryWCeMMFEDInstruction.</span><code><span class="memberNameLink"><a href="../../fed/QuaternaryWCeMMFEDInstruction.html#parseInstruction(org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction)">parseInstruction</a></span>&#8203;(<a href="../QuaternaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">QuaternaryCPInstruction</a>&nbsp;instr)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../fed/QuaternaryWDivMMFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">QuaternaryWDivMMFEDInstruction</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QuaternaryWDivMMFEDInstruction.</span><code><span class="memberNameLink"><a href="../../fed/QuaternaryWDivMMFEDInstruction.html#parseInstruction(org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction)">parseInstruction</a></span>&#8203;(<a href="../QuaternaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">QuaternaryCPInstruction</a>&nbsp;instr)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../fed/QuaternaryWSigmoidFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">QuaternaryWSigmoidFEDInstruction</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QuaternaryWSigmoidFEDInstruction.</span><code><span class="memberNameLink"><a href="../../fed/QuaternaryWSigmoidFEDInstruction.html#parseInstruction(org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction)">parseInstruction</a></span>&#8203;(<a href="../QuaternaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">QuaternaryCPInstruction</a>&nbsp;instr)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../fed/QuaternaryWSLossFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">QuaternaryWSLossFEDInstruction</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QuaternaryWSLossFEDInstruction.</span><code><span class="memberNameLink"><a href="../../fed/QuaternaryWSLossFEDInstruction.html#parseInstruction(org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction)">parseInstruction</a></span>&#8203;(<a href="../QuaternaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">QuaternaryCPInstruction</a>&nbsp;instr)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../fed/QuaternaryWUMMFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">QuaternaryWUMMFEDInstruction</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QuaternaryWUMMFEDInstruction.</span><code><span class="memberNameLink"><a href="../../fed/QuaternaryWUMMFEDInstruction.html#parseInstruction(org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction)">parseInstruction</a></span>&#8203;(<a href="../QuaternaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">QuaternaryCPInstruction</a>&nbsp;instr)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

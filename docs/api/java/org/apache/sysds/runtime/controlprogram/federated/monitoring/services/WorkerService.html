@@ -26,8 +26,8 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9,"i6":10};
+var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -168,7 +168,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colSecond" scope="col">Method</th>
@@ -200,6 +200,12 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#syncWorkerStatisticsWithDB(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel,java.lang.Long)">syncWorkerStatisticsWithDB</a></span>&#8203;(<a href="../models/StatisticsModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">StatisticsModel</a>&nbsp;stats,
+                          <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#update(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel)">update</a></span>&#8203;(<a href="../models/WorkerModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">WorkerModel</a>&nbsp;model)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -295,10 +301,20 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <a id="getWorkerOnlineStatus(java.lang.Long)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getWorkerOnlineStatus</h4>
 <pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang" class="externalLink">Boolean</a>&nbsp;getWorkerOnlineStatus&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;workerId)</pre>
+</li>
+</ul>
+<a id="syncWorkerStatisticsWithDB(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel,java.lang.Long)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>syncWorkerStatisticsWithDB</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;syncWorkerStatisticsWithDB&#8203;(<a href="../models/StatisticsModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">StatisticsModel</a>&nbsp;stats,
+                                              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id)</pre>
 </li>
 </ul>
 </li>

@@ -35,7 +35,7 @@ def matrixProfile(ts: Matrix,
      Builtin function that computes the MatrixProfile of a time series efficiently
      using the SCRIMP++ algorithm.
     
-     .. code-block:: txt
+     .. code-block::
     
        References:
        Yan Zhu et al.. 2018.

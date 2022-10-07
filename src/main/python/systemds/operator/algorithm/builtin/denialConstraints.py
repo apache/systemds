@@ -34,7 +34,7 @@ def denialConstraints(dataFrame: Frame,
     """
      This function considers some constraints indicating statements that can NOT happen in the data (denial constraints).
     
-     .. code-block:: txt
+     .. code-block::
     
        EXAMPLE:
        dataFrame:

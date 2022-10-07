@@ -37,7 +37,7 @@ def confusionMatrix(P: Matrix,
      After which, it calculates and returns the sum of classifications
      and the average of each true class.
     
-     .. code-block:: txt
+     .. code-block::
     
                        True Labels
                          1    2

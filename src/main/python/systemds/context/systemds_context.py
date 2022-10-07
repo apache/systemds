@@ -74,9 +74,9 @@ class SystemDSContext(object):
         :param capture_statistics: If the statistics of the execution in SystemDS should be captured
         :param capture_stdout: If the standard out should be captured in Java SystemDS and maintained in ques
         :param logging_level: Specify the logging level used for informative messages, default 20 indicating INFO.
-        The logging levels are as follows: 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL.
+            The logging levels are as follows: 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL.
         :param py4j_logging_level: The logging level for Py4j to use, since all communication to the JVM is done through this,
-        it can be verbose if not set high.
+            it can be verbose if not set high.
         """
         self.__setup_logging(logging_level, py4j_logging_level)
         self.__start(port,  capture_stdout)
@@ -347,12 +347,14 @@ class SystemDSContext(object):
         Afterwards capturing will be reset to the state it was before.
 
         Example:
-        ```Python
-        with sds.capture_stats_context():
-            a = some_computation.compute()
-            b = another_computation.compute()
-        print(sds.take_stats())
-        ```
+        
+        # ```Python
+        # with sds.capture_stats_context():
+        #     a = some_computation.compute()
+        #     b = another_computation.compute()
+        # print(sds.take_stats())
+        # ```
+
         :return: a context object to be used in a `with` statement
         """
         was_enabled = self._capture_statistics

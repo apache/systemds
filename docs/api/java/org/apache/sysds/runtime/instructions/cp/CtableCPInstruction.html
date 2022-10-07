@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":9,"i2":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9,"i6":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -221,18 +221,38 @@ extends <a href="ComputationCPInstruction.html" title="class in org.apache.sysds
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getIgnoreZeros()">getIgnoreZeros</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getIsExpand()">getIsExpand</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../../lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getLineageItem(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">getLineageItem</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">
 <div class="block">Obtain lineage trace of an instruction with a single output.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOutDim1()">getOutDim1</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code><a href="CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOutDim2()">getOutDim2</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static <a href="CtableCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">CtableCPInstruction</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#parseInstruction(java.lang.String)">parseInstruction</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;inst)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#processInstruction(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">processInstruction</a></span>&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code></th>
 <td class="colLast">
@@ -320,7 +340,7 @@ extends <a href="ComputationCPInstruction.html" title="class in org.apache.sysds
 <a id="getLineageItem(org.apache.sysds.runtime.controlprogram.context.ExecutionContext)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getLineageItem</h4>
 <pre class="methodSignature">public&nbsp;org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="../../lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;&nbsp;getLineageItem&#8203;(<a href="../../controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
@@ -336,6 +356,42 @@ extends <a href="ComputationCPInstruction.html" title="class in org.apache.sysds
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>pair of (output variable name, output lineage item)</dd>
 </dl>
+</li>
+</ul>
+<a id="getOutDim1()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getOutDim1</h4>
+<pre class="methodSignature">public&nbsp;<a href="CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;getOutDim1()</pre>
+</li>
+</ul>
+<a id="getOutDim2()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getOutDim2</h4>
+<pre class="methodSignature">public&nbsp;<a href="CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;getOutDim2()</pre>
+</li>
+</ul>
+<a id="getIsExpand()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getIsExpand</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;getIsExpand()</pre>
+</li>
+</ul>
+<a id="getIgnoreZeros()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getIgnoreZeros</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;getIgnoreZeros()</pre>
 </li>
 </ul>
 </li>

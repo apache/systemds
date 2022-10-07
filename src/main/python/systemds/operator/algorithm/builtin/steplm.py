@@ -38,7 +38,7 @@ def steplm(X: Matrix,
      until the Akaike information criterion (AIC) does not improve anymore. Each configuration trains a regression model
      via lm, which in turn calls either the closed form lmDS or iterative lmGC.
     
-     .. code-block:: txt 
+     .. code-block:: 
     
        return: Matrix of regression parameters (the betas) and its size depend on icpt input value:
                OUTPUT SIZE:   OUTPUT CONTENTS:                HOW TO PREDICT Y FROM X AND B:

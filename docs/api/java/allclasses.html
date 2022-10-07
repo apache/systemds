@@ -39,6 +39,7 @@
 <li><a href="org/apache/sysds/runtime/instructions/fed/AggregateBinaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">AggregateBinaryFEDInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/gpu/AggregateBinaryGPUInstruction.html" title="class in org.apache.sysds.runtime.instructions.gpu">AggregateBinaryGPUInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/spark/AggregateBinarySPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">AggregateBinarySPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/functions/AggregateDropCorrectionFunction.html" title="class in org.apache.sysds.runtime.instructions.spark.functions">AggregateDropCorrectionFunction</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/operators/AggregateOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateOperator</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/AggregateTernaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">AggregateTernaryCPInstruction</a></li>
@@ -79,6 +80,7 @@
 <li><a href="org/apache/sysds/runtime/privacy/propagation/AppendPropagator.html" title="class in org.apache.sysds.runtime.privacy.propagation">AppendPropagator</a></li>
 <li><a href="org/apache/sysds/lops/AppendR.html" title="class in org.apache.sysds.lops">AppendR</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/AppendRSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">AppendRSPInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/spark/AppendSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">AppendSPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/APreAgg.html" title="class in org.apache.sysds.runtime.compress.colgroup">APreAgg</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/gpu/ArithmeticBinaryGPUInstruction.html" title="class in org.apache.sysds.runtime.instructions.gpu">ArithmeticBinaryGPUInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/ASDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ASDC</a></li>
@@ -228,7 +230,6 @@
 <li><a href="org/apache/sysds/runtime/compress/colgroup/ColGroupConst.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupConst</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/ColGroupDDCFOR.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDCFOR</a></li>
-<li><a href="org/apache/sysds/runtime/compress/colgroup/ColGroupDeltaDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDeltaDDC</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupEmpty</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupFactory</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/ColGroupIO.html" title="interface in org.apache.sysds.runtime.compress.colgroup"><span class="interfaceName">ColGroupIO</span></a></li>
@@ -316,7 +317,7 @@
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/CostEstimator.ExcludeType.html" title="enum in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimator.ExcludeType</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/CostEstimator.TestMeasure.html" title="enum in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimator.TestMeasure</a></li>
 <li><a href="org/apache/sysds/runtime/compress/cost/CostEstimatorBuilder.html" title="class in org.apache.sysds.runtime.compress.cost">CostEstimatorBuilder</a></li>
-<li><a href="org/apache/sysds/runtime/compress/cost/CostEstimatorFactory.html" title="class in org.apache.sysds.runtime.compress.cost">CostEstimatorFactory</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cost/CostEstimatorFactory.html" title="interface in org.apache.sysds.runtime.compress.cost"><span class="interfaceName">CostEstimatorFactory</span></a></li>
 <li><a href="org/apache/sysds/runtime/compress/cost/CostEstimatorFactory.CostType.html" title="enum in org.apache.sysds.runtime.compress.cost">CostEstimatorFactory.CostType</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/CostEstimatorHops.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimatorHops</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/CostEstimatorRuntime.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimatorRuntime</a></li>
@@ -540,6 +541,7 @@
 <li><a href="org/apache/sysds/runtime/transform/encode/EncoderMVImpute.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderMVImpute</a></li>
 <li><a href="org/apache/sysds/runtime/transform/encode/EncoderMVImpute.MVMethod.html" title="enum in org.apache.sysds.runtime.transform.encode">EncoderMVImpute.MVMethod</a></li>
 <li><a href="org/apache/sysds/runtime/transform/encode/EncoderOmit.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderOmit</a></li>
+<li><a href="org/apache/sysds/runtime/compress/estim/encoding/EncodingFactory.html" title="interface in org.apache.sysds.runtime.compress.estim.encoding"><span class="interfaceName">EncodingFactory</span></a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/Encrypted.html" title="class in org.apache.sysds.runtime.instructions.cp">Encrypted</a></li>
 <li><a href="org/apache/sysds/utils/EnvironmentHelper.html" title="class in org.apache.sysds.utils">EnvironmentHelper</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/Equals.html" title="class in org.apache.sysds.runtime.functionobjects">Equals</a></li>
@@ -587,6 +589,8 @@
 <li><a href="org/apache/sysds/runtime/iogen/FastStringTokenizer.html" title="class in org.apache.sysds.runtime.iogen">FastStringTokenizer</a></li>
 <li><a href="org/apache/sysds/runtime/util/FastStringTokenizer.html" title="class in org.apache.sysds.runtime.util">FastStringTokenizer</a></li>
 <li><a href="org/apache/sysds/lops/Federated.html" title="class in org.apache.sysds.lops">Federated</a></li>
+<li><a href="org/apache/sysds/hops/fedplanner/FederatedCompilationTimer.html" title="class in org.apache.sysds.hops.fedplanner">FederatedCompilationTimer</a></li>
+<li><a href="org/apache/sysds/hops/fedplanner/FederatedCompilationTimer.TimeEntry.html" title="class in org.apache.sysds.hops.fedplanner">FederatedCompilationTimer.TimeEntry</a></li>
 <li><a href="org/apache/sysds/hops/cost/FederatedCost.html" title="class in org.apache.sysds.hops.cost">FederatedCost</a></li>
 <li><a href="org/apache/sysds/hops/cost/FederatedCostEstimator.html" title="class in org.apache.sysds.hops.cost">FederatedCostEstimator</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a></li>

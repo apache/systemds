@@ -277,7 +277,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private static void printStatistics() {
 		if(DMLScript.STATISTICS && Statistics.allowWorkerStatistics) {
 			System.out.println("Federated Worker " + Statistics.display());
-			Statistics.reset();
+			// Statistics.reset();
 		}
 	}
 

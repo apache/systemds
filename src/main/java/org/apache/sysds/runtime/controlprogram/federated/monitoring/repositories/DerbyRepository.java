@@ -44,7 +44,8 @@ public class DerbyRepository implements IRepository {
 			new EventModel(),
 			new EventStageModel(),
 			new DataObjectModel(),
-			new RequestModel()
+			new RequestModel(),
+			new HeavyHitterModel()
 	));
 	private static final String ENTITY_SCHEMA_CREATE_STMT = "CREATE TABLE %s " +
 			"(id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)";

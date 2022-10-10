@@ -33,6 +33,7 @@ import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.HeavyHitterModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions;
@@ -77,7 +78,7 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 		int retry = 10;
 		while(model == null && retry > 0){
 			Thread.sleep(1000);
-			model = (StatisticsModel) StatisticsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0]);
+			model = StatisticsService.getWorkerStatistics(1L, "localhost:" + workerPorts[0]);
 			retry--;
 		}
 
@@ -214,6 +215,17 @@ public class FederatedWorkerStatisticsTest extends FederatedMonitoringTestBase {
 						if (requestEntity.coordinatorId > 0) {
 							entityRepository.createEntity(requestEntity);
 						}
+					}
+
+					return true;
+				});
+			}
+			if (stats.heavyHitters != null) {
+				dataObjFuture = CompletableFuture.supplyAsync(() -> {
+					entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, HeavyHitterModel.class);
+
+					for (var heavyHitterEntity : stats.heavyHitters) {
+						entityRepository.createEntity(heavyHitterEntity);
 					}
 
 					return true;

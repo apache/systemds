@@ -32,6 +32,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.HeavyHitterModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.WorkerModel;
@@ -170,6 +171,22 @@ public class WorkerService {
 					for (var requestEntity : stats.requests) {
 						if (requestEntity.coordinatorId > 0) {
 							entityRepository.createEntity(requestEntity);
+						}
+					}
+				});
+			}
+			if (stats.heavyHitters != null) {
+				CompletableFuture.runAsync(() -> {
+					// entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, HeavyHitterModel.class);
+
+					// for (var heavyHitterEntity : stats.heavyHitters) {
+					// 	entityRepository.createEntity(heavyHitterEntity);
+					// }
+					if(!stats.heavyHitters.isEmpty()) {
+						entityRepository.removeAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, id, HeavyHitterModel.class);
+
+						for(var heavyHitterEntity : stats.heavyHitters) {
+							entityRepository.createEntity(heavyHitterEntity);
 						}
 					}
 				});

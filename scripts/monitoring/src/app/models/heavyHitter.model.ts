@@ -17,52 +17,8 @@
  * under the License.
  */
 
-let coordinators = [
-	{
-		"id": 1,
-		"name": "Coordinator 1",
-		"host": "localhost",
-		"processId": 4242
-	},
-	{
-		"id": 2,
-		"name": "Coordinator 1",
-		"host": "localhost",
-		"processId": 4241
-	}
-]
-
-let workers = [
-	{
-		"id": 1,
-		"name": "Worker 1",
-		"address": "localhost:8001",
-		"isOnline": false
-	},
-	{
-		"id": 2,
-		"name": "Worker 2",
-		"address": "localhost:8002",
-		"isOnline": false
-	},
-	{
-		"id": 3,
-		"name": "Worker 3",
-		"address": "localhost:8003",
-		"isOnline": true,
-	}
-]
-
-
-let statistics = {
-	"utilization": [],
-	"traffic": [],
-	"dataObjects": [],
-	"requests": [],
-	"heavyHitters": []
-}
-export const serviceMockData = {
-	workers: workers,
-	coordinators: coordinators,
-	statistics: statistics
+export class HeavyHitter {
+	constructor(public operation: string = '',
+				public duration: number = 0,
+				public count: number = 0) { }
 }

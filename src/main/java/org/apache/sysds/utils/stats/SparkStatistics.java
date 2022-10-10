@@ -34,6 +34,7 @@ public class SparkStatistics {
 	private static final LongAdder broadcastCount = new LongAdder();
 	private static final LongAdder asyncPrefetchCount = new LongAdder();
 	private static final LongAdder asyncBroadcastCount = new LongAdder();
+	private static final LongAdder asyncTriggerRemoteCount = new LongAdder();
 
 	public static boolean createdSparkContext() {
 		return ctxCreateTime > 0;
@@ -76,6 +77,10 @@ public class SparkStatistics {
 		asyncBroadcastCount.add(c);
 	}
 
+	public static void incAsyncTriggerRemoteCount(long c) {
+		asyncTriggerRemoteCount.add(c);
+	}
+
 	public static long getSparkCollectCount() {
 		return collectCount.longValue();
 	}
@@ -88,6 +93,10 @@ public class SparkStatistics {
 		return asyncBroadcastCount.longValue();
 	}
 
+	public static long getAsyncTriggerRemoteCount() {
+		return asyncTriggerRemoteCount.longValue();
+	}
+
 	public static void reset() {
 		ctxCreateTime = 0;
 		parallelizeTime.reset();
@@ -98,6 +107,7 @@ public class SparkStatistics {
 		collectCount.reset();
 		asyncPrefetchCount.reset();
 		asyncBroadcastCount.reset();
+		asyncTriggerRemoteCount.reset();
 	}
 
 	public static String displayStatistics() {
@@ -114,8 +124,8 @@ public class SparkStatistics {
 						broadcastTime.longValue()*1e-9,
 						collectTime.longValue()*1e-9));
 		if (OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS)
-			sb.append("Spark async. count (pf,bc): \t" + 
-					String.format("%d/%d.\n", getAsyncPrefetchCount(), getAsyncBroadcastCount()));
+			sb.append("Spark async. count (pf,bc,tr): \t" +
+					String.format("%d/%d/%d.\n", getAsyncPrefetchCount(), getAsyncBroadcastCount(), getAsyncTriggerRemoteCount()));
 		return sb.toString();
 	}
 }

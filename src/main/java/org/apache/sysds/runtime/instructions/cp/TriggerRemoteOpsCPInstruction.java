@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.concurrent.Executors;
@@ -26,31 +25,29 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-public class PrefetchCPInstruction extends UnaryCPInstruction {
-	private PrefetchCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
-		super(CPType.Prefetch, op, in, out, opcode, istr);
+public class TriggerRemoteOpsCPInstruction extends UnaryCPInstruction {
+	private TriggerRemoteOpsCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
+		super(CPType.TrigRemote, op, in, out, opcode, istr);
 	}
-	
-	public static PrefetchCPInstruction parseInstruction (String str) {
+
+	public static TriggerRemoteOpsCPInstruction parseInstruction (String str) {
 		InstructionUtils.checkNumFields(str, 2);
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand in = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		return new PrefetchCPInstruction(null, in, out, opcode, str);
+		return new TriggerRemoteOpsCPInstruction(null, in, out, opcode, str);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		//TODO: handle non-matrix objects
+		// TODO: Operator placement.
+		// Note for testing: write a method in the Dag class to place this operator
+		// after Spark MMRJ. Then execute PrefetchRDDTest.testAsyncSparkOPs3.
 		ec.setVariable(output.getName(), ec.getMatrixObject(input1));
 
-		// Note, a Prefetch instruction doesn't guarantee an asynchronous execution.
-		// If the next instruction which takes this output as an input comes before
-		// the prefetch thread triggers, that instruction will start the operations.
-		// In that case this Prefetch instruction will act like a NOOP. 
 		if (CommonThreadPool.triggerRemoteOPsPool == null)
 			CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
-		CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerPrefetchTask(ec.getMatrixObject(output)));
+		CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerRemoteOperationsTask(ec.getMatrixObject(output)));
 	}
 }

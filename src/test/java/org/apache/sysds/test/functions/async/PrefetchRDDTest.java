@@ -64,7 +64,7 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 
 	@Test
 	public void testAsyncSparkOPs3() {
-		//SP action type consumer. No Prefetch.
+		//SP binary consumer, followed by an action. No Prefetch.
 		runTest(TEST_NAME+"3");
 	}
 	

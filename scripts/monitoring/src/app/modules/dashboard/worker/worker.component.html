@@ -17,7 +17,7 @@
 	under the License.
 -->
 
-<mat-card class="worker-card">
+<mat-card class="worker-card" [style.height.px]="450 + additionalCardHeight">
 	<mat-card-title *ngIf="model">{{ model.name }}</mat-card-title>
 	<mat-divider inset></mat-divider>
 	<mat-card-content *ngIf="model">
@@ -52,15 +52,20 @@
 	<mat-divider inset></mat-divider>
 
 	<mat-card-content>
+		<mat-form-field appearance="fill" class="full-width">
+			<mat-label>Select number of heavy hitters</mat-label>
+			<input matInput type="number" placeholder="3" [(ngModel)]="heavyHittersCount">
+		</mat-form-field>
+
 		<table [dataSource]="dataSource" mat-table matSort>
 
 			<ng-container matColumnDef="instruction">
-				<th *matHeaderCellDef mat-header-cell mat-sort-header> Top 3 Inst.</th>
+				<th *matHeaderCellDef mat-header-cell mat-sort-header> Top {{heavyHittersCount}} Heavy Hitters</th>
 				<td *matCellDef="let element" mat-cell> {{element['instruction']}} </td>
 			</ng-container>
 
 			<ng-container matColumnDef="time">
-				<th *matHeaderCellDef mat-header-cell mat-sort-header> Time(ms)</th>
+				<th *matHeaderCellDef mat-header-cell mat-sort-header> Time(Sec)</th>
 				<td *matCellDef="let element" mat-cell> {{element['time']}} </td>
 			</ng-container>
 

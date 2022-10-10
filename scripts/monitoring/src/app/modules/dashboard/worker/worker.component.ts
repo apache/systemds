@@ -43,6 +43,9 @@ export class WorkerComponent {
 	public displayedColumns: string[] = ['instruction', 'time', 'frequency'];
 	public dataSource: MatTableDataSource<any> = new MatTableDataSource<any>([]);
 
+	public heavyHittersCount: number = 3;
+	public additionalCardHeight: number = 0;
+
 	private stopPollingWorker = new Subject<any>();
 	private stopPollingStatistics = new Subject<any>();
 
@@ -111,33 +114,22 @@ export class WorkerComponent {
 	}
 
 	private parseInstructions(): any {
-		let tmp = {};
-		let result: any[] = [];
-		this.statistics.events.forEach(e => {
-			e.stages.forEach(s => {
-				if (!tmp[s.operation]) {
-					tmp[s.operation] = {
-						frequency: 0,
-						time: 0
-					}
-				}
-
-				tmp[s.operation]['frequency'] += 1;
-				tmp[s.operation]['time'] += (new Date(s.endTime).getTime() - new Date(s.startTime).getTime());
-			})
+		let result: any = this.statistics.heavyHitters.map(hh => {
+			return {
+				instruction: hh.operation,
+				time: hh.duration,
+				frequency: hh.count
+			}
 		});
 
-		for (const [key, value] of Object.entries(tmp)) {
-			result.push({
-				instruction: key,
-				// @ts-ignore
-				time: value['time'],
-				// @ts-ignore
-				frequency: value['frequency']
-			})
+		// 48 px is the height of one table row
+		this.additionalCardHeight = this.heavyHittersCount * 48;
+
+		if (result.length < this.heavyHittersCount) {
+			this.heavyHittersCount = result.length;
 		}
 
-		return result.sort((a,b) => b['time']-a['time']).slice(0,3);
+		return result.sort((a,b) => b['time']-a['time']).slice(0,this.heavyHittersCount);
 	}
 
 	ngOnDestroy() {

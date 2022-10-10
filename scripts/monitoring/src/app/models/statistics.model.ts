@@ -22,11 +22,13 @@ import { Traffic } from "./traffic.model";
 import { Event } from "./event.model";
 import { DataObject } from "./dataObject.model";
 import { FedRequest } from "./fedRequest.model";
+import { HeavyHitter } from "./heavyHitter.model";
 
 export class Statistics {
 	constructor(public utilization: Utilization[] = [],
 				public traffic: Traffic[] = [],
 				public events: Event[] = [],
 				public dataObjects: DataObject[] = [],
-				public requests: FedRequest[] = []) { }
+				public requests: FedRequest[] = [],
+				public heavyHitters: HeavyHitter[] = []) { }
 }

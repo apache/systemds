@@ -29,13 +29,15 @@ public class StatisticsModel extends BaseModel {
 	public List<EventModel> events;
 	public List<DataObjectModel> dataObjects;
 	public List<RequestModel> requests;
+	public List<HeavyHitterModel> heavyHitters;
 
 	private static final String JsonFormat = "{" +
 			"\"utilization\": [%s]," +
 			"\"traffic\": [%s]," +
 			"\"events\": [%s]," +
 			"\"dataObjects\": [%s]," +
-			"\"requests\": [%s]" +
+			"\"requests\": [%s]," +
+			"\"heavyHitters\": [%s]" +
 			"}";
 
 	public StatisticsModel() { }
@@ -44,18 +46,20 @@ public class StatisticsModel extends BaseModel {
 						   List<TrafficModel> traffic,
 						   List<EventModel> events,
 						   List<DataObjectModel> dataObjects,
-						   List<RequestModel> requests) {
+						   List<RequestModel> requests,
+						   List<HeavyHitterModel> heavyHitters) {
 		this.utilization = utilization;
 		this.traffic = traffic;
 		this.events = events;
 		this.dataObjects = dataObjects;
 		this.requests = requests;
+		this.heavyHitters = heavyHitters;
 	}
 
 
 	@Override
 	public String toString() {
-		String utilizationStr = null, trafficStr = null, eventsStr = null, dataObjectsStr = null, requestsStr = null;
+		String utilizationStr = null, trafficStr = null, eventsStr = null, dataObjectsStr = null, requestsStr = null, heavyHittersStr = null;
 
 		if (utilization != null) {
 			utilizationStr = utilization.stream()
@@ -87,6 +91,12 @@ public class StatisticsModel extends BaseModel {
 					.collect(Collectors.joining(","));
 		}
 
-		return String.format(JsonFormat, utilizationStr, trafficStr, eventsStr, dataObjectsStr, requestsStr);
+		if (heavyHitters != null) {
+			heavyHittersStr = heavyHitters.stream()
+					.map(HeavyHitterModel::toString)
+					.collect(Collectors.joining(","));
+		}
+
+		return String.format(JsonFormat, utilizationStr, trafficStr, eventsStr, dataObjectsStr, requestsStr, heavyHittersStr);
 	}
 }

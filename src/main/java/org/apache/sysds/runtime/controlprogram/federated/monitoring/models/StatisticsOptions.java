@@ -27,4 +27,5 @@ public class StatisticsOptions extends BaseModel {
 	public boolean events = true;
 	public boolean dataObjects = true;
 	public boolean requests = true;
+	public boolean heavyHitters = true;
 }

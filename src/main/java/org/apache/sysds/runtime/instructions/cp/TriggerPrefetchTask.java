@@ -19,32 +19,37 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.utils.stats.SparkStatistics;
 
-public class TriggerRemoteOperationsTask implements Runnable {
-	MatrixObject _remoteOperationsRoot;
+public class TriggerPrefetchTask implements Runnable {
+	MatrixObject _prefetchMO;
 
-	public TriggerRemoteOperationsTask(MatrixObject mo) {
-		_remoteOperationsRoot = mo;
+	public TriggerPrefetchTask(MatrixObject mo) {
+		_prefetchMO = mo;
 	}
 
 	@Override
 	public void run() {
-		boolean triggered = false;
-		synchronized (_remoteOperationsRoot) {
-			if (_remoteOperationsRoot.isPendingRDDOps()) {
-				JavaPairRDD<?, ?> rdd = _remoteOperationsRoot.getRDDHandle().getRDD();
-				rdd.persist(Checkpoint.DEFAULT_STORAGE_LEVEL).count();
-				_remoteOperationsRoot.getRDDHandle().setCheckpointRDD(true);
-				triggered = true;
+		boolean prefetched = false;
+		synchronized (_prefetchMO) {
+			// Having this check inside the critical section
+			// safeguards against concurrent rmVar.
+			if (_prefetchMO.isPendingRDDOps() || _prefetchMO.isFederated()) {
+				// TODO: Add robust runtime constraints for federated prefetch
+				// Execute and bring the result to local
+				_prefetchMO.acquireReadAndRelease();
+				prefetched = true;
 			}
 		}
-
-		if (DMLScript.STATISTICS && triggered)
-			SparkStatistics.incAsyncTriggerRemoteCount(1);
+		if (DMLScript.STATISTICS && prefetched) {
+			if (_prefetchMO.isFederated())
+				FederatedStatistics.incAsyncPrefetchCount(1);
+			else
+				SparkStatistics.incAsyncPrefetchCount(1);
+		}
 	}
+
 }

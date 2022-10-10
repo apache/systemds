@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.Coord
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.HeavyHitterModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.StatisticsOptions;
@@ -58,6 +59,7 @@ public class StatisticsService {
 		CompletableFuture<Void> eventsFuture = null;
 		CompletableFuture<Void> dataObjFuture = null;
 		CompletableFuture<Void> requestsFuture = null;
+		CompletableFuture<Void> heavyHittersFuture = null;
 
 		var stats = new StatisticsModel();
 
@@ -101,7 +103,13 @@ public class StatisticsService {
 					.thenAcceptAsync(result -> stats.requests = result);
 		}
 
-		List<CompletableFuture<Void>> completableFutures = Arrays.asList(utilizationFuture, trafficFuture, eventsFuture, dataObjFuture, requestsFuture);
+		if (options.heavyHitters) {
+			heavyHittersFuture = CompletableFuture
+					.supplyAsync(() -> entityRepository.getAllEntitiesByField(Constants.ENTITY_WORKER_ID_COL, workerId, HeavyHitterModel.class))
+					.thenAcceptAsync(result -> stats.heavyHitters = result);
+		}
+
+		List<CompletableFuture<Void>> completableFutures = Arrays.asList(utilizationFuture, trafficFuture, eventsFuture, dataObjFuture, requestsFuture, heavyHittersFuture);
 
 		completableFutures.forEach(cf -> {
 			try {
@@ -151,6 +159,8 @@ public class StatisticsService {
 		var dataObjects = aggFedStats.workerDataObjects;
 		var requests = aggFedStats.workerRequests;
 
+		List<HeavyHitterModel> heavyHitters = new ArrayList<>();
+
 		utilization.workerId = workerId;
 		traffic.forEach(t -> t.workerId = workerId);
 		dataObjects.forEach(o -> o.workerId = workerId);
@@ -173,7 +183,12 @@ public class StatisticsService {
 			setCoordinatorId(request);
 		}
 
-		return new StatisticsModel(List.of(utilization), traffic, events, dataObjects, requests);
+		for (var heavyHitterEntry: aggFedStats.heavyHitters.entrySet()) {
+			var newHH = new HeavyHitterModel(workerId, heavyHitterEntry.getKey(), heavyHitterEntry.getValue().getValue(), heavyHitterEntry.getValue().getLeft());
+			heavyHitters.add(newHH);
+		}
+
+		return new StatisticsModel(List.of(utilization), traffic, events, dataObjects, requests, heavyHitters);
 	}
 
 	private static void setCoordinatorId(CoordinatorConnectionModel entity) {

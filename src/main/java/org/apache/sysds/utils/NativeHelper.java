@@ -333,6 +333,7 @@ public class NativeHelper {
 	 * @return true if successfully loaded BLAS
 	 */
 	public static boolean loadLibraryHelperFromResource(String libFileName)  {
+		LOG.info("Loading JNI shared library: " + libFileName);
 		try(InputStream in = NativeHelper.class.getResourceAsStream("/lib/"+ libFileName)) {
 			// This logic is added because Java does not allow to load library from a resource file.
 			if(in != null) {
@@ -346,10 +347,10 @@ public class NativeHelper {
 				return true;
 			}
 			else
-				LOG.warn("No lib available in the jar:" + libFileName);
+				LOG.error("No lib available in the jar:" + libFileName);
 		}
-		catch(IOException e) {
-			LOG.warn("Unable to load library " + libFileName + " from resource:" + e.getMessage());
+		catch(IOException | UnsatisfiedLinkError e) {
+			LOG.error("Unable to load library " + libFileName + " from resource:" + e.getMessage());
 		}
 		return false;
 	}

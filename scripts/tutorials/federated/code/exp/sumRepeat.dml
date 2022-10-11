@@ -1,0 +1,8 @@
+X = read($1)
+
+for(x in 1:$2){
+    s = 0
+    s = s + sum(X)
+}
+
+print("Sum of Data: " + s)

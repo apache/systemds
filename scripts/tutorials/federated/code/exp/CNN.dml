@@ -1,0 +1,26 @@
+
+X = read($1) / 255
+Y = read($2)
+
+Xt = read($3) / 255
+Yt = read($4)
+
+epochs = 2
+learning_rate = 0.1
+utype = "BSP"
+freq = "EPOCH"
+# freq="BATCH"
+batch_size = 128
+scheme = "DISJOINT_CONTIGUOUS"
+mode = "LOCAL"
+seed = -1
+
+source("code/network/CNN.dml") as CNN
+
+model = CNN::train_paramserv(X, Y, epochs, utype, freq, batch_size, scheme, mode, learning_rate, seed)
+
+probs_test = CNN::predict(Xt, batch_size, model)
+[loss_test, acc] = CNN::eval(probs_test, Yt)
+
+print("Test loss: " + loss_test + " acc: " + acc)
+

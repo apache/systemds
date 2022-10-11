@@ -1,0 +1,12 @@
+X = read($1)
+Y = read($2) + 1
+Xt = read($3)
+Yt = read($4) + 1
+
+beta = multiLogReg(X=X, Y=Y, verbose=$5, maxi=5)
+
+[m, pred, acc] = multiLogRegPredict(X=Xt, B=beta, Y=Yt)
+
+[co, avg] = confusionMatrix(P=pred, Y=Yt)
+
+print(toString(avg))

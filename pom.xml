@@ -97,8 +97,12 @@
 					<exclude>perftestDeprecated</exclude>
 					<exclude>staging/**/*</exclude>
 					<exclude>monitoring/**/*</exclude>
+					<exclude>monitoring</exclude>
 					<exclude>nn/test/compare_backends/*</exclude>
-					<exclude>nn/test/compare_backends/*</exclude>
+					<exclude>nn/test/compare_backends</exclude>
+					<exclude>tutorials/**/*</exclude>
+					<exclude>tutorials</exclude>
+					<exclude>aws</exclude>
 				</excludes>
 				<targetPath>scripts</targetPath>
 			</resource>
@@ -577,6 +581,7 @@
 							<excludes>
 								<exclude>scripts/perftest/results/**</exclude>
 								<exclude>scripts/perftest/temp/**</exclude>
+								<exclude>scripts/tutorials/**</exclude>
 								<exclude>scripts/perftest/logs/**</exclude>
 								<exclude>.gitignore</exclude>
 								<exclude>src/main/python/.gitignore</exclude>

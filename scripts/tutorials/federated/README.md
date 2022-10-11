@@ -31,6 +31,17 @@ Successfully installed certifi-2020.12.5 chardet-4.0.0 idna-2.10 numpy-1.20.3 pa
 Installed Python Systemds
 ```
 
+Also required is to install NodeJS <https://nodejs.org/en/>, simply download and add the bin folder to path add it on path to enable:
+
+```sh
+node --version
+```
+
+```txt
+Me:~/.../scripts/tutorials/federated$ node --version
+v16.17.1
+```
+
 ## Step 3: Setup and Download Data
 
 Next we download and split the dataset into partitions that the different federated workers can use.
@@ -91,7 +102,11 @@ Me:~/github/federatedTutorial$ cat tmp/worker/XPS-15-7590-8001
 
 Also worth noting is that all the output from the federated worker is concatenated to: results/fed/workerlog/
 
-## Step 4.1: Port Forward if you dont have access to the ports
+At startup a federated monitoring tool is launched at <http://localhost:4200>.
+
+## Step 5: Port Forward
+
+if you don't have access to the ports on the federated workers (note local execution can skip this.)
 
 If the ports are not accessible directly from your machine because of a firewall, i suggest using the port forwarding script.
 that port forward the list of ports from your local machine to the remote machines.
@@ -101,29 +116,24 @@ Note this only works if all the federated machines are remote machines, aka the 
 portforward.sh
 ```
 
-Note these process will just continue running in the background, and have to manually terminated.
+Note these process will just continue running in the background so have to be manually terminated.
 
-## Step 5: run algorithms
+## Step 6: run algorithms
 
-This tutorial is using a LM script. To execute it simply use:
+This tutorial is using different scripts depending on what is outcommented in the run.sh.
+
+Please go into this file and enable which specific script you want to run.
+
+To execute it simply use:
 
 ```sh
 ./run.sh
 ```
 
-The terminal output should look like the following:
-
-```txt
-Me:~/github/federatedTutorial$ ./run.sh
-fed 1W def - lm mnist
-fed 2W def - lm mnist
-loc def - lm mnist
-```
-
 This have execute three different execution versions.
 first with one federated worker, then two and finally a local baseline.
 
-all outputs are put into the results folder:
+all outputs are put into the results folder and could look like:
 
 ```txt
 Me:~/github/federatedTutorial$ cat results/fed1/lm_mnist_XPS-15-7590_def.log
@@ -196,13 +206,6 @@ Heavy hitter instructions:
  4  rmvar          0.000      3
 ```
 
-The saved LM model is located in the tmp folder and the federated results is exactly the same as if it was executed locally.
-
-```txt
-Me:~/github/federatedTutorial$ ls tmp/
-fed_mnist_1.res  fed_mnist_1.res.mtd  fed_mnist_2.res  fed_mnist_2.res.mtd  mnist_local.res  mnist_local.res.mtd  worker
-```
-
 ## Step 6: Stop Workers
 
 To stop the workers running simply use the stop all workers script.
@@ -210,3 +213,14 @@ To stop the workers running simply use the stop all workers script.
 ```sh
 ./stopAllWorkers.sh
 ```
+
+```txt
+Me:~/.../scripts/tutorials/federated$ ./stopAllWorkers.sh 
+Stopping workers XPS-15-7590
+Stopping Monitoring 
+STOP NPM manually!! Process ID:
+62870q
+```
+
+As specified by the output npm is still running and have to be manually stopped.
+Simply search for 'ng serve' process in the terminal and stop it.

@@ -33,6 +33,7 @@ ENV PATH $JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
 
 COPY ./src/test/scripts/installDependencies.R installDependencies.R
 COPY ./docker/entrypoint.sh /entrypoint.sh
@@ -49,6 +50,9 @@ RUN apt-get update -qq \
 		apt-transport-https \
 		wget \
 		ca-certificates \
+		git \
+		cmake \
+		patchelf \
 	&& apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
 	&& add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" \
 	&& apt-get update -qq \
@@ -74,4 +78,35 @@ RUN apt-get install -y --no-install-recommends \
 	&& rm -rf installDependencies.R \
 	&& rm -rf /var/lib/apt/lists/*
 
+# SEAL
+RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.3.tar.gz | tar xzf - \
+    && cd SEAL-3.7.3 \
+    && cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
+    && cmake --build build \
+    && cmake --install build
+RUN cp -r /usr/local/include/SEAL-3.7/seal /usr/local/include/seal
+RUN cp /usr/local/lib/libseal.so.3.7 /usr/local/include/libseal.so.3.7
+RUN cp /usr/local/lib/libseal.so.3.7 /usr/src/libseal.so.3.7
+#COPY ./src/main/cpp/lib/libhe-Linux-x86_64.so /libhe-Linux-x86_64.so
+
+#RUN git clone --depth 1 https://github.com/apache/systemds.git systemds && \
+#	cd /usr/src/systemds/ && \
+#	mvn --no-transfer-progress clean package -P distribution
+
+#COPY ./src/main/cpp ./
+#RUN cd /usr/src/systemds/src/main/cpp \
+#    && ./build.sh
+#COPY ./src/main/cpp/lib/libhe-Linux-x86_64.so ./lib/libhe-Linux-x86_64.so
+#COPY ./src/main/cpp/lib/libhe-Linux-x86_64.so ./libhe-Linux-x86_64.so
+#COPY ./src/main/cpp/lib/libhe-Linux-x86_64.so ./github/workspace/lib/libhe-Linux-x86_64.so
+#COPY ./src/main/cpp/lib/libhe-Linux-x86_64.so /usr/lib/libhe-Linux-x86_64.so
+#COPY ./src/main/cpp/lib/libhe-Linux-x86_64.so /usr/src/main/cpp/lib/libhe-Linux-x86_64.so
+#COPY ./src/main/cpp/lib/libhe-Linux-x86_64.so /github/workspace/lib/libhe-Linux-x86_64.so
+#COPY ./src/main/cpp/lib/libhe-Linux-x86_64.so /github/workspace/src/main/cpp/lib/libhe-Linux-x86_64.so
+
+#RUN cmake main/cpp/he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++ \
+#    && cmake --build HE --target install --config Release \
+#    rm -R HE
+
+#COPY ./src/main/cpp/lib/libhe-Linux-x86_64.so tmp/libhe-Linux-x86_64.so
 ENTRYPOINT ["/entrypoint.sh"]

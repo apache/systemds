@@ -29,6 +29,8 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Vector;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -333,23 +335,33 @@ public class NativeHelper {
 	 * @return true if successfully loaded BLAS
 	 */
 	public static boolean loadLibraryHelperFromResource(String libFileName)  {
+		LOG.info("Loading JNI shared library: " + libFileName);
 		try(InputStream in = NativeHelper.class.getResourceAsStream("/lib/"+ libFileName)) {
 			// This logic is added because Java does not allow to load library from a resource file.
 			if(in != null) {
+				File originFile = new File("lib/"+libFileName);
+				LOG.info("Origin file is: " + originFile.getName() + " path is: " + originFile.getAbsolutePath() + " and it exists: " + originFile.exists());
 				File temp = File.createTempFile(libFileName, "");
+				LOG.info("Temp has path: " + temp.getPath());
 				temp.deleteOnExit();
 				OutputStream out = FileUtils.openOutputStream(temp);
+				LOG.info("IO copying in " + in.toString() + " out " + out.toString());
 				IOUtils.copy(in, out);
 				// not closing the stream here makes dll loading fail on Windows
 				IOUtilFunctions.closeSilently(out);
+				Files.walk(Paths.get(temp.getAbsolutePath()))
+					.filter(Files::isRegularFile)
+					.forEach(System.out::println);
+				LOG.info("Loading absolute path: " + temp.getAbsolutePath());
 				System.load(temp.getAbsolutePath());
 				return true;
 			}
 			else
-				LOG.warn("No lib available in the jar:" + libFileName);
+				LOG.error("No lib available in the jar:" + libFileName);
 		}
-		catch(IOException e) {
-			LOG.warn("Unable to load library " + libFileName + " from resource:" + e.getMessage());
+		catch(IOException | UnsatisfiedLinkError e) {
+			LOG.error("Unable to load library " + libFileName + " from resource:" + e.getMessage());
+			e.printStackTrace();
 		}
 		return false;
 	}

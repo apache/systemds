@@ -23,6 +23,23 @@
 # A script to execute the tests inside the docker container.
 
 cd /github/workspace
+cd src/main/cpp
+# Download SEAL here?
+# SEAL
+#wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.3.tar.gz | tar xzf -
+#cd SEAL-3.7.3
+#cmake -S . -B build -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=~/github/workspace
+#cmake --build build
+#cmake --install build
+#cd ..
+
+./build.sh
+cd ../../..
+#cd ~/github/workspace
+#cp -r src/main/cpp/lib/ lib/
+cp -r /usr/local/include/SEAL-3.7/seal /usr/local/include/seal
+cp /usr/local/lib/libseal.so.3.7 /usr/local/include/libseal.so.3.7
+cp /usr/local/lib/libseal.so.3.7 /usr/src/libseal.so.3.7
 
 export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
 

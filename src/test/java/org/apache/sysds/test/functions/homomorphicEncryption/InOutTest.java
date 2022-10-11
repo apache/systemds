@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.homomorphicEncryption;
 
+import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.paramserv.NativeHEHelper;
@@ -33,7 +34,6 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class InOutTest extends AutomatedTestBase {
@@ -49,18 +49,12 @@ public class InOutTest extends AutomatedTestBase {
 
     @Override
     public void setUp() {
-        try {
-            NativeHEHelper.initialize();
-        } catch (Exception e) {
-            throw e;
-        }
-
+        NativeHEHelper.initialize();
         TestUtils.clearAssertionInformation();
         addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "C" }) );
     }
 
     @Test
-    @Ignore
     public void endToEndTest() {
         SEALServer server = new SEALServer();
 

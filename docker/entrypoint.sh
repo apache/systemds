@@ -22,6 +22,8 @@
 
 # A script to execute the tests inside the docker container.
 
+cd /github/workspace/src/main/cpp
+./build.sh
 cd /github/workspace
 
 export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"

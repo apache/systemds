@@ -959,50 +959,7 @@ public class ColGroupRLE extends AColGroupOffset {
 
 	@Override
 	public AColGroup sliceRows(int rl, int ru) {
-		throw new NotImplementedException();
-		// if(rl == 0 && ru >= _numRows)
-		// return this;
-
-		// final int newRows = ru - rl;
-		// final int numVals = getNumValues();
-		// char[][] newData = new char[numVals][];
-
-		// LOG.error(this);
-		// for(int k = 0; k < numVals; k++) {
-		// final int blen = _ptr[k + 1];
-
-		// skipPair start = skipScanVal(k, rl).next();
-		// skipPair end = skipScanVal(k, ru);
-		// int lenStart = _data[start.apos + 1];
-		// int lenEnd = end.apos == blen ? _data[end.apos - 1] : _data[end.apos + 1];
-		// LOG.error(
-		// start.apos + " " + start.astart + " " + lenStart + " -- " + end.apos + " " + end.astart + " " + lenEnd);
-		// LOG.error(rl + " " + ru);
-
-		// int newStartPos = start.astart - rl;
-		// // correct the length of the new start if needed
-		// int newStartLen = newStartPos < 0 ? lenStart + newStartPos : lenStart;
-		// int newEndPos = 0;
-		// int newDataLength = 0;
-		// newData[k] = new char[newDataLength];
-
-		// StringBuilder sb = new StringBuilder();
-		// sb.append("\nStart pos ");
-		// sb.append(newStartPos);
-		// sb.append(" New Start len: ");
-		// sb.append(newStartLen);
-		// sb.append("\n");
-		// for(char c : newData[k])
-		// sb.append((int) c);
-
-		// Arrays.copyOfRange(_data, startPos, endPos);
-		// Modify start offset.
-		// modify end offset.
-
-		// }
-
-		// throw new NotImplementedException();
-		// return new ColGroupRLE(_colIndexes, newRows, _zeros, _dict, newMap, newOffs, null);
+		throw new NotImplementedException("Slice rows for RLE is not implemented yet!");
 	}
 
 	@Override

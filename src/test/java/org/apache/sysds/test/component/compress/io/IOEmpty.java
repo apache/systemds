@@ -39,18 +39,18 @@ public class IOEmpty {
 		+ IOEmpty.class.getSimpleName() + "/";
 
 	public IOEmpty() {
-		synchronized(IOTestUtils.lock) {
+		synchronized(IOCompressionTestUtils.lock) {
 			new File(nameBeginning).mkdirs();
 		}
 	}
 
 	@AfterClass
 	public static void cleanup() {
-		IOTestUtils.deleteDirectory(new File(nameBeginning));
+		IOCompressionTestUtils.deleteDirectory(new File(nameBeginning));
 	}
 
 	public static String getName() {
-		return IOTestUtils.getName(nameBeginning);
+		return IOCompressionTestUtils.getName(nameBeginning);
 	}
 
 	@Test
@@ -65,8 +65,8 @@ public class IOEmpty {
 	public void writeEmptyAndRead() {
 		String n = getName();
 		write(n, 10, 10, 1000);
-		MatrixBlock mb = IOTestUtils.read(n);
-		IOTestUtils.verifyEquivalence(mb, new MatrixBlock(10, 10, 0.0));
+		MatrixBlock mb = IOCompressionTestUtils.read(n);
+		IOCompressionTestUtils.verifyEquivalence(mb, new MatrixBlock(10, 10, 0.0));
 	}
 
 	@Test
@@ -83,8 +83,8 @@ public class IOEmpty {
 		write(n, 1000, 10, 100);
 		File f = new File(n);
 		assertTrue(f.isDirectory() || f.isFile());
-		MatrixBlock mb = IOTestUtils.read(n);
-		IOTestUtils.verifyEquivalence(mb, new MatrixBlock(1000, 10, 0.0));
+		MatrixBlock mb = IOCompressionTestUtils.read(n);
+		IOCompressionTestUtils.verifyEquivalence(mb, new MatrixBlock(1000, 10, 0.0));
 	}
 
 	protected static void write(String path, int nRows, int nCols, int blen) {

@@ -37,6 +37,8 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.sysds.common.Types.BlockType;
@@ -117,7 +119,7 @@ import org.apache.sysds.utils.NativeHelper;
 
 
 public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable {
-	// private static final Log LOG = LogFactory.getLog(MatrixBlock.class.getName());
+	private static final Log LOG = LogFactory.getLog(MatrixBlock.class.getName());
 
 	private static final long serialVersionUID = 7319972089143154056L;
 	
@@ -818,7 +820,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( src.sparse ) //SPARSE <- SPARSE
 		{
 			SparseBlock a = src.sparseBlock;
-			if( a.isEmpty(i) ) return;
+			if( a == null || a.isEmpty(i) ) return;
 			int aix = rowoffset+i;
 			
 			//single block append (avoid re-allocations)
@@ -1164,7 +1166,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return evalSparseFormatInMemory(dc.getRows(), dc.getCols(), dc.getNonZeros());
 	}
 	
-	
 	/**
 	 * Evaluates if a matrix block with the given characteristics should be in sparse format 
 	 * in memory.
@@ -1237,26 +1238,41 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		final int n = clen;
 		
 		if( allowCSR && nonZeros <= Integer.MAX_VALUE ) {
-			//allocate target in memory-efficient CSR format
-			int lnnz = (int) nonZeros;
-			int[] rptr = new int[m+1];
-			int[] indexes = new int[lnnz];
-			double[] values = new double[lnnz];
-			for( int i=0, pos=0; i<m; i++ ) {
-				double[] avals = a.values(i);
-				int aix = a.pos(i);
-				for(int j=0; j<n; j++) {
-					double aval = avals[aix+j];
-					if( aval != 0 ) {
-						indexes[pos] = j;
-						values[pos] = aval;
-						pos++;
+			try{
+
+				//allocate target in memory-efficient CSR format
+				int lnnz = (int) nonZeros;
+				int[] rptr = new int[m+1];
+				int[] indexes = new int[lnnz];
+				double[] values = new double[lnnz];
+				for( int i=0, pos=0; i<m; i++ ) {
+					double[] avals = a.values(i);
+					int aix = a.pos(i);
+					for(int j=0; j<n; j++) {
+						double aval = avals[aix+j];
+						if( aval != 0 ) {
+							indexes[pos] = j;
+							values[pos] = aval;
+							pos++;
+						}
 					}
+					rptr[i+1]=pos;
 				}
-				rptr[i+1]=pos;
+				sparseBlock = new SparseBlockCSR(
+					rptr, indexes, values, lnnz);
+			} catch(ArrayIndexOutOfBoundsException ioobe){
+				sparse = false;
+				long nnzBefore = nonZeros;
+				long nnzNew = recomputeNonZeros();
+				if(nnzBefore != nnzNew){
+					LOG.error("Error in dense to sparse because nonZeros was set incorrectly\nTrying again with correction");
+					denseToSparse(true);
+				}
+				else{
+					LOG.error("Failed construction of SparseCSR block", ioobe);
+					denseToSparse(false);
+				}
 			}
-			sparseBlock = new SparseBlockCSR(
-				rptr, indexes, values, lnnz);
 		}
 		else {
 			// remember number non zeros.
@@ -4112,8 +4128,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		ret.quickSetValue(rl, cl, inVal);
 		return ret;
 	}
-	
-	
 
 	public MatrixBlock slice(IndexRange ixrange, MatrixBlock ret) {
 		return slice(
@@ -4122,34 +4136,63 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	/**
-	 * Slice out a row block
-	 * @param rl The row lower to start from 
-	 * @param ru The row lower to end at
+	 * Slice out a block in the range
+	 * 
+	 * @param rl row lower (inclusive)
+	 * @param ru row upper (inclusive)
 	 * @return The sliced out matrix block.
 	 */
 	public final MatrixBlock slice(int rl, int ru) {
 		return slice(rl, ru, 0, clen-1, true, null);
 	}
 
+	/**
+	 * Slice out a block in the range
+	 * 
+	 * @param rl row lower (inclusive)
+	 * @param ru row upper (inclusive)
+	 * @param deep Deep copy or not
+	 * @return The sliced out matrix block.
+	 */
 	public final MatrixBlock slice(int rl, int ru, boolean deep){
 		return slice(rl,ru, 0, clen-1, deep, null);
 	}
 	
+	/**
+	 * Slice out a block in the range
+	 * 
+	 * @param rl row lower (inclusive)
+	 * @param ru row upper (inclusive)
+	 * @param cl column lower (inclusive)
+	 * @param cu column upper (inclusive)
+	 * @return The sliced out matrix block.
+	 */
 	public final MatrixBlock slice(int rl, int ru, int cl, int cu){
 		return slice(rl, ru, cl, cu, true, null);
 	}
 
+	/**
+	 * Slice out a block in the range
+	 * 
+	 * @param rl row lower (inclusive)
+	 * @param ru row upper (inclusive)
+	 * @param cl column lower (inclusive)
+	 * @param cu column upper (inclusive)
+	 * @param ret output sliced out matrix block
+	 * @return The sliced out matrix block.
+	 */
 	@Override
 	public final MatrixBlock slice(int rl, int ru, int cl, int cu, CacheBlock ret) {
 		return slice(rl, ru, cl, cu, true, ret);
 	}
 
 	/**
-	 * Slice out a row block
-	 * @param rl The row lower to start from
-	 * @param ru The row lower to end at
-	 * @param cl The col lower to start from
-	 * @param cu The col lower to end at
+	 * Slice out a block in the range
+	 * 
+	 * @param rl row lower (inclusive) 
+	 * @param ru row upper (inclusive) 
+	 * @param cl column lower (inclusive)
+	 * @param cu column upper (inclusive)
 	 * @param deep Deep copy or not
 	 * @return The sliced out matrix block.
 	 */
@@ -4163,10 +4206,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 * This means that if you call with rl == ru then you get 1 row output.
 	 * 
-	 * @param rl row lower if this value is below 0 or above the number of rows contained in the matrix an exception is thrown
-	 * @param ru row upper if this value is below rl or above the number of rows contained in the matrix an exception is thrown
-	 * @param cl column lower if this value us below 0 or above the number of columns contained in the matrix an exception is thrown
-	 * @param cu column upper if this value us below cl or above the number of columns contained in the matrix an exception is thrown
+	 * If rl or cl less than 0 an exception is thrown
+	 * If ru or cu greater than or equals to nRows or nCols an exception is thrown
+	 * 
+	 * @param rl row lower (inclusive) 
+	 * @param ru row upper (inclusive) 
+	 * @param cl column lower (inclusive)
+	 * @param cu column upper (inclusive)
 	 * @param deep should perform deep copy, this is relevant in cases where the matrix is in sparse format,
 	 *            or the entire matrix is sliced out
 	 * @param ret output sliced out matrix block

@@ -69,11 +69,23 @@ public final class ReaderCompressed extends MatrixReader {
 
 	private static MatrixBlock readCompressedMatrix(Path path, JobConf job, FileSystem fs, int rlen, int clen, int blen)
 		throws IOException {
-		final Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path));
 
+		final Map<MatrixIndexes, MatrixBlock> data = new HashMap<>();
+
+		for(Path subPath : IOUtilFunctions.getSequenceFilePaths(fs, path))
+			read(subPath, job, data);
+
+		if(data.size() == 1)
+			return data.entrySet().iterator().next().getValue();
+		else
+			return CLALibCombine.combine(data);
+	}
+
+	private static void read(Path path, JobConf job, Map<MatrixIndexes, MatrixBlock> data) throws IOException {
+
+		final Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path));
 		try {
 			// Materialize all sub blocks.
-			Map<MatrixIndexes, MatrixBlock> data = new HashMap<>();
 
 			// Use write and read interface to read and write this object.
 			MatrixIndexes key = new MatrixIndexes();
@@ -84,10 +96,6 @@ public final class ReaderCompressed extends MatrixReader {
 				key = new MatrixIndexes();
 				value = new CompressedWriteBlock();
 			}
-			if(data.size() == 1)
-				return data.entrySet().iterator().next().getValue();
-			else
-				return CLALibCombine.combine(data);
 		}
 		finally {
 			IOUtilFunctions.closeSilently(reader);

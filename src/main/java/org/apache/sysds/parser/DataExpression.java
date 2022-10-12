@@ -1327,7 +1327,7 @@ public class DataExpression extends DataIdentifier
 			//validate read filename
 			if (getVarParam(FORMAT_TYPE) == null || FileFormat.isTextFormat(getVarParam(FORMAT_TYPE).toString()))
 				getOutput().setBlocksize(-1);
-			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.BINARY.toString())) {
+			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.BINARY.toString()) || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.COMPRESSED.toString())) {
 				if( getVarParam(ROWBLOCKCOUNTPARAM)!=null )
 					getOutput().setBlocksize(Integer.parseInt(getVarParam(ROWBLOCKCOUNTPARAM).toString()));
 				else

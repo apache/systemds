@@ -28,16 +28,22 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.instructions.spark.CompressionSPInstruction.CompressionFunction;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 
 public final class WriterCompressed extends MatrixWriter {
@@ -60,6 +66,18 @@ public final class WriterCompressed extends MatrixWriter {
 	public static void writeCompressedMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen,
 		long nnz, boolean diag) throws IOException {
 		create(null).writeMatrixToHDFS(src, fname, rlen, clen, blen, nnz, diag);
+	}
+
+	public static void writeRDDToHDFS(JavaPairRDD<MatrixIndexes, MatrixBlock> src, String path, int blen,
+		DataCharacteristics mc) {
+		final DataCharacteristics outC = new MatrixCharacteristics(mc).setBlocksize(blen);
+		writeRDDToHDFS(RDDConverterUtils.binaryBlockToBinaryBlock(src, mc, outC), path);
+	}
+
+	public static void writeRDDToHDFS(JavaPairRDD<MatrixIndexes, MatrixBlock> src, String path) {
+		src.mapValues(new CompressionFunction()) // Try to compress each block.
+			.mapValues(new CompressWrap()) // Wrap in writable
+			.saveAsHadoopFile(path, MatrixIndexes.class, CompressedWriteBlock.class, SequenceFileOutputFormat.class);
 	}
 
 	@Override

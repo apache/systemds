@@ -1053,19 +1053,17 @@ public class DMLTranslator
 						case MM:
 						case CSV:
 						case LIBSVM:
+						case HDF5:
 							// write output in textcell format
 							ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1);
 							break;
 						case BINARY:
+						case COMPRESSED:
 							// write output in binary block format
 							ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ae.getBlocksize());
 							break;
 						case FEDERATED:
 							ae.setOutputParams(ae.getDim1(), ae.getDim2(), -1, ae.getUpdateType(), -1);
-							break;
-						case HDF5:
-							// write output in HDF5 format
-							ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1);
 							break;
 						default:
 							throw new LanguageException("Unrecognized file format: " + ae.getFileFormat());

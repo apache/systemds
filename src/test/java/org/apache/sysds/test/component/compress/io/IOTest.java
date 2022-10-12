@@ -41,18 +41,18 @@ public class IOTest {
 		+ IOTest.class.getSimpleName() + "/";
 
 	public IOTest() {
-		synchronized(IOTestUtils.lock) {
+		synchronized(IOCompressionTestUtils.lock) {
 			new File(nameBeginning).mkdirs();
 		}
 	}
 
 	@AfterClass
 	public static void cleanup() {
-		IOTestUtils.deleteDirectory(new File(nameBeginning));
+		IOCompressionTestUtils.deleteDirectory(new File(nameBeginning));
 	}
 
 	public static String getName() {
-		return IOTestUtils.getName(nameBeginning);
+		return IOCompressionTestUtils.getName(nameBeginning);
 	}
 
 	@Test
@@ -101,8 +101,8 @@ public class IOTest {
 		WriterCompressed.writeCompressedMatrixToHDFS(mb, filename);
 		File f = new File(filename);
 		assertTrue(f.isFile() || f.isDirectory());
-		MatrixBlock mbr = IOTestUtils.read(filename);
-		IOTestUtils.verifyEquivalence(mb, mbr);
+		MatrixBlock mbr = IOCompressionTestUtils.read(filename);
+		IOCompressionTestUtils.verifyEquivalence(mb, mbr);
 	}
 
 	protected static void write(MatrixBlock src, String path) {
@@ -145,7 +145,7 @@ public class IOTest {
 		WriterCompressed.writeCompressedMatrixToHDFS(mb, filename, blen);
 		File f = new File(filename);
 		assertTrue(f.isFile() || f.isDirectory());
-		MatrixBlock mbr = IOTestUtils.read(filename);
-		IOTestUtils.verifyEquivalence(mb, mbr);
+		MatrixBlock mbr = IOCompressionTestUtils.read(filename);
+		IOCompressionTestUtils.verifyEquivalence(mb, mbr);
 	}
 }

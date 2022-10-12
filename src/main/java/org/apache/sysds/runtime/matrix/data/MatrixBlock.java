@@ -1435,6 +1435,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				for(int k = apos; k < apos + alen; k++)
 					if(avals[k] == 0)
 						throw new RuntimeException("Wrong sparse row: zero at " + k);
+				if(aix[apos + alen-1] > clen)
+					throw new RuntimeException("Invalid offset outside of matrix");
 			}
 	}
 

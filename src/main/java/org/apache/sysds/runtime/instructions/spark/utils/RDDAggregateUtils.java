@@ -704,32 +704,27 @@ public class RDDAggregateUtils
 		}
 		
 		@Override
-		public MatrixBlock call(MatrixBlock b1, MatrixBlock b2) 
-			throws Exception 
-		{
+		public MatrixBlock call(MatrixBlock b1, MatrixBlock b2) throws Exception {
 			long b1nnz = b1.getNonZeros();
 			long b2nnz = b2.getNonZeros();
-			
+
 			// sanity check input dimensions
-			if (b1.getNumRows() != b2.getNumRows() || b1.getNumColumns() != b2.getNumColumns()) {
-				throw new DMLRuntimeException("Mismatched block sizes for: "
-						+ b1.getNumRows() + " " + b1.getNumColumns() + " "
-						+ b2.getNumRows() + " " + b2.getNumColumns());
+			if(b1.getNumRows() != b2.getNumRows() || b1.getNumColumns() != b2.getNumColumns()) {
+				throw new DMLRuntimeException("Mismatched block sizes for: " + b1.getNumRows() + " " + b1.getNumColumns()
+					+ " " + b2.getNumRows() + " " + b2.getNumColumns());
 			}
 
 			// execute merge (never pass by reference)
 			MatrixBlock ret = _deep ? new MatrixBlock(b1) : b1;
 			ret.merge(b2, false, false, _deep);
 			ret.examSparsity();
-			
-			// sanity check output number of non-zeros
-			if (ret.getNonZeros() != b1nnz + b2nnz) {
-				throw new DMLRuntimeException("Number of non-zeros does not match: "
-						+ ret.getNonZeros() + " != " + b1nnz + " + " + b2nnz);
-			}
 
+			// sanity check output number of non-zeros
+			if(ret.getNonZeros() != b1nnz + b2nnz) {
+				throw new DMLRuntimeException(
+					"Number of non-zeros does not match: " + ret.getNonZeros() + " != " + b1nnz + " + " + b2nnz);
+			}
 			return ret;
 		}
-
 	}
 }

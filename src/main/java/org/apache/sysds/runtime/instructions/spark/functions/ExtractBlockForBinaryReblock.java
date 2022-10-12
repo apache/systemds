@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -92,15 +91,19 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 				final int cixi = UtilFunctions.computeCellInBlock(rowLower, out_blen);
 				final int cixj = UtilFunctions.computeCellInBlock(colLower, out_blen);
 				
-				if(in instanceof CompressedMatrixBlock){
-					blk.allocateSparseRowsBlock(false);
-					CLALibDecompress.decompressTo((CompressedMatrixBlock) in, blk, cixi, cixj, 1);
-				}
-				else if( aligned ) {
-					blk.appendToSparse(in, cixi, cixj);
-					blk.setNonZeros(in.getNonZeros());
+				if( aligned ) {
+					if(in instanceof CompressedMatrixBlock){
+						blk.allocateSparseRowsBlock(false);
+							CLALibDecompress.decompressTo((CompressedMatrixBlock) in, blk, cixi- aixi, cixj-aixj, 1);
+					}else{
+						blk.appendToSparse(in, cixi, cixj);
+						blk.setNonZeros(in.getNonZeros());
+					}
 				}
 				else { //general case
+					if(in instanceof CompressedMatrixBlock){
+						in = CompressedMatrixBlock.getUncompressed(in);
+					}
 					for(int i2 = 0; i2 <= (int)(rowUpper-rowLower); i2++)
 						for(int j2 = 0; j2 <= (int)(colUpper-colLower); j2++)
 							blk.appendValue(cixi+i2, cixj+j2, in.quickGetValue(aixi+i2, aixj+j2));

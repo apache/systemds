@@ -28,14 +28,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.sysds.runtime.compress.io.ReaderCompressed;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class IOTestUtils {
+public class IOCompressionTestUtils {
 
 	final static Object lock = new Object();
 
 	static final AtomicInteger id = new AtomicInteger(0);
 
 	protected static void deleteDirectory(File file) {
-		synchronized(IOTestUtils.lock) {
+		synchronized(IOCompressionTestUtils.lock) {
 			for(File subfile : file.listFiles()) {
 				if(subfile.isDirectory())
 					deleteDirectory(subfile);
@@ -59,7 +59,7 @@ public class IOTestUtils {
 		// assertTrue("Disk size is not equivalent", a.getExactSizeOnDisk() > b.getExactSizeOnDisk());
 	}
 
-	protected static MatrixBlock read(String path) {
+	public static MatrixBlock read(String path) {
 		try {
 			return ReaderCompressed.readCompressedMatrixFromHDFS(path);
 		}

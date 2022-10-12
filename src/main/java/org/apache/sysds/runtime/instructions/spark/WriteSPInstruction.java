@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Random;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.LongWritable;
@@ -31,6 +35,7 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.io.WriterCompressed;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -51,10 +56,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Random;
 
 public class WriteSPInstruction extends SPInstruction implements LineageTraceable {
 	public CPOperand input1 = null;
@@ -251,6 +252,21 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				mc.setNonZeros(aNnz.value().longValue());
 			if( nonDefaultBlen )
 				mcOut = new MatrixCharacteristics(mc).setBlocksize(blen);
+		}
+		else if(fmt == FileFormat.COMPRESSED) {
+			// reblock output if needed
+			final int blen = Integer.parseInt(input4.getName());
+			final boolean nonDefaultBlen = ConfigurationManager.getBlocksize() != blen;
+			mc.setNonZeros(-1); // default to unknown non zeros for compressed matrix block
+
+			if(nonDefaultBlen)
+				WriterCompressed.writeRDDToHDFS(in1, fname, blen, mc);
+			else
+				WriterCompressed.writeRDDToHDFS(in1, fname);
+		
+			if(nonDefaultBlen)
+				mcOut = new MatrixCharacteristics(mc).setBlocksize(blen);
+
 		}
 		else if(fmt == FileFormat.LIBSVM) {
 			if(mc.getRows() == 0 || mc.getCols() == 0) {

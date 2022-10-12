@@ -646,20 +646,36 @@ public abstract class DenseBlock implements Serializable
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		for(int i=0; i<_rlen; i++) {
-			double[] data = values(i);
-			int ix = pos(i);
-			for(int j=0; j<_odims[0]; j++) {
-				double v = data[ix+j];
-				if(v == (long) v)
-					sb.append((long)v);
-				else
-					sb.append(data[ix+j]);
-				sb.append("  ");
+		if(_odims[0] == 1) {
+			sb.append("Printing column vector transposed:\n");
+			for(int b = 0; b < numBlocks(); b++) {
+				for(double v : valuesAt(b)) {
+					sb.append(getNiceFormat(v));
+					sb.append(" ");
+				}
 			}
 			sb.append("\n");
 		}
+		else{
+			for(int i=0; i<_rlen; i++) {
+				double[] data = values(i);
+				int ix = pos(i);
+				for(int j=0; j<_odims[0]; j++) {
+					double v = data[ix+j];
+					sb.append(getNiceFormat(v));
+					sb.append("  ");
+				}
+				sb.append("\n");
+			}
+		}
 		return sb.toString();
+	}
+
+	private String getNiceFormat(double v) {
+		if(v == (long) v)
+			return Long.toString((long) v);
+		else
+			return Double.toString(v);
 	}
 	
 	protected double[] getReuseRow(boolean reset) {

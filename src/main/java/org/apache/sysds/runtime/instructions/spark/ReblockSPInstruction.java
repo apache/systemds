@@ -195,8 +195,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			libsvmInstruction.processInstruction(sec);
 		}
 		else if(fmt == FileFormat.COMPRESSED){
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = SPCompressedReblock.getRDDHandle(sec, input1.getName(), output.getName());
-			
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = SPCompressedReblock.getRDDHandle(sec, input1.getName(),
+				output.getName());
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}

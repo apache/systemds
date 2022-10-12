@@ -820,7 +820,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( src.sparse ) //SPARSE <- SPARSE
 		{
 			SparseBlock a = src.sparseBlock;
-			if( a.isEmpty(i) ) return;
+			if( a == null || a.isEmpty(i) ) return;
 			int aix = rowoffset+i;
 			
 			//single block append (avoid re-allocations)

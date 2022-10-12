@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.compress.io;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.List;
@@ -31,6 +32,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.compress.io.CompressedWriteBlock;
+import org.apache.sysds.runtime.compress.io.WriterCompressed;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -104,7 +106,13 @@ public class IOSpark {
 	private void readWrite(MatrixBlock mb) {
 		double sum = mb.sum();
 		String n = getName();
-		IOTest.write(mb, n, 50);
+		try{
+			WriterCompressed.writeCompressedMatrixToHDFS(mb, n, 50);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 		verifySum(read(n), sum, 0.0001);
 	}
 

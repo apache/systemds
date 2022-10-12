@@ -23,8 +23,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -89,7 +92,11 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 				final int cixi = UtilFunctions.computeCellInBlock(rowLower, out_blen);
 				final int cixj = UtilFunctions.computeCellInBlock(colLower, out_blen);
 				
-				if( aligned ) {
+				if(in instanceof CompressedMatrixBlock){
+					blk.allocateSparseRowsBlock(false);
+					CLALibDecompress.decompressTo((CompressedMatrixBlock) in, blk, cixi, cixj, 1);
+				}
+				else if( aligned ) {
 					blk.appendToSparse(in, cixi, cixj);
 					blk.setNonZeros(in.getNonZeros());
 				}

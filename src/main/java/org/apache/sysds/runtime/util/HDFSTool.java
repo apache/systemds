@@ -484,7 +484,7 @@ public class HDFSTool
 			mtd.put(DataExpression.READCOLPARAM, dc.getCols());
 			// handle output nnz and binary block configuration
 			if( dt.isMatrix() ) {
-				if (fmt == FileFormat.BINARY) {
+				if (fmt == FileFormat.BINARY || fmt == FileFormat.COMPRESSED) {
 					mtd.put(DataExpression.ROWBLOCKCOUNTPARAM, dc.getBlocksize());
 					mtd.put(DataExpression.COLUMNBLOCKCOUNTPARAM, dc.getBlocksize());
 				}

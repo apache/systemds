@@ -1,46 +1,80 @@
 package org.apache.sysds.test.functions.io.compressed;
 
+import static org.junit.Assert.fail;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.runtime.compress.io.WriterCompressed;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-public abstract class ReadCompressedTest extends CompressedTestBase {
+public class ReadCompressedTest extends CompressedTestBase {
 
-	protected abstract int getId();
+	private final static String TEST_NAME = "ReadCompressedTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReadCompressedTest.class.getSimpleName() + "/";
+
+	private final double expected;
+
+	public ReadCompressedTest() {
+		try {
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			String n = HOME + INPUT_DIR + getInputFileName() + ".cla";
+			MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(130, 62, 100, 102, 1.0, 215));
+			WriterCompressed.writeCompressedMatrixToHDFS(mb, n, 50);
+			MatrixCharacteristics mc = new MatrixCharacteristics(130, 62, 50);
+			HDFSTool.writeMetaDataFile(n + ".mtd", ValueType.FP64, mc, FileFormat.COMPRESSED);
+			expected = mb.sum();
+		}
+		catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected String getTestName() {
+		return TEST_NAME;
+	}
+
+	protected String getTestClassDir() {
+		return TEST_CLASS_DIR;
+	}
 
 	protected String getInputFileName() {
-		return "comp_" + getId();
+		return "comp";
 	}
 
 	@Test
 	public void testCSV_Sequential_CP1() {
-		runTest(getId(), ExecMode.SINGLE_NODE, false);
+		runTest(ExecMode.SINGLE_NODE, false);
 	}
 
 	@Test
 	public void testCSV_Parallel_CP1() {
-		runTest(getId(), ExecMode.SINGLE_NODE, true);
+		runTest(ExecMode.SINGLE_NODE, true);
 	}
 
 	@Test
 	public void testCSV_Sequential_CP() {
-		runTest(getId(), ExecMode.HYBRID, false);
+		runTest(ExecMode.HYBRID, false);
 	}
 
 	@Test
 	public void testCSV_Parallel_CP() {
-		runTest(getId(), ExecMode.HYBRID, true);
+		runTest(ExecMode.HYBRID, true);
 	}
 
 	@Test
 	public void testCSV_SP() {
-		runTest(getId(), ExecMode.SPARK, false);
+		runTest(ExecMode.SPARK, false);
 	}
 
-	protected String runTest(int testNumber, ExecMode platform, boolean parallel) {
+	protected String runTest(ExecMode platform, boolean parallel) {
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
 
@@ -50,7 +84,6 @@ public abstract class ReadCompressedTest extends CompressedTestBase {
 
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 
-		String output;
 		try {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 
@@ -59,31 +92,28 @@ public abstract class ReadCompressedTest extends CompressedTestBase {
 			setOutputBuffering(true); // otherwise NPEs
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String inputMatrixNameNoExtension = HOME + INPUT_DIR + getInputFileName();
-			String inputMatrixNameWithExtension = inputMatrixNameNoExtension + ".csv";
+			String n = HOME + INPUT_DIR + getInputFileName() + ".cla";
 			String dmlOutput = output("dml.scalar");
-			String rOutput = output("R.scalar");
 
-			String sep = getId() == 2 ? ";" : ",";
+			fullDMLScriptName = HOME + getTestName() + ".dml";
+			programArgs = new String[] {"-args", n, dmlOutput};
 
-			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
-			programArgs = new String[] {"-args", inputMatrixNameWithExtension, dmlOutput, sep};
-
-			fullRScriptName = HOME + "csv_verify2.R";
-			rCmd = "Rscript " + fullRScriptName + " " + inputMatrixNameNoExtension + ".single.csv " + rOutput;
-
-			output = runTest(true, false, null, -1).toString();
-			runRScript(true);
-
+			String out = runTest(true, false, null, -1).toString();
 			double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
-			double rScalar = TestUtils.readRScalar(rOutput);
-			TestUtils.compareScalars(dmlScalar, rScalar, eps);
+			TestUtils.compareScalars(dmlScalar, expected, eps);
+			return out;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
 		}
 		finally {
 			rtplatform = oldPlatform;
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-		return output;
+
+		return null;
 	}
+
 }

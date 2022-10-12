@@ -148,14 +148,6 @@ public class IOTest {
 		MatrixBlock mbr = IOTestUtils.read(filename);
 		IOTestUtils.verifyEquivalence(mb, mbr);
 	}
+	
 
-	protected static void write(MatrixBlock src, String path, int blen) {
-		try {
-			WriterCompressed.writeCompressedMatrixToHDFS(src, path, blen);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail("Failed to write file");
-		}
-	}
 }

@@ -123,6 +123,9 @@ public class MatrixReaderFactory {
 					fileFormatPropertiesHDF5);
 				break;
 
+			case COMPRESSED:
+				reader = new ReaderCompressed();
+				break;
 			default:
 				throw new DMLRuntimeException("Failed to create matrix reader for unknown format: " + fmt.toString());
 		}

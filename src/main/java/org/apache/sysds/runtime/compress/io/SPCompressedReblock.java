@@ -23,7 +23,8 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysds.runtime.instructions.spark.functions.ExtractBlockForBinaryReblock;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -40,8 +41,22 @@ public class SPCompressedReblock {
 		// BINARY BLOCK <- BINARY BLOCK (different sizes)
 		JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = (JavaPairRDD<MatrixIndexes, MatrixBlock>) sec
 			.getRDDHandleForMatrixObject(mo, FileFormat.COMPRESSED);
-		JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryBlockToBinaryBlock(in1, mc, mcOut);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = compressedBlockToCompressedBlock(in1, mc, mcOut);
 		return out;
 
+	}
+
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> compressedBlockToCompressedBlock(
+		JavaPairRDD<MatrixIndexes, MatrixBlock> in, DataCharacteristics mcIn, DataCharacteristics mcOut)
+	{
+		boolean shuffleFreeReblock = mcIn.dimsKnown() && mcOut.dimsKnown()
+			&& (mcIn.getRows() < mcIn.getBlocksize() || mcIn.getBlocksize()%mcOut.getBlocksize() == 0)
+			&& (mcIn.getCols() < mcIn.getBlocksize() || mcIn.getBlocksize()%mcOut.getBlocksize() == 0);
+
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in
+			.flatMapToPair(new ExtractBlockForBinaryReblock(mcIn, mcOut));
+		if( !shuffleFreeReblock )
+			out = RDDAggregateUtils.mergeByKey(out, false);
+		return out;
 	}
 }

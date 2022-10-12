@@ -344,26 +344,6 @@ public class ColGroupSDCFOR extends ASDC {
 		}
 	}
 
-	// @Override
-	// protected AColGroup sliceSingleColumn(int idx) {
-	// ColGroupSDCFOR ret = (ColGroupSDCFOR) super.sliceSingleColumn(idx);
-	// // select values from double array.
-	// ret._reference = new double[1];
-	// ret._reference[0] = _reference[idx];
-	// return ret;
-	// }
-
-	// @Override
-	// protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-	// ColGroupSDCFOR ret = (ColGroupSDCFOR) super.sliceMultiColumns(idStart, idEnd, outputCols);
-	// final int len = idEnd - idStart;
-	// ret._reference = new double[len];
-	// for(int i = 0, ii = idStart; i < len; i++, ii++)
-	// ret._reference[i] = _reference[ii];
-
-	// return ret;
-	// }
-
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
 		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);

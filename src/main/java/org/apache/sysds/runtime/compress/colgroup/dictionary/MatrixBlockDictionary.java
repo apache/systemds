@@ -2146,14 +2146,8 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public boolean eq(ADictionary o) {
-		if(o instanceof MatrixBlockDictionary) {
-			throw new NotImplementedException();
-			// final MatrixBlock mb = ((MatrixBlockDictionary) o).getMatrixBlock();
-			// if(mb.isInSparseFormat())
-			// throw new NotImplementedException();
-			// final double[] dv = mb.getDenseBlockValues();
-			// return Arrays.equals(_values, dv);
-		}
+		if(o instanceof MatrixBlockDictionary)
+			throw new NotImplementedException("Comparison if a MatrixBlock is equivalent is not implemented yet");
 		else if(o instanceof Dictionary) {
 			if(_data.isInSparseFormat())
 				throw new NotImplementedException();

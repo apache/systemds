@@ -22,6 +22,8 @@ package org.apache.sysds.test.component.compress.io;
 import java.io.IOException;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.io.CompressedWriteBlock;
 import org.apache.sysds.runtime.compress.io.ReaderCompressed;
 import org.apache.sysds.runtime.compress.io.WriterCompressed;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -121,5 +123,17 @@ public class IONegativeTest {
 	public void readFromStream() throws IOException {
 		ReaderCompressed r = ReaderCompressed.create();
 		r.readMatrixFromInputStream(null, 0, 0, 0, 0);
+	}
+
+	@Test(expected = RuntimeException.class)
+	public void compareToWriteBlock() {
+		CompressedWriteBlock a = new CompressedWriteBlock();
+		CompressedWriteBlock b = new CompressedWriteBlock();
+		a.compareTo(b);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void writeDiagonalCompressedInterface2() throws IOException {
+		WriterCompressed.writeCompressedMatrixToHDFS(null, "ada", 333L, 222L, 24, 130L, true);
 	}
 }

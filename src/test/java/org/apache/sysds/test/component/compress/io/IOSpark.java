@@ -69,20 +69,20 @@ public class IOSpark {
 	}
 
 	@Test
-	@SuppressWarnings({"unchecked"})
-	public void readRDDThroughSparkExecutionContext() {
-		String n = getName();
-		IOEmpty.write(n, 1000, 102, 100);
+	public void readSPContextEmpty() {
+		readRDDThroughSparkExecutionContext(new MatrixBlock(100, 100, 0.0), 40);
+	}
 
-		SparkExecutionContext ec = ExecutionContextFactory.createSparkExecutionContext();
+	@Test
+	public void readSPContextCompressable() {
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(120, 140, 1, 3, 1.0, 2514));
+		readRDDThroughSparkExecutionContext(mb, 100);
+	}
 
-		MatrixObject obj = new MatrixObject(ValueType.FP64, n);
-		FileFormat fmt = FileFormat.COMPRESSED;
-
-		JavaPairRDD<MatrixIndexes, MatrixBlock> m = (JavaPairRDD<MatrixIndexes, MatrixBlock>) ec
-			.getRDDHandleForMatrixObject(obj, fmt);
-
-		verifySum(m.collect(), 0, 0);
+	@Test
+	public void readSPContextNotCompressable() {
+		MatrixBlock mb = TestUtils.generateTestMatrixBlock(120, 140, 1, 3, 1.0, 2514);
+		readRDDThroughSparkExecutionContext(mb, 100);
 	}
 
 	@Test
@@ -103,13 +103,19 @@ public class IOSpark {
 		readWrite(mb);
 	}
 
+	@Test
+	public void readMultiBlockRowsAndColsIncompressable() {
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(120, 122, 1, 1000, 1.0, 2514));
+		readWrite(mb);
+	}
+
 	private void readWrite(MatrixBlock mb) {
 		double sum = mb.sum();
 		String n = getName();
-		try{
+		try {
 			WriterCompressed.writeCompressedMatrixToHDFS(mb, n, 50);
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -136,4 +142,29 @@ public class IOSpark {
 		return (JavaPairRDD<MatrixIndexes, CompressedWriteBlock>) sc.hadoopFile(path, inf.inputFormatClass, inf.keyClass,
 			inf.valueClass);
 	}
+
+	@SuppressWarnings({"unchecked"})
+	public void readRDDThroughSparkExecutionContext(MatrixBlock mb, int blen) {
+		try {
+
+			String n = getName();
+
+			WriterCompressed.writeCompressedMatrixToHDFS(mb, n, blen);
+
+			SparkExecutionContext ec = ExecutionContextFactory.createSparkExecutionContext();
+
+			MatrixObject obj = new MatrixObject(ValueType.FP64, n);
+			FileFormat fmt = FileFormat.COMPRESSED;
+
+			JavaPairRDD<MatrixIndexes, MatrixBlock> m = (JavaPairRDD<MatrixIndexes, MatrixBlock>) ec
+				.getRDDHandleForMatrixObject(obj, fmt);
+
+			verifySum(m.collect(), mb.sum(), 0.0001);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
 }

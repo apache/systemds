@@ -196,10 +196,6 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 			return copyAndSet(Util.genColsIndices(max), d);
 	}
 
-	protected AColGroup rexpandCols(int max, ADictionary d) {
-		return (d == null) ? ColGroupEmpty.create(max) : copyAndSet(Util.genColsIndices(max), d);
-	}
-
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

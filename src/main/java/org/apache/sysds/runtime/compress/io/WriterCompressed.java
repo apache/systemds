@@ -49,17 +49,12 @@ public final class WriterCompressed extends MatrixWriter {
 	}
 
 	public static void writeCompressedMatrixToHDFS(MatrixBlock src, String fname) throws IOException {
-		create(null).writeMatrixToHDFS(src, fname, src.getNumRows(), src.getNumColumns(),
-			OptimizerUtils.DEFAULT_BLOCKSIZE, src.getNonZeros(), false);
+		writeCompressedMatrixToHDFS(src, fname, src.getNumRows(), src.getNumColumns(), OptimizerUtils.DEFAULT_BLOCKSIZE,
+			src.getNonZeros(), false);
 	}
 
 	public static void writeCompressedMatrixToHDFS(MatrixBlock src, String fname, int blen) throws IOException {
-		create(null).writeMatrixToHDFS(src, fname, src.getNumRows(), src.getNumColumns(), blen, src.getNonZeros(), false);
-	}
-
-	public static void writeCompressedMatrixToHDFS(MatrixBlock src, String fname, int blen, boolean diag)
-		throws IOException {
-		create(null).writeMatrixToHDFS(src, fname, src.getNumRows(), src.getNumColumns(), blen, src.getNonZeros(), diag);
+		writeCompressedMatrixToHDFS(src, fname, src.getNumRows(), src.getNumColumns(), blen, src.getNonZeros(), false);
 	}
 
 	public static void writeCompressedMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen,

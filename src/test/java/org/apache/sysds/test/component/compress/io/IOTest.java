@@ -148,6 +148,4 @@ public class IOTest {
 		MatrixBlock mbr = IOTestUtils.read(filename);
 		IOTestUtils.verifyEquivalence(mb, mbr);
 	}
-	
-
 }

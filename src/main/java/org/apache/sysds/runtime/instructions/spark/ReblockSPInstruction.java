@@ -29,7 +29,6 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.io.SPCompressedReblock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -195,8 +194,9 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			libsvmInstruction.processInstruction(sec);
 		}
 		else if(fmt == FileFormat.COMPRESSED){
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = SPCompressedReblock.getRDDHandle(sec, input1.getName(),
-				output.getName());
+			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = (JavaPairRDD<MatrixIndexes, MatrixBlock>) sec
+				.getRDDHandleForMatrixObject(mo, FileFormat.COMPRESSED);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryBlockToBinaryBlock(in1, mc, mcOut);
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}

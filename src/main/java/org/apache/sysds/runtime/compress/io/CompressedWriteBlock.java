@@ -21,10 +21,7 @@ package org.apache.sysds.runtime.compress.io;
 
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -34,7 +31,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * Write block for serializing either a instance of MatrixBlock or CompressedMatrixBlock, To allow spark to read in
  * either or.
  */
-public class CompressedWriteBlock implements Externalizable, WritableComparable<CompressedWriteBlock> {
+public class CompressedWriteBlock implements  WritableComparable<CompressedWriteBlock> {
 
 	public MatrixBlock mb;
 
@@ -64,16 +61,6 @@ public class CompressedWriteBlock implements Externalizable, WritableComparable<
 			mb = new MatrixBlock();
 			mb.readFields(in);
 		}
-	}
-
-	@Override
-	public void readExternal(ObjectInput is) throws IOException {
-		readFields(is);
-	}
-
-	@Override
-	public void writeExternal(ObjectOutput os) throws IOException {
-		write(os);
 	}
 
 	public MatrixBlock get() {

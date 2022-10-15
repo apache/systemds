@@ -39,18 +39,12 @@ public class CLALibSlice {
 	 * 
 	 * @param cmb  The input block to slice.
 	 * @param blen The length of the blocks.
-	 * @return A list containing CompressedMatrixBlocks where there is values, and null if there is no values in the sub
-	 *         block.
+	 * @return A list containing CompressedMatrixBlocks or MatrixBlocks
 	 */
-	public static List<CompressedMatrixBlock> sliceBlocks(CompressedMatrixBlock cmb, int blen) {
-		List<CompressedMatrixBlock> mbs = new ArrayList<>();
-		for(int b = 0; b < cmb.getNumRows(); b += blen) {
-			MatrixBlock mb = sliceRowsCompressed(cmb, b, Math.min(b + blen, cmb.getNumRows()));
-			if(mb instanceof CompressedMatrixBlock)
-				mbs.add((CompressedMatrixBlock) mb);
-			else
-				mbs.add(null);
-		}
+	public static List<MatrixBlock> sliceBlocks(CompressedMatrixBlock cmb, int blen) {
+		final List<MatrixBlock> mbs = new ArrayList<>();
+		for(int b = 0; b < cmb.getNumRows(); b += blen)
+			mbs.add(sliceRowsCompressed(cmb, b, Math.min(b + blen, cmb.getNumRows()) - 1));
 		return mbs;
 	}
 
@@ -79,7 +73,6 @@ public class CLALibSlice {
 			return sliceRowsDecompress(cmb, rl, ru);
 		else
 			return sliceRowsCompressed(cmb, rl, ru);
-
 	}
 
 	private static boolean shouldDecompressSliceRows(CompressedMatrixBlock cmb, int rl, int ru) {
@@ -139,7 +132,7 @@ public class CLALibSlice {
 		return tmp;
 	}
 
-	private static CompressedMatrixBlock sliceColumns(CompressedMatrixBlock cmb, int cl, int cu) {
+	public static CompressedMatrixBlock sliceColumns(CompressedMatrixBlock cmb, int cl, int cu) {
 		final int cue = cu + 1;
 		final CompressedMatrixBlock ret = new CompressedMatrixBlock(cmb.getNumRows(), cue - cl);
 

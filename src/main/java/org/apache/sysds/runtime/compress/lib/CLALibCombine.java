@@ -151,8 +151,11 @@ public class CLALibCombine {
 
 			final List<AColGroup> gs = cmb.getColGroups();
 			for(AColGroup g : gs) {
-				final int[] cols = g.getColIndices();
-				finalCols[cols[0] + bc * blen] = g; // only assign first column of each group.
+				AColGroup gc = g;
+				if(bc > 0)
+					gc = g.shiftColIndices(bc * blen);
+				final int[] cols = gc.getColIndices();
+				finalCols[cols[0]] = gc; // only assign first column of each group.
 			}
 		}
 
@@ -169,12 +172,14 @@ public class CLALibCombine {
 					if(bc > 0)
 						gc = g.shiftColIndices(bc * blen);
 					final int[] cols = gc.getColIndices();
-
-					finalCols[cols[0]] = finalCols[cols[0]].append(gc);
-					if(finalCols[cols[0]] == null) {
-						LOG.warn("Combining of columns was non trivial, therefore falling back to decompression");
+					AColGroup prev = finalCols[cols[0]];
+					AColGroup comb = prev.append(gc);
+					if(comb == null) {
+						LOG.warn("Combining of columns from group: " + prev.getClass().getSimpleName() + " and "
+							+ gc.getClass().getSimpleName() + " was non trivial, therefore falling back to decompression");
 						return combineViaDecompression(m, rlen, clen, blen);
 					}
+					finalCols[cols[0]] = comb;
 
 				}
 			}

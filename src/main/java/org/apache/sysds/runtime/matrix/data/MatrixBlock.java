@@ -3659,22 +3659,66 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return result;
 	}
 
+	/**
+	 * Append that matrix to this matrix, while allocating a new matrix.
+	 * Default is cbind making the matrix "wider"
+	 * 
+	 * @param that the other matrix to append
+	 * @return A new MatrixBlock object with the appended result
+	 */
 	public final MatrixBlock append(MatrixBlock that) {
 		return append(that, null, true); // default cbind
 	}
 
+	/**
+	 * Append that matrix to this matrix, while allocating a new matrix. 
+	 * cbind true makes the matrix "wider" while cbind false make it "taller"
+	 * 
+	 * @param that  the other matrix to append
+	 * @param cbind if binding on columns or rows
+	 * @return a new MatrixBlock object with the appended result
+	 */
 	public final MatrixBlock append(MatrixBlock that, boolean cbind) {
 		return append(that, null, cbind);
 	}
 
+	/**
+	 * Append that matrix to this matrix.
+	 * 
+	 * Default is cbind making the matrix "wider"
+	 * 
+	 * @param that the other matrix to append
+	 * @param ret the output matrix to modify, (is also returned)
+	 * @return the ret MatrixBlock object with the appended result
+	 */
 	public final MatrixBlock append( MatrixBlock that, MatrixBlock ret ) {
 		return append(that, ret, true); //default cbind
 	}
 
+	/**
+	 * Append that matrix to this matrix.
+	 * 
+	 * cbind true makes the matrix "wider" while cbind false make it "taller"
+	 * 
+	 * @param that  the other matrix to append
+	 * @param ret   the output matrix to modify, (is also returned)
+	 * @param cbind if binding on columns or rows
+	 * @return the ret MatrixBlock object with the appended result
+	 */
 	public final MatrixBlock append( MatrixBlock that, MatrixBlock ret, boolean cbind ) {
 		return append(new MatrixBlock[]{that}, ret, cbind);
 	}
 	
+	/**
+	 * Append that list of matrixes to this matrix.
+	 * 
+	 * cbind true makes the matrix "wider" while cbind false make it "taller"
+	 * 
+	 * @param that a list of matrices to append in order
+	 * @param result   the output matrix to modify, (is also returned)
+	 * @param cbind if binding on columns or rows
+	 * @return the ret MatrixBlock object with the appended result
+	 */
 	public MatrixBlock append( MatrixBlock[] that, MatrixBlock result, boolean cbind) {
 		checkDimensionsForAppend(that, cbind);
 

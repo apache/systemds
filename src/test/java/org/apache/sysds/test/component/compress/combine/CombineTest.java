@@ -26,14 +26,22 @@ import static org.junit.Assert.fail;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.lib.CLALibCombine;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 public class CombineTest {
+
+	protected static final Log LOG = LogFactory.getLog(CombineTest.class.getName());
 
 	@Test
 	public void combineEmpty() {
@@ -56,7 +64,6 @@ public class CombineTest {
 
 	}
 
-
 	@Test
 	public void combineConst() {
 		CompressedMatrixBlock m1 = CompressedMatrixBlockFactory.createConstant(100, 10, 1.0);
@@ -75,6 +82,25 @@ public class CombineTest {
 			e.printStackTrace();
 			fail("Failed to combine empty");
 		}
+
+	}
+
+	@Test
+	public void combineDDC() {
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(165, 2, 1, 3, 1.0, 2514));
+		CompressedMatrixBlock csb = (CompressedMatrixBlock) CompressedMatrixBlockFactory
+			.compress(mb,
+				new CompressionSettingsBuilder().clearValidCompression().addValidCompression(CompressionType.DDC))
+			.getLeft();
+
+		AColGroup g = csb.getColGroups().get(0);
+		double sum = g.getSum(165);
+		AColGroup ret = g.append(g);
+		double sum2 = ret.getSum(165 * 2);
+		assertEquals(sum * 2, sum2, 0.001);
+		AColGroup ret2 = ret.append(g);
+		double sum3 = ret2.getSum(165 * 3);
+		assertEquals(sum * 3, sum3, 0.001);
 
 	}
 

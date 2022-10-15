@@ -116,6 +116,13 @@ public abstract class AColGroupCompressed extends AColGroup {
 	}
 
 	@Override
+	public double getSum(int nRows) {
+		double[] ret = new double[1];
+		computeSum(ret, nRows);
+		return ret[0];
+	}
+
+	@Override
 	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int nRows, int rl, int ru) {
 		unaryAggregateOperations(op, c, nRows, rl, ru,
 			(op.indexFn instanceof ReduceCol) ? preAggRows(op.aggOp.increOp.fn) : null);

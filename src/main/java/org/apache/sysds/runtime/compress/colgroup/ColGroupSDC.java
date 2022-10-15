@@ -571,6 +571,14 @@ public class ColGroupSDC extends ASDC {
 
 	@Override
 	public AColGroup append(AColGroup g) {
+		if(g instanceof ColGroupSDC && Arrays.equals(g.getColIndices(), _colIndexes)) {
+			final ColGroupSDC gSDC = (ColGroupSDC) g;
+			if(Arrays.equals(_defaultTuple, gSDC._defaultTuple) && gSDC._dict.eq(_dict)) {
+				final AMapToData nd = _data.append(gSDC._data);
+				final AOffset ofd = _indexes.append(gSDC._indexes);
+				return create(_colIndexes, _numRows + gSDC._numRows, _dict, _defaultTuple, ofd, nd, null);
+			}
+		}
 		return null;
 	}
 

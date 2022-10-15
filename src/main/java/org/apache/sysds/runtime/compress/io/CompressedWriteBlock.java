@@ -31,9 +31,13 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * Write block for serializing either a instance of MatrixBlock or CompressedMatrixBlock, To allow spark to read in
  * either or.
  */
-public class CompressedWriteBlock implements  WritableComparable<CompressedWriteBlock> {
+public class CompressedWriteBlock implements WritableComparable<CompressedWriteBlock> {
 
 	public MatrixBlock mb;
+
+	private enum CONTENT {
+		Comp, MB;
+	}
 
 	/**
 	 * Write block used to point to a underlying instance of CompressedMatrixBlock or MatrixBlock, Unfortunately spark
@@ -49,17 +53,25 @@ public class CompressedWriteBlock implements  WritableComparable<CompressedWrite
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeBoolean(mb instanceof CompressedMatrixBlock);
+
+		if(mb instanceof CompressedMatrixBlock)
+			out.writeByte(CONTENT.Comp.ordinal());
+		else
+			out.writeByte(CONTENT.MB.ordinal());
 		mb.write(out);
+
 	}
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		if(in.readBoolean())
-			mb = CompressedMatrixBlock.read(in);
-		else {
-			mb = new MatrixBlock();
-			mb.readFields(in);
+		switch(CONTENT.values()[in.readByte()]) {
+			case Comp:
+				mb = CompressedMatrixBlock.read(in);
+				break;
+			case MB:
+				mb = new MatrixBlock();
+				mb.readFields(in);
+				break;
 		}
 	}
 

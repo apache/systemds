@@ -439,18 +439,14 @@ public abstract class AOffset implements Serializable {
 			return ((OffsetChar) this).slice(lowOff, highOff, lowValue, highValue, low, high);
 	}
 
-	// protected abstract OffsetSliceInfo slice(int lowOff, int highOff, int lowValue, int highValue, int low, int high);
-
-	public static final class OffsetSliceInfo {
-		public final int lIndex;
-		public final int uIndex;
-		public final AOffset offsetSlice;
-
-		protected OffsetSliceInfo(int l, int u, AOffset off) {
-			this.lIndex = l;
-			this.uIndex = u;
-			this.offsetSlice = off;
-		}
+	/**
+	 * Append the offsets from that other offset to the offsets in this.
+	 * 
+	 * @param t that offsets
+	 * @return this offsets followed by thats offsets.
+	 */
+	public AOffset append(AOffset t){
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -475,6 +471,18 @@ public abstract class AOffset implements Serializable {
 						+ getOffsetToLast() + " String: " + sb.toString());
 		}
 		return sb.toString();
+	}
+
+	public static final class OffsetSliceInfo {
+		public final int lIndex;
+		public final int uIndex;
+		public final AOffset offsetSlice;
+
+		protected OffsetSliceInfo(int l, int u, AOffset off) {
+			this.lIndex = l;
+			this.uIndex = u;
+			this.offsetSlice = off;
+		}
 	}
 
 	protected static class OffsetCache {

@@ -117,12 +117,12 @@ public class IOTest {
 
 	@Test
 	public void testWriteAndReadSmallBlen() throws Exception {
-		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(1000, 3, 1, 3, 1.0, 2514)), 100);
+		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(200, 3, 1, 3, 1.0, 2514)), 100);
 	}
 
 	@Test
 	public void testWriteAndReadSmallBlenBiggerClen() throws Exception {
-		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(1000, 51, 1, 3, 1.0, 2514)), 50);
+		writeAndRead(TestUtils.ceil(TestUtils.generateTestMatrixBlock(200, 51, 1, 3, 1.0, 2514)), 50);
 	}
 
 	@Test
@@ -141,11 +141,18 @@ public class IOTest {
 	}
 
 	protected static void writeAndRead(MatrixBlock mb, int blen) throws Exception {
-		String filename = getName();
-		WriterCompressed.writeCompressedMatrixToHDFS(mb, filename, blen);
-		File f = new File(filename);
-		assertTrue(f.isFile() || f.isDirectory());
-		MatrixBlock mbr = IOCompressionTestUtils.read(filename);
-		IOCompressionTestUtils.verifyEquivalence(mb, mbr);
+		try{
+
+			String filename = getName();
+			WriterCompressed.writeCompressedMatrixToHDFS(mb, filename, blen);
+			File f = new File(filename);
+			assertTrue(f.isFile() || f.isDirectory());
+			MatrixBlock mbr = IOCompressionTestUtils.read(filename);
+			IOCompressionTestUtils.verifyEquivalence(mb, mbr);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			throw e;
+		}
 	}
 }

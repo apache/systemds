@@ -486,13 +486,23 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public AColGroup append(AColGroup g) {
-		if(g instanceof ColGroupDDC && Arrays.equals(g.getColIndices(), _colIndexes)) {
-			ColGroupDDC gDDC = (ColGroupDDC) g;
-			if(gDDC._dict.eq(_dict)){
-				AMapToData nd = _data.append(gDDC._data);
-				return create(_colIndexes, _dict, nd, null);
+		if(g instanceof ColGroupDDC) {
+			if(Arrays.equals(g.getColIndices(), _colIndexes)) {
+
+				ColGroupDDC gDDC = (ColGroupDDC) g;
+				if(gDDC._dict.eq(_dict)) {
+					AMapToData nd = _data.append(gDDC._data);
+					return create(_colIndexes, _dict, nd, null);
+				}
+				else
+					LOG.warn("Not same Dictionaries therefore not appending DDC\n" + _dict + "\n\n" + gDDC._dict);
 			}
+			else
+				LOG.warn("Not same columns therefore not appending DDC\n" + Arrays.toString(_colIndexes) + "\n\n"
+					+ Arrays.toString(g.getColIndices()));
 		}
+		else
+			LOG.warn("Not DDC but " + g.getClass().getSimpleName() + ", therefore not appending DDC");
 		return null;
 	}
 

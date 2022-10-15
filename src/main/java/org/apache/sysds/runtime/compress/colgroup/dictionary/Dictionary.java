@@ -1077,7 +1077,6 @@ public class Dictionary extends ADictionary {
 			final double[] dv = mb.getDenseBlockValues();
 			return Arrays.equals(_values, dv);
 		}
-		
 		return false;
 	}
 }

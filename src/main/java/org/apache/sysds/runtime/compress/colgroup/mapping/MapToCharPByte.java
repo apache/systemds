@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -216,5 +217,28 @@ public class MapToCharPByte extends AMapToData {
 	@Override
 	public AMapToData slice(int l, int u) {
 		return new MapToCharPByte(getUnique(), Arrays.copyOfRange(_data_c, l, u), Arrays.copyOfRange(_data_b, l, u));
+	}
+
+	@Override
+	public AMapToData append(AMapToData t) {
+		if(t instanceof MapToCharPByte) {
+			MapToCharPByte tb = (MapToCharPByte) t;
+			char[] tbb = tb._data_c;
+			byte[] tbbb = tb._data_b;
+			final int newSize = _data_c.length + t.size();
+			final int newDistinct = Math.max(getUnique(), t.getUnique());
+
+			// copy
+			char[] ret_c = Arrays.copyOf(_data_c, newSize);
+			System.arraycopy(tbb, 0, ret_c, _data_c.length, t.size());
+			byte[] ret_b = Arrays.copyOf(_data_b, newSize);
+			System.arraycopy(tbbb, 0, ret_b, _data_b.length, t.size());
+
+
+			return new MapToCharPByte(newDistinct, ret_c, ret_b);
+		}
+		else {
+			throw new NotImplementedException("Not implemented append on Bit map different type");
+		}
 	}
 }

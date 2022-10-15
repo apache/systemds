@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.io;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,6 +36,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.lib.CLALibSlice;
 import org.apache.sysds.runtime.instructions.spark.CompressionSPInstruction.CompressionFunction;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.runtime.io.FileFormatProperties;
@@ -112,7 +114,7 @@ public final class WriterCompressed extends MatrixWriter {
 		write(m, fname, blen);
 	}
 
-	private void write(MatrixBlock src, String fname, int blen) throws IOException {
+	private void write(MatrixBlock src, final String fname, final int blen) throws IOException {
 		final int k = OptimizerUtils.getParallelTextWriteParallelism();
 		final Path path = new Path(fname);
 		final JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -120,12 +122,16 @@ public final class WriterCompressed extends MatrixWriter {
 		HDFSTool.deleteFileIfExistOnHDFS(path, job);
 
 		// Make Writer (New interface)
-		Writer w = SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096), Writer.blockSize(4096),
-			Writer.keyClass(MatrixIndexes.class), Writer.valueClass(CompressedWriteBlock.class),
+		final Writer w = SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
+			Writer.blockSize(4096), Writer.keyClass(MatrixIndexes.class), Writer.valueClass(CompressedWriteBlock.class),
 			Writer.compression(SequenceFile.CompressionType.RECORD), Writer.replication((short) 1));
 
 		final int rlen = src.getNumRows();
 		final int clen = src.getNumColumns();
+
+		// Try to compress!
+		if(!(src instanceof CompressedMatrixBlock))
+			src = CompressedMatrixBlockFactory.compress(src, k).getLeft();
 
 		if(rlen <= blen && clen <= blen)
 			writeSingleBlock(w, src, k);
@@ -145,20 +151,36 @@ public final class WriterCompressed extends MatrixWriter {
 		w.append(idx, new CompressedWriteBlock(mc));
 	}
 
-	private void writeMultiBlock(Writer w, MatrixBlock b, int rlen, int clen, int blen, int k) throws IOException {
+	private void writeMultiBlock(Writer w, MatrixBlock b, final int rlen, final int clen, final int blen, int k)
+		throws IOException {
 		final MatrixIndexes indexes = new MatrixIndexes();
-		for(int br = 0; br * blen < rlen; br++) {
-			for(int bc = 0; bc * blen < clen; bc++) {
-				// Max Row and col in block
-				int sR = br * blen;
-				int sC = bc * blen;
-				int mR = Math.min(br * blen + blen, rlen) - 1;
-				int mC = Math.min(bc * blen + blen, clen) - 1;
+		if(!(b instanceof CompressedMatrixBlock))
+			LOG.warn("Writing compressed format with non identical compression scheme");
 
-				MatrixBlock mb = b.slice(sR, mR, sC, mC);
-				MatrixBlock mc = CompressedMatrixBlockFactory.compress(mb, k).getLeft();
-				indexes.setIndexes(br + 1, bc + 1);
-				w.append(indexes, new CompressedWriteBlock(mc));
+		for(int bc = 0; bc * blen < clen; bc++) {
+			final int sC = bc * blen;
+			final int mC = Math.min(sC + blen, clen) - 1;
+			if(b instanceof CompressedMatrixBlock) {
+				final CompressedMatrixBlock mc = //mC == clen - 1 ? (CompressedMatrixBlock) b :
+				 CLALibSlice
+					.sliceColumns((CompressedMatrixBlock) b, sC, mC); // slice columns!
+
+				final List<MatrixBlock> blocks = CLALibSlice.sliceBlocks(mc, blen); // Slice compressed blocks
+				for(int br = 0; br * blen < rlen; br++) {
+					indexes.setIndexes(br + 1, bc + 1);
+					w.append(indexes, new CompressedWriteBlock(blocks.get(br)));
+				}
+			}
+			else {
+				for(int br = 0; br * blen < rlen; br++) {
+					// Max Row and col in block
+					final int sR = br * blen;
+					final int mR = Math.min(sR + blen, rlen) - 1;
+					MatrixBlock mb = b.slice(sR, mR, sC, mC);
+					MatrixBlock mc = CompressedMatrixBlockFactory.compress(mb, k).getLeft();
+					indexes.setIndexes(br + 1, bc + 1);
+					w.append(indexes, new CompressedWriteBlock(mc));
+				}
 			}
 		}
 	}

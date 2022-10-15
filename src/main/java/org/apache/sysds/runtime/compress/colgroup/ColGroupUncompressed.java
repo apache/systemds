@@ -767,6 +767,11 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public AColGroup append(AColGroup g) {
+		if(g instanceof ColGroupUncompressed && Arrays.equals(g.getColIndices(), _colIndexes)) {
+			final ColGroupUncompressed gDDC = (ColGroupUncompressed) g;
+			final MatrixBlock nd = _data.append(gDDC._data, false);
+			return create(nd, _colIndexes);
+		}
 		return null;
 	}
 

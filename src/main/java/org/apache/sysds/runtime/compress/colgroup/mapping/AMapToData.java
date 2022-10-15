@@ -815,6 +815,9 @@ public abstract class AMapToData implements Serializable {
 	 */
 	public abstract AMapToData slice(int l, int u);
 
+
+	public abstract AMapToData append(AMapToData t);
+
 	@Override
 	public String toString() {
 		final int sz = size();

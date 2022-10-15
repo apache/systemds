@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -171,16 +172,15 @@ public class MapToChar extends AMapToData {
 		}
 	}
 
-
 	@Override
 	public int getUpperBoundValue() {
 		return Character.MAX_VALUE;
 	}
 
 	@Override
-	public void copyInt(int[] d){
+	public void copyInt(int[] d) {
 		for(int i = 0; i < _data.length; i++)
-			_data[i] = (char)d[i];
+			_data[i] = (char) d[i];
 	}
 
 	@Override
@@ -193,23 +193,23 @@ public class MapToChar extends AMapToData {
 	@Override
 	public int[] getCounts(int[] ret) {
 		for(int i = 0; i < _data.length; i++)
-			ret[_data[i]]++; 
+			ret[_data[i]]++;
 		return ret;
 	}
 
 	@Override
-	public AMapToData resize(int unique){
+	public AMapToData resize(int unique) {
 		final int size = _data.length;
 		AMapToData ret;
 		if(unique <= 1)
 			return new MapToZero(size);
 		else if(unique == 2 && size > 32)
 			ret = new MapToBit(unique, size);
-		else if (unique <= 127)
+		else if(unique <= 127)
 			ret = new MapToUByte(unique, size);
 		else if(unique < 256)
 			ret = new MapToByte(unique, size);
-		else{
+		else {
 			setUnique(unique);
 			return this;
 		}
@@ -221,7 +221,7 @@ public class MapToChar extends AMapToData {
 	public int countRuns() {
 		int c = 1;
 		char prev = _data[0];
-		for(int i = 1; i <_data.length; i++){
+		for(int i = 1; i < _data.length; i++) {
 			c += prev == _data[i] ? 0 : 1;
 			prev = _data[i];
 		}
@@ -231,5 +231,24 @@ public class MapToChar extends AMapToData {
 	@Override
 	public AMapToData slice(int l, int u) {
 		return new MapToChar(getUnique(), Arrays.copyOfRange(_data, l, u));
+	}
+
+	@Override
+	public AMapToData append(AMapToData t) {
+		if(t instanceof MapToChar) {
+			MapToChar tb = (MapToChar) t;
+			char[] tbb = tb._data;
+			final int newSize = _data.length + t.size();
+			final int newDistinct = Math.max(getUnique(), t.getUnique());
+
+			// copy
+			char[] ret = Arrays.copyOf(_data, newSize);
+			System.arraycopy(tbb, 0, ret, _data.length, t.size());
+
+			return new MapToChar(newDistinct, ret);
+		}
+		else {
+			throw new NotImplementedException("Not implemented append on Bit map different type");
+		}
 	}
 }

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
@@ -485,6 +486,13 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public AColGroup append(AColGroup g) {
+		if(g instanceof ColGroupDDC && Arrays.equals(g.getColIndices(), _colIndexes)) {
+			ColGroupDDC gDDC = (ColGroupDDC) g;
+			if(gDDC._dict.eq(_dict)){
+				AMapToData nd = _data.append(gDDC._data);
+				return create(_colIndexes, _dict, nd, null);
+			}
+		}
 		return null;
 	}
 

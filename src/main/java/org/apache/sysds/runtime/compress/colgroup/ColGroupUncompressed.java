@@ -478,6 +478,11 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
+	public double getSum(int nRows) {
+		return _data.sum();
+	}
+
+	@Override
 	public final void tsmm(MatrixBlock ret, int nRows) {
 
 		final int tCol = _colIndexes.length;

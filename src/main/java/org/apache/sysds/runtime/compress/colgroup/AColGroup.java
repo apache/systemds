@@ -517,6 +517,14 @@ public abstract class AColGroup implements Serializable {
 	public abstract double getMax();
 
 	/**
+	 * Short hand method for getting the sum of this column group
+	 * 
+	 * @param nRows The number of rows in the column group
+	 * @return The sum of this column group
+	 */
+	public abstract double getSum(int nRows);
+
+	/**
 	 * Detect if the column group contains a specific value.
 	 * 
 	 * @param pattern The value to look for.

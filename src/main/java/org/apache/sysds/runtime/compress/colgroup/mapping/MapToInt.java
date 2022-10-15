@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -231,5 +232,24 @@ public class MapToInt extends AMapToData {
 	@Override
 	public AMapToData slice(int l, int u) {
 		return new MapToInt(getUnique(), Arrays.copyOfRange(_data, l, u));
+	}
+
+	@Override
+	public AMapToData append(AMapToData t) {
+		if(t instanceof MapToInt) {
+			MapToInt tb = (MapToInt) t;
+			int[] tbb = tb._data;
+			final int newSize = _data.length + t.size();
+			final int newDistinct = Math.max(getUnique(), t.getUnique());
+
+			// copy
+			int[] ret = Arrays.copyOf(_data, newSize);
+			System.arraycopy(tbb, 0, ret, _data.length, t.size());
+
+			return new MapToInt(newDistinct, ret);
+		}
+		else {
+			throw new NotImplementedException("Not implemented append on Bit map different type");
+		}
 	}
 }

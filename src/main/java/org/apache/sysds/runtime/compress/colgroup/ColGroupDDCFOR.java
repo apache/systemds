@@ -435,6 +435,13 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	public AColGroup append(AColGroup g) {
+		if(g instanceof ColGroupDDCFOR && Arrays.equals(g.getColIndices(), _colIndexes)) {
+			ColGroupDDCFOR gDDC = (ColGroupDDCFOR) g;
+			if(Arrays.equals(_reference , gDDC._reference) && gDDC._dict.eq(_dict)){
+				AMapToData nd = _data.append(gDDC._data);
+				return create(_colIndexes, _dict, nd, null, _reference);
+			}
+		}
 		return null;
 	}
 

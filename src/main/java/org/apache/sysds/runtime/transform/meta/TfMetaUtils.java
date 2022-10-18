@@ -28,8 +28,11 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.api.jmlc.Connection;
@@ -471,6 +474,20 @@ public class TfMetaUtils
 	private static String getStringFromResource(String path) throws IOException {
 		try(InputStream is = Connection.class.getResourceAsStream(path) ) {
 			return IOUtilFunctions.toString(is);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static void checkValidEncoders(JSONObject jSpec) {
+		Set<String> validEncoders = new HashSet<>();
+		validEncoders.addAll(Arrays.asList("ids","K"));
+		for( TfMethod tf : TfMethod.values() )
+			validEncoders.add(tf.toString());
+		Iterator<String> keys = jSpec.keys();
+		while( keys.hasNext() ) {
+			String key = keys.next();
+			if( !validEncoders.contains(key) )
+				throw new DMLRuntimeException("Transform specification includes an invalid encoder: "+key);
 		}
 	}
 }

@@ -74,6 +74,7 @@ public class EncoderFactory {
 			List<ColumnEncoderComposite> lencoders = new ArrayList<>();
 			HashMap<Integer, List<ColumnEncoder>> colEncoders = new HashMap<>();
 			boolean ids = jSpec.containsKey("ids") && jSpec.getBoolean("ids");
+			TfMetaUtils.checkValidEncoders(jSpec);
 
 			// prepare basic id lists (recode, feature hash, dummycode, pass-through)
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils

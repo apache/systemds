@@ -124,7 +124,8 @@ public final class WriterCompressed extends MatrixWriter {
 		// Make Writer (New interface)
 		final Writer w = SequenceFile.createWriter(job, Writer.file(path), Writer.bufferSize(4096),
 			Writer.blockSize(4096), Writer.keyClass(MatrixIndexes.class), Writer.valueClass(CompressedWriteBlock.class),
-			Writer.compression(SequenceFile.CompressionType.RECORD), Writer.replication((short) 1));
+			Writer.compression(SequenceFile.CompressionType.NONE), // No Compression type on disk
+			 Writer.replication((short) 1));
 
 		final int rlen = src.getNumRows();
 		final int clen = src.getNumColumns();

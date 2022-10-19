@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.io;
 
 import org.apache.spark.api.java.function.Function;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CompressWrap implements Function<MatrixBlock, CompressedWriteBlock> {

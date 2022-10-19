@@ -27,6 +27,7 @@ import java.util.BitSet;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -817,6 +818,8 @@ public abstract class AMapToData implements Serializable {
 
 
 	public abstract AMapToData append(AMapToData t);
+
+	public abstract AMapToData appendN(AMapToDataGroup[] d);
 
 	@Override
 	public String toString() {

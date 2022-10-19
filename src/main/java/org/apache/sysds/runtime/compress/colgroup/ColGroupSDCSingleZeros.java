@@ -806,7 +806,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 
 	@Override
 	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
-		return create(colIndexes, _numRows, newDictionary, _indexes, getCounts());
+		return create(colIndexes, _numRows, newDictionary, _indexes, getCachedCounts());
 	}
 
 	@Override

@@ -430,7 +430,7 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
-		return create(colIndexes, newDictionary, _data, getCounts(), _reference);
+		return create(colIndexes, newDictionary, _data, getCachedCounts(), _reference);
 	}
 
 	@Override

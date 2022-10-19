@@ -32,8 +32,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToCharPByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -68,8 +70,14 @@ public class MappingTests {
 			tests.add(new Object[] {6, t, 63, false});
 			tests.add(new Object[] {4, t, 63, false});
 			tests.add(new Object[] {3, t, 64, false});
+			tests.add(new Object[] {4, t, 64, false});
 			tests.add(new Object[] {3, t, 65, false});
 			tests.add(new Object[] {5, t, 64 + 63, false});
+			tests.add(new Object[] {5, t, 127, false});
+			tests.add(new Object[] {5, t, 128, false});
+			tests.add(new Object[] {5, t, 129, false});
+			tests.add(new Object[] {7, t, 255, false});
+			tests.add(new Object[] {8, t, 256, false});
 			tests.add(new Object[] {5, t, 1234, false});
 			tests.add(new Object[] {5, t, 13, true});
 		}
@@ -80,7 +88,7 @@ public class MappingTests {
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
-		this.max =Math.min(Math.min(MappingTestUtil.getUpperBoundValue(type), fictiveMax) + 1, size);
+		this.max = Math.min(Math.min(MappingTestUtil.getUpperBoundValue(type), fictiveMax) + 1, size);
 		expected = new int[size];
 		m = genMap(MapToFactory.create(size, max), expected, max, fill, seed);
 	}
@@ -113,7 +121,7 @@ public class MappingTests {
 		}
 
 		// to make sure that the bit set is actually filled.
-		for(int i = 0; i < max; i++){
+		for(int i = 0; i < max; i++) {
 
 			m.set(i, i);
 			expected[i] = i;
@@ -126,7 +134,6 @@ public class MappingTests {
 		for(int i = 0; i < size; i++)
 			if(expected[i] != m.getIndex(i))
 				fail("Expected equals " + Arrays.toString(expected) + "\nbut got: " + m);
-
 	}
 
 	@Test
@@ -214,7 +221,7 @@ public class MappingTests {
 
 	@Test
 	public void replaceMax() {
-		m.replace(max-1, 0);
+		m.replace(max - 1, 0);
 
 		for(int i = 0; i < size; i++) {
 			expected[i] = expected[i] == max - 1 ? 0 : expected[i];
@@ -271,4 +278,85 @@ public class MappingTests {
 				+ m.getType() + "  " + type + " " + max + " " + m);
 	}
 
+	@Test
+	public void testAppend() {
+		int nVal = m.getUnique();
+		int[] counts = m.getCounts(new int[nVal]);
+
+		AMapToData m2 = m.append(m);
+		assertEquals(m.size() * 2, m2.size());
+		assertEquals(m.getUnique(), m2.getUnique());
+		int[] counts2 = m2.getCounts(new int[nVal]);
+
+		for(int i = 0; i < nVal; i++)
+			assertEquals(counts[i] * 2, counts2[i]);
+	}
+
+	@Test
+	public void testAppendN() {
+		int nVal = m.getUnique();
+		int[] counts = m.getCounts(new int[nVal]);
+
+		try {
+
+			AMapToData m2 = m.appendN(new AMapToDataGroup[] {//
+				new Holder(m), new Holder(m), new Holder(m)});
+			try {
+				assertEquals(m.size() * 3, m2.size());
+				assertEquals(m.getUnique(), m2.getUnique());
+				int[] counts2 = m2.getCounts(new int[nVal]);
+
+				for(int i = 0; i < nVal; i++)
+					assertEquals(counts[i] * 3, counts2[i]);
+			}
+			catch(AssertionError e) {
+				fail(e.getMessage() + "\nFailed appendN with in: \n" + m + "\ncomp:\n" + m2);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("Failed " + e.getMessage());
+		}
+
+	}
+
+	@Test
+	public void testAppendVSAppendN() {
+		final AMapToData m2 = m.append(m).append(m);
+		final AMapToData m3 = m.appendN(new AMapToDataGroup[] {//
+			new Holder(m), new Holder(m), new Holder(m)});
+		compare(m2, m3);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void testAppendNotSame() {
+		AMapToData mm;
+		switch(type) {
+			case INT:
+				mm = MapToFactory.create(size, MAP_TYPE.CHAR_BYTE);
+				mm.copy(m);
+				m.append(mm);
+				break;
+			default:
+				mm = MapToFactory.create(size, MAP_TYPE.INT);
+				mm.copy(m);
+				m.append(mm);
+		}
+		LOG.error("Did not throw exception with: " + m);
+	}
+
+	private static class Holder implements AMapToDataGroup {
+
+		AMapToData d;
+
+		protected Holder(AMapToData d) {
+			this.d = d;
+		}
+
+		@Override
+		public AMapToData getMapToData() {
+			return d;
+		}
+
+	}
 }

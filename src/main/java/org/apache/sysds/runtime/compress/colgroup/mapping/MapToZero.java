@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 
@@ -153,9 +154,17 @@ public class MapToZero extends AMapToData {
 
 	@Override
 	public AMapToData append(AMapToData t) {
-		if(t instanceof MapToZero) 
+		if(t instanceof MapToZero)
 			return new MapToZero(_size + t.size());
-		else 
+		else
 			throw new NotImplementedException("Not implemented append on Bit map different type");
+	}
+
+	@Override
+	public AMapToData appendN(AMapToDataGroup[] d) {
+		int p = 0; // pointer
+		for(AMapToDataGroup gd : d)
+			p += gd.getMapToData().size();
+		return new MapToZero(p);
 	}
 }

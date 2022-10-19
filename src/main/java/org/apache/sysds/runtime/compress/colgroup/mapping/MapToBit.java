@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -323,12 +324,12 @@ public class MapToBit extends AMapToData {
 
 	@Override
 	public AMapToData slice(int l, int u) {
-		return new MapToBit(getUnique(), _data.get(l,u), u - l);
+		return new MapToBit(getUnique(), _data.get(l, u), u - l);
 	}
 
 	@Override
 	public AMapToData append(AMapToData t) {
-		if(t instanceof MapToBit){
+		if(t instanceof MapToBit) {
 			MapToBit tb = (MapToBit) t;
 			BitSet tbb = tb._data;
 			final int newSize = _size + t.size();
@@ -338,9 +339,62 @@ public class MapToBit extends AMapToData {
 			tbb.stream().forEach(x -> ret.set(x + _size, true));
 			return new MapToBit(2, ret, newSize);
 		}
-		else{
+		else {
 			throw new NotImplementedException("Not implemented append on Bit map different type");
 
 		}
+	}
+
+	@Override
+	public AMapToData appendN(AMapToDataGroup[] d) {
+		int p = 0; // pointer
+		for(AMapToDataGroup gd : d)
+			p += gd.getMapToData().size();
+		final long[] ret = new long[(p - 1) / 64 + 1];
+		long[] or = _data.toLongArray();
+		System.arraycopy(or, 0, ret, 0, or.length);
+
+		p = size();
+		for(int i = 1; i < d.length; i++) {
+			final MapToBit mm = (MapToBit) d[i].getMapToData();
+			final int ms = mm.size();
+			or = mm._data.toLongArray();
+			final int remainder = p % 64;
+			int retLp = p / 64;
+			if(remainder == 0)// Easy lining up
+				System.arraycopy(or, 0, ret, retLp, or.length);
+			else { // Not Lining up
+				// all but last
+				for(int j = 0; j < or.length - 1; j++) {
+					long v = or[j];
+					ret[retLp] = ret[retLp] ^ (v << remainder);
+					retLp++;
+					ret[retLp] = v >>> (64 - remainder);
+				}
+				// last
+				long v = or[or.length - 1];
+				ret[retLp] = ret[retLp] ^ (v << remainder);
+				retLp++;
+				if(retLp < ret.length)
+					ret[retLp] = v >>> (64 - remainder);
+			}
+			p += ms;
+		}
+
+		BitSet retBS = BitSet.valueOf(ret);
+		return new MapToBit(getUnique(), retBS, p);
+
+	}
+
+	private static String bl(long l) {
+		int lead = Long.numberOfLeadingZeros(l);
+		if(lead == 64)
+			return "0000000000000000000000000000000000000000000000000000000000000000";
+		StringBuilder sb = new StringBuilder(64);
+		for(int i = 0; i < lead; i++) {
+			sb.append('0');
+		}
+		sb.append(Long.toBinaryString(l));
+		return sb.toString();
 	}
 }

@@ -652,7 +652,7 @@ public class ColGroupOLE extends AColGroupOffset {
 
 	@Override
 	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
-		return create(colIndexes, _numRows, _zeros, newDictionary, _data, _ptr, getCounts());
+		return create(colIndexes, _numRows, _zeros, newDictionary, _data, _ptr, getCachedCounts());
 	}
 
 	@Override

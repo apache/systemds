@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -214,13 +215,13 @@ public class MapToByte extends AMapToData {
 	@Override
 	public AMapToData append(AMapToData t) {
 		if(t instanceof MapToByte) {
-			MapToByte tb = (MapToByte) t;
-			byte[] tbb = tb._data;
+			final MapToByte tb = (MapToByte) t;
+			final byte[] tbb = tb._data;
 			final int newSize = _data.length + t.size();
 			final int newDistinct = Math.max(getUnique(), t.getUnique());
 
 			// copy
-			byte[] ret = Arrays.copyOf(_data, newSize);
+			final byte[] ret = Arrays.copyOf(_data, newSize);
 			System.arraycopy(tbb, 0, ret, _data.length, t.size());
 
 			// return
@@ -232,5 +233,26 @@ public class MapToByte extends AMapToData {
 		else {
 			throw new NotImplementedException("Not implemented append on Bit map different type");
 		}
+	}
+
+	@Override
+	public AMapToData appendN(AMapToDataGroup[] d) {
+		int p = 0; // pointer
+		for(AMapToDataGroup gd : d)
+			p += gd.getMapToData().size();
+		final byte[] ret = Arrays.copyOf(_data, p);
+
+		p = size();
+		for(int i = 1; i < d.length; i++) {
+			final MapToByte mm = (MapToByte) d[i].getMapToData();
+			final int ms = mm.size();
+			System.arraycopy(mm._data, 0, ret, p, ms);
+			p += ms;
+		}
+
+		if(getUnique() < 127)
+			return new MapToUByte(getUnique(), ret);
+		else
+			return new MapToByte(getUnique(), ret);
 	}
 }

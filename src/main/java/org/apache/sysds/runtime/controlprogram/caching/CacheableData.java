@@ -366,7 +366,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return getDataCharacteristics().getCols();
 	}
 	
-	public long getBlocksize() {
+	public int getBlocksize() {
 		return getDataCharacteristics().getBlocksize();
 	}
 	

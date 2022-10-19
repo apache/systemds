@@ -60,6 +60,7 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.Instruction.IType;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -194,6 +195,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		FederatedResponse response = null; // last response
 		boolean containsCLEAR = false;
 		long clearReqPid = -1;
+		int numGETrequests = 0;
 		var event = new EventModel();
 		final String coordinatorHostIdFormat = "%s-%d";
 		event.setCoordinatorHostId(String.format(coordinatorHostIdFormat, remoteHost, requests[0].getPID()));
@@ -229,13 +231,19 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			}
 			else if(t == RequestType.GET_VAR) {
 				// If any of the requests was a GET_VAR then set it as output.
-				if(response != null) {
+				if(response != null && numGETrequests > 0) {
 					String message = "Multiple GET_VAR are not supported in single batch of requests.";
 					LOG.error(message);
 					if (DMLScript.STATISTICS)
 						FederatedStatistics.addEvent(event);
 					throw new FederatedWorkerHandlerException(message);
 				}
+				response = tmp;
+				numGETrequests ++;
+			}
+			else if(response == null
+				&& (t == RequestType.EXEC_INST || t == RequestType.EXEC_UDF)) {
+				// If there was no GET, use the EXEC INST or UDF to obtain the returned nnz
 				response = tmp;
 			}
 			else if(response == null && i == requests.length - 1) {
@@ -244,16 +252,13 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 			if (DMLScript.STATISTICS) {
 				if(t == RequestType.PUT_VAR || t == RequestType.EXEC_UDF) {
-					for (int paramIndex = 0; paramIndex < request.getNumParams(); paramIndex++) {
+					for (int paramIndex = 0; paramIndex < request.getNumParams(); paramIndex++)
 						FederatedStatistics.incFedTransfer(request.getParam(paramIndex), _remoteAddress, request.getPID());
-					}
 				}
-
 				if(t == RequestType.GET_VAR) {
 					var data = response.getData();
-					for (int dataObjIndex = 0; dataObjIndex < Arrays.stream(data).count(); dataObjIndex++) {
+					for (int dataObjIndex = 0; dataObjIndex < Arrays.stream(data).count(); dataObjIndex++)
 						FederatedStatistics.incFedTransfer(data[dataObjIndex], _remoteAddress, request.getPID());
-					}
 				}
 			}
 
@@ -577,7 +582,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		setThreads(ins);
 		exec(ec, ins);
 		adaptToWorkload(ec, _fan, tid, ins);
-		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+		return new FederatedResponse(
+			ResponseType.SUCCESS_EMPTY, getOutputNnz(ec, ins));
 	}
 	
 	private static ExecutionContext getContextForInstruction(long id, Instruction ins, ExecutionContextMap ecm){
@@ -624,6 +630,15 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				fan.compressRun(ec, tid);
 			});
 		}
+	}
+	
+	private static long getOutputNnz(ExecutionContext ec, Instruction ins) {
+		if( ins instanceof ComputationCPInstruction ) {
+			Data dat = ec.getVariable(((ComputationCPInstruction)ins).getOutput());
+			if( dat instanceof MatrixObject )
+				return ((MatrixObject)dat).getNnz();
+		}
+		return -1L;
 	}
 
 	private FederatedResponse execUDF(FederatedRequest request, ExecutionContextMap ecm, EventStageModel eventStage) {

@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.concurrent.Future;
+
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -26,6 +28,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
@@ -166,17 +169,19 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 				new long[]{ fr1[0].getID(), moFed.getFedMapping().getID()});
 			
 			//execute federated operations and set output
+			Future<FederatedResponse>[] ret = null;
 			if(isSpark) {
 				FederatedRequest tmp = new FederatedRequest(RequestType.PUT_VAR,
 					fr2.getID(), new MatrixCharacteristics(-1, -1), mo1.getDataType());
-				moFed.getFedMapping().execute(getTID(), true, fr1, tmp, fr2);
+				ret = moFed.getFedMapping().execute(getTID(), true, fr1, tmp, fr2);
 			} else {
-				moFed.getFedMapping().execute(getTID(), true, fr1, fr2);
+				ret = moFed.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
 			int dim = (_cbind ? 1 : 0);
 			FederationMap newFedMap = moFed.getFedMapping().copyWithNewID(fr2.getID())
 				.modifyFedRanges(moFed.getDim(dim) + moLoc.getDim(dim), dim);
 			out.setFedMapping(newFedMap);
+			out.getDataCharacteristics().setNonZeros(FederationUtils.sumNonZeros(ret));
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported federated append: "

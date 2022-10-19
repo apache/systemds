@@ -446,6 +446,11 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 	}
 
 	@Override
+	public AColGroup appendNInternal(AColGroup[] g) {
+		return null;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

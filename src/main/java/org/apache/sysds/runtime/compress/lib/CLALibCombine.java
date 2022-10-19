@@ -187,9 +187,6 @@ public class CLALibCombine {
 	}
 
 	private static AColGroup combineN(AColGroup[] groups) {
-		AColGroup r = groups[0];
-		for(int i = 1; i < groups.length && r != null; i++)
-			r = r.append(groups[i]);
-		return r;
+		return AColGroup.appendN(groups);
 	}
 }

@@ -660,4 +660,9 @@ public class ColGroupOLE extends AColGroupOffset {
 		return null;
 	}
 
+	@Override
+	public AColGroup appendNInternal(AColGroup[] g) {
+		return null;
+	}
+
 }

@@ -506,6 +506,12 @@ public class ColGroupDDC extends APreAgg {
 		return null;
 	}
 
+
+	@Override
+	public AColGroup appendNInternal(AColGroup[] g) {
+		return null;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

@@ -360,6 +360,12 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			return null;
 		}
+
+		@Override
+		protected AColGroup appendNInternal(AColGroup[] groups) {
+			// TODO Auto-generated method stub
+			return null;
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -569,6 +575,12 @@ public class ColGroupNegativeTests {
 
 		@Override
 		public AColGroup append(AColGroup g) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		protected AColGroup appendNInternal(AColGroup[] groups) {
 			// TODO Auto-generated method stub
 			return null;
 		}

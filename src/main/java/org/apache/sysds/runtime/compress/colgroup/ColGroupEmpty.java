@@ -319,4 +319,12 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		return null;
 	}
 
+	@Override
+	public AColGroup appendNInternal(AColGroup[] g) {
+		for(int i = 0; i < g.length; i++)
+			if(!Arrays.equals(_colIndexes, g[i]._colIndexes))
+				return null;
+		return this;
+	}
+
 }

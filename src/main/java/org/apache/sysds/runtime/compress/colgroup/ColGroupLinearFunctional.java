@@ -670,4 +670,9 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		return null;
 	}
 
+	@Override
+	public AColGroup appendNInternal(AColGroup[] g) {
+		return null;
+	}
+
 }

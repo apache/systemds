@@ -611,9 +611,33 @@ public abstract class AColGroup implements Serializable {
 	 * If it is not possible or very inefficient null is returned.
 	 * 
 	 * @param g The other column group
-	 * @return A combined column group
+	 * @return A combined column group or null
 	 */
 	public abstract AColGroup append(AColGroup g);
+
+	/**
+	 * Append all column groups in the list provided together in one go allocating the output once.
+	 * 
+	 * If it is not possible or very inefficient null is returned.
+	 * 
+	 * @param groups The groups to combine.
+	 * @return A combined column group or null
+	 */
+	public static AColGroup appendN(AColGroup[] groups) {
+		return groups[0].appendNInternal(groups);
+	}
+
+	/**
+	 * Append all column groups in the list provided together with this.
+	 * 
+	 * A Important detail is the first entry in the group == this, and should not be appended twice.
+	 * 
+	 * If it is not possible or very inefficient null is returned.
+	 * 
+	 * @param groups The groups to combine.
+	 * @return A combined column group or null
+	 */
+	protected abstract AColGroup appendNInternal(AColGroup[] groups);
 
 	@Override
 	public String toString() {

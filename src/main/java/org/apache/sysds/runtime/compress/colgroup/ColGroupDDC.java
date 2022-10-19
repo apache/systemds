@@ -46,7 +46,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).
  */
-public class ColGroupDDC extends APreAgg {
+public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 	private static final long serialVersionUID = -5769772089913918987L;
 
 	protected final AMapToData _data;
@@ -120,6 +120,11 @@ public class ColGroupDDC extends APreAgg {
 		for(int i = rl, offT = (rl + offR) * nCols + colOff; i < ru; i++, offT += nCols)
 			c[offT] += values[_data.getIndex(i)];
 
+	}
+
+	@Override
+	public AMapToData getMapToData(){
+		return _data;
 	}
 
 	private void decompressToDenseBlockDenseDictSingleColOutContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
@@ -481,7 +486,7 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
-		return create(colIndexes, newDictionary, _data, getCounts());
+		return create(colIndexes, newDictionary, _data, getCachedCounts());
 	}
 
 	@Override
@@ -506,10 +511,28 @@ public class ColGroupDDC extends APreAgg {
 		return null;
 	}
 
-
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
-		return null;
+		for(int i = 1; i < g.length; i++) {
+			if(!Arrays.equals(_colIndexes, g[i]._colIndexes)) {
+				LOG.warn("Not same columns therefore not appending DDC\n" + Arrays.toString(_colIndexes) + "\n\n"
+					+ Arrays.toString(g[i]._colIndexes));
+				return null;
+			}
+
+			if(!(g[i] instanceof ColGroupDDC)) {
+				LOG.warn("Not DDC but " + g[i].getClass().getSimpleName() + ", therefore not appending DDC");
+				return null;
+			}
+
+			final ColGroupDDC gDDC = (ColGroupDDC) g[i];
+			if(!gDDC._dict.eq(_dict)) {
+				LOG.warn("Not same Dictionaries therefore not appending DDC\n" + _dict + "\n\n" + gDDC._dict);
+				return null;
+			}
+		}
+		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, AMapToDataGroup[].class));
+		return create(_colIndexes, _dict, nd, null);
 	}
 
 	@Override

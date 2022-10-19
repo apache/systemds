@@ -566,7 +566,7 @@ public class ColGroupSDC extends ASDC {
 
 	@Override
 	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
-		return create(colIndexes, _numRows, newDictionary, _defaultTuple, _indexes, _data, getCounts());
+		return create(colIndexes, _numRows, newDictionary, _defaultTuple, _indexes, _data, getCachedCounts());
 	}
 
 	@Override

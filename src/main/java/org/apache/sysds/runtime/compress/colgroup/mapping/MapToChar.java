@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -250,5 +251,23 @@ public class MapToChar extends AMapToData {
 		else {
 			throw new NotImplementedException("Not implemented append on Bit map different type");
 		}
+	}
+
+	@Override
+	public AMapToData appendN(AMapToDataGroup[] d) {
+		int p = 0; // pointer
+		for(AMapToDataGroup gd : d)
+			p += gd.getMapToData().size();
+		final char[] ret = Arrays.copyOf(_data, p);
+
+		p = size();
+		for(int i = 1; i < d.length; i++) {
+			final MapToChar mm = (MapToChar) d[i].getMapToData();
+			final int ms = mm.size();
+			System.arraycopy(mm._data, 0, ret, p, ms);
+			p += ms;
+		}
+
+		return new MapToChar(getUnique(), ret);
 	}
 }

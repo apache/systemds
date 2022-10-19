@@ -87,13 +87,7 @@ public class CombineTest {
 
 	@Test
 	public void combineDDC() {
-		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(165, 2, 1, 3, 1.0, 2514));
-		CompressedMatrixBlock csb = (CompressedMatrixBlock) CompressedMatrixBlockFactory
-			.compress(mb,
-				new CompressionSettingsBuilder().clearValidCompression().addValidCompression(CompressionType.DDC))
-			.getLeft();
-
-		AColGroup g = csb.getColGroups().get(0);
+		AColGroup g = getDDC();
 		double sum = g.getSum(165);
 		AColGroup ret = g.append(g);
 		double sum2 = ret.getSum(165 * 2);
@@ -101,7 +95,15 @@ public class CombineTest {
 		AColGroup ret2 = ret.append(g);
 		double sum3 = ret2.getSum(165 * 3);
 		assertEquals(sum * 3, sum3, 0.001);
+	}
 
+	private static AColGroup getDDC(){
+		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(165, 2, 1, 3, 1.0, 2514));
+		CompressedMatrixBlock csb = (CompressedMatrixBlock) CompressedMatrixBlockFactory
+			.compress(mb,
+				new CompressionSettingsBuilder().clearValidCompression().addValidCompression(CompressionType.DDC))
+			.getLeft();
+		return csb.getColGroups().get(0);
 	}
 
 }

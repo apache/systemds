@@ -577,4 +577,15 @@ public class FederationUtils {
 		return new ObjectDecoder(Integer.MAX_VALUE,
 			ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader()));
 	}
+
+	public static long sumNonZeros(Future<FederatedResponse>[] responses) {
+		long nnz = 0;
+		try {
+			for( Future<FederatedResponse> r : responses)
+				nnz += (Long)r.get().getData()[0];
+			return nnz;
+		}
+		catch(Exception ex) { }
+		return -1;
+	}
 }

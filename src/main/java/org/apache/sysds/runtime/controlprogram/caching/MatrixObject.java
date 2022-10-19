@@ -194,7 +194,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		mc.setNonZeros(_data.getNonZeros());
 	}
 
-	public long getBlocksize() {
+	public int getBlocksize() {
 		return getDataCharacteristics().getBlocksize();
 	}
 

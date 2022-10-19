@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 import java.util.zip.Adler32;
 import java.util.zip.Checksum;
@@ -287,12 +288,12 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 	public static void encodeFederatedFrames(FederationMap fedMapping, MultiColumnEncoder globalencoder,
 		MatrixObject transformedMat) {
 		long varID = FederationUtils.getNextFedDataID();
-		FederationMap transformedFedMapping = fedMapping.mapParallel(varID, (range, data) -> {
+		LongAdder nnz = new LongAdder();
+		FederationMap tfFedMap = fedMapping.mapParallel(varID, (range, data) -> {
 			// copy because we reuse it
 			long[] beginDims = range.getBeginDims();
 			long[] endDims = range.getEndDims();
-			IndexRange ixRange = new IndexRange(beginDims[0], endDims[0], beginDims[1], endDims[1]).add(1);// make
-																											// 1-based
+			IndexRange ixRange = new IndexRange(beginDims[0], endDims[0], beginDims[1], endDims[1]).add(1);
 			IndexRange ixRangeInv = new IndexRange(0, beginDims[0], 0, beginDims[1]);
 
 			// get the encoder segment that is relevant for this federated worker
@@ -301,10 +302,12 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			encoder.updateIndexRanges(beginDims, endDims, globalencoder.getNumExtraCols(ixRangeInv));
 
 			try {
-				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(RequestType.EXEC_UDF,
+				FederatedResponse response = data.executeFederatedOperation(
+					new FederatedRequest(RequestType.EXEC_UDF,
 					-1, new ExecuteFrameEncoder(data.getVarID(), varID, encoder))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
+				nnz.add((Long)response.getData()[0]);
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);
@@ -313,9 +316,10 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		});
 
 		// construct a federated matrix with the encoded data
-		transformedMat.getDataCharacteristics().setDimension(transformedFedMapping.getMaxIndexInRange(0),
-			transformedFedMapping.getMaxIndexInRange(1));
-		transformedMat.setFedMapping(transformedFedMapping);
+		transformedMat.getDataCharacteristics()
+			.setDimension(tfFedMap.getMaxIndexInRange(0), tfFedMap.getMaxIndexInRange(1))
+			.setNonZeros(nnz.longValue());
+		transformedMat.setFedMapping(tfFedMap);
 	}
 
 	public static class CreateFrameEncoder extends FederatedUDF {
@@ -380,7 +384,8 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			ec.setVariable(String.valueOf(_outputID), mo);
 
 			// return id handle
-			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+			return new FederatedResponse(
+				ResponseType.SUCCESS_EMPTY, mbout.getNonZeros());
 		}
 
 		@Override

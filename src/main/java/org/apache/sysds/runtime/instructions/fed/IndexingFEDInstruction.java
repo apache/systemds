@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
@@ -42,6 +43,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -203,19 +205,17 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		FederatedRequest[] fr1 = FederationUtils.callInstruction(instStrings, output, id,
 			new CPOperand[] {input1}, new long[] {fedMap.getID()}, execType);
 		fedMap.execute(getTID(), true, tmp);
-		fedMap.execute(getTID(), true, fr1, new FederatedRequest[0]);
-
-		if(input1.isFrame()) {
-			FrameObject out = ec.getFrameObject(output);
-			out.setSchema(schema.toArray(new Types.ValueType[0]));
-			out.getDataCharacteristics().setDimension(fedMap.getMaxIndexInRange(0), fedMap.getMaxIndexInRange(1));
-			out.setFedMapping(fedMap.copyWithNewID(fr1[0].getID()));
-		} else {
-			MatrixObject out = ec.getMatrixObject(output);
-			out.getDataCharacteristics().set(fedMap.getMaxIndexInRange(0), fedMap.getMaxIndexInRange(1),
-				(int) ((MatrixObject)in).getBlocksize());
-			out.setFedMapping(fedMap.copyWithNewID(fr1[0].getID()));
-		}
+		Future<FederatedResponse>[] ret = fedMap.execute(getTID(), true, fr1, new FederatedRequest[0]);
+		
+		//set output characteristics for frames and matrices
+		CacheableData<?> out = ec.getCacheableData(output);
+		if(input1.isFrame())
+			((FrameObject) out).setSchema(schema.toArray(new Types.ValueType[0]));
+		out.getDataCharacteristics()
+			.setDimension(fedMap.getMaxIndexInRange(0), fedMap.getMaxIndexInRange(1))
+			.setBlocksize(in.getBlocksize())
+			.setNonZeros(FederationUtils.sumNonZeros(ret));
+		out.setFedMapping(fedMap.copyWithNewID(fr1[0].getID()));
 	}
 
 	private void leftIndexing(ExecutionContext ec)
@@ -324,8 +324,8 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		fedMap.execute(getTID(), true, tmp);
 
 		if(in2 != null) { // matrix, frame
-			FederatedRequest[] fr1 = fedMap.broadcastSliced(in2, DMLScript.LINEAGE ? ec.getLineageItem(input2) : null,
-				input2.isFrame(), sliceIxs);
+			FederatedRequest[] fr1 = fedMap.broadcastSliced(in2,
+				DMLScript.LINEAGE ? ec.getLineageItem(input2) : null, input2.isFrame(), sliceIxs);
 			FederatedRequest[] fr2 = FederationUtils.callInstruction(instStrings, output, id, new CPOperand[]{input1, input2},
 				new long[]{fedMap.getID(), fr1[0].getID()}, null);
 			FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1[0].getID());

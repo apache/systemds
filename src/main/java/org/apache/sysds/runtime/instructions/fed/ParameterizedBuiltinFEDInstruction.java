@@ -175,13 +175,15 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 				output,
 				new CPOperand[] {getTargetOperand()},
 				new long[] {mo.getFedMapping().getID()});
-			mo.getFedMapping().execute(getTID(), true, fr1);
+			Future<FederatedResponse>[] ret = mo.getFedMapping().execute(getTID(), true, fr1);
 
 			// derive new fed mapping for output
 			CacheableData<?> out = ec.getCacheableData(output);
 			if(mo instanceof FrameObject)
 				((FrameObject)out).setSchema(((FrameObject) mo).getSchema());
-			out.getDataCharacteristics().set(mo.getDataCharacteristics());
+			out.getDataCharacteristics()
+				.set(mo.getDataCharacteristics())
+				.setNonZeros(FederationUtils.sumNonZeros(ret));
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
 		}
 		else if(opcode.equals("rmempty"))

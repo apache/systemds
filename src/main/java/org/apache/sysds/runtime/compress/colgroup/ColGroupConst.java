@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
@@ -525,6 +526,14 @@ public class ColGroupConst extends ADictBasedColGroup {
 			((ColGroupConst) g)._dict.eq(_dict))
 			return this;
 		return null;
+	}
+
+	@Override
+	public AColGroup appendNInternal(AColGroup[] g) {
+		for(int i = 0; i < g.length; i++)
+			if(!Arrays.equals(_colIndexes, g[i]._colIndexes) || !this._dict.eq(((ColGroupConst) g[i])._dict))
+				return null;
+		return this;
 	}
 
 	@Override

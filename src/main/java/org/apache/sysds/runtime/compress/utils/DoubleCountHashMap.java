@@ -231,39 +231,9 @@ public class DoubleCountHashMap {
 	}
 
 	private final int hashIndex(final double key) {
-		
-		// previous require pow2 size.:
-		// long bits = Double.doubleToRawLongBits(key);
-		// int h =(int)( bits ^ (bits >>> 32));
-		// h = h ^ (h >>> 20) ^ (h >>> 12);
-		// h = h ^ (h >>> 7) ^ (h >>> 4);
-		// return h & (_data.length - 1);
-		// 100.809.414.955      instructions
-
 		// Option 1 ... conflict on 1 vs -1
-		long bits = Double.doubleToLongBits(key);
+		final long bits = Double.doubleToLongBits(key);
 		return Math.abs((int)(bits ^ (bits >>> 32)) % _data.length);
-		// 102.356.926.448      instructions
-
-		// Option 2
-		// long bits = Double.doubleToRawLongBits(key);
-		// return (int) ((bits ^ (bits >> 32) % _data.length));
-		
-
-		// basic double hash code (w/o object creation)
-		// return Double.hashCode(key) % _data.length;
-		// return (int) ((bits ^ (bits >>> 32)) % _data.length);
-		// long bits = Double.doubleToLongBits(key);
-		// return (int) Long.remainderUnsigned(bits, (long) _data.length);
-		// long bits = Double.doubleToLongBits(key);
-		// long bits = Double.doubleToRawLongBits(key);
-		// return (int) (bits % (long) _data.length);
-		
-		// return h;
-
-		// This function ensures that hashCodes that differ only by
-		// constant multiples at each bit position have a bounded
-		// number of collisions (approximately 8 at default load factor).
 	}
 
 	// private static int indexFor(int h, int length) {

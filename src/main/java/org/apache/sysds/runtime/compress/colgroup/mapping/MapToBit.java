@@ -385,16 +385,4 @@ public class MapToBit extends AMapToData {
 		return new MapToBit(getUnique(), retBS, p);
 
 	}
-
-	private static String bl(long l) {
-		int lead = Long.numberOfLeadingZeros(l);
-		if(lead == 64)
-			return "0000000000000000000000000000000000000000000000000000000000000000";
-		StringBuilder sb = new StringBuilder(64);
-		for(int i = 0; i < lead; i++) {
-			sb.append('0');
-		}
-		sb.append(Long.toBinaryString(l));
-		return sb.toString();
-	}
 }

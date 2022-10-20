@@ -411,13 +411,16 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		long lcols = ec.getScalarInput(cols).getLongValue();
 		checkValidDimensions(lrows, lcols);
 		
+		if(sparsity == 0.0 && lrows < Integer.MAX_VALUE && lcols < Integer.MAX_VALUE)
+			return new MatrixBlock((int)lrows,(int)lcols, 0.0);
+
 		if(ConfigurationManager.isCompressionEnabled() && minValue == maxValue && sparsity == 1.0) {
 			// contains constant
 
 			if(lrows > 1000 && lcols > 0 && lrows / lcols > 1)
 				return CompressedMatrixBlockFactory.createConstant((int)lrows, (int)lcols, minValue);
-			else
-				return MatrixBlock.randOperations(getGenerator(lrows, lcols), lSeed, numThreads);
+			
+			return MatrixBlock.randOperations(getGenerator(lrows, lcols), lSeed, numThreads);
 		}
 		else
 			return MatrixBlock.randOperations(getGenerator(lrows, lcols), lSeed, numThreads);

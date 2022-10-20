@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -169,7 +170,19 @@ public class DataExpression extends DataIdentifier
 	public static final String  DEFAULT_NA_STRINGS = "";
 	public static final String  DEFAULT_SCHEMAPARAM = "NULL";
 	public static final String DEFAULT_LIBSVM_INDEX_DELIM = ":";
-
+	private static Map<String, Object> csvDefaults;
+	static {
+		csvDefaults = new HashMap<>();
+		csvDefaults.put(DELIM_DELIMITER, DEFAULT_DELIM_DELIMITER);
+		csvDefaults.put(DELIM_HAS_HEADER_ROW, DEFAULT_DELIM_HAS_HEADER_ROW);
+		csvDefaults.put(DELIM_FILL, DEFAULT_DELIM_FILL);
+		csvDefaults.put(DELIM_FILL_VALUE, DEFAULT_DELIM_FILL_VALUE);
+		csvDefaults.put(DELIM_SPARSE, DEFAULT_DELIM_SPARSE);
+		csvDefaults.put(DELIM_NA_STRINGS, DEFAULT_NA_STRINGS);
+		csvDefaults.put(SCHEMAPARAM, DEFAULT_SCHEMAPARAM);
+		csvDefaults.put(LIBSVM_INDEX_DELIM, DEFAULT_LIBSVM_INDEX_DELIM);
+	}
+	
 	private DataOp _opcode;
 	private HashMap<String, Expression> _varParams;
 	private boolean _strInit = false; //string initialize
@@ -967,6 +980,8 @@ public class DataExpression extends DataIdentifier
 
 			// track whether should attempt to read MTD file or not
 			boolean shouldReadMTD = _checkMetadata
+				&& !(dataTypeString!= null && getVarParam(VALUETYPEPARAM) != null 
+					&& dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE))
 				&& (!ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA)
 					|| HDFSTool.existsFileOnHDFS(mtdFileName)); // existing mtd file
 
@@ -1096,7 +1111,6 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			if (isCSV){
-
 				// there should be no MTD file for delimited file format
 				shouldReadMTD = true;
 				
@@ -1112,69 +1126,13 @@ public class DataExpression extends DataIdentifier
 					}
 				}
 
-				// DEFAULT for "sep" : ","
-				if (getVarParam(DELIM_DELIMITER) == null) {
-					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
-				}
-				else {
-					if ( (getVarParam(DELIM_DELIMITER) instanceof ConstIdentifier)
-						&& (! (getVarParam(DELIM_DELIMITER) instanceof StringIdentifier)))
-					{
-						raiseValidateError("For delimited file '" + getVarParam(DELIM_DELIMITER) 
-								+  "' must be a string value ", conditional);
-					}
-				} 
-				
-				// DEFAULT for "default": 0
-				if (getVarParam(DELIM_FILL_VALUE) == null) {
-					addVarParam(DELIM_FILL_VALUE, new DoubleIdentifier(DEFAULT_DELIM_FILL_VALUE, this));
-				}
-				else {
-					if ( (getVarParam(DELIM_FILL_VALUE) instanceof ConstIdentifier)
-						&& (! (getVarParam(DELIM_FILL_VALUE) instanceof IntIdentifier ||  getVarParam(DELIM_FILL_VALUE) instanceof DoubleIdentifier)))
-					{
-						raiseValidateError("For delimited file '" + getVarParam(DELIM_FILL_VALUE)  +  "' must be a numeric value ", conditional);
-					}
-				}
-				
-				// DEFAULT for "header": boolean false
-				if (getVarParam(DELIM_HAS_HEADER_ROW) == null) {
-					addVarParam(DELIM_HAS_HEADER_ROW, new BooleanIdentifier(DEFAULT_DELIM_HAS_HEADER_ROW, this));
-				}
-				else {
-					if ((getVarParam(DELIM_HAS_HEADER_ROW) instanceof ConstIdentifier)
-						&& (! (getVarParam(DELIM_HAS_HEADER_ROW) instanceof BooleanIdentifier)))
-					{
-						raiseValidateError("For delimited file '" + getVarParam(DELIM_HAS_HEADER_ROW) + "' must be a boolean value ", conditional);
-					}
-				}
-				
-				// DEFAULT for "fill": boolean false
-				if (getVarParam(DELIM_FILL) == null){
-					addVarParam(DELIM_FILL, new BooleanIdentifier(DEFAULT_DELIM_FILL, this));
-				}
-				else {
-					
-					if ((getVarParam(DELIM_FILL) instanceof ConstIdentifier)
-						&& (! (getVarParam(DELIM_FILL) instanceof BooleanIdentifier)))
-					{
-						raiseValidateError("For delimited file '" + getVarParam(DELIM_FILL) + "' must be a boolean value ", conditional);
-					}
-				}
-
-				// DEFAULT for "naStrings": String ""
-				if (getVarParam(DELIM_NA_STRINGS) == null){
-					addVarParam(DELIM_NA_STRINGS, new StringIdentifier(DEFAULT_NA_STRINGS, this));
-				} 
-				else {
-					if ((getVarParam(DELIM_NA_STRINGS) instanceof ConstIdentifier)
-							&& (! (getVarParam(DELIM_NA_STRINGS) instanceof StringIdentifier)))
-						{
-							raiseValidateError("For delimited file '" + getVarParam(DELIM_NA_STRINGS) + "' must be a string value ", conditional);
-						}
-					LOG.info("Replacing :" + _varParams.get(DELIM_NA_STRINGS) + " with NaN");
-				}
-			} 
+				//handle all csv default parameters
+				handleCSVDefaultParam(DELIM_DELIMITER, ValueType.STRING, conditional);
+				handleCSVDefaultParam(DELIM_FILL_VALUE, ValueType.FP64, conditional);
+				handleCSVDefaultParam(DELIM_HAS_HEADER_ROW, ValueType.BOOLEAN, conditional);
+				handleCSVDefaultParam(DELIM_FILL, ValueType.BOOLEAN, conditional);
+				handleCSVDefaultParam(DELIM_NA_STRINGS, ValueType.STRING, conditional);
+			}
 
 			boolean isLIBSVM = false;
 			isLIBSVM = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.LIBSVM.toString()));
@@ -1201,28 +1159,11 @@ public class DataExpression extends DataIdentifier
 						}
 					}
 				}
-				// DEFAULT for "sep" : ","
-				if (getVarParam(DELIM_DELIMITER) == null) {
-					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
-				}
-				else {
-					if ((getVarParam(DELIM_DELIMITER) instanceof ConstIdentifier) 
-							&& (!(getVarParam( DELIM_DELIMITER) instanceof StringIdentifier))) {
-						raiseValidateError( "For delimited file " + getVarParam(DELIM_DELIMITER) + " must be a string value ", conditional);
-					}
-				}
-				// DEFAULT for "indSep": ":"
-				if(getVarParam(LIBSVM_INDEX_DELIM) == null) {
-					addVarParam(LIBSVM_INDEX_DELIM, new StringIdentifier(DEFAULT_LIBSVM_INDEX_DELIM, this));
-				}
-				else {
-					if((getVarParam(LIBSVM_INDEX_DELIM) instanceof ConstIdentifier) 
-							&& (!(getVarParam(LIBSVM_INDEX_DELIM) instanceof StringIdentifier))) {
-						raiseValidateError(
-								"For delimited file " + getVarParam(LIBSVM_INDEX_DELIM) + " must be a string value ", conditional);
-					}
-				}
+				//handle all default parameters
+				handleCSVDefaultParam(DELIM_DELIMITER, ValueType.STRING, conditional);
+				handleCSVDefaultParam(LIBSVM_INDEX_DELIM, ValueType.STRING, conditional);
 			}
+			
 			boolean isHDF5 = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.HDF5.toString()));
 
 			dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
@@ -2221,6 +2162,37 @@ public class DataExpression extends DataIdentifier
 		default:
 			raiseValidateError("Unsupported Data expression "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS); //always unconditional
 		}
+	}
+	
+	private void handleCSVDefaultParam(String param, ValueType vt, boolean conditional) {
+		if (getVarParam(param) == null) {
+			Expression defExpr = null;
+			switch(vt) {
+				case BOOLEAN:
+					defExpr = new BooleanIdentifier((boolean)csvDefaults.get(param), this);
+					break;
+				case FP64:
+					defExpr = new DoubleIdentifier((double)csvDefaults.get(param), this);
+					break;
+				default:
+					defExpr = new StringIdentifier((String)csvDefaults.get(param), this);
+			}
+			addVarParam(param, defExpr);
+		}
+		else {
+			if ( (getVarParam(param) instanceof ConstIdentifier)
+				&& (! checkValueType(getVarParam(param), vt)))
+			{
+				raiseValidateError("For delimited file '" + getVarParam(param) 
+					+ "' must be a '"+vt.toExternalString()+"' value ", conditional);
+			}
+		}
+	}
+	
+	private boolean checkValueType(Expression expr, ValueType vt) {
+		return (vt == ValueType.STRING && expr instanceof StringIdentifier)
+			|| (vt == ValueType.FP64 && (expr instanceof DoubleIdentifier || expr instanceof IntIdentifier))
+			|| (vt == ValueType.BOOLEAN && expr instanceof BooleanIdentifier);
 	}
 
 	private void validateParams(boolean conditional, Set<String> validParamNames, String legalMessage) {

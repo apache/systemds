@@ -32,6 +32,8 @@ import org.apache.hadoop.io.SequenceFile.Reader;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.lib.CLALibCombine;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixReader;
@@ -92,7 +94,14 @@ public final class ReaderCompressed extends MatrixReader {
 			CompressedWriteBlock value = new CompressedWriteBlock();
 
 			while(reader.next(key, value)) {
-				data.put(key, value.get());
+				final MatrixBlock g = value.get();
+
+				if(g instanceof CompressedMatrixBlock)
+					data.put(key, g);
+				else if(g.isEmpty())
+					data.put(key, CompressedMatrixBlockFactory.createConstant(g.getNumRows(), g.getNumColumns(), 0.0));
+				else
+					data.put(key, g);
 				key = new MatrixIndexes();
 				value = new CompressedWriteBlock();
 			}

@@ -154,7 +154,7 @@ public class ColGroupMorphingPerformanceCompare {
 		private final MatrixBlock mbDict;
 
 		public SDCNoMorph(ColGroupSDC g) {
-			this(g.getColIndices(), g.getNumRows(), g.getDictionary(), g.getDefaultTuple(), g.getOffsets(), g.getMapping(),
+			this(g.getColIndices(), g.getNumRows(), g.getDictionary(), g.getDefaultTuple(), g.getOffsets(), g.getMapToData(),
 				null);
 		}
 

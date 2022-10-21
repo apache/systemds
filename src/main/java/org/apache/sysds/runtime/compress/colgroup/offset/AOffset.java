@@ -26,6 +26,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.AOffsetsGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -445,7 +446,17 @@ public abstract class AOffset implements Serializable {
 	 * @param t that offsets
 	 * @return this offsets followed by thats offsets.
 	 */
-	public AOffset append(AOffset t){
+	public AOffset append(AOffset t) {
+		throw new NotImplementedException();
+	}
+
+	/**
+	 * Append a list of offsets together in order.
+	 * 
+	 * @param g The offsets to append together.
+	 * @return The combined offsets.
+	 */
+	public AOffset appendN(AOffsetsGroup[] g) {
 		throw new NotImplementedException();
 	}
 

@@ -836,7 +836,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			}
 			sumRows += gc.getNumRows();
 		}
-		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class));
+		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
 		return create(_colIndexes, sumRows, _dict, no, null);
 
 	}

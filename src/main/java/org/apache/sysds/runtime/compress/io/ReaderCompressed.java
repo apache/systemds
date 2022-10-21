@@ -31,6 +31,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Reader;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
@@ -80,7 +81,7 @@ public final class ReaderCompressed extends MatrixReader {
 		if(data.size() == 1)
 			return data.entrySet().iterator().next().getValue();
 		else
-			return CLALibCombine.combine(data);
+			return CLALibCombine.combine(data, OptimizerUtils.getParallelTextWriteParallelism());
 	}
 
 	private static void read(Path path, JobConf job, Map<MatrixIndexes, MatrixBlock> data) throws IOException {

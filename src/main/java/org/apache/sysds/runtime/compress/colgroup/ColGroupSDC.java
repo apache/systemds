@@ -576,7 +576,7 @@ public class ColGroupSDC extends ASDC implements AMapToDataGroup {
 			final ColGroupSDC gSDC = (ColGroupSDC) g;
 			if(Arrays.equals(_defaultTuple, gSDC._defaultTuple) && gSDC._dict.eq(_dict)) {
 				final AMapToData nd = _data.append(gSDC._data);
-				final AOffset ofd = _indexes.append(gSDC._indexes);
+				final AOffset ofd = _indexes.append(gSDC._indexes, getNumRows());
 				return create(_colIndexes, _numRows + gSDC._numRows, _dict, _defaultTuple, ofd, nd, null);
 			}
 		}
@@ -606,7 +606,7 @@ public class ColGroupSDC extends ASDC implements AMapToDataGroup {
 			sumRows += gc.getNumRows();
 		}
 		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, AMapToDataGroup[].class));
-		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class));
+		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
 
 		return create(_colIndexes, sumRows, _dict, _defaultTuple, no, nd, null);
 	}

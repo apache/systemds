@@ -43,6 +43,8 @@ public class CombineTest {
 
 	protected static final Log LOG = LogFactory.getLog(CombineTest.class.getName());
 
+	final int k = 1;
+
 	@Test
 	public void combineEmpty() {
 		CompressedMatrixBlock m1 = CompressedMatrixBlockFactory.createConstant(100, 10, 0.0);
@@ -53,7 +55,7 @@ public class CombineTest {
 		data.put(new MatrixIndexes(2, 1), m1);
 
 		try {
-			MatrixBlock c = CLALibCombine.combine(data, 100 * 2, 10, 100);
+			MatrixBlock c = CLALibCombine.combine(data, 100 * 2, 10, 100, k);
 			assertTrue("The result is not in compressed format", c instanceof CompressedMatrixBlock);
 			assertEquals(0.0, c.sum(), 0.0);
 		}
@@ -74,7 +76,7 @@ public class CombineTest {
 		data.put(new MatrixIndexes(2, 1), m1);
 
 		try {
-			MatrixBlock c = CLALibCombine.combine(data, 100 * 2, 10, 100);
+			MatrixBlock c = CLALibCombine.combine(data, 100 * 2, 10, 100, k);
 			assertTrue("The result is not in compressed format", c instanceof CompressedMatrixBlock);
 			assertEquals(0.0, c.sum(), 100.0 * 10.0 * 2);
 		}
@@ -97,7 +99,7 @@ public class CombineTest {
 		assertEquals(sum * 3, sum3, 0.001);
 	}
 
-	private static AColGroup getDDC(){
+	private static AColGroup getDDC() {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(165, 2, 1, 3, 1.0, 2514));
 		CompressedMatrixBlock csb = (CompressedMatrixBlock) CompressedMatrixBlockFactory
 			.compress(mb,

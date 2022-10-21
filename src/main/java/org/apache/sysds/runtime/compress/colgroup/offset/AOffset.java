@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AOffsetsGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -443,21 +444,59 @@ public abstract class AOffset implements Serializable {
 	/**
 	 * Append the offsets from that other offset to the offsets in this.
 	 * 
-	 * @param t that offsets
+	 * @param t That offset/
+	 * @param s The total length encoded in this offset.
 	 * @return this offsets followed by thats offsets.
 	 */
-	public AOffset append(AOffset t) {
-		throw new NotImplementedException();
+	public AOffset append(AOffset t, int s) {
+		final IntArrayList r = new IntArrayList(getLength() + t.getLength());
+		final AOffsetIterator of = getOffsetIterator();
+		while(of.value() < getOffsetToLast()) {
+			r.appendValue(of.value());
+			of.next();
+		}
+		r.appendValue(of.value());
+
+		AOffsetIterator tof = t.getOffsetIterator();
+		final int last = t.getOffsetToLast();
+		while(tof.value() < last) {
+			r.appendValue(tof.value() + s);
+			tof.next();
+		}
+		r.appendValue(tof.value() + s);
+
+		return OffsetFactory.createOffset(r);
 	}
 
 	/**
 	 * Append a list of offsets together in order.
 	 * 
-	 * @param g The offsets to append together.
+	 * @param g The offsets to append together (note fist entry is equal to this)
+	 * @param s The standard size of each g (except last, but that does not matter)
 	 * @return The combined offsets.
 	 */
-	public AOffset appendN(AOffsetsGroup[] g) {
-		throw new NotImplementedException();
+	public AOffset appendN(AOffsetsGroup[] g, int s) {
+		int l = 0;
+		for(AOffsetsGroup gs : g)
+			l += gs.getOffsets().getLength();
+
+		IntArrayList r = new IntArrayList(l); // rough but good.
+
+		int ss = 0;
+		for(AOffsetsGroup gs : g) {
+			final AOffset tof = gs.getOffsets();
+			final AOffsetIterator tofit = tof.getOffsetIterator();
+			final int last = tof.getOffsetToLast() + ss;
+			int v = tofit.value() + ss;
+			while(v < last) {
+				r.appendValue(v);
+				v = tofit.next() + ss;
+			}
+			r.appendValue(v);
+			ss += s;
+		}
+
+		return OffsetFactory.createOffset(r);
 	}
 
 	@Override

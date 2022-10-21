@@ -467,7 +467,7 @@ public class ColGroupSDCFOR extends ASDC {
 			sumRows += gc.getNumRows();
 		}
 		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, AMapToDataGroup[].class));
-		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class));
+		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
 		return create(_colIndexes, sumRows, _dict, no, nd, null, _reference);
 	}
 

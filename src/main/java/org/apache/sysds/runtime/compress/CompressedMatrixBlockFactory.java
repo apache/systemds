@@ -260,7 +260,7 @@ public class CompressedMatrixBlockFactory {
 		block.recomputeNonZeros();
 		if(block.getNumRows() == 0 || block.getNumColumns() == 0)
 			throw new DMLCompressionException("Invalid size of allocated constant compressed matrix block");
-		
+
 		return block;
 	}
 
@@ -268,12 +268,13 @@ public class CompressedMatrixBlockFactory {
 
 		if(mb instanceof CompressedMatrixBlock) // Redundant compression
 			return returnSelf();
-		else if(mb.isEmpty()) // empty input return empty compression
-			return createEmpty();
 
 		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0);
 		_stats.originalSize = mb.getInMemorySize();
 		_stats.originalCost = costEstimator.getCost(mb);
+
+		if(mb.isEmpty()) // empty input return empty compression
+			return createEmpty();
 
 		res = new CompressedMatrixBlock(mb); // copy metadata and allocate soft reference
 
@@ -506,7 +507,7 @@ public class CompressedMatrixBlockFactory {
 							LOG.debug(
 								String.format("--relative cost:     %1.4f", (_stats.compressedCost / _stats.originalCost)));
 						}
-						if(compressionGroups.getInfo().size() < 1000) {
+						if(compressionGroups != null && compressionGroups.getInfo().size() < 1000) {
 							int[] lengths = new int[res.getColGroups().size()];
 							int i = 0;
 							for(AColGroup colGroup : res.getColGroups())
@@ -546,11 +547,16 @@ public class CompressedMatrixBlockFactory {
 
 	private Pair<MatrixBlock, CompressionStatistics> createEmpty() {
 		LOG.info("Empty input to compress, returning a compressed Matrix block with empty column group");
-		CompressedMatrixBlock ret = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
+		res = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
 		ColGroupEmpty cg = ColGroupEmpty.create(mb.getNumColumns());
-		ret.allocateColGroup(cg);
-		ret.setNonZeros(0);
-		return new ImmutablePair<>(ret, null);
+		res.allocateColGroup(cg);
+		res.setNonZeros(0);
+		_stats.compressedSize = res.getInMemorySize();
+		_stats.compressedCost = costEstimator.getCost(res.getColGroups(), res.getNumRows());
+		_stats.setColGroupsCounts(res.getColGroups());
+		phase = 4;
+		logPhase();
+		return new ImmutablePair<>(res, _stats);
 	}
 
 	private Pair<MatrixBlock, CompressionStatistics> returnSelf() {

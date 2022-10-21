@@ -816,7 +816,29 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
-		return null;
+		int sumRows = 0;
+		for(int i = 1; i < g.length; i++) {
+			if(!Arrays.equals(_colIndexes, g[i]._colIndexes)) {
+				LOG.warn("Not same columns therefore not appending \n" + Arrays.toString(_colIndexes) + "\n\n"
+					+ Arrays.toString(g[i]._colIndexes));
+				return null;
+			}
+
+			if(!(g[i] instanceof ColGroupSDCSingleZeros)) {
+				LOG.warn("Not SDCFOR but " + g[i].getClass().getSimpleName());
+				return null;
+			}
+
+			final ColGroupSDCSingleZeros gc = (ColGroupSDCSingleZeros) g[i];
+			if(!gc._dict.eq(_dict)) {
+				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
+				return null;
+			}
+			sumRows += gc.getNumRows();
+		}
+		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class));
+		return create(_colIndexes, sumRows, _dict, no, null);
+
 	}
 
 	@Override

@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.io;
 
 import org.apache.spark.api.java.function.Function;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CompressUnwrap implements Function<CompressedWriteBlock, MatrixBlock> {
@@ -31,9 +32,12 @@ public class CompressUnwrap implements Function<CompressedWriteBlock, MatrixBloc
 
 	@Override
 	public MatrixBlock call(CompressedWriteBlock arg0) throws Exception {
-		if(arg0.get() instanceof CompressedMatrixBlock)
-			return new CompressedMatrixBlock((CompressedMatrixBlock) arg0.get());
+		final MatrixBlock g = arg0.get();
+		if(g instanceof CompressedMatrixBlock)
+			return new CompressedMatrixBlock((CompressedMatrixBlock) g);
+		else if(g.isEmpty())
+			return CompressedMatrixBlockFactory.createConstant(g.getNumRows(), g.getNumColumns(), 0.0);
 		else
-			return new MatrixBlock(arg0.get());
+			return new MatrixBlock(g);
 	}
 }

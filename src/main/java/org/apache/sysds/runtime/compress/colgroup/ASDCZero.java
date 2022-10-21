@@ -27,7 +27,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public abstract class ASDCZero extends APreAgg {
+public abstract class ASDCZero extends APreAgg implements AOffsetsGroup {
 	private static final long serialVersionUID = -69266306137398807L;
 
 	/** Sparse row indexes for the data */
@@ -39,6 +39,10 @@ public abstract class ASDCZero extends APreAgg {
 		super(colIndices, dict, cachedCounts);
 		_indexes = offsets;
 		_numRows = numRows;
+	}
+
+	public int getNumRows() {
+		return _numRows;
 	}
 
 	@Override
@@ -204,5 +208,10 @@ public abstract class ASDCZero extends APreAgg {
 
 	public AIterator getIterator(int row) {
 		return _indexes.getIterator(row);
+	}
+
+	@Override
+	public AOffset getOffsets() {
+		return _indexes;
 	}
 }

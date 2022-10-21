@@ -51,7 +51,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns. Then the zeros
  * would be materialized in the group without any overhead.
  */
-public class ColGroupSDC extends ASDC {
+public class ColGroupSDC extends ASDC implements AMapToDataGroup {
 	private static final long serialVersionUID = 769993538831949086L;
 
 	/** Pointers to row indexes in the dictionary. */
@@ -108,7 +108,8 @@ public class ColGroupSDC extends ASDC {
 		return _defaultTuple;
 	}
 
-	public AMapToData getMapping() {
+	@Override
+	public AMapToData getMapToData() {
 		return _data;
 	}
 
@@ -584,7 +585,30 @@ public class ColGroupSDC extends ASDC {
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
-		return null;
+		int sumRows = 0;
+		for(int i = 1; i < g.length; i++) {
+			if(!Arrays.equals(_colIndexes, g[i]._colIndexes)) {
+				LOG.warn("Not same columns therefore not appending \n" + Arrays.toString(_colIndexes) + "\n\n"
+					+ Arrays.toString(g[i]._colIndexes));
+				return null;
+			}
+
+			if(!(g[i] instanceof ColGroupSDC)) {
+				LOG.warn("Not SDC but " + g[i].getClass().getSimpleName());
+				return null;
+			}
+
+			final ColGroupSDC gc = (ColGroupSDC) g[i];
+			if(!gc._dict.eq(_dict)) {
+				LOG.warn("Not same Dictionaries therefore not appending \n" + _dict + "\n\n" + gc._dict);
+				return null;
+			}
+			sumRows += gc.getNumRows();
+		}
+		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, AMapToDataGroup[].class));
+		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class));
+
+		return create(_colIndexes, sumRows, _dict, _defaultTuple, no, nd, null);
 	}
 
 	@Override

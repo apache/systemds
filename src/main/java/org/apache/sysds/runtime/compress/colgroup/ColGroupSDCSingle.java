@@ -592,7 +592,7 @@ public class ColGroupSDCSingle extends ASDC {
 			}
 
 			if(!(g[i] instanceof ColGroupSDCSingle)) {
-				LOG.warn("Not SDCFOR but " + g[i].getClass().getSimpleName() );
+				LOG.warn("Not SDCFOR but " + g[i].getClass().getSimpleName());
 				return null;
 			}
 
@@ -603,8 +603,8 @@ public class ColGroupSDCSingle extends ASDC {
 			}
 			sumRows += gc.getNumRows();
 		}
-		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class));
-		return create(_colIndexes, sumRows, _dict, _defaultTuple, no,  null);
+		AOffset no = _indexes.appendN(Arrays.copyOf(g, g.length, AOffsetsGroup[].class), getNumRows());
+		return create(_colIndexes, sumRows, _dict, _defaultTuple, no, null);
 	}
 
 	@Override

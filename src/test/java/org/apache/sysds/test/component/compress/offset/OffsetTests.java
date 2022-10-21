@@ -37,6 +37,7 @@ import java.util.Collection;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.AOffsetsGroup;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
@@ -574,13 +575,146 @@ public class OffsetTests {
 
 	}
 
+	@Test
+	public void append() {
+		if(data.length > 0) {
+			final int ll = data[data.length - 1] + 1;
+			final AOffset r = o.append(o, ll);
+			compareAppendOne(r, ll);
+		}
+	}
+
+	@Test
+	public void append_v2() {
+		if(data.length > 0) {
+			final int ll = data[data.length - 1] + 3;
+			final AOffset r = o.append(o, ll);
+			compareAppendOne(r, ll);
+		}
+	}
+
+	@Test
+	public void appendN_one() {
+		if(data.length > 0) {
+			final int ll = data[data.length - 1] + 1;
+			final AOffset r = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(o)}, ll);
+			compareAppendOne(r, ll);
+		}
+	}
+
+	@Test
+	public void appendN_one_v2() {
+		if(data.length > 0) {
+			final int ll = data[data.length - 1] + 3;
+			final AOffset r = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(o)}, ll);
+			compareAppendOne(r, ll);
+		}
+	}
+
+	@Test
+	public void compareAppend() {
+		if(data.length > 0) {
+			final int ll = data[data.length - 1] + 3;
+			final AOffset r1 = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(o)}, ll);
+			final AOffset r2 = o.append(o, ll);
+			compare(r1, r2);
+		}
+	}
+
+	@Test
+	public void compareAppend_v2() {
+		if(data.length > 0) {
+			final int ll = data[data.length - 1] + 100;
+			final AOffset r1 = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(o)}, ll);
+			final AOffset r2 = o.append(o, ll);
+			compare(r1, r2);
+		}
+	}
+
+	@Test
+	public void compareAppend_2x() {
+
+		try{
+
+			if(data.length > 0) {
+	
+				final int ll = data[data.length - 1] + 100;
+				final AOffset r = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(o), new Con(o)}, ll);
+				final AOffset t2 = o.append(o, ll).append(o, ll * 2);
+				compare(r, t2);
+			}
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void compareAppend_2x_v2() {
+
+		try{
+
+			if(data.length > 0) {
+	
+				final int ll = data[data.length - 1] + 280;
+				final AOffset r = o.appendN(new AOffsetsGroup[] {new Con(o), new Con(o), new Con(o)}, ll);
+				final AOffset t2 = o.append(o, ll).append(o, ll * 2);
+				compare(r, t2);
+			}
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	private void compareAppendOne(AOffset r, int ll) {
+		if(r.getSize() != data.length * 2)
+			fail("Invalid return length:   is: " + o.getSize() + " Should be " + (data.length * 2));
+		final AIterator i = r.getIterator();
+		if(o.getSize() > 0) {
+			if(i.value() != data[0])
+				fail("incorrect value");
+			for(int j = 1; j < data.length; j++) {
+				i.next();
+				if(data[j] != i.value())
+					fail("Incorrect value: expected: " + (data[j]) + " Was: " + i.value());
+
+			}
+			for(int j = data.length; j < data.length * 2; j++) {
+				i.next();
+				if(data[j - data.length] + ll != i.value())
+					fail("Incorrect value: expected: " + (data[j - data.length] + ll) + " Was: " + i.value());
+
+			}
+			assertEquals(data[data.length - 1] + ll, i.value());
+			assertEquals(data[data.length - 1] + ll, r.getOffsetToLast());
+		}
+	}
+
+	private class Con implements AOffsetsGroup {
+
+		AOffset a;
+
+		protected Con(AOffset a) {
+			this.a = a;
+		}
+
+		@Override
+		public AOffset getOffsets() {
+			return a;
+		}
+
+	}
+
 	public static void compare(AOffset o, int[] v) {
 		AIterator i = o.getIterator();
-
 		if(o.getSize() != v.length) {
 			fail("Incorrect result sizes : " + o + " " + Arrays.toString(v));
 		}
 		if(o.getSize() > 0) {
+			assertEquals(o.getOffsetToLast(), v[v.length - 1]);
 			if(v[0] != i.value())
 				fail("incorrect result using : " + o.getClass().getSimpleName() + " expected: " + Arrays.toString(v)
 					+ " but was :" + o.toString());
@@ -591,6 +725,26 @@ public class OffsetTests {
 						+ " but was :" + o.toString());
 			}
 		}
+	}
+
+	public static void compare(AOffset o, AOffset b) {
+		assertEquals(o.getOffsetToFirst(), b.getOffsetToFirst());
+		assertEquals(o.getOffsetToLast(), b.getOffsetToLast());
+
+		AIterator io = o.getIterator();
+		AIterator ib = b.getIterator();
+
+		assertEquals(io.value(), ib.value());
+		int s = o.getSize();
+		assertEquals(s, b.getSize());
+		for(int i = 0; i < s - 1; i++) {
+			assertEquals(io.value(), ib.value());
+			io.next();
+			ib.next();
+		}
+		assertEquals(io.value(), ib.value());
+		assertEquals(io.value(), b.getOffsetToLast());
+
 	}
 
 	public static void compareOffsetIterator(AOffset o, int[] v) {

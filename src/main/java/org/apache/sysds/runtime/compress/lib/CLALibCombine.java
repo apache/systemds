@@ -19,26 +19,29 @@
 
 package org.apache.sysds.runtime.compress.lib;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibCombine {
 
 	protected static final Log LOG = LogFactory.getLog(CLALibCombine.class.getName());
 
-	public static MatrixBlock combine(Map<MatrixIndexes, MatrixBlock> m) {
+	public static MatrixBlock combine(Map<MatrixIndexes, MatrixBlock> m, int k) {
 		// Dynamically find rlen, clen and blen;
 		// assume that the blen is the same in all blocks.
 		// assume that all blocks are there ...
@@ -58,19 +61,19 @@ public class CLALibCombine {
 			lookup.setIndexes(1, lookup.getColumnIndex() + 1);
 		}
 
-		return combine(m, lookup, (int) rows, (int) cols, blen);
+		return combine(m, lookup, (int) rows, (int) cols, blen, k);
 	}
 
-	public static MatrixBlock combine(Map<MatrixIndexes, MatrixBlock> m, int rlen, int clen, int blen) {
+	public static MatrixBlock combine(Map<MatrixIndexes, MatrixBlock> m, int rlen, int clen, int blen, int k) {
 		final MatrixIndexes lookup = new MatrixIndexes();
-		return combine(m, lookup, rlen, clen, blen);
+		return combine(m, lookup, rlen, clen, blen, k);
 	}
 
 	private static MatrixBlock combine(final Map<MatrixIndexes, MatrixBlock> m, final MatrixIndexes lookup,
-		final int rlen, final int clen, final int blen) {
+		final int rlen, final int clen, final int blen, final int k) {
 
 		if(rlen < blen) // Shortcut, in case file only contains one block in r length.
-			return CombiningColumnGroups(m, lookup, rlen, clen, blen);
+			return CombiningColumnGroups(m, lookup, rlen, clen, blen, k);
 
 		final CompressionType[] colTypes = new CompressionType[clen];
 		// Look through the first blocks in to the top.
@@ -80,12 +83,12 @@ public class CLALibCombine {
 			if(!(b instanceof CompressedMatrixBlock)) {
 				LOG.warn("Found uncompressed matrix in Map of matrices, this is not"
 					+ " supported in combine therefore falling back to decompression");
-				return combineViaDecompression(m, rlen, clen, blen);
+				return combineViaDecompression(m, rlen, clen, blen, k);
 			}
 			final CompressedMatrixBlock cmb = (CompressedMatrixBlock) b;
 			if(cmb.isOverlapping()) {
 				LOG.warn("Not supporting overlapping combine yet falling back to decompression");
-				return combineViaDecompression(m, rlen, clen, blen);
+				return combineViaDecompression(m, rlen, clen, blen, k);
 			}
 			final List<AColGroup> gs = cmb.getColGroups();
 			for(AColGroup g : gs) {
@@ -104,12 +107,12 @@ public class CLALibCombine {
 				if(!(b instanceof CompressedMatrixBlock)) {
 					LOG.warn("Found uncompressed matrix in Map of matrices, this is not"
 						+ " supported in combine therefore falling back to decompression");
-					return combineViaDecompression(m, rlen, clen, blen);
+					return combineViaDecompression(m, rlen, clen, blen, k);
 				}
 				final CompressedMatrixBlock cmb = (CompressedMatrixBlock) b;
 				if(cmb.isOverlapping()) {
 					LOG.warn("Not supporting overlapping combine yet falling back to decompression");
-					return combineViaDecompression(m, rlen, clen, blen);
+					return combineViaDecompression(m, rlen, clen, blen, k);
 				}
 				final List<AColGroup> gs = cmb.getColGroups();
 				for(AColGroup g : gs) {
@@ -119,18 +122,18 @@ public class CLALibCombine {
 						if(colTypes[c + bc * blen] != t) {
 							LOG.warn("Not supported different types of column groups to combine."
 								+ "Falling back to decompression of all blocks");
-							return combineViaDecompression(m, rlen, clen, blen);
+							return combineViaDecompression(m, rlen, clen, blen, k);
 						}
 					}
 				}
 			}
 		}
 
-		return CombiningColumnGroups(m, lookup, rlen, clen, blen);
+		return CombiningColumnGroups(m, lookup, rlen, clen, blen, k);
 	}
 
 	private static MatrixBlock combineViaDecompression(final Map<MatrixIndexes, MatrixBlock> m, final int rlen,
-		final int clen, final int blen) {
+		final int clen, final int blen, int k) {
 		final MatrixBlock out = new MatrixBlock(rlen, clen, false);
 		out.allocateDenseBlock();
 		for(Entry<MatrixIndexes, MatrixBlock> e : m.entrySet()) {
@@ -149,11 +152,10 @@ public class CLALibCombine {
 
 	// It is known all of the matrices are Compressed and they are non overlapping.
 	private static MatrixBlock CombiningColumnGroups(final Map<MatrixIndexes, MatrixBlock> m, final MatrixIndexes lookup,
-		final int rlen, final int clen, final int blen) {
+		final int rlen, final int clen, final int blen, int k) {
 
 		final AColGroup[][] finalCols = new AColGroup[clen][]; // temp array for combining
 		final int blocksInColumn = (rlen - 1) / blen + 1;
-		final int nGroups = m.size() / blocksInColumn;
 
 		// Add all the blocks into linear structure.
 		for(int br = 0; br * blen < rlen; br++) {
@@ -170,20 +172,32 @@ public class CLALibCombine {
 				}
 			}
 		}
+		final ExecutorService pool = CommonThreadPool.get(Math.max(Math.min(clen / 500, k),1));
+		try {
 
-		final List<AColGroup> finalGroups = new ArrayList<>(nGroups);
-		for(AColGroup[] colOfGroups : finalCols) {
-			if(colOfGroups != null) { // skip null entries
-				final AColGroup combined = combineN(colOfGroups);
-				if(combined == null) {
-					LOG.warn("Combining of columns from group failed: " + Arrays.toString(colOfGroups));
-					return combineViaDecompression(m, rlen, clen, blen);
-				}
-				finalGroups.add(combined);
+			List<AColGroup> finalGroups = pool.submit(() -> {
+				return Arrays//
+					.stream(finalCols)//
+					.filter(x -> x != null)//
+					.parallel()//
+					.map(x -> {
+						return combineN(x);
+					}).collect(Collectors.toList());
+			}).get();
+
+			if(finalGroups.contains(null)) {
+				LOG.warn("Combining via decompression. There was a column group that did not append ");
+				return combineViaDecompression(m, rlen, clen, blen, k);
 			}
+			pool.shutdown();
+			return new CompressedMatrixBlock(rlen, clen, -1, false, finalGroups);
 		}
+		catch(InterruptedException | ExecutionException e) {
+			pool.shutdown();
+			throw new DMLRuntimeException("Failed to combine column groups", e);
+		}
+		
 
-		return new CompressedMatrixBlock(rlen, clen, -1, false, finalGroups);
 	}
 
 	private static AColGroup combineN(AColGroup[] groups) {

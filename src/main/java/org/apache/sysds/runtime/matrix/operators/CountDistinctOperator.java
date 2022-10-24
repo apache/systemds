@@ -22,19 +22,21 @@ package org.apache.sysds.runtime.matrix.operators;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction.AUType;
 import org.apache.sysds.utils.Hash.HashType;
 
-public class CountDistinctOperator extends Operator {
+public class CountDistinctOperator extends AggregateUnaryOperator {
 	private static final long serialVersionUID = 7615123453265129670L;
 
 	private final CountDistinctOperatorTypes operatorType;
 	private final HashType hashType;
 	private Types.Direction direction;
-	private IndexFunction indexFunction;
 
 	public CountDistinctOperator(AUType opType) {
-		super(true);
+		super(new AggregateOperator(0, Plus.getPlusFnObject()), ReduceAll.getReduceAllFnObject(), 1);
+
 		switch(opType) {
 			case COUNT_DISTINCT:
 				this.operatorType = CountDistinctOperatorTypes.COUNT;
@@ -49,22 +51,22 @@ public class CountDistinctOperator extends Operator {
 	}
 
 	public CountDistinctOperator(CountDistinctOperatorTypes operatorType) {
-		super(true);
+		super(new AggregateOperator(0, Plus.getPlusFnObject()), ReduceAll.getReduceAllFnObject(), 1);
 		this.operatorType = operatorType;
 		this.hashType = HashType.StandardJava;
 	}
 
 	public CountDistinctOperator(CountDistinctOperatorTypes operatorType, HashType hashType) {
-		super(true);
+		super(new AggregateOperator(0, Plus.getPlusFnObject()), ReduceAll.getReduceAllFnObject(), 1);
 		this.operatorType = operatorType;
 		this.hashType = hashType;
 	}
 
 	public CountDistinctOperator(CountDistinctOperatorTypes operatorType, IndexFunction indexFunction,
 		HashType hashType) {
-		super(true);
+		super(new AggregateOperator(0, Plus.getPlusFnObject()), ReduceAll.getReduceAllFnObject(), 1);
+		super.indexFn = indexFunction;
 		this.operatorType = operatorType;
-		this.indexFunction = indexFunction;
 		this.hashType = hashType;
 	}
 
@@ -77,11 +79,11 @@ public class CountDistinctOperator extends Operator {
 	}
 
 	public IndexFunction getIndexFunction() {
-		return indexFunction;
+		return super.indexFn;
 	}
 
 	public CountDistinctOperator setIndexFunction(IndexFunction indexFunction) {
-		this.indexFunction = indexFunction;
+		super.indexFn = indexFunction;
 		return this;
 	}
 

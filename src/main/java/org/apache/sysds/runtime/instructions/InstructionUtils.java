@@ -83,6 +83,9 @@ import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceDiag;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.Xor;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
@@ -90,19 +93,8 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction.SPType;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
-import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.matrix.operators.*;
 import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
-import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
-import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
-import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
-import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 
 public class InstructionUtils 
@@ -421,9 +413,38 @@ public class InstructionUtils
 			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("min"));
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase("uacd") || opcode.equalsIgnoreCase("uacdr")
-				|| opcode.equalsIgnoreCase("uacdc") ) {
-			throw new NotImplementedException("countDistinct() is not supported in Spark execution mode");
+		else if ( opcode.equalsIgnoreCase("uacd") ) {
+			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT)
+					.setDirection(Types.Direction.RowCol)
+					.setIndexFunction(ReduceAll.getReduceAllFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uacdr") ) {
+			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT)
+					.setDirection(Types.Direction.Row)
+					.setIndexFunction(ReduceCol.getReduceColFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uacdc") ) {
+			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT)
+					.setDirection(Types.Direction.Col)
+					.setIndexFunction(ReduceRow.getReduceRowFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uacdap") ) {
+			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT_APPROX)
+					.setDirection(Types.Direction.RowCol)
+					.setIndexFunction(ReduceAll.getReduceAllFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uacdapr") ) {
+			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT_APPROX)
+					.setDirection(Types.Direction.Row)
+					.setIndexFunction(ReduceCol.getReduceColFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uacdapc") ) {
+			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT_APPROX)
+					.setDirection(Types.Direction.Col)
+					.setIndexFunction(ReduceRow.getReduceRowFnObject());
+		}
+		else {
+			throw new IllegalArgumentException("Cannot parse given opcode");
 		}
 
 		return aggun;

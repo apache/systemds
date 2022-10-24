@@ -247,10 +247,14 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			break;
 
 		case COUNT_DISTINCT:
+		case COUNT_DISTINCT_ROW:
+		case COUNT_DISTINCT_COL:
 			validateCountDistinct(output, conditional);
 			break;
 
 		case COUNT_DISTINCT_APPROX:
+		case COUNT_DISTINCT_APPROX_ROW:
+		case COUNT_DISTINCT_APPROX_COL:
 			validateCountDistinctApprox(output, conditional);
 			break;
 

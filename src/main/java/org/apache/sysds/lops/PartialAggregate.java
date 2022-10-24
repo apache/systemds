@@ -349,7 +349,13 @@ public class PartialAggregate extends Lop
 				}
 				break;
 			}
-			
+
+			case COUNT_DISTINCT_ROW:
+				return "uacdr";
+
+			case COUNT_DISTINCT_COL:
+				return "uacdc";
+
 			case COUNT_DISTINCT_APPROX: {
 				switch (dir) {
 					case RowCol: return "uacdap";
@@ -358,6 +364,12 @@ public class PartialAggregate extends Lop
 				}
 				break;
 			}
+
+			case COUNT_DISTINCT_APPROX_ROW:
+				return "uacdapr";
+
+			case COUNT_DISTINCT_APPROX_COL:
+				return "uacdapc";
 		}
 		
 		//should never come here for normal compilation

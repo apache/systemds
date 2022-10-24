@@ -2859,34 +2859,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			else
 				ret = LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op);
 		}
-		else if(!sparse && !isEmptyBlock(false)
-			&& OptimizerUtils.isMaxLocalParallelism(op.getNumThreads())) {
-			//note: we apply multi-threading in a best-effort manner here
-			//only for expensive operators such as exp, log, sigmoid, because
-			//otherwise allocation, read and write anyway dominates
-			if (!op.isInplace() || isEmpty())
-				ret.allocateDenseBlock(false);
-			else
-				ret = this;
-
-			DenseBlock a = getDenseBlock();
-			DenseBlock c = ret.getDenseBlock();
-			for(int bi=0; bi<a.numBlocks(); bi++) {
-				double[] avals = a.valuesAt(bi), cvals = c.valuesAt(bi);
-				Arrays.parallelSetAll(cvals, i -> op.fn.execute(avals[i]));
-			}
-			ret.recomputeNonZeros();
-		}
-		else
-		{
-			if (op.isInplace() && !isInSparseFormat() )
-				ret = this;
-			
-			//default execute unary operations
-			if(op.sparseSafe)
-				sparseUnaryOperations(op, ret);
-			else
-				denseUnaryOperations(op, ret);
+		else {
+			ret = LibMatrixBincell.uncellOp(this, ret, op);
 		}
 		
 		//ensure empty results sparse representation 
@@ -2895,106 +2869,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			ret.examSparsity();
 		
 		return ret;
-	}
-
-	private void sparseUnaryOperations(UnaryOperator op, MatrixBlock ret) {
-		//early abort possible since sparse-safe
-		if( isEmptyBlock(false) )
-			return;
-		
-		final int m = rlen;
-		final int n = clen;
-		
-		if( sparse && ret.sparse ) //SPARSE <- SPARSE
-		{
-			ret.allocateSparseRowsBlock();
-			SparseBlock a = sparseBlock;
-			SparseBlock c = ret.sparseBlock;
-		
-			long nnz = 0;
-			for(int i=0; i<m; i++) {
-				if( a.isEmpty(i) ) continue;
-				
-				int apos = a.pos(i);
-				int alen = a.size(i);
-				int[] aix = a.indexes(i);
-				double[] avals = a.values(i);
-				
-				c.allocate(i, alen); //avoid repeated alloc
-				for( int j=apos; j<apos+alen; j++ ) {
-					double val = op.fn.execute(avals[j]);
-					c.append(i, aix[j], val);
-					nnz += (val != 0) ? 1 : 0;
-				}
-			}
-			ret.nonZeros = nnz;
-		}
-		else if( sparse ) //DENSE <- SPARSE
-		{
-			ret.allocateDenseBlock(false);
-			SparseBlock a = sparseBlock;
-			DenseBlock c = ret.denseBlock;
-			long nnz = (ret.nonZeros > 0) ?
-				(long) m*n-a.size() : 0;
-			for(int i=0; i<m; i++) {
-				if( a.isEmpty(i) ) continue;
-				int apos = a.pos(i);
-				int alen = a.size(i);
-				int[] aix = a.indexes(i);
-				double[] avals = a.values(i);
-				double[] cvals = c.values(i);
-				int cix = c.pos(i);
-				for( int j=apos; j<apos+alen; j++ ) {
-					double val = op.fn.execute(avals[j]);
-					cvals[cix + aix[j]] = val; 
-					nnz += (val != 0) ? 1 : 0;
-				}
-			}
-			ret.nonZeros = nnz;
-		}
-		else //DENSE <- DENSE
-		{
-			if( this != ret ) //!in-place
-				ret.allocateDenseBlock(false);
-			DenseBlock da = getDenseBlock();
-			DenseBlock dc = ret.getDenseBlock();
-			
-			//unary op, incl nnz maintenance
-			long nnz = 0;
-			for( int bi=0; bi<da.numBlocks(); bi++ ) {
-				double[] a = da.valuesAt(bi);
-				double[] c = dc.valuesAt(bi);
-				int len = da.size(bi);
-				for( int i=0; i<len; i++ ) {
-					c[i] = op.fn.execute(a[i]);
-					nnz += (c[i] != 0) ? 1 : 0;
-				}
-			}
-			ret.nonZeros = nnz;
-		}
-	}
-
-	private void denseUnaryOperations(UnaryOperator op, MatrixBlock ret) {
-		//prepare 0-value init (determine if unnecessarily sparse-unsafe)
-		double val0 = op.fn.execute(0d);
-		
-		final int m = rlen;
-		final int n = clen;
-		
-		//early abort possible if unnecessarily sparse unsafe
-		//(otherwise full init with val0, no need for computation)
-		if( isEmptyBlock(false) ) {
-			if( val0 != 0 )
-				ret.reset(m, n, val0);
-			return;
-		}
-		
-		//redirection to sparse safe operation w/ init by val0
-		if( sparse && val0 != 0 ) {
-			ret.reset(m, n, val0);
-			ret.nonZeros = (long)m * n;
-		}
-		sparseUnaryOperations(op, ret);
 	}
 
 	public final MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue){

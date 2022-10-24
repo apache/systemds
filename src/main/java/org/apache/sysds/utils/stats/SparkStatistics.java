@@ -21,7 +21,6 @@ package org.apache.sysds.utils.stats;
 
 import java.util.concurrent.atomic.LongAdder;
 
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 
 public class SparkStatistics {

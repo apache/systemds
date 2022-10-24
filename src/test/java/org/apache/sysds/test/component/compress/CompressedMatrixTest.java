@@ -184,7 +184,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(!(cmb instanceof CompressedMatrixBlock) || _cs == null)
 				return;
 			CompressionStatistics cStat = cmbStats;
-			if(cStat != null)
+			if(cStat != null && !(mb.isEmpty()) && cStat.originalSize > 1000)
 				assertTrue("Compression ration if compressed should be larger than 1", cStat.getRatio() > 1);
 		}
 		catch(Exception e) {
@@ -199,7 +199,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(!(cmb instanceof CompressedMatrixBlock) || _cs == null)
 				return;
 			CompressionStatistics cStat = cmbStats;
-			if(cStat != null) {
+			if(cStat != null && !(mb.isEmpty()) && cStat.originalSize > 1000) {
 				long colsEstimate = cStat.estimatedSizeCols;
 				long actualSize = cStat.compressedSize;
 				long originalSize = cStat.originalSize;

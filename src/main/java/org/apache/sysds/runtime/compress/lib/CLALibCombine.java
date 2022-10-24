@@ -184,12 +184,12 @@ public class CLALibCombine {
 						return combineN(x);
 					}).collect(Collectors.toList());
 			}).get();
-
+			
+			pool.shutdown();
 			if(finalGroups.contains(null)) {
 				LOG.warn("Combining via decompression. There was a column group that did not append ");
 				return combineViaDecompression(m, rlen, clen, blen, k);
 			}
-			pool.shutdown();
 			return new CompressedMatrixBlock(rlen, clen, -1, false, finalGroups);
 		}
 		catch(InterruptedException | ExecutionException e) {

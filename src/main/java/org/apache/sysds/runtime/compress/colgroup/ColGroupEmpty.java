@@ -25,6 +25,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -327,4 +328,8 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		return this;
 	}
 
+	@Override
+	public ICLAScheme getCompressionScheme() {
+		return null;
+	}
 }

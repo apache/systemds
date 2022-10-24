@@ -36,16 +36,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public interface ICLAScheme {
 
 	/**
-	 * Create an instance of a scheme based on a specific column group.
-	 * 
-	 * The column group specify what columns is to be encoded and what the return
-	 * 
-	 * @param g A column group to extract the compression scheme from.
-	 * @return An ICLAScheme instance able to encode uncompressed data with the scheme.
-	 */
-	public ICLAScheme create(AColGroup g);
-
-	/**
 	 * Encode the given matrix block into the scheme provided in the instance.
 	 * 
 	 * The method returns null, if it is impossible to encode the input data with the given scheme.

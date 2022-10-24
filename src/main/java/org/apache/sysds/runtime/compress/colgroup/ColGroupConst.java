@@ -28,6 +28,8 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ConstScheme;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.compress.utils.Util;
@@ -534,6 +536,11 @@ public class ColGroupConst extends ADictBasedColGroup {
 			if(!Arrays.equals(_colIndexes, g[i]._colIndexes) || !this._dict.eq(((ColGroupConst) g[i])._dict))
 				return null;
 		return this;
+	}
+
+	@Override
+	public ICLAScheme getCompressionScheme() {
+		return ConstScheme.create(this);
 	}
 
 	@Override

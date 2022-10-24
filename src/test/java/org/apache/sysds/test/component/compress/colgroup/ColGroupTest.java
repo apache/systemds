@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.colgroup.AMorphingMMColGroup;
 import org.apache.sysds.runtime.compress.colgroup.APreAgg;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
@@ -463,7 +464,7 @@ public class ColGroupTest extends ColGroupBase {
 			AColGroup bs = base.rightMultByMatrix(right);
 			AColGroup os = other.rightMultByMatrix(right);
 			if(bs == null || os == null) // if null return
-				if(bs != os){
+				if(bs != os) {
 					fail("both results are not equally null");
 					return;
 				}
@@ -2113,14 +2114,14 @@ public class ColGroupTest extends ColGroupBase {
 
 	// @Test
 	// public void copyMaintainPointers() {
-	// 	AColGroup a = base.copy();
-	// 	AColGroup b = other.copy();
+	// AColGroup a = base.copy();
+	// AColGroup b = other.copy();
 
-	// 	assertTrue(a.getColIndices() == base.getColIndices());
-	// 	assertTrue(b.getColIndices() == other.getColIndices());
-	// 	// assertFalse(a.getColIndices() == other.getColIndices());
-	// 	assertFalse(a == base);
-	// 	assertFalse(b == other);
+	// assertTrue(a.getColIndices() == base.getColIndices());
+	// assertTrue(b.getColIndices() == other.getColIndices());
+	// // assertFalse(a.getColIndices() == other.getColIndices());
+	// assertFalse(a == base);
+	// assertFalse(b == other);
 	// }
 
 	@Test
@@ -2170,7 +2171,7 @@ public class ColGroupTest extends ColGroupBase {
 			AColGroup b = other.sliceRows(rl, ru);
 			final int newNRow = ru - rl;
 
-			if(a == null || b == null) 
+			if(a == null || b == null)
 				// one side is concluded empty
 				// We do not enforce that empty is returned if it is empty, since some column groups
 				// are to expensive to analyze if empty.
@@ -2210,5 +2211,25 @@ public class ColGroupTest extends ColGroupBase {
 			fail(e.getMessage());
 		}
 		assertTrue(exception);
+	}
+
+	@Test
+	public void getScheme() {
+		// create scheme and check if it compress the same matrix input in same way.
+		checkScheme(base.getCompressionScheme(), base, nRow, maxCol);
+		checkScheme(other.getCompressionScheme(), other, nRow, maxCol);
+	}
+
+	private static void checkScheme(ICLAScheme ia, AColGroup a, int nRow, int nCol) {
+		if(ia != null) {
+			// if whatever is returned is not null,
+			// then it should be able to compress the matrix block again
+			// in same scheme
+
+			MatrixBlock ot = sparseMB(nRow, nCol);
+			a.decompressToSparseBlock(ot.getSparseBlock(), 0, nRow);
+			AColGroup g = ia.encode(ot);
+			assertTrue(g.getClass().equals(a.getClass()));
+		}
 	}
 }

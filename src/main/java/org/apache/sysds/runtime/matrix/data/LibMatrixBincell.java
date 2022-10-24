@@ -57,6 +57,7 @@ import org.apache.sysds.runtime.functionobjects.Power2;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.SortUtils;
@@ -97,6 +98,51 @@ public class LibMatrixBincell {
 	///////////////////////////////////
 	// public matrix bincell interface
 	///////////////////////////////////
+	
+	public static MatrixBlock uncellOp(MatrixBlock m1, MatrixBlock ret, UnaryOperator op) {
+		if(!m1.sparse && !m1.isEmptyBlock(false) 
+			&& op.getNumThreads() > 1 && m1.getLength() > PAR_NUMCELL_THRESHOLD2  ) {
+			//note: we apply multi-threading in a best-effort manner here
+			//only for expensive operators such as exp, log, sigmoid, because
+			//otherwise allocation, read and write anyway dominates
+			if (!op.isInplace() || m1.isEmpty())
+				ret.allocateDenseBlock(false);
+			else
+				ret = m1;
+
+			int k = op.getNumThreads();
+			DenseBlock a = m1.getDenseBlock();
+			DenseBlock c = ret.getDenseBlock();
+			try {
+				ExecutorService pool = CommonThreadPool.get(k);
+				ArrayList<UncellTask> tasks = new ArrayList<>();
+				ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(ret.rlen, k, false);
+				for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
+					tasks.add(new UncellTask(a, c, op, lb, lb+blklens.get(i)));
+				List<Future<Long>> taskret = pool.invokeAll(tasks);
+				
+				//aggregate non-zeros
+				ret.nonZeros = 0; //reset after execute
+				for( Future<Long> task : taskret )
+					ret.nonZeros += task.get();
+				pool.shutdown();
+			}
+			catch(InterruptedException | ExecutionException ex) {
+				throw new DMLRuntimeException(ex);
+			}
+		}
+		else {
+			if (op.isInplace() && !m1.isInSparseFormat() )
+				ret = m1;
+			
+			//default execute unary operations
+			if(op.sparseSafe)
+				sparseUnaryOperations(m1, ret, op);
+			else
+				denseUnaryOperations(m1, ret, op);
+		}
+		return ret;
+	}
 	
 	/**
 	 * matrix-scalar, scalar-matrix binary operations.
@@ -445,6 +491,106 @@ public class LibMatrixBincell {
 	// private sparse-safe/sparse-unsafe implementations
 	///////////////////////////////////
 
+	private static void denseUnaryOperations(MatrixBlock m1, MatrixBlock ret, UnaryOperator op) {
+		//prepare 0-value init (determine if unnecessarily sparse-unsafe)
+		double val0 = op.fn.execute(0d);
+		
+		final int m = m1.rlen;
+		final int n = m1.clen;
+		
+		//early abort possible if unnecessarily sparse unsafe
+		//(otherwise full init with val0, no need for computation)
+		if( m1.isEmptyBlock(false) ) {
+			if( val0 != 0 )
+				ret.reset(m, n, val0);
+			return;
+		}
+		
+		//redirection to sparse safe operation w/ init by val0
+		if( m1.sparse && val0 != 0 ) {
+			ret.reset(m, n, val0);
+			ret.nonZeros = (long)m * n;
+		}
+		sparseUnaryOperations(m1, ret, op);
+	}
+	
+	private static void sparseUnaryOperations(MatrixBlock m1, MatrixBlock ret, UnaryOperator op) {
+		//early abort possible since sparse-safe
+		if( m1.isEmptyBlock(false) )
+			return;
+		
+		final int m = m1.rlen;
+		final int n = m1.clen;
+		
+		if( m1.sparse && ret.sparse ) //SPARSE <- SPARSE
+		{
+			ret.allocateSparseRowsBlock();
+			SparseBlock a = m1.sparseBlock;
+			SparseBlock c = ret.sparseBlock;
+		
+			long nnz = 0;
+			for(int i=0; i<m; i++) {
+				if( a.isEmpty(i) ) continue;
+				
+				int apos = a.pos(i);
+				int alen = a.size(i);
+				int[] aix = a.indexes(i);
+				double[] avals = a.values(i);
+				
+				c.allocate(i, alen); //avoid repeated alloc
+				for( int j=apos; j<apos+alen; j++ ) {
+					double val = op.fn.execute(avals[j]);
+					c.append(i, aix[j], val);
+					nnz += (val != 0) ? 1 : 0;
+				}
+			}
+			ret.nonZeros = nnz;
+		}
+		else if( m1.sparse ) //DENSE <- SPARSE
+		{
+			ret.allocateDenseBlock(false);
+			SparseBlock a = m1.sparseBlock;
+			DenseBlock c = ret.denseBlock;
+			long nnz = (ret.nonZeros > 0) ?
+				(long) m*n-a.size() : 0;
+			for(int i=0; i<m; i++) {
+				if( a.isEmpty(i) ) continue;
+				int apos = a.pos(i);
+				int alen = a.size(i);
+				int[] aix = a.indexes(i);
+				double[] avals = a.values(i);
+				double[] cvals = c.values(i);
+				int cix = c.pos(i);
+				for( int j=apos; j<apos+alen; j++ ) {
+					double val = op.fn.execute(avals[j]);
+					cvals[cix + aix[j]] = val; 
+					nnz += (val != 0) ? 1 : 0;
+				}
+			}
+			ret.nonZeros = nnz;
+		}
+		else //DENSE <- DENSE
+		{
+			if( m1 != ret ) //!in-place
+				ret.allocateDenseBlock(false);
+			DenseBlock da = m1.getDenseBlock();
+			DenseBlock dc = ret.getDenseBlock();
+			
+			//unary op, incl nnz maintenance
+			long nnz = 0;
+			for( int bi=0; bi<da.numBlocks(); bi++ ) {
+				double[] a = da.valuesAt(bi);
+				double[] c = dc.valuesAt(bi);
+				int len = da.size(bi);
+				for( int i=0; i<len; i++ ) {
+					c[i] = op.fn.execute(a[i]);
+					nnz += (c[i] != 0) ? 1 : 0;
+				}
+			}
+			ret.nonZeros = nnz;
+		}
+	}
+	
 	private static long safeBinary(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op,
 		BinaryAccessType atype, int rl, int ru)
 	{
@@ -1762,6 +1908,51 @@ public class LibMatrixBincell {
 		public Long call() {
 			//execute binary operation on row partition
 			return safeBinaryScalar(_m1, _ret, _sop, _rl, _ru);
+		}
+	}
+	
+	private static class UncellTask implements Callable<Long> {
+		private final DenseBlock _a;
+		private final DenseBlock _c;
+		private final UnaryOperator _op;
+		private final int _rl;
+		private final int _ru;
+
+		protected UncellTask(DenseBlock a, DenseBlock c, UnaryOperator op, int rl, int ru ) {
+			_a = a;
+			_c = c;
+			_op = op;
+			_rl = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public Long call() {
+			long nnz = 0;
+			//fast dense-dense operations
+			if(_a.isContiguous(_rl, _ru)) {
+				double[] avals = _a.values(_rl);
+				double[] cvals = _c.values(_rl);
+				int start = _a.pos(_rl), end = _a.pos(_ru);
+				for( int i=start; i<end; i++ ) {
+					cvals[i] = _op.fn.execute(avals[i]);
+					nnz += (cvals[i] != 0) ? 1 : 0;
+				}
+			}
+			//generic dense-dense, including large blocks
+			else {
+				int clen = _a.getDim(1);
+				for(int i=_rl; i<_ru; i++) {
+					double[] avals = _a.values(i);
+					double[] cvals = _c.values(i);
+					int pos = _a.pos(i);
+					for( int j=0; j<clen; j++ ) {
+						cvals[pos+j] = _op.fn.execute(avals[pos+j]);
+						nnz += (cvals[pos+j] != 0) ? 1 : 0;
+					}
+				}
+			}
+			return nnz;
 		}
 	}
 }

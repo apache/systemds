@@ -452,7 +452,7 @@ public class UnaryOp extends MultiThreadedHop
 	}
 	
 	public boolean isExpensiveUnaryOperation() {
-		return (_op == OpOp1.EXP || _op == OpOp1.LOG
+		return (_op == OpOp1.EXP || _op == OpOp1.LOG || _op == OpOp1.LOG_NZ
 			|| _op == OpOp1.ROUND || _op == OpOp1.FLOOR || _op == OpOp1.CEIL
 			|| _op == OpOp1.SIGMOID || _op == OpOp1.SPROP || _op == OpOp1.SOFTMAX
 			|| _op == OpOp1.TAN || _op == OpOp1.TANH || _op == OpOp1.ATAN

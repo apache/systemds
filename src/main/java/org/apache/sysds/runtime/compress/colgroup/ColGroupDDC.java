@@ -32,6 +32,8 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictiona
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
+import org.apache.sysds.runtime.compress.colgroup.scheme.DDCScheme;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -533,6 +535,12 @@ public class ColGroupDDC extends APreAgg implements AMapToDataGroup {
 		}
 		AMapToData nd = _data.appendN(Arrays.copyOf(g, g.length, AMapToDataGroup[].class));
 		return create(_colIndexes, _dict, nd, null);
+	}
+
+
+	@Override
+	public ICLAScheme getCompressionScheme() {
+		return DDCScheme.create(this);
 	}
 
 	@Override

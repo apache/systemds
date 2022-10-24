@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingleZeros;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCZeros;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -366,6 +367,12 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			return null;
 		}
+
+		@Override
+		public ICLAScheme getCompressionScheme() {
+			// TODO Auto-generated method stub
+			return null;
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -581,6 +588,12 @@ public class ColGroupNegativeTests {
 
 		@Override
 		protected AColGroup appendNInternal(AColGroup[] groups) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public ICLAScheme getCompressionScheme() {
 			// TODO Auto-generated method stub
 			return null;
 		}

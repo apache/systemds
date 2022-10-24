@@ -196,8 +196,6 @@ public class CLALibCombine {
 			pool.shutdown();
 			throw new DMLRuntimeException("Failed to combine column groups", e);
 		}
-		
-
 	}
 
 	private static AColGroup combineN(AColGroup[] groups) {

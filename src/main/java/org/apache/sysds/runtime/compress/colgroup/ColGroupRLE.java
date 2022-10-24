@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -974,6 +975,11 @@ public class ColGroupRLE extends AColGroupOffset {
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
+		return null;
+	}
+
+	@Override
+	public ICLAScheme getCompressionScheme() {
 		return null;
 	}
 

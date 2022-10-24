@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictLibMatrixMult;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -777,6 +778,11 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
+		return null;
+	}
+
+	@Override
+	public ICLAScheme getCompressionScheme() {
 		return null;
 	}
 

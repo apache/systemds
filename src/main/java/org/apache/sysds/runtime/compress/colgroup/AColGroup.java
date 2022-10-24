@@ -28,6 +28,7 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -638,6 +639,13 @@ public abstract class AColGroup implements Serializable {
 	 * @return A combined column group or null
 	 */
 	protected abstract AColGroup appendNInternal(AColGroup[] groups);
+
+	/**
+	 * Get the compression scheme for this column group to enable compression of other data.
+	 * 
+	 * @return The compression scheme of this column group
+	 */
+	public abstract ICLAScheme getCompressionScheme();
 
 	@Override
 	public String toString() {

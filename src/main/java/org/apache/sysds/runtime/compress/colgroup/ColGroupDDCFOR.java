@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -447,6 +448,11 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
+		return null;
+	}
+
+	@Override
+	public ICLAScheme getCompressionScheme() {
 		return null;
 	}
 

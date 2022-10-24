@@ -25,20 +25,59 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class ConstScheme implements ICLAScheme {
 
-	public static ICLAScheme create(ColGroupConst g){
-		return null;
+	final int[] cols;
+	final double[] values;
+
+	protected ConstScheme(int[] cols, double[] values) {
+		this.cols = cols;
+		this.values = values;
+	}
+
+	public static ICLAScheme create(ColGroupConst g) {
+		return new ConstScheme(g.getColIndices(), g.getValues());
 	}
 
 	@Override
 	public AColGroup encode(MatrixBlock data) {
-		// TODO Auto-generated method stub
-		return null;
+		return encode(data, cols, values);
 	}
 
 	@Override
 	public AColGroup encode(MatrixBlock data, int[] columns) {
-		// TODO Auto-generated method stub
-		return null;
+		if(columns.length != cols.length)
+			throw new IllegalArgumentException("Invalid columns to encode");
+		return encode(data, columns, values);
 	}
 
+	private static AColGroup encode(MatrixBlock data, int[] cols, double[] values) {
+		// Check if the column is all constant in the column that is specified.
+		if(data.isEmpty()) {
+			LOG.warn("Invalid to encode an empty matrix into constant column group");
+			return null; // Invalid to encode this.
+		}
+		else if(data.isInSparseFormat()) {
+			// unlucky inefficient lookup in each row.
+			LOG.warn("Not implemented Sparse encoding of constant columns.");
+			return null;
+		}
+		else if(data.getDenseBlock().isContiguous()) {
+			// Nice
+			final double[] dv = data.getDenseBlockValues();
+			final int nCol = data.getNumColumns();
+			final int nRow = data.getNumRows();
+			for(int r = 0; r < nRow; r++) {
+				final int off = r * nCol;
+				for(int ci = 0; ci < cols.length; ci++) {
+					if(dv[off + cols[ci]] != values[ci])
+						return null;
+				}
+			}
+			return ColGroupConst.create(cols, values);
+		}
+		else {
+			// not implemented
+			LOG.warn("Not implemented application of compression scheme for non continuous dense blocks");
+			return null;
+		}
+	}
 }

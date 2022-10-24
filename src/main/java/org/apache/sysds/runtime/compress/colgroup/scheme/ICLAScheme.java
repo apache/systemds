@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.colgroup.scheme;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -34,6 +36,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * A single scheme is only responsible for encoding a single column group type.
  */
 public interface ICLAScheme {
+
+	/** Logging access for the CLA Scheme encoders */
+	public final Log LOG = LogFactory.getLog(ICLAScheme.class.getName());
 
 	/**
 	 * Encode the given matrix block into the scheme provided in the instance.

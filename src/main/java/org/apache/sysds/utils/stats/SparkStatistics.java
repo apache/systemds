@@ -123,9 +123,8 @@ public class SparkStatistics {
 						parallelizeTime.longValue()*1e-9,
 						broadcastTime.longValue()*1e-9,
 						collectTime.longValue()*1e-9));
-		if (OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS)
-			sb.append("Spark async. count (pf,bc,tr): \t" +
-					String.format("%d/%d/%d.\n", getAsyncPrefetchCount(), getAsyncBroadcastCount(), getAsyncTriggerRemoteCount()));
+		sb.append("Spark async. count (pf,bc,tr): \t" +
+				String.format("%d/%d/%d.\n", getAsyncPrefetchCount(), getAsyncBroadcastCount(), getAsyncTriggerRemoteCount()));
 		return sb.toString();
 	}
 }

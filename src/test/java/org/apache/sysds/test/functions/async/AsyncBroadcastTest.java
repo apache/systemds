@@ -88,9 +88,9 @@ public class AsyncBroadcastTest extends AutomatedTestBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
 
-			OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS = true;
+			OptimizerUtils.ASYNC_BROADCAST_SPARK = true;
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS = false;
+			OptimizerUtils.ASYNC_BROADCAST_SPARK = false;
 			HashMap<MatrixValue.CellIndex, Double> R_bc = readDMLScalarFromOutputDir("R");
 
 			//compare matrices

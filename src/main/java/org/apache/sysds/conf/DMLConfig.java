@@ -127,7 +127,9 @@ public class DMLConfig
 	public static final String FEDERATED_MONITOR_FREQUENCY = "sysds.federated.monitorFreq";
 	public static final int DEFAULT_FEDERATED_PORT = 4040; // borrowed default Spark Port
 	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 8;
-	
+	/** Asynchronous triggering of Spark OPs and operator placement **/
+	public static final String ASYNC_SPARK_PREFETCH = "sysds.async.prefetch";  // boolean: enable asynchronous prefetching spark intermediates
+	public static final String ASYNC_SPARK_BROADCAST = "sysds.async.broadcast";  // boolean: enable asynchronous broadcasting CP intermediates
 	//internal config
 	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and DFS
 	
@@ -198,6 +200,8 @@ public class DMLConfig
 		_defaultVals.put(FEDERATED_READCACHE,    "true"); // vcores
 		_defaultVals.put(FEDERATED_MONITOR_FREQUENCY, "3");
 		_defaultVals.put(PRIVACY_CONSTRAINT_MOCK, null);
+		_defaultVals.put(ASYNC_SPARK_PREFETCH,   "false" );
+		_defaultVals.put(ASYNC_SPARK_BROADCAST,  "false" );
 	}
 	
 	public DMLConfig() {
@@ -450,7 +454,7 @@ public class DMLConfig
 			PRINT_GPU_MEMORY_INFO, AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION,
 			GPU_EVICTION_POLICY, LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE, GPU_MEMORY_ALLOCATOR,
 			GPU_MEMORY_UTILIZATION_FACTOR, USE_SSL_FEDERATED_COMMUNICATION, DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT,
-			FEDERATED_TIMEOUT, FEDERATED_MONITOR_FREQUENCY
+			FEDERATED_TIMEOUT, FEDERATED_MONITOR_FREQUENCY, ASYNC_SPARK_PREFETCH, ASYNC_SPARK_BROADCAST
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

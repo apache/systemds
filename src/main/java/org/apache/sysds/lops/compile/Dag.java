@@ -35,6 +35,7 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -195,8 +196,8 @@ public class Dag<N extends Lop>
 		List<Lop> node_v = ILinearize.linearize(nodes);
 		
 		// add Prefetch and broadcast lops, if necessary
-		List<Lop> node_pf = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addPrefetchLop(node_v) : node_v;
-		List<Lop> node_bc = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addBroadcastLop(node_pf) : node_pf;
+		List<Lop> node_pf = ConfigurationManager.isPrefetchEnabled() ? addPrefetchLop(node_v) : node_v;
+		List<Lop> node_bc = ConfigurationManager.isBroadcastEnabled() ? addBroadcastLop(node_pf) : node_pf;
 		// TODO: Merge via a single traversal of the nodes
 
 		prefetchFederated(node_bc);

@@ -141,4 +141,11 @@
 
     <!-- set memory manager (static, unified) -->
     <sysds.caching.memorymanager>static</sysds.caching.memorymanager>
+	
+	<!-- Asynchronously trigger prefetch (Spark intermediate) -->
+    <sysds.async.prefetch>false</sysds.async.prefetch>
+
+    <!-- Asynchronously trigger broadcast (CP intermediate) -->
+    <sysds.async.broadcast>false</sysds.async.broadcast>
+
 </root>

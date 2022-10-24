@@ -281,8 +281,7 @@ getOps = function( Frame[string] allOps, Frame[String] refSol, Integer dist, Int
   else {
     allOps = map(allOps, "x -> (!x.equals(\"dummycoding\") & !x.equals(\"frequencyEncode\") & !x.equals(\"tomeklink\")
       & !x.equals(\"dbscan\") & !x.equals(\"WoE\") & !x.equals(\"pca\") & !x.equals(\"ppca\") &
-      !x.equals(\"abstain\") & !x.equals(\"underSampling\") & !x.equals(\"flipLabels\") & !x.equals(\"SMOTE\"))?x:\"0\"")
-    # & !x.equals(\"mice\") & !x.equals(\"dbscan\")
+      !x.equals(\"abstain\") & !x.equals(\"underSampling\") & !x.equals(\"flipLabels\") & !x.equals(\"mice\") & !x.equals(\"SMOTE\"))?x:\"0\"") 
     ref = frame(["imputeByMean", "winsorize", "scale"], rows=1, cols=3)
   }
   if(as.scalar(refSol[1,1]) == "NaN")

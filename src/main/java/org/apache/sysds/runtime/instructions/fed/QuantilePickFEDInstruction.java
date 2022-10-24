@@ -34,7 +34,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
-import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.PickByCount.OperationTypes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -48,12 +47,13 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.QuantilePickCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.spark.QuantilePickSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -80,8 +80,14 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 		this(op, in, in2, out, type, inmem, opcode, istr, FederatedOutput.NONE);
 	}
 
-	public static QuantilePickFEDInstruction parseInstruction( Instruction inst ){
-		return parseInstruction(inst.getInstructionString() + Lop.OPERAND_DELIMITOR + FederatedOutput.NONE);
+	public static QuantilePickFEDInstruction parseInstruction(QuantilePickCPInstruction instr) {
+		return new QuantilePickFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
+			instr.getOperationType(), instr.isInMem(), instr.getOpcode(), instr.getInstructionString());
+	}
+	
+	public static QuantilePickFEDInstruction parseInstruction(QuantilePickSPInstruction instr) {
+		return new QuantilePickFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
+				instr.getOperationType(), false, instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static QuantilePickFEDInstruction parseInstruction ( String str ) {

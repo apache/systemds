@@ -32,7 +32,7 @@ class TestPrint(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True)
         sleep(2.0)
         # Clear stdout ...
         cls.sds.get_stdout()

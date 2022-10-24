@@ -54,4 +54,18 @@ public class AggregateOperator extends Operator {
 			&& correction != CorrectionLocationType.INVALID)
 			|| increOp.fn.requiresCorrection();
 	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append("(");
+		sb.append(initialValue);
+		sb.append(", ");
+		sb.append(increOp);
+		sb.append(", ");
+		sb.append(correction);
+		sb.append(")");
+		return sb.toString();
+	}
 }

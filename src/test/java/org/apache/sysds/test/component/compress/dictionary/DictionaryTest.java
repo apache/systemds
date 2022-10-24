@@ -28,20 +28,20 @@ public class DictionaryTest {
 
 	@Test
 	public void testContainsValue() {
-		Dictionary d = new Dictionary(new double[] {1, 2, 3});
+		Dictionary d = Dictionary.createNoCheck(new double[] {1, 2, 3});
 		assertTrue(d.containsValue(1));
 		assertTrue(!d.containsValue(-1));
 	}
 
 	@Test
 	public void testContainsValue_nan() {
-		Dictionary d = new Dictionary(new double[] {Double.NaN, 2, 3});
+		Dictionary d = Dictionary.createNoCheck(new double[] {Double.NaN, 2, 3});
 		assertTrue(d.containsValue(Double.NaN));
 	}
 
 	@Test
 	public void testContainsValue_nan_not() {
-		Dictionary d = new Dictionary(new double[] {1, 2, 3});
+		Dictionary d = Dictionary.createNoCheck(new double[] {1, 2, 3});
 		assertTrue(!d.containsValue(Double.NaN));
 	}
 }

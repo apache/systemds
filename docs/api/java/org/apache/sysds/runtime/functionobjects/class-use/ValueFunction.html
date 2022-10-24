@@ -110,18 +110,22 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.compress.colgroup.dictionary">org.apache.sysds.runtime.compress.colgroup.dictionary</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.functionobjects">org.apache.sysds.runtime.functionobjects</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.matrix.operators">org.apache.sysds.runtime.matrix.operators</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -146,6 +150,28 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>[]</code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">SpoofMultiAggregate.</span><code><span class="memberNameLink"><a href="../../codegen/SpoofMultiAggregate.html#getAggFunctions(org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp%5B%5D)">getAggFunctions</a></span>&#8203;(<a href="../../codegen/SpoofCellwise.AggOp.html" title="enum in org.apache.sysds.runtime.codegen">SpoofCellwise.AggOp</a>[]&nbsp;aggOps)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section role="region"><a id="org.apache.sysds.runtime.compress.colgroup">
+<!--   -->
+</a>
+<h3>Uses of <a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a> in <a href="../../compress/colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../compress/colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> with parameters of type <a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>double[]</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">AColGroupCompressed.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/AColGroupCompressed.html#preAggRows(org.apache.sysds.runtime.functionobjects.ValueFunction)">preAggRows</a></span>&#8203;(<a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -210,6 +236,56 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/ADictionary.html#centralMomentWithDefault(org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithDefault</a></span>&#8203;(<a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                        int[]&nbsp;counts,
+                        double&nbsp;def,
+                        int&nbsp;nRows)</code></th>
+<td class="colLast">
+<div class="block">Central moment function to calculate the central moment of this column group with a default offset on all missing
+ tuples.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>abstract <a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/ADictionary.html#centralMomentWithDefault(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithDefault</a></span>&#8203;(<a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
+                        <a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                        int[]&nbsp;counts,
+                        double&nbsp;def,
+                        int&nbsp;nRows)</code></th>
+<td class="colLast">
+<div class="block">Central moment function to calculate the central moment of this column group with a default offset on all missing
+ tuples.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/Dictionary.html#centralMomentWithDefault(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithDefault</a></span>&#8203;(<a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
+                        <a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                        int[]&nbsp;counts,
+                        double&nbsp;def,
+                        int&nbsp;nRows)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/MatrixBlockDictionary.html#centralMomentWithDefault(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithDefault</a></span>&#8203;(<a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
+                        <a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                        int[]&nbsp;counts,
+                        double&nbsp;def,
+                        int&nbsp;nRows)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/QDictionary.html#centralMomentWithDefault(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithDefault</a></span>&#8203;(<a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
+                        <a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
+                        int[]&nbsp;counts,
+                        double&nbsp;def,
+                        int&nbsp;nRows)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/ADictionary.html#centralMomentWithReference(org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithReference</a></span>&#8203;(<a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
                           int[]&nbsp;counts,
                           double&nbsp;reference,
@@ -219,7 +295,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  tuple.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/ADictionary.html#centralMomentWithReference(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithReference</a></span>&#8203;(<a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
                           <a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
@@ -231,7 +307,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
  tuple.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/Dictionary.html#centralMomentWithReference(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithReference</a></span>&#8203;(<a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
                           <a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
@@ -240,7 +316,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                           int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">MatrixBlockDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/MatrixBlockDictionary.html#centralMomentWithReference(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithReference</a></span>&#8203;(<a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
                           <a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,
@@ -249,7 +325,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
                           int&nbsp;nRows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a></code></td>
 <th class="colSecond" scope="row"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../compress/colgroup/dictionary/QDictionary.html#centralMomentWithReference(org.apache.sysds.runtime.instructions.cp.CM_COV_Object,org.apache.sysds.runtime.functionobjects.ValueFunction,int%5B%5D,double,int)">centralMomentWithReference</a></span>&#8203;(<a href="../../instructions/cp/CM_COV_Object.html" title="class in org.apache.sysds.runtime.instructions.cp">CM_COV_Object</a>&nbsp;ret,
                           <a href="../ValueFunction.html" title="class in org.apache.sysds.runtime.functionobjects">ValueFunction</a>&nbsp;fn,

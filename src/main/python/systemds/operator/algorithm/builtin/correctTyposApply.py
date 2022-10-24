@@ -39,7 +39,7 @@ def correctTyposApply(strings: Frame,
      and simply swaps strings that do not occur often with similar strings that 
      occur more often
     
-     .. code-block:: txt
+     .. code-block::
     
        References:
        Fred J. Damerau. 1964. 

@@ -18,6 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import logging
+
 import numpy as np
 from systemds.context import SystemDSContext
 
@@ -34,4 +36,4 @@ with SystemDSContext() as sds:
     m_res = sds.from_numpy(m1) * sds.from_numpy(m2)
     # lets do the actual computation in SystemDS! The result is an numpy array
     m_res_np = m_res.compute()
-    print(m_res_np)
+    logging.info(m_res_np)

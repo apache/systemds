@@ -29,7 +29,7 @@ os.environ['SYSDS_QUIET'] = "1"
 
 test_dir = os.path.join("tests", "lineage")
 temp_dir = os.path.join(test_dir, "temp")
-
+trace_test_1 = os.path.join(test_dir,"trace1.dml")
 
 class TestLineageTrace(unittest.TestCase):
 
@@ -37,7 +37,7 @@ class TestLineageTrace(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -54,43 +54,30 @@ class TestLineageTrace(unittest.TestCase):
         python_trace = [x.strip().split("°")
                         for x in m_res.get_lineage_trace().split("\n")]
 
-        dml_script = (
-            "x = matrix(1, rows=10, cols=10);\n"
-            "y = x + x;\n"
-            "print(lineage(y));\n"
-        )
+      
+        sysds_trace = create_execute_and_trace_dml(trace_test_1)
 
-        sysds_trace = create_execute_and_trace_dml(dml_script, "trace1")
-
-        # It is not garantied, that the two lists 100% align to be the same.
+        # It is not guarantied, that the two lists 100% align to be the same.
         # Therefore for now, we only compare if the command is the same, in same order.
         python_trace_commands = [x[:1] for x in python_trace]
         dml_script_commands = [x[:1] for x in sysds_trace]
         self.assertEqual(python_trace_commands[0], dml_script_commands[0])
 
-# TODO add more tests cases.
 
-
-def create_execute_and_trace_dml(script: str, name: str):
-    script_file_name = temp_dir + "/" + name + ".dml"
-
+def create_execute_and_trace_dml(script: str):
     if not os.path.exists(temp_dir):
         os.makedirs(temp_dir)
 
-    with open(script_file_name, "w") as dml_file:
-        dml_file.write(script)
-
     # Call SYSDS!
-    result_file_name = temp_dir + "/" + name + ".txt"
+    result_file_name = temp_dir + "/tmp_res.txt"
 
-    command = "systemds " + script_file_name + \
+    command = "systemds " + script + \
         " > " + result_file_name + " 2> /dev/null"
     os.system(command)
     return parse_trace(result_file_name)
 
 
 def parse_trace(path: str):
-    pointer = 0
     data = []
     with open(path, "r") as log:
         for line in log:

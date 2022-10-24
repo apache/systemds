@@ -116,7 +116,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <main role="main">
 <div class="header">
 <div class="subTitle"><span class="packageLabelInType">Package</span>&nbsp;<a href="package-summary.html">org.apache.sysds.runtime.matrix.data.sketch</a></div>
-<h2 title="Interface MatrixSketch" class="title">Interface MatrixSketch&lt;T&gt;</h2>
+<h2 title="Interface MatrixSketch" class="title">Interface MatrixSketch</h2>
 </div>
 <div class="contentContainer">
 <div class="description">
@@ -127,7 +127,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd><code><a href="countdistinctapprox/KMVSketch.html" title="class in org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox">KMVSketch</a></code></dd>
 </dl>
 <hr>
-<pre>public interface <span class="typeNameLabel">MatrixSketch&lt;T&gt;</span></pre>
+<pre>public interface <span class="typeNameLabel">MatrixSketch</span></pre>
 </li>
 </ul>
 </div>
@@ -152,21 +152,21 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colFirst"><code><a href="../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.matrix.data.MatrixBlock)">create</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</code></th>
 <td class="colLast">
-<div class="block">Create a initial sketch of a given block.</div>
+<div class="block">Create an initial sketch of a given block.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMatrixValue(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">getMatrixValue</a></span>&#8203;(<a href="../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;blkIn)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getValue</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</code></th>
 <td class="colLast">
-<div class="block">Obtain matrix distinct count value from estimation Used for estimating distinct in rows or columns.</div>
+<div class="block">Get scalar distinct count from an input matrix block.</div>
 </td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code><a href="MatrixSketch.html" title="type parameter in MatrixSketch">T</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getScalarValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">getScalarValue</a></span>&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</code></th>
+<td class="colFirst"><code><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getValueFromSketch(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">getValueFromSketch</a></span>&#8203;(<a href="../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;blkIn)</code></th>
 <td class="colLast">
-<div class="block">Get scalar distinct count from a input matrix block.</div>
+<div class="block">Obtain matrix distinct count value from estimation Used for estimating distinct in rows or columns.</div>
 </td>
 </tr>
 <tr id="i3" class="rowColor">
@@ -202,29 +202,29 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="getScalarValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
+<a id="getValue(org.apache.sysds.runtime.matrix.data.MatrixBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getScalarValue</h4>
-<pre class="methodSignature"><a href="MatrixSketch.html" title="type parameter in MatrixSketch">T</a>&nbsp;getScalarValue&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</pre>
-<div class="block">Get scalar distinct count from a input matrix block.</div>
+<h4>getValue</h4>
+<pre class="methodSignature"><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;getValue&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</pre>
+<div class="block">Get scalar distinct count from an input matrix block.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>blkIn</code> - A input block to estimate the number of distinct values in</dd>
+<dd><code>blkIn</code> - An input block to estimate the number of distinct values in</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>The distinct count estimate</dd>
+<dd>The result matrix block containing the distinct count estimate</dd>
 </dl>
 </li>
 </ul>
-<a id="getMatrixValue(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">
+<a id="getValueFromSketch(org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getMatrixValue</h4>
-<pre class="methodSignature"><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;getMatrixValue&#8203;(<a href="../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;blkIn)</pre>
+<h4>getValueFromSketch</h4>
+<pre class="methodSignature"><a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;getValueFromSketch&#8203;(<a href="../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;blkIn)</pre>
 <div class="block">Obtain matrix distinct count value from estimation Used for estimating distinct in rows or columns.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -241,7 +241,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <h4>create</h4>
 <pre class="methodSignature"><a href="../../../instructions/spark/data/CorrMatrixBlock.html" title="class in org.apache.sysds.runtime.instructions.spark.data">CorrMatrixBlock</a>&nbsp;create&#8203;(<a href="../MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;blkIn)</pre>
-<div class="block">Create a initial sketch of a given block.</div>
+<div class="block">Create an initial sketch of a given block.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>blkIn</code> - A block to process</dd>
@@ -264,7 +264,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd><code>arg0</code> - Sketch one</dd>
 <dd><code>arg1</code> - Sketch two</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>The combined sketch</dd>
+<dd>The sketch union is a sketch</dd>
 </dl>
 </li>
 </ul>
@@ -282,7 +282,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd><code>arg0</code> - Sketch one</dd>
 <dd><code>arg1</code> - Sketch two</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>The intersected sketch</dd>
+<dd>The sketch intersection is a sketch</dd>
 </dl>
 </li>
 </ul>

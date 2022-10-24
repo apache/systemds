@@ -1,0 +1,46 @@
+<!--
+	Licensed to the Apache Software Foundation (ASF) under one
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+
+		http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->
+
+<h1 mat-dialog-title>Choose which coordinators and workers to show</h1>
+
+<div id="dashboard-dialog-content" mat-dialog-content>
+	<h4>Coordinators:</h4>
+	<section *ngFor="let coordinator of data.coordinators" class="dialog-dashboard-section">
+		<span class="dialog-dashboard-list-section">
+			<mat-checkbox (change)="changeSelectedCoordinators(coordinator.id)" class="dialog-dashboard-margin">
+				{{coordinator.name}}
+			</mat-checkbox>
+		</span>
+	</section>
+	<hr/>
+
+	<h4>Workers:</h4>
+	<section *ngFor="let worker of data.workers" class="dialog-dashboard-section">
+		<span class="dialog-dashboard-list-section">
+			<mat-checkbox (change)="changeSelectedWorkers(worker.id)" class="dialog-dashboard-margin">
+				{{worker.name}}
+			</mat-checkbox>
+		</span>
+	</section>
+</div>
+
+<div mat-dialog-actions>
+	<button (click)="onCancelClick()" mat-button>Cancel</button>
+	<button (click)="onSaveClick()" cdkFocusInitial mat-button>Save</button>
+</div>

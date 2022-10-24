@@ -18,9 +18,11 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import logging
+
 from systemds.context import SystemDSContext
-from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
 from systemds.examples.tutorials.mnist import DataManager
+from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
 
 d = DataManager()
 
@@ -33,10 +35,10 @@ with SystemDSContext() as sds:
     # Train Data
     X_ds = sds.from_numpy(X)
     Y_ds = sds.from_numpy(Y) + 1.0
-    bias = multiLogReg(X_ds, Y_ds, maxi=30)
+    bias = multiLogReg(X_ds, Y_ds, maxi=30, verbose=False)
     # Test data
     Xt_ds = sds.from_numpy(Xt)
     Yt_ds = sds.from_numpy(Yt) + 1.0
-    [m, y_pred, acc] = multiLogRegPredict(Xt_ds, bias, Yt_ds).compute()
+    [m, y_pred, acc] = multiLogRegPredict(Xt_ds, bias, Yt_ds, verbose=False).compute()
 
-print(acc)
+logging.info(acc)

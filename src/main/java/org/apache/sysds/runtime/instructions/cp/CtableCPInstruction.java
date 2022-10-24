@@ -185,4 +185,20 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 			LineageItemUtils.getLineage(ec, input1, input2, input3);
 		return Pair.of(output.getName(), new LineageItem(getOpcode(), linputs));
 	}
+
+	public CPOperand getOutDim1() {
+		return _outDim1;
+	}
+
+	public CPOperand getOutDim2() {
+		return _outDim2;
+	}
+
+	public boolean getIsExpand() {
+		return _isExpand;
+	}
+
+	public boolean getIgnoreZeros() {
+		return _ignoreZeros;
+	}
 }

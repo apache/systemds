@@ -171,7 +171,7 @@ extends <a href="LocalParamServer.html" title="class in org.apache.sysds.runtime
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static <a href="HEParamServer.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv">HEParamServer</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.instructions.cp.ListObject,java.lang.String,org.apache.sysds.parser.Statement.PSUpdateType,org.apache.sysds.parser.Statement.PSFrequency,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,int,java.lang.String,int,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int)">create</a></span>&#8203;(<a href="../../instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a>&nbsp;model,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#create(org.apache.sysds.runtime.instructions.cp.ListObject,java.lang.String,org.apache.sysds.parser.Statement.PSUpdateType,org.apache.sysds.parser.Statement.PSFrequency,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,int,java.lang.String,int,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int,int)">create</a></span>&#8203;(<a href="../../instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a>&nbsp;model,
       <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;aggFunc,
       <a href="../../../parser/Statement.PSUpdateType.html" title="enum in org.apache.sysds.parser">Statement.PSUpdateType</a>&nbsp;updateType,
       <a href="../../../parser/Statement.PSFrequency.html" title="enum in org.apache.sysds.parser">Statement.PSFrequency</a>&nbsp;freq,
@@ -181,7 +181,8 @@ extends <a href="LocalParamServer.html" title="class in org.apache.sysds.runtime
       int&nbsp;numBatchesPerEpoch,
       <a href="../caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;valFeatures,
       <a href="../caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;valLabels,
-      int&nbsp;nbatches)</code></th>
+      int&nbsp;nbatches,
+      int&nbsp;numBackupWorkers)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
@@ -207,7 +208,7 @@ extends <a href="LocalParamServer.html" title="class in org.apache.sysds.runtime
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.controlprogram.paramserv.<a href="LocalParamServer.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv">LocalParamServer</a></h3>
-<code><a href="LocalParamServer.html#create(org.apache.sysds.runtime.instructions.cp.ListObject,java.lang.String,org.apache.sysds.parser.Statement.PSUpdateType,org.apache.sysds.parser.Statement.PSFrequency,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,int,java.lang.String,int,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int,boolean)">create</a>, <a href="LocalParamServer.html#pull(int)">pull</a></code></li>
+<code><a href="LocalParamServer.html#create(org.apache.sysds.runtime.instructions.cp.ListObject,java.lang.String,org.apache.sysds.parser.Statement.PSUpdateType,org.apache.sysds.parser.Statement.PSFrequency,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,int,java.lang.String,int,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int,boolean,int)">create</a>, <a href="LocalParamServer.html#pull(int)">pull</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.apache.sysds.runtime.controlprogram.paramserv.ParamServer">
@@ -239,7 +240,7 @@ extends <a href="LocalParamServer.html" title="class in org.apache.sysds.runtime
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="create(org.apache.sysds.runtime.instructions.cp.ListObject,java.lang.String,org.apache.sysds.parser.Statement.PSUpdateType,org.apache.sysds.parser.Statement.PSFrequency,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,int,java.lang.String,int,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int)">
+<a id="create(org.apache.sysds.runtime.instructions.cp.ListObject,java.lang.String,org.apache.sysds.parser.Statement.PSUpdateType,org.apache.sysds.parser.Statement.PSFrequency,org.apache.sysds.runtime.controlprogram.context.ExecutionContext,int,java.lang.String,int,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,org.apache.sysds.runtime.controlprogram.caching.MatrixObject,int,int)">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -255,7 +256,8 @@ extends <a href="LocalParamServer.html" title="class in org.apache.sysds.runtime
                                    int&nbsp;numBatchesPerEpoch,
                                    <a href="../caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;valFeatures,
                                    <a href="../caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;valLabels,
-                                   int&nbsp;nbatches)</pre>
+                                   int&nbsp;nbatches,
+                                   int&nbsp;numBackupWorkers)</pre>
 </li>
 </ul>
 <a id="registerThread(int,org.apache.sysds.runtime.controlprogram.paramserv.FederatedPSControlThread)">

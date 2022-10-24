@@ -168,6 +168,25 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		decompressedVersion = new SoftReference<>(uncompressedMatrixBlock);
 	}
 
+	/**
+	 * Direct constructor with everything.
+	 * 
+	 * @param rl          Number of rows in the block
+	 * @param cl          Number of columns
+	 * @param nnz         Number of non zeros
+	 * @param overlapping If the matrix is overlapping
+	 * @param groups      The list of column groups
+	 */
+	public CompressedMatrixBlock(int rl, int cl, long nnz, boolean overlapping, List<AColGroup> groups) {
+		super(true);
+		this.rlen = rl;
+		this.clen = cl;
+		this.sparse = false;
+		this.nonZeros = nnz;
+		this.overlappingColGroups = overlapping;
+		this._colGroups = groups;
+	}
+
 	@Override
 	public void reset(int rl, int cl, boolean sp, long estnnz, double val) {
 		throw new DMLCompressionException("Invalid to reset a Compressed MatrixBlock");
@@ -370,13 +389,22 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		_colGroups = ColGroupIO.readGroups(in, rlen);
 	}
 
+	public static CompressedMatrixBlock read(DataInput in) throws IOException {
+		int rlen = in.readInt();
+		int clen = in.readInt();
+		long nonZeros = in.readLong();
+		boolean overlappingColGroups = in.readBoolean();
+		List<AColGroup> groups = ColGroupIO.readGroups(in, rlen);
+		return new CompressedMatrixBlock(rlen, clen, nonZeros, overlappingColGroups, groups);
+	}
+
 	@Override
 	public void write(DataOutput out) throws IOException {
-		if(getExactSizeOnDisk() > MatrixBlock.estimateSizeOnDisk(rlen, clen, nonZeros)) {
+		if(nonZeros > 0 && getExactSizeOnDisk() > MatrixBlock.estimateSizeOnDisk(rlen, clen, nonZeros)) {
 			// If the size of this matrixBlock is smaller in uncompressed format, then
 			// decompress and save inside an uncompressed column group.
 			MatrixBlock uncompressed = getUncompressed("for smaller serialization");
-			ColGroupUncompressed cg = new ColGroupUncompressed(uncompressed);
+			ColGroupUncompressed cg = (ColGroupUncompressed) ColGroupUncompressed.create(uncompressed);
 			allocateColGroup(cg);
 			nonZeros = cg.getNumberNonZeros(rlen);
 			// clear the soft reference to the decompressed version, since the one column group is perfectly,
@@ -724,7 +752,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return super.cmOperations(op, right);
 		AColGroup grp = _colGroups.get(0);
 		if(grp instanceof ColGroupUncompressed)
-			return ((ColGroupUncompressed) grp).getData().cmOperations(op);
+			return ((ColGroupUncompressed) grp).getData().cmOperations(op, right);
 		return getUncompressed().cmOperations(op, right);
 	}
 
@@ -1024,7 +1052,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		this._colGroups = new ArrayList<>(that.getColGroups().size());
 		for(AColGroup cg : that._colGroups)
-			_colGroups.add(cg.copy());
+			_colGroups.add(cg);
 
 		overlappingColGroups = that.overlappingColGroups;
 	}

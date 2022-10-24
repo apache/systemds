@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 import java.util.zip.Adler32;
 import java.util.zip.Checksum;
@@ -35,8 +36,11 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.fedplanner.FTypes;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -50,6 +54,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -64,16 +70,48 @@ import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
-	protected final ArrayList<CPOperand> _outputs;
+	protected final List<CPOperand> _outputs;
 
 	private MultiReturnParameterizedBuiltinFEDInstruction(Operator op, CPOperand input1, CPOperand input2,
-		ArrayList<CPOperand> outputs, String opcode, String istr) {
+		List<CPOperand> outputs, String opcode, String istr) {
 		super(FEDType.MultiReturnParameterizedBuiltin, op, input1, input2, null, opcode, istr);
 		_outputs = outputs;
 	}
 
 	public CPOperand getOutput(int i) {
 		return _outputs.get(i);
+	}
+
+	public static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
+		MultiReturnParameterizedBuiltinCPInstruction inst, ExecutionContext ec) {
+		if(inst.getOpcode().equals("transformencode") && inst.input1.isFrame()) {
+			CacheableData<?> fo = ec.getCacheableData(inst.input1);
+			if(fo.isFederatedExcept(FType.BROADCAST))
+				return MultiReturnParameterizedBuiltinFEDInstruction.parseInstruction(inst);
+		}
+		return null;
+	}
+
+	public static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
+		MultiReturnParameterizedBuiltinSPInstruction inst, ExecutionContext ec) {
+		if(inst.getOpcode().equals("transformencode") && inst.input1.isFrame()) {
+			CacheableData<?> fo = ec.getCacheableData(inst.input1);
+			if(fo.isFederatedExcept(FType.BROADCAST))
+				return MultiReturnParameterizedBuiltinFEDInstruction.parseInstruction(inst);
+		}
+		return null;
+	}
+
+	private static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
+		MultiReturnParameterizedBuiltinCPInstruction instr) {
+		return new MultiReturnParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.input1, instr.input2,
+			instr.getOutputs(), instr.getOpcode(), instr.getInstructionString());
+	}
+
+	private static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(
+		MultiReturnParameterizedBuiltinSPInstruction instr) {
+		return new MultiReturnParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.input1, instr.input2,
+			instr.getOutputs(), instr.getOpcode(), instr.getInstructionString());
 	}
 
 	public static MultiReturnParameterizedBuiltinFEDInstruction parseInstruction(String str) {
@@ -250,12 +288,12 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 	public static void encodeFederatedFrames(FederationMap fedMapping, MultiColumnEncoder globalencoder,
 		MatrixObject transformedMat) {
 		long varID = FederationUtils.getNextFedDataID();
-		FederationMap transformedFedMapping = fedMapping.mapParallel(varID, (range, data) -> {
+		LongAdder nnz = new LongAdder();
+		FederationMap tfFedMap = fedMapping.mapParallel(varID, (range, data) -> {
 			// copy because we reuse it
 			long[] beginDims = range.getBeginDims();
 			long[] endDims = range.getEndDims();
-			IndexRange ixRange = new IndexRange(beginDims[0], endDims[0], beginDims[1], endDims[1]).add(1);// make
-																											// 1-based
+			IndexRange ixRange = new IndexRange(beginDims[0], endDims[0], beginDims[1], endDims[1]).add(1);
 			IndexRange ixRangeInv = new IndexRange(0, beginDims[0], 0, beginDims[1]);
 
 			// get the encoder segment that is relevant for this federated worker
@@ -264,10 +302,12 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			encoder.updateIndexRanges(beginDims, endDims, globalencoder.getNumExtraCols(ixRangeInv));
 
 			try {
-				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(RequestType.EXEC_UDF,
+				FederatedResponse response = data.executeFederatedOperation(
+					new FederatedRequest(RequestType.EXEC_UDF,
 					-1, new ExecuteFrameEncoder(data.getVarID(), varID, encoder))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
+				nnz.add((Long)response.getData()[0]);
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);
@@ -276,9 +316,10 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		});
 
 		// construct a federated matrix with the encoded data
-		transformedMat.getDataCharacteristics().setDimension(transformedFedMapping.getMaxIndexInRange(0),
-			transformedFedMapping.getMaxIndexInRange(1));
-		transformedMat.setFedMapping(transformedFedMapping);
+		transformedMat.getDataCharacteristics()
+			.setDimension(tfFedMap.getMaxIndexInRange(0), tfFedMap.getMaxIndexInRange(1))
+			.setNonZeros(nnz.longValue());
+		transformedMat.setFedMapping(tfFedMap);
 	}
 
 	public static class CreateFrameEncoder extends FederatedUDF {
@@ -303,7 +344,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				.createEncoder(_spec, colNames, fb.getNumColumns(), null, _offset, _offset + fb.getNumColumns());
 
 			// build necessary structures for encoding
-			encoder.build(fb); // FIXME skip equi-height sorting
+			encoder.build(fb, OptimizerUtils.getTransformNumThreads()); // FIXME skip equi-height sorting
 			fo.release();
 
 			// create federated response
@@ -334,7 +375,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			// offset is applied on the Worker to shift the local encoders to their respective column
 			_encoder.applyColumnOffset();
 			// apply transformation
-			MatrixBlock mbout = _encoder.apply(fb);
+			MatrixBlock mbout = _encoder.apply(fb, OptimizerUtils.getTransformNumThreads());
 
 			// create output matrix object
 			MatrixObject mo = ExecutionContext.createMatrixObject(mbout);
@@ -343,7 +384,8 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			ec.setVariable(String.valueOf(_outputID), mo);
 
 			// return id handle
-			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+			return new FederatedResponse(
+				ResponseType.SUCCESS_EMPTY, mbout.getNonZeros());
 		}
 
 		@Override

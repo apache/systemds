@@ -30,7 +30,7 @@ sp2 = sp1 %*% t(sp1);
 v = ((v + v) * 1 - v) / (1+1);
 v = ((v + v) * 2 - v) / (2+1);
 
-# CP binary triggers the DAG of SP operations
-cp = sp2 + sum(v);
-R = sum(cp);
+# SP sum triggers the DAG of SP operations
+SP = sp2 + sum(v); #spark transformation
+R = sum(SP); #action
 write(R, $1, format="text");

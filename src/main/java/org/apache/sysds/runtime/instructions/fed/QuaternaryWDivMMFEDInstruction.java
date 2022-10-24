@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
@@ -69,6 +71,18 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 	{
 		super(FEDType.Quaternary, operator, in1, in2, in3, in4, out, opcode, instruction_str);
 		_qop = operator;
+	}
+
+	public static QuaternaryWDivMMFEDInstruction parseInstruction(QuaternaryCPInstruction instr) {
+		return new QuaternaryWDivMMFEDInstruction((QuaternaryOperator) instr.getOperator(), instr.input1, instr.input2,
+			instr.input3, instr.getInput4(), instr.output, instr.getOpcode(), instr.getInstructionString());
+	}
+
+	public static QuaternaryWDivMMFEDInstruction parseInstruction(QuaternarySPInstruction instr) {
+		String instrStr = rewriteSparkInstructionToCP(instr.getInstructionString());
+		String opcode = InstructionUtils.getInstructionPartsWithValueType(instrStr)[0];
+		return new QuaternaryWDivMMFEDInstruction((QuaternaryOperator) instr.getOperator(), instr.input1, instr.input2,
+			instr.input3, instr.getInput4(), instr.output, opcode, instrStr);
 	}
 
 	@Override

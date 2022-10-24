@@ -31,9 +31,11 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.spark.AggregateTernarySPInstruction;
 import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -44,6 +46,34 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 	private AggregateTernaryFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 		String opcode, String istr, FederatedOutput fedOut) {
 		super(FEDType.AggregateTernary, op, in1, in2, in3, out, opcode, istr, fedOut);
+	}
+
+	public static AggregateTernaryFEDInstruction parseInstruction(AggregateTernaryCPInstruction inst,
+		ExecutionContext ec) {
+		if(inst.input1.isMatrix() && ec.getCacheableData(inst.input1).isFederatedExcept(FType.BROADCAST) &&
+			inst.input2.isMatrix() && ec.getCacheableData(inst.input2).isFederatedExcept(FType.BROADCAST)) {
+			return parseInstruction(inst);
+		}
+		return null;
+	}
+
+	public static AggregateTernaryFEDInstruction parseInstruction(AggregateTernarySPInstruction inst,
+		ExecutionContext ec) {
+		if(inst.input1.isMatrix() && ec.getCacheableData(inst.input1).isFederatedExcept(FType.BROADCAST) &&
+			inst.input2.isMatrix() && ec.getCacheableData(inst.input2).isFederatedExcept(FType.BROADCAST)) {
+			return parseInstruction(inst);
+		}
+		return null;
+	}
+
+	private static AggregateTernaryFEDInstruction parseInstruction(AggregateTernaryCPInstruction instr) {
+		return new AggregateTernaryFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.input3,
+			instr.output, instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
+	}
+
+	private static AggregateTernaryFEDInstruction parseInstruction(AggregateTernarySPInstruction instr) {
+		return new AggregateTernaryFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.input3,
+			instr.output, instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
 	}
 
 	public static AggregateTernaryFEDInstruction parseInstruction(String str) {
@@ -67,8 +97,8 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 		}
 		else {
 			throw new DMLRuntimeException("AggregateTernaryInstruction.parseInstruction():: Unknown opcode " + opcode);
-		}
 	}
+}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {

@@ -366,7 +366,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return getDataCharacteristics().getCols();
 	}
 	
-	public long getBlocksize() {
+	public int getBlocksize() {
 		return getDataCharacteristics().getBlocksize();
 	}
 	
@@ -392,8 +392,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if(_fedMapping == null && _metaData instanceof MetaDataFormat){
 			MetaDataFormat mdf = (MetaDataFormat) _metaData;
 			if(mdf.getFileFormat() == FileFormat.FEDERATED){
-				InitFEDInstruction.federateMatrix(
-					this, ReaderWriterFederated.read(_hdfsFileName, mdf.getDataCharacteristics()));
+				if (this instanceof FrameObject)
+					InitFEDInstruction.federateFrame((FrameObject) this,
+						ReaderWriterFederated.read(_hdfsFileName, mdf.getDataCharacteristics()));
+				else
+					InitFEDInstruction.federateMatrix(
+							this, ReaderWriterFederated.read(_hdfsFileName, mdf.getDataCharacteristics()));
 				return true;
 			}
 		}

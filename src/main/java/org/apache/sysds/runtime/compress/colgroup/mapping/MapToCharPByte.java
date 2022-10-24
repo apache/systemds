@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -172,6 +174,13 @@ public class MapToCharPByte extends AMapToData {
 	}
 
 	@Override
+	public int[] getCounts(int[] ret) {
+		for(int i = 0; i < size(); i++)
+			ret[getIndex(i)]++;
+		return ret;
+	}
+
+	@Override
 	public AMapToData resize(int unique) {
 		final int size = _data_c.length;
 		AMapToData ret;
@@ -193,4 +202,49 @@ public class MapToCharPByte extends AMapToData {
 		return ret;
 	}
 
+	@Override
+	public int countRuns() {
+		int c = 1;
+		char prev = _data_c[0];
+		byte prev_b = _data_b[0];
+		for(int i = 1; i < _data_c.length; i++) {
+			c += prev == _data_c[i] && prev_b == _data_b[i] ? 0 : 1;
+			prev = _data_c[i];
+			prev_b = _data_b[i];
+		}
+		return c;
+	}
+
+	@Override
+	public AMapToData slice(int l, int u) {
+		return new MapToCharPByte(getUnique(), Arrays.copyOfRange(_data_c, l, u), Arrays.copyOfRange(_data_b, l, u));
+	}
+
+	@Override
+	public AMapToData append(AMapToData t) {
+		if(t instanceof MapToCharPByte) {
+			MapToCharPByte tb = (MapToCharPByte) t;
+			char[] tbb = tb._data_c;
+			byte[] tbbb = tb._data_b;
+			final int newSize = _data_c.length + t.size();
+			final int newDistinct = Math.max(getUnique(), t.getUnique());
+
+			// copy
+			char[] ret_c = Arrays.copyOf(_data_c, newSize);
+			System.arraycopy(tbb, 0, ret_c, _data_c.length, t.size());
+			byte[] ret_b = Arrays.copyOf(_data_b, newSize);
+			System.arraycopy(tbbb, 0, ret_b, _data_b.length, t.size());
+
+
+			return new MapToCharPByte(newDistinct, ret_c, ret_b);
+		}
+		else {
+			throw new NotImplementedException("Not implemented append on Bit map different type");
+		}
+	}
+
+	@Override
+	public AMapToData appendN(AMapToDataGroup[] d){
+		throw new NotImplementedException();
+	}
 }

@@ -54,6 +54,10 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		_in = in;
 	}
 
+	public SpoofOperator getSpoofOperator() {
+		return _op;
+	}
+
 	public Class<?> getOperatorClass() {
 		return _class;
 	}

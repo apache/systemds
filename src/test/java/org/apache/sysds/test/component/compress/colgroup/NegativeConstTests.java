@@ -53,12 +53,12 @@ public class NegativeConstTests {
 
 	@Test(expected = DMLCompressionException.class)
 	public void testConstConstruction_07() {
-		ColGroupConst.create(2, new Dictionary(new double[] {1, 2, 4}));
+		ColGroupConst.create(2, Dictionary.createNoCheck(new double[] {1, 2, 4}));
 	}
 
 	@Test(expected = DMLCompressionException.class)
 	public void testConstConstruction_08() {
-		ColGroupConst.create(4, new Dictionary(new double[] {1, 2, 4}));
+		ColGroupConst.create(4, Dictionary.createNoCheck(new double[] {1, 2, 4}));
 	}
 
 	@Test
@@ -68,7 +68,7 @@ public class NegativeConstTests {
 
 	@Test
 	public void testConstConstruction_allowed_02() {
-		ColGroupConst.create(3, new Dictionary(new double[] {1, 2, 4}));
+		ColGroupConst.create(3, Dictionary.createNoCheck(new double[] {1, 2, 4}));
 	}
 
 	@Test

@@ -1,0 +1,5 @@
+X = read($1)
+
+X_s = sum(X)
+
+print("Sum of Data: " + X_s)

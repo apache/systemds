@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":6,"i2":6,"i3":10,"i4":10,"i5":6,"i6":10,"i7":10,"i8":10,"i9":10};
+var data = {"i0":10,"i1":6,"i2":6,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -193,7 +193,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>abstract int</code></td>
+<td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getNumValues()">getNumValues</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Obtain number of distinct value groups in the column.</div>
@@ -343,7 +343,7 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>getNumValues</h4>
-<pre class="methodSignature">public abstract&nbsp;int&nbsp;getNumValues()</pre>
+<pre class="methodSignature">public final&nbsp;int&nbsp;getNumValues()</pre>
 <div class="block">Obtain number of distinct value groups in the column. this number is also the number of bitmaps, since there is
  one bitmap per value</div>
 <dl>

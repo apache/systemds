@@ -50,6 +50,11 @@ jobs:
       with:
         images: apache/systemds
         tags: ${{ github.event.inputs.version }},latest
+        labels: |
+          maintainer=Apache
+          org.opencontainers.image.title=SystemDS
+          org.opencontainers.image.description=An open source ML system for the end-to-end data science lifecycle
+          org.opencontainers.image.vendor=Apache
 
     # https://github.com/docker/setup-buildx-action
     - name: Set up Docker Buildx
@@ -71,7 +76,6 @@ jobs:
       with:
         context: .
         file: ./docker/sysds.Dockerfile
-        push: false
+        push: True
         tags: ${{ steps.meta.outputs.tags }}
-#       Use the below labels entry for images for cpu, gpu for the same release
-#       labels: ${{ steps.meta.outputs.labels }}
+        labels: ${{ steps.meta.outputs.labels }}

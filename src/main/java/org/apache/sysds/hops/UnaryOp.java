@@ -173,8 +173,8 @@ public class UnaryOp extends MultiThreadedHop
 							final boolean inplace = OptimizerUtils.ALLOW_UNARY_UPDATE_IN_PLACE &&
 								input.getParent().size() == 1 && (!(input instanceof DataOp) || !((DataOp) input).isRead());
 
-							k = isCumulativeUnaryOperation() || isExpensiveUnaryOperation() ? OptimizerUtils
-								.getConstrainedNumThreads(_maxNumThreads) : 1;
+							k = isCumulativeUnaryOperation() || isExpensiveUnaryOperation() ?
+								OptimizerUtils.getConstrainedNumThreads(_maxNumThreads) : 1;
 							ret = new Unary(input.constructLops(), _op, getDataType(), getValueType(), et, k, inplace);
 						}
 					}
@@ -295,9 +295,10 @@ public class UnaryOp extends MultiThreadedHop
 		}
 		
 		//in-memory cum sum (of partial aggregates)
+		//marked for update in-place if there was at least one aggregation level
 		if( TEMP.getOutputParameters().getNumRows()!=1 ){
 			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
-			Unary unary1 = new Unary( TEMP, _op, DataType.MATRIX, ValueType.FP64, ExecType.CP, k, true);
+			Unary unary1 = new Unary( TEMP, _op, DataType.MATRIX, ValueType.FP64, ExecType.CP, k, TEMP!=X);
 			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, blen, -1);
 			setLineNumbers(unary1);
 			TEMP = unary1;
@@ -450,14 +451,13 @@ public class UnaryOp extends MultiThreadedHop
 			|| _op == OpOp1.CAST_AS_INT);
 	}
 	
-	public boolean isExpensiveUnaryOperation()  {
-		return (_op == OpOp1.EXP 
-			|| _op == OpOp1.LOG
-			|| _op == OpOp1.SIGMOID
-			|| _op == OpOp1.COMPRESS
-			|| _op == OpOp1.DECOMPRESS
-			|| _op == OpOp1.MEDIAN
-			|| _op == OpOp1.IQM);
+	public boolean isExpensiveUnaryOperation() {
+		return (_op == OpOp1.EXP || _op == OpOp1.LOG
+			|| _op == OpOp1.ROUND || _op == OpOp1.FLOOR || _op == OpOp1.CEIL
+			|| _op == OpOp1.SIGMOID || _op == OpOp1.SPROP || _op == OpOp1.SOFTMAX
+			|| _op == OpOp1.TAN || _op == OpOp1.TANH || _op == OpOp1.ATAN
+			|| _op == OpOp1.COMPRESS || _op == OpOp1.DECOMPRESS
+			|| _op == OpOp1.MEDIAN || _op == OpOp1.IQM);
 	}
 	
 	public boolean isMetadataOperation() {

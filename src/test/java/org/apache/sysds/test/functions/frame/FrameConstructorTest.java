@@ -183,8 +183,7 @@ public class FrameConstructorTest extends AutomatedTestBase {
 		else if (type.equals("multi-row")) //multi-row data
 			out = new String[]{"1", "abc", "2.5", "TRUE"};
 		else {
-			System.out.println("invalid test type");
-			System.exit(1);
+			throw new RuntimeException("invalid test type");
 		}
 
 		for(int i=0; i<rows; i++)

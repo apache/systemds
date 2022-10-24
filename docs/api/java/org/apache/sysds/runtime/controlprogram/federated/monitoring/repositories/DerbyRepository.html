@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -180,38 +180,52 @@ implements <a href="IRepository.html" title="interface in org.apache.sysds.runti
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel)">createEntity</a></span>&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type,
-            <a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;model)</code></th>
+<td class="colFirst"><code>&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;<br><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createEntity(T)">createEntity</a></span>&#8203;(T&nbsp;model)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAllEntities(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum)">getAllEntities</a></span>&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type)</code></th>
+<td class="colFirst"><code>&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;<br><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;T&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAllEntities(java.lang.Class)">getAllEntities</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAllEntitiesByField(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,java.lang.Object)">getAllEntitiesByField</a></span>&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type,
-                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;fieldValue)</code></th>
+<td class="colFirst"><code>&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;<br><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;T&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAllEntitiesByField(java.lang.String,java.lang.Object,java.lang.Class)">getAllEntitiesByField</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fieldName,
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;value,
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code><a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,java.lang.Long)">getEntity</a></span>&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type,
-         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id)</code></th>
+<td class="colFirst"><code>&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;<br><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;T&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getAllEntitiesByField(java.lang.String,java.lang.Object,java.lang.Class,int)">getAllEntitiesByField</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fieldName,
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;value,
+                     <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type,
+                     int&nbsp;rowCount)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,java.lang.Long)">removeEntity</a></span>&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type,
-            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id)</code></th>
+<td class="colFirst"><code>&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;<br>T</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEntity(java.lang.Long,java.lang.Class)">getEntity</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id,
+         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#updateEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel)">updateEntity</a></span>&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type,
-            <a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;model)</code></th>
+<td class="colFirst"><code>&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;<br>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeAllEntitiesByField(java.lang.String,java.lang.Object,java.lang.Class)">removeAllEntitiesByField</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fieldName,
+                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;value,
+                        <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;<br>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeEntity(java.lang.Long,java.lang.Class)">removeEntity</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id,
+            <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;<br>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#updateEntity(T)">updateEntity</a></span>&#8203;(T&nbsp;model)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </table>
@@ -257,86 +271,120 @@ implements <a href="IRepository.html" title="interface in org.apache.sysds.runti
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="createEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel)">
+<a id="createEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel)">
+<!--   -->
+</a><a id="createEntity(T)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>createEntity</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;createEntity&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type,
-                         <a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;model)</pre>
+<pre class="methodSignature">public&nbsp;&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;createEntity&#8203;(T&nbsp;model)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="IRepository.html#createEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel)">createEntity</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
+<dd><code><a href="IRepository.html#createEntity(T)">createEntity</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
 </dl>
 </li>
 </ul>
-<a id="getEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,java.lang.Long)">
+<a id="getEntity(java.lang.Long,java.lang.Class)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getEntity</h4>
-<pre class="methodSignature">public&nbsp;<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;getEntity&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type,
-                                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id)</pre>
+<pre class="methodSignature">public&nbsp;&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;&nbsp;T&nbsp;getEntity&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id,
+                                         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="IRepository.html#getEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,java.lang.Long)">getEntity</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
+<dd><code><a href="IRepository.html#getEntity(java.lang.Long,java.lang.Class)">getEntity</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
 </dl>
 </li>
 </ul>
-<a id="getAllEntities(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum)">
+<a id="getAllEntities(java.lang.Class)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getAllEntities</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&gt;&nbsp;getAllEntities&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type)</pre>
+<pre class="methodSignature">public&nbsp;&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;T&gt;&nbsp;getAllEntities&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="IRepository.html#getAllEntities(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum)">getAllEntities</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
+<dd><code><a href="IRepository.html#getAllEntities(java.lang.Class)">getAllEntities</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
 </dl>
 </li>
 </ul>
-<a id="getAllEntitiesByField(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,java.lang.Object)">
+<a id="getAllEntitiesByField(java.lang.String,java.lang.Object,java.lang.Class)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getAllEntitiesByField</h4>
-<pre class="methodSignature">public&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&gt;&nbsp;getAllEntitiesByField&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type,
-                                                   <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;fieldValue)</pre>
+<pre class="methodSignature">public&nbsp;&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;T&gt;&nbsp;getAllEntitiesByField&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fieldName,
+                                                           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;value,
+                                                           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="IRepository.html#getAllEntitiesByField(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,java.lang.Object)">getAllEntitiesByField</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
+<dd><code><a href="IRepository.html#getAllEntitiesByField(java.lang.String,java.lang.Object,java.lang.Class)">getAllEntitiesByField</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
 </dl>
 </li>
 </ul>
-<a id="updateEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel)">
+<a id="getAllEntitiesByField(java.lang.String,java.lang.Object,java.lang.Class,int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getAllEntitiesByField</h4>
+<pre class="methodSignature">public&nbsp;&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;T&gt;&nbsp;getAllEntitiesByField&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fieldName,
+                                                           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;value,
+                                                           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type,
+                                                           int&nbsp;rowCount)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="IRepository.html#getAllEntitiesByField(java.lang.String,java.lang.Object,java.lang.Class,int)">getAllEntitiesByField</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="removeAllEntitiesByField(java.lang.String,java.lang.Object,java.lang.Class)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>removeAllEntitiesByField</h4>
+<pre class="methodSignature">public&nbsp;&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;&nbsp;void&nbsp;removeAllEntitiesByField&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;fieldName,
+                                                           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;value,
+                                                           <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="IRepository.html#removeAllEntitiesByField(java.lang.String,java.lang.Object,java.lang.Class)">removeAllEntitiesByField</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="updateEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseModel)">
+<!--   -->
+</a><a id="updateEntity(T)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>updateEntity</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;updateEntity&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type,
-                         <a href="../models/BaseEntityModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseEntityModel</a>&nbsp;model)</pre>
+<pre class="methodSignature">public&nbsp;&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;&nbsp;void&nbsp;updateEntity&#8203;(T&nbsp;model)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="IRepository.html#updateEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,org.apache.sysds.runtime.controlprogram.federated.monitoring.models.BaseEntityModel)">updateEntity</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
+<dd><code><a href="IRepository.html#updateEntity(T)">updateEntity</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
 </dl>
 </li>
 </ul>
-<a id="removeEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,java.lang.Long)">
+<a id="removeEntity(java.lang.Long,java.lang.Class)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>removeEntity</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;removeEntity&#8203;(<a href="EntityEnum.html" title="enum in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">EntityEnum</a>&nbsp;type,
-                         <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id)</pre>
+<pre class="methodSignature">public&nbsp;&lt;T extends <a href="../models/BaseModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">BaseModel</a>&gt;&nbsp;void&nbsp;removeEntity&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;id,
+                                               <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html?is-external=true" title="class or interface in java.lang" class="externalLink">Class</a>&lt;T&gt;&nbsp;type)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="IRepository.html#removeEntity(org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum,java.lang.Long)">removeEntity</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
+<dd><code><a href="IRepository.html#removeEntity(java.lang.Long,java.lang.Class)">removeEntity</a></code>&nbsp;in interface&nbsp;<code><a href="IRepository.html" title="interface in org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories">IRepository</a></code></dd>
 </dl>
 </li>
 </ul>

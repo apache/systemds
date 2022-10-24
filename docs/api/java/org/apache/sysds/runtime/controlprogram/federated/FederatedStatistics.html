@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9,"i33":9,"i34":9,"i35":9,"i36":9,"i37":9,"i38":9,"i39":9,"i40":9,"i41":9};
+var data = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9,"i33":9,"i34":9,"i35":9,"i36":9,"i37":9,"i38":9,"i39":9,"i40":9,"i41":9,"i42":9,"i43":9,"i44":9,"i45":9,"i46":9,"i47":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -204,221 +204,252 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggFedPutLineage(java.lang.String)">aggFedPutLineage</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;serializedLineage)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addDataObject(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel)">addDataObject</a></span>&#8203;(<a href="monitoring/models/DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">DataObjectModel</a>&nbsp;dataObject)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggFedSerializationReuse(long)">aggFedSerializationReuse</a></span>&#8203;(long&nbsp;bytes)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addEvent(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel)">addEvent</a></span>&#8203;(<a href="monitoring/models/EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventModel</a>&nbsp;event)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#addWorkerRequest(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel)">addWorkerRequest</a></span>&#8203;(<a href="monitoring/models/RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&nbsp;request)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggFedPutLineage(java.lang.String)">aggFedPutLineage</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;serializedLineage)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#aggFedSerializationReuse(long)">aggFedSerializationReuse</a></span>&#8203;(long&nbsp;bytes)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayFedIOExecStatistics()">displayFedIOExecStatistics</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayFedLookupTableStats()">displayFedLookupTableStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayFedLookupTableStats(long,long,double)">displayFedLookupTableStats</a></span>&#8203;(long&nbsp;fltGetCount,
                           long&nbsp;fltEntryCount,
                           double&nbsp;fltGetTime)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayFedPutLineageStats()">displayFedPutLineageStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayFedPutLineageStats(long,long)">displayFedPutLineageStats</a></span>&#8203;(long&nbsp;plCount,
                          long&nbsp;plItems)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayFedReuseReadStats()">displayFedReuseReadStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayFedReuseReadStats(long,long)">displayFedReuseReadStats</a></span>&#8203;(long&nbsp;rrHits,
                         long&nbsp;rrBytes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayFedSerializationReuseStats()">displayFedSerializationReuseStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayFedSerializationReuseStats(long,long)">displayFedSerializationReuseStats</a></span>&#8203;(long&nbsp;srCount,
                                  long&nbsp;srBytes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayFedWorkers()">displayFedWorkers</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayFedWorkerStats()">displayFedWorkerStats</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayNetworkTrafficStatistics()">displayNetworkTrafficStatistics</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayStatistics(int)">displayStatistics</a></span>&#8203;(int&nbsp;numHeavyHitters)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#displayStatistics(org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection,int)">displayStatistics</a></span>&#8203;(<a href="FederatedStatistics.FedStatsCollection.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedStatistics.FedStatsCollection</a>&nbsp;fedStats,
                  int&nbsp;numHeavyHitters)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
-<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Triple&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/LocalDateTime.html?is-external=true" title="class or interface in java.time" class="externalLink">LocalDateTime</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&gt;&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCoordinatorsTrafficBytes()">getCoordinatorsTrafficBytes</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i17" class="rowColor">
-<td class="colFirst"><code>static double</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCPUUsage()">getCPUUsage</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i18" class="altColor">
-<td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedLookupTableEntryCount()">getFedLookupTableEntryCount</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
 <tr id="i19" class="rowColor">
-<td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedLookupTableGetCount()">getFedLookupTableGetCount</a></span>()</code></th>
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/TrafficModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">TrafficModel</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCoordinatorsTrafficBytes()">getCoordinatorsTrafficBytes</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i20" class="altColor">
 <td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedLookupTableGetTime()">getFedLookupTableGetTime</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedLookupTableEntryCount()">getFedLookupTableEntryCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i21" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedPutLineageCount()">getFedPutLineageCount</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedLookupTableGetCount()">getFedLookupTableGetCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i22" class="altColor">
 <td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedPutLineageItems()">getFedPutLineageItems</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedLookupTableGetTime()">getFedLookupTableGetTime</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i23" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedReuseReadBytesCount()">getFedReuseReadBytesCount</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedPutLineageCount()">getFedPutLineageCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i24" class="altColor">
 <td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedReuseReadHitCount()">getFedReuseReadHitCount</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedPutLineageItems()">getFedPutLineageItems</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i25" class="rowColor">
 <td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedSerializationReuseBytes()">getFedSerializationReuseBytes</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedReuseReadBytesCount()">getFedReuseReadBytesCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i26" class="altColor">
 <td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedSerializationReuseCount()">getFedSerializationReuseCount</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedReuseReadHitCount()">getFedReuseReadHitCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i27" class="rowColor">
-<td class="colFirst"><code>static double</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getMemoryUsage()">getMemoryUsage</a></span>()</code></th>
+<td class="colFirst"><code>static long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedSerializationReuseBytes()">getFedSerializationReuseBytes</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i28" class="altColor">
 <td class="colFirst"><code>static long</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getTotalFedTransferCount()">getTotalFedTransferCount</a></span>()</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getFedSerializationReuseCount()">getFedSerializationReuseCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i29" class="rowColor">
+<td class="colFirst"><code>static long</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getTotalFedTransferCount()">getTotalFedTransferCount</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i30" class="altColor">
+<td class="colFirst"><code>static <a href="monitoring/models/UtilizationModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">UtilizationModel</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getUtilization()">getUtilization</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i31" class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">DataObjectModel</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getWorkerDataObjects()">getWorkerDataObjects</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i32" class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventModel</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getWorkerEvents()">getWorkerEvents</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i33" class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getWorkerRequests()">getWorkerRequests</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incAsyncPrefetchCount(long)">incAsyncPrefetchCount</a></span>&#8203;(long&nbsp;c)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incFederated(org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType,java.util.List)">incFederated</a></span>&#8203;(<a href="FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a>&nbsp;rqt,
             <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;data)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incFedLookupTableEntryCount()">incFedLookupTableEntryCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incFedLookupTableGetCount()">incFedLookupTableGetCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incFedLookupTableGetTime(long)">incFedLookupTableGetTime</a></span>&#8203;(long&nbsp;time)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incFedReuseReadBytesCount(org.apache.sysds.runtime.controlprogram.caching.CacheableData)">incFedReuseReadBytesCount</a></span>&#8203;(<a href="../caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;data)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incFedReuseReadBytesCount(org.apache.sysds.runtime.controlprogram.caching.CacheBlock)">incFedReuseReadBytesCount</a></span>&#8203;(<a href="../caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;cb)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incFedReuseReadHitCount()">incFedReuseReadHitCount</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incFedTransfer(java.lang.Object,java.lang.String)">incFedTransfer</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;dataObj,
-              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;host)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#incFedTransfer(java.lang.Object,java.lang.String,java.lang.Long)">incFedTransfer</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;dataObj,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;host,
+              <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;pid)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#logServerTraffic(long,long)">logServerTraffic</a></span>&#8203;(long&nbsp;read,
                 long&nbsp;written)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#logWorkerTraffic(long,long)">logWorkerTraffic</a></span>&#8203;(long&nbsp;read,
                 long&nbsp;written)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#registerFedWorker(java.lang.String,int)">registerFedWorker</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;host,
                  int&nbsp;port)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i46" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeDataObjects()">removeDataObjects</a></span>()</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#reset()">reset</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
@@ -496,14 +527,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
                                 <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;data)</pre>
 </li>
 </ul>
-<a id="incFedTransfer(java.lang.Object,java.lang.String)">
+<a id="incFedTransfer(java.lang.Object,java.lang.String,java.lang.Long)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>incFedTransfer</h4>
 <pre class="methodSignature">public static&nbsp;void&nbsp;incFedTransfer&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&nbsp;dataObj,
-                                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;host)</pre>
+                                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>&nbsp;host,
+                                  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&nbsp;pid)</pre>
 </li>
 </ul>
 <a id="incAsyncPrefetchCount(long)">
@@ -613,25 +645,79 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <ul class="blockList">
 <li class="blockList">
 <h4>getCoordinatorsTrafficBytes</h4>
-<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.commons.lang3.tuple.Triple&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/LocalDateTime.html?is-external=true" title="class or interface in java.time" class="externalLink">LocalDateTime</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a>,&#8203;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html?is-external=true" title="class or interface in java.lang" class="externalLink">Long</a>&gt;&gt;&nbsp;getCoordinatorsTrafficBytes()</pre>
+<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/TrafficModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">TrafficModel</a>&gt;&nbsp;getCoordinatorsTrafficBytes()</pre>
 </li>
 </ul>
-<a id="getCPUUsage()">
+<a id="getWorkerEvents()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getCPUUsage</h4>
-<pre class="methodSignature">public static&nbsp;double&nbsp;getCPUUsage()</pre>
+<h4>getWorkerEvents</h4>
+<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventModel</a>&gt;&nbsp;getWorkerEvents()</pre>
 </li>
 </ul>
-<a id="getMemoryUsage()">
+<a id="getWorkerRequests()">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getMemoryUsage</h4>
-<pre class="methodSignature">public static&nbsp;double&nbsp;getMemoryUsage()</pre>
+<h4>getWorkerRequests</h4>
+<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&gt;&nbsp;getWorkerRequests()</pre>
+</li>
+</ul>
+<a id="getWorkerDataObjects()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getWorkerDataObjects</h4>
+<pre class="methodSignature">public static&nbsp;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="monitoring/models/DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">DataObjectModel</a>&gt;&nbsp;getWorkerDataObjects()</pre>
+</li>
+</ul>
+<a id="addEvent(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>addEvent</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;addEvent&#8203;(<a href="monitoring/models/EventModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">EventModel</a>&nbsp;event)</pre>
+</li>
+</ul>
+<a id="addWorkerRequest(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>addWorkerRequest</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;addWorkerRequest&#8203;(<a href="monitoring/models/RequestModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">RequestModel</a>&nbsp;request)</pre>
+</li>
+</ul>
+<a id="addDataObject(org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>addDataObject</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;addDataObject&#8203;(<a href="monitoring/models/DataObjectModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">DataObjectModel</a>&nbsp;dataObject)</pre>
+</li>
+</ul>
+<a id="removeDataObjects()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>removeDataObjects</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;removeDataObjects()</pre>
+</li>
+</ul>
+<a id="getUtilization()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getUtilization</h4>
+<pre class="methodSignature">public static&nbsp;<a href="monitoring/models/UtilizationModel.html" title="class in org.apache.sysds.runtime.controlprogram.federated.monitoring.models">UtilizationModel</a>&nbsp;getUtilization()</pre>
 </li>
 </ul>
 <a id="getFedLookupTableGetTime()">

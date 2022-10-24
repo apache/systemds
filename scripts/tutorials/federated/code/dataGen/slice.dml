@@ -1,0 +1,13 @@
+
+
+
+X = read( "data/" + $1 + ".data") 
+parts = $2
+partsSize = ceil(nrow(X) / parts)
+
+for(i in 0:parts-1){
+    start = i*partsSize + 1
+    end = min((i+1)*partsSize , nrow(X))
+    slice = X[start: end]
+    write(slice, "data/" + $1 + "_" + parts+ "_"+ (i + 1)+ ".data",format="binary")
+}

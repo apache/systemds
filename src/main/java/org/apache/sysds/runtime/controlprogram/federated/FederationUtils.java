@@ -145,13 +145,14 @@ public class FederationUtils {
 					Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX,
 					Lop.OPERAND_DELIMITOR + String.valueOf(outputId) + Lop.DATATYPE_PREFIX);
 			}
-			
+
 			fr[j] = new FederatedRequest(RequestType.EXEC_INST, outputId, (Object) linst[j]);
 		}
 		return fr;
 	}
 
 	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn, ExecType type, boolean rmFedOutputFlag) {
+		boolean isFedInstr = inst.startsWith(ExecType.FED.name() + Lop.OPERAND_DELIMITOR);
 		String linst = InstructionUtils.replaceOperand(inst, 0, type.name());
 		linst = linst.replace(Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR+outputId+Lop.DATATYPE_PREFIX);
 		for(int i=0; i<varOldIn.length; i++)
@@ -161,7 +162,7 @@ public class FederationUtils {
 					Lop.OPERAND_DELIMITOR+(varNewIn[i])+Lop.DATATYPE_PREFIX);
 				linst = linst.replace("="+varOldIn[i].getName(), "="+(varNewIn[i])); //parameterized
 			}
-		if(rmFedOutputFlag)
+		if(rmFedOutputFlag && isFedInstr)
 			linst = InstructionUtils.removeFEDOutputFlag(linst);
 		return new FederatedRequest(RequestType.EXEC_INST, outputId, linst);
 	}
@@ -538,7 +539,13 @@ public class FederationUtils {
 	public static MatrixBlock bindResponses(List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses, long[] dims)
 		throws Exception
 	{
-		MatrixBlock ret = new MatrixBlock((int) dims[0], (int) dims[1], false);
+		long totalNNZ = 0;
+		for(Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
+			FederatedResponse response = readResponse.getRight().get();
+			MatrixBlock multRes = (MatrixBlock) response.getData()[0];
+			totalNNZ += multRes.getNonZeros();
+		}
+		MatrixBlock ret = new MatrixBlock((int) dims[0], (int) dims[1], MatrixBlock.evalSparseFormatInMemory(dims[0], dims[1], totalNNZ));
 		for(Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
 			FederatedRange range = readResponse.getLeft();
 			FederatedResponse response = readResponse.getRight().get();
@@ -569,5 +576,16 @@ public class FederationUtils {
 	public static ObjectDecoder decoder() {
 		return new ObjectDecoder(Integer.MAX_VALUE,
 			ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader()));
+	}
+
+	public static long sumNonZeros(Future<FederatedResponse>[] responses) {
+		long nnz = 0;
+		try {
+			for( Future<FederatedResponse> r : responses)
+				nnz += (Long)r.get().getData()[0];
+			return nnz;
+		}
+		catch(Exception ex) { }
+		return -1;
 	}
 }

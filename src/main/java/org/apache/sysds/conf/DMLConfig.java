@@ -82,6 +82,7 @@ public class DMLConfig
 	public static final String COMPRESSED_VALID_COMPRESSIONS = "sysds.compressed.valid.compressions";
 	public static final String COMPRESSED_OVERLAPPING = "sysds.compressed.overlapping"; 
 	public static final String COMPRESSED_SAMPLING_RATIO = "sysds.compressed.sampling.ratio"; 
+	public static final String COMPRESSED_SOFT_REFERENCE_COUNT = "sysds.compressed.softreferencecount"; 
 	public static final String COMPRESSED_COCODE    = "sysds.compressed.cocode"; 
 	public static final String COMPRESSED_COST_MODEL= "sysds.compressed.costmodel";
 	public static final String COMPRESSED_TRANSPOSE = "sysds.compressed.transpose";
@@ -120,7 +121,10 @@ public class DMLConfig
 	public static final String FEDERATED_PLANNER = "sysds.federated.planner";
 	public static final String FEDERATED_PAR_INST = "sysds.federated.par_inst";
 	public static final String FEDERATED_PAR_CONN = "sysds.federated.par_conn";
+	public static final String FEDERATED_READCACHE = "sysds.federated.readcache";
 	public static final String PRIVACY_CONSTRAINT_MOCK = "sysds.federated.priv_mock";
+	/** Trigger frequency of the collecting and parsing statistics process on registered workers for monitoring in seconds */
+	public static final String FEDERATED_MONITOR_FREQUENCY = "sysds.federated.monitorFreq";
 	public static final int DEFAULT_FEDERATED_PORT = 4040; // borrowed default Spark Port
 	public static final int DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS = 8;
 	
@@ -156,6 +160,7 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_VALID_COMPRESSIONS, "SDC,DDC");
 		_defaultVals.put(COMPRESSED_OVERLAPPING, "true" );
 		_defaultVals.put(COMPRESSED_SAMPLING_RATIO, "0.01");
+		_defaultVals.put(COMPRESSED_SOFT_REFERENCE_COUNT, "true");
 		_defaultVals.put(COMPRESSED_COCODE,      "AUTO");
 		_defaultVals.put(COMPRESSED_COST_MODEL,  "AUTO");
 		_defaultVals.put(COMPRESSED_TRANSPOSE,   "auto");
@@ -190,6 +195,8 @@ public class DMLConfig
 		_defaultVals.put(FEDERATED_PLANNER,      FederatedPlanner.RUNTIME.name());
 		_defaultVals.put(FEDERATED_PAR_CONN,     "-1"); // vcores
 		_defaultVals.put(FEDERATED_PAR_INST,     "-1"); // vcores
+		_defaultVals.put(FEDERATED_READCACHE,    "true"); // vcores
+		_defaultVals.put(FEDERATED_MONITOR_FREQUENCY, "3");
 		_defaultVals.put(PRIVACY_CONSTRAINT_MOCK, null);
 	}
 	
@@ -436,13 +443,14 @@ public class DMLConfig
 			LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL, DEFAULT_BLOCK_SIZE,
 			CP_PARALLEL_OPS, CP_PARALLEL_IO, PARALLEL_ENCODE, NATIVE_BLAS, NATIVE_BLAS_DIR,
 			COMPRESSED_LINALG, COMPRESSED_LOSSY, COMPRESSED_VALID_COMPRESSIONS, COMPRESSED_OVERLAPPING,
-			COMPRESSED_SAMPLING_RATIO, COMPRESSED_COCODE, COMPRESSED_TRANSPOSE, DAG_LINEARIZATION,
+			COMPRESSED_SAMPLING_RATIO, COMPRESSED_SOFT_REFERENCE_COUNT,
+			COMPRESSED_COCODE, COMPRESSED_TRANSPOSE, DAG_LINEARIZATION,
 			CODEGEN, CODEGEN_API, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 			STATS_MAX_WRAP_LEN, LINEAGECACHESPILL, COMPILERASSISTED_RW, BUFFERPOOL_LIMIT, MEMORY_MANAGER,
 			PRINT_GPU_MEMORY_INFO, AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION,
 			GPU_EVICTION_POLICY, LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE, GPU_MEMORY_ALLOCATOR,
 			GPU_MEMORY_UTILIZATION_FACTOR, USE_SSL_FEDERATED_COMMUNICATION, DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT,
-			FEDERATED_TIMEOUT
+			FEDERATED_TIMEOUT, FEDERATED_MONITOR_FREQUENCY
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

@@ -21,7 +21,7 @@
 
 import unittest
 
-import numpy as np
+from time import sleep
 from systemds.context import SystemDSContext
 
 class TestSource_NoReturn(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestSource_NoReturn(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -41,6 +41,7 @@ class TestSource_NoReturn(unittest.TestCase):
         s = self.sds.source(self.src_path,"test")
         c = s.no_return()
         c.compute()
+        sleep(1) # to allow the std buffer to fill
         stdout = self.sds.get_stdout()
         self.assertEqual(4.2 + 14 * 2,float(stdout[0]))
 
@@ -48,6 +49,7 @@ class TestSource_NoReturn(unittest.TestCase):
         s = self.sds.source(self.src_path,"test")
         c = s.no_return(4)
         c.compute()
+        sleep(1) # to allow the std buffer to fill
         stdout = self.sds.get_stdout()
         self.assertEqual(4 + 14 * 2,float(stdout[0]))
 
@@ -55,6 +57,7 @@ class TestSource_NoReturn(unittest.TestCase):
         s = self.sds.source(self.src_path,"test")
         c = s.no_return(a=14)
         c.compute()
+        sleep(1) # to allow the std buffer to fill
         stdout = self.sds.get_stdout()
         self.assertEqual(14 + 14 * 2,float(stdout[0]))
 

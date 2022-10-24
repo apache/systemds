@@ -22,6 +22,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -92,7 +93,20 @@ public abstract class AOffset implements Serializable {
 			cacheIterator(it.clone(), row);
 			return it;
 		}
+	}
 
+	/**
+	 * Get an iterator that is pointing only at offsets from specific offset
+	 * 
+	 * @param row The row requested.
+	 * @return AOffsetIterator that iterate through index only offset values.
+	 */
+	public AOffsetIterator getOffsetIterator(int row) {
+		AOffsetIterator it = getOffsetIterator();
+		final int last = Math.min(row, getOffsetToLast());
+		while(it.value() < last)
+			it.next();
+		return it;
 	}
 
 	/**
@@ -153,13 +167,6 @@ public abstract class AOffset implements Serializable {
 	 */
 	public abstract int getSize();
 
-	/**
-	 * Get the length of the underlying offsets lists.
-	 * 
-	 * @return The number of offsets.
-	 */
-	public abstract int getOffsetsLength();
-
 	public final void preAggregateDenseMap(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
 		AMapToData data) {
 		// multi row iterator.
@@ -172,6 +179,7 @@ public abstract class AOffset implements Serializable {
 			final DenseBlock db = m.getDenseBlock();
 			final double[] mV = db.values(rl);
 			final int off = db.pos(rl);
+			// guaranteed contiguous.
 			preAggregateDenseMapRow(mV, off, preAV, cu, nVal, data, it);
 		}
 		else {
@@ -215,7 +223,9 @@ public abstract class AOffset implements Serializable {
 
 	protected final void preAggregateDenseMapRows(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
 		int nVal, AMapToData data, AIterator it) {
-		if(cu <= getOffsetToLast())
+		if(!db.isContiguous())
+			throw new NotImplementedException("Not implemented support for preAggregate non contiguous dense matrix");
+		else if(cu <= getOffsetToLast())
 			preAggregateDenseMapRowsBelowEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
 		else
 			preAggregateDenseMapRowsEnd(db, preAV, rl, ru, cl, cu, nVal, data, it);
@@ -330,6 +340,8 @@ public abstract class AOffset implements Serializable {
 
 		while(i < last) { // while we are not done iterating
 			for(int r = rl; r < ru; r++) {
+				if(sb.isEmpty(r))
+					continue;
 				final int off = r - rl;
 				int apos = aOffs[off]; // current offset
 				final int alen = sb.size(r) + sb.pos(r);
@@ -346,6 +358,8 @@ public abstract class AOffset implements Serializable {
 
 		// process final element
 		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
 			final int off = r - rl;
 			int apos = aOffs[off];
 			final int alen = sb.size(r) + sb.pos(r);
@@ -354,7 +368,7 @@ public abstract class AOffset implements Serializable {
 				apos++;
 
 			if(apos < alen && aix[apos] == last)
-				preAV[off* nVal + data.getIndex(it.getDataIndex())] += sb.values(r)[apos];
+				preAV[off * nVal + data.getIndex(it.getDataIndex())] += sb.values(r)[apos];
 			aOffs[off] = apos;
 		}
 	}
@@ -377,26 +391,98 @@ public abstract class AOffset implements Serializable {
 		return false;
 	}
 
+	protected abstract AOffset moveIndex(int m);
+
+	protected abstract int getLength();
+
+	public OffsetSliceInfo slice(int l, int u) {
+		AIterator it = getIterator(l);
+		if(it == null || it.value() >= u)
+			return new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+		else if(l <= getOffsetToFirst() && u > getOffsetToLast()) {
+			if(l == 0)
+				return new OffsetSliceInfo(0, getSize(), this);
+			else
+				return new OffsetSliceInfo(0, getSize(), moveIndex(l));
+		}
+		int low = it.getDataIndex();
+		int lowOff = it.getOffsetsIndex();
+		int lowValue = it.value();
+
+		int high = it.getDataIndex();
+		int highOff = it.getOffsetsIndex();
+		int highValue = it.value();
+		if(u >= getOffsetToLast()) { // If including the last do not iterate.
+			high = getSize() - 1;
+			highOff = getLength();
+			highValue = getOffsetToLast();
+		}
+		else { // Have to iterate through until we find last.
+			while(it.value() < u) {
+				high = it.getDataIndex();
+				highOff = it.getOffsetsIndex();
+				highValue = it.value();
+				it.next();
+			}
+		}
+
+		lowValue -= l;
+		highValue -= l;
+
+		if(low == high)
+			return new OffsetSliceInfo(low, high + 1, new OffsetSingle(lowValue));
+		else if(low + 1 == high)
+			return new OffsetSliceInfo(low, high + 1, new OffsetTwo(lowValue, highValue));
+		else if(this instanceof OffsetByte)
+			return ((OffsetByte) this).slice(lowOff, highOff, lowValue, highValue, low, high);
+		else // if(this instanceof OffsetChar)
+			return ((OffsetChar) this).slice(lowOff, highOff, lowValue, highValue, low, high);
+	}
+
+	/**
+	 * Append the offsets from that other offset to the offsets in this.
+	 * 
+	 * @param t that offsets
+	 * @return this offsets followed by thats offsets.
+	 */
+	public AOffset append(AOffset t){
+		throw new NotImplementedException();
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
 		final AIterator it = getIterator();
-		final int last = getOffsetToLast();
-		sb.append("[");
-		while(it.offset < last) {
+		if(it != null) {
+			final int last = getOffsetToLast();
+			sb.append("[");
+			while(it.offset < last) {
+				sb.append(it.offset);
+				sb.append(", ");
+				it.next();
+			}
 			sb.append(it.offset);
-			sb.append(", ");
-			it.next();
-		}
-		sb.append(it.offset);
-		sb.append("]");
+			sb.append("]");
 
-		if(it.offset != last)
-			throw new DMLCompressionException(
-				"Invalid iteration of offset when making string, the last offset is not equal to a iteration: "
-					+ getOffsetToLast() + " String: " + sb.toString());
+			if(it.offset != last)
+				throw new DMLCompressionException(
+					"Invalid iteration of offset when making string, the last offset is not equal to a iteration: "
+						+ getOffsetToLast() + " String: " + sb.toString());
+		}
 		return sb.toString();
+	}
+
+	public static final class OffsetSliceInfo {
+		public final int lIndex;
+		public final int uIndex;
+		public final AOffset offsetSlice;
+
+		protected OffsetSliceInfo(int l, int u, AOffset off) {
+			this.lIndex = l;
+			this.uIndex = u;
+			this.offsetSlice = off;
+		}
 	}
 
 	protected static class OffsetCache {

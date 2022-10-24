@@ -64,12 +64,6 @@ public final class MultiColBitmap extends ABitmap {
 	}
 
 	@Override
-	public int getNumValues() {
-		// values are always guaranteed to be allocated
-		return _values.length;
-	}
-
-	@Override
 	public int getNumColumns() {
 		// values are always guaranteed to be allocated
 		return _values[0].length;

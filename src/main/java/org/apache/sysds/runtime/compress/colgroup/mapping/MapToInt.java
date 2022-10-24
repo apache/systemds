@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -187,33 +189,86 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
-	public void count(int[] ret) {
+	public int[] getCounts(int[] ret) {
 		for(int i = 0; i < _data.length; i++)
 			ret[_data[i]]++;
+		return ret;
 	}
 
+	@Override
+	public int countRuns() {
+		int c = 1;
+		int prev = _data[0];
+		for(int i = 1; i < _data.length; i++) {
+			c += prev == _data[i] ? 0 : 1;
+			prev = _data[i];
+		}
+		return c;
+	}
 
 	@Override
-	public AMapToData resize(int unique){
+	public AMapToData resize(int unique) {
 		final int size = _data.length;
 		AMapToData ret;
 		if(unique <= 1)
 			return new MapToZero(size);
 		else if(unique == 2 && size > 32)
 			ret = new MapToBit(unique, size);
-		else if (unique <= 127)
+		else if(unique <= 127)
 			ret = new MapToUByte(unique, size);
 		else if(unique < 256)
 			ret = new MapToByte(unique, size);
-		else if(unique < Character.MAX_VALUE -1)
+		else if(unique < Character.MAX_VALUE - 1)
 			ret = new MapToChar(unique, size);
 		else if(unique < MapToCharPByte.max)
 			ret = new MapToCharPByte(unique, size);
-		else{
+		else {
 			setUnique(unique);
 			return this;
 		}
 		ret.copyInt(_data);
 		return ret;
+	}
+
+	@Override
+	public AMapToData slice(int l, int u) {
+		return new MapToInt(getUnique(), Arrays.copyOfRange(_data, l, u));
+	}
+
+	@Override
+	public AMapToData append(AMapToData t) {
+		if(t instanceof MapToInt) {
+			MapToInt tb = (MapToInt) t;
+			int[] tbb = tb._data;
+			final int newSize = _data.length + t.size();
+			final int newDistinct = Math.max(getUnique(), t.getUnique());
+
+			// copy
+			int[] ret = Arrays.copyOf(_data, newSize);
+			System.arraycopy(tbb, 0, ret, _data.length, t.size());
+
+			return new MapToInt(newDistinct, ret);
+		}
+		else {
+			throw new NotImplementedException("Not implemented append on Bit map different type");
+		}
+	}
+
+	@Override
+	public AMapToData appendN(AMapToDataGroup[] d) {
+		int p = 0; // pointer
+		for(AMapToDataGroup gd : d)
+			p += gd.getMapToData().size();
+		final int[] ret = Arrays.copyOf(_data, p);
+
+		p = size();
+		for(int i = 1; i < d.length; i++) {
+			final MapToInt mm = (MapToInt) d[i].getMapToData();
+			final int ms = mm.size();
+			System.arraycopy(mm._data, 0, ret, p, ms);
+			p += ms;
+		}
+
+		return new MapToInt(getUnique(), ret);
 	}
 }

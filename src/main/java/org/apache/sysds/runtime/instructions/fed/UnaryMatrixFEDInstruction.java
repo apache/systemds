@@ -36,6 +36,8 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.UnaryMatrixCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -51,6 +53,16 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		return !LibCommonsMath.isSupportedUnaryOperation(opcode);
 	}
 
+	public static UnaryMatrixFEDInstruction parseInstruction(UnaryMatrixCPInstruction instr) {
+		return new UnaryMatrixFEDInstruction(instr.getOperator(), instr.input1, instr.output, instr.getOpcode(),
+			instr.getInstructionString());
+	}
+
+	public static UnaryMatrixFEDInstruction parseInstruction(UnaryMatrixSPInstruction instr) {
+		return new UnaryMatrixFEDInstruction(instr.getOperator(), instr.input1, instr.output, instr.getOpcode(),
+			instr.getInstructionString());
+	}
+
 	public static UnaryMatrixFEDInstruction parseInstruction(String str) {
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -58,12 +70,14 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if(parts.length == 5 && (opcode.equalsIgnoreCase("exp") || opcode.equalsIgnoreCase("log") || opcode.startsWith("ucum"))) {
+		if(parts.length == 5 &&
+			(opcode.equalsIgnoreCase("exp") || opcode.equalsIgnoreCase("log") || opcode.startsWith("ucum"))) {
 			in.split(parts[1]);
 			out.split(parts[2]);
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode);
-			if( Arrays.asList(new String[]{"ucumk+","ucum*","ucumk+*","ucummin","ucummax","exp","log","sigmoid"}).contains(opcode) ){
-				UnaryOperator op = new UnaryOperator(func,Integer.parseInt(parts[3]),Boolean.parseBoolean(parts[4]));
+			if(Arrays.asList(new String[] {"ucumk+", "ucum*", "ucumk+*", "ucummin", "ucummax", "exp", "log", "sigmoid"})
+				.contains(opcode)) {
+				UnaryOperator op = new UnaryOperator(func, Integer.parseInt(parts[3]), Boolean.parseBoolean(parts[4]));
 				return new UnaryMatrixFEDInstruction(op, in, out, opcode, str);
 			}
 			else

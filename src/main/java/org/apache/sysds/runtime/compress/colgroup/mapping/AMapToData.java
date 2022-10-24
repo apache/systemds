@@ -27,7 +27,7 @@ import java.util.BitSet;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -370,28 +370,20 @@ public abstract class AMapToData implements Serializable {
 	 * Get the number of counts of each unique value contained in this map. Note that in the case the mapping is shorter
 	 * than number of rows the counts sum to the number of mapped values not the number of rows.
 	 * 
-	 * @param counts The object to return.
-	 * @return the Counts
+	 * @return The counts
 	 */
-	public final int[] getCounts(int[] counts) {
-		count(counts);
-
-		if(counts[counts.length - 1] == 0) {
-			int actualUnique = counts.length;
-			for(; actualUnique > 1; actualUnique--) {
-				if(counts[actualUnique - 1] > 0)
-					break;
-			}
-			throw new DMLCompressionException("Invalid number unique expected: " + counts.length + " but is actually: "
-				+ actualUnique + " type: " + getType());
-		}
-		return counts;
+	public final int[] getCounts() {
+		return getCounts(new int[getUnique()]);
 	}
 
-	protected void count(int[] ret) {
-		for(int i = 0; i < size(); i++)
-			ret[getIndex(i)]++;
-	}
+	/**
+	 * Get the number of counts of each unique value contained in this map. Note that in the case the mapping is shorter
+	 * than number of rows the counts sum to the number of mapped values not the number of rows.
+	 * 
+	 * @param counts The object to return.
+	 * @return The counts
+	 */
+	public abstract int[] getCounts(int[] counts);
 
 	/**
 	 * PreAggregate into dictionary with two sides of DDC.
@@ -624,7 +616,7 @@ public abstract class AMapToData implements Serializable {
 		}
 
 		// Remaining part (very small so not really main performance bottleneck)
-		preAggregateSDCZ_SDCZMultiCol_tail(tm, this, new Dictionary(td), dv, 1, itThat, itThis, tSize, size, i, j);
+		preAggregateSDCZ_SDCZMultiCol_tail(tm, this, Dictionary.create(td), dv, 1, itThat, itThis, tSize, size, i, j);
 	}
 
 	protected void preAggregateSDCZ_SDCZMultiCol(AMapToData tm, ADictionary td, AOffset tof, AOffset of, double[] dv,
@@ -697,6 +689,53 @@ public abstract class AMapToData implements Serializable {
 		}
 	}
 
+	public void preAggregateRLE_DDC(int[] ptr, char[] data, ADictionary td, Dictionary ret, int nCol) {
+		if(nCol == 1)
+			preAggregateRLE_DDCSingleCol(ptr, data, td.getValues(), ret.getValues());
+		else
+			preAggregateRLE_DDCMultiCol(ptr, data, td, ret.getValues(), nCol);
+	}
+
+	protected void preAggregateRLE_DDCSingleCol(int[] ptr, char[] data, double[] td, double[] ret) {
+		// find each index in RLE, and aggregate into those.
+		for(int k = 0; k < ret.length; k++) { // for each run in RLE
+			final int blen = ptr[k + 1];
+			for(int apos = ptr[k], rs = 0, re = 0; apos < blen; apos += 2) {
+				rs = re + data[apos];
+				re = rs + data[apos + 1];
+				for(int rix = rs; rix < re; rix++)
+					ret[k] += td[getIndex(rix)];
+			}
+		}
+	}
+
+	protected void preAggregateRLE_DDCMultiCol(int[] ptr, char[] data, ADictionary td, double[] ret, int nCol) {
+		// find each index in RLE, and aggregate into those.
+		for(int k = 0; k < ret.length / nCol; k++) { // for each run in RLE
+			final int blen = ptr[k + 1];
+			for(int apos = ptr[k], rs = 0, re = 0; apos < blen; apos += 2) {
+				rs = re + data[apos];
+				re = rs + data[apos + 1];
+				for(int rix = rs; rix < re; rix++)
+					td.addToEntry(ret, getIndex(rix), k, nCol);
+			}
+		}
+	}
+
+	public void preAggregateDDC_RLE(int[] ptr, char[] data, ADictionary td, Dictionary ret, int nCol) {
+		// find each index in RLE, and aggregate into those.
+		double[] v = ret.getValues();
+		for(int k = 0; k < ptr.length - 1; k++) { // for each run in RLE
+			final int blen = ptr[k + 1];
+			for(int apos = ptr[k], rs = 0, re = 0; apos < blen; apos += 2) {
+				rs = re + data[apos];
+				re = rs + data[apos + 1];
+				for(int rix = rs; rix < re; rix++)
+					td.addToEntry(v, k, getIndex(rix), nCol);
+			}
+		}
+	}
+
 	/**
 	 * Copy the values in this map into another mapping object.
 	 * 
@@ -740,6 +779,47 @@ public abstract class AMapToData implements Serializable {
 	}
 
 	public abstract AMapToData resize(int unique);
+
+	/**
+	 * Count the number of runs inside the map.
+	 * 
+	 * @return The number of runs
+	 */
+	public abstract int countRuns();
+
+	/**
+	 * Count the number of runs inside the map, but sparse with offsets.
+	 * 
+	 * @param off The sparse offsets to consider counting the runs from.
+	 * @return count of runs.
+	 */
+	public int countRuns(AOffset off) {
+		int c = 1;
+		final int size = size();
+		final AOffsetIterator of = off.getOffsetIterator();
+		for(int i = 1; i < size; i++) {
+			int id = of.value();
+			if(id + 1 == of.next())
+				c += getIndex(i - 1) == getIndex(i) ? 0 : 1;
+			else
+				c++;
+		}
+		return c;
+	}
+
+	/**
+	 * Slice out the range from lower to upper from this map toData.
+	 * 
+	 * @param l Low value to slice from
+	 * @param u high value to slice to (not inclusive)
+	 * @return A new map containing only the values from the range.
+	 */
+	public abstract AMapToData slice(int l, int u);
+
+
+	public abstract AMapToData append(AMapToData t);
+
+	public abstract AMapToData appendN(AMapToDataGroup[] d);
 
 	@Override
 	public String toString() {

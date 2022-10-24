@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.concurrent.Future;
+
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -26,15 +28,15 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.functionobjects.OffsetColumnIndex;
-import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CPInstruction;
+import org.apache.sysds.runtime.instructions.cp.AppendCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.spark.SPInstruction;
+import org.apache.sysds.runtime.instructions.spark.AppendSPInstruction;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -56,22 +58,15 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 		_cbind = cbind;
 	}
 
-	public static AppendFEDInstruction parseInstruction(Instruction inst){
-		if ( inst instanceof CPInstruction || inst instanceof SPInstruction ){
-			String instStr = inst.getInstructionString();
-			String[] parts = InstructionUtils.getInstructionPartsWithValueType(instStr);
-			InstructionUtils.checkNumFields(parts, 6, 5, 4);
+	public static AppendFEDInstruction parseInstruction(AppendCPInstruction instr) {
+		return new AppendFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output,
+			instr.getAppendType().equals(AppendCPInstruction.AppendType.CBIND), instr.getOpcode(),
+			instr.getInstructionString(), FederatedOutput.NONE);
+	}
 
-			String opcode = parts[0];
-			CPOperand in1 = new CPOperand(parts[1]);
-			CPOperand in2 = new CPOperand(parts[2]);
-			CPOperand out = new CPOperand(parts[parts.length - 2]);
-			boolean cbind = Boolean.parseBoolean(parts[parts.length - 1]);
-
-			Operator op = new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1));
-			return new AppendFEDInstruction(op, in1, in2, out, cbind, opcode, instStr);
-		}
-		else return parseInstruction(inst.getInstructionString());
+	public static AppendFEDInstruction parseInstruction(AppendSPInstruction instr) {
+		return new AppendFEDInstruction(instr.getOperator(), instr.input1, instr.input2, instr.output, instr.getCBind(),
+			instr.getOpcode(), instr.getInstructionString(), FederatedOutput.NONE);
 	}
 
 	public static AppendFEDInstruction parseInstruction(String str) {
@@ -174,17 +169,19 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 				new long[]{ fr1[0].getID(), moFed.getFedMapping().getID()});
 			
 			//execute federated operations and set output
+			Future<FederatedResponse>[] ret = null;
 			if(isSpark) {
 				FederatedRequest tmp = new FederatedRequest(RequestType.PUT_VAR,
 					fr2.getID(), new MatrixCharacteristics(-1, -1), mo1.getDataType());
-				moFed.getFedMapping().execute(getTID(), true, fr1, tmp, fr2);
+				ret = moFed.getFedMapping().execute(getTID(), true, fr1, tmp, fr2);
 			} else {
-				moFed.getFedMapping().execute(getTID(), true, fr1, fr2);
+				ret = moFed.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
 			int dim = (_cbind ? 1 : 0);
 			FederationMap newFedMap = moFed.getFedMapping().copyWithNewID(fr2.getID())
 				.modifyFedRanges(moFed.getDim(dim) + moLoc.getDim(dim), dim);
 			out.setFedMapping(newFedMap);
+			out.getDataCharacteristics().setNonZeros(FederationUtils.sumNonZeros(ret));
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported federated append: "

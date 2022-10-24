@@ -56,7 +56,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import scala.Tuple2;
 
-public class MapmmSPInstruction extends BinarySPInstruction {
+public class MapmmSPInstruction extends AggregateBinarySPInstruction {
 	private static final Log LOG = LogFactory.getLog(MapmmSPInstruction.class.getName());
 	
 	private CacheType _type = null;

@@ -18,7 +18,9 @@
 # under the License.
 #
 # -------------------------------------------------------------
-# Import numpy and SystemDS
+
+import logging
+
 import numpy as np
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import l2svm
@@ -40,5 +42,5 @@ for i in range(10):
 # compute our model
 with SystemDSContext() as sds:
     model = l2svm(sds.from_numpy(features),
-                  sds.from_numpy(labels)).compute()
-    print(model)
+                  sds.from_numpy(labels), verbose=False).compute()
+    logging.info(model)

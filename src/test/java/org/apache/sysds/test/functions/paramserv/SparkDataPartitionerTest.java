@@ -44,7 +44,7 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 	static {
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		DMLScript.setGlobalExecMode(ExecMode.SPARK);
-		_sec = (SparkExecutionContext) ExecutionContextFactory.createContext(null);
+		_sec =  ExecutionContextFactory.createSparkExecutionContext();
 	}
 
 	private Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> doPartitioning(Statement.PSScheme scheme) {

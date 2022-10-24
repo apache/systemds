@@ -43,7 +43,7 @@ public final class CostEstimatorBuilder implements Serializable {
 	public CostEstimatorBuilder(WTreeRoot root) {
 		counter = new InstructionTypeCounter();
 		if(root.isDecompressing())
-			counter.decompressions++;
+			counter.incDecompressions();
 		for(Op o : root.getOps())
 			addOp(1, o, counter);
 		for(WTreeNode n : root.getChildNodes())
@@ -77,23 +77,23 @@ public final class CostEstimatorBuilder implements Serializable {
 	private static void addOp(int count, Op o, InstructionTypeCounter counter) {
 		if(o.isDecompressing()) {
 			if(o.isOverlapping())
-				counter.overlappingDecompressions += count * o.dim();
+				counter.incOverlappingDecompressions(count * o.dim());
 			else
-				counter.decompressions += count;
+				counter.incDecompressions(count);
 		}
 		if(o.isDensifying()) {
-			counter.isDensifying = true;
+			counter.setDensifying(true);
 		}
 
 		if(o instanceof OpSided) {
 			OpSided os = (OpSided) o;
 			final int d = o.dim();
 			if(os.isLeftMM())
-				counter.leftMultiplications += count * d;
+				counter.incLMM(count * d);
 			else if(os.isRightMM())
-				counter.rightMultiplications += count * d;
+				counter.incRMM(count * d);
 			else
-				counter.compressedMultiplications += count * d;
+				counter.incCMM(count * d);
 		}
 		else if(o instanceof OpMetadata) {
 			// ignore it
@@ -105,29 +105,30 @@ public final class CostEstimatorBuilder implements Serializable {
 
 				switch(agop.getDirection()) {
 					case Row:
-						counter.scans += count;
+						counter.incScans(count);
 						break;
 					default:
-						counter.dictionaryOps += count;
+						counter.incDictOps(count);
 				}
 			}
 			else if(h instanceof IndexingOp) {
 				IndexingOp idxO = (IndexingOp) h;
 				if(idxO.isRowLowerEqualsUpper() && idxO.isColLowerEqualsUpper())
-					counter.indexing++;
+					counter.incIndexOp(count);
 				else if(idxO.isAllRows())
-					counter.dictionaryOps += count; // Technically not correct but better than decompression
+					// Technically not correct but better than decompression
+					counter.incDictOps(count);
 			}
 			else
-				counter.dictionaryOps += count;
+				counter.incDictOps(count);
 		}
 	}
 
 	public boolean shouldTryToCompress() {
 		int numberOps = 0;
-		numberOps += counter.scans + counter.leftMultiplications + counter.rightMultiplications +
-			counter.compressedMultiplications + counter.dictionaryOps;
-		numberOps -= counter.decompressions + counter.overlappingDecompressions;
+		numberOps += counter.getScans()+ counter.getLeftMultiplications() + counter.getRightMultiplications() +
+			counter.getCompressedMultiplications() + counter.getDictionaryOps();
+		numberOps -= counter.getDecompressions() + counter.getOverlappingDecompressions();
 		return numberOps > 4;
 	}
 

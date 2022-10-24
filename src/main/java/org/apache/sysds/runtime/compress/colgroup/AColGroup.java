@@ -24,7 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -65,13 +65,8 @@ public abstract class AColGroup implements Serializable {
 		LinearFunctional;
 	}
 
-	/** The ColGroup Indexes contained in the ColGroup */
-	protected int[] _colIndexes;
-
-	/** Empty constructor, used for serializing into an empty new object of ColGroup. */
-	protected AColGroup() {
-		// empty
-	}
+	/** The ColGroup indexes contained in the ColGroup */
+	protected final int[] _colIndexes;
 
 	/**
 	 * Main constructor.
@@ -92,15 +87,6 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	/**
-	 * Set the column indexes of the column group.
-	 * 
-	 * @param colIndexes
-	 */
-	protected final void setColIndices(int[] colIndexes) {
-		_colIndexes = colIndexes;
-	}
-
-	/**
 	 * Obtain the number of columns in this column group.
 	 * 
 	 * @return number of columns in this column group
@@ -117,13 +103,24 @@ public abstract class AColGroup implements Serializable {
 	 * Since column indexes are reused between operations, we allocate a new list here to be safe
 	 * 
 	 * @param offset The offset to move all columns
+	 * @return A new column group object with the shifted columns
 	 */
-	public final void shiftColIndices(int offset) {
-		int[] newIndexes = new int[_colIndexes.length];
+	public final AColGroup shiftColIndices(int offset) {
+		final int[] newIndexes = new int[_colIndexes.length];
 		for(int i = 0; i < _colIndexes.length; i++)
 			newIndexes[i] = _colIndexes[i] + offset;
-		_colIndexes = newIndexes;
+		return copyAndSet(newIndexes);
 	}
+
+	/**
+	 * Copy the content of the column group with pointers to the previous content but with new column given Note this
+	 * method does not verify if the colIndexes specified are valid and correct dimensions for the underlying column
+	 * groups.
+	 * 
+	 * @param colIndexes the new indexes to use in the copy
+	 * @return a new object with pointers to underlying data.
+	 */
+	protected abstract AColGroup copyAndSet(int[] colIndexes);
 
 	/**
 	 * Get the upper bound estimate of in memory allocation for the column group.
@@ -166,7 +163,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param out data output
 	 * @throws IOException if IOException occurs
 	 */
-	public void write(DataOutput out) throws IOException {
+	protected void write(DataOutput out) throws IOException {
 		out.writeByte(getColGroupType().ordinal());
 		out.writeInt(_colIndexes.length);
 		// write col indices
@@ -175,17 +172,18 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	/**
-	 * Deserialize column group from data input.
+	 * Read in the columns from the input and return them
 	 * 
-	 * @param in data input
-	 * @throws IOException if IOException occurs
+	 * @param in The data source to read from
+	 * @return A new int[] column groups
+	 * @throws IOException If there is some error in reading the input.
 	 */
-	public void readFields(DataInput in) throws IOException {
-		// column group type is read in ColGroupIO
+	protected static int[] readCols(DataInput in) throws IOException {
 		final int numCols = in.readInt();
-		_colIndexes = new int[numCols];
+		int[] cols = new int[numCols];
 		for(int i = 0; i < numCols; i++)
-			_colIndexes[i] = in.readInt();
+			cols[i] = in.readInt();
+		return cols;
 	}
 
 	/**
@@ -269,7 +267,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param nRows  The number of rows in the groups
 	 * @return The given res list, where the sum of the column groups is added
 	 */
-	public static double[] colSum(List<AColGroup> groups, double[] res, int nRows) {
+	public static double[] colSum(Collection<AColGroup> groups, double[] res, int nRows) {
 		for(AColGroup g : groups)
 			g.computeColSums(res, nRows);
 		return res;
@@ -358,7 +356,21 @@ public abstract class AColGroup implements Serializable {
 	 * @param right The MatrixBlock on the right of this matrix multiplication
 	 * @return The new Column Group or null that is the result of the matrix multiplication.
 	 */
-	public abstract AColGroup rightMultByMatrix(MatrixBlock right);
+	public final AColGroup rightMultByMatrix(MatrixBlock right) {
+		return rightMultByMatrix(right, null);
+	}
+
+	/**
+	 * Right matrix multiplication with this column group.
+	 * 
+	 * This method can return null, meaning that the output overlapping group would have been empty.
+	 * 
+	 * @param right   The MatrixBlock on the right of this matrix multiplication
+	 * @param allCols A pre-materialized list of all col indexes, that can be shared across all column groups if use
+	 *                full, can be set to null.
+	 * @return The new Column Group or null that is the result of the matrix multiplication.
+	 */
+	public abstract AColGroup rightMultByMatrix(MatrixBlock right, int[] allCols);
 
 	/**
 	 * Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group.
@@ -391,10 +403,11 @@ public abstract class AColGroup implements Serializable {
 	 * Left side matrix multiplication with a column group that is transposed.
 	 * 
 	 * @param lhs    The left hand side Column group to multiply with, the left hand side should be considered
-	 *               transposed.
+	 *               transposed. Also it should be guaranteed that this column group is not empty.
 	 * @param result The result matrix to insert the result of the multiplication into
+	 * @param nRows  Number of rows in the lhs colGroup
 	 */
-	public abstract void leftMultByAColGroup(AColGroup lhs, MatrixBlock result);
+	public abstract void leftMultByAColGroup(AColGroup lhs, MatrixBlock result, int nRows);
 
 	/**
 	 * Matrix multiply with this other column group, but:
@@ -446,11 +459,13 @@ public abstract class AColGroup implements Serializable {
 	 * Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed
 	 * matrix.
 	 * 
+	 * The range of rl to ru only applies to row aggregates. (ReduceCol)
+	 * 
 	 * @param op    The operator used
 	 * @param c     The output matrix block
 	 * @param nRows The total number of rows in the Column Group
-	 * @param rl    The Starting Row to do aggregation from
-	 * @param ru    The last Row to do aggregation to (not included)
+	 * @param rl    The starting row to do aggregation from
+	 * @param ru    The last row to do aggregation to (not included)
 	 */
 	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int nRows, int rl, int ru);
 
@@ -470,11 +485,22 @@ public abstract class AColGroup implements Serializable {
 	 * It is guaranteed that the columns to slice is contained in this columnGroup.
 	 * 
 	 * @param idStart    The column index to start at
-	 * @param idEnd      The column index to end at
+	 * @param idEnd      The column index to end at (not included)
 	 * @param outputCols The output columns to extract materialized for ease of implementation
 	 * @return The sliced ColGroup from this. (never null)
 	 */
 	protected abstract AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols);
+
+	/**
+	 * Slice range of rows out of the column group and return a new column group only containing the row segment.
+	 * 
+	 * Note that this slice should maintain pointers back to the original dictionaries and only modify index structures.
+	 * 
+	 * @param rl The row to start at
+	 * @param ru The row to end at (not included)
+	 * @return A new column group containing the specified row range.
+	 */
+	public abstract AColGroup sliceRows(int rl, int ru);
 
 	/**
 	 * Short hand method for getting minimum value contained in this column group.
@@ -491,12 +517,12 @@ public abstract class AColGroup implements Serializable {
 	public abstract double getMax();
 
 	/**
-	 * Get a copy of this column group note this is only a shallow copy. Meaning only the object wrapping index
-	 * structures, column indexes and dictionaries are copied.
+	 * Short hand method for getting the sum of this column group
 	 * 
-	 * @return Get a copy of this column group.
+	 * @param nRows The number of rows in the column group
+	 * @return The sum of this column group
 	 */
-	public abstract AColGroup copy();
+	public abstract double getSum(int nRows);
 
 	/**
 	 * Detect if the column group contains a specific value.
@@ -561,16 +587,65 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public abstract double getCost(ComputationCostEstimator e, int nRows);
 
+	/**
+	 * Perform unary operation on the column group and return a new column group
+	 * 
+	 * @param op The operation to perform
+	 * @return The new column group
+	 */
 	public abstract AColGroup unaryOperation(UnaryOperator op);
+
+	/**
+	 * Get if the group is only containing zero
+	 * 
+	 * @return true if empty
+	 */
+	public abstract boolean isEmpty();
+
+	/**
+	 * Append the other column group to this column group. This method tries to combine them to return a new column group
+	 * containing both. In some cases it is possible in reasonable time, in others it is not.
+	 * 
+	 * The result is first this column group followed by the other column group in higher row values.
+	 * 
+	 * If it is not possible or very inefficient null is returned.
+	 * 
+	 * @param g The other column group
+	 * @return A combined column group or null
+	 */
+	public abstract AColGroup append(AColGroup g);
+
+	/**
+	 * Append all column groups in the list provided together in one go allocating the output once.
+	 * 
+	 * If it is not possible or very inefficient null is returned.
+	 * 
+	 * @param groups The groups to combine.
+	 * @return A combined column group or null
+	 */
+	public static AColGroup appendN(AColGroup[] groups) {
+		return groups[0].appendNInternal(groups);
+	}
+
+	/**
+	 * Append all column groups in the list provided together with this.
+	 * 
+	 * A Important detail is the first entry in the group == this, and should not be appended twice.
+	 * 
+	 * If it is not possible or very inefficient null is returned.
+	 * 
+	 * @param groups The groups to combine.
+	 * @return A combined column group or null
+	 */
+	protected abstract AColGroup appendNInternal(AColGroup[] groups);
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("\n\n%15s", "ColGroupType: "));
+		sb.append(String.format("%15s", "ColGroupType: "));
 		sb.append(this.getClass().getSimpleName());
 		sb.append(String.format("\n%15s", "Columns: "));
 		sb.append(Arrays.toString(_colIndexes));
-
 		return sb.toString();
 	}
 }

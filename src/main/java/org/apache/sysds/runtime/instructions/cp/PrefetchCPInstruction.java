@@ -51,6 +51,6 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 		// In that case this Prefetch instruction will act like a NOOP. 
 		if (CommonThreadPool.triggerRemoteOPsPool == null)
 			CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
-		CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerRemoteOperationsTask(ec.getMatrixObject(output)));
+		CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerPrefetchTask(ec.getMatrixObject(output)));
 	}
 }

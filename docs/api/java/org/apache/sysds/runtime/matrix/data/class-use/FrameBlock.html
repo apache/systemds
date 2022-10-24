@@ -166,6 +166,14 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.tokenize.applier">org.apache.sysds.runtime.transform.tokenize.applier</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.transform.tokenize.builder">org.apache.sysds.runtime.transform.tokenize.builder</a></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <th class="colFirst" scope="row"><a href="#org.apache.sysds.runtime.util">org.apache.sysds.runtime.util</a></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -2334,32 +2342,19 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">Tokenizer.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/Tokenizer.html#tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenize</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
-        <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Tokenizer.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/Tokenizer.html#apply(org.apache.sysds.runtime.matrix.data.FrameBlock,int)">apply</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out,
+     int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPost.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPost.html#tokenizePost(java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenizePost</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.DocumentToTokens&gt;&nbsp;tl,
-            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Tokenizer.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/Tokenizer.html#tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenize</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPostCount.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPostCount.html#tokenizePost(java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenizePost</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.DocumentToTokens&gt;&nbsp;tl,
-            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPostHash.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPostHash.html#tokenizePost(java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenizePost</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.DocumentToTokens&gt;&nbsp;tl,
-            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPostPosition.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPostPosition.html#tokenizePost(java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenizePost</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.DocumentToTokens&gt;&nbsp;tl,
-            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Tokenizer.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/Tokenizer.html#tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock,int)">tokenize</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+        int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -2373,62 +2368,153 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPostPosition.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPostPosition.html#appendTokensLong(java.util.List,java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">appendTokensLong</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;keys,
-                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.Token&gt;&nbsp;tokenList,
-                <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Tokenizer.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/Tokenizer.html#apply(org.apache.sysds.runtime.matrix.data.FrameBlock,int)">apply</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out,
+     int&nbsp;k)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPostPosition.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPostPosition.html#appendTokensWide(java.util.List,java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">appendTokensWide</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;keys,
-                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.Token&gt;&nbsp;tokenList,
+<th class="colSecond" scope="row"><span class="typeNameLabel">Tokenizer.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/Tokenizer.html#build(org.apache.sysds.runtime.matrix.data.FrameBlock,int)">build</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+     int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Tokenizer.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/Tokenizer.html#getBuildTasks(org.apache.sysds.runtime.matrix.data.FrameBlock)">getBuildTasks</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Tokenizer.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/Tokenizer.html#tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenize</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">Tokenizer.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/Tokenizer.html#tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock,int)">tokenize</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+        int&nbsp;k)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section role="region"><a id="org.apache.sysds.runtime.transform.tokenize.applier">
+<!--   -->
+</a>
+<h3>Uses of <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a> in <a href="../../../transform/tokenize/applier/package-summary.html">org.apache.sysds.runtime.transform.tokenize.applier</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../transform/tokenize/applier/package-summary.html">org.apache.sysds.runtime.transform.tokenize.applier</a> with parameters of type <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerApplierPosition.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/applier/TokenizerApplierPosition.html#appendTokensLong(int,java.util.List,java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">appendTokensLong</a></span>&#8203;(int&nbsp;row,
+                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;keys,
+                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../../transform/tokenize/Token.html" title="class in org.apache.sysds.runtime.transform.tokenize">Token</a>&gt;&nbsp;tokenList,
+                <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerApplierPosition.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/applier/TokenizerApplierPosition.html#appendTokensWide(int,java.util.List,java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">appendTokensWide</a></span>&#8203;(int&nbsp;row,
+                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html?is-external=true" title="class or interface in java.lang" class="externalLink">Object</a>&gt;&nbsp;keys,
+                <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../../transform/tokenize/Token.html" title="class in org.apache.sysds.runtime.transform.tokenize">Token</a>&gt;&nbsp;tokenList,
                 <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">Tokenizer.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/Tokenizer.html#tokenize(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenize</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
-        <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerApplier.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/applier/TokenizerApplier.html#applyInternalRepresentation(org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation%5B%5D,org.apache.sysds.runtime.matrix.data.FrameBlock)">applyInternalRepresentation</a></span>&#8203;(<a href="../../../transform/tokenize/DocumentRepresentation.html" title="class in org.apache.sysds.runtime.transform.tokenize">DocumentRepresentation</a>[]&nbsp;internalRepresentation,
+                           <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPost.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPost.html#tokenizePost(java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenizePost</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.DocumentToTokens&gt;&nbsp;tl,
-            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerApplierCount.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/applier/TokenizerApplierCount.html#applyInternalRepresentation(org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation%5B%5D,org.apache.sysds.runtime.matrix.data.FrameBlock,int,int)">applyInternalRepresentation</a></span>&#8203;(<a href="../../../transform/tokenize/DocumentRepresentation.html" title="class in org.apache.sysds.runtime.transform.tokenize">DocumentRepresentation</a>[]&nbsp;internalRepresentation,
+                           <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out,
+                           int&nbsp;inputRowStart,
+                           int&nbsp;blk)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPostCount.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPostCount.html#tokenizePost(java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenizePost</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.DocumentToTokens&gt;&nbsp;tl,
-            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerApplierHash.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/applier/TokenizerApplierHash.html#applyInternalRepresentation(org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation%5B%5D,org.apache.sysds.runtime.matrix.data.FrameBlock,int,int)">applyInternalRepresentation</a></span>&#8203;(<a href="../../../transform/tokenize/DocumentRepresentation.html" title="class in org.apache.sysds.runtime.transform.tokenize">DocumentRepresentation</a>[]&nbsp;internalRepresentation,
+                           <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out,
+                           int&nbsp;inputRowStart,
+                           int&nbsp;blk)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPostHash.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPostHash.html#tokenizePost(java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenizePost</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.DocumentToTokens&gt;&nbsp;tl,
-            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colFirst"><code>int</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerApplierPosition.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/applier/TokenizerApplierPosition.html#applyInternalRepresentation(org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation%5B%5D,org.apache.sysds.runtime.matrix.data.FrameBlock,int,int)">applyInternalRepresentation</a></span>&#8203;(<a href="../../../transform/tokenize/DocumentRepresentation.html" title="class in org.apache.sysds.runtime.transform.tokenize">DocumentRepresentation</a>[]&nbsp;internalRepresentation,
+                           <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out,
+                           int&nbsp;inputRowStart,
+                           int&nbsp;blk)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPostPosition.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPostPosition.html#tokenizePost(java.util.List,org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenizePost</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.DocumentToTokens&gt;&nbsp;tl,
-            <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerApplier.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/applier/TokenizerApplier.html#getApplyTasks(org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation%5B%5D,org.apache.sysds.runtime.matrix.data.FrameBlock)">getApplyTasks</a></span>&#8203;(<a href="../../../transform/tokenize/DocumentRepresentation.html" title="class in org.apache.sysds.runtime.transform.tokenize">DocumentRepresentation</a>[]&nbsp;internalRepresentation,
+             <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</section>
+</li>
+<li class="blockList">
+<section role="region"><a id="org.apache.sysds.runtime.transform.tokenize.builder">
+<!--   -->
+</a>
+<h3>Uses of <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a> in <a href="../../../transform/tokenize/builder/package-summary.html">org.apache.sysds.runtime.transform.tokenize.builder</a></h3>
+<table class="useSummary">
+<caption><span>Methods in <a href="../../../transform/tokenize/builder/package-summary.html">org.apache.sysds.runtime.transform.tokenize.builder</a> with parameters of type <a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colSecond" scope="col">Method</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerBuilder.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/builder/TokenizerBuilder.html#createInternalRepresentation(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation%5B%5D)">createInternalRepresentation</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+                            <a href="../../../transform/tokenize/DocumentRepresentation.html" title="class in org.apache.sysds.runtime.transform.tokenize">DocumentRepresentation</a>[]&nbsp;internalRepresentation)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.DocumentToTokens&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPre.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPre.html#tokenizePre(org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenizePre</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
+<td class="colFirst"><code>abstract void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerBuilder.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/builder/TokenizerBuilder.html#createInternalRepresentation(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation%5B%5D,int,int)">createInternalRepresentation</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+                            <a href="../../../transform/tokenize/DocumentRepresentation.html" title="class in org.apache.sysds.runtime.transform.tokenize">DocumentRepresentation</a>[]&nbsp;internalRepresentation,
+                            int&nbsp;rowStart,
+                            int&nbsp;blk)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.DocumentToTokens&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPreNgram.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPreNgram.html#tokenizePre(org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenizePre</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerBuilderNgram.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/builder/TokenizerBuilderNgram.html#createInternalRepresentation(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation%5B%5D,int,int)">createInternalRepresentation</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+                            <a href="../../../transform/tokenize/DocumentRepresentation.html" title="class in org.apache.sysds.runtime.transform.tokenize">DocumentRepresentation</a>[]&nbsp;internalRepresentation,
+                            int&nbsp;rowStart,
+                            int&nbsp;blk)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;org.apache.sysds.runtime.transform.tokenize.Tokenizer.DocumentToTokens&gt;</code></td>
-<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerPreWhitespaceSplit.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/TokenizerPreWhitespaceSplit.html#tokenizePre(org.apache.sysds.runtime.matrix.data.FrameBlock)">tokenizePre</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code></th>
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerBuilderWhitespaceSplit.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/builder/TokenizerBuilderWhitespaceSplit.html#createInternalRepresentation(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation%5B%5D,int,int)">createInternalRepresentation</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+                            <a href="../../../transform/tokenize/DocumentRepresentation.html" title="class in org.apache.sysds.runtime.transform.tokenize">DocumentRepresentation</a>[]&nbsp;internalRepresentation,
+                            int&nbsp;rowStart,
+                            int&nbsp;blk)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html?is-external=true" title="class or interface in java.util" class="externalLink">List</a>&lt;<a href="../../../util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
+<th class="colSecond" scope="row"><span class="typeNameLabel">TokenizerBuilder.</span><code><span class="memberNameLink"><a href="../../../transform/tokenize/builder/TokenizerBuilder.html#getTasks(org.apache.sysds.runtime.matrix.data.FrameBlock,org.apache.sysds.runtime.transform.tokenize.DocumentRepresentation%5B%5D)">getTasks</a></span>&#8203;(<a href="../FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+        <a href="../../../transform/tokenize/DocumentRepresentation.html" title="class in org.apache.sysds.runtime.transform.tokenize">DocumentRepresentation</a>[]&nbsp;internalRepresentation)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

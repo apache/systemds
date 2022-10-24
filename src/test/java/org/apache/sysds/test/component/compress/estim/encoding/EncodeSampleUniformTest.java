@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -53,12 +54,14 @@ public class EncodeSampleUniformTest extends EncodeSampleMultiColTest {
 		tests.add(create(30, 10, 1.0, false, 2, 7654));
 
 		// row sparse
-		tests.add(create(2, 300, 0.1, true, 2, 1251));
-		tests.add(create(2, 300, 0.1, true, 2, 11));
-		tests.add(create(2, 300, 0.2, true, 2, 65));
-		tests.add(create(2, 300, 0.24, true, 2, 245));
-		tests.add(create(2, 300, 0.24, true, 4, 16));
-		tests.add(create(2, 300, 0.23, true, 4, 15));
+		for(int i = 0; i < 5; i++) {
+			tests.add(create(2, 300, 0.1, true, 2 , 1251 * i));
+			tests.add(create(2, 300, 0.1, true, 2 , 11 * i));
+			tests.add(create(2, 300, 0.2, true, 2 , 65 * i));
+			tests.add(create(2, 300, 0.24, true, 2 , 245 * i));
+			tests.add(create(2, 300, 0.24, true, 3 , 16 * i));
+			tests.add(create(2, 300, 0.23, true, 3 , 15 * i));
+		}
 
 		// ultra sparse
 		tests.add(create(2, 10000, 0.001, true, 3, 215));
@@ -98,12 +101,12 @@ public class EncodeSampleUniformTest extends EncodeSampleMultiColTest {
 			// Make sure that nUnique always is correct if we have a large enough matrix.
 
 			final int d = t ? m.getNumRows() : m.getNumColumns();
-			final IEncode e = IEncode.createFromMatrixBlock(m, t, genRowCol(d));
+			final IEncode e = EncodingFactory.createFromMatrixBlock(m, t, genRowCol(d));
 
 			// split and read subparts individually
 			final int dfh = d / 2;
-			final IEncode fh = IEncode.createFromMatrixBlock(m, t, genRowCol(dfh));
-			final IEncode sh = IEncode.createFromMatrixBlock(m, t, genRowCol(dfh, d));
+			final IEncode fh = EncodingFactory.createFromMatrixBlock(m, t, genRowCol(dfh));
+			final IEncode sh = EncodingFactory.createFromMatrixBlock(m, t, genRowCol(dfh, d));
 
 			// join subparts and use its unique count for tests
 			final IEncode er = fh.combine(sh);

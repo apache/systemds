@@ -227,6 +227,7 @@ public final class SysdsProtos {
     }
 
     @java.lang.Override
+	 @SuppressWarnings("unchecked")
     public int hashCode() {
       if (memoizedHashCode != 0) {
         return memoizedHashCode;
@@ -403,7 +404,7 @@ public final class SysdsProtos {
       @java.lang.Override
       public org.apache.sysds.protobuf.SysdsProtos.Frame buildPartial() {
         org.apache.sysds.protobuf.SysdsProtos.Frame result = new org.apache.sysds.protobuf.SysdsProtos.Frame(this);
-        int from_bitField0_ = bitField0_;
+        //   int from_bitField0_ = bitField0_;
         if (rowsBuilder_ == null) {
           if (((bitField0_ & 0x00000001) != 0)) {
             rows_ = java.util.Collections.unmodifiableList(rows_);
@@ -1194,6 +1195,7 @@ public final class SysdsProtos {
     }
 
     @java.lang.Override
+	 @SuppressWarnings("unchecked")
     public int hashCode() {
       if (memoizedHashCode != 0) {
         return memoizedHashCode;
@@ -1382,7 +1384,7 @@ public final class SysdsProtos {
       @java.lang.Override
       public org.apache.sysds.protobuf.SysdsProtos.Row buildPartial() {
         org.apache.sysds.protobuf.SysdsProtos.Row result = new org.apache.sysds.protobuf.SysdsProtos.Row(this);
-        int from_bitField0_ = bitField0_;
+        //   int from_bitField0_ = bitField0_;
         if (((bitField0_ & 0x00000001) != 0)) {
           columnNames_ = columnNames_.getUnmodifiableView();
           bitField0_ = (bitField0_ & ~0x00000001);
@@ -2338,7 +2340,7 @@ public final class SysdsProtos {
             new com.google.protobuf.Internal.ListAdapter.Converter<
                 java.lang.Integer, org.apache.sysds.protobuf.SysdsProtos.Schema.ValueType>() {
               public org.apache.sysds.protobuf.SysdsProtos.Schema.ValueType convert(java.lang.Integer from) {
-                @SuppressWarnings("deprecation")
+               //  @SuppressWarnings("deprecation")
                 org.apache.sysds.protobuf.SysdsProtos.Schema.ValueType result = org.apache.sysds.protobuf.SysdsProtos.Schema.ValueType.valueOf(from);
                 return result == null ? org.apache.sysds.protobuf.SysdsProtos.Schema.ValueType.UNRECOGNIZED : result;
               }
@@ -2453,6 +2455,7 @@ public final class SysdsProtos {
     }
 
     @java.lang.Override
+	 @SuppressWarnings("unchecked")
     public int hashCode() {
       if (memoizedHashCode != 0) {
         return memoizedHashCode;
@@ -2624,7 +2627,7 @@ public final class SysdsProtos {
       @java.lang.Override
       public org.apache.sysds.protobuf.SysdsProtos.Schema buildPartial() {
         org.apache.sysds.protobuf.SysdsProtos.Schema result = new org.apache.sysds.protobuf.SysdsProtos.Schema(this);
-        int from_bitField0_ = bitField0_;
+      //   int from_bitField0_ = bitField0_;
         if (((bitField0_ & 0x00000001) != 0)) {
           valueType_ = java.util.Collections.unmodifiableList(valueType_);
           bitField0_ = (bitField0_ & ~0x00000001);

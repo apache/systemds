@@ -24,6 +24,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.AMapToDataGroup;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -132,7 +134,8 @@ public class MapToBit extends AMapToData {
 		long[] internalLong = new long[in.readInt()];
 		for(int i = 0; i < internalLong.length; i++)
 			internalLong[i] = in.readLong();
-		return new MapToBit(2, BitSet.valueOf(internalLong), size);
+		BitSet ret = BitSet.valueOf(internalLong);
+		return new MapToBit(2, ret, size);
 	}
 
 	@Override
@@ -141,10 +144,11 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	protected void count(int[] ret) {
+	public int[] getCounts(int[] ret) {
 		final int sz = size();
 		ret[1] = _data.cardinality();
 		ret[0] = sz - ret[1];
+		return ret;
 	}
 
 	@Override
@@ -271,5 +275,114 @@ public class MapToBit extends AMapToData {
 			return new MapToZero(size());
 		else
 			return this;
+	}
+
+	@Override
+	public int countRuns() {
+		if(_size <= 64) {
+			long l = _data.toLongArray()[0];
+			if(_size != 64 && _data.get(_size - 1)) {
+				// make last run go over into the last elements.
+				long mask = ~((-1L) ^ ((-1L) << (_size - 64)));
+				l |= mask;
+			}
+			long shift1 = (l << 1) | (l & 1L);
+			long j = l ^ shift1;
+			return 1 + Long.bitCount(j);
+		}
+		else {
+			// at least two locations
+			final long[] _longs = _data.toLongArray();
+			final long lastMask = (-1L) << (63);
+
+			// first
+			long l = _longs[0];
+			// set least significant bit to same as previous.
+			long shift1 = (l << 1) | (l & 1L);
+			long j = l ^ shift1;
+			int c = 1 + Long.bitCount(j);
+
+			// middle ones
+			for(int i = 1; i < _longs.length - 1; i++) {
+				// we move over the most significant bit from last value
+				shift1 = (_longs[i] << 1) | ((_longs[i - 1] & lastMask) >>> 63);
+				c += Long.bitCount(_longs[i] ^ shift1);
+			}
+
+			// last
+			final int idx = _longs.length - 1;
+			// handle if we are not aligned with 64.
+			l = (_size % 64 != 0 && _data.get(_size - 1)) ? _longs[idx] |
+				(~((-1L) ^ ((-1L) << (_size - 64)))) : _longs[idx];
+			shift1 = (l << 1) | ((_longs[idx - 1] & lastMask) >>> 63);
+
+			c += Long.bitCount(l ^ shift1);
+
+			return c;
+		}
+	}
+
+	@Override
+	public AMapToData slice(int l, int u) {
+		return new MapToBit(getUnique(), _data.get(l, u), u - l);
+	}
+
+	@Override
+	public AMapToData append(AMapToData t) {
+		if(t instanceof MapToBit) {
+			MapToBit tb = (MapToBit) t;
+			BitSet tbb = tb._data;
+			final int newSize = _size + t.size();
+			BitSet ret = new BitSet(newSize);
+			ret.xor(_data);
+
+			tbb.stream().forEach(x -> ret.set(x + _size, true));
+			return new MapToBit(2, ret, newSize);
+		}
+		else {
+			throw new NotImplementedException("Not implemented append on Bit map different type");
+
+		}
+	}
+
+	@Override
+	public AMapToData appendN(AMapToDataGroup[] d) {
+		int p = 0; // pointer
+		for(AMapToDataGroup gd : d)
+			p += gd.getMapToData().size();
+		final long[] ret = new long[(p - 1) / 64 + 1];
+		long[] or = _data.toLongArray();
+		System.arraycopy(or, 0, ret, 0, or.length);
+
+		p = size();
+		for(int i = 1; i < d.length; i++) {
+			final MapToBit mm = (MapToBit) d[i].getMapToData();
+			final int ms = mm.size();
+			or = mm._data.toLongArray();
+			final int remainder = p % 64;
+			int retLp = p / 64;
+			if(remainder == 0)// Easy lining up
+				System.arraycopy(or, 0, ret, retLp, or.length);
+			else { // Not Lining up
+				// all but last
+				for(int j = 0; j < or.length - 1; j++) {
+					long v = or[j];
+					ret[retLp] = ret[retLp] ^ (v << remainder);
+					retLp++;
+					ret[retLp] = v >>> (64 - remainder);
+				}
+				// last
+				long v = or[or.length - 1];
+				ret[retLp] = ret[retLp] ^ (v << remainder);
+				retLp++;
+				if(retLp < ret.length)
+					ret[retLp] = v >>> (64 - remainder);
+			}
+			p += ms;
+		}
+
+		BitSet retBS = BitSet.valueOf(ret);
+		return new MapToBit(getUnique(), retBS, p);
+
 	}
 }

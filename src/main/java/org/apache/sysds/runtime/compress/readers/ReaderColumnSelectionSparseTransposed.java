@@ -58,12 +58,8 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 				final int len = a.size(c) + pos;
 				final int spa = Arrays.binarySearch(aIdx, pos, len, _rl);
 				if(spa >= 0) {
-					if(aIdx[spa] < _ru)
-						sparsePos[i] = spa;
-					else {
-						sparsePos[i] = -1;
-						atEnd = true;
-					}
+					// it should never happen that if the value of _rl is found that the end is out of range.
+					sparsePos[i] = spa;
 				}
 				else { // spa < 0 or larger.
 					final int spaC = Math.abs(spa + 1);

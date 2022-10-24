@@ -25,6 +25,8 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.TernaryFrameScalarCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.TernaryFrameScalarSPInstruction;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 
 public class TernaryFrameScalarFEDInstruction extends TernaryFEDInstruction
@@ -32,6 +34,18 @@ public class TernaryFrameScalarFEDInstruction extends TernaryFEDInstruction
 	protected TernaryFrameScalarFEDInstruction(TernaryOperator op, CPOperand in1,
 			CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, FederatedOutput fedOut) {
 		super(op, in1, in2, in3, out, opcode, istr, fedOut);
+	}
+
+	public static TernaryFrameScalarFEDInstruction parseInstruction(TernaryFrameScalarCPInstruction instr) {
+		return new TernaryFrameScalarFEDInstruction((TernaryOperator) instr.getOperator(), instr.input1, instr.input2,
+			instr.input3, instr.output, instr.getOpcode(), instr.getInstructionString(),
+			FEDInstruction.FederatedOutput.NONE);
+	}
+
+	public static TernaryFrameScalarFEDInstruction parseInstruction(TernaryFrameScalarSPInstruction instr) {
+		return new TernaryFrameScalarFEDInstruction((TernaryOperator) instr.getOperator(), instr.input1, instr.input2,
+			instr.input3, instr.output, instr.getOpcode(), instr.getInstructionString(),
+			FEDInstruction.FederatedOutput.NONE);
 	}
 
 	@Override

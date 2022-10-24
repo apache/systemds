@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.utils.DArrCounts;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public interface DictionaryFactory {
@@ -84,7 +85,7 @@ public interface DictionaryFactory {
 				}
 				retB.recomputeNonZeros();
 				retB.examSparsity(true);
-				return new MatrixBlockDictionary(retB, nCols);
+				return new MatrixBlockDictionary(retB);
 			}
 			else {
 
@@ -93,7 +94,7 @@ public interface DictionaryFactory {
 					final DArrCounts dac = vals.get(i);
 					System.arraycopy(dac.key.getData(), 0, resValues, dac.id * nCols, nCols);
 				}
-				return new Dictionary(resValues);
+				return Dictionary.create(resValues);
 			}
 		}
 		catch(Exception e) {
@@ -113,7 +114,7 @@ public interface DictionaryFactory {
 	public static ADictionary create(ABitmap ubm, double sparsity) {
 		final int nCol = ubm.getNumColumns();
 		if(ubm instanceof Bitmap)
-			return new Dictionary(((Bitmap) ubm).getValues());
+			return Dictionary.create(((Bitmap) ubm).getValues());
 		else if(sparsity < 0.4 && nCol > 4 && ubm instanceof MultiColBitmap) {
 			final MultiColBitmap mcbm = (MultiColBitmap) ubm;
 
@@ -129,7 +130,7 @@ public interface DictionaryFactory {
 			}
 			m.recomputeNonZeros();
 			m.examSparsity(true);
-			return new MatrixBlockDictionary(m, nCol);
+			return new MatrixBlockDictionary(m);
 		}
 		else if(ubm instanceof MultiColBitmap) {
 			MultiColBitmap mcbm = (MultiColBitmap) ubm;
@@ -138,7 +139,7 @@ public interface DictionaryFactory {
 			for(int i = 0; i < nVals; i++)
 				System.arraycopy(mcbm.getValues(i), 0, resValues, i * nCol, nCol);
 
-			return new Dictionary(resValues);
+			return Dictionary.create(resValues);
 		}
 		throw new NotImplementedException("Not implemented creation of bitmap type : " + ubm.getClass().getSimpleName());
 	}
@@ -148,25 +149,24 @@ public interface DictionaryFactory {
 		final int nCol = ubm.getNumColumns();
 		final int nVal = ubm.getNumValues() - (addZero ? 0 : 1);
 		if(nCol > 4 && sparsity < 0.4) {
-			final MultiColBitmap mcbm = (MultiColBitmap) ubm;
+			final MultiColBitmap mcbm = (MultiColBitmap) ubm; // always multi column
+
 			final MatrixBlock m = new MatrixBlock(nVal, nCol, true);
 			m.allocateSparseRowsBlock();
 			final SparseBlock sb = m.getSparseBlock();
 
-			for(int i = 0; i < defaultIndex; i++) {
-				final double[] tuple = mcbm.getValues(i);
-				for(int col = 0; col < nCol; col++)
-					sb.append(i, col, tuple[col]);
-			}
+			for(int i = 0; i < defaultIndex; i++)
+				sb.set(i, new SparseRowVector(mcbm.getValues(i)), false);
+
+			// copy default
 			System.arraycopy(mcbm.getValues(defaultIndex), 0, defaultTuple, 0, nCol);
-			for(int i = defaultIndex; i < ubm.getNumValues() - 1; i++) {
-				final double[] tuple = mcbm.getValues(i);
-				for(int col = 0; col < nCol; col++)
-					sb.append(i, col, tuple[col]);
-			}
+
+			for(int i = defaultIndex; i < ubm.getNumValues() - 1; i++)
+				sb.set(i, new SparseRowVector(mcbm.getValues(i + 1)), false);
+
 			m.recomputeNonZeros();
 			m.examSparsity(true);
-			return new MatrixBlockDictionary(m, nCol);
+			return new MatrixBlockDictionary(m);
 		}
 		else {
 			double[] dict = new double[nCol * nVal];
@@ -177,7 +177,7 @@ public interface DictionaryFactory {
 				System.arraycopy(bmv, defaultIndex + 1, dict, defaultIndex, bmv.length - defaultIndex - 1);
 			}
 			else if(ubm instanceof MultiColBitmap) {
-				MultiColBitmap mcbm = (MultiColBitmap) ubm;
+				final MultiColBitmap mcbm = (MultiColBitmap) ubm;
 				for(int i = 0; i < defaultIndex; i++)
 					System.arraycopy(mcbm.getValues(i), 0, dict, i * nCol, nCol);
 				System.arraycopy(mcbm.getValues(defaultIndex), 0, defaultTuple, 0, nCol);
@@ -187,7 +187,7 @@ public interface DictionaryFactory {
 			else
 				throw new NotImplementedException("not supported ABitmap of type:" + ubm.getClass().getSimpleName());
 
-			return new Dictionary(dict);
+			return Dictionary.create(dict);
 		}
 	}
 
@@ -200,7 +200,7 @@ public interface DictionaryFactory {
 			final double[] resValues = new double[nRows];
 			final double[] from = ((Bitmap) ubm).getValues();
 			System.arraycopy(from, 0, resValues, 0, from.length);
-			return new Dictionary(resValues);
+			return Dictionary.create(resValues);
 		}
 
 		final MultiColBitmap mcbm = (MultiColBitmap) ubm;
@@ -216,18 +216,18 @@ public interface DictionaryFactory {
 			}
 			m.recomputeNonZeros();
 			m.examSparsity(true);
-			return new MatrixBlockDictionary(m, nCols);
+			return new MatrixBlockDictionary(m);
 		}
 
 		final double[] resValues = new double[nRows * nCols];
 		for(int i = 0; i < nVals; i++)
 			System.arraycopy(mcbm.getValues(i), 0, resValues, i * nCols, nCols);
 
-		return new Dictionary(resValues);
+		return Dictionary.create(resValues);
 	}
 
 	public static ADictionary create(DoubleCountHashMap map) {
 		final double[] resValues = map.getDictionary();
-		return new Dictionary(resValues);
+		return Dictionary.create(resValues);
 	}
 }

@@ -241,7 +241,7 @@ public class Types
 		CUMSUMPROD, DETECTSCHEMA, COLNAMES, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
 		IQM, ISNA, ISNAN, ISINF, LENGTH, LINEAGE, LOG, NCOL, NOT, NROW,
 		MEDIAN, PREFETCH, PRINT, ROUND, SIN, SINH, SIGN, SOFTMAX, SQRT, STOP,
-		SVD, TAN, TANH, TYPEOF,
+		SVD, TAN, TANH, TYPEOF, TRIGREMOTE,
 		//fused ML-specific operators for performance 
 		SPROP, //sample proportion: P * (1 - P)
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
@@ -539,6 +539,7 @@ public class Types
 		TEXT,   // text cell IJV representation (mm w/o header)
 		MM,     // text matrix market IJV representation
 		CSV,    // text dense representation
+		COMPRESSED, // Internal SYSTEMDS compressed format 
 		LIBSVM, // text libsvm sparse row representation
 		JSONL,  // text nested JSON (Line) representation
 		BINARY, // binary block representation (dense/sparse/ultra-sparse)
@@ -551,7 +552,7 @@ public class Types
 		}
 		
 		public boolean isTextFormat() {
-			return this != BINARY;
+			return this != BINARY && this != COMPRESSED;
 		}
 		
 		public static boolean isTextFormat(String fmt) {

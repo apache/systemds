@@ -25,6 +25,7 @@ import zipfile
 import pandas as pd
 import requests
 from systemds.context import SystemDSContext
+from systemds.operator import Frame, Scalar
 
 
 class DataManager:
@@ -41,8 +42,8 @@ class DataManager:
     _test_data_loc: str
     _test_labels_loc: str
 
-    _data_columns: []
-    _data_string_labels: []
+    _data_columns: list
+    _data_string_labels: list
 
     def __init__(self):
         self._data_zip_url = "https://systemds.apache.org/assets/datasets/adult/data.zip"
@@ -59,38 +60,38 @@ class DataManager:
 
     def get_train_data(self, sds: SystemDSContext) -> 'Frame':
         self._get_data(self._train_data_loc)
-        return sds.read(self._train_data_loc)[:,0:14]
+        return sds.read(self._train_data_loc)[:, 0:14]
 
     def get_train_labels_pandas(self) -> pd.DataFrame:
         self._get_data(self._train_data_loc)
-        return self._parse_data(self._train_data_loc)["income"]
+        return self._parse_data(self._train_data_loc)[["income"]]
 
     def get_train_labels(self, sds: SystemDSContext) -> 'Frame':
         self._get_data(self._train_data_loc)
-        return sds.read(self._train_data_loc)[:,14]
+        return sds.read(self._train_data_loc)[:, 14]
 
     def get_test_data_pandas(self) -> pd.DataFrame:
         self._get_data(self._test_data_loc)
         return self._parse_data(self._test_data_loc)\
             .drop(labels=["income"], axis=1)
-    
+
     def get_test_data(self, sds: SystemDSContext) -> 'Frame':
         self._get_data(self._test_data_loc)
-        return sds.read(self._test_data_loc)[:,0:14]
+        return sds.read(self._test_data_loc)[:, 0:14]
 
     def get_test_labels_pandas(self) -> pd.DataFrame:
         self._get_data(self._test_data_loc)
-        return self._parse_data(self._test_data_loc)["income"]
+        return self._parse_data(self._test_data_loc)[["income"]]
 
     def get_test_labels(self, sds: SystemDSContext) -> 'Frame':
         self._get_data(self._test_data_loc)
-        return sds.read(self._test_data_loc)[:,14]
+        return sds.read(self._test_data_loc)[:, 14]
 
     def get_jspec_string(self) -> str:
         self._get_data(self._jspec_loc)
         with open(self._jspec_loc, "r") as f:
             return f.read()
-    
+
     def get_jspec(self, sds: SystemDSContext) -> 'Scalar':
         self._get_data(self._jspec_loc)
         return sds.read(self._jspec_loc, data_type="scalar", value_type="string")

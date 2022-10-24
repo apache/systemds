@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
@@ -49,12 +50,17 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.RequestModel;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.Instruction.IType;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -189,6 +195,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		FederatedResponse response = null; // last response
 		boolean containsCLEAR = false;
 		long clearReqPid = -1;
+		int numGETrequests = 0;
+		var event = new EventModel();
+		final String coordinatorHostIdFormat = "%s-%d";
+		event.setCoordinatorHostId(String.format(coordinatorHostIdFormat, remoteHost, requests[0].getPID()));
 		for(int i = 0; i < requests.length; i++) {
 			final FederatedRequest request = requests[i];
 			final RequestType t = request.getType();
@@ -198,39 +208,57 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
 			PrivacyMonitor.clearCheckedConstraints();
 
+			var eventStage = new EventStageModel();
 			// execute command and handle privacy constraints
-			final FederatedResponse tmp = executeCommand(request, ecm);
+			final FederatedResponse tmp = executeCommand(request, ecm, eventStage);
+
+			if (DMLScript.STATISTICS) {
+				var requestStat = new RequestModel(request.getType().name(), 1L);
+				requestStat.setCoordinatorHostId(String.format(coordinatorHostIdFormat, remoteHost, request.getPID()));
+				FederatedStatistics.addWorkerRequest(requestStat);
+
+				event.stages.add(eventStage);
+			}
+
 			conditionalAddCheckedConstraints(request, tmp);
 
 			// select the response
 			if(!tmp.isSuccessful()) {
 				LOG.error("Command " + t + " resulted in error:\n" + tmp.getErrorMessage());
+				if (DMLScript.STATISTICS)
+					FederatedStatistics.addEvent(event);
 				return tmp; // Return first error without executing anything further
 			}
 			else if(t == RequestType.GET_VAR) {
 				// If any of the requests was a GET_VAR then set it as output.
-				if(response != null) {
+				if(response != null && numGETrequests > 0) {
 					String message = "Multiple GET_VAR are not supported in single batch of requests.";
 					LOG.error(message);
+					if (DMLScript.STATISTICS)
+						FederatedStatistics.addEvent(event);
 					throw new FederatedWorkerHandlerException(message);
 				}
+				response = tmp;
+				numGETrequests ++;
+			}
+			else if(response == null
+				&& (t == RequestType.EXEC_INST || t == RequestType.EXEC_UDF)) {
+				// If there was no GET, use the EXEC INST or UDF to obtain the returned nnz
 				response = tmp;
 			}
 			else if(response == null && i == requests.length - 1) {
 				response = tmp; // return last
 			}
 
-
-			if(t == RequestType.PUT_VAR || t == RequestType.EXEC_UDF) {
-				for (int paramIndex = 0; paramIndex < request.getNumParams(); paramIndex++) {
-					FederatedStatistics.incFedTransfer(request.getParam(paramIndex), _remoteAddress);
+			if (DMLScript.STATISTICS) {
+				if(t == RequestType.PUT_VAR || t == RequestType.EXEC_UDF) {
+					for (int paramIndex = 0; paramIndex < request.getNumParams(); paramIndex++)
+						FederatedStatistics.incFedTransfer(request.getParam(paramIndex), _remoteAddress, request.getPID());
 				}
-			}
-
-			if(t == RequestType.GET_VAR) {
-				var data = response.getData();
-				for (int dataObjIndex = 0; dataObjIndex < Arrays.stream(data).count(); dataObjIndex++) {
-					FederatedStatistics.incFedTransfer(data[dataObjIndex], _remoteAddress);
+				if(t == RequestType.GET_VAR) {
+					var data = response.getData();
+					for (int dataObjIndex = 0; dataObjIndex < Arrays.stream(data).count(); dataObjIndex++)
+						FederatedStatistics.incFedTransfer(data[dataObjIndex], _remoteAddress, request.getPID());
 				}
 			}
 
@@ -245,13 +273,16 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			printStatistics();
 		}
 
+		if (DMLScript.STATISTICS)
+			FederatedStatistics.addEvent(event);
+
 		return response;
 	}
 
 	private static void printStatistics() {
 		if(DMLScript.STATISTICS && Statistics.allowWorkerStatistics) {
 			System.out.println("Federated Worker " + Statistics.display());
-			Statistics.reset();
+			// Statistics.reset();
 		}
 	}
 
@@ -268,28 +299,48 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			response.setCheckedConstraints(PrivacyMonitor.getCheckedConstraints());
 	}
 
-	private FederatedResponse executeCommand(FederatedRequest request, ExecutionContextMap ecm)
+	private FederatedResponse executeCommand(FederatedRequest request, ExecutionContextMap ecm, EventStageModel eventStage)
 		throws DMLPrivacyException, FederatedWorkerHandlerException, Exception {
 		final RequestType method = request.getType();
+		FederatedResponse result = null;
+
+		eventStage.startTime = LocalDateTime.now();
+
 		switch(method) {
 			case READ_VAR:
-				return readData(request, ecm); // matrix/frame
+				eventStage.operation = method.name();
+				result = readData(request, ecm); // matrix/frame
+				break;
 			case PUT_VAR:
-				return putVariable(request, ecm);
+				eventStage.operation = method.name();
+				result = putVariable(request, ecm);
+				break;
 			case GET_VAR:
-				return getVariable(request, ecm);
+				eventStage.operation = method.name();
+				result = getVariable(request, ecm);
+				break;
 			case EXEC_INST:
-				return execInstruction(request, ecm);
+				result = execInstruction(request, ecm, eventStage);
+				break;
 			case EXEC_UDF:
-				return execUDF(request, ecm);
+				result = execUDF(request, ecm, eventStage);
+				break;
 			case CLEAR:
-				return execClear(ecm);
+				eventStage.operation = method.name();
+				result = execClear(ecm);
+				break;
 			case NOOP:
-				return execNoop();
+				eventStage.operation = method.name();
+				result = execNoop();
+				break;
 			default:
 				String message = String.format("Method %s is not supported.", method);
 				throw new FederatedWorkerHandlerException(message);
 		}
+
+		eventStage.endTime = LocalDateTime.now();
+
+		return result;
 	}
 
 	private FederatedResponse readData(FederatedRequest request, ExecutionContextMap ecm) {
@@ -315,16 +366,19 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		final String sId = String.valueOf(id);
 
 		boolean linReuse = (!ReuseCacheType.isNone() && dataType == DataType.MATRIX);
+		boolean readCache = ConfigurationManager.isFederatedReadCacheEnabled();
 		if(!linReuse || !LineageCache.reuseFedRead(sId, dataType, linItem, ec)) {
 			// Lookup read cache if reuse is disabled and we skipped storing in the
 			// lineage cache due to other constraints
-			cd = _frc.get(filename, !linReuse);
+			cd = _frc.get(filename, readCache & !linReuse);
 			try {
 				if(cd == null) { // data is neither in lineage cache nor in read cache
-					cd = localBlock == null ? readDataNoReuse(filename, dataType, mc) : ExecutionContext.createCacheableData(localBlock); // actual read of the data
+					cd = localBlock == null ?
+						readDataNoReuse(filename, dataType, mc) :
+						ExecutionContext.createCacheableData(localBlock); // actual read of the data
 					if(linReuse) // put the object into the lineage cache
 						LineageCache.putFedReadObject(cd, linItem, ec);
-					else
+					else if( readCache )
 						_frc.setData(filename, cd); // set the data into the read cache entry
 				}
 				ec.setVariable(sId, cd);
@@ -431,18 +485,32 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		final Object v = request.getParam(0);
 		// wrap transferred cache block into cacheable data
 		Data data;
-		if(v instanceof CacheBlock)
-			data = ExecutionContext.createCacheableData((CacheBlock) v);
-		else if(v instanceof ScalarObject)
+		long size = 0;
+		if(v instanceof CacheBlock) {
+			var block = ExecutionContext.createCacheableData((CacheBlock) v);
+			size = block.getDataSize();
+			data = block;
+		}
+		else if(v instanceof ScalarObject) {
 			data = (ScalarObject) v;
-		else if(v instanceof ListObject)
+			size = ((ScalarObject) v).getSize();
+		}
+		else if(v instanceof ListObject) {
 			data = (ListObject) v;
+			size = ((ListObject) v).getDataSize();
+		}
 		else if(request.getNumParams() == 2){
 			final Object v1= request.getParam(1);
-			if(v1 == DataType.MATRIX)
-				data = ExecutionContext.createMatrixObject((MatrixCharacteristics) v);
-			else
-				data = ExecutionContext.createFrameObject((MatrixCharacteristics) v);
+			if(v1 == DataType.MATRIX) {
+				var mtrx = ExecutionContext.createMatrixObject((MatrixCharacteristics) v);
+				size = mtrx.getDataSize();
+				data = mtrx;
+			}
+			else {
+				var frm = ExecutionContext.createFrameObject((MatrixCharacteristics) v);
+				size = frm.getDataSize();
+				data = frm;
+			}
 		}
 		else
 			throw new FederatedWorkerHandlerException(
@@ -451,6 +519,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				
 		// set variable and construct empty response
 		ec.setVariable(varName, data);
+
+		if (DMLScript.STATISTICS){
+			FederatedStatistics.addDataObject(new DataObjectModel(varName, data.getDataType().name(), data.getValueType().name(), size));
+		}
 
 		if(shouldTryAsyncCompress())
 			CompressedMatrixBlockFactory.compressAsync(ec, varName);
@@ -500,14 +572,18 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private FederatedResponse execInstruction(FederatedRequest request, ExecutionContextMap ecm) throws Exception {
+	private FederatedResponse execInstruction(FederatedRequest request, ExecutionContextMap ecm, EventStageModel eventStage) throws Exception {
 		final Instruction ins = InstructionParser.parseSingleInstruction((String) request.getParam(0));
+
+		eventStage.operation = ins.getExtendedOpcode();
+
 		final long tid = request.getTID();
 		final ExecutionContext ec = getContextForInstruction(tid, ins, ecm);
 		setThreads(ins);
 		exec(ec, ins);
 		adaptToWorkload(ec, _fan, tid, ins);
-		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+		return new FederatedResponse(
+			ResponseType.SUCCESS_EMPTY, getOutputNnz(ec, ins));
 	}
 	
 	private static ExecutionContext getContextForInstruction(long id, Instruction ins, ExecutionContextMap ecm){
@@ -555,14 +631,26 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			});
 		}
 	}
+	
+	private static long getOutputNnz(ExecutionContext ec, Instruction ins) {
+		if( ins instanceof ComputationCPInstruction ) {
+			Data dat = ec.getVariable(((ComputationCPInstruction)ins).getOutput());
+			if( dat instanceof MatrixObject )
+				return ((MatrixObject)dat).getNnz();
+		}
+		return -1L;
+	}
 
-	private FederatedResponse execUDF(FederatedRequest request, ExecutionContextMap ecm) {
+	private FederatedResponse execUDF(FederatedRequest request, ExecutionContextMap ecm, EventStageModel eventStage) {
 		checkNumParams(request.getNumParams(), 1);
 		ExecutionContext ec = ecm.get(request.getTID());
 
 		// get function and input parameters
 		try {
 			FederatedUDF udf = (FederatedUDF) request.getParam(0);
+
+			eventStage.operation = udf.getClass().getSimpleName();
+
 			Data[] inputs = Arrays.stream(udf.getInputIDs()).mapToObj(id -> ec.getVariable(String.valueOf(id)))
 				.map(PrivacyMonitor::handlePrivacy).toArray(Data[]::new);
 
@@ -600,6 +688,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private FederatedResponse execClear(ExecutionContextMap ecm) {
 		try {
 			ecm.clear();
+			FederatedStatistics.removeDataObjects();
 		}
 		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
 			throw ex;

@@ -24,13 +24,15 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -54,42 +56,28 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * with no modifications.
  * 
  */
-public class ColGroupSDCFOR extends AMorphingMMColGroup {
+public class ColGroupSDCFOR extends ASDC {
 
 	private static final long serialVersionUID = 3883228464052204203L;
 
-	/** Sparse row indexes for the data that is nonZero */
-	protected AOffset _indexes;
-
 	/** Pointers to row indexes in the dictionary. */
-	protected AMapToData _data;
+	protected final AMapToData _data;
 
 	/** Reference values in this column group */
-	protected double[] _reference;
-
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
-	protected ColGroupSDCFOR(int numRows) {
-		super(numRows);
-	}
+	protected final double[] _reference;
 
 	private ColGroupSDCFOR(int[] colIndices, int numRows, ADictionary dict, AOffset indexes, AMapToData data,
 		int[] cachedCounts, double[] reference) {
-		super(colIndices, numRows, dict, cachedCounts);
+		super(colIndices, numRows, dict, indexes, cachedCounts);
 		if(data.getUnique() != dict.getNumberOfValues(colIndices.length))
 			throw new DMLCompressionException("Invalid construction of SDCZero group");
 		_data = data;
-		_indexes = indexes;
-		_zeros = false;
 		_reference = reference;
 	}
 
-	protected static AColGroup create(int[] colIndexes, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
+	public static AColGroup create(int[] colIndexes, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
 		int[] cachedCounts, double[] reference) {
-		final boolean allZero = FORUtil.allZero(reference);
+		final boolean allZero = ColGroupUtils.allZero(reference);
 		if(allZero && dict == null)
 			return new ColGroupEmpty(colIndexes);
 		else if(dict == null)
@@ -100,6 +88,13 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 			return new ColGroupSDCFOR(colIndexes, numRows, dict, offsets, data, cachedCounts, reference);
 	}
 
+	public static AColGroup sparsifyFOR(ColGroupSDC g) {
+		// subtract default.
+		final double[] constV = ((ColGroupSDC) g)._defaultTuple;
+		final AColGroupValue clg = (AColGroupValue) g.subtractDefaultTuple();
+		return create(g.getColIndices(), g._numRows, clg._dict, g._indexes, g._data, g.getCachedCounts(), constV);
+	}
+
 	@Override
 	public CompressionType getCompType() {
 		return CompressionType.SDCFOR;
@@ -108,6 +103,11 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 	@Override
 	public ColGroupType getColGroupType() {
 		return ColGroupType.SDCFOR;
+	}
+
+	@Override
+	public double[] getDefaultTuple() {
+		return _reference;
 	}
 
 	@Override
@@ -128,11 +128,9 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 	@Override
 	public double getIdx(int r, int colIdx) {
 		final AIterator it = _indexes.getIterator(r);
-		final int nCol = _colIndexes.length;
 		if(it == null || it.value() != r)
 			return _reference[colIdx];
-		final int rowOff = _data.getIndex(it.getDataIndex()) * nCol;
-		return _dict.getValue(rowOff + colIdx) + _reference[colIdx];
+		return _dict.getValue(_data.getIndex(it.getDataIndex()), colIdx, _colIndexes.length) + _reference[colIdx];
 	}
 
 	@Override
@@ -154,7 +152,7 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	public AColGroup unaryOperation(UnaryOperator op) {
-		final double[] newRef = FORUtil.unaryOperator(op, _reference);
+		final double[] newRef = ColGroupUtils.unaryOperator(op, _reference);
 		final ADictionary newDict = _dict.applyUnaryOpWithReference(op, _reference, newRef);
 		return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), newRef);
 	}
@@ -206,14 +204,13 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 			out.writeDouble(d);
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		_indexes = OffsetFactory.readIn(in);
-		_data = MapToFactory.readIn(in);
-		_reference = new double[_colIndexes.length];
-		for(int i = 0; i < _colIndexes.length; i++)
-			_reference[i] = in.readDouble();
+	public static ColGroupSDCFOR read(DataInput in, int nRows) throws IOException {
+		int[] cols = readCols(in);
+		ADictionary dict = DictionaryFactory.read(in);
+		AOffset indexes = OffsetFactory.readIn(in);
+		AMapToData data = MapToFactory.readIn(in);
+		double[] reference = ColGroupIO.readDoubleArray(cols.length, in);
+		return new ColGroupSDCFOR(cols, nRows, dict, indexes, data, null, reference);
 	}
 
 	@Override
@@ -236,21 +233,26 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
+
+		final ADictionary newDict = _dict.replaceWithReference(pattern, replace, _reference);
 		boolean patternInReference = false;
 		for(double d : _reference)
 			if(pattern == d) {
 				patternInReference = true;
 				break;
 			}
-
 		if(patternInReference) {
-			throw new NotImplementedException("Not Implemented replace where a value in reference should be replaced");
-			// _dict.replace(pattern, replace, _reference, _newReplace);
+			double[] nRef = new double[_reference.length];
+			for(int i = 0; i < _reference.length; i++)
+				if(pattern == _reference[i])
+					nRef[i] = replace;
+				else
+					nRef[i] = _reference[i];
+
+			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), nRef);
 		}
-		else {
-			final ADictionary newDict = _dict.replaceWithReference(pattern, replace, _reference);
+		else
 			return create(_colIndexes, _numRows, newDict, _indexes, _data, getCachedCounts(), _reference);
-		}
 
 	}
 
@@ -269,7 +271,7 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 		// trick, use normal sum
 		super.computeSum(c, nRows);
 		// and add all sum of reference multiplied with nrows.
-		final double refSum = FORUtil.refSum(_reference);
+		final double refSum = ColGroupUtils.refSum(_reference);
 		c[0] += refSum * nRows;
 	}
 
@@ -286,14 +288,13 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 	protected void computeSumSq(double[] c, int nRows) {
 		// square sum the dictionary.
 		c[0] += _dict.sumSqWithReference(getCounts(), _reference);
-		final double refSum = FORUtil.refSumSq(_reference);
+		final double refSum = ColGroupUtils.refSumSq(_reference);
 		// Square sum of the reference values only for the rows that is not represented in the Offsets.
 		c[0] += refSum * (_numRows - _data.size());
 	}
 
 	@Override
 	protected void computeColSumsSq(double[] c, int nRows) {
-		_dict = _dict.getMBDict(_colIndexes.length);
 		// square sum the dictionary
 		_dict.colSumSqWithReference(c, getCounts(), _colIndexes, _reference);
 		// Square sum of the reference values only for the rows that is not represented in the Offsets.
@@ -313,7 +314,7 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	protected double[] preAggProductRows() {
-		throw new NotImplementedException();
+		return _dict.productAllRowsToDoubleWithReference(_reference);
 	}
 
 	@Override
@@ -329,42 +330,51 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
-		throw new NotImplementedException("Not Implemented PFOR");
+		ColGroupSDC.computeRowProduct(c, rl, ru, preAgg, _data, _indexes, _numRows);
 	}
 
 	@Override
 	protected void computeColProduct(double[] c, int nRows) {
-		throw new NotImplementedException("Not Implemented PFOR");
-	}
+		_dict.colProductWithReference(c, getCounts(), _colIndexes, _reference);
+		final int count = _numRows - _data.size();
 
-	@Override
-	protected AColGroup sliceSingleColumn(int idx) {
-		ColGroupSDCFOR ret = (ColGroupSDCFOR) super.sliceSingleColumn(idx);
-		// select values from double array.
-		ret._reference = new double[1];
-		ret._reference[0] = _reference[idx];
-		return ret;
+		for(int x = 0; x < _colIndexes.length; x++) {
+			double v = c[_colIndexes[x]];
+			c[_colIndexes[x]] = v != 0 ? v * Math.pow(_reference[x], count) : 0;
+		}
 	}
 
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-		ColGroupSDCFOR ret = (ColGroupSDCFOR) super.sliceMultiColumns(idStart, idEnd, outputCols);
-		final int len = idEnd - idStart;
-		ret._reference = new double[len];
-		for(int i = 0, ii = idStart; i < len; i++, ii++)
-			ret._reference[i] = _reference[ii];
+		ADictionary retDict = _dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
+		final double[] newDef = new double[idEnd - idStart];
+		for(int i = idStart, j = 0; i < idEnd; i++, j++)
+			newDef[j] = _reference[i];
+		return create(outputCols, _numRows, retDict, _indexes, _data, getCounts(), newDef);
+	}
 
-		return ret;
+	@Override
+	protected AColGroup sliceSingleColumn(int idx) {
+		final int[] retIndexes = new int[] {0};
+		if(_colIndexes.length == 1) // early abort, only single column already.
+			return create(retIndexes, _numRows, _dict, _indexes, _data, getCounts(), _reference);
+		final double[] newDef = new double[] {_reference[idx]};
+		final ADictionary retDict = _dict.sliceOutColumnRange(idx, idx + 1, _colIndexes.length);
+		return create(retIndexes, _numRows, retDict, _indexes, _data, getCounts(), newDef);
 	}
 
 	@Override
 	public boolean containsValue(double pattern) {
-		if(pattern == 0 && _zeros)
-			return true;
-		else if(Double.isNaN(pattern) || Double.isInfinite(pattern))
-			return FORUtil.containsInfOrNan(pattern, _reference) || _dict.containsValue(pattern);
-		else
+		if(Double.isNaN(pattern) || Double.isInfinite(pattern))
+			return ColGroupUtils.containsInfOrNan(pattern, _reference) || _dict.containsValue(pattern);
+		else {
+			// if the value is in reference then return true.
+			for(double v : _reference)
+				if(v == pattern)
+					return true;
+
 			return _dict.containsValueWithReference(pattern, _reference);
+		}
 	}
 
 	@Override
@@ -386,17 +396,15 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
-		ADictionary d = _dict.rexpandColsWithReference(max, ignore, cast, _reference[0]);
-		return ColGroupSDC.rexpandCols(max, ignore, cast, nRows, d, _indexes, _data, getCachedCounts(), _reference[0]);
+		ADictionary d = _dict.rexpandColsWithReference(max, ignore, cast, (int) _reference[0]);
+		return ColGroupSDC.rexpandCols(max, ignore, cast, nRows, d, _indexes, _data, getCachedCounts(),
+			(int) _reference[0]);
 	}
 
 	@Override
 	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
 		// should be guaranteed to be one column therefore only one reference value.
-		CM_COV_Object ret = _dict.centralMomentWithReference(op.fn, getCounts(), _reference[0], nRows);
-		int count = _numRows - _data.size();
-		op.fn.execute(ret, _reference[0], count);
-		return ret;
+		return _dict.centralMomentWithReference(op.fn, getCounts(), _reference[0], nRows);
 	}
 
 	@Override
@@ -405,6 +413,40 @@ public class ColGroupSDCFOR extends AMorphingMMColGroup {
 		final int nCols = getNumCols();
 		final int nRowsScanned = _data.size();
 		return e.getCost(nRows, nRowsScanned, nCols, nVals, _dict.getSparsity());
+	}
+
+	@Override
+	public double[] getCommon() {
+		return _reference;
+	}
+
+	@Override
+	protected AColGroup allocateRightMultiplicationCommon(double[] common, int[] colIndexes, ADictionary preAgg) {
+		return create(colIndexes, _numRows, preAgg, _indexes, _data, getCachedCounts(), common);
+	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		OffsetSliceInfo off = _indexes.slice(rl, ru);
+		if(off.lIndex == -1)
+			return ColGroupConst.create(_colIndexes, Dictionary.create(_reference));
+		AMapToData newData = _data.slice(off.lIndex, off.uIndex);
+		return new ColGroupSDCFOR(_colIndexes, _numRows, _dict, off.offsetSlice, newData, null, _reference);
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
+		return create(colIndexes, _numRows, newDictionary, _indexes, _data, getCachedCounts(), _reference);
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
+	}
+
+	@Override
+	public AColGroup appendNInternal(AColGroup[] g) {
+		return null;
 	}
 
 	@Override

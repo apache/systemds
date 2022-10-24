@@ -18,7 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
-# Import SystemDS
+import logging
+
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import l2svm
 
@@ -28,7 +29,7 @@ with SystemDSContext() as sds:
     # Add value to all cells in features
     features += 1.1
     # Generate labels of all ones and zeros
-    labels = sds.rand(10, 1, 1, 1, sparsity = 0.5)
+    labels = sds.rand(10, 1, 1, 1, sparsity=0.5)
 
-    model = l2svm(features, labels).compute()
-    print(model)
+    model = l2svm(features, labels, verbose=False).compute()
+    logging.info(model)

@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.io.DataInput;
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -38,11 +40,6 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class ColGroupEmpty extends AColGroupCompressed {
 	private static final long serialVersionUID = -2307677253622099958L;
-
-	/** Constructor for serialization */
-	protected ColGroupEmpty() {
-		super();
-	}
 
 	/**
 	 * Constructs an Constant Colum Group, that contains only one tuple, with the given value.
@@ -89,7 +86,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 			return this;
 		double[] retV = new double[_colIndexes.length];
 		Arrays.fill(retV, v);
-		return ColGroupConst.create(_colIndexes, new Dictionary(retV));
+		return ColGroupConst.create(_colIndexes, Dictionary.create(retV));
 	}
 
 	@Override
@@ -99,7 +96,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 			return this;
 		double[] retV = new double[_colIndexes.length];
 		Arrays.fill(retV, v);
-		return ColGroupConst.create(_colIndexes, new Dictionary(retV));
+		return ColGroupConst.create(_colIndexes, Dictionary.create(retV));
 	}
 
 	@Override
@@ -109,13 +106,9 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		final ValueFunction fn = op.fn;
 		final double[] retVals = new double[_colIndexes.length];
 		final int lenV = _colIndexes.length;
-		boolean allZero = true;
 		for(int i = 0; i < lenV; i++)
-			allZero = 0 == (retVals[i] = fn.execute(v[_colIndexes[i]], 0)) && allZero;
-
-		if(allZero)
-			return this;
-		return ColGroupConst.create(_colIndexes, new Dictionary(retVals));
+			retVals[i] = fn.execute(v[_colIndexes[i]], 0);
+		return ColGroupConst.create(_colIndexes, Dictionary.create(retVals));
 	}
 
 	@Override
@@ -125,12 +118,9 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		final ValueFunction fn = op.fn;
 		final double[] retVals = new double[_colIndexes.length];
 		final int lenV = _colIndexes.length;
-		boolean allZero = true;
 		for(int i = 0; i < lenV; i++)
-			allZero = 0 == (retVals[i] = fn.execute(0, v[_colIndexes[i]])) && allZero;
-		if(allZero)
-			return this;
-		return ColGroupConst.create(_colIndexes, new Dictionary(retVals));
+			retVals[i] = fn.execute(0, v[_colIndexes[i]]);
+		return ColGroupConst.create(_colIndexes, Dictionary.create(retVals));
 	}
 
 	@Override
@@ -139,24 +129,18 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock c) {
-		// do nothing
+	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock c, int nRows) {
+		// do nothing, but should never be called
 	}
 
 	@Override
 	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
-		// do nothing
+		// do nothing, but should never be called
 	}
 
 	@Override
 	public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
-		// do nothing
-		// but should never be called
-	}
-
-	@Override
-	public AColGroup copy() {
-		return new ColGroupEmpty(_colIndexes);
+		// do nothing, but should never be called
 	}
 
 	@Override
@@ -180,7 +164,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	public AColGroup rightMultByMatrix(MatrixBlock right) {
+	public AColGroup rightMultByMatrix(MatrixBlock right, int[] allCols) {
 		return null;
 	}
 
@@ -307,4 +291,40 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		final int nCols = getNumCols();
 		return e.getCost(nRows, 1, nCols, 1, 0.00001);
 	}
+
+	@Override
+	public boolean isEmpty() {
+		return true;
+	}
+
+	public static ColGroupEmpty read(DataInput in) throws IOException {
+		int[] cols = readCols(in);
+		return new ColGroupEmpty(cols);
+	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		return null;
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes) {
+		return new ColGroupEmpty(colIndexes);
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		if(g instanceof ColGroupEmpty && g._colIndexes.length == _colIndexes.length)
+			return this;
+		return null;
+	}
+
+	@Override
+	public AColGroup appendNInternal(AColGroup[] g) {
+		for(int i = 0; i < g.length; i++)
+			if(!Arrays.equals(_colIndexes, g[i]._colIndexes))
+				return null;
+		return this;
+	}
+
 }

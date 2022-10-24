@@ -75,6 +75,7 @@ public class DMLOptions {
 	public int                  fedWorkerPort = -1;
 	public boolean              fedMonitoring = false;
 	public int                  fedMonitoringPort = -1;
+	public String               fedMonitoringAddress = null;
 	public int                  pythonPort    = -1;
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
 	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
@@ -97,7 +98,8 @@ public class DMLOptions {
 			", statsCount=" + statsCount +
 			", fedStats=" + fedStats +
 			", fedStatsCount=" + fedStatsCount +
-			", fedMonitor=" + fedMonitoring +
+			", fedMonitoring=" + fedMonitoring +
+			", fedMonitoringAddress" + fedMonitoringAddress +
 			", memStats=" + memStats +
 			", explainType=" + explainType +
 			", execMode=" + execMode +
@@ -198,6 +200,7 @@ public class DMLOptions {
 				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -hops option, must be one of [hops, runtime, recompile_hops, recompile_runtime]");
 			}
 		}
+
 		dmlOptions.stats = line.hasOption("stats");
 		if (dmlOptions.stats){
 			String statsCount = line.getOptionValue("stats");
@@ -234,9 +237,13 @@ public class DMLOptions {
 			dmlOptions.fedWorkerPort = Integer.parseInt(line.getOptionValue("w"));
 		}
 
-		if (line.hasOption("fedMonitor")) {
+		if (line.hasOption("fedMonitoring")) {
 			dmlOptions.fedMonitoring= true;
-			dmlOptions.fedMonitoringPort = Integer.parseInt(line.getOptionValue("fedMonitor"));
+			dmlOptions.fedMonitoringPort = Integer.parseInt(line.getOptionValue("fedMonitoring"));
+		}
+
+		if (line.hasOption("fedMonitoringAddress")) {
+			dmlOptions.fedMonitoringAddress = line.getOptionValue("fedMonitoringAddress");
 		}
 
 		if (line.hasOption("f")){
@@ -258,9 +265,8 @@ public class DMLOptions {
 			}
 		}
 
-		if (line.hasOption("python")){
+		if (line.hasOption("python"))
 			dmlOptions.pythonPort = Integer.parseInt(line.getOptionValue("python"));
-		}
 
 		// Named arguments map is created as ("$K, 123), ("$X", "X.csv"), etc
 		if (line.hasOption("nvargs")){
@@ -346,8 +352,11 @@ public class DMLOptions {
 		Option debugOpt = OptionBuilder.withDescription("runs in debug mode; default off")
 			.create("debug");
 		Option pythonOpt = OptionBuilder
-			.withDescription("Python Context start with port argument for communication to python")
+			.withDescription("Python Context start with port argument for communication to from python to java")
 			.isRequired().hasArg().create("python");
+		Option monitorIdOpt = OptionBuilder
+				.withDescription("Coordinator context start with monitorId argument for monitoring registration")
+				.hasOptionalArg().create("monitorId");
 		Option fileOpt = OptionBuilder.withArgName("filename")
 			.withDescription("specifies dml/pydml file to execute; path can be local/hdfs/gpfs (prefixed with appropriate URI)")
 			.isRequired().hasArg().create("f");
@@ -365,7 +374,10 @@ public class DMLOptions {
 			.hasOptionalArg().create("w");
 		Option monitorOpt = OptionBuilder
 			.withDescription("Starts a federated monitoring backend with the given argument as the port.")
-			.hasOptionalArg().create("fedMonitor");
+			.hasOptionalArg().create("fedMonitoring");
+		Option registerMonitorOpt = OptionBuilder
+				.withDescription("Registers the coordinator for monitoring with the specified address of the monitoring tool.")
+				.hasOptionalArg().create("fedMonitoringAddress");
 		Option checkPrivacy = OptionBuilder
 			.withDescription("Check which privacy constraints are loaded and checked during federated execution")
 			.create("checkPrivacy");
@@ -393,6 +405,8 @@ public class DMLOptions {
 		options.addOption(lineageOpt);
 		options.addOption(fedOpt);
 		options.addOption(monitorOpt);
+		options.addOption(registerMonitorOpt);
+		options.addOption(monitorIdOpt);
 		options.addOption(checkPrivacy);
 		options.addOption(federatedCompilation);
 		options.addOption(noFedRuntimeConversion);

@@ -57,11 +57,6 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 	protected int _numRows;
 
-	/** Constructor for serialization */
-	protected ColGroupLinearFunctional() {
-		super();
-	}
-
 	/**
 	 * Constructs a Linear Functional Column Group that compresses its content using a linear functional.
 	 *
@@ -371,9 +366,9 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	public AColGroup rightMultByMatrix(MatrixBlock right) {
+	public AColGroup rightMultByMatrix(MatrixBlock right, int[] allCols) {
 		final int nColR = right.getNumColumns();
-		final int[] outputCols = Util.genColsIndices(nColR);
+		final int[] outputCols = allCols != null ? allCols : Util.genColsIndices(nColR);
 
 		// TODO: add specialization for sparse/dense matrix blocks
 		MatrixBlock result = new MatrixBlock(_numRows, nColR, false);
@@ -418,10 +413,9 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
-		if(lhs instanceof ColGroupEmpty) {
+	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result, int nRows) {
+		if(lhs instanceof ColGroupEmpty)
 			return;
-		}
 
 		MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.length, 0);
 
@@ -491,11 +485,6 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	public AColGroup copy() {
-		return this;
-	}
-
-	@Override
 	public boolean containsValue(double pattern) {
 		for(int col = 0; col < getNumCols(); col++) {
 			if(colContainsValue(col, pattern))
@@ -525,14 +514,17 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		throw new NotImplementedException();
 	}
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		throw new NotImplementedException();
+	public static ColGroupLinearFunctional read(DataInput in, int nRows) throws IOException {
+		int[] cols = readCols(in);
+		double[] coefficients = ColGroupIO.readDoubleArray(2 * cols.length, in);
+		return new ColGroupLinearFunctional(cols, coefficients, nRows);
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		throw new NotImplementedException();
+		super.write(out);
+		for(double d : _coefficents)
+			out.writeDouble(d);
 	}
 
 	@Override
@@ -662,4 +654,25 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 
 		return slopes;
 	}
+
+	@Override
+	public AColGroup sliceRows(int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected AColGroup copyAndSet(int[] colIndexes) {
+		return ColGroupLinearFunctional.create(colIndexes, _coefficents, _numRows);
+	}
+
+	@Override
+	public AColGroup append(AColGroup g) {
+		return null;
+	}
+
+	@Override
+	public AColGroup appendNInternal(AColGroup[] g) {
+		return null;
+	}
+
 }

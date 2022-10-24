@@ -1,0 +1,6 @@
+X = read($1)
+Y = read($2)
+
+m = lm(X=X, y=Y, reg= 1e-16, tol=1e-16, maxi= 100, verbose=$3)
+
+print(toString(m))

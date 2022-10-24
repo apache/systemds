@@ -20,7 +20,6 @@
 package org.apache.sysds.test.functions.builtin.part2;
 
 import org.junit.Ignore;
-import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;

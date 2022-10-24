@@ -61,6 +61,21 @@ public class CLALibDecompress {
 
 	public static void decompressTo(CompressedMatrixBlock cmb, MatrixBlock ret, int rowOffset, int colOffset, int k) {
 		Timing time = new Timing(true);
+		if(cmb.getNumColumns() + colOffset > ret.getNumColumns() || cmb.getNumRows() + rowOffset > ret.getNumRows()) {
+			LOG.warn(
+				"Slow slicing off excess parts for decompressTo because decompression into is implemented for fitting blocks");
+			MatrixBlock mbSliced = cmb.slice( //
+				Math.min(Math.abs(rowOffset), 0), Math.min(cmb.getNumRows(), ret.getNumRows() - rowOffset) - 1, // Rows
+				Math.min(Math.abs(colOffset), 0), Math.min(cmb.getNumColumns(), ret.getNumColumns() - colOffset) - 1); // Cols
+			if(mbSliced instanceof MatrixBlock) {
+				mbSliced.putInto(ret, rowOffset, colOffset, false);
+				return;
+			}
+
+			cmb = (CompressedMatrixBlock) mbSliced;
+			decompress(cmb, 1);
+		}
+
 		final boolean outSparse = ret.isInSparseFormat();
 		if(!cmb.isEmpty()) {
 			if(outSparse && cmb.isOverlapping())
@@ -78,8 +93,7 @@ public class CLALibDecompress {
 				LOG.trace("decompressed block w/ k=" + k + " in " + t + "ms.");
 		}
 
-		if(ret.getNonZeros() <= 0)
-			ret.setNonZeros(cmb.getNonZeros());
+		ret.recomputeNonZeros();
 	}
 
 	private static void decompressToSparseBlock(CompressedMatrixBlock cmb, MatrixBlock ret, int rowOffset,
@@ -96,6 +110,8 @@ public class CLALibDecompress {
 		else
 			for(AColGroup g : groups)
 				g.decompressToSparseBlock(sb, 0, nRows, rowOffset, colOffset);
+		sb.sort();
+		ret.checkSparseRows();
 	}
 
 	private static void decompressToDenseBlock(CompressedMatrixBlock cmb, DenseBlock ret, int rowOffset, int colOffset) {

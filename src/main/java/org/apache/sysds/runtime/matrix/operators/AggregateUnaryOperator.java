@@ -67,4 +67,16 @@ public class AggregateUnaryOperator extends MultiThreadedOperator {
 	public boolean isFullAggregate() {
 		return indexFn instanceof ReduceAll;
 	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(getClass().getSimpleName());
+		sb.append("(");
+		sb.append(aggOp);
+		sb.append(", ");
+		sb.append(indexFn);
+		sb.append(")");
+		return sb.toString();
+	}
 }

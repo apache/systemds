@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -30,13 +31,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.ColGroupType;
 
-/**
- * This has the IO responsibility of ColGroups, such that it enables to read and write ColGroups to and from a DataInput
- * and DataOutput
- */
-public class ColGroupIO {
+/** IO for ColGroups, it enables read and write ColGroups */
+public interface ColGroupIO {
 
-	protected static final Log LOG = LogFactory.getLog(ColGroupIO.class.getName());
+	static final Log LOG = LogFactory.getLog(ColGroupIO.class.getName());
 
 	/**
 	 * Read groups from a file. Note that the information about how many should be in the file already.
@@ -50,22 +48,13 @@ public class ColGroupIO {
 
 		// Read in how many colGroups there are
 		final int nColGroups = in.readInt();
-		final boolean trace = LOG.isTraceEnabled();
-		if(trace)
-			LOG.trace("reading " + nColGroups + " ColGroups");
-		
+
 		// Allocate that amount into an ArrayList
 		final List<AColGroup> _colGroups = new ArrayList<>(nColGroups);
 
 		// Read each ColGroup one at a time.
-		for(int i = 0; i < nColGroups; i++) {
-			ColGroupType ctype = ColGroupType.values()[in.readByte()];
-			if(trace)
-				LOG.trace("Reading in : " + ctype);
-			final AColGroup grp = constructColGroup(ctype, nRows);
-			grp.readFields(in);
-			_colGroups.add(grp);
-		}
+		for(int i = 0; i < nColGroups; i++)
+			_colGroups.add(readColGroup(in, nRows));
 
 		return _colGroups;
 	}
@@ -77,7 +66,7 @@ public class ColGroupIO {
 	 * @param colGroups List of the ColGroups to write to file.
 	 * @throws IOException Throws IO Exception if the out refuses to write.
 	 */
-	public static void writeGroups(DataOutput out, List<AColGroup> colGroups) throws IOException {
+	public static void writeGroups(DataOutput out, Collection<AColGroup> colGroups) throws IOException {
 		// Write out how many ColGroups to save.
 		out.writeInt(colGroups.size());
 		for(AColGroup grp : colGroups)
@@ -92,41 +81,49 @@ public class ColGroupIO {
 	 */
 	public static long getExactSizeOnDisk(List<AColGroup> colGroups) {
 		long ret = 4; // int for number of colGroups.
-		for(AColGroup grp : colGroups) 
+		for(AColGroup grp : colGroups)
 			ret += grp.getExactSizeOnDisk();
 		return ret;
 	}
 
-	private static AColGroup constructColGroup(ColGroupType ctype, int nRows){
+	public static AColGroup readColGroup(DataInput in, int nRows) throws IOException {
+		final ColGroupType ctype = ColGroupType.values()[in.readByte()];
 		switch(ctype) {
-			case UNCOMPRESSED:
-				return new ColGroupUncompressed();
-			case OLE:
-				return new ColGroupOLE(nRows);
-			case RLE:
-				return new ColGroupRLE(nRows);
 			case DDC:
-				return new ColGroupDDC(nRows);
-			case DeltaDDC:
-				return new ColGroupDeltaDDC(nRows);
-			case CONST:
-				return new ColGroupConst();
-			case EMPTY:
-				return new ColGroupEmpty();
-			case SDC:
-				return new ColGroupSDC(nRows);
-			case SDCSingle:
-				return new ColGroupSDCSingle(nRows);
-			case SDCSingleZeros:
-				return new ColGroupSDCSingleZeros(nRows);
-			case SDCZeros:
-				return new ColGroupSDCZeros(nRows);
-			case SDCFOR:
-				return new ColGroupSDCFOR(nRows);
+				return ColGroupDDC.read(in);
 			case DDCFOR:
-				return new ColGroupDDCFOR(nRows);
+				return ColGroupDDCFOR.read(in);
+			case OLE:
+				return ColGroupOLE.read(in, nRows);
+			case RLE:
+				return ColGroupRLE.read(in, nRows);
+			case CONST:
+				return ColGroupConst.read(in);
+			case EMPTY:
+				return ColGroupEmpty.read(in);
+			case UNCOMPRESSED:
+				return ColGroupUncompressed.read(in);
+			case SDC:
+				return ColGroupSDC.read(in, nRows);
+			case SDCSingle:
+				return ColGroupSDCSingle.read(in, nRows);
+			case SDCSingleZeros:
+				return ColGroupSDCSingleZeros.read(in, nRows);
+			case SDCZeros:
+				return ColGroupSDCZeros.read(in, nRows);
+			case SDCFOR:
+				return ColGroupSDCFOR.read(in, nRows);
+			case LinearFunctional:
+				return ColGroupLinearFunctional.read(in, nRows);
 			default:
-				throw new DMLRuntimeException("Unsupported ColGroup Type used:  " + ctype);
+				throw new DMLRuntimeException("Unsupported ColGroup Type used: " + ctype);
 		}
+	}
+
+	public static double[] readDoubleArray(int length, DataInput in) throws IOException {
+		double[] ret = new double[length];
+		for(int i = 0; i < length; i++)
+			ret[i] = in.readDouble();
+		return ret;
 	}
 }

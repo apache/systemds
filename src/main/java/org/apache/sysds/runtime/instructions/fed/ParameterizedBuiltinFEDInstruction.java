@@ -62,7 +62,9 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -80,12 +82,40 @@ import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
-	protected final LinkedHashMap<String, String> params;
+	protected final HashMap<String, String> params;
 
-	protected ParameterizedBuiltinFEDInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out,
+	private static final String[] PARAM_BUILTINS = new String[]{
+		"replace", "rmempty", "lowertri", "uppertri", "transformdecode", "transformapply", "tokenize"};
+
+
+	protected ParameterizedBuiltinFEDInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
 		String opcode, String istr) {
 		super(FEDType.ParameterizedBuiltin, op, null, null, out, opcode, istr);
 		params = paramsMap;
+	}
+
+	public static ParameterizedBuiltinFEDInstruction parseInstruction(String str) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		// first part is always the opcode
+		String opcode = parts[0];
+		// last part is always the output
+		CPOperand out = new CPOperand(parts[parts.length - 1]);
+
+		// process remaining parts and build a hash map
+		LinkedHashMap<String, String> paramsMap = constructParameterMap(parts);
+
+		// determine the appropriate value function
+		if(opcode.equalsIgnoreCase("replace") || opcode.equalsIgnoreCase("rmempty") ||
+			opcode.equalsIgnoreCase("lowertri") || opcode.equalsIgnoreCase("uppertri")) {
+			ValueFunction func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
+			return new ParameterizedBuiltinFEDInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
+		}
+		else if(opcode.equals("transformapply") || opcode.equals("transformdecode") || opcode.equals("tokenize")) {
+			return new ParameterizedBuiltinFEDInstruction(null, paramsMap, out, opcode, str);
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported opcode (" + opcode + ") for ParameterizedBuiltinFEDInstruction.");
+		}
 	}
 
 	public HashMap<String, String> getParameterMap() {
@@ -110,29 +140,28 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		return paramMap;
 	}
 
-	public static ParameterizedBuiltinFEDInstruction parseInstruction(String str) {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		// first part is always the opcode
-		String opcode = parts[0];
-		// last part is always the output
-		CPOperand out = new CPOperand(parts[parts.length - 1]);
+	public static ParameterizedBuiltinFEDInstruction parseInstruction(ParameterizedBuiltinCPInstruction inst,
+		ExecutionContext ec) {
+		if(ArrayUtils.contains(PARAM_BUILTINS, inst.getOpcode()) && inst.getTarget(ec).isFederatedExcept(FType.BROADCAST))
+			return ParameterizedBuiltinFEDInstruction.parseInstruction(inst);
+		return null;
+	}
 
-		// process remaining parts and build a hash map
-		LinkedHashMap<String, String> paramsMap = constructParameterMap(parts);
+	public static ParameterizedBuiltinFEDInstruction parseInstruction(ParameterizedBuiltinSPInstruction inst,
+		ExecutionContext ec) {
+		if( inst.getOpcode().equalsIgnoreCase("replace") && inst.getTarget(ec).isFederatedExcept(FType.BROADCAST) )
+			return ParameterizedBuiltinFEDInstruction.parseInstruction(inst);
+		return null;
+	}
 
-		// determine the appropriate value function
-		if(opcode.equalsIgnoreCase("replace") || opcode.equalsIgnoreCase("rmempty") ||
-			opcode.equalsIgnoreCase("lowertri") || opcode.equalsIgnoreCase("uppertri")) {
-			ValueFunction func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-			return new ParameterizedBuiltinFEDInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
-		}
-		else if(opcode.equals("transformapply") || opcode.equals("transformdecode") || opcode.equals("tokenize")) {
-			return new ParameterizedBuiltinFEDInstruction(null, paramsMap, out, opcode, str);
-		}
-		else {
-			throw new DMLRuntimeException(
-				"Unsupported opcode (" + opcode + ") for ParameterizedBuiltinFEDInstruction.");
-		}
+	private static ParameterizedBuiltinFEDInstruction parseInstruction(ParameterizedBuiltinCPInstruction instr) {
+		return new ParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.getParameterMap(), instr.output,
+			instr.getOpcode(), instr.getInstructionString());
+	}
+
+	private static ParameterizedBuiltinFEDInstruction parseInstruction(ParameterizedBuiltinSPInstruction instr) {
+		return new ParameterizedBuiltinFEDInstruction(instr.getOperator(), instr.getParameterMap(), instr.output,
+			instr.getOpcode(), instr.getInstructionString());
 	}
 
 	@Override
@@ -146,13 +175,15 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 				output,
 				new CPOperand[] {getTargetOperand()},
 				new long[] {mo.getFedMapping().getID()});
-			mo.getFedMapping().execute(getTID(), true, fr1);
+			Future<FederatedResponse>[] ret = mo.getFedMapping().execute(getTID(), true, fr1);
 
 			// derive new fed mapping for output
 			CacheableData<?> out = ec.getCacheableData(output);
 			if(mo instanceof FrameObject)
 				((FrameObject)out).setSchema(((FrameObject) mo).getSchema());
-			out.getDataCharacteristics().set(mo.getDataCharacteristics());
+			out.getDataCharacteristics()
+				.set(mo.getDataCharacteristics())
+				.setNonZeros(FederationUtils.sumNonZeros(ret));
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
 		}
 		else if(opcode.equals("rmempty"))

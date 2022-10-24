@@ -683,11 +683,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			// cumsum(X);
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
-			if( getOpCode() == Builtins.CUMSUMPROD && id.getDim2() > 2 )
+			boolean cumSP = getOpCode() == Builtins.CUMSUMPROD;
+			if( cumSP && id.getDim2() > 2 )
 				raiseValidateError("Cumsumprod only supported over two-column matrices", conditional);
 			
 			output.setDataType(DataType.MATRIX);
-			output.setDimensions(id.getDim1(), id.getDim2());
+			output.setDimensions(id.getDim1(), cumSP ? 1 : id.getDim2());
 			output.setBlocksize (id.getBlocksize());
 			output.setValueType(id.getValueType());
 			

@@ -21,12 +21,10 @@ package org.apache.sysds.test.functions.federated.monitoring;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.NodeEntityModel;
-import org.apache.sysds.runtime.controlprogram.federated.monitoring.repositories.EntityEnum;
+import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoringTestBase {
@@ -44,19 +42,18 @@ public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoring
 
 	@Test
 	public void testCoordinatorAddedForMonitoring() {
-		var addedCoordinators = addEntities(EntityEnum.COORDINATOR,1);
+		var addedCoordinators = addEntities(1, Entity.COORDINATOR);
 		var firstCoordinatorStatus = addedCoordinators.get(0).statusCode();
 
 		Assert.assertEquals("Added coordinator status code", HttpStatus.SC_OK, firstCoordinatorStatus);
 	}
 
 	@Test
-	@Ignore
 	public void testCoordinatorRemovedFromMonitoring() {
-		addEntities(EntityEnum.COORDINATOR,2);
-		var statusCode = removeEntity(EntityEnum.COORDINATOR,1L).statusCode();
+		addEntities(2, Entity.COORDINATOR);
+		var statusCode = removeEntity(1L, Entity.COORDINATOR).statusCode();
 
-		var getAllCoordinatorsResponse = getEntities(EntityEnum.COORDINATOR);
+		var getAllCoordinatorsResponse = getEntities(Entity.COORDINATOR);
 		var numReturnedCoordinators = StringUtils.countMatches(getAllCoordinatorsResponse.body().toString(), "id");
 
 		Assert.assertEquals("Removed coordinator status code", HttpStatus.SC_OK, statusCode);
@@ -64,32 +61,30 @@ public class FederatedCoordinatorIntegrationCRUDTest extends FederatedMonitoring
 	}
 
 	@Test
-	@Ignore
 	public void testCoordinatorDataUpdated() {
-		addEntities(EntityEnum.COORDINATOR,3);
-		var newCoordinatorData = new NodeEntityModel(1L, "NonExistentName", "nonexistent.address");
+		addEntities(3, Entity.COORDINATOR);
+		var newCoordinatorData = new CoordinatorModel(1L, "NonExistentName", "nonexistent.address", 4241L);
 
-		var editedCoordinator = updateEntity(EntityEnum.COORDINATOR, newCoordinatorData);
+		var editedCoordinator = updateEntity(newCoordinatorData, Entity.COORDINATOR);
 
-		var getAllCoordinatorsResponse = getEntities(EntityEnum.COORDINATOR);
-		var numCoordinatorsNewData = StringUtils.countMatches(getAllCoordinatorsResponse.body().toString(), newCoordinatorData.getName());
+		var getAllCoordinatorsResponse = getEntities(Entity.COORDINATOR);
+		var numCoordinatorsNewData = StringUtils.countMatches(getAllCoordinatorsResponse.body().toString(), newCoordinatorData.name);
 
 		Assert.assertEquals("Updated coordinator status code", HttpStatus.SC_OK, editedCoordinator.statusCode());
-		Assert.assertEquals("Updated coordinators num", 1, numCoordinatorsNewData);
+		Assert.assertEquals("Updated coordinator name", 1, numCoordinatorsNewData);
 	}
 
 	@Test
-	@Ignore
 	public void testCorrectAmountAddedCoordinatorsForMonitoring() {
 		int numCoordinators = 3;
-		var addedCoordinators = addEntities(EntityEnum.COORDINATOR, numCoordinators);
+		var addedCoordinators = addEntities(numCoordinators, Entity.COORDINATOR);
 
 		for (int i = 0; i < numCoordinators; i++) {
 			var coordinatorStatus = addedCoordinators.get(i).statusCode();
 			Assert.assertEquals("Added coordinator status code", HttpStatus.SC_OK, coordinatorStatus);
 		}
 
-		var getAllCoordinatorsResponse = getEntities(EntityEnum.COORDINATOR);
+		var getAllCoordinatorsResponse = getEntities(Entity.COORDINATOR);
 		var numReturnedCoordinators = StringUtils.countMatches(getAllCoordinatorsResponse.body().toString(), "id");
 
 		Assert.assertEquals("Amount of coordinators to get", numCoordinators, numReturnedCoordinators);

@@ -22,9 +22,11 @@
 __all__ = ["SystemDSContext"]
 
 import json
+import logging
 import os
 import socket
 import sys
+from contextlib import contextmanager
 from glob import glob
 from queue import Queue
 from subprocess import PIPE, Popen
@@ -34,37 +36,52 @@ from typing import Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from py4j.java_gateway import GatewayParameters, JavaGateway
+from py4j.java_gateway import GatewayParameters, JavaGateway, Py4JNetworkError
 from systemds.operator import (Frame, List, Matrix, OperationNode, Scalar,
                                Source)
-from systemds.script_building import OutputType
+from systemds.script_building import DMLScript, OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.helpers import get_module_dir
 
 
 class SystemDSContext(object):
-    """A context with a connection to a java instance with which SystemDS operations are executed. 
+    """A context with a connection to a java instance with which SystemDS operations are executed.
     The java process is started and is running using a random tcp port for instruction parsing.
 
     This class is used as the starting point for all SystemDS execution. It gives the ability to create
-    all the different objects and adding them to the exectution.
+    all the different objects and adding them to the execution.
     """
 
     java_gateway: JavaGateway
+    _capture_statistics: bool = False
+    _statistics: str = ""
+    _log: logging.Logger
+    __stdout: Queue = None
+    __stderr: Queue = None
 
-    def __init__(self, port: int = -1):
+    def __init__(self, port: int = -1,
+                 capture_statistics: bool = False,
+                 capture_stdout: bool = False,
+                 logging_level: int = 20,
+                 py4j_logging_level: int = 50):
         """Starts a new instance of SystemDSContext, in which the connection to a JVM systemds instance is handled
         Any new instance of this SystemDS Context, would start a separate new JVM.
 
         Standard out and standard error form the JVM is also handled in this class, filling up Queues,
         that can be read from to get the printed statements from the JVM.
+
+        :param port: default -1, giving a random port for communication with JVM
+        :param capture_statistics: If the statistics of the execution in SystemDS should be captured
+        :param capture_stdout: If the standard out should be captured in Java SystemDS and maintained in ques
+        :param logging_level: Specify the logging level used for informative messages, default 20 indicating INFO.
+            The logging levels are as follows: 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL.
+        :param py4j_logging_level: The logging level for Py4j to use, since all communication to the JVM is done through this,
+            it can be verbose if not set high.
         """
-        actual_port = self.__start(port)
-        process = self.__process
-        if process.poll() is None:
-            self.__start_gateway(actual_port)
-        else:
-            self.exception_and_close("Java process stopped before gateway could connect")
+        self.__setup_logging(logging_level, py4j_logging_level)
+        self.__start(port,  capture_stdout)
+        self.capture_stats(capture_statistics)
+        self._log.debug("Started JVM and SystemDS python context manager")
 
     def get_stdout(self, lines: int = -1):
         """Getter for the stdout of the java subprocess
@@ -72,10 +89,13 @@ class SystemDSContext(object):
         :param lines: The number of lines to try to read from the stdout queue.
         default -1 prints all current lines in the queue.
         """
-        if lines == -1 or self.__stdout.qsize() < lines:
-            return [self.__stdout.get() for x in range(self.__stdout.qsize())]
+        if self.__stdout:
+            if (lines == -1 or self.__stdout.qsize() < lines):
+                return [self.__stdout.get() for x in range(self.__stdout.qsize())]
+            else:
+                return [self.__stdout.get() for x in range(lines)]
         else:
-            return [self.__stdout.get() for x in range(lines)]
+            return []
 
     def get_stderr(self, lines: int = -1):
         """Getter for the stderr of the java subprocess
@@ -83,10 +103,13 @@ class SystemDSContext(object):
         :param lines: The number of lines to try to read from the stderr queue.
         default -1 prints all current lines in the queue.
         """
-        if lines == -1 or self.__stderr.qsize() < lines:
-            return [self.__stderr.get() for x in range(self.__stderr.qsize())]
+        if self.__stderr:
+            if lines == -1 or self.__stderr.qsize() < lines:
+                return [self.__stderr.get() for x in range(self.__stderr.qsize())]
+            else:
+                return [self.__stderr.get() for x in range(lines)]
         else:
-            return [self.__stderr.get() for x in range(lines)]
+            return []
 
     def exception_and_close(self, exception, trace_back_limit: int = None):
         """
@@ -108,51 +131,29 @@ class SystemDSContext(object):
         self.close()
         raise RuntimeError(message)
 
-    def __try_startup(self, command) -> bool:
+    def __try_startup(self, command: str, capture_stdout: bool) -> Popen:
+        if(capture_stdout):
+            process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
 
-        self.__process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+            # Handle Std out from the subprocess.
+            self.__stdout = Queue()
+            self.__stderr = Queue()
 
-        # Handle Std out from the subprocess.
-        self.__stdout = Queue()
-        self.__stderr = Queue()
+            self.__stdout_thread = Thread(target=self.__enqueue_output, args=(
+                process.stdout, self.__stdout), daemon=True)
 
-        self.__stdout_thread = Thread(target=self.__enqueue_output, args=(
-            self.__process.stdout, self.__stdout), daemon=True)
+            self.__stderr_thread = Thread(target=self.__enqueue_output, args=(
+                process.stderr, self.__stderr), daemon=True)
 
-        self.__stderr_thread = Thread(target=self.__enqueue_output, args=(
-            self.__process.stderr, self.__stderr), daemon=True)
-
-        self.__stdout_thread.start()
-        self.__stderr_thread.start()
-
-        return self.__verify_startup(command)
-
-    def __verify_startup(self, command) -> bool:
-        first_stdout = self.get_stdout()
-        if(not "GatewayServer Started" in first_stdout):
-            return self.__verify_startup_retry(command)
+            self.__stdout_thread.start()
+            self.__stderr_thread.start()
+            return process
         else:
-            return True
-
-    def __verify_startup_retry(self, command,  retry: int = 1) -> bool:
-        sleep(0.8 * retry)
-        stdout = self.get_stdout()
-        if "GatewayServer Started" in stdout:
-            return True, ""
-        elif retry < 3:  # retry 3 times
-            return self.__verify_startup_retry(command, retry + 1)
-        else:
-            error_message = "Error in startup of systemDS gateway process:"
-            error_message += "\n" + " ".join(command)
-            stderr = self.get_stderr()
-            if len(stderr) > 0:
-                error_message += "\n" + "\n".join(stderr)
-            if len(stdout) > 0:
-                error_message += "\n\n" + "\n".join(stdout)
-            self.__error_message = error_message
-            return False
+            return Popen(command)
 
     def __build_startup_command(self, port: int):
+        """Build the command line argument for the startup of the JVM
+        :param port: The port address to use if -1 chose random port."""
 
         command = ["java", "-cp"]
         root = os.environ.get("SYSTEMDS_ROOT")
@@ -184,12 +185,12 @@ class SystemDSContext(object):
 
         files = glob(os.path.join(root, "conf", "log4j*.properties"))
         if len(files) > 1:
-            print(
-                "WARNING: Multiple logging files found selecting: " + files[0])
+            self._log.warning(
+                "Multiple logging files found selecting: " + files[0])
         if len(files) == 0:
-            print("WARNING: No log4j file found at: "
-                  + os.path.join(root, "conf")
-                  + " therefore using default settings")
+            self._log.warning("No log4j file found at: "
+                              + os.path.join(root, "conf")
+                              + " therefore using default settings")
         else:
             command.append("-Dlog4j.configuration=file:" + files[0])
 
@@ -197,12 +198,12 @@ class SystemDSContext(object):
 
         files = glob(os.path.join(root, "conf", "SystemDS*.xml"))
         if len(files) > 1:
-            print(
-                "WARNING: Multiple config files found selecting: " + files[0])
+            self._log.warning(
+                "Multiple config files found selecting: " + files[0])
         if len(files) == 0:
-            print("WARNING: No log4j file found at: "
-                  + os.path.join(root, "conf")
-                  + " therefore using default settings")
+            self._log.warning("No log4j file found at: "
+                              + os.path.join(root, "conf")
+                              + " therefore using default settings")
         else:
             command.append("-config")
             command.append(files[0])
@@ -217,48 +218,59 @@ class SystemDSContext(object):
 
         return command, actual_port
 
-    def __start(self, port: int):
+    def __start(self, port: int, capture_stdout: bool, retry: int = 0):
+        """Starts the JVM and establishes connection to it via calls to:
+        jvm.System.currentTimeMillis()
+        If the connection is not established the connection is
+        tried to be established multiple times,
+        and if this fails new JVMs are allocated up to a total of 3 times.
+
+        :param port: The port to try, if -1 chose random.
+        :param capture_stdout: If the output of the JVM should be captured.
+        :param retry: The Retry number of the current startup.
+        """
+        if retry > 3:
+            raise Exception(
+                "Failed startup of SystemDS Context with 3 repeats")
+
+        if port != -1 and self.__is_port_in_use(port):
+            port = -1
         command, actual_port = self.__build_startup_command(port)
-        success = self.__try_startup(command)
 
-        if not success:
-            retry = 1
-            while not success and retry < 3:
-                self.__kill_Popen(self.__process)
-                # retry after waiting a bit.
-                sleep(3 * retry)
-                self.close()
-                self.__error_message = None
-                success, command, actual_port = self.__retry_start(retry)
-                retry = retry + 1
-            if not success:
-                self.exception_and_close(self.__error_message)
-        return actual_port
+        # Verify the port intended is available.
+        while self.__is_port_in_use(actual_port):
+            command, actual_port, = self.__build_startup_command(actual_port)
 
-    def __retry_start(self, ret):
-        command, actual_port = self.__build_startup_command(-1)
-        success = self.__try_startup(command)
-        return success, command, actual_port
+        process = self.__try_startup(command, capture_stdout)
 
-    def __start_gateway(self, actual_port: int):
-        process = self.__process
+        # Eager load to test connection to the JVM via calls to currentTimeMillis
         gwp = GatewayParameters(port=actual_port, eager_load=True)
-        self.__retry_start_gateway(process, gwp)
-
-    def __retry_start_gateway(self, process: Popen, gwp: GatewayParameters, retry: int = 0):
         try:
-            self.java_gateway = JavaGateway(
-                gateway_parameters=gwp, java_process=process)
-            self.__process = None  # On success clear process variable
-            return
-        except:
-            sleep(3 * retry)
-            if retry < 3:
-                self.__retry_start_gateway(process, gwp, retry + 1)
-                return
-            else:
-                e = "Error in startup of Java Gateway"
-        self.exception_and_close(e)
+            connect_retry = 1
+            max_retry = 25
+            while connect_retry < max_retry:
+                # Increasing sleep time to establish connection.
+                sleep_time = 0.04 * connect_retry
+                sleep(sleep_time)
+                try:
+                    self.java_gateway = JavaGateway(
+                        gateway_parameters=gwp, java_process=process)
+                    # Successful startup.
+                    return
+                except Py4JNetworkError as pe:
+                    m = str(pe)
+                    if "An error occurred while trying to connect to the Java server" in m:
+                        # Here the startup failed because the java process is not ready.
+                        connect_retry += 1
+                    else:  # unknown new error or java process crashed
+                        raise pe
+                except Exception as e:
+                    raise Exception(
+                        "Exception hit when connecting to JavaGateway, perhaps the JVM terminated because of port", e)
+            raise Exception("Failed to connect to process, making a new JVM")
+        except Exception:
+            self.__kill_Popen(process)
+            self.__start(-1, capture_stdout, retry + 1)
 
     def __enter__(self):
         return self
@@ -274,7 +286,7 @@ class SystemDSContext(object):
             self.__kill_Popen(self.java_gateway.java_process)
             self.java_gateway.shutdown()
         if hasattr(self, '__process'):
-            print("Has process variable")
+            logging.error("Has process variable")
             self.__kill_Popen(self.__process)
         if hasattr(self, '__stdout_thread') and self.__stdout_thread.is_alive():
             self.__stdout_thread.join(0)
@@ -282,12 +294,14 @@ class SystemDSContext(object):
             self.__stderr_thread.join(0)
 
     def __kill_Popen(self, process: Popen):
+        """Stop the process at the Popen.
+        :param process: The process to stop"""
         process.kill()
         process.__exit__(None, None, None)
 
     def __enqueue_output(self, out, queue):
         """Method for handling the output from java.
-        It is locating the string handeling inside a different thread, since the 'out.readline' is a blocking command.
+        It is locating the string handling inside a different thread, since the 'out.readline' is a blocking command.
         """
         for line in iter(out.readline, b""):
             line_string = line.decode("utf-8")
@@ -297,14 +311,81 @@ class SystemDSContext(object):
         """Get a random available port.
         and hope that no other process steals it while we wait for the JVM to startup
         """
-        # https://stackoverflow.com/questions/2838244/get-open-tcp-port-in-python
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("", 0))
+            s.listen(1)
+            return s.getsockname()[1]
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(("", 0))
-        s.listen(1)
-        port = s.getsockname()[1]
-        s.close()
-        return port
+    def __is_port_in_use(self, port: int) -> bool:
+        """Get if the given port is in use.
+        :param port: The port to analyze"""
+        # https://stackoverflow.com/questions/2470971/fast-way-to-test-if-a-port-is-in-use-using-python
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            return s.connect_ex(('localhost', port)) == 0
+
+    def _execution_completed(self, script: DMLScript):
+        """
+        Should/will be called after execution of a script.
+        Used to update statistics.
+        :param script: The script that got executed
+        """
+        if self._capture_statistics:
+            self._statistics += script.prepared_script.statistics()
+
+    def capture_stats(self, enable: bool = True):
+        """
+        Enable (or disable) capturing of execution statistics.
+        :param enable: if `True` enable capturing, else disable it
+        """
+        self._capture_statistics = enable
+        self.java_gateway.entry_point.getConnection().setStatistics(enable)
+
+    @contextmanager
+    def capture_stats_context(self):
+        """
+        Context for capturing statistics. Should be used in a `with` statement.
+        Afterwards capturing will be reset to the state it was before.
+
+        Example:
+        
+        # ```Python
+        # with sds.capture_stats_context():
+        #     a = some_computation.compute()
+        #     b = another_computation.compute()
+        # print(sds.take_stats())
+        # ```
+
+        :return: a context object to be used in a `with` statement
+        """
+        was_enabled = self._capture_statistics
+        try:
+            self.capture_stats(True)
+            yield None
+        finally:
+            self.capture_stats(was_enabled)
+
+    def get_stats(self):
+        """Get the captured statistics. Will not clear the captured statistics.
+
+        See `take_stats()` for an option that also clears the captured statistics.
+        :return: The captured statistics
+        """
+        return self._statistics
+
+    def take_stats(self):
+        """Get the captured statistics and clear the captured statistics.
+
+        See `get_stats()` for an option that does not clear the captured statistics.
+        :return: The captured statistics
+        """
+        stats = self.get_stats()
+        self.clear_stats()
+        return stats
+
+    def clear_stats(self):
+        """Clears the captured statistics.
+        """
+        self._statistics = ""
 
     def full(self, shape: Tuple[int, int], value: Union[float, int]) -> 'Matrix':
         """Generates a matrix completely filled with a value
@@ -378,40 +459,59 @@ class SystemDSContext(object):
 
         return Matrix(self, 'rand', [], named_input_nodes=named_input_nodes)
 
+    def __fix_string_args(self, arg: str) -> str:
+        nf = str(arg).replace('"', "").replace("'", "")
+        return f'"{nf}"'
+
     def read(self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
-        """ Read an file from disk. Supportted types include:
+        """ Read an file from disk. Supported types include:
         CSV, Matrix Market(coordinate), Text(i,j,v), SystemDS Binary, etc.
         See: http://apache.github.io/systemds/site/dml-language-reference#readwrite-built-in-functions for more details
         :return: an Operation Node, containing the read data the operationNode read can be of types, Matrix, Frame or Scalar.
         """
         mdt_filepath = path + ".mtd"
+        # If metadata file is existing, then simply use that and force data type to mtd file
         if os.path.exists(mdt_filepath):
             with open(mdt_filepath) as jspec_file:
                 mtd = json.load(jspec_file)
                 kwargs["data_type"] = mtd["data_type"]
+            if kwargs.get("format", None):
+                kwargs["format"] = self.__fix_string_args(kwargs["format"])
+        elif kwargs.get("format", None):  # If format is specified. Then use that format
+            kwargs["format"] = self.__fix_string_args(kwargs["format"])
+        else:  # Otherwise guess at what format the file is based on file extension
+            if ".csv" in path[-4:]:
+                kwargs["format"] = '"csv"'
+                self._log.warning(
+                    "Guessing '"+path+"' is a csv file, please add a mtd file, or specify in arguments")
+                if not ("header" in kwargs) and "data_type" in kwargs and kwargs["data_type"] == "frame":
+                    kwargs["header"] = True
 
         data_type = kwargs.get("data_type", None)
-        file_format = kwargs.get("format", None)
+
         if data_type == "matrix":
             kwargs["data_type"] = f'"{data_type}"'
             return Matrix(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
         elif data_type == "frame":
             kwargs["data_type"] = f'"{data_type}"'
-            if isinstance(file_format, str):
-                kwargs["format"] = f'"{kwargs["format"]}"'
             return Frame(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
         elif data_type == "scalar":
             kwargs["data_type"] = f'"{data_type}"'
             output_type = OutputType.from_str(kwargs.get("value_type", None))
-            kwargs["value_type"] = f'"{output_type.name}"'
-            return Scalar(self, "read", [f'"{path}"'], named_input_nodes=kwargs, output_type=output_type)
+            if output_type:
+                kwargs["value_type"] = f'"{output_type.name}"'
+                return Scalar(self, "read", [f'"{path}"'], named_input_nodes=kwargs, output_type=output_type)
+            else:
+                raise ValueError(
+                    "Invalid arguments for reading scalar, value_type must be specified")
         elif data_type == "list":
             # Reading a list have no extra arguments.
             return List(self, "read", [f'"{path}"'])
-
-        kwargs["data_type"] = None
-        print("WARNING: Unknown type read please add a mtd file, or specify in arguments")
-        return OperationNode(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
+        else:
+            kwargs["data_type"] = '"matrix"'
+            self._log.warning(
+                "Unknown type read please add a mtd file, or specify in arguments, defaulting to matrix")
+            return Matrix(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
 
     def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> Scalar:
         """ Construct an scalar value, this can contain str, float, double, integers and booleans.
@@ -502,10 +602,10 @@ class SystemDSContext(object):
         named_params.update(kwargs)
         return Matrix(self, 'federated', args, named_params)
 
-    def source(self, path: str, name: str, print_imported_methods: bool = False) -> Source:
+    def source(self, path: str, name: str) -> Source:
         """Import methods from a given dml file.
 
-        The importing is done thorugh the DML command source, and adds all defined methods from
+        The importing is done through the DML command source, and adds all defined methods from
         the script to the Source object returned in python. This gives the flexibility to call the methods 
         directly on the object returned.
 
@@ -517,9 +617,8 @@ class SystemDSContext(object):
 
         :param path: The absolute or relative path to the file to import
         :param name: The name to give the imported file in the script, this name must be unique
-        :param print_imported_methods: boolean specifying if the imported methods should be printed.
         """
-        return Source(self, path, name, print_imported_methods)
+        return Source(self, path, name)
 
     def list(self, *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]) -> List:
         """ Create a List object containing the given nodes.
@@ -550,3 +649,28 @@ class SystemDSContext(object):
         :return: A List 
         """
         return List(self, named_input_nodes=kwargs)
+
+    def __setup_logging(self, level: int, py4j_level: int):
+        """Setup the logging infrastructure of the Python API, note this does not effect the JVM part.
+        This method also reset the loggers to only have one handler.
+
+        :param level: The SystemDS logging part logging level.
+        :param py4j_level: The Py4J logging level.
+        """
+        logging.basicConfig()
+        py4j = logging.getLogger("py4j.java_gateway")
+        py4j.setLevel(py4j_level)
+        py4j.propagate = False
+
+        self._log = logging.getLogger(self.__class__.__name__)
+        f_handler = logging.StreamHandler()
+        f_handler.setLevel(level)
+        f_format = logging.Formatter(
+            '%(asctime)s - SystemDS- %(levelname)s - %(message)s')
+        f_handler.setFormatter(f_format)
+        self._log.addHandler
+        # avoid the logger to call loggers above.
+        self._log.propagate = False
+        # Reset all handlers to only this new handler.
+        self._log.handlers = [f_handler]
+        self._log.debug("Logging setup done")

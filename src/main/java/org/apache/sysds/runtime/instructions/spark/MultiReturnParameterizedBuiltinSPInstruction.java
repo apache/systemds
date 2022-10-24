@@ -180,6 +180,10 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		return acc;
 	}
 
+	public List<CPOperand> getOutputs() {
+		return _outputs;
+	}
+
 	private static class MaxLongAccumulator extends AccumulatorV2<Long, Long> {
 		private static final long serialVersionUID = -3739727823287550826L;
 

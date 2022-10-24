@@ -193,6 +193,13 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				mcOut.getBlocksize(), mcOut.getBlocksize(), "libsvmblk", delim, indexDelim, instString);
 			libsvmInstruction.processInstruction(sec);
 		}
+		else if(fmt == FileFormat.COMPRESSED){
+			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = (JavaPairRDD<MatrixIndexes, MatrixBlock>) sec
+				.getRDDHandleForMatrixObject(mo, FileFormat.COMPRESSED);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryBlockToBinaryBlock(in1, mc, mcOut);
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
+		}
 		else {
 			throw new DMLRuntimeException("The given format is not implemented "
 				+ "for ReblockSPInstruction:" + fmt.toString());
@@ -271,5 +278,13 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		}
 		//default reblock w/ active lineage tracing
 		return super.getLineageItem(ec);
+	}
+
+	public int getBlockLength() {
+		return blen;
+	}
+
+	public boolean getOutputEmptyBlocks() {
+		return outputEmptyBlocks;
 	}
 }

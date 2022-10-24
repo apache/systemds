@@ -68,8 +68,7 @@ class Matrix(OperationNode):
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> np.array:
         if self._is_numpy():
-            if verbose:
-                print('[Numpy Array - No Compilation necessary]')
+            self.sds_context._log.info('Numpy Array - No Compilation necessary')
             return self._np_array
         else:
             return super().compute(verbose, lineage)

@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":6,"i3":6,"i4":6,"i5":10,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":10,"i12":10,"i13":10,"i14":6};
+var data = {"i0":10,"i1":10,"i2":6,"i3":6,"i4":6,"i5":10,"i6":6,"i7":10,"i8":6,"i9":6,"i10":6,"i11":6,"i12":10,"i13":10,"i14":10,"i15":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -243,34 +243,41 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 </td>
 </tr>
 <tr id="i7" class="rowColor">
+<td class="colFirst"><code><a href="AOffsetIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffsetIterator</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOffsetIterator(int)">getOffsetIterator</a></span>&#8203;(int&nbsp;row)</code></th>
+<td class="colLast">
+<div class="block">Get an iterator that is pointing only at offsets from specific offset</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOffsetsLength()">getOffsetsLength</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the length of the underlying offsets lists.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOffsetToFirst()">getOffsetToFirst</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the offset to the first index</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getOffsetToLast()">getOffsetToLast</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the offset to the last value</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>abstract int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getSize()">getSize</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Get the number of contained elements, This method iterate the entire offset list, so it is not constant lookup.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preAggregateDenseMap(org.apache.sysds.runtime.matrix.data.MatrixBlock,double%5B%5D,int,int,int,int,int,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">preAggregateDenseMap</a></span>&#8203;(<a href="../../../matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
                     double[]&nbsp;preAV,
@@ -282,7 +289,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
                     <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#preAggregateSparseMap(org.apache.sysds.runtime.data.SparseBlock,double%5B%5D,int,int,int,org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData)">preAggregateSparseMap</a></span>&#8203;(<a href="../../../data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
                      double[]&nbsp;preAV,
@@ -292,12 +299,12 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
                      <a href="../mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a>&nbsp;data)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html?is-external=true" title="class or interface in java.lang" class="externalLink">String</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#write(java.io.DataOutput)">write</a></span>&#8203;(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/DataOutput.html?is-external=true" title="class or interface in java.io" class="externalLink">DataOutput</a>&nbsp;out)</code></th>
 <td class="colLast">
@@ -388,6 +395,22 @@ implements <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base
 <dd><code>row</code> - The row requested.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>AIterator that iterate through index and dictionary offset values.</dd>
+</dl>
+</li>
+</ul>
+<a id="getOffsetIterator(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getOffsetIterator</h4>
+<pre class="methodSignature">public&nbsp;<a href="AOffsetIterator.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffsetIterator</a>&nbsp;getOffsetIterator&#8203;(int&nbsp;row)</pre>
+<div class="block">Get an iterator that is pointing only at offsets from specific offset</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>row</code> - The row requested.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>AOffsetIterator that iterate through index only offset values.</dd>
 </dl>
 </li>
 </ul>

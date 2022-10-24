@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10};
+var data = {"i0":10,"i1":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -188,6 +188,15 @@ extends <a href="AFederatedPlanner.html" title="class in org.apache.sysds.hops.f
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">rewriteFunctionDynamic</a></span>&#8203;(<a href="../../parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&nbsp;function,
+                      <a href="../../runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;funcArgs)</code></th>
+<td class="colLast">
+<div class="block">Selects a federated execution plan for the given function, taking into account
+ federation types of the arguments.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#rewriteProgram(org.apache.sysds.parser.DMLProgram,org.apache.sysds.hops.ipa.FunctionCallGraph,org.apache.sysds.hops.ipa.FunctionCallSizeInfo)">rewriteProgram</a></span>&#8203;(<a href="../../parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
               <a href="../ipa/FunctionCallGraph.html" title="class in org.apache.sysds.hops.ipa">FunctionCallGraph</a>&nbsp;fgraph,
               <a href="../ipa/FunctionCallSizeInfo.html" title="class in org.apache.sysds.hops.ipa">FunctionCallSizeInfo</a>&nbsp;fcallSizes)</code></th>
@@ -242,7 +251,7 @@ extends <a href="AFederatedPlanner.html" title="class in org.apache.sysds.hops.f
 <a id="rewriteProgram(org.apache.sysds.parser.DMLProgram,org.apache.sysds.hops.ipa.FunctionCallGraph,org.apache.sysds.hops.ipa.FunctionCallSizeInfo)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>rewriteProgram</h4>
 <pre class="methodSignature">public&nbsp;void&nbsp;rewriteProgram&#8203;(<a href="../../parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
@@ -258,6 +267,26 @@ extends <a href="AFederatedPlanner.html" title="class in org.apache.sysds.hops.f
 <dd><code>prog</code> - dml program</dd>
 <dd><code>fgraph</code> - function call graph</dd>
 <dd><code>fcallSizes</code> - function call graph sizes</dd>
+</dl>
+</li>
+</ul>
+<a id="rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>rewriteFunctionDynamic</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;rewriteFunctionDynamic&#8203;(<a href="../../parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&nbsp;function,
+                                   <a href="../../runtime/controlprogram/LocalVariableMap.html" title="class in org.apache.sysds.runtime.controlprogram">LocalVariableMap</a>&nbsp;funcArgs)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="AFederatedPlanner.html#rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">AFederatedPlanner</a></code></span></div>
+<div class="block">Selects a federated execution plan for the given function, taking into account
+ federation types of the arguments.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="AFederatedPlanner.html#rewriteFunctionDynamic(org.apache.sysds.parser.FunctionStatementBlock,org.apache.sysds.runtime.controlprogram.LocalVariableMap)">rewriteFunctionDynamic</a></code>&nbsp;in class&nbsp;<code><a href="AFederatedPlanner.html" title="class in org.apache.sysds.hops.fedplanner">AFederatedPlanner</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>function</code> - The function statement block to recompile.</dd>
+<dd><code>funcArgs</code> - The function arguments.</dd>
 </dl>
 </li>
 </ul>

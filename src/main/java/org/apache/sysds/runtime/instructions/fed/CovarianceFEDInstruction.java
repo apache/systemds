@@ -37,7 +37,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
-import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -45,7 +44,7 @@ import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.spark.SPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CovarianceSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.COVOperator;
@@ -68,21 +67,16 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		return fedInst;
 	}
 
-	public static CovarianceFEDInstruction parseInstruction(Instruction inst){
-		if ( inst instanceof CovarianceCPInstruction )
-			return parseInstruction((CovarianceCPInstruction) inst);
-		else if ( inst instanceof SPInstruction )
-			return parseInstruction(CovarianceCPInstruction.parseInstruction(inst.getInstructionString()));
-		else
-			return parseInstruction(inst.getInstructionString());
-	}
-
-	public static CovarianceFEDInstruction parseInstruction(CovarianceCPInstruction inst) { 
-		return new CovarianceFEDInstruction(inst.getOperator(),
-			inst.input1, inst.input2, inst.input3, inst.output,
+	public static CovarianceFEDInstruction parseInstruction(CovarianceCPInstruction inst) {
+		return new CovarianceFEDInstruction(inst.getOperator(), inst.input1, inst.input2, inst.input3, inst.output,
 			inst.getOpcode(), inst.getInstructionString());
 	}
-	
+
+	public static CovarianceFEDInstruction parseInstruction(CovarianceSPInstruction inst) {
+		return new CovarianceFEDInstruction(inst.getOperator(), inst.input1, inst.input2, inst.input3, inst.output,
+			inst.getOpcode(), inst.getInstructionString());
+	}
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);

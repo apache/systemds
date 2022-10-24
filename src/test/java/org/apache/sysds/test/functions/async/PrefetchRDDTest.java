@@ -96,9 +96,9 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
 
-			OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS = true;
+			OptimizerUtils.ASYNC_PREFETCH_SPARK = true;
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS = false;
+			OptimizerUtils.ASYNC_PREFETCH_SPARK = false;
 			HashMap<MatrixValue.CellIndex, Double> R_pf = readDMLScalarFromOutputDir("R");
 
 			//compare matrices

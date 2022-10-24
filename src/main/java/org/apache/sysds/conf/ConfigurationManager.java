@@ -21,6 +21,7 @@ package org.apache.sysds.conf;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Compression.CompressConfig;
 
 /**
@@ -229,6 +230,16 @@ public class ConfigurationManager
 	
 	public static boolean isFederatedReadCacheEnabled(){
 		return getDMLConfig().getBooleanValue(DMLConfig.FEDERATED_READCACHE);
+	}
+
+	public static boolean isPrefetchEnabled() {
+		return (getDMLConfig().getBooleanValue(DMLConfig.ASYNC_SPARK_PREFETCH)
+			|| OptimizerUtils.ASYNC_PREFETCH_SPARK);
+	}
+
+	public static boolean isBroadcastEnabled() {
+		return (getDMLConfig().getBooleanValue(DMLConfig.ASYNC_SPARK_BROADCAST)
+			|| OptimizerUtils.ASYNC_BROADCAST_SPARK);
 	}
 
 	///////////////////////////////////////

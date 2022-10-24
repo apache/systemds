@@ -28,6 +28,8 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ConstScheme;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.compress.utils.Util;
@@ -171,7 +173,25 @@ public class ColGroupConst extends ADictBasedColGroup {
 	 * @return the dictionary vector stored in this column group
 	 */
 	public double[] getValues() {
-		return _dict.getValues();
+		double[] values;
+		if(getDictionary() instanceof MatrixBlockDictionary) {
+			LOG.warn("Inefficient get values for constant column group (but it is allowed)");
+			final MatrixBlock mb = ((MatrixBlockDictionary) getDictionary()).getMatrixBlock();
+			if(mb.isInSparseFormat()) {
+				values = new double[mb.getNumColumns()];
+				SparseBlock sb = mb.getSparseBlock();
+				final int alen = sb.size(0);
+				final double[] aval = sb.values(0);
+				final int[] aix = sb.indexes(0);
+				for(int j = 0; j < alen; j++)
+					values[aix[j]] = aval[j];
+			}
+			else
+				values = mb.getDenseBlockValues();
+		}
+		else
+			values = _dict.getValues();
+		return values;
 	}
 
 	@Override
@@ -534,6 +554,11 @@ public class ColGroupConst extends ADictBasedColGroup {
 			if(!Arrays.equals(_colIndexes, g[i]._colIndexes) || !this._dict.eq(((ColGroupConst) g[i])._dict))
 				return null;
 		return this;
+	}
+
+	@Override
+	public ICLAScheme getCompressionScheme() {
+		return ConstScheme.create(this);
 	}
 
 	@Override

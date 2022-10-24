@@ -114,6 +114,25 @@ public class DblArrayCountHashMap {
 		return l.v.count;
 	}
 
+	/**
+	 * Get the ID behind the key, if it does not exist -1 is returned.
+	 * 
+	 * @param key The key array
+	 * @return The Id or -1
+	 */
+	public int getId(DblArray key) {
+		final int ix = indexFor(key.hashCode(), _data.length);
+		Bucket l = _data[ix];
+		if(l == null)
+			return -1;
+		while(!(l.v.key.equals(key))) {
+			l = l.n;
+			if(l == null)
+				return -1;
+		}
+		return l.v.id;
+	}
+
 	public ArrayList<DArrCounts> extractValues() {
 		ArrayList<DArrCounts> ret = new ArrayList<>(_size);
 		for(Bucket e : _data) {
@@ -135,7 +154,7 @@ public class DblArrayCountHashMap {
 			}
 	}
 
-	public int getSumCounts(){
+	public int getSumCounts() {
 		int c = 0;
 		for(Bucket e : _data)
 			while(e != null) {

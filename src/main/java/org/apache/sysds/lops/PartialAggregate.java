@@ -346,8 +346,10 @@ public class PartialAggregate extends Lop
 					case RowCol: return "uacd";
 					case Row: return "uacdr";
 					case Col: return "uacdc";
+					default:
+						throw new LopsException("PartialAggregate.getOpcode() - "
+								+ "Unknown aggregate direction: " + dir);
 				}
-				break;
 			}
 
 			case COUNT_DISTINCT_ROW:
@@ -361,8 +363,10 @@ public class PartialAggregate extends Lop
 					case RowCol: return "uacdap";
 					case Row: return "uacdapr";
 					case Col: return "uacdapc";
+					default:
+						throw new LopsException("PartialAggregate.getOpcode() - "
+								+ "Unknown aggregate direction: " + dir);
 				}
-				break;
 			}
 
 			case COUNT_DISTINCT_APPROX_ROW:

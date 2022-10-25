@@ -35,7 +35,7 @@ public class AggregateUnaryOperator extends MultiThreadedOperator {
 	private static final long serialVersionUID = 6690553323120787735L;
 
 	public final AggregateOperator aggOp;
-	public IndexFunction indexFn;
+	public final IndexFunction indexFn;
 
 	public AggregateUnaryOperator(AggregateOperator aop, IndexFunction iop)
 	{

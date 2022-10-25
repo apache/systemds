@@ -146,9 +146,8 @@ public abstract class CountDistinctRowOrColBase extends CountDistinctBase {
 		}
 		blkIn = new MatrixBlock(blkIn, sparseBlockType, true);
 
-		CountDistinctOperator op = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT_APPROX)
-				.setDirection(direction)
-				.setIndexFunction(ReduceCol.getReduceColFnObject());
+		CountDistinctOperator op = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT_APPROX,
+				direction, ReduceCol.getReduceColFnObject());
 
 		MatrixBlock blkOut = LibMatrixCountDistinct.estimateDistinctValues(blkIn, op);
 		double[][] expectedMatrix = getExpectedMatrixRowOrCol(direction, cols, rows, actualDistinctCount);

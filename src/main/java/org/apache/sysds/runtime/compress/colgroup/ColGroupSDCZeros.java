@@ -56,7 +56,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * 
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns.
  */
-public class ColGroupSDCZeros extends ASDCZero {
+public class ColGroupSDCZeros extends ASDCZero implements AMapToDataGroup{
 	private static final long serialVersionUID = -3703199743391937991L;
 
 	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
@@ -87,6 +87,11 @@ public class ColGroupSDCZeros extends ASDCZero {
 	@Override
 	public ColGroupType getColGroupType() {
 		return ColGroupType.SDCZeros;
+	}
+
+	@Override
+	public AMapToData getMapToData(){
+		return _data;
 	}
 
 	@Override
@@ -728,7 +733,7 @@ public class ColGroupSDCZeros extends ASDCZero {
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
-		int sumRows = 0;
+		int sumRows = getNumRows();
 		for(int i = 1; i < g.length; i++) {
 			if(!Arrays.equals(_colIndexes, g[i]._colIndexes)) {
 				LOG.warn("Not same columns therefore not appending \n" + Arrays.toString(_colIndexes) + "\n\n"

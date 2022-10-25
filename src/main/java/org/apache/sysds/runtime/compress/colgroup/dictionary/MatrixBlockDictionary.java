@@ -2147,10 +2147,11 @@ public class MatrixBlockDictionary extends ADictionary {
 	@Override
 	public boolean eq(ADictionary o) {
 		if(o instanceof MatrixBlockDictionary)
-			throw new NotImplementedException("Comparison if a MatrixBlock is equivalent is not implemented yet");
+			return _data.equals(((MatrixBlockDictionary) o)._data);
 		else if(o instanceof Dictionary) {
 			if(_data.isInSparseFormat())
-				throw new NotImplementedException();
+				throw new NotImplementedException(
+					"Not supporting one side being sparse while other is dense in compressed dictionary equality");
 			final double[] dv = _data.getDenseBlockValues();
 			return Arrays.equals(dv, ((Dictionary) o)._values);
 		}

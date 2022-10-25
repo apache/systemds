@@ -57,7 +57,7 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
  * with no modifications.
  * 
  */
-public class ColGroupSDCFOR extends ASDC {
+public class ColGroupSDCFOR extends ASDC implements AMapToDataGroup {
 
 	private static final long serialVersionUID = 3883228464052204203L;
 
@@ -114,6 +114,11 @@ public class ColGroupSDCFOR extends ASDC {
 	@Override
 	public int[] getCounts(int[] counts) {
 		return _data.getCounts(counts);
+	}
+
+	@Override
+	public AMapToData getMapToData() {
+		return _data;
 	}
 
 	@Override
@@ -447,7 +452,7 @@ public class ColGroupSDCFOR extends ASDC {
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
-		int sumRows = 0;
+		int sumRows = getNumRows();
 		for(int i = 1; i < g.length; i++) {
 			if(!Arrays.equals(_colIndexes, g[i]._colIndexes)) {
 				LOG.warn("Not same columns therefore not appending \n" + Arrays.toString(_colIndexes) + "\n\n"

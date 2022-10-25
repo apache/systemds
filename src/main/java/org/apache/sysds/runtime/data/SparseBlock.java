@@ -467,6 +467,28 @@ public abstract class SparseBlock implements Serializable
 	 */
 	public abstract int posFIndexGT(int r, int c);
 	
+	/** 
+	 * Checks if the block contains at least one value of the given
+	 * pattern. Implementations need to handle NaN patterns as well
+	 * (note that NaN==NaN yields false).
+	 * 
+	 * @param pattern checked pattern
+	 * @return true if pattern appears at least once, otherwise false
+	 */
+	public boolean contains(double pattern) {
+		boolean NaNpattern = Double.isNaN(pattern);
+		int rlen = numRows();
+		for(int i=0; i<rlen; i++) {
+			if( isEmpty(i) ) continue;
+			int apos = pos(i);
+			int alen = size(i);
+			double[] avals = values(i);
+			for( int j=apos; j<apos+alen; j++ )
+				if(avals[j]==pattern || (NaNpattern && Double.isNaN(avals[j])))
+					return true;
+		}
+		return false;
+	}
 	
 	////////////////////////
 	//iterators

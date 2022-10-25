@@ -643,6 +643,26 @@ public abstract class DenseBlock implements Serializable
 	 */
 	public abstract long getLong(int[] ix);
 
+	/** 
+	 * Checks if the block contains at least one value of the given
+	 * pattern. Implementations need to handle NaN patterns as well
+	 * (note that NaN==NaN yields false).
+	 * 
+	 * @param pattern checked pattern
+	 * @return true if pattern appears at least once, otherwise false
+	 */
+	public boolean contains(double pattern) {
+		boolean NaNpattern = Double.isNaN(pattern);
+		for(int i=0; i<numBlocks(); i++) {
+			double[] vals = valuesAt(i);
+			int len = size(i);
+			for(int j=0; j<len; j++)
+				if(vals[j]==pattern || (NaNpattern && Double.isNaN(vals[j])))
+					return true;
+		}
+		return false;
+	}
+	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

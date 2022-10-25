@@ -694,30 +694,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//make a pass over the data to determine if it includes the
 		//pattern, with early abort as soon as the pattern is found
-		boolean NaNpattern = Double.isNaN(pattern);
-		if( isInSparseFormat() ) {
-			SparseBlock sb = getSparseBlock();
-			for(int i=0; i<rlen; i++) {
-				if( sb.isEmpty(i) ) continue;
-				int apos = sb.pos(i);
-				int alen = sb.size(i);
-				double[] avals = sb.values(i);
-				for( int j=apos; j<apos+alen; j++ )
-					if(avals[j]==pattern || (NaNpattern && Double.isNaN(avals[j])))
-						return true;
-			}
-		}
-		else {
-			DenseBlock db = getDenseBlock();
-			for(int i=0; i<rlen; i++) {
-				double[] vals = db.values(i);
-				int pos = db.pos(i);
-				for(int j=pos; j<pos+clen; j++)
-					if(vals[j]==pattern || (NaNpattern && Double.isNaN(vals[j])))
-						return true;
-			}
-		}
-		return false;
+		return isInSparseFormat() ?
+			getSparseBlock().contains(pattern) :
+			getDenseBlock().contains(pattern);
 	}
 	
 	/**
@@ -2839,17 +2818,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		// by default, we guess result.sparsity=input.sparsity, unless not sparse safe
 		boolean sp = this.sparse && op.sparseSafe;
 		
+		//early abort for comparisons w/ special values
+		if( Builtin.isBuiltinCode(op.fn, BuiltinCode.ISNAN, BuiltinCode.ISNA))
+			if( !containsValue(op.getPattern()) ) {
+				return new MatrixBlock(rlen, clen, true); //avoid unnecessary allocation
+			}
+		
 		//allocate output
 		int n = Builtin.isBuiltinCode(op.fn, BuiltinCode.CUMSUMPROD) ? 1 : clen;
 		if( ret == null )
 			ret = new MatrixBlock(rlen, n, sp, sp ? nonZeros : rlen*n);
 		else
 			ret.reset(rlen, n, sp);
-
-		//early abort for comparisons w/ special values
-		if( Builtin.isBuiltinCode(op.fn, BuiltinCode.ISNAN, BuiltinCode.ISNA))
-			if( !containsValue(op.getPattern()) )
-				return ret; //avoid unnecessary allocation
 		
 		//core execute
 		if( LibMatrixAgg.isSupportedUnaryOperator(op) ) {

@@ -954,6 +954,17 @@ public class SparseBlockCSR extends SparseBlock
 
 		return true;
 	}
+	
+	@Override //specialized for CSR
+	public boolean contains(double pattern) {
+		boolean NaNpattern = Double.isNaN(pattern);
+		double[] vals = _values;
+		int len = _size;
+		for(int i=0; i<len; i++)
+			if(vals[i]==pattern || (NaNpattern && Double.isNaN(vals[i])))
+				return true;
+		return false;
+	}
 
 	///////////////////////////
 	// private helper methods

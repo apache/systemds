@@ -584,7 +584,7 @@ public class ColGroupSDCSingle extends ASDC {
 
 	@Override
 	public AColGroup appendNInternal(AColGroup[] g) {
-		int sumRows = 0;
+		int sumRows = getNumRows();
 		for(int i = 1; i < g.length; i++) {
 			if(!Arrays.equals(_colIndexes, g[i]._colIndexes)) {
 				LOG.warn("Not same columns therefore not appending \n" + Arrays.toString(_colIndexes) + "\n\n"

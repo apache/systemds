@@ -573,6 +573,18 @@ public abstract class SparseBlock implements Serializable, Block
 		return true;
 	}
 
+
+	/**
+	 * Get if the dense double array is equivalent to this sparse Block.
+	 * 
+	 * @param denseValues row major double values same dimensions of sparse Block.
+	 * @param nCol        Number of columns in dense values (and hopefully in this sparse block)
+	 * @return If the dense array is equivalent
+	 */
+	public boolean equals(double[] denseValues, int nCol) {
+		return equals(denseValues, nCol, Double.MIN_NORMAL * 1024);
+	}
+
 	/**
 	 * Get if the dense double array is equivalent to this sparse Block.
 	 * 

@@ -2112,18 +2112,6 @@ public class ColGroupTest extends ColGroupBase {
 		assertTrue(co < eo);
 	}
 
-	// @Test
-	// public void copyMaintainPointers() {
-	// AColGroup a = base.copy();
-	// AColGroup b = other.copy();
-
-	// assertTrue(a.getColIndices() == base.getColIndices());
-	// assertTrue(b.getColIndices() == other.getColIndices());
-	// // assertFalse(a.getColIndices() == other.getColIndices());
-	// assertFalse(a == base);
-	// assertFalse(b == other);
-	// }
-
 	@Test
 	public void sliceRowsBeforeEnd() {
 		if(nRow > 10)
@@ -2241,4 +2229,54 @@ public class ColGroupTest extends ColGroupBase {
 			fail(e.getMessage());
 		}
 	}
+
+	@Test
+	public void testAppendSelf() {
+		appendSelfVerification(base);
+		appendSelfVerification(other);
+	}
+
+	@Test
+	public void testAppendSomethingElse() {
+		// This is under the assumption that if one is appending
+		// to the other then other should append to this.
+		// If this property does not hold it is because some cases are missing in the append logic.
+		try {
+
+			AColGroup g2 = base.append(other);
+			AColGroup g2n = other.append(base);
+			// both should be null, or both should not be.
+			if(g2 == null)
+				assertTrue(g2n == null);
+			else if(g2 != null)
+				assertTrue(g2n != null);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	private void appendSelfVerification(AColGroup g) {
+		try {
+
+			AColGroup g2 = g.append(g);
+			AColGroup g2n = AColGroup.appendN(new AColGroup[] {g, g});
+
+			if(g2 != null && g2n != null) {
+				double s2 = g2.getSum(nRow * 2);
+				double s = g.getSum(nRow) * 2;
+				double s2n = g2n.getSum(nRow * 2);
+				assertEquals(s2, s, 0.0001);
+				assertEquals(s2n, s, 0.0001);
+
+				UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1), 0, nRow * 2, g2, g2n, nRow * 2);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
 }

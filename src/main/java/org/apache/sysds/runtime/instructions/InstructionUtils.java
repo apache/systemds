@@ -281,8 +281,8 @@ public class InstructionUtils
 	/**
 	 * Parse the given opcode into an aggregate unary operator.
 	 *
-	 * @param opcode
-	 * @param numThreads
+	 * @param opcode opcode
+	 * @param numThreads number of threads
 	 * @return Parsed aggregate unary operator object. Caller must handle possible null return value.
 	 */
 	public static AggregateUnaryOperator parseBasicAggregateUnaryOperator(String opcode, int numThreads)

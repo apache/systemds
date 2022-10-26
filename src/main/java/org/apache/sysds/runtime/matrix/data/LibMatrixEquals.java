@@ -41,6 +41,22 @@ import org.apache.commons.lang.NotImplementedException;
  */
 public class LibMatrixEquals {
 
+	/** first block */
+	private final MatrixBlock a;
+	/** second block */
+	private final MatrixBlock b;
+
+	/**
+	 * Private instance of a comparison, constructed to reduce the arguments to method calls.
+	 * 
+	 * @param a first block
+	 * @param b second block
+	 */
+	private LibMatrixEquals(MatrixBlock a, MatrixBlock b) {
+		this.a = a;
+		this.b = b;
+	}
+
 	/**
 	 * <p>
 	 * Analyze if the two matrix blocks are equivalent, this functions even if the underlying allocation and data
@@ -63,6 +79,40 @@ public class LibMatrixEquals {
 	 * @return If the block are equivalent.
 	 */
 	public static boolean equals(MatrixBlock a, MatrixBlock b) {
+		// Same object
+		if(a == b)
+			return true;
+		return new LibMatrixEquals(a, b).exec();
+	}
+
+	/**
+	 * Execute the comparison
+	 * 
+	 * @return if the blocks are equivalent
+	 */
+	private boolean exec() {
+		if(isMetadataDifferent())
+			return false;
+
 		throw new NotImplementedException("Not implemented matrixBlock compare");
+	}
+
+	/**
+	 * Compare metadata, and return true if metadata is different
+	 * 
+	 * @param a MatrixBlock a
+	 * @param b MatrixBlock b
+	 * @return If the metadata was comparable
+	 */
+	private boolean isMetadataDifferent() {
+		boolean diff = false;
+
+		diff |= a.getNumRows() != b.getNumRows();
+		diff |= a.getNumColumns() != b.getNumColumns();
+		final long nnzA = a.getNonZeros();
+		final long nnzB = b.getNonZeros();
+		diff |= nnzA != -1 && nnzB != -1 && nnzA != nnzB;
+
+		return diff;
 	}
 }

@@ -5867,9 +5867,33 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 
 	@Override
 	public final boolean equals(Object arg0) {
-		throw new RuntimeException("equals should never be called for matrix blocks.");
+		if(arg0 instanceof MatrixBlock)
+			return LibMatrixEquals.equals(this, (MatrixBlock) arg0);
+		return false;
 	}
-	
+
+	/**
+	 * Analyze if the matrixBlocks are equivalent, the comparsion supports if the differnet sides are differently
+	 * allocated such as sparse and dense.
+	 * 
+	 * <p>
+	 * The implementations adhere to the properties of equals of:
+	 * </p>
+	 * 
+	 * <ul>
+	 * <li>Reflective</li>
+	 * <li>Symmetric</li>
+	 * <li>Transitive</li>
+	 * <li>Consistent</li>
+	 * </ul>
+	 * 
+	 * @param arg0 MatrixBlock to compare
+	 * @return If the matrices are equivalent
+	 */
+	public final boolean equals(MatrixBlock arg0) {
+		return LibMatrixEquals.equals(this, arg0);
+	}
+
 	@Override
 	public final int hashCode() {
 		throw new RuntimeException("HashCode should never be called for matrix blocks.");

@@ -5867,9 +5867,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 
 	@Override
 	public final boolean equals(Object arg0) {
-		throw new RuntimeException("equals should never be called for matrix blocks.");
+		if(arg0 instanceof MatrixBlock)
+			return LibMatrixEquals.equals(this, (MatrixBlock) arg0);
+		return false;
 	}
-	
+
+	public final boolean equals(MatrixBlock arg0) {
+		return LibMatrixEquals.equals(this,  arg0);
+	}
+
 	@Override
 	public final int hashCode() {
 		throw new RuntimeException("HashCode should never be called for matrix blocks.");

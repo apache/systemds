@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.sysds.runtime.matrix.data.LibMatrixEquals;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 public class EqualsTest {
@@ -242,5 +243,49 @@ public class EqualsTest {
 		MatrixBlock m2 = new MatrixBlock(10, 10, 1.0);
 		assertFalse(LibMatrixEquals.equals(m1, m2, 0.9999));
 		assertFalse(LibMatrixEquals.equals(m2, m1, 0.9999));
+	}
+
+	@Test
+	public void testSparse() {
+
+		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 1000, 0, 100, 0.05, 231);
+		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(100, 1000, 0, 100, 0.05, 231);
+		assertTrue(LibMatrixEquals.equals(m1, m2, 0.00000001));
+		assertTrue(LibMatrixEquals.equals(m2, m1, 0.00000001));
+	}
+
+	@Test
+	public void testSparseOneForcedDense() {
+
+		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 100, 0, 100, 0.05, 231);
+		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(100, 100, 0, 100, 0.05, 231);
+		m1.sparseToDense();
+		assertTrue(LibMatrixEquals.equals(m1, m2, 0.00000001));
+		assertTrue(LibMatrixEquals.equals(m2, m1, 0.00000001));
+	}
+
+	@Test
+	public void testSparseOneForcedDenseNotEquivalent() {
+
+		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 100, 0, 100, 0.05, 231);
+		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(100, 100, 0, 100, 0.05, 231);
+
+		m1.getSparseBlock().get(13).values()[2] = 1324;
+		m2.sparseToDense();
+
+		assertFalse(LibMatrixEquals.equals(m1, m2, 0.00000001));
+		assertFalse(LibMatrixEquals.equals(m2, m1, 0.00000001));
+	}
+
+	@Test
+	public void testSparseNotEquivalent() {
+
+		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 1000, 0, 100, 0.05, 231);
+		MatrixBlock m2 = TestUtils.generateTestMatrixBlock(100, 1000, 0, 100, 0.05, 231);
+
+		m1.getSparseBlock().get(13).values()[2] = 1324;
+
+		assertFalse(LibMatrixEquals.equals(m1, m2, 0.00000001));
+		assertFalse(LibMatrixEquals.equals(m2, m1, 0.00000001));
 	}
 }

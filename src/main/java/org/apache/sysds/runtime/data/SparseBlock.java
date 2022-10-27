@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.data;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.sysds.runtime.matrix.data.IJV;
@@ -536,12 +537,48 @@ public abstract class SparseBlock implements Serializable, Block
 	public abstract String toString();
 	
 
+	@Override
+	public boolean equals(Object o) {
+		if(o instanceof SparseBlock)
+			return equals((SparseBlock) o, Double.MIN_NORMAL * 1024);
+		return false;
+	}
+
+	/**
+	 * Verify if the values in this sparse block is equivalent to that sparse block, not taking into account the
+	 * dimensions of the contained values.
+	 * 
+	 * @param o   Other block
+	 * @param eps Epsilon allowed
+	 * @return If the blocs are equivalent.
+	 */
+	public boolean equals(SparseBlock o, double eps) {
+		for(int r = 0; r < numRows(); r++){
+			if(isEmpty(r) != o.isEmpty(r))
+				return false;
+			if(isEmpty(r))
+				continue;
+			
+			final int apos = pos(r);
+			final int alen = apos + size(r);
+
+			final int aposO = o.pos(r);
+			final int alenO = aposO + o.size(r);
+	
+			if(! Arrays.equals(indexes(r), apos, alen,  o.indexes(r), aposO, alenO))
+				return false;
+			if(! Arrays.equals(values(r), apos, alen,  o.values(r), aposO, alenO))
+				return false;
+		}
+		return true;
+	}
+
 	/**
 	 * Get if the dense double array is equivalent to this sparse Block.
 	 * 
 	 * @param denseValues row major double values same dimensions of sparse Block.
-	 * @param nCol Number of columns in dense values (and hopefully in this sparse block)
-	 * @param eps Epsilon allowed to be off. Note we treat zero differently and it must be zero.
+	 * @param nCol        Number of columns in dense values (and hopefully in this sparse block)
+	 * @param eps         Epsilon allowed to be off. Note we treat zero differently and it must be zero.
 	 * @return If the dense array is equivalent
 	 */
 	public boolean equals(double[] denseValues, int nCol, double eps) {

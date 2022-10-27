@@ -2150,8 +2150,7 @@ public class MatrixBlockDictionary extends ADictionary {
 			return _data.equals(((MatrixBlockDictionary) o)._data);
 		else if(o instanceof Dictionary) {
 			if(_data.isInSparseFormat())
-				throw new NotImplementedException(
-					"Not supporting one side being sparse while other is dense in compressed dictionary equality");
+				return _data.getSparseBlock().equals(((Dictionary) o)._values, _data.getNumColumns());
 			final double[] dv = _data.getDenseBlockValues();
 			return Arrays.equals(dv, ((Dictionary) o)._values);
 		}

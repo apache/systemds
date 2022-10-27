@@ -26,7 +26,6 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -1070,10 +1069,10 @@ public class Dictionary extends ADictionary {
 	public boolean eq(ADictionary o) {
 		if(o instanceof Dictionary)
 			return Arrays.equals(_values, ((Dictionary) o)._values);
-		else if(o instanceof MatrixBlockDictionary){
+		else if(o instanceof MatrixBlockDictionary) {
 			final MatrixBlock mb = ((MatrixBlockDictionary) o).getMatrixBlock();
 			if(mb.isInSparseFormat())
-				throw new NotImplementedException();
+				return mb.getSparseBlock().equals(_values, mb.getNumColumns());
 			final double[] dv = mb.getDenseBlockValues();
 			return Arrays.equals(_values, dv);
 		}

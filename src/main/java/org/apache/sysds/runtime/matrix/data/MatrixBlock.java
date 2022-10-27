@@ -5872,8 +5872,26 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return false;
 	}
 
+	/**
+	 * Analyze if the matrixBlocks are equivalent, the comparsion supports if the differnet sides are differently
+	 * allocated such as sparse and dense.
+	 * 
+	 * <p>
+	 * The implementations adhere to the properties of equals of:
+	 * </p>
+	 * 
+	 * <ul>
+	 * <li>Reflective</li>
+	 * <li>Symmetric</li>
+	 * <li>Transitive</li>
+	 * <li>Consistent</li>
+	 * </ul>
+	 * 
+	 * @param arg0 MatrixBlock to compare
+	 * @return If the matrices are equivalent
+	 */
 	public final boolean equals(MatrixBlock arg0) {
-		return LibMatrixEquals.equals(this,  arg0);
+		return LibMatrixEquals.equals(this, arg0);
 	}
 
 	@Override

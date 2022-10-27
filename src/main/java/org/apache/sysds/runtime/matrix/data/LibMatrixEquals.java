@@ -49,7 +49,6 @@ public class LibMatrixEquals {
 	private final MatrixBlock a;
 	/** second block */
 	private final MatrixBlock b;
-
 	/** Epsilon */
 	private final double eps;
 
@@ -65,6 +64,13 @@ public class LibMatrixEquals {
 		this.eps = Double.MIN_VALUE * 1024;
 	}
 
+	/**
+	 * Private instance of a comparison, constructed to reduce the arguments to method calls.
+	 * 
+	 * @param a   first block
+	 * @param b   second block
+	 * @param eps epsilon allowed
+	 */
 	private LibMatrixEquals(MatrixBlock a, MatrixBlock b, double eps) {
 		this.a = a;
 		this.b = b;
@@ -164,6 +170,11 @@ public class LibMatrixEquals {
 		return diff;
 	}
 
+	/**
+	 * Empty metadata check. to verify if the content is empty and such.
+	 * 
+	 * @return Boolean that is not null if something was found otherwise null.
+	 */
 	private Boolean isEmpty() {
 		final boolean emptyA = a.isEmpty();
 		final boolean emptyB = b.isEmpty();
@@ -175,6 +186,11 @@ public class LibMatrixEquals {
 		return null;
 	}
 
+	/**
+	 * Generic implementation to cover all cases. But it is slow in most.
+	 * 
+	 * @return if the matrices are equivalent.
+	 */
 	private boolean genericEquals() {
 		LOG.warn("Using generic equals, potential optimizations are possible");
 		final int rows = a.getNumRows();
@@ -184,8 +200,6 @@ public class LibMatrixEquals {
 			for(int j = 0; j < cols; j++)
 				if(Math.abs(a.quickGetValue(i, j) - b.quickGetValue(i, j)) > eps)
 					return false;
-
 		return true;
-
 	}
 }

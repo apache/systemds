@@ -675,33 +675,31 @@ public abstract class DenseBlock implements Serializable
 	 * of the contained values. Note in some cases one or the other block is allocated bigger than the other, so the
 	 * values compared is only the values of the smaller block.
 	 * 
-	 * @param o Other block
+	 * @param o   Other block
 	 * @param eps Epsilon allowed
 	 * @return If the blocs are equivalent.
 	 */
 	public boolean equals(DenseBlock o, double eps) {
 		if(isContiguous() && o.isContiguous())
-			return contiguousEquals(o,eps);
-		
+			return contiguousEquals(o, eps);
 		return genericEquals(o, eps);
-		
 	}
 
-	private boolean contiguousEquals(DenseBlock o, double eps){
+	private boolean contiguousEquals(DenseBlock o, double eps) {
 		final double[] va = values(0);
 		final double[] vb = o.values(0);
 		final int len = Math.min(va.length, vb.length);
-		for(int i = 0; i < len; i ++)
+		for(int i = 0; i < len; i++)
 			if(Math.abs(va[i] - vb[i]) > eps)
 				return false;
 		return true;
 	}
 
-	private boolean genericEquals(DenseBlock o, double eps){
+	private boolean genericEquals(DenseBlock o, double eps) {
 		final int nRows = getDim(0);
 		final int nCols = getDim(1);
-		for(int i = 0; i < nRows; i ++)
-			for( int j = 0; j < nCols; j++)
+		for(int i = 0; i < nRows; i++)
+			for(int j = 0; j < nCols; j++)
 				if(Math.abs(get(i, j) - o.get(i, j)) > eps)
 					return false;
 		return true;

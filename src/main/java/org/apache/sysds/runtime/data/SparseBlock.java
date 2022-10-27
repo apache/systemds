@@ -563,7 +563,7 @@ public abstract class SparseBlock implements Serializable, Block
 				int i = off;
 				for(int k = 0; i < offEnd && j < alen; i++, k++) {
 					if(aix[j] == k) {
-						if(denseValues[i] != avals[j])
+						if(Math.abs(denseValues[i] - avals[j]) > eps)
 							return false;
 						j++;
 					}

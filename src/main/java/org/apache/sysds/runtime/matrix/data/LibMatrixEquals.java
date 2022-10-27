@@ -148,6 +148,13 @@ public class LibMatrixEquals {
 
 		if(a.denseBlock != null && b.denseBlock != null)
 			return a.denseBlock.equals(b.denseBlock, eps);
+		if(a.sparseBlock != null && b.sparseBlock != null)
+			return a.sparseBlock.equals(b.sparseBlock, eps);
+		if(a.sparseBlock != null && b.denseBlock != null && b.denseBlock.isContiguous())
+			return a.sparseBlock.equals(b.denseBlock.values(0), b.getNumColumns(), eps);
+		if(b.sparseBlock != null && a.denseBlock != null && a.denseBlock.isContiguous())
+			return b.sparseBlock.equals(a.denseBlock.values(0), a.getNumColumns(), eps);
+
 		return genericEquals();
 	}
 
@@ -195,7 +202,6 @@ public class LibMatrixEquals {
 		LOG.warn("Using generic equals, potential optimizations are possible");
 		final int rows = a.getNumRows();
 		final int cols = a.getNumColumns();
-
 		for(int i = 0; i < rows; i++)
 			for(int j = 0; j < cols; j++)
 				if(Math.abs(a.quickGetValue(i, j) - b.quickGetValue(i, j)) > eps)

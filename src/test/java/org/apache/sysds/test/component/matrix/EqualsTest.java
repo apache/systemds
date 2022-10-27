@@ -288,4 +288,24 @@ public class EqualsTest {
 		assertFalse(LibMatrixEquals.equals(m1, m2, 0.00000001));
 		assertFalse(LibMatrixEquals.equals(m2, m1, 0.00000001));
 	}
+
+	@Test
+	public void testForcedNonContiguousNotEqual() {
+		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 100, 0, 100, 0.05, 231);
+		MatrixBlock m2 = TestUtils.mockNonContiguousMatrix( //
+			TestUtils.generateTestMatrixBlock(100, 100, 0, 100, 0.05, 231));
+		m1.getSparseBlock().get(13).values()[2] = 1324;
+		assertFalse(LibMatrixEquals.equals(m1, m2, 0.00000001));
+		assertFalse(LibMatrixEquals.equals(m2, m1, 0.00000001));
+	}
+
+	@Test
+	public void testForcedNonContiguousEqual() {
+		MatrixBlock m1 = TestUtils.generateTestMatrixBlock(100, 100, 0, 100, 0.05, 231);
+		MatrixBlock m2 = TestUtils.mockNonContiguousMatrix( //
+			TestUtils.generateTestMatrixBlock(100, 100, 0, 100, 0.05, 231));
+		assertTrue(LibMatrixEquals.equals(m1, m2, 0.00000001));
+		assertTrue(LibMatrixEquals.equals(m2, m1, 0.00000001));
+	}
+
 }

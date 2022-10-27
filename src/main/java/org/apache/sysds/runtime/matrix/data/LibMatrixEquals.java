@@ -21,6 +21,9 @@ package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.data.Block;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 
 /**
  * 
@@ -148,6 +151,11 @@ public class LibMatrixEquals {
 
 		if(a.denseBlock != null && b.denseBlock != null)
 			return a.denseBlock.equals(b.denseBlock, eps);
+		if(a.sparseBlock != null && b.denseBlock != null && b.denseBlock.isContiguous())
+			return a.sparseBlock.equals(b.denseBlock.values(0), b.getNumColumns(), eps);
+		if(b.sparseBlock != null && a.denseBlock != null && a.denseBlock.isContiguous())
+			return b.sparseBlock.equals(a.denseBlock.values(0), a.getNumColumns(), eps);
+
 		return genericEquals();
 	}
 
@@ -192,14 +200,21 @@ public class LibMatrixEquals {
 	 * @return if the matrices are equivalent.
 	 */
 	private boolean genericEquals() {
+		return genericEquals(a.getBlock(), b.getBlock(), a.getNumRows(), a.getNumColumns(), eps);
+	}
+
+	private static boolean genericEquals(Block a, Block b, int rows, int cols, double eps) {
 		LOG.warn("Using generic equals, potential optimizations are possible");
-		final int rows = a.getNumRows();
-		final int cols = a.getNumColumns();
 
 		for(int i = 0; i < rows; i++)
 			for(int j = 0; j < cols; j++)
-				if(Math.abs(a.quickGetValue(i, j) - b.quickGetValue(i, j)) > eps)
+				if(Math.abs(a.get(i, j) - b.get(i, j)) > eps)
 					return false;
 		return true;
 	}
+
+	public static boolean equals(SparseBlock sb, DenseBlock o, double eps) {
+		return genericEquals(sb, o, sb.numRows(), o.numCols(), eps);
+	}
+
 }

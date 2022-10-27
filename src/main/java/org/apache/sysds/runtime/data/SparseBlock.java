@@ -35,7 +35,7 @@ import org.apache.sysds.runtime.matrix.data.IJV;
  * CSR, MCSR, and - with performance drawbacks - COO.
  * 
  */
-public abstract class SparseBlock implements Serializable
+public abstract class SparseBlock implements Serializable, Block
 {
 	private static final long serialVersionUID = -5008747088111141395L;
 	
@@ -535,6 +535,49 @@ public abstract class SparseBlock implements Serializable
 	@Override 
 	public abstract String toString();
 	
+
+	/**
+	 * Get if the dense double array is equivalent to this sparse Block.
+	 * 
+	 * @param denseValues row major double values same dimensions of sparse Block.
+	 * @param nCol Number of columns in dense values (and hopefully in this sparse block)
+	 * @param eps Epsilon allowed to be off. Note we treat zero differently and it must be zero.
+	 * @return If the dense array is equivalent
+	 */
+	public boolean equals(double[] denseValues, int nCol, double eps) {
+		for(int r = 0; r < numRows(); r++) {
+			final int off = r * nCol;
+			final int offEnd = off + nCol;
+			if(isEmpty(r)) {
+				// all in row should be zero.
+				for(int i = off; i < offEnd; i++)
+					if(denseValues[i] != 0)
+						return false;
+			}
+			else {
+				final int apos = pos(r);
+				final int alen = apos + size(r);
+				final double[] avals = values(r);
+				final int[] aix = indexes(r);
+				int j = apos;
+				int i = off;
+				for(int k = 0; i < offEnd && j < alen; i++, k++) {
+					if(aix[j] == k) {
+						if(denseValues[i] != avals[j])
+							return false;
+						j++;
+					}
+					else if(denseValues[i] != 0.0)
+						return false;
+				}
+				for(; i < offEnd; i++)
+					if(denseValues[i] != 0)
+						return false;
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * Default sparse block iterator implemented against the sparse block
 	 * api in an implementation-agnostic manner.

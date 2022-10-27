@@ -65,6 +65,7 @@ import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -3518,5 +3519,32 @@ public class TestUtils
 		//return JCuda.cudaGetDeviceCount(deviceCount);
 		// FIXME: Fails to skip if gpu available but no libraries
 		return 1; //return false for now
+	}
+
+	public static MatrixBlock mockNonContiguousMatrix(MatrixBlock db){
+		db.sparseToDense();
+		double[] vals = db.getDenseBlockValues();
+		int[] dims = new int[]{db.getNumRows(), db.getNumColumns()};
+		MatrixBlock m = new MatrixBlock(db.getNumRows(), db.getNumColumns(), new DenseBlockFP64Mock(dims, vals));
+		m.setNonZeros(db.getNonZeros());
+		return m;
+	}
+
+	private static class DenseBlockFP64Mock extends DenseBlockFP64 {
+		private static final long serialVersionUID = -3601232958390554672L;
+
+		public DenseBlockFP64Mock(int[] dims, double[] data) {
+			super(dims, data);
+		}
+
+		@Override
+		public boolean isContiguous() {
+			return false;
+		}
+
+		@Override
+		public int numBlocks() {
+			return 2;
+		}
 	}
 }

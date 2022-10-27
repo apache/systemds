@@ -35,7 +35,7 @@ import org.apache.sysds.utils.MemoryEstimates;
  * one or many contiguous rows.
  * 
  */
-public abstract class DenseBlock implements Serializable
+public abstract class DenseBlock implements Serializable, Block
 {
 	private static final long serialVersionUID = 7517220490270237832L;
 
@@ -186,6 +186,15 @@ public abstract class DenseBlock implements Serializable
 	 */
 	public final int numRows() {
 		return _rlen;
+	}
+
+	/**
+	 * Get the number of columns / first dimension
+	 * 
+	 * @return number of columns
+	 */
+	public final int numCols(){
+		return _odims[0];
 	}
 	
 	/**

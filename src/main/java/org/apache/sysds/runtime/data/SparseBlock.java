@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.data;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.sysds.runtime.matrix.data.IJV;
@@ -35,7 +36,7 @@ import org.apache.sysds.runtime.matrix.data.IJV;
  * CSR, MCSR, and - with performance drawbacks - COO.
  * 
  */
-public abstract class SparseBlock implements Serializable
+public abstract class SparseBlock implements Serializable, Block
 {
 	private static final long serialVersionUID = -5008747088111141395L;
 	
@@ -535,6 +536,85 @@ public abstract class SparseBlock implements Serializable
 	@Override 
 	public abstract String toString();
 	
+
+	@Override
+	public boolean equals(Object o) {
+		if(o instanceof SparseBlock)
+			return equals((SparseBlock) o, Double.MIN_NORMAL * 1024);
+		return false;
+	}
+
+	/**
+	 * Verify if the values in this sparse block is equivalent to that sparse block, not taking into account the
+	 * dimensions of the contained values.
+	 * 
+	 * @param o   Other block
+	 * @param eps Epsilon allowed
+	 * @return If the blocs are equivalent.
+	 */
+	public boolean equals(SparseBlock o, double eps) {
+		for(int r = 0; r < numRows(); r++){
+			if(isEmpty(r) != o.isEmpty(r))
+				return false;
+			if(isEmpty(r))
+				continue;
+			
+			final int apos = pos(r);
+			final int alen = apos + size(r);
+
+			final int aposO = o.pos(r);
+			final int alenO = aposO + o.size(r);
+	
+			if(! Arrays.equals(indexes(r), apos, alen,  o.indexes(r), aposO, alenO))
+				return false;
+			if(! Arrays.equals(values(r), apos, alen,  o.values(r), aposO, alenO))
+				return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Get if the dense double array is equivalent to this sparse Block.
+	 * 
+	 * @param denseValues row major double values same dimensions of sparse Block.
+	 * @param nCol        Number of columns in dense values (and hopefully in this sparse block)
+	 * @param eps         Epsilon allowed to be off. Note we treat zero differently and it must be zero.
+	 * @return If the dense array is equivalent
+	 */
+	public boolean equals(double[] denseValues, int nCol, double eps) {
+		for(int r = 0; r < numRows(); r++) {
+			final int off = r * nCol;
+			final int offEnd = off + nCol;
+			if(isEmpty(r)) {
+				// all in row should be zero.
+				for(int i = off; i < offEnd; i++)
+					if(denseValues[i] != 0)
+						return false;
+			}
+			else {
+				final int apos = pos(r);
+				final int alen = apos + size(r);
+				final double[] avals = values(r);
+				final int[] aix = indexes(r);
+				int j = apos;
+				int i = off;
+				for(int k = 0; i < offEnd && j < alen; i++, k++) {
+					if(aix[j] == k) {
+						if(Math.abs(denseValues[i] - avals[j]) > eps)
+							return false;
+						j++;
+					}
+					else if(denseValues[i] != 0.0)
+						return false;
+				}
+				for(; i < offEnd; i++)
+					if(denseValues[i] != 0)
+						return false;
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * Default sparse block iterator implemented against the sparse block
 	 * api in an implementation-agnostic manner.

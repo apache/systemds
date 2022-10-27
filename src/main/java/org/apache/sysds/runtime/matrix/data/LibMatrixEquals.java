@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.data.Block;
 
 /**
  * 
@@ -200,15 +199,12 @@ public class LibMatrixEquals {
 	 * @return if the matrices are equivalent.
 	 */
 	private boolean genericEquals() {
-		return genericEquals(a.getBlock(), b.getBlock(), a.getNumRows(), a.getNumColumns(), eps);
-	}
-
-	private static boolean genericEquals(final Block a, final Block b, final int rows, final int cols,
-		final double eps) {
 		LOG.warn("Using generic equals, potential optimizations are possible");
+		final int rows = a.getNumRows();
+		final int cols = a.getNumColumns();
 		for(int i = 0; i < rows; i++)
 			for(int j = 0; j < cols; j++)
-				if(Math.abs(a.get(i, j) - b.get(i, j)) > eps)
+				if(Math.abs(a.quickGetValue(i, j) - b.quickGetValue(i, j)) > eps)
 					return false;
 		return true;
 	}

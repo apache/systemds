@@ -552,11 +552,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 
 	////////
 	// Data handling
-	
-	public Block getBlock(){
-		return (sparseBlock != null) ? sparseBlock : denseBlock;
-	}
-
 	public DenseBlock getDenseBlock() {
 		return denseBlock;
 	}

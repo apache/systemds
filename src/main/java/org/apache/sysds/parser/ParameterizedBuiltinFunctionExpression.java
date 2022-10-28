@@ -246,7 +246,15 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			validateParamserv(output, conditional);
 			break;
 
+		case COUNT_DISTINCT:
+		case COUNT_DISTINCT_ROW:
+		case COUNT_DISTINCT_COL:
+			validateCountDistinct(output, conditional);
+			break;
+
 		case COUNT_DISTINCT_APPROX:
+		case COUNT_DISTINCT_APPROX_ROW:
+		case COUNT_DISTINCT_APPROX_COL:
 			validateCountDistinctApprox(output, conditional);
 			break;
 
@@ -353,6 +361,45 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setBlocksize(-1);
 	}
 
+	private void validateCountDistinct(DataIdentifier output, boolean conditional) {
+		HashMap<String, Expression> varParams = getVarParams();
+
+		// "data" is the only parameter that is allowed to be unnamed
+		if (varParams.containsKey(null)) {
+			varParams.put("data", varParams.remove(null));
+		}
+
+		// Validate the number of parameters
+		String fname = getOpCode().getName();
+		String usageMessage = "function " + fname + " takes at least 1 and at most 2 parameters";
+		if (varParams.size() < 1) {
+			raiseValidateError("Too few parameters: " + usageMessage, conditional);
+		}
+
+		if (varParams.size() > 2) {
+			raiseValidateError("Too many parameters: " + usageMessage, conditional);
+		}
+
+		// Check parameter names are valid
+		Set<String> validParameterNames = CollectionUtils.asSet("data", "dir");
+		checkInvalidParameters(getOpCode(), varParams, validParameterNames);
+
+		// Check parameter expression data types match expected
+		checkDataType(false, fname, "data", DataType.MATRIX, conditional);
+		checkDataValueType(false, fname, "data", DataType.MATRIX, ValueType.FP64, conditional);
+
+		// We need the dimensions of the input matrix to determine the output matrix characteristics
+		// Validate data parameter, lookup previously defined var or resolve expression
+		Identifier dataId = varParams.get("data").getOutput();
+		if (dataId == null) {
+			raiseValidateError("Cannot parse input parameter \"data\" to function " + fname, conditional);
+		}
+
+		checkStringParam(true, fname, "dir", conditional);
+		// Check data value of "dir" parameter
+		validateAggregationDirection(dataId, output);
+	}
+
 	private void validateCountDistinctApprox(DataIdentifier output, boolean conditional) {
 		Set<String> validTypeNames = CollectionUtils.asSet("KMV");
 		HashMap<String, Expression> varParams = getVarParams();
@@ -390,7 +437,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 		checkStringParam(true, fname, "type", conditional);
 		// Check data value of "type" parameter
-		if (varParams.keySet().contains("type")) {
+		if (varParams.containsKey("type")) {
 			String typeString = varParams.get("type").toString().toUpperCase();
 			if (!validTypeNames.contains(typeString)) {
 				raiseValidateError("Unrecognized type for optional parameter " + typeString, conditional);
@@ -402,7 +449,12 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 		checkStringParam(true, fname, "dir", conditional);
 		// Check data value of "dir" parameter
-		if (varParams.keySet().contains("dir")) {
+		validateAggregationDirection(dataId, output);
+	}
+
+	private void validateAggregationDirection(Identifier dataId, DataIdentifier output) {
+		HashMap<String, Expression> varParams = getVarParams();
+		if (varParams.containsKey("dir")) {
 			String directionString = varParams.get("dir").toString().toUpperCase();
 
 			// Set output type and dimensions based on direction
@@ -435,9 +487,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			} else {
 				raiseValidateError("Invalid argument: " + directionString + " is not recognized");
 			}
-
-		// default to dir="rc"
-		} else {
+		} else {  // default to dir="rc"
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlocksize(0);

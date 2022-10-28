@@ -23,11 +23,11 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.junit.Test;
 
-public class CountDistinctApproxRow extends CountDistinctRowOrColBase {
+public class CountDistinctColAlias extends CountDistinctRowOrColBase {
 
-	private final static String TEST_NAME = "countDistinctApproxRow";
-	private final static String TEST_DIR = "functions/countDistinctApprox/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApproxRow.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "countDistinctColAlias";
+	private final static String TEST_DIR = "functions/countDistinct/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctColAlias.class.getSimpleName() + "/";
 
 	@Override
 	protected String getTestClassDir() {
@@ -46,12 +46,13 @@ public class CountDistinctApproxRow extends CountDistinctRowOrColBase {
 
 	@Override
 	protected Types.Direction getDirection() {
-		return Types.Direction.Row;
+		return Types.Direction.Col;
 	}
 
 	@Override
 	public void setUp() {
 		super.addTestConfiguration();
+		super.setRunSparkTests(false);
 	}
 
 	@Test
@@ -59,7 +60,7 @@ public class CountDistinctApproxRow extends CountDistinctRowOrColBase {
 		Types.ExecType ex = Types.ExecType.CP;
 
 		int actualDistinctCount = 10;
-		int rows = 10000, cols = 1000;
+		int rows = 1000, cols = 10000;
 		double sparsity = 0.1;
 		double tolerance = actualDistinctCount * this.percentTolerance;
 
@@ -69,7 +70,7 @@ public class CountDistinctApproxRow extends CountDistinctRowOrColBase {
 	@Test
 	public void testCPSparseLargeCSR() {
 		int actualDistinctCount = 10;
-		int rows = 10000, cols = 1000;
+		int rows = 1000, cols = 10000;
 		double sparsity = 0.1;
 		double tolerance = actualDistinctCount * this.percentTolerance;
 
@@ -80,7 +81,7 @@ public class CountDistinctApproxRow extends CountDistinctRowOrColBase {
 	@Test
 	public void testCPSparseLargeCOO() {
 		int actualDistinctCount = 10;
-		int rows = 10000, cols = 1000;
+		int rows = 1000, cols = 10000;
 		double sparsity = 0.1;
 		double tolerance = actualDistinctCount * this.percentTolerance;
 
@@ -93,7 +94,7 @@ public class CountDistinctApproxRow extends CountDistinctRowOrColBase {
 		Types.ExecType ex = Types.ExecType.CP;
 
 		int actualDistinctCount = 100;
-		int rows = 10000, cols = 1000;
+		int rows = 1000, cols = 10000;
 		double sparsity = 0.9;
 		double tolerance = actualDistinctCount * this.percentTolerance;
 

@@ -22,19 +22,20 @@ package org.apache.sysds.runtime.matrix.operators;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction.AUType;
 import org.apache.sysds.utils.Hash.HashType;
 
-public class CountDistinctOperator extends Operator {
+public class CountDistinctOperator extends AggregateUnaryOperator {
 	private static final long serialVersionUID = 7615123453265129670L;
 
 	private final CountDistinctOperatorTypes operatorType;
+	private final Types.Direction direction;
 	private final HashType hashType;
-	private Types.Direction direction;
-	private IndexFunction indexFunction;
 
-	public CountDistinctOperator(AUType opType) {
-		super(true);
+	public CountDistinctOperator(AUType opType, Types.Direction direction, IndexFunction indexFunction) {
+		super(new AggregateOperator(0, Plus.getPlusFnObject()), indexFunction, 1);
+
 		switch(opType) {
 			case COUNT_DISTINCT:
 				this.operatorType = CountDistinctOperatorTypes.COUNT;
@@ -46,25 +47,15 @@ public class CountDistinctOperator extends Operator {
 				throw new DMLRuntimeException(opType + " not supported for CountDistinct Operator");
 		}
 		this.hashType = HashType.LinearHash;
+		this.direction = direction;
 	}
 
-	public CountDistinctOperator(CountDistinctOperatorTypes operatorType) {
-		super(true);
-		this.operatorType = operatorType;
-		this.hashType = HashType.StandardJava;
-	}
+	public CountDistinctOperator(CountDistinctOperatorTypes operatorType, Types.Direction direction,
+								 IndexFunction indexFunction, HashType hashType) {
+		super(new AggregateOperator(0, Plus.getPlusFnObject()), indexFunction, 1);
 
-	public CountDistinctOperator(CountDistinctOperatorTypes operatorType, HashType hashType) {
-		super(true);
 		this.operatorType = operatorType;
-		this.hashType = hashType;
-	}
-
-	public CountDistinctOperator(CountDistinctOperatorTypes operatorType, IndexFunction indexFunction,
-		HashType hashType) {
-		super(true);
-		this.operatorType = operatorType;
-		this.indexFunction = indexFunction;
+		this.direction = direction;
 		this.hashType = hashType;
 	}
 
@@ -76,21 +67,7 @@ public class CountDistinctOperator extends Operator {
 		return hashType;
 	}
 
-	public IndexFunction getIndexFunction() {
-		return indexFunction;
-	}
-
-	public CountDistinctOperator setIndexFunction(IndexFunction indexFunction) {
-		this.indexFunction = indexFunction;
-		return this;
-	}
-
 	public Types.Direction getDirection() {
 		return direction;
-	}
-
-	public CountDistinctOperator setDirection(Types.Direction direction) {
-		this.direction = direction;
-		return this;
 	}
 }

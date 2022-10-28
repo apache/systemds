@@ -29,6 +29,7 @@ import java.util.Collection;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
@@ -138,7 +139,9 @@ public class CountDistinctTest {
 	@Test
 	public void testEstimation() {
 		try {
-			CountDistinctOperator op = new CountDistinctOperator(et, ht).setDirection(Types.Direction.RowCol);
+			CountDistinctOperator op = new CountDistinctOperator(et, Types.Direction.RowCol,
+					ReduceAll.getReduceAllFnObject(), ht);
+
 			if(expectedException != null) {
 				assertThrows(expectedException.getClass(), () -> {
 					LibMatrixCountDistinct.estimateDistinctValues(in, op);

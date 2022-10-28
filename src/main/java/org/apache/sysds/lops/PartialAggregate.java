@@ -342,19 +342,38 @@ public class PartialAggregate extends Lop
 			}
 
 			case COUNT_DISTINCT: {
-				if(dir == Direction.RowCol )
-					return "uacd";
-				break;
+				switch (dir) {
+					case RowCol: return "uacd";
+					case Row: return "uacdr";
+					case Col: return "uacdc";
+					default:
+						throw new LopsException("PartialAggregate.getOpcode() - "
+								+ "Unknown aggregate direction: " + dir);
+				}
 			}
-			
+
+			case COUNT_DISTINCT_ROW:
+				return "uacdr";
+
+			case COUNT_DISTINCT_COL:
+				return "uacdc";
+
 			case COUNT_DISTINCT_APPROX: {
 				switch (dir) {
 					case RowCol: return "uacdap";
 					case Row: return "uacdapr";
 					case Col: return "uacdapc";
+					default:
+						throw new LopsException("PartialAggregate.getOpcode() - "
+								+ "Unknown aggregate direction: " + dir);
 				}
-				break;
 			}
+
+			case COUNT_DISTINCT_APPROX_ROW:
+				return "uacdapr";
+
+			case COUNT_DISTINCT_APPROX_COL:
+				return "uacdapc";
 		}
 		
 		//should never come here for normal compilation

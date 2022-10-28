@@ -52,7 +52,6 @@ public interface LibMatrixCountDistinct {
 	 * Public method to count the number of distinct values inside a matrix. Depending on which CountDistinctOperator
 	 * selected it either gets the absolute number or a estimated value.
 	 * 
-	 * TODO: Support counting num distinct in rows, or columns axis.
 	 * TODO: If the MatrixBlock type is CompressedMatrix, simply read the values from the ColGroups.
 	 * 
 	 * @param in the input matrix to count number distinct values in
@@ -252,7 +251,7 @@ public interface LibMatrixCountDistinct {
 				}
 			}
 		} else {  // Col aggregation
-			blkOut = new MatrixBlock(1, blkIn.getNumColumns(), false, blkIn.getNumRows());
+			blkOut = new MatrixBlock(1, blkIn.getNumColumns(), false, blkIn.getNumColumns());
 			blkOut.allocateBlock();
 
 			// All dense and sparse formats (COO, CSR, MCSR) are row-major formats, so there is no obvious way to iterate
@@ -300,7 +299,6 @@ public interface LibMatrixCountDistinct {
 						if (csrBlock.isEmpty(rix)) {
 							continue;
 						}
-						distinct.clear();
 						int rpos = csrBlock.pos(rix);
 						int clen = csrBlock.size(rix);
 						int[] cixs = csrBlock.indexes();

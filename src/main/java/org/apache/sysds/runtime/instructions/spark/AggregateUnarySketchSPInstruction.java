@@ -53,20 +53,6 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
     protected AggregateUnarySketchSPInstruction(Operator op, CPOperand in, CPOperand out, AggBinaryOp.SparkAggType aggtype, String opcode, String instr) {
         super(SPType.AggregateUnarySketch, op, in, out, opcode, instr);
         this.op = (CountDistinctOperator) super.getOperator();
-
-        if (opcode.equals("uacdap")) {
-            this.op.setDirection(Types.Direction.RowCol)
-                    .setIndexFunction(ReduceAll.getReduceAllFnObject());
-        } else if (opcode.equals("uacdapr")) {
-            this.op.setDirection(Types.Direction.Row)
-                    .setIndexFunction(ReduceCol.getReduceColFnObject());
-        } else if (opcode.equals("uacdapc")) {
-            this.op.setDirection(Types.Direction.Col)
-                    .setIndexFunction(ReduceRow.getReduceRowFnObject());
-        } else {
-            throw new DMLException("Unrecognized opcode " + opcode);
-        }
-
         this.aggtype = aggtype;
     }
 
@@ -79,7 +65,19 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
         CPOperand out = new CPOperand(parts[2]);
         AggBinaryOp.SparkAggType aggtype = AggBinaryOp.SparkAggType.valueOf(parts[3]);
 
-        CountDistinctOperator cdop = new CountDistinctOperator(CountDistinctOperatorTypes.KMV, Hash.HashType.LinearHash);
+        CountDistinctOperator cdop = null;
+        if (opcode.equals("uacdap")) {
+            cdop = new CountDistinctOperator(CountDistinctOperatorTypes.KMV, Types.Direction.RowCol,
+                    ReduceAll.getReduceAllFnObject(), Hash.HashType.LinearHash);
+        } else if (opcode.equals("uacdapr")) {
+            cdop = new CountDistinctOperator(CountDistinctOperatorTypes.KMV, Types.Direction.Row,
+                    ReduceCol.getReduceColFnObject(), Hash.HashType.LinearHash);
+        } else if (opcode.equals("uacdapc")) {
+            cdop = new CountDistinctOperator(CountDistinctOperatorTypes.KMV, Types.Direction.Col,
+                    ReduceRow.getReduceRowFnObject(), Hash.HashType.LinearHash);
+        } else {
+            throw new DMLException("Unrecognized opcode: " + opcode);
+        }
 
         return new AggregateUnarySketchSPInstruction(cdop, in1, out, aggtype, opcode, str);
     }
@@ -147,7 +145,7 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
 
             out3 = out2.mapValues(new CalculateAggregateSketchFunction(this.op));
 
-            updateUnaryAggOutputDataCharacteristics(sec, this.op.getIndexFunction());
+            updateUnaryAggOutputDataCharacteristics(sec, this.op.indexFn);
 
             // put output RDD handle into symbol table
             sec.setRDDHandleForVariable(output.getName(), out3);
@@ -173,7 +171,7 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
             MatrixBlock blkIn = arg0._2();
 
             MatrixIndexes ixOut = new MatrixIndexes();
-            this.op.getIndexFunction().execute(ixIn, ixOut);
+            this.op.indexFn.execute(ixIn, ixOut);
 
             return LibMatrixCountDistinct.createSketch(blkIn, this.op);
         }
@@ -222,7 +220,7 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
 
             MatrixIndexes idxOut = new MatrixIndexes();
             MatrixBlock blkOut = blkIn;  // Do not create sketch yet
-            this._op.getIndexFunction().execute(idxIn, idxOut);
+            this._op.indexFn.execute(idxIn, idxOut);
 
             return new Tuple2<>(idxOut, blkOut);
         }

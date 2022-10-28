@@ -22,11 +22,11 @@ package org.apache.sysds.test.functions.countDistinct;
 import org.apache.sysds.common.Types.ExecType;
 import org.junit.Test;
 
-public class CountDistinctRowCol extends CountDistinctRowColBase {
+public class CountDistinctRowColParameterized extends CountDistinctRowColBase {
 
-	public String TEST_NAME = "countDistinctRowCol";
+	public String TEST_NAME = "countDistinctRowColParameterized";
 	public String TEST_DIR = "functions/countDistinct/";
-	public String TEST_CLASS_DIR = TEST_DIR + CountDistinctRowCol.class.getSimpleName() + "/";
+	public String TEST_CLASS_DIR = TEST_DIR + CountDistinctRowColParameterized.class.getSimpleName() + "/";
 
 	protected String getTestClassDir() {
 		return TEST_CLASS_DIR;

@@ -2034,15 +2034,16 @@ public class DMLTranslator
 						target.getValueType(), ParamBuiltinOp.TOSTRING, paramHops) :
 					HopRewriteUtils.createBinary(paramHops.get("target"), new LiteralOp(""), OpOp2.PLUS);
 				break;
+
 			case LISTNV:
 				currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), target.getDataType(),
 					target.getValueType(), ParamBuiltinOp.LIST, paramHops);
 				break;
 
+			case COUNT_DISTINCT:
 			case COUNT_DISTINCT_APPROX:
-				// Default direction and data type
-				Direction dir = Direction.RowCol;
-				DataType dataType = DataType.SCALAR;
+				Direction dir = Direction.RowCol;  // Default direction
+				DataType dataType = DataType.SCALAR;  // Default output data type
 
 				LiteralOp dirOp = (LiteralOp) paramHops.get("dir");
 				if (dirOp != null) {
@@ -2062,6 +2063,19 @@ public class DMLTranslator
 				currBuiltinOp = new AggUnaryOp(target.getName(), dataType, target.getValueType(),
 						AggOp.valueOf(source.getOpCode().name()), dir, paramHops.get("data"));
 				break;
+
+			case COUNT_DISTINCT_ROW:
+			case COUNT_DISTINCT_APPROX_ROW:
+				currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
+						AggOp.valueOf(source.getOpCode().name()), Direction.Row, paramHops.get("data"));
+				break;
+
+			case COUNT_DISTINCT_COL:
+			case COUNT_DISTINCT_APPROX_COL:
+				currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
+						AggOp.valueOf(source.getOpCode().name()), Direction.Col, paramHops.get("data"));
+				break;
+
 			default:
 				throw new ParseException(source.printErrorLocation() + 
 					"processParameterizedBuiltinFunctionExpression() -- Unknown operation: " + source.getOpCode());
@@ -2361,10 +2375,10 @@ public class DMLTranslator
 		case SUM:
 		case PROD:
 		case VAR:
-		case COUNT_DISTINCT:
 			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.SCALAR, target.getValueType(),
 					AggOp.valueOf(source.getOpCode().name()), Direction.RowCol, expr);
 			break;
+
 		case MEAN:
 			if ( expr2 == null ) {
 				// example: x = mean(Y);

@@ -313,8 +313,9 @@ public class CLALibBinaryCellOp {
 		// apply overlap
 		if(smallestSize == Integer.MAX_VALUE) {
 			// if there was no smallest colgroup
-			ADictionary newDict = new MatrixBlockDictionary(m2);
-			newColGroups.add(ColGroupConst.create(nCol, newDict));
+			ADictionary newDict = MatrixBlockDictionary.create(m2);
+			if(newDict != null)	
+				newColGroups.add(ColGroupConst.create(nCol, newDict));
 		}
 		else {
 			// apply to the found group

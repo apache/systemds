@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.junit.Test;
 
-public class DictionaryTest {
+public class CustomDictionaryTest {
 
 	@Test
 	public void testContainsValue() {

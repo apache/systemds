@@ -358,7 +358,7 @@ public class ColGroupUncompressed extends AColGroup {
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
 		LOG.warn("Binary row op left is not supported for Uncompressed Matrix, "
 			+ "Implement support for VMr in MatrixBlock Binary Cell operations");
-		MatrixBlockDictionary d = new MatrixBlockDictionary(_data);
+		MatrixBlockDictionary d = MatrixBlockDictionary.create(_data);
 		ADictionary dm = d.binOpLeft(op, v, _colIndexes);
 		if(dm == null)
 			return create(null, _colIndexes);

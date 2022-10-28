@@ -990,7 +990,7 @@ public class Dictionary extends ADictionary {
 	public ADictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
 		MatrixBlockDictionary a = getMBDict(1);
 		if(a == null)
-			a = new MatrixBlockDictionary(new MatrixBlock(_values.length, 1, (double) reference));
+			a = MatrixBlockDictionary.create(new MatrixBlock(_values.length, 1, (double) reference));
 		else
 			a = (MatrixBlockDictionary) a.applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
 		if(a == null)
